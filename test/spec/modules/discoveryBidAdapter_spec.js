@@ -5,7 +5,7 @@ import {
   storage,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
-  getCurrentTimeToUTCString,
+  getCookieTimeToUTCString,
   buildUTMTagData,
 } from 'modules/discoveryBidAdapter.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
@@ -594,7 +594,7 @@ describe('discovery Bid Adapter Tests', function () {
 
         const response = event.data;
         if (!response.optout && response.mguid) {
-          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCookieTimeToUTCString());
         }
       }
 
