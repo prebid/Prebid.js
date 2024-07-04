@@ -61,6 +61,7 @@ module.exports = {
     'no-useless-escape': 'off',
     'no-console': 'error',
     'jsdoc/check-types': 'off',
+    'jsdoc/no-defaults': 'off',
     'jsdoc/newline-after-description': 'off',
     'jsdoc/require-jsdoc': 'off',
     'jsdoc/require-param': 'off',
@@ -120,7 +121,12 @@ module.exports = {
     // code in other packages (such as plugins/eslint) is not "seen" by babel and its parser will complain.
     files: 'plugins/*/**/*.js',
     parser: 'esprima'
+
   }, {
+
+
+
+
     files: '**BidAdapter.js',
     rules: {
       'no-restricted-imports': [
