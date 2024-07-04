@@ -20,6 +20,10 @@ pbjs.setConfig({
                 name: 'ceeIdToken',
                 expires: 7,
                 refreshInSeconds: 360
+            },
+            params: {
+                tokenName: 'name' // Your custom name of token to read
+                value: 'tokenValue' // Optional param if you want to pass token value directly through setConfig (this param shouldn't be set if token value will be taken from cookie or LS)
             }
         }]
     }

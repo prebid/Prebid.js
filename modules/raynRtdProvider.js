@@ -14,6 +14,7 @@ import { deepAccess, deepSetValue, logError, logMessage, mergeDeep } from '../sr
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'rayn';
 const RAYN_TCF_ID = 1220;
+const RAYN_PERSONA_TAXONOMY_ID = 103015;
 const LOG_PREFIX = 'RaynJS: ';
 export const SEGMENTS_RESOLVER = 'rayn.io';
 export const RAYN_LOCAL_STORAGE_KEY = 'rayn-segtax';
@@ -78,6 +79,32 @@ export function generateOrtbDataObject(segtax, segment, maxTier) {
 }
 
 /**
+ * Create and return ORTB2 object with segtax and personaIds
+ * @param {number} segtax
+ * @param {Array} personaIds
+ * @return {Array}
+ */
+export function generatePersonaOrtbDataObject(segtax, personaIds) {
+  const segmentIds = [];
+
+  try {
+    segmentIds.push(...personaIds.map((id) => {
+      return { id };
+    }))
+  } catch (error) {
+    logError(LOG_PREFIX, error);
+  }
+
+  return {
+    name: SEGMENTS_RESOLVER,
+    ext: {
+      segtax,
+    },
+    segment: segmentIds,
+  };
+}
+
+/**
  * Generates checksum
  * @param {string} url
  * @returns {string}
@@ -127,8 +154,14 @@ export function setSegmentsAsBidderOrtb2(bidConfig, bidders, integrationConfig, 
     deepSetValue(raynOrtb2, 'site.content.data', raynContentData);
   }
 
+  const raynUserData = [];
   if (integrationConfig.iabAudienceCategories.v1_1.enabled && segments[4]) {
-    const raynUserData = [generateOrtbDataObject(4, segments[4], integrationConfig.iabAudienceCategories.v1_1.tier)];
+    raynUserData.push(generateOrtbDataObject(4, segments[4], integrationConfig.iabAudienceCategories.v1_1.tier));
+  }
+  if (segments[RAYN_PERSONA_TAXONOMY_ID]) {
+    raynUserData.push(generatePersonaOrtbDataObject(RAYN_PERSONA_TAXONOMY_ID, segments[RAYN_PERSONA_TAXONOMY_ID]));
+  }
+  if (raynUserData.length > 0) {
     deepSetValue(raynOrtb2, 'user.data', raynUserData);
   }
 
@@ -163,8 +196,8 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
       segments[checksum] || (segments[4] &&
         integrationConfig.iabAudienceCategories.v1_1.enabled &&
         !integrationConfig.iabContentCategories.v2_2.enabled &&
-        !integrationConfig.iabContentCategories.v3_0.enabled
-      )
+        !integrationConfig.iabContentCategories.v3_0.enabled) ||
+      segments[RAYN_PERSONA_TAXONOMY_ID]
     )) {
       logMessage(LOG_PREFIX, `Segtax data from localStorage: ${JSON.stringify(segments)}`);
       setSegmentsAsBidderOrtb2(reqBidsConfigObj, bidders, integrationConfig, segments, checksum);

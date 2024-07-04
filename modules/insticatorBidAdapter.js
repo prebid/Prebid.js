@@ -439,6 +439,10 @@ function buildRequest(validBidRequests, bidderRequest) {
     deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
+  if (validBidRequests[0]?.params?.publisherId) {
+    deepSetValue(req, 'site.publisher.id', validBidRequests[0].params.publisherId);
+  }
+
   return req;
 }
 

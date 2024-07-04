@@ -37,6 +37,7 @@ function getSlotConfigs(mediaTypes, params) {
     ortb2Imp: {
       ext: {
         tid: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
+        gpid: 'some-gpid'
       }
     },
     adUnitCode: adUnitCode,
@@ -299,6 +300,7 @@ describe('Seedtag Adapter', function () {
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
 
       expect(data.bidRequests[0].adUnitCode).to.equal(adUnitCode);
+      expect(data.bidRequests[0].gpid).to.equal('some-gpid');
     });
 
     describe('GDPR params', function () {
@@ -624,6 +626,33 @@ describe('Seedtag Adapter', function () {
         const data = JSON.parse(request.data);
         expect(data.bcat).to.be.undefined;
         expect(data.badv).to.be.undefined;
+      });
+    });
+
+    describe('device.sua param', function () {
+      it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
+        const sua = 1
+        var ortb2 = {
+          device: {
+            sua: sua
+          }
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.sua).to.equal(sua);
+      });
+
+      it('should not add device.sua param to payload when bidderRequest does not have ortb2 device.sua info', function () {
+        var ortb2 = {
+          device: {}
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.sua).to.be.undefined;
       });
     });
   })

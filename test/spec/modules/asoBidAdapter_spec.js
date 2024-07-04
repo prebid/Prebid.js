@@ -6,7 +6,7 @@ import {syncAddFPDToBidderRequest} from '../../helpers/fpd';
 import {parseUrl} from '../../../src/utils';
 
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 
 describe('Adserver.Online bidding adapter', function () {
