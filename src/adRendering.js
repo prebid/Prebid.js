@@ -255,6 +255,12 @@ export function insertLocatorFrame() {
   if (!window.frames[PB_LOCATOR]) {
     const frame = createInvisibleIframe();
     frame.name = PB_LOCATOR;
-    document.body.appendChild(frame);
+    if(!document.body){
+      window.requestAnimationFrame(() => {
+        document.body.appendChild(frame);
+      });
+    }else{
+      document.body.appendChild(frame);
+    }
   }
 }
