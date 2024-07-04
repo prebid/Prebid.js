@@ -132,6 +132,9 @@ describe('Zeta Ssp Bid Adapter', function () {
     userIdAsEids: eids,
     timeout: 500,
     ortb2: {
+      site: {
+        inventorypartnerdomain: 'disqus.com'
+      },
       device: {
         sua: {
           mobile: 1,
@@ -708,5 +711,13 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.ext.tags.emptyTag).to.be.undefined;
     expect(payload.ext.tags.nullTag).to.be.undefined;
     expect(payload.ext.tags.complexEmptyTag).to.be.undefined;
+  });
+
+  it('Test that site payload param are merged from ortb2 and params', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.site.page).to.eql('zetaglobal.com/page');
+    expect(payload.site.inventorypartnerdomain).to.eql('disqus.com');
   });
 });

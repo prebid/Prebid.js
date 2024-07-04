@@ -12,7 +12,7 @@ import {
   isFn,
   isNumber,
   isBoolean,
-  isInteger, deepSetValue, getBidIdParameter,
+  isInteger, deepSetValue, getBidIdParameter, setOnAny
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -86,7 +86,7 @@ _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAs
 _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.6',
+  VERSION: '1.7',
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
@@ -167,6 +167,8 @@ export const spec = {
         tagid,
         secure,
       };
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+      gpid && isStr(gpid) && deepSetValue(impObj, `ext.gpid`, gpid);
       const floorData = getBidFloor(bid, cur);
       if (floorData.floor) {
         impObj.bidfloor = floorData.floor;
@@ -430,15 +432,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
-}
 
 /**
  * Unpack the Server's Bid into a Prebid-compatible one.

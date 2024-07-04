@@ -151,7 +151,7 @@ export const spec = {
    *
    * @param {syncOptions} Publisher prebid configuration
    * @param {serverResponses} Response from the server
-   * @param {gdprConsent} GPDR consent object
+   * @param {gdprConsent} GDPR consent object
    * @returns {Array}
    */
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {

@@ -110,12 +110,17 @@ describe('YandexId module', () => {
 
     describe('crypto', () => {
       it('uses Math.random when crypto is not available', () => {
-        sandbox.stub(window, 'crypto').value(undefined);
+        const cryptoTmp = window.crypto;
+
+        // @ts-expect-error -- Crypto is always defined in modern JS. TS yells when trying to delete non-nullable property.
+        delete window.crypto;
 
         yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG);
 
         expect(randomStub.calledOnce).to.be.true;
         expect(getCryptoRandomValuesStub.called).to.be.false;
+
+        window.crypto = cryptoTmp;
       });
 
       it('uses crypto when it is available', () => {
