@@ -399,7 +399,10 @@ function getBidData(bid) {
 
 function getLoggingData(event, bids) {
   const logData = {};
-  bids.forEach?.((bid) => {
+  if (!isArray(bids)) {
+    bids = [];
+  }
+  bids.forEach((bid) => {
     let bidData = getBidData(bid);
     Object.keys(bidData).forEach((key) => {
       logData[key] = logData[key] || [];
@@ -407,17 +410,6 @@ function getLoggingData(event, bids) {
     });
   });
   return Object.assign({}, getEventData(event), logData)
-}
-
-function firePostLog(url, payload) {
-  try {
-    const isSent = window.navigator.sendBeacon(url, payload);
-    if (!isSent) {
-      fireAjaxLog(url, payload);
-    }
-  } catch (e) {
-    fireAjaxLog(url, payload);
-  }
 }
 
 function fireAjaxLog(url, payload) {
@@ -428,14 +420,15 @@ function fireAjaxLog(url, payload) {
     },
     payload,
     {
-      method: 'POST'
+      method: 'POST',
+      keepalive: true
     }
   );
 }
 
 function logEvent(event, data) {
   const logData = getLoggingData(event, data);
-  firePostLog(EVENT_PIXEL_URL, formatQS(logData));
+  fireAjaxLog(EVENT_PIXEL_URL, formatQS(logData));
 }
 
 function clearPageMeta() {
