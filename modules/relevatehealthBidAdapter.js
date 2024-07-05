@@ -67,14 +67,14 @@ function buildRequests(bidRequests, bidderRequest) {
 // Format the response as per the standards
 function interpretResponse(bidResponse, bidRequest) {
   let resp = [];
-  if (bidResponse && bidResponse.body) {
+  if (bidResponse) {
     try {
-      let bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
-      if (bids) {
-        bids.forEach(bidObj => {
-          let newBid = formatResponse(bidObj);
-          newBid.mediaType = BANNER;
-          resp.push(newBid);
+      let bidRequests = bidResponse.body && bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
+      if (bidRequests) {
+        bidRequests.forEach(bidRequestObj => {
+          let newBidObject = formatResponse(bidRequestObj);
+          newBidObject.mediaType = BANNER;
+          resp.push(newBidObject);
         });
       }
     } catch (err) {
