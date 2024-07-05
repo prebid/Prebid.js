@@ -16,7 +16,7 @@ const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
 const FIRST_PARTY_KEY = '_iiq_fdata';
 const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-const JSVERSION = 5.3
+const JSVERSION = 0.1
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
@@ -211,6 +211,7 @@ function constructFullUrl(data) {
       ? '&iiqid=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid) : '') +
     '&agid=' + REPORTER_ID +
     '&jsver=' + JSVERSION +
+    '&vrref=' + getRefferer() +
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report)
 }
