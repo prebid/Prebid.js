@@ -137,7 +137,6 @@ describe('storage manager', function() {
       expect(val).to.be.null;
       sinon.assert.calledThrice(errorLogSpy);
     })
-
   })
 
   describe('sessionstorage forbidden access in 3rd-party context', function() {
@@ -166,7 +165,6 @@ describe('storage manager', function() {
       expect(val).to.be.null;
       sinon.assert.calledThrice(errorLogSpy);
     })
-
   })
 
   describe('localstorage is enabled', function() {

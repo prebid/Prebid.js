@@ -39,7 +39,6 @@ function getRxEngineReceptivity(requester) {
 }
 
 function getItemFromSessionStorage(key) {
-
   let value = null;
   try {
     // Use the Storage Manager
@@ -48,11 +47,9 @@ function getItemFromSessionStorage(key) {
   }
 
   return value;
-
 }
 
 function loadSessionReceptivity(requester) {
-
   let sessionStorageValue = getItemFromSessionStorage(requester);
   if (!sessionStorageValue) {
     return null;
@@ -71,7 +68,6 @@ function loadSessionReceptivity(requester) {
   } catch {
     return null;
   }
-
 }
 
 /**
