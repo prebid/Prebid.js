@@ -73,20 +73,34 @@ const _SESSION = (function() {
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew, vwSmplg, vwSmplgNxt, lastActivityTime } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, testName, testVersion, initiator } = _internal.getSessionFromLocalStorage(storageValue);
+
+        // isNew can be `true` if the session has been initialized by the A/B test snippet (external)
+        const isNewSess = (initiator === 'snippet') ? isNew : isNewSession(lastActivityTime);
 
         data.session = {
           rnd,
-          new: isNew || false, // legacy: `new` was used but the choosen name is not good.
+          new: isNewSess, // legacy: `new` was used but the choosen name is not good.
           // Don't use values if they are not defined.
           ...(vwSmplg !== undefined && { vwSmplg }),
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
-          ...(lastActivityTime !== undefined && { lastActivityTime })
+          ...(lastActivityTime !== undefined && { lastActivityTime }),
+          ...(id !== undefined && { id }),
+          ...(testName !== undefined && { testName }),
+          ...(testVersion !== undefined && { testVersion }),
+          ...(initiator !== undefined && { initiator }),
         };
 
-        if (isNewSession(lastActivityTime)) {
+        // `initiator` is a pseudo flag used to know if the session has been initialized by the A/B test snippet (external).
+        // If the AB Test snippet has not been used, then `initiator` value is `adgjs` or `undefined`.
+        // The check on `testName` is used to ensure that the A/B test values are removed.
+        if (initiator !== 'snippet' && (isNewSess || testName)) {
           data.session.new = true;
+          data.session.id = generateUUID();
           data.session.rnd = Math.random();
+          // Ensure that the A/B test values are removed.
+          delete data.session.testName;
+          delete data.session.testVersion;
         }
 
         _internal.getAdagioNs().queue.push({
