@@ -55,8 +55,12 @@ describe('storage manager', function() {
     coreStorage.getDataFromLocalStorage('foo', noop);
     coreStorage.removeDataFromLocalStorage('foo', noop);
     coreStorage.hasLocalStorage(noop);
+    coreStorage.setDataInSessionStorage('foo', 'bar', noop);
+    coreStorage.getDataFromSessionStorage('foo', noop);
+    coreStorage.removeDataFromSessionStorage('foo', noop);
+    coreStorage.hasSessionStorage(noop);
 
-    expect(storageCallbacks.length).to.equal(8);
+    expect(storageCallbacks.length).to.equal(12);
   });
 
   it('should allow bidder to access device if gdpr enforcement module is not included', function() {
@@ -92,6 +96,8 @@ describe('storage manager', function() {
       const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
       mgr.setDataInLocalStorage('testKey', 'val');
       expect(mgr.getDataFromLocalStorage('testKey')).to.not.exist;
+      mgr.setDataInSessionStorage('testKeySession', 'val');
+      expect(mgr.getDataFromSessionStorage('testKeySession')).to.not.exist;
     });
 
     it('should use bidder aliases when possible', () => {
@@ -131,6 +137,36 @@ describe('storage manager', function() {
       expect(val).to.be.null;
       sinon.assert.calledThrice(errorLogSpy);
     })
+
+  })
+
+  describe('sessionstorage forbidden access in 3rd-party context', function() {
+    let errorLogSpy;
+    let originalSessionStorage;
+    const sessionStorageMock = { get: () => { throw Error } };
+
+    beforeEach(function() {
+      originalSessionStorage = window.sessionStorage;
+      Object.defineProperty(window, 'sessionStorage', sessionStorageMock);
+      errorLogSpy = sinon.spy(utils, 'logError');
+    });
+
+    afterEach(function() {
+      Object.defineProperty(window, 'sessionStorage', { get: () => originalSessionStorage });
+      errorLogSpy.restore();
+    })
+
+    it('should not throw if the sessionStorage is not accessible when setting/getting/removing from sessionStorage', function() {
+      const coreStorage = newStorageManager();
+
+      coreStorage.setDataInSessionStorage('key', 'value');
+      const val = coreStorage.getDataFromSessionStorage('key');
+      coreStorage.removeDataFromSessionStorage('key');
+
+      expect(val).to.be.null;
+      sinon.assert.calledThrice(errorLogSpy);
+    })
+
   })
 
   describe('localstorage is enabled', function() {
@@ -154,6 +190,30 @@ describe('storage manager', function() {
       expect(val).to.be.true;
       expect(localStorage.length).to.be.eq(1);
       expect(localStorage.getItem('unrelated')).to.be.eq('dummy');
+    });
+  });
+
+  describe('sessionStorage is enabled', function() {
+    let sessionStorage;
+
+    beforeEach(function() {
+      sessionStorage = window.sessionStorage;
+      sessionStorage.clear();
+    });
+
+    afterEach(function() {
+      sessionStorage.clear();
+    })
+
+    it('should remove side-effect after checking', function () {
+      const storage = newStorageManager();
+
+      sessionStorage.setItem('unrelated', 'dummy');
+      const val = storage.sessionStorageIsEnabled();
+
+      expect(val).to.be.true;
+      expect(sessionStorage.length).to.be.eq(1);
+      expect(sessionStorage.getItem('unrelated')).to.be.eq('dummy');
     });
   });
 

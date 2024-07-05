@@ -179,6 +179,83 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
   }
 
   /**
+   * @returns {boolean}
+   */
+  const sessionStorageIsEnabled = function (done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        try {
+          sessionStorage.setItem('prebid.cookieTest', '1');
+          return sessionStorage.getItem('prebid.cookieTest') === '1';
+        } catch (error) {
+        } finally {
+          try {
+            sessionStorage.removeItem('prebid.cookieTest');
+          } catch (error) {}
+        }
+      }
+      return false;
+    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+  }
+
+  /**
+   * @param {string} key
+   * @param {string} value
+   */
+  const setDataInSessionStorage = function (key, value, done) {
+    let cb = function (result) {
+      if (result && result.valid && hasSessionStorage()) {
+        window.sessionStorage.setItem(key, value);
+      }
+    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+  }
+
+  /**
+   * @param {string} key
+   * @returns {(string|null)}
+   */
+  const getDataFromSessionStorage = function (key, done) {
+    let cb = function (result) {
+      if (result && result.valid && hasSessionStorage()) {
+        return window.sessionStorage.getItem(key);
+      }
+      return null;
+    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+  }
+
+  /**
+   * @param {string} key
+   */
+  const removeDataFromSessionStorage = function (key, done) {
+    let cb = function (result) {
+      if (result && result.valid && hasSessionStorage()) {
+        window.sessionStorage.removeItem(key);
+      }
+    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  const hasSessionStorage = function (done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        try {
+          return !!window.sessionStorage;
+        } catch (e) {
+          logError('Session storage api disabled');
+        }
+      }
+      return false;
+    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+  }
+
+  /**
    * Returns all cookie values from the jar whose names contain the `keyLike`
    * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
    * @param {string} keyLike
@@ -217,6 +294,11 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
     getDataFromLocalStorage,
     removeDataFromLocalStorage,
     hasLocalStorage,
+    sessionStorageIsEnabled,
+    setDataInSessionStorage,
+    getDataFromSessionStorage,
+    removeDataFromSessionStorage,
+    hasSessionStorage,
     findSimilarCookies
   }
 }
