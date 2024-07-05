@@ -10,8 +10,14 @@ import {
   isArray,
   logError
 } from '../src/utils.js';
+import {
+  getStorageManager
+} from '../src/storageManager.js';
+
 const BIDDER_CODE = 'relevatehealth';
 const ENDPOINT_URL = 'https://rtb.relevate.health/prebid/relevate';
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const LOCAL_STORAGE_KEY = 'adx_profile_guid';
 
 function buildRequests(bidRequests, bidderRequest) {
   const requests = [];
@@ -83,23 +89,19 @@ function isBidRequestValid(bid) {
 }
 // Function to get banner details
 function getBanner(bid) {
-  if (deepAccess(bid, 'mediaTypes.banner')) {
+  let banner = {};
+  if (deepAccess(bid, 'mediaTypes.banner') && deepAccess(bid, 'mediaTypes.banner.sizes') && !(bid.params.height && bid.params.width)) {
     // Fetch width and height from MediaTypes object, if not provided in bid params
-    if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
-      let sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-      if (isArray(sizes) && sizes.length > 0) {
-        return {
-          h: sizes[0][1],
-          w: sizes[0][0]
-        };
-      }
-    } else {
-      return {
-        h: bid.params.height,
-        w: bid.params.width
-      };
+    let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+    if (isArray(bannerSizes) && bannerSizes.length > 0) {
+      banner.h = bannerSizes[0][1];
+      banner.w = bannerSizes[0][0];
     }
+  } else {
+    banner.h = bid.params.height;
+    banner.w = bid.params.width;
   }
+  return banner;
 }
 // Function to get bid_floor
 function getFloor(bid) {
@@ -121,32 +123,40 @@ function getSite(bidderRequest) {
 }
 // Function to format response
 function formatResponse(bid) {
-  return {
-    requestId: bid && bid.impid ? bid.impid : undefined,
-    cpm: bid && bid.price ? bid.price : 0.0,
-    width: bid && bid.w ? bid.w : 0,
-    height: bid && bid.h ? bid.h : 0,
-    ad: bid && bid.adm ? bid.adm : '',
-    meta: {
-      advertiserDomains: bid && bid.adomain ? bid.adomain : []
-    },
-    creativeId: bid && bid.crid ? bid.crid : undefined,
-    netRevenue: false,
-    currency: bid && bid.cur ? bid.cur : 'USD',
-    ttl: 300,
-    dealId: bid && bid.dealId ? bid.dealId : undefined
+  let response = {};
+  response.requestId = bid && bid.impid ? bid.impid : undefined;
+  response.cpm = bid && bid.price ? bid.price : 0.0;
+  response.width = bid && bid.w ? bid.w : 0;
+  response.height = bid && bid.h ? bid.h : 0;
+  response.ad = bid && bid.adm ? bid.adm : '';
+  response.meta = {
+    advertiserDomains: bid && bid.adomain ? bid.adomain : []
   };
+  response.creativeId = bid && bid.crid ? bid.crid : undefined;
+  response.netRevenue = false;
+  response.currency = bid && bid.cur ? bid.cur : 'USD';
+  response.ttl = 300;
+  response.dealId = bid && bid.dealId ? bid.dealId : undefined;
+  return response;
+}
+// Function to get the data from storage
+function getStorageValue(key) {
+  let storageValue = '';
+  if (storage.localStorageIsEnabled()) {
+    storageValue = storage.getDataFromLocalStorage(key);
+  }
+  return storageValue;
 }
 // Function to build the user object
 function buildUser(bid) {
+  let user = {};
   if (bid && bid.params) {
-    return {
-      id: bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '',
-      buyeruid: localStorage.getItem('adx_profile_guid') ? localStorage.getItem('adx_profile_guid') : '',
-      keywords: bid.params.keywords && typeof bid.params.keywords == 'string' ? bid.params.keywords : '',
-      customdata: bid.params.customdata && typeof bid.params.customdata == 'string' ? bid.params.customdata : ''
-    };
+    user.id = bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '';
+    user.buyeruid = getStorageValue(LOCAL_STORAGE_KEY) ? getStorageValue(LOCAL_STORAGE_KEY) : '';
+    user.keywords = bid.params.keywords && typeof bid.params.keywords == 'string' ? bid.params.keywords : '';
+    user.customdata = bid.params.customdata && typeof bid.params.customdata == 'string' ? bid.params.customdata : '';
   }
+  return user;
 }
 // Export const spec
 export const spec = {
