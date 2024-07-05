@@ -17,11 +17,14 @@ import {
   isArray,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
 const CONTXTFUL_RECEPTIVITY_DOMAIN = 'api.receptivity.io';
+
+const storageManager = getStorageManager({ bidderCode: MODULE_NAME });
 
 let rxApi = null;
 let isFirstBidRequestCall = true;
@@ -35,10 +38,22 @@ function getRxEngineReceptivity(requester) {
   return rxApi?.receptivity(requester);
 }
 
+function getItemFromSessionStorage(key) {
+
+  let value = null;
+  try {
+    // Use the Storage Manager
+    value = storageManager.getDataFromSessionStorage(key, null);
+  } catch (error) {
+  }
+
+  return value;
+
+}
+
 function loadSessionReceptivity(requester) {
-  // TODO: commented out because of rule violations
-  /*
-  let sessionStorageValue = sessionStorage.getItem(requester);
+
+  let sessionStorageValue = getItemFromSessionStorage(requester);
   if (!sessionStorageValue) {
     return null;
   }
@@ -56,7 +71,7 @@ function loadSessionReceptivity(requester) {
   } catch {
     return null;
   }
-   */
+
 }
 
 /**
