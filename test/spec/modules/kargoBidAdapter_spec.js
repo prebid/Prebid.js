@@ -300,7 +300,7 @@ describe('kargo adapter tests', function() {
           domain,
           isAmp: false,
           location: topUrl,
-          numIframs: 0,
+          numIframes: 0,
           page: topUrl,
           reachedTop: true,
           ref: referer,
@@ -428,12 +428,12 @@ describe('kargo adapter tests', function() {
           }
         }
       }]);
-      expect(payload.ext).to.deep.equal({ ortb2: {
+      expect(payload.ext.ortb2).to.deep.equal({
         user: { key: 'value' }
-      }});
+      });
 
       payload = getPayloadFromTestBids(testBids);
-      expect(payload.ext).to.be.undefined;
+      expect(payload.ext.ortb2).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -450,9 +450,33 @@ describe('kargo adapter tests', function() {
           }
         }
       }]);
-      expect(payload.ext).to.deep.equal({ortb2: {
+      expect(payload.ext.ortb2).to.deep.equal({
         user: { key: 'value' }
-      }});
+      }
+      );
+    });
+
+    it('copies the refererInfo object from bidderRequest if present', function() {
+      let payload;
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.ext.refererInfo).to.deep.equal({
+        canonicalUrl: 'https://random.com/this/is/a/url',
+        domain: 'random.com',
+        isAmp: false,
+        location: 'https://random.com/this/is/a/url',
+        numIframes: 0,
+        page: 'https://random.com/this/is/a/url',
+        reachedTop: true,
+        ref: 'https://random.com/',
+        stack: [
+          'https://random.com/this/is/a/url'
+        ],
+        topmostLocation: 'https://random.com/this/is/a/url'
+      });
+
+      delete bidderRequest.refererInfo
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.ext).to.be.undefined;
     });
 
     it('pulls the site category from the first bids ortb2 object', function() {
@@ -1808,7 +1832,7 @@ describe('kargo adapter tests', function() {
       });
     });
 
-    it('should return fledgeAuctionConfigs if provided in bid response', function () {
+    it('should return paapi if provided in bid response', function () {
       const auctionConfig = {
         seller: 'https://kargo.com',
         decisionLogicUrl: 'https://kargo.com/decision_logic.js',
@@ -1841,11 +1865,11 @@ describe('kargo adapter tests', function() {
         expect(bid).to.have.property('meta').that.is.an('object');
       });
 
-      // Test properties of fledgeAuctionConfigs
-      expect(result.fledgeAuctionConfigs).to.have.lengthOf(3);
+      // Test properties of paapi
+      expect(result.paapi).to.have.lengthOf(3);
 
       const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
-      result.fledgeAuctionConfigs.forEach(config => {
+      result.paapi.forEach(config => {
         expect(config).to.have.property('bidId');
         expect(expectedBidIds).to.include(config.bidId);
 

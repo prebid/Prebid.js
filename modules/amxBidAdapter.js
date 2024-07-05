@@ -454,6 +454,10 @@ export const spec = {
       setUIDSafe(response.am);
     }
 
+    const bidderSettings = config.getConfig('bidderSettings');
+    const settings = bidderSettings?.amx ?? bidderSettings?.standard ?? {};
+    const allowAlternateBidderCodes = !!settings.allowAlternateBidderCodes;
+
     return flatMap(Object.keys(response.r), (bidID) => {
       return flatMap(response.r[bidID], (siteBid) =>
         siteBid.b.map((bid) => {
@@ -466,8 +470,10 @@ export const spec = {
 
           const size = resolveSize(bid, request.data, bidID);
           const defaultExpiration = mediaType === BANNER ? 240 : 300;
+          const { bc: bidderCode, ds: demandSource } = bid.ext ?? {};
 
           return {
+            ...(bidderCode != null && allowAlternateBidderCodes ? { bidderCode } : {}),
             requestId: bidID,
             cpm: bid.price,
             width: size[0],
@@ -479,6 +485,7 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain,
               mediaType,
+              ...(demandSource != null ? { demandSource } : {}),
             },
             mediaType,
             ttl: typeof bid.exp === 'number' ? bid.exp : defaultExpiration,
