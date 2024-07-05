@@ -18,13 +18,17 @@ import {
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
 const CONTXTFUL_RECEPTIVITY_DOMAIN = 'api.receptivity.io';
 
-const storageManager = getStorageManager({ bidderCode: MODULE_NAME });
+const storageManager = getStorageManager({
+  moduleType: MODULE_TYPE_RTD,
+  moduleName: MODULE_NAME
+});
 
 let rxApi = null;
 let isFirstBidRequestCall = true;

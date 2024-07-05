@@ -59,31 +59,12 @@ pbjs.setConfig({
           "adServerTargeting": true, // Optional, default: true
         }
       }
-    ],
-    userSync: {
-      userIds: [
-        {
-          name: "contxtful",
-          storage: {
-            type: "html5",
-          },
-        },
-      ],
-    },
+    ]
   }
 });
 ```
 
-The Contxtful RTD Module uses browser session storage. The access to it must be explicitly set as such:
-
-```javascript
-// https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html
-pbjs.bidderSettings = {
-  contxtful: {
-    storageAllowed: true
-  }
-}
-```
+The Contxtful RTD Module uses browser session storage. The access to storage must be set at the bidder level as documented in [pbjs.bidderSettings](https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html).
 
 ## Parameters
 
