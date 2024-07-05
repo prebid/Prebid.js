@@ -1,0 +1,75 @@
+name: Builds Prebid with custom modules
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        default: "develop"
+        required: false
+        type: choice
+        options:
+        - development
+        - production
+      modules_list: 
+        default: ""
+        required: true
+        type: string
+      tag: 
+        default: "9.3.0"
+        required: true
+        type: string
+      client_id:
+        default: "none"
+        required: true
+        type: string
+      pbjs_global:
+        default: "pbjs"
+        required: true
+        type: string
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      modules_list: ${{ steps.vars.outputs.modules_list }}
+    steps:
+      - name: Create an array of modules
+        id: vars
+        run: echo "::set-output name=modules_list::$(jq 'split(",")' -Rc <(echo '${{ github.event.inputs.modules_list }}'))"
+
+  build:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout to tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+    
+      - name: Install dependencies
+        run: npm install
+    
+      - name: Replace string in file
+        uses: MathieuSoysal/replace-string-in-file@v1.0.0
+        with:
+          file: package.json
+          old-string: pbjs
+          new-string: ${{ github.event.inputs.pbjs_global }}
+    
+      - name: Build prebid
+        run: gulp build --modules=${{ needs.setup.outputs.modules_list }}
+
+      - name: Upload bundle to R2
+        uses: magicwallet/r2-upload@main
+        with:
+          endpoint: ${{ secrets.R2_ENDPOINT }}
+          access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.R2_ACCESS_SECRET_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
+          file: ./build/dist/prebid.js
+          destination: '/${{ github.event.inputs.client_id }}/${{ github.event.inputs.env }}/prebid.min.js'
