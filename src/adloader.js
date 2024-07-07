@@ -31,6 +31,7 @@ const _approvedLoadExternalJSList = [
   'qortex',
   'dynamicAdBoost',
   '51Degrees',
+  'symitridap',
   // UserId Submodules
   'justtag',
   'tncId',

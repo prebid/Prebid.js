@@ -128,8 +128,8 @@ export const spec = {
       id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
-      site: params.site ? params.site : {},
-      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
+      site: {...bidderRequest?.ortb2?.site, ...params?.site},
+      device: {...bidderRequest?.ortb2?.device, ...params?.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
