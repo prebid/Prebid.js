@@ -34,7 +34,7 @@ describe('GDPR FPD enrichment', () => {
     })
   });
 
-  it('sets user.ext.consent, but not regs.ext.gdpr, if gpdrApplies is not a boolean', () => {
+  it('sets user.ext.consent, but not regs.ext.gdpr, if gdprApplies is not a boolean', () => {
     consent = {consentString: 'mock-consent'};
     return callHook().then(ortb2 => {
       expect(ortb2).to.eql({

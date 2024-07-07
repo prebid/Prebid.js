@@ -1,10 +1,22 @@
+/**
+ * This module adds the Mobian RTD provider to the real time data module
+ * The {@link module:modules/realTimeData} module is required
+ * @module modules/anonymisedRtdProvider
+ * @requires module:modules/realTimeData
+ */
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
+import { deepSetValue } from '../src/utils.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 export const MOBIAN_URL = 'https://impact-api-prod.themobian.com/brand_safety';
 
+/** @type {RtdSubmodule} */
 export const mobianBrandSafetySubmodule = {
   name: 'mobianBrandSafety',
-  gvlid: null,
   init: init,
   getBidRequestData: getBidRequestData
 };
@@ -36,10 +48,12 @@ function getBidRequestData(bidReqConfig, callback, config) {
           'mobianGarmRisk': mobianGarmRisk
         };
         resolve(risk);
-        ortb2Site.ext.data['mobian'] = risk
+        deepSetValue(ortb2Site.ext, 'data.mobian', risk);
+        callback()
       },
       error: function () {
         resolve({});
+        callback()
       }
     });
   });
