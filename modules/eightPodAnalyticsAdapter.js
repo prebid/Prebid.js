@@ -1,4 +1,4 @@
-import {logError, logInfo} from '../src/utils.js';
+import {logError, logInfo, logMessage} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
@@ -14,7 +14,7 @@ const MODULE = `${MODULE_NAME}AnalyticProvider`;
  * Custom tracking server that gets internal events from EightPod's ad unit
  */
 const trackerUrl = 'https://demo.8pod.com/tracker/track';
-
+const context = {};
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
 
 const {
@@ -22,12 +22,11 @@ const {
 } = EVENTS;
 
 export let queue = [];
-export let context;
 
 /**
  * Create eightPod Analytic adapter
  */
-let eightPodAnalytics = Object.assign(adapter({ analyticsType }), {
+let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}), {
   /**
    * Execute on bid won - setup basic settings, save context about EightPod's bid. We will send it with our events later
    */
@@ -35,8 +34,10 @@ let eightPodAnalytics = Object.assign(adapter({ analyticsType }), {
     switch (eventType) {
       case BID_WON:
         if (args.bidder === 'eightPod') {
+          const params = args?.params?.[0];
+          context[args.adUnitCode] = makeContext(args);
+
           eightPodAnalytics.setupPage(args);
-          context = makeContext(args);
           break;
         }
     }
@@ -46,24 +47,23 @@ let eightPodAnalytics = Object.assign(adapter({ analyticsType }), {
    * Execute on bid won - subscribe on events from adUnit
    */
   setupPage() {
-    eightPodAnalytics.eventSubscribe();
     queue = getEventFromLocalStorage();
   },
   /**
    * Subscribe on internal ad unit tracking events
    */
+
   eventSubscribe() {
     window.addEventListener('message', async (event) => {
-      const data = event?.data;
+      const data = event.data;
 
-      if (!data?.detail?.name) {
-        return;
-      }
+      const frameElement = event.source.frameElement;
+      const parentElement = frameElement?.parentElement;
+      const adUnitCode = parentElement?.id;
 
-      trackEvent(data);
+      trackEvent(data, adUnitCode);
     });
 
-    // Send queue of event every 10 seconds
     setInterval(sendEvents, 10_000);
   },
   resetQueue() {
@@ -81,8 +81,8 @@ function makeContext(args) {
   const params = args?.params?.[0];
   return {
     bidId: args.seatBidId,
-    variantId: args.creativeId || 'variantId',
-    campaignId: 'campaignId',
+    variantId: args.creativeId || '',
+    campaignId: args.cid || '',
     publisherId: params.publisherId,
     placementId: params.placementId,
   };
@@ -91,12 +91,12 @@ function makeContext(args) {
 /**
  * Create event, add context and push it to queue
  */
-export function trackEvent(event) {
+export function trackEvent(event, adUnitCode) {
   if (!event.detail) {
     return;
   }
   const fullEvent = {
-    context: eightPodAnalytics.getContext(),
+    context: context[adUnitCode],
     eventType: event.detail.type,
     eventClass: 'adunit',
     timestamp: new Date().getTime(),
@@ -104,6 +104,7 @@ export function trackEvent(event) {
     payload: event.detail.payload
   };
 
+  logMessage(fullEvent);
   addEvent(fullEvent);
 }
 
@@ -173,6 +174,7 @@ eightPodAnalytics.eventsStorage = [];
 eightPodAnalytics.enableAnalytics = function (config) {
   eightPodAnalytics.originEnableAnalytics(config);
   logInfo(MODULE, 'init', config);
+  eightPodAnalytics.eventSubscribe();
 };
 
 /**
@@ -180,7 +182,7 @@ eightPodAnalytics.enableAnalytics = function (config) {
  */
 adapterManager.registerAnalyticsAdapter({
   adapter: eightPodAnalytics,
-  code: MODULE_NAME
+  code: 'eightPod'
 });
 
 export default eightPodAnalytics;
