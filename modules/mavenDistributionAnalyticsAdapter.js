@@ -326,8 +326,8 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     }
   })
 
-  const dateNow = Date.now();
-  const windowPerformanceNow = window.performance.now() | 0;
+  const dateNow = Date.now()
+  const windowPerformanceNow = window.performance.now() | 0
 
   /** @type {AuctionEndSummary} */
   const eventToSend = {
