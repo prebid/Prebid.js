@@ -12,7 +12,7 @@ const analyticsType = 'endpoint';
 const defaultUrl = 'https://reports.intentiq.com/report';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME });
 const prebidVersion = '$prebid.version$';
-const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
+export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
 const FIRST_PARTY_KEY = '_iiq_fdata';
 const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
@@ -145,7 +145,7 @@ function getRandom(start, end) {
   return Math.floor((Math.random() * (end - start + 1)) + start);
 }
 
-function preparePayload(data) {
+export function preparePayload(data) {
   let result = getDefaultDataObject();
 
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
@@ -216,7 +216,7 @@ function constructFullUrl(data) {
     '&payload=' + JSON.stringify(report)
 }
 
-function getReferrer() {
+export function getReferrer() {
   return document.referrer;
 }
 
