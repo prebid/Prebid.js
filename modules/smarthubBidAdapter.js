@@ -29,22 +29,6 @@ const _getUrl = (partnerName) => {
   return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
 }
 
-const _isBidResponseValid = (bid) => {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency || !bid.hasOwnProperty('netRevenue')) {
-    return false;
-  }
-  switch (bid.mediaType) {
-    case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
-    case VIDEO:
-      return Boolean(bid.width && bid.height && (bid.vastUrl || bid.vastXml));
-    case NATIVE:
-      return Boolean(bid.native && bid.native.impressionTrackers && bid.native.impressionTrackers.length);
-    default:
-      return false;
-  }
-}
-
 const _getPlacementReqData = (bid) => {
   const { params, bidId, mediaTypes, bidder } = bid;
   const schain = bid.schain || {};
