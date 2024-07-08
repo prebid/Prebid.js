@@ -4,7 +4,6 @@ import {
   cleanObj,
   deepAccess,
   deepClone,
-  generateUUID,
   getDNT,
   getWindowSelf,
   isArray,
