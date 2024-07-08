@@ -256,9 +256,7 @@ export function insertLocatorFrame() {
     const frame = createInvisibleIframe();
     frame.name = PB_LOCATOR;
     if (!document.body) {
-      window.requestAnimationFrame(() => {
-        document.body.appendChild(frame);
-      });
+      window.requestAnimationFrame(insertLocatorFrame);
     } else {
       document.body.appendChild(frame);
     }
