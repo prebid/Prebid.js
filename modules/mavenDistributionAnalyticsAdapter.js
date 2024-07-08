@@ -137,12 +137,15 @@ export function summarizeAuctionInit(args, adapterConfig) {
     }
   })
 
+  const dateNow = Date.now()
+  const windowPerformanceNow = window.performance.now() | 0
+  
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
     ts: args.timestamp,
-    tspl: args.timestamp - (Date.now() - (window.performance.now() | 0)),
-    tspl_q: window.performance.now() | 0,
+    tspl: args.timestamp - (dateNow - windowPerformanceNow),
+    tspl_q: windowPerformanceNow,
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
   if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
@@ -263,7 +266,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     const bidAmounts = []
     const bidResponseTimes = []
     const floors = []
-
+    
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
@@ -323,12 +326,13 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     }
   })
 
+  const dateNow = Date.now()
+  const windowPerformanceNow = window.performance.now() | 0
+
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
-    ts: args.timestamp,
-    tspl: args.timestamp - (Date.now() - (window.performance.now() | 0)),
-    tspl_q: window.performance.now() | 0,
+    tspl_q: windowPerformanceNow,
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
   if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
@@ -338,8 +342,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   // args.timestamp is only the _auctionStart in src/auction.js
   // so to get the time for this event we want args.auctionEnd
   eventToSend.ts = args.auctionEnd
-  eventToSend.tspl = args.auctionEnd - (Date.now() - (window.performance.now() | 0))
-  eventToSend.tspl_q = window.performance.now() | 0
+  eventToSend.tspl = args.auctionEnd - (dateNow - windowPerformanceNow)
   eventToSend.bidderss = bidderss
   eventToSend.bid_statusss = bidStatusss
   eventToSend.bid_amountss = bidAmountss
