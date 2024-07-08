@@ -263,7 +263,6 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     const bidAmounts = []
     const bidResponseTimes = []
     const floors = []
-
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
