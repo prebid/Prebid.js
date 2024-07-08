@@ -3,7 +3,7 @@ import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from '../../../src/utils';
-import {BANNER} from "../../../src/mediaTypes";
+import {BANNER} from '../../../src/mediaTypes';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
@@ -36,8 +36,8 @@ describe('dspxAdapter', function () {
 
     it('should return false when required params are not passed', function () {
       const invalidBid = {
-        bidId: "30b31c1838de1e",
-        bidder: "dspx",
+        bidId: '30b31c1838de1e',
+        bidder: 'dspx',
         mediaTypes: {
           [BANNER]: {
             sizes: [[300, 250]]
@@ -94,7 +94,7 @@ describe('dspxAdapter', function () {
           }, {
             'id': 'pubid2-123'
           }]
-        },{
+        }, {
           'source': 'puburl.com',
           'uids': [{
             'id': 'pubid1',
@@ -438,7 +438,7 @@ describe('dspxAdapter', function () {
       'adUnitCode': 'testDiv1',
     };
 
-   it('does pass segtax, segclass, segments for google topics data', () => {
+    it('does pass segtax, segclass, segments for google topics data', () => {
       const GOOGLE_TOPICS_DATA = {
         ortb2: {
           user: {
@@ -501,7 +501,6 @@ describe('dspxAdapter', function () {
       expect(request.data).to.not.contain('segments');
     });
   });
-
 
   describe('interpretResponse', function () {
     let serverResponse = {
