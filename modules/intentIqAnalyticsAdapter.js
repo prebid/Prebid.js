@@ -20,7 +20,7 @@ const JSVERSION = 0.1
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
-  pbPauseUntill: 'pbPauseUntil',
+  pbPauseUntil: 'pbPauseUntil',
   pbMonitoringEnabled: 'pbMonitoringEnabled',
   isInTestGroup: 'isInTestGroup',
   enhanceRequests: 'enhanceRequests',
@@ -28,7 +28,7 @@ const PARAMS_NAMES = {
   hadEids: 'hadEids',
   ABTestingConfigurationSource: 'ABTestingConfigurationSource',
   lateConfiguration: 'lateConfiguration',
-  jsverion: 'jsversion',
+  jsversion: 'jsversion',
   eidsNames: 'eidsNames',
   requestRtt: 'rtt',
   clientType: 'clientType',
@@ -45,9 +45,9 @@ const PARAMS_NAMES = {
   auctionStartTime: 'ast',
   eidsReadTime: 'eidt',
   agentId: 'aid',
-  auctionEidsLegth: 'aeidln',
+  auctionEidsLength: 'aeidln',
   wasServerCalled: 'wsrvcll',
-  refferer: 'vrref',
+  referrer: 'vrref',
   isInBrowserBlacklist: 'inbbl',
   prebidVersion: 'pbjsver',
   partnerId: 'partnerId'
@@ -150,7 +150,7 @@ function preparePayload(data) {
 
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
-  result[PARAMS_NAMES.refferer] = getRefferer();
+  result[PARAMS_NAMES.referrer] = getReferrer();
 
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
@@ -168,7 +168,7 @@ function preparePayload(data) {
 function fillEidsData(result) {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) {
     result[PARAMS_NAMES.hadEidsInLocalStorage] = iiqAnalyticsAnalyticsAdapter.initOptions.eidl && iiqAnalyticsAnalyticsAdapter.initOptions.eidl > 0;
-    result[PARAMS_NAMES.auctionEidsLegth] = iiqAnalyticsAnalyticsAdapter.initOptions.eidl || -1;
+    result[PARAMS_NAMES.auctionEidsLength] = iiqAnalyticsAnalyticsAdapter.initOptions.eidl || -1;
   }
 }
 
@@ -211,12 +211,12 @@ function constructFullUrl(data) {
       ? '&iiqid=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid) : '') +
     '&agid=' + REPORTER_ID +
     '&jsver=' + JSVERSION +
-    '&vrref=' + getRefferer() +
+    '&vrref=' + getReferrer() +
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report)
 }
 
-function getRefferer() {
+function getReferrer() {
   return document.referrer;
 }
 
