@@ -253,11 +253,11 @@ export function renderAdDirect(doc, adId, options) {
  */
 export function insertLocatorFrame() {
   if (!window.frames[PB_LOCATOR]) {
-    const frame = createInvisibleIframe();
-    frame.name = PB_LOCATOR;
     if (!document.body) {
       window.requestAnimationFrame(insertLocatorFrame);
     } else {
+      const frame = createInvisibleIframe();
+      frame.name = PB_LOCATOR;
       document.body.appendChild(frame);
     }
   }
