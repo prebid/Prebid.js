@@ -34,7 +34,6 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
     switch (eventType) {
       case BID_WON:
         if (args.bidder === 'eightPod') {
-          const params = args?.params?.[0];
           context[args.adUnitCode] = makeContext(args);
 
           eightPodAnalytics.setupPage(args);
