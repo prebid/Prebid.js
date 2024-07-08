@@ -309,7 +309,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
         bidAmountss.push(bidAmounts)
         bidResponseTimess.push(bidResponseTimes)
         floorss.push(floors)
-        cpmms.push(cpmmsMap[adUnit.code])
+        cpmms.push(cpmmsMap[adUnit.code] ?? 0)
       })
     } else {
       adUnitCodes.push(adUnit.code)
@@ -322,7 +322,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
       bidAmountss.push(bidAmounts)
       bidResponseTimess.push(bidResponseTimes)
       floorss.push(floors)
-      cpmms.push(cpmmsMap[adUnit.code])
+      cpmms.push(cpmmsMap[adUnit.code] ?? 0)
     }
   })
 
