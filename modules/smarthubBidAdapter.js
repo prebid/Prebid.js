@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { interpretResponse, isBidRequestValid } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'smarthub';
 const ALIASES = [
@@ -152,22 +153,6 @@ const _buildRequestParams = (bidderRequest = {}, placements = []) => {
   };
 }
 
-const isBidRequestValid = (bid = {}) => {
-  const { params, bidId, mediaTypes } = bid;
-  let validParams = Boolean(bidId && params && params.seat && params.token);
-
-  if (mediaTypes && mediaTypes[BANNER]) {
-    validParams = validParams && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
-  } else if (mediaTypes && mediaTypes[VIDEO]) {
-    validParams = validParams && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
-  } else if (mediaTypes && mediaTypes[NATIVE]) {
-    validParams = validParams && Boolean(mediaTypes[NATIVE]);
-  } else {
-    validParams = false;
-  }
-  return validParams;
-}
-
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -189,20 +174,6 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
       data: request,
     }
   });
-}
-
-const interpretResponse = (response) => {
-  let responseArr = [];
-  for (let i = 0; i < response.body.length; i++) {
-    let resItem = response.body[i];
-    if (_isBidResponseValid(resItem)) {
-      const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
-      resItem.meta = { ...resItem.meta, advertiserDomains };
-
-      responseArr.push(resItem);
-    }
-  }
-  return responseArr;
 }
 
 export const spec = {
