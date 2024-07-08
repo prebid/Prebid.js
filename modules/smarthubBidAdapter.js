@@ -19,7 +19,7 @@ const BASE_URLS = {
   vimayx: 'https://vimayx-prebid.smart-hub.io/pbjs',
 };
 
-function getUrl(partnerName) {
+const _getUrl = (partnerName) => {
   const aliases = ALIASES.map(el => el.code);
   if (aliases.includes(partnerName)) {
     return BASE_URLS[partnerName];
@@ -28,7 +28,7 @@ function getUrl(partnerName) {
   return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
 }
 
-function isBidResponseValid(bid) {
+const _isBidResponseValid = (bid) => {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency || !bid.hasOwnProperty('netRevenue')) {
     return false;
   }
@@ -44,11 +44,11 @@ function isBidResponseValid(bid) {
   }
 }
 
-function getPlacementReqData(bid) {
+const _getPlacementReqData = (bid) => {
   const { params, bidId, mediaTypes, bidder } = bid;
   const schain = bid.schain || {};
   const { partnerName, seat, token, iabCat, minBidfloor, pos } = params;
-  const bidfloor = getBidFloor(bid);
+  const bidfloor = _getBidFloor(bid);
 
   const plcmt = {
     partnerName: String(partnerName || bidder).toLowerCase(),
@@ -91,7 +91,7 @@ function getPlacementReqData(bid) {
   return plcmt;
 }
 
-function getBidFloor(bid) {
+const _getBidFloor = (bid) => {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidfloor', 0);
   }
@@ -107,7 +107,7 @@ function getBidFloor(bid) {
   }
 }
 
-function buildRequestParams(bidderRequest = {}, placements = []) {
+const _buildRequestParams = (bidderRequest = {}, placements = []) => {
   let width = 0;
   let height = 0;
 
@@ -152,63 +152,67 @@ function buildRequestParams(bidderRequest = {}, placements = []) {
   };
 }
 
+const isBidRequestValid = (bid = {}) => {
+  const { params, bidId, mediaTypes } = bid;
+  let validParams = Boolean(bidId && params && params.seat && params.token);
+
+  if (mediaTypes && mediaTypes[BANNER]) {
+    validParams = validParams && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
+  } else if (mediaTypes && mediaTypes[VIDEO]) {
+    validParams = validParams && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
+  } else if (mediaTypes && mediaTypes[NATIVE]) {
+    validParams = validParams && Boolean(mediaTypes[NATIVE]);
+  } else {
+    validParams = false;
+  }
+  return validParams;
+}
+
+const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+  const tempObj = {};
+
+  const len = validBidRequests.length;
+  for (let i = 0; i < len; i++) {
+    const bid = validBidRequests[i];
+    const data = _getPlacementReqData(bid);
+    tempObj[data.partnerName] = tempObj[data.partnerName] || [];
+    tempObj[data.partnerName].push(data);
+  }
+
+  return Object.keys(tempObj).map(key => {
+    const request = _buildRequestParams(bidderRequest, tempObj[key]);
+    return {
+      method: 'POST',
+      url: _getUrl(key),
+      data: request,
+    }
+  });
+}
+
+const interpretResponse = (response) => {
+  let responseArr = [];
+  for (let i = 0; i < response.body.length; i++) {
+    let resItem = response.body[i];
+    if (_isBidResponseValid(resItem)) {
+      const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
+      resItem.meta = { ...resItem.meta, advertiserDomains };
+
+      responseArr.push(resItem);
+    }
+  }
+  return responseArr;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: (bid = {}) => {
-    const { params, bidId, mediaTypes } = bid;
-    let validParams = Boolean(bidId && params && params.seat && params.token);
-
-    if (mediaTypes && mediaTypes[BANNER]) {
-      validParams = validParams && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
-    } else if (mediaTypes && mediaTypes[VIDEO]) {
-      validParams = validParams && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
-    } else if (mediaTypes && mediaTypes[NATIVE]) {
-      validParams = validParams && Boolean(mediaTypes[NATIVE]);
-    } else {
-      validParams = false;
-    }
-    return validParams;
-  },
-
-  buildRequests: (validBidRequests = [], bidderRequest = {}) => {
-    // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const tempObj = {};
-
-    const len = validBidRequests.length;
-    for (let i = 0; i < len; i++) {
-      const bid = validBidRequests[i];
-      const data = getPlacementReqData(bid);
-      tempObj[data.partnerName] = tempObj[data.partnerName] || [];
-      tempObj[data.partnerName].push(data);
-    }
-
-    return Object.keys(tempObj).map(key => {
-      const request = buildRequestParams(bidderRequest, tempObj[key]);
-      return {
-        method: 'POST',
-        url: getUrl(key),
-        data: request,
-      }
-    });
-  },
-
-  interpretResponse: (response) => {
-    let responseArr = [];
-    for (let i = 0; i < response.body.length; i++) {
-      let resItem = response.body[i];
-      if (isBidResponseValid(resItem)) {
-        const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
-        resItem.meta = { ...resItem.meta, advertiserDomains };
-
-        responseArr.push(resItem);
-      }
-    }
-    return responseArr;
-  }
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse
 };
 
 registerBidder(spec);
