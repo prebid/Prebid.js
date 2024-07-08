@@ -102,6 +102,7 @@ describe('Test user agent categorization', () => {
     it('user agent is other', () => {
       const otherUserAgent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
       window.navigator.__defineGetter__('userAgent', () => otherUserAgent);
+      window.navigator.__defineGetter__('appVersion', () => '');
       expect(getOS()).to.equal(osTypes.OTHER);
     })
   })
