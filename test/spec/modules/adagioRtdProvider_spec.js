@@ -5,7 +5,7 @@ import {
   storage,
 } from 'modules/adagioRtdProvider.js';
 import * as utils from 'src/utils.js';
-import { config as prebidConfig} from 'src/config.js';
+import { config as prebidConfig } from 'src/config.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 import { expect } from 'chai';
 import { getGlobal } from '../../../src/prebidGlobal.js';
