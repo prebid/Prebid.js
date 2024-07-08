@@ -332,8 +332,6 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
-    ts: args.timestamp,
-    tspl: args.timestamp - (dateNow - windowPerformanceNow),
     tspl_q: windowPerformanceNow,
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
@@ -344,6 +342,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   // args.timestamp is only the _auctionStart in src/auction.js
   // so to get the time for this event we want args.auctionEnd
   eventToSend.ts = args.auctionEnd
+  eventToSend.tspl = args.auctionEnd - (dateNow - windowPerformanceNow)
   eventToSend.bidderss = bidderss
   eventToSend.bid_statusss = bidStatusss
   eventToSend.bid_amountss = bidAmountss
