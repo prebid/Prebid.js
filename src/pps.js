@@ -1,4 +1,5 @@
 import { auctionManager } from './auctionManager.js';
+import { TARGETING_KEYS } from './constants.js';
 import { CLIENT_SECTIONS } from './fpd/oneClient.js';
 import { deepAccess, uniques } from './utils.js';
 
@@ -21,15 +22,16 @@ export function getSignals(fpd) {
   return signals;
 }
 
-export function getSignalsArray(auctionIds) {
+export function getSignalsArrayByAuctionsIds(auctionIds) {
   const signals = auctionIds
     .map(auctionId => auctionManager.index.getAuction({ auctionId })?.getFPD()?.global)
     .map(getSignals)
     .filter(fpd => fpd);
-  return signals
+
+  return signals;
 }
 
-export function getSegmentsIntersection(signals) {
+export function getSignalsIntersection(signals) {
   const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
   const result = {};
   taxonomies.forEach((taxonomy) => {
@@ -42,6 +44,15 @@ export function getSegmentsIntersection(signals) {
         return commonElements.filter(element => subArray.includes(element));
       })
     ) : []
+    result[taxonomy] = { values: result[taxonomy] };
   })
   return result;
+}
+
+export function getAuctionsIdsFromTargeting(targeting) {
+  return Object.values(targeting)
+    .flatMap(x => Object.entries(x))
+    .filter((entry) => (entry[0] || '').includes(TARGETING_KEYS.AD_ID))
+    .flatMap(entry => entry[1])
+    .filter(uniques);
 }

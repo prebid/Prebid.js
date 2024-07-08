@@ -2,8 +2,18 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import {registerVideoSupport} from '../src/adServerManager.js';
-import {targeting} from '../src/targeting.js';
+import { DEFAULT_DFP_PARAMS, DFP_ENDPOINT } from '../libraries/dfpUtils/dfpUtils.js';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { gdprDataHandler } from '../src/adapterManager.js';
+import { getPPID } from '../src/adserver.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { config } from '../src/config.js';
+import { EVENTS } from '../src/constants.js';
+import * as events from '../src/events.js';
+import { getHook } from '../src/hook.js';
+import { getSignals } from '../src/pps.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { targeting } from '../src/targeting.js';
 import {
   buildUrl,
   deepAccess,
@@ -12,20 +22,8 @@ import {
   isNumber,
   logError,
   parseSizesInput,
-  parseUrl,
-  uniques
+  parseUrl
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getHook} from '../src/hook.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {gdprDataHandler} from '../src/adapterManager.js';
-import * as events from '../src/events.js';
-import {EVENTS} from '../src/constants.js';
-import {getPPID} from '../src/adserver.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';
-import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT} from '../libraries/dfpUtils/dfpUtils.js';
-import { getSegments, getSignals } from '../src/pps.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -171,7 +169,7 @@ export function buildDfpVideoUrl(options) {
   });
   const fpd = auctionManager.index.getBidRequest(options.bid || {})?.ortb2 ??
     auctionManager.index.getAuction(options.bid || {})?.getFPD()?.global;
-  
+
   const signals = getSignals(fpd);
 
   if (signals.length) {

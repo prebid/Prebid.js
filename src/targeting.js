@@ -1,3 +1,22 @@
+import { auctionManager } from './auctionManager.js';
+import { getTTL } from './bidTTL.js';
+import { bidderSettings } from './bidderSettings.js';
+import { config } from './config.js';
+import {
+  BID_STATUS,
+  DEFAULT_TARGETING_KEYS,
+  EVENTS,
+  JSON_MAPPING,
+  NATIVE_KEYS,
+  STATUS,
+  TARGETING_KEYS
+} from './constants.js';
+import * as events from './events.js';
+import { hook } from './hook.js';
+import { ADPOD } from './mediaTypes.js';
+import { NATIVE_TARGETING_KEYS } from './native.js';
+import { find, includes } from './polyfill.js';
+import { getAuctionsIdsFromTargeting, getSignalsArrayByAuctionsIds, getSignalsIntersection } from './pps.js';
 import {
   deepAccess,
   deepClone,
@@ -14,26 +33,7 @@ import {
   timestamp,
   uniques,
 } from './utils.js';
-import {config} from './config.js';
-import {NATIVE_TARGETING_KEYS} from './native.js';
-import {auctionManager} from './auctionManager.js';
-import {ADPOD} from './mediaTypes.js';
-import {hook} from './hook.js';
-import {bidderSettings} from './bidderSettings.js';
-import {find, includes} from './polyfill.js';
-import {
-  BID_STATUS,
-  DEFAULT_TARGETING_KEYS,
-  EVENTS,
-  JSON_MAPPING,
-  NATIVE_KEYS,
-  STATUS,
-  TARGETING_KEYS
-} from './constants.js';
-import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
-import {getTTL} from './bidTTL.js';
-import * as events from './events.js';
-import { getSignalsArray } from './pps.js';
+import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
 
 var pbTargetingKeys = [];
 
@@ -436,16 +436,6 @@ export function newTargeting(auctionManager) {
     // get our ad unit codes
     let targetingSet = targeting.getAllTargeting(adUnit);
 
-    const auctionIds = targetingSet
-      .flatMap(entry => Object.values(entry))
-      .flatMap(x => x)
-      .filter(x => Object.keys(x).some(key => key.includes(TARGETING_KEYS.AD_ID)))
-      .map(entry => Object.values(entry))
-      .flatMap(x => x[0])
-
-    const signals = getSignalsArray(auctionIds)
-    googletag.setConfig({pps: signals})
-
     let resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
 
     Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet), customSlotMatching)).forEach(([targetId, slots]) => {
@@ -471,6 +461,11 @@ export function newTargeting(auctionManager) {
         }
       });
     });
+
+    // set gpt config
+    const auctionsIds = getAuctionsIdsFromTargeting(targetingSet);
+    const signals = getSignalsIntersection(getSignalsArrayByAuctionsIds(auctionsIds));
+    window.googletag.setConfig && window.googletag.setConfig({pps: { taxonomies: signals }});
 
     // emit event
     events.emit(EVENTS.SET_TARGETING, targetingSet);
@@ -676,10 +671,7 @@ export function newTargeting(auctionManager) {
   function getCustomBidTargeting(adUnitCodes, bidsReceived) {
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
-      .map(bid => {
-        const newBid = Object.assign({}, bid);
-        return newBid;
-      })
+      .map(bid => Object.assign({}, bid))
       .reduce(mergeAdServerTargeting, [])
       .map(truncateCustomKeys)
       .filter(bid => bid); // removes empty elements in array;
