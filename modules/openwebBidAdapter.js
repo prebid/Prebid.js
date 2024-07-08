@@ -46,6 +46,11 @@ export const spec = {
       return false;
     }
 
+    if (!bidRequest.params.placementId) {
+      logWarn('placementId is a mandatory param for OpenWeb adapter');
+      return false;
+    }
+
     return true;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -76,7 +81,7 @@ export const spec = {
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
-          creativeId: adUnit.requestId,
+          creativeId: adUnit.creativeId,
           netRevenue: adUnit.netRevenue || true,
           nurl: adUnit.nurl,
           mediaType: adUnit.mediaType,

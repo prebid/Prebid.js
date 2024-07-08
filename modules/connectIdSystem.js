@@ -313,11 +313,13 @@ export const connectIdSubmodule = {
 
   /**
    * Utility function that returns a boolean flag indicating if the user
-   * has opeted out via the Yahoo easy-opt-out mechanism.
+   * has opted out via the Yahoo easy-opt-out mechanism.
    * @returns {Boolean}
    */
   userHasOptedOut() {
     try {
+      // TODO FIX THIS RULES VIOLATION
+      // eslint-disable-next-line
       return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
     } catch {
       return false;
