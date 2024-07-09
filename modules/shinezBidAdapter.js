@@ -19,6 +19,7 @@ const BIDDER_CODE = 'shinez';
 const ADAPTER_VERSION = '1.0.0';
 const TTL = 360;
 const CURRENCY = 'USD';
+/*
 const SELLER_ENDPOINT = 'https://hb.sweetgum.io/';
 const MODES = {
   PRODUCTION: 'hb-sz-multi',
@@ -28,7 +29,7 @@ const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
   PIXEL: 'pixel'
 };
-
+*/
 export const spec = {
   code: BIDDER_CODE,
   version: ADAPTER_VERSION,
