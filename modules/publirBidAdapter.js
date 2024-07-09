@@ -11,7 +11,6 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import {
-  getEndpoint,
   generateBidsParams,
   generateGeneralParams,
   buildBidResponse,
