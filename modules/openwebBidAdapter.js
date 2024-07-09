@@ -20,6 +20,10 @@ const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
 const BASE_URL = 'https://hb.openwebmp.com/';
+const MODES = {
+  PRODUCTION: 'hb-multi',
+  TEST: 'hb-multi-test'
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -56,7 +60,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: getEndpoint(testMode, BASE_URL),
+      url: getEndpoint(testMode, BASE_URL, MODES),
       data: combinedRequestsObject
     }
   },
