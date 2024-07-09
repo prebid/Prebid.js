@@ -12,7 +12,6 @@ import {
   generateBidsParams,
   generateGeneralParams,
   buildBidResponse,
-  getAllowedSyncMethod
 } from '../libraries/riseUtils/index.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
