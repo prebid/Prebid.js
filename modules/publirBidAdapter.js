@@ -13,7 +13,6 @@ import { ajax } from '../src/ajax.js';
 import {
   generateBidsParams,
   generateGeneralParams,
-  buildBidResponse,
 } from '../libraries/riseUtils/index.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
@@ -60,21 +59,44 @@ export const spec = {
     const bidResponses = [];
     if (body.bids) {
       body.bids.forEach(adUnit => {
-        const bidResponse = buildBidResponse(adUnit, CURRENCY, TTL, VIDEO, BANNER);
-        bidResponse.meta.advertiserDomains = [];
-        bidResponse.bidder = BIDDER_CODE;
+        const bidResponse = {
+          requestId: adUnit.requestId,
+          cpm: adUnit.cpm,
+          currency: adUnit.currency || CURRENCY,
+          width: adUnit.width,
+          height: adUnit.height,
+          ttl: adUnit.ttl || TTL,
+          creativeId: adUnit.creativeId,
+          netRevenue: adUnit.netRevenue || true,
+          nurl: adUnit.nurl,
+          mediaType: adUnit.mediaType,
+          meta: {
+            mediaType: adUnit.mediaType
+          },
+        };
+
+        if (adUnit.mediaType === VIDEO) {
+          bidResponse.vastXml = adUnit.vastXml;
+        } else if (adUnit.mediaType === BANNER) {
+          bidResponse.ad = adUnit.ad;
+        }
+
+        if (adUnit.adomain && adUnit.adomain.length) {
+          bidResponse.meta.advertiserDomains = adUnit.adomain;
+        } else {
+          bidResponse.meta.advertiserDomains = [];
+        }
         if (adUnit?.meta?.ad_key) {
           bidResponse.meta.ad_key = adUnit.meta.ad_key ?? null;
-        }
-        // Check if advertiserDomains is not empty, otherwise set it to an empty array
-        if (!adUnit.adomain || adUnit.adomain.length === 0) {
-          bidResponse.meta.advertiserDomains = [];
         }
         if (adUnit.campId) {
           bidResponse.campId = adUnit.campId;
         }
+        bidResponse.bidder = BIDDER_CODE;
         bidResponses.push(bidResponse);
       });
+    } else {
+      return [];
     }
     return bidResponses;
   },
