@@ -5,6 +5,7 @@ import {
   wurflSubmodule,
 } from 'modules/wurflRtdProvider';
 import * as ajaxModule from 'src/ajax';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('wurflRtdProvider', function () {
   describe('wurflSubmodule', function () {
@@ -55,47 +56,23 @@ describe('wurflRtdProvider', function () {
     }
 
     // expected analytics values
-    const expectedURL = 'https://prebid.wurflcloud.com/v1/prebid/stats';
+    const expectedStatsURL = 'https://prebid.wurflcloud.com/v1/prebid/stats';
     const expectedData = JSON.stringify({ bidders: ['bidder1', 'bidder2'] });
 
-    let calledURL;
-    let createElementStub;
-    let appendChildStub;
     let sandbox;
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-      // Mock document.createElement
-      createElementStub = sinon.stub(document, 'createElement').callsFake((tagName) => {
-        if (tagName === 'script') {
-          return {
-            set src(value) {
-              calledURL = value;
-            },
-            get src() {},
-            set async(value) {},
-            get async() {},
-            set onload(event) {
-              window.WURFLPromises = {
-                init: new Promise(function(resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
-                complete: new Promise(function(resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
-              }
-            },
-            get onload() {},
-          };
-        }
-        return {};
-      });
-
-      // Mock document.head.appendChild
-      appendChildStub = sinon.stub(document.head, 'appendChild');
+      window.WURFLPromises = {
+        init: new Promise(function(resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
+        complete: new Promise(function(resolve, reject) { resolve({ WURFL, wurfl_pbjs }) }),
+      };
     });
 
     afterEach(() => {
       // Restore the original functions
       sandbox.restore();
-      createElementStub.restore();
-      appendChildStub.restore();
+      window.WURFLPromises = undefined;
     });
 
     // Bid request config
@@ -117,12 +94,11 @@ describe('wurflRtdProvider', function () {
     });
 
     it('should enrich the bid request data', (done) => {
-      const expectedUrl = new URL(altHost);
-      expectedUrl.searchParams.set('debug', true);
-      expectedUrl.searchParams.set('mode', 'prebid');
+      const expectedURL = new URL(altHost);
+      expectedURL.searchParams.set('debug', true);
+      expectedURL.searchParams.set('mode', 'prebid');
 
       const callback = () => {
-        expect(calledURL).to.equal(expectedUrl.toString());
         expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.equal({
           bidder1: {
             device: {
@@ -185,6 +161,10 @@ describe('wurflRtdProvider', function () {
       const userConsent = {};
 
       wurflSubmodule.getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
+      expect(loadExternalScriptStub.calledOnce).to.be.true;
+      const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
+      expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
+      expect(loadExternalScriptCall.args[1]).to.equal('wurfl');
     });
 
     it('onAuctionEndEvent: should send analytics data using navigator.sendBeacon, if available', () => {
@@ -199,7 +179,7 @@ describe('wurflRtdProvider', function () {
 
       // Assertions
       expect(sendBeaconStub.calledOnce).to.be.true;
-      expect(sendBeaconStub.calledWithExactly(expectedURL, expectedData)).to.be.true;
+      expect(sendBeaconStub.calledWithExactly(expectedStatsURL, expectedData)).to.be.true;
     });
 
     it('onAuctionEndEvent: should send analytics data using fetch as fallback, if navigator.sendBeacon is not available', () => {
@@ -220,7 +200,7 @@ describe('wurflRtdProvider', function () {
 
       expect(fetchAjaxStub.calledOnce).to.be.true;
       const fetchAjaxCall = fetchAjaxStub.getCall(0);
-      expect(fetchAjaxCall.args[0]).to.equal(expectedURL);
+      expect(fetchAjaxCall.args[0]).to.equal(expectedStatsURL);
       expect(fetchAjaxCall.args[1].method).to.equal('POST');
       expect(fetchAjaxCall.args[1].body).to.equal(expectedData);
       expect(fetchAjaxCall.args[1].mode).to.equal('no-cors');
@@ -249,7 +229,7 @@ describe('wurflRtdProvider', function () {
       expect(xhrOpenStub.calledOnce).to.be.true;
       const xhrOpenStubCall = xhrOpenStub.getCall(0);
       expect(xhrOpenStubCall.args[0]).to.equal('POST');
-      expect(xhrOpenStubCall.args[1]).to.equal(expectedURL);
+      expect(xhrOpenStubCall.args[1]).to.equal(expectedStatsURL);
       expect(xhrOpenStubCall.args[2]).to.equal(true);
 
       expect(xhrSetRequestHeaderStub.calledOnce).to.be.true;

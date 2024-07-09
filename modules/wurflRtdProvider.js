@@ -1,5 +1,6 @@
 import { submodule } from '../src/hook.js';
 import { fetch } from '../src/ajax.js';
+import { loadExternalScript } from '../src/adloader.js';
 import {
   mergeDeep,
   prefixLog,
@@ -15,8 +16,6 @@ const WURFL_JS_HOST = 'https://prebid.wurflcloud.com';
 const WURFL_JS_ENDPOINT_PATH = '/wurfl.js';
 // STATS_ENDPOINT_PATH is the path for the stats endpoint used to send analytics data
 const STATS_ENDPOINT_PATH = '/v1/prebid/stats';
-// WURFL_JS_TIMEOUT is the default timeout for WURFL.js to load in milliseconds
-const WURFL_JS_TIMEOUT = 500;
 
 const logger = prefixLog('[WURFL RTD Submodule]');
 
@@ -57,45 +56,33 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
     host = altHost;
   }
 
-  const wjsPromise = new Promise((resolve, reject) => {
-    const url = new URL(host);
-    url.pathname = WURFL_JS_ENDPOINT_PATH;
+  const url = new URL(host);
+  url.pathname = WURFL_JS_ENDPOINT_PATH;
 
-    const runWjs = (src) => {
-      const wjs = document.createElement('script');
-      wjs.src = src;
-      wjs.async = true;
-      wjs.onload = () => resolve(window.WURFLPromises.complete);
-      wjs.onerror = () => reject(new Error('failed to load'));
-      document.head.appendChild(wjs);
-    }
+  if (isDebug) {
+    url.searchParams.set('debug', 'true')
+  }
 
-    if (isDebug) {
-      url.searchParams.set('debug', 'true')
-    }
+  url.searchParams.set('mode', 'prebid')
+  logger.logMessage('url', url.toString());
 
-    url.searchParams.set('mode', 'prebid')
-
-    runWjs(url.toString());
-  })
-
-  const timeoutPromise = new Promise((resolve, reject) => {
-    logger.logWarn('timeout');
-    setTimeout(() => resolve(window.WURFLPromises.init), WURFL_JS_TIMEOUT);
-  });
-
-  Promise.race([wjsPromise, timeoutPromise]).then((res) => {
-    logger.logMessage('received data', res);
-    if (!res.wurfl_pbjs) {
-      logger.logWaErrorrn('invalid WURFL.js for Prebid response');
-    } else {
-      enrichBidderRequests(reqBidsConfigObj, bidders, res);
-    }
-    callback();
-  }).catch((err) => {
+  try {
+    loadExternalScript(url.toString(), MODULE_NAME, () => {
+      logger.logMessage('script injected');
+      window.WURFLPromises.complete.then((res) => {
+        logger.logMessage('received data', res);
+        if (!res.wurfl_pbjs) {
+          logger.logError('invalid WURFL.js for Prebid response');
+        } else {
+          enrichBidderRequests(reqBidsConfigObj, bidders, res);
+        }
+        callback();
+      });
+    });
+  } catch (err) {
     logger.logError(err);
     callback();
-  });
+  }
 }
 
 /**
