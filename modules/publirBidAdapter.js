@@ -24,10 +24,6 @@ const TTL = 360;
 const CURRENCY = 'USD';
 const BASE_URL = 'https://prebid.publir.com/publirPrebidEndPoint';
 const DEFAULT_IMPS_ENDPOINT = 'https://prebidimpst.publir.com/publirPrebidImpressionTracker';
-const MODES = {
-  PRODUCTION: 'hb-mm-multi',
-  TEST: 'hb-multi-mm-test'
-};
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
@@ -58,7 +54,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: getEndpoint(testMode, BASE_URL, MODES),
+      url: BASE_URL,
       data: combinedRequestsObject,
       options
     };
