@@ -3,6 +3,7 @@ import {
   logInfo,
   isArray,
   deepAccess,
+  triggerPixel,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -84,13 +85,13 @@ export const spec = {
     const syncs = [];
     for (const response of serverResponses) {
       if (response.body && response.body.params) {
-        if (syncOptions.iframeEnabled && (response, 'body.params.userSyncURL')) {
+        if (syncOptions.iframeEnabled && deepAccess(response, 'body.params.userSyncURL')) {
           syncs.push({
             type: 'iframe',
-            url: (response, 'body.params.userSyncURL')
+            url: deepAccess(response, 'body.params.userSyncURL')
           });
         }
-        if (syncOptions.pixelEnabled && isArray((response, 'body.params.userSyncPixels'))) {
+        if (syncOptions.pixelEnabled && isArray(deepAccess(response, 'body.params.userSyncPixels'))) {
           const pixels = response.body.params.userSyncPixels.map(pixel => {
             return {
               type: 'image',
@@ -110,7 +111,7 @@ export const spec = {
     logInfo('onBidWon:', bid);
     ajax(DEFAULT_IMPS_ENDPOINT, null, JSON.stringify(bid), { method: 'POST', mode: 'no-cors', credentials: 'include', headers: { 'Content-Type': 'application/json' } });
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
-      (bid.nurl);
+      triggerPixel(bid.nurl);
     }
   },
 };
