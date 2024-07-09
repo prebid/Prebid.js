@@ -251,18 +251,19 @@ function isBanner(bid) {
   return bid.mediaTypes && bid.mediaTypes.banner;
 }
 
-export function generateGeneralParams(generalObject, bidderRequest) {
+export function generateGeneralParams(generalObject, bidderRequest, adapterVersion) {
   const domain = window.location.hostname;
   const { syncEnabled, filterSettings } = config.getConfig('userSync') || {};
   const { bidderCode } = bidderRequest;
   const generalBidParams = generalObject.params;
   const timeout = bidderRequest.timeout;
+  const adapVer = adapterVersion || '6.0.0';
 
   const generalParams = {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
-    adapter_version: '6.0.0',
+    adapter_version: adapVer,
     auction_start: bidderRequest.auctionStart,
     publisher_id: generalBidParams.org,
     publisher_name: domain,
