@@ -61,9 +61,14 @@ export const spec = {
     if (body.bids) {
       body.bids.forEach(adUnit => {
         const bidResponse = buildBidResponse(adUnit, CURRENCY, TTL, VIDEO, BANNER);
+        bidResponse.meta.advertiserDomains = [];
         bidResponse.bidder = BIDDER_CODE;
         if (adUnit?.meta?.ad_key) {
           bidResponse.meta.ad_key = adUnit.meta.ad_key ?? null;
+        }
+        // Check if advertiserDomains is not empty, otherwise set it to an empty array
+        if (!adUnit.adomain || adUnit.adomain.length === 0) {
+          bidResponse.meta.advertiserDomains = [];
         }
         if (adUnit.campId) {
           bidResponse.campId = adUnit.campId;
