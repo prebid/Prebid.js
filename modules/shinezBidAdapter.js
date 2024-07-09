@@ -19,18 +19,12 @@ const BIDDER_CODE = 'shinez';
 const ADAPTER_VERSION = '1.0.0';
 const TTL = 360;
 const CURRENCY = 'USD';
-const SELLER_ENDPOINT = 'https://hb.sweetgum.io/';
-/*
+const BASE_URL = 'https://hb.sweetgum.io/';
 const MODES = {
   PRODUCTION: 'hb-sz-multi',
   TEST: 'hb-multi-sz-test'
 };
-/
-const SUPPORTED_SYNC_METHODS = {
-  IFRAME: 'iframe',
-  PIXEL: 'pixel'
-};
-*/
+
 export const spec = {
   code: BIDDER_CODE,
   version: ADAPTER_VERSION,
@@ -60,7 +54,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: getEndpoint(testMode, SELLER_ENDPOINT),
+      url: getEndpoint(testMode, BASE_URL, MODES),
       data: combinedRequestsObject
     }
   },
