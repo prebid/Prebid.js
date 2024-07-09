@@ -20,17 +20,12 @@ const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_GVLID = 1043;
-/*
-const DEFAULT_SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
+const BASE_URL = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb-multi',
   TEST: 'hb-multi-test'
 };
-const SUPPORTED_SYNC_METHODS = {
-  IFRAME: 'iframe',
-  PIXEL: 'pixel'
-};
-*/
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: [
@@ -59,14 +54,14 @@ export const spec = {
     // use data from the first bid, to create the general params for all bids
     const generalObject = validBidRequests[0];
     const testMode = generalObject.params.testMode;
-    const rtbDomain = generalObject.params.rtbDomain;
+    const rtbDomain = generalObject.params.rtbDomain || BASE_URL;
 
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
     combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
 
     return {
       method: 'POST',
-      url: getEndpoint(testMode, rtbDomain),
+      url: getEndpoint(testMode, rtbDomain, MODES),
       data: combinedRequestsObject
     }
   },
