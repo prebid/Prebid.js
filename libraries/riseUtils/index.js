@@ -78,9 +78,10 @@ export function isSyncMethodAllowed(syncRule, bidderCode) {
 
 export function getEndpoint(testMode, baseUrl, modes) {
   const protocol = baseUrl.startsWith('http') ? '' : 'https://';
+  const url = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   return testMode
-    ? `${protocol}${baseUrl}${modes.TEST}`
-    : `${protocol}${baseUrl}${modes.PRODUCTION}`;
+    ? `${protocol}${url}${modes.TEST}`
+    : `${protocol}${url}${modes.PRODUCTION}`;
 }
 
 export function getDeviceType(ua) {
