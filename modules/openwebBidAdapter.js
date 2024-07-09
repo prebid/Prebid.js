@@ -3,8 +3,7 @@ import {
   logInfo,
   isArray,
   deepAccess,
-  triggerPixel,
-  getDNT
+  triggerPixel
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -20,6 +19,7 @@ const BIDDER_CODE = 'openweb';
 const ADAPTER_VERSION = '6.1.0';
 const TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
+/*
 const SELLER_ENDPOINT = 'https://hb.openwebmp.com/';
 const MODES = {
   PRODUCTION: 'hb-multi',
@@ -29,7 +29,7 @@ const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
   PIXEL: 'pixel'
 };
-
+*/
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 280,
