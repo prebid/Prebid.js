@@ -4,7 +4,6 @@ import {
   deepAccess,
   isEmpty,
   contains,
-  timestamp,
   isInteger,
   getBidIdParameter
 } from '../../src/utils.js';
@@ -264,7 +263,7 @@ export function generateGeneralParams(generalObject, bidderRequest) {
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
     adapter_version: '6.0.0',
-    auction_start: timestamp(),
+    auction_start: bidderRequest.auctionStart,
     publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
