@@ -1,8 +1,8 @@
-import {BANNER, VIDEO} from "../../src/mediaTypes";
-import {find} from "../../src/polyfill";
-import {getRefererInfo} from "../../src/refererDetection";
-import {createTrackPixelHtml, deepAccess, getBidRequest, logError} from "../../src/utils";
-import {BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from "./constants";
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import {find} from '../../src/polyfill.js';
+import {getRefererInfo} from '../../src/refererDetection.js';
+import {createTrackPixelHtml, deepAccess, getBidRequest, logError} from '../../src/utils.js';
+import {BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from './constants.js';
 
 export function getSizes(request) {
   let sizes = request.sizes;
@@ -28,7 +28,7 @@ export function formatRequest(payload, requestType, config) {
     }
   }
 
-  switch(requestType) {
+  switch (requestType) {
     case BANNER:
       request.url = BANNER_ENDPOINT_URL;
       request.bidderRequest = config;
@@ -38,7 +38,7 @@ export function formatRequest(payload, requestType, config) {
       request.bidId = config;
       break;
     default:
-      logError("Unsupported media type");
+      logError('Unsupported media type');
   }
 
   return request;
