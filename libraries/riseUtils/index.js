@@ -1,17 +1,15 @@
 import {
-  logWarn,
-  logInfo,
   isArray,
   isFn,
   deepAccess,
   isEmpty,
   contains,
   timestamp,
-  triggerPixel,
   isInteger,
   getBidIdParameter
-} from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+} from '../../src/utils.js';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import {config} from '../../src/config.js';
 
 export function getFloor(bid, mediaType) {
   if (!isFn(bid.getFloor)) {
