@@ -7,13 +7,11 @@ import {
   generateUUID,
   getDNT,
   getWindowSelf,
-  getWindowTop,
   isArray,
   isArrayOfNums,
   isFn,
   isInteger,
   isNumber,
-  isSafeFrameWindow,
   isStr,
   logError,
   logInfo,
@@ -26,6 +24,7 @@ import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { find } from '../src/polyfill.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
 
@@ -78,21 +77,6 @@ export const ORTB_VIDEO_PARAMS = {
  * Returns the window.ADAGIO global object used to store Adagio data.
  * This object is created in window.top if possible, otherwise in window.self.
  */
-const _ADAGIO = (function() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-
-  w.ADAGIO = w.ADAGIO || {};
-  w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || generateUUID();
-  w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
-  w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-  w.ADAGIO.queue = w.ADAGIO.queue || [];
-  w.ADAGIO.versions = w.ADAGIO.versions || {};
-  w.ADAGIO.versions.pbjs = '$prebid.version$';
-  w.ADAGIO.isSafeFrameWindow = isSafeFrameWindow();
-
-  return w.ADAGIO;
-})();
-
 function getDevice() {
   const language = navigator.language ? 'language' : 'userLanguage';
   return {
@@ -592,7 +576,7 @@ export const spec = {
       sessionData.rnd = Math.random()
     }
 
-    const aucId = deepAccess('bidderRequest', 'ortb2.site.ext.data.adg_rtd.uid') || generateUUID()
+    const aucId = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.uid') || generateUUID()
 
     const adUnits = validBidRequests.map(rawBidRequest => {
       const bidRequest = deepClone(rawBidRequest);

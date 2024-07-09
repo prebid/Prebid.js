@@ -6,7 +6,6 @@ import { EVENTS, STATUS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {includes as strIncludes} from '../src/polyfill.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'yuktamedia';
@@ -37,7 +36,7 @@ const _pageInfo = {
   referer: referer,
   refererDomain: parseUrl(referer).host,
   yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
-  prebidVersion: getGlobal().version
+  prebidVersion: 'v' + 'prebid.version$'
 };
 
 function getParameterByName(param) {

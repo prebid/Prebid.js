@@ -26,6 +26,7 @@ import {
   isStr,
   prefixLog
 } from '../src/utils.js';
+import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 /**
@@ -37,29 +38,17 @@ const ADAGIO_BIDDER_CODE = 'adagio';
 const GVLID = 617;
 const SCRIPT_URL = 'https://script.4dex.io/a/latest/adagio.js';
 const SESS_DURATION = 30 * 60 * 1000;
+export const PLACEMENT_SOURCES = {
+  ORTB: 'ortb', // implicit default, not used atm.
+  ADUNITCODE: 'code',
+  GPID: 'gpid'
+};
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 const { logError, logWarn } = prefixLog('AdagioRtdProvider:');
 
 // Guard to avoid storing the same bid data several times.
 const guard = new Set();
-
-/**
- * Returns the window.ADAGIO global object used to store Adagio data.
- * This object is created in window.top if possible, otherwise in window.self.
- */
-const _ADAGIO = (function() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-
-  w.ADAGIO = w.ADAGIO || {};
-  w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || generateUUID();
-  w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
-  w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-  w.ADAGIO.queue = w.ADAGIO.queue || [];
-  w.ADAGIO.windows = w.ADAGIO.windows || [];
-
-  return w.ADAGIO;
-})();
 
 /**
  * Store the sampling data.
@@ -84,20 +73,34 @@ const _SESSION = (function() {
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew, vwSmplg, vwSmplgNxt, lastActivityTime } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, testName, testVersion, initiator } = _internal.getSessionFromLocalStorage(storageValue);
+
+        // isNew can be `true` if the session has been initialized by the A/B test snippet (external)
+        const isNewSess = (initiator === 'snippet') ? isNew : isNewSession(lastActivityTime);
 
         data.session = {
           rnd,
-          new: isNew || false, // legacy: `new` was used but the choosen name is not good.
+          new: isNewSess, // legacy: `new` was used but the choosen name is not good.
           // Don't use values if they are not defined.
           ...(vwSmplg !== undefined && { vwSmplg }),
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
-          ...(lastActivityTime !== undefined && { lastActivityTime })
+          ...(lastActivityTime !== undefined && { lastActivityTime }),
+          ...(id !== undefined && { id }),
+          ...(testName !== undefined && { testName }),
+          ...(testVersion !== undefined && { testVersion }),
+          ...(initiator !== undefined && { initiator }),
         };
 
-        if (isNewSession(lastActivityTime)) {
+        // `initiator` is a pseudo flag used to know if the session has been initialized by the A/B test snippet (external).
+        // If the AB Test snippet has not been used, then `initiator` value is `adgjs` or `undefined`.
+        // The check on `testName` is used to ensure that the A/B test values are removed.
+        if (initiator !== 'snippet' && (isNewSess || testName)) {
           data.session.new = true;
+          data.session.id = generateUUID();
           data.session.rnd = Math.random();
+          // Ensure that the A/B test values are removed.
+          delete data.session.testName;
+          delete data.session.testVersion;
         }
 
         _internal.getAdagioNs().queue.push({
@@ -133,7 +136,7 @@ const _FEATURES = (function() {
       features.data = {};
     },
     get: function() {
-      const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
+      const w = getBestWindowForAdagio();
 
       if (!features.initialized) {
         features.data = {
@@ -275,6 +278,7 @@ function onBidRequest(bidderRequest, config, _userConsent) {
  * @param {*} config
  */
 function onGetBidRequestData(bidReqConfig, callback, config) {
+  const configParams = deepAccess(config, 'params', {});
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const features = _internal.getFeatures().get();
   const ext = {
@@ -288,19 +292,40 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
 
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits || [];
   adUnits.forEach(adUnit => {
+    adUnit.ortb2Imp = adUnit.ortb2Imp || {};
     const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+
     // A divId is required to compute the slot position and later to track viewability.
     // If nothing has been explicitly set, we try to get the divId from the GPT slot and fallback to the adUnit code in last resort.
-    if (!deepAccess(ortb2Imp, 'ext.data.divId')) {
-      const divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
+    let divId = deepAccess(ortb2Imp, 'ext.data.divId')
+    if (!divId) {
+      divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
       deepSetValue(ortb2Imp, `ext.data.divId`, divId || adUnit.code);
     }
 
-    const slotPosition = getSlotPosition(adUnit);
+    const slotPosition = getSlotPosition(divId);
     deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
 
-    // We expect `pagetype` `category` are defined in FPD `ortb2.site.ext.data` object.
-    // `placement` is expected in FPD `adUnits[].ortb2Imp.ext.data` object. (Please note that this `placement` is not related to the oRTB video property.)
+    // It is expected that the publisher set a `adUnits[].ortb2Imp.ext.data.placement` value.
+    // Btw, We allow fallback sources to programmatically set this value.
+    // The source is defined in the `config.params.placementSource` and the possible values are `code` or `gpid`.
+    // (Please note that this `placement` is not related to the oRTB video property.)
+    if (!deepAccess(ortb2Imp, 'ext.data.placement')) {
+      const { placementSource = '' } = configParams;
+
+      switch (placementSource.toLowerCase()) {
+        case PLACEMENT_SOURCES.ADUNITCODE:
+          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
+          break;
+        case PLACEMENT_SOURCES.GPID:
+          deepSetValue(ortb2Imp, 'ext.data.placement', deepAccess(ortb2Imp, 'ext.gpid'));
+          break;
+        default:
+          logWarn('`ortb2Imp.ext.data.placement` is missing and `params.definePlacement` is not set in the config.');
+      }
+    }
+
+    // We expect that `pagetype`, `category`, `placement` are defined in FPD `ortb2.site.ext.data` and `adUnits[].ortb2Imp.ext.data` objects.
     // Btw, we have to ensure compatibility with publishers that use the "legacy" adagio params at the adUnit.params level.
     const adagioBid = adUnit.bids.find(bid => _internal.isAdagioBidder(bid.bidder));
     if (adagioBid) {
@@ -321,9 +346,6 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
         if (adagioBid.params.placement) {
           deepSetValue(ortb2Imp, 'ext.data.placement', adagioBid.params.placement);
           mustWarnOrtb2Imp = true;
-        } else {
-          // If the placement is not defined, we fallback to the adUnit code.
-          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
         }
       }
 
@@ -425,7 +447,7 @@ function getElementFromTopWindow(element, currentWindow) {
   }
 };
 
-function getSlotPosition(adUnit) {
+function getSlotPosition(divId) {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
@@ -446,16 +468,15 @@ function getSlotPosition(adUnit) {
       // window.top based computing
       const wt = getWindowTop();
       const d = wt.document;
-      const adUnitElementId = deepAccess(adUnit, 'ortb2Imp.ext.data.divId');
 
       let domElement;
 
       if (inIframe() === true) {
         const ws = getWindowSelf();
-        const currentElement = ws.document.getElementById(adUnitElementId);
+        const currentElement = ws.document.getElementById(divId);
         domElement = getElementFromTopWindow(currentElement, ws);
       } else {
-        domElement = wt.document.getElementById(adUnitElementId);
+        domElement = wt.document.getElementById(divId);
       }
 
       if (!domElement) {

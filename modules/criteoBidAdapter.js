@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import {ajax} from '../src/ajax.js';
@@ -540,9 +540,16 @@ function hasValidVideoMediaType(bidRequest) {
   var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
   requiredMediaTypesParams.forEach(function (param) {
-    if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
-      isValid = false;
-      logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
+    if (param === 'placement') {
+      if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined && deepAccess(bidRequest, 'mediaTypes.video.plcmt') === undefined && deepAccess(bidRequest, 'params.video.plcmt') === undefined) {
+        isValid = false;
+        logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' or mediaTypes.video.plcmt is required');
+      }
+    } else {
+      if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
+        isValid = false;
+        logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
+      }
     }
   });
 
