@@ -4,15 +4,74 @@ import {
   isGptPubadsDefined,
   logInfo,
   pick,
-  deepSetValue, logWarn
+  deepSetValue, logWarn, uniques
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {find} from '../src/polyfill.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { CLIENT_SECTIONS } from '../src/fpd/oneClient.js';
+import { TARGETING_KEYS } from '../src/constants.js';
 
 const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig = {};
 let hooksAdded = false;
+
+const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
+
+export function getSegments(fpd, sections, segtax) {
+  return sections
+    .flatMap(section => deepAccess(fpd, section) || [])
+    .filter(datum => datum.ext?.segtax === segtax)
+    .flatMap(datum => datum.segment?.map(seg => seg.id))
+    .filter(ob => ob)
+    .filter(uniques)
+}
+
+export function getSignals(fpd) {
+  const signals = Object.entries({
+    [taxonomies[0]]: getSegments(fpd, ['user.data'], 4),
+    [taxonomies[1]]: getSegments(fpd, CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
+  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
+    .filter(ob => ob);
+
+  return signals;
+}
+
+export function getSignalsArrayByAuctionsIds(auctionIds, index = auctionManager.index) {
+  const signals = auctionIds
+    .map(auctionId => index.getAuction({ auctionId })?.getFPD()?.global)
+    .map(getSignals)
+    .filter(fpd => fpd);
+
+  return signals;
+}
+
+export function getSignalsIntersection(signals) {
+  const result = {};
+  taxonomies.forEach((taxonomy) => {
+    const allValues = signals
+      .flatMap(x => x)
+      .filter(x => x.taxonomy === taxonomy)
+      .map(x => x.values);
+    result[taxonomy] = allValues.length ? (
+      allValues.reduce((commonElements, subArray) => {
+        return commonElements.filter(element => subArray.includes(element));
+      })
+    ) : []
+    result[taxonomy] = { values: result[taxonomy] };
+  })
+  return result;
+}
+
+export function getAuctionsIdsFromTargeting(targeting, am = auctionManager) {
+  return Object.values(targeting)
+    .flatMap(x => Object.entries(x))
+    .filter((entry) => entry[0] === TARGETING_KEYS.AD_ID || entry[0].startsWith(TARGETING_KEYS.AD_ID + '_'))
+    .flatMap(entry => entry[1])
+    .map(adId => am.findBidByAdId(adId).auctionId)
+    .filter(uniques);
+}
 
 export const appendGptSlots = adUnits => {
   const { customGptSlotMatching } = _currentConfig;
