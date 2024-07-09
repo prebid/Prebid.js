@@ -57,7 +57,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: getEndpoint(testMode),
+      url: getEndpoint(testMode, SELLER_ENDPOINT, MODES),
       data: combinedRequestsObject
     }
   },
