@@ -76,10 +76,10 @@ export function isSyncMethodAllowed(syncRule, bidderCode) {
   return isInclude && contains(bidders, bidderCode);
 }
 
-export function getEndpoint(testMode, baseUrl) {
+export function getEndpoint(testMode, baseUrl, modes) {
   return testMode
-    ? `${baseUrl}hb-multi-test`
-    : `${baseUrl}hb-multi`;
+    ? `${baseUrl}${modes.TEST}`
+    : `${baseUrl}${modes.PRODUCTION}`;
 }
 
 export function getDeviceType(ua) {
