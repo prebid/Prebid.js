@@ -3,6 +3,7 @@ import {
   logInfo,
   isArray,
   deepAccess,
+  timestamp,
   triggerPixel,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
