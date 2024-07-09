@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { fetch } from '../src/ajax.js';
+import { fetch, sendBeacon } from '../src/ajax.js';
 import { loadExternalScript } from '../src/adloader.js';
 import {
   mergeDeep,
@@ -188,25 +188,17 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
   }
 
   var payload = JSON.stringify({ bidders: [...enrichedBidders] });
-  if (navigator.sendBeacon !== undefined) {
-    navigator.sendBeacon(url.toString(), payload);
+  const sentBeacon = sendBeacon(url.toString(), payload);
+  if (sentBeacon) {
     return;
   }
 
-  if (window.fetch) {
-    fetch(url.toString(), {
-      method: 'POST',
-      body: payload,
-      mode: 'no-cors',
-      keepalive: true
-    });
-    return;
-  }
-
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', url.toString(), true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send(payload);
+  fetch(url.toString(), {
+    method: 'POST',
+    body: payload,
+    mode: 'no-cors',
+    keepalive: true
+  });
 }
 
 // The WURFL submodule

@@ -190,7 +190,6 @@ describe('wurflRtdProvider', function () {
       const sendBeaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
       const windowFetchStub = sandbox.stub(window, 'fetch');
       const fetchAjaxStub = sandbox.stub(ajaxModule, 'fetch');
-      const xhrOpenStub = sandbox.stub(XMLHttpRequest.prototype, 'open');
 
       // Call the function
       wurflSubmodule.onAuctionEndEvent(auctionDetails, config, userConsent);
@@ -204,42 +203,6 @@ describe('wurflRtdProvider', function () {
       expect(fetchAjaxCall.args[1].method).to.equal('POST');
       expect(fetchAjaxCall.args[1].body).to.equal(expectedData);
       expect(fetchAjaxCall.args[1].mode).to.equal('no-cors');
-
-      expect(xhrOpenStub.called).to.be.false;
-    });
-
-    it('onAuctionEndEvent: should send analytics data using XMLHttpRequest as fallback, if navigator.sendBeacon and fetch are not available', () => {
-      const auctionDetails = {};
-      const config = {};
-      const userConsent = {};
-
-      const sendBeaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
-      const fetchStub = sandbox.stub(window, 'fetch').value(undefined);
-      const xhrOpenStub = sandbox.stub(XMLHttpRequest.prototype, 'open');
-      const xhrSetRequestHeaderStub = sandbox.stub(XMLHttpRequest.prototype, 'setRequestHeader');
-      const xhrSendStub = sandbox.stub(XMLHttpRequest.prototype, 'send');
-
-      // Call the function
-      wurflSubmodule.onAuctionEndEvent(auctionDetails, config, userConsent);
-
-      // Assertions
-      expect(sendBeaconStub.called).to.be.false;
-      expect(fetchStub.called).to.be.false;
-
-      expect(xhrOpenStub.calledOnce).to.be.true;
-      const xhrOpenStubCall = xhrOpenStub.getCall(0);
-      expect(xhrOpenStubCall.args[0]).to.equal('POST');
-      expect(xhrOpenStubCall.args[1]).to.equal(expectedStatsURL);
-      expect(xhrOpenStubCall.args[2]).to.equal(true);
-
-      expect(xhrSetRequestHeaderStub.calledOnce).to.be.true;
-      const xhrSetRequestHeaderStubCall = xhrSetRequestHeaderStub.getCall(0);
-      expect(xhrSetRequestHeaderStubCall.args[0]).to.equal('Content-Type');
-      expect(xhrSetRequestHeaderStubCall.args[1]).to.equal('application/json');
-
-      expect(xhrSendStub.calledOnce).to.be.true;
-      const xhrSendStubCall = xhrSendStub.getCall(0);
-      expect(xhrSendStubCall.args[0]).to.equal(expectedData);
     });
   });
 
