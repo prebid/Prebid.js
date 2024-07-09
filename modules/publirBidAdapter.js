@@ -8,7 +8,6 @@ import {
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import {
@@ -16,7 +15,6 @@ import {
   generateBidsParams,
   generateGeneralParams,
   buildBidResponse,
-  getAllowedSyncMethod,
 } from '../libraries/riseUtils/index.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
