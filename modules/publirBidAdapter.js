@@ -84,13 +84,13 @@ export const spec = {
     const syncs = [];
     for (const response of serverResponses) {
       if (response.body && response.body.params) {
-        if (syncOptions.iframeEnabled && deepAccess(response, 'body.params.userSyncURL')) {
+        if (syncOptions.iframeEnabled && (response, 'body.params.userSyncURL')) {
           syncs.push({
             type: 'iframe',
-            url: deepAccess(response, 'body.params.userSyncURL')
+            url: (response, 'body.params.userSyncURL')
           });
         }
-        if (syncOptions.pixelEnabled && isArray(deepAccess(response, 'body.params.userSyncPixels'))) {
+        if (syncOptions.pixelEnabled && isArray((response, 'body.params.userSyncPixels'))) {
           const pixels = response.body.params.userSyncPixels.map(pixel => {
             return {
               type: 'image',
