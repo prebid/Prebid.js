@@ -128,10 +128,6 @@ function getDefaultSrcPageUrl() {
   return encodeURIComponent(document.location.href);
 }
 
-function getEncodedValIfNotEmpty(val) {
-  return (val !== '' && val !== undefined) ? encodeURIComponent(val) : '';
-}
-
 function getUrlParams(params, schainFromBidRequest) {
   let urlSuffix = '';
 
