@@ -3,8 +3,7 @@ import {
   logInfo,
   isArray,
   deepAccess,
-  triggerPixel,
-  getDNT
+  triggerPixel
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
