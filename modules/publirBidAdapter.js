@@ -41,8 +41,6 @@ export const spec = {
     const combinedRequestsObject = {};
 
     const generalObject = validBidRequests[0];
-    const testMode = generalObject.params.testMode;
-
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest, ADAPTER_VERSION);
     combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
     combinedRequestsObject.bids.timestamp = timestamp();
