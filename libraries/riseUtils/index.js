@@ -81,7 +81,6 @@ export function getEndpoint(testMode, baseUrl, MODES) {
   return testMode ? `${url}${MODES.TEST}` : `${url}${MODES.PRODUCTION}`;
 }
 
-
 export function getDeviceType(ua) {
   if (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(ua.toLowerCase())) {
     return '5';
