@@ -1,7 +1,8 @@
 import {deepAccess, deepClone, isFn, isPlainObject, isStr} from '../../src/utils.js';
-/* 
+/*
  * @typedef {import('../modules/userId/index.js').SubmoduleContainer} SubmoduleContainer
  */
+
 export const EID_CONFIG = new Map();
 
 // this function will create an eid object for the given UserId sub-module
