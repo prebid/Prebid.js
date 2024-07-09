@@ -1,4 +1,4 @@
-import {deepAccess, isArray, logError, logInfo, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepClone, isArray, logError, logInfo, mergeDeep, isEmpty, isPlainObject, isNumber, isStr} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -17,6 +17,12 @@ const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported curren
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
 const GVLID = 16;
+
+const DSA_ATTRIBUTES = [
+  { name: 'dsarequired', 'min': 0, 'max': 3 },
+  { name: 'pubrender', 'min': 0, 'max': 2 },
+  { name: 'datatopub', 'min': 0, 'max': 2 }
+];
 
 // Codes defined by OpenRTB Native Ads 1.1 specification
 export const OPENRTB = {
@@ -95,6 +101,17 @@ export const spec = {
       }
     });
 
+    const dsa = deepAccess(ortb2Params, 'regs.ext.dsa');
+    if (validateDSA(dsa)) {
+      mergeDeep(request, {
+        regs: {
+          ext: {
+            dsa
+          }
+        }
+      });
+    }
+
     let computedEndpointUrl = ENDPOINT_URL;
 
     if (bidderRequest.fledgeEnabled) {
@@ -133,7 +150,13 @@ export const spec = {
       } else {
         interpretedBid = interpretBannerBid(serverBid);
       }
-      if (serverBid.ext) interpretedBid.ext = serverBid.ext;
+
+      if (serverBid.ext) {
+        interpretedBid.ext = deepClone(serverBid.ext);
+        if (serverBid.ext.dsa) {
+          interpretedBid.meta = Object.assign({}, interpretedBid.meta, { dsa: serverBid.ext.dsa });
+        }
+      }
 
       bids.push(interpretedBid);
     });
@@ -142,6 +165,7 @@ export const spec = {
   interpretResponse: function (serverResponse, originalRequest) {
     let bids;
 
+    const fledgeInterestGroupBuyers = config.getConfig('fledgeConfig.interestGroupBuyers') || [];
     const responseBody = serverResponse.body;
     let fledgeAuctionConfigs = null;
 
@@ -163,7 +187,7 @@ export const spec = {
           {
             seller,
             decisionLogicUrl,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
+            interestGroupBuyers: [...fledgeInterestGroupBuyers, ...Object.keys(perBuyerSignals)],
             perBuyerSignals,
           },
           sellerTimeout
@@ -517,4 +541,28 @@ function interpretNativeAd(adm) {
     }
   });
   return result;
+}
+
+/**
+ * https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/dsa_transparency.md
+ *
+ * @param {object} dsa
+ * @returns {boolean} whether dsa object contains valid attributes values
+ */
+function validateDSA(dsa) {
+  if (isEmpty(dsa) || !isPlainObject(dsa)) return false;
+
+  return DSA_ATTRIBUTES.reduce((prev, attr) => {
+    const dsaEntry = dsa[attr.name];
+    return prev && (
+      !dsa.hasOwnProperty(attr.name) ||
+      (isNumber(dsaEntry) && dsaEntry >= attr.min && dsaEntry <= attr.max)
+    )
+  }, true) &&
+    (!dsa.hasOwnProperty('transparency') ||
+      (isArray(dsa.transparency) && dsa.transparency.every(
+        v => isPlainObject(v) && isStr(v.domain) && v.domain && isArray(v.dsaparams) &&
+          v.dsaparams.every(x => isNumber(x))
+      ))
+    )
 }

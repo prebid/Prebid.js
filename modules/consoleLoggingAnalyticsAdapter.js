@@ -1,6 +1,6 @@
 // see http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adaptermanager from '../src/adapterManager.js';
 
 const analyticsType = 'endpoint';
@@ -18,37 +18,37 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
       }
       let handler = null;
       switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
+        case EVENTS.AUCTION_INIT:
           if (analyticsAdapter.context.queue) {
             analyticsAdapter.context.queue.init();
           }
           handler = trackAuctionInit;
           break;
-        case CONSTANTS.EVENTS.ADD_AD_UNITS:
+        case EVENTS.ADD_AD_UNITS:
           handler = trackAddAdUnits;
           break;
-        case CONSTANTS.EVENTS.REQUEST_BIDS:
+        case EVENTS.REQUEST_BIDS:
           handler = trackRequestBids;
           break;
-        case CONSTANTS.EVENTS.BID_REQUESTED:
+        case EVENTS.BID_REQUESTED:
           handler = trackBidRequest;
           break;
-        case CONSTANTS.EVENTS.BID_ADJUSTMENT:
+        case EVENTS.BID_ADJUSTMENT:
           handler = trackBidAdjustment;
           break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
+        case EVENTS.BID_RESPONSE:
           handler = trackBidResponse;
           break;
-        case CONSTANTS.EVENTS.BID_WON:
+        case EVENTS.BID_WON:
           handler = trackBidWon;
           break;
-        case CONSTANTS.EVENTS.BID_TIMEOUT:
+        case EVENTS.BID_TIMEOUT:
           handler = trackBidTimeout;
           break;
-        case CONSTANTS.EVENTS.AUCTION_END:
+        case EVENTS.AUCTION_END:
           handler = trackAuctionEnd;
           break;
-        case CONSTANTS.EVENTS.SET_TARGETING:
+        case EVENTS.SET_TARGETING:
           handler = trackSetTargeting;
           break;
       }
@@ -57,7 +57,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
         if (analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
         }
-        if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+        if (eventType === EVENTS.AUCTION_END) {
           sendAll();
         }
       }
@@ -80,51 +80,51 @@ function sendAll() {
 }
 
 function trackAuctionInit(args) {
-  const event = createHbEvent(undefined, CONSTANTS.EVENTS.AUCTION_INIT, undefined, args.auctionId, args);
+  const event = createHbEvent(undefined, EVENTS.AUCTION_INIT, undefined, args.auctionId, args);
   return [event];
 }
 
 function trackAddAdUnits(args) {
-  const event = createHbEvent(undefined, CONSTANTS.EVENTS.ADD_AD_UNITS, undefined, undefined, args);
+  const event = createHbEvent(undefined, EVENTS.ADD_AD_UNITS, undefined, undefined, args);
   return [event];
 }
 
 function trackRequestBids(args) {
-  const event = createHbEvent(undefined, CONSTANTS.EVENTS.REQUEST_BIDS, undefined, undefined, args);
+  const event = createHbEvent(undefined, EVENTS.REQUEST_BIDS, undefined, undefined, args);
   return [event];
 }
 
 function trackBidRequest(args) {
   return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, CONSTANTS.EVENTS.BID_REQUESTED, bid.adUnitCode, bid.auctionId, args));
+    createHbEvent(args.bidderCode, EVENTS.BID_REQUESTED, bid.adUnitCode, bid.auctionId, args));
 }
 
 function trackBidAdjustment(args) {
   return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, CONSTANTS.EVENTS.BID_ADJUSTMENT, bid.placementCode, bid.auctionId, args));
+    createHbEvent(args.bidderCode, EVENTS.BID_ADJUSTMENT, bid.placementCode, bid.auctionId, args));
 }
 
 function trackBidResponse(args) {
-  const event = createHbEvent(args.bidderCode, CONSTANTS.EVENTS.BID_RESPONSE, args.adUnitCode, args.auctionId, args);
+  const event = createHbEvent(args.bidderCode, EVENTS.BID_RESPONSE, args.adUnitCode, args.auctionId, args);
   return [event];
 }
 
 function trackBidWon(args) {
-  const event = createHbEvent(args.bidderCode, CONSTANTS.EVENTS.BID_WON, args.adUnitCode, args.auctionId, args);
+  const event = createHbEvent(args.bidderCode, EVENTS.BID_WON, args.adUnitCode, args.auctionId, args);
   return [event];
 }
 
 function trackAuctionEnd(args) {
-  const event = createHbEvent(undefined, CONSTANTS.EVENTS.AUCTION_END, undefined, args.auctionId, args);
+  const event = createHbEvent(undefined, EVENTS.AUCTION_END, undefined, args.auctionId, args);
   return [event];
 }
 
 function trackBidTimeout(args) {
-  return args.map(bid => createHbEvent(bid.bidder, CONSTANTS.EVENTS.BID_TIMEOUT, bid.adUnitCode, bid.auctionId, args));
+  return args.map(bid => createHbEvent(bid.bidder, EVENTS.BID_TIMEOUT, bid.adUnitCode, bid.auctionId, args));
 }
 
 function trackSetTargeting() {
-  const event = createHbEvent(undefined, CONSTANTS.EVENTS.SET_TARGETING, undefined, undefined, undefined);
+  const event = createHbEvent(undefined, EVENTS.SET_TARGETING, undefined, undefined, undefined);
   return [event];
 }
 

@@ -1,7 +1,7 @@
 import analyticsAdapter, {AnalyticsQueue, _} from 'modules/guAnalyticsAdapter';
 import {expect} from 'chai';
 import adapterManager from 'src/adapterManager';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 
 const events = require('../../../src/events');
 
@@ -230,7 +230,7 @@ describe('Gu analytics adapter', () => {
 
   it('should handle auction init event', () => {
     timer.tick(7);
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+    events.emit(EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
       timeout: 3000
@@ -241,13 +241,13 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid request events', () => {
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+    events.emit(EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
       timeout: 3000
     });
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST2);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(3);
     expect(ev[1]).to.be.eql({ev: 'request', n: 'b1', sid: 'slot-1', bid: '208750227436c1', st: 1509369418389});
@@ -255,14 +255,14 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid response event', () => {
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+    events.emit(EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
       timeout: 3000
     });
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(EVENTS.BID_RESPONSE, RESPONSE);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(4);
     expect(ev[3]).to.be.eql({
@@ -288,13 +288,13 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid response event', () => {
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+    events.emit(EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
       timeout: 3000
     });
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, OZONE_REQUEST);
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, OZONE_RESPONSE);
+    events.emit(EVENTS.BID_REQUESTED, OZONE_REQUEST);
+    events.emit(EVENTS.BID_RESPONSE, OZONE_RESPONSE);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(3);
     expect(ev[2]).to.be.eql({
@@ -320,14 +320,14 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle no_bid events', () => {
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+    events.emit(EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
       timeout: 3000
     });
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
-    events.emit(CONSTANTS.EVENTS.NO_BID, NOBID_EVENT);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(EVENTS.NO_BID, NOBID_EVENT);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(4);
     const nobidEv = ev[3];
@@ -342,14 +342,14 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid response event when buyer data absent', () => {
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+    events.emit(EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
       timeout: 3000
     });
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE_WITHOUT_BUYER_DATA);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(EVENTS.BID_RESPONSE, RESPONSE_WITHOUT_BUYER_DATA);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(4);
     expect(ev[3]).to.be.eql({
@@ -370,16 +370,16 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle auction end event', () => {
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+    events.emit(EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
       timeout: 3000
     });
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
-    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(EVENTS.BID_RESPONSE, RESPONSE);
     timer.tick(447);
-    events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
+    events.emit(EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0);
     expect(ajaxStub.called).to.be.equal(true);
@@ -389,7 +389,7 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should handle bid won event', () => {
-    events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
+    events.emit(EVENTS.BID_WON, BIDWONEXAMPLE);
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0); // The queue has been flushed.
     const payload = JSON.parse(ajaxStub.firstCall.args);
@@ -398,33 +398,33 @@ describe('Gu analytics adapter', () => {
   });
 
   it('should not send orphan responses', () => {
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    events.emit(EVENTS.BID_RESPONSE, RESPONSE);
     timer.tick(4500);
     expect(ajaxStub.called).to.be.equal(false);
   });
 
   it('should not send orphan end events', () => {
     timer.tick(460);
-    events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
+    events.emit(EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
     expect(ajaxStub.called).to.be.equal(false);
   });
 
   it('should not send orphan auction events', () => {
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+    events.emit(EVENTS.BID_RESPONSE, RESPONSE);
     timer.tick(584);
-    events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
+    events.emit(EVENTS.AUCTION_END, {auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'});
     expect(ajaxStub.called).to.be.equal(false);
   });
 
   it('should have a version number', () => {
-    events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
+    events.emit(EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args);
     expect(payload.v).to.be.equal(9);
   });
 
   it('should ignore responses sent with bid won event', () => {
-    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
-    events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
+    events.emit(EVENTS.BID_RESPONSE, RESPONSE);
+    events.emit(EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args);
     const ev = payload.hb_ev;
     expect(ev).to.be.eql([{

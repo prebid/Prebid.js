@@ -4,7 +4,6 @@ import {expectEvents} from '../../helpers/analytics.js';
 
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
 
 describe('sigmoid Prebid Analytic', function () {
   after(function () {

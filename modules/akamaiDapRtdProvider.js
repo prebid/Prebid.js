@@ -12,6 +12,10 @@ import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/ut
 import { loadExternalScript } from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'dap';
 const MODULE_CODE = 'akamaidap';
@@ -44,9 +48,8 @@ function mergeLazy(target, source) {
 
 /**
  * Add real-time data & merge segments.
- * @param {Object} ortb2 destionation object to merge RTD into
+ * @param {Object} ortb2 destination object to merge RTD into
  * @param {Object} rtd
- * @param {Object} rtdConfig
  */
 export function addRealTimeData(ortb2, rtd) {
   logInfo('DEBUG(addRealTimeData) - ENTER');
@@ -60,7 +63,7 @@ export function addRealTimeData(ortb2, rtd) {
 
 /**
  * Real-time data retrieval from Audigent
- * @param {Object} reqBidsConfigObj
+ * @param {Object} bidConfig
  * @param {function} onDone
  * @param {Object} rtdConfig
  * @param {Object} userConsent

@@ -3,6 +3,7 @@ import {
   spec, storage, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
 import { sandbox } from 'sinon';
+import { getAmxId } from '../../../modules/nexx360BidAdapter';
 
 const instreamResponse = {
   'id': '2be64380-ba0c-405a-ab53-51f51c7bde51',
@@ -20,12 +21,12 @@ const instreamResponse = {
           'crid': '97517771',
           'h': 1,
           'w': 1,
+          'adm': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>Nexx360 Wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[https://fast.nexx360.io/cache?uuid=f093f759-3143-4ad4-a52d-d2c6de420564]]></VASTAdTagURI>\n        <Impression><![CDATA[https://fast.nexx360.io/track-imp?ssp=appnexus&type=booster&price=4.710315591144606&cur=EUR&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&consent=1&abtest_id=0&tag_id=29h5tilm&uuid=8ffb1d9e-3081-4855-87e9-8a9f5c251641&seat=9325&adomain=appnexus.com&mediatype=video]]></Impression>\n        <Impression><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=impression]]></Impression>\n        <Creatives>\n          <Creative>\n            <Linear>\n              <TrackingEvents>\n                <Tracking event="start"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=start]]></Tracking>\n                <Tracking event="firstQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=firstQuartile]]></Tracking>\n                <Tracking event="midpoint"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=midpoint]]></Tracking>\n                <Tracking event="thirdQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=thirdQuartile]]></Tracking>\n                <Tracking event="complete"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=complete]]></Tracking>\n                <Tracking event="creativeView"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=creativeView]]></Tracking>\n              </TrackingEvents>\n            </Linear>\n          </Creative>\n        </Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>',
           'ext': {
             'mediaType': 'instream',
             'ssp': 'appnexus',
             'divId': 'video1',
             'adUnitCode': 'video1',
-            'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>Nexx360 Wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[https://fast.nexx360.io/cache?uuid=f093f759-3143-4ad4-a52d-d2c6de420564]]></VASTAdTagURI>\n        <Impression><![CDATA[https://fast.nexx360.io/track-imp?ssp=appnexus&type=booster&price=4.710315591144606&cur=EUR&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&consent=1&abtest_id=0&tag_id=29h5tilm&uuid=8ffb1d9e-3081-4855-87e9-8a9f5c251641&seat=9325&adomain=appnexus.com&mediatype=video]]></Impression>\n        <Impression><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=impression]]></Impression>\n        <Creatives>\n          <Creative>\n            <Linear>\n              <TrackingEvents>\n                <Tracking event="start"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=start]]></Tracking>\n                <Tracking event="firstQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=firstQuartile]]></Tracking>\n                <Tracking event="midpoint"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=midpoint]]></Tracking>\n                <Tracking event="thirdQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=thirdQuartile]]></Tracking>\n                <Tracking event="complete"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=complete]]></Tracking>\n                <Tracking event="creativeView"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=creativeView]]></Tracking>\n              </TrackingEvents>\n            </Linear>\n          </Creative>\n        </Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
           }
         }
       ],
@@ -220,7 +221,7 @@ describe('Nexx360 bid adapter tests', function () {
     after(function () {
       sandbox.restore()
     });
-  })
+  });
 
   describe('getNexx360LocalStorage enabled', function () {
     before(function () {
@@ -235,7 +236,37 @@ describe('Nexx360 bid adapter tests', function () {
     after(function () {
       sandbox.restore()
     });
-  })
+  });
+
+  describe('getAmxId() with localStorage enabled and data not set', function() {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => null);
+    });
+    it('We test if we get the amxId', function() {
+      const output = getAmxId();
+      expect(output).to.be.eql(false);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  });
+
+  describe('getAmxId() with localStorage enabled and data set', function() {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => 'abcdef');
+    });
+    it('We test if we get the amxId', function() {
+      const output = getAmxId();
+      expect(output).to.be.eql('abcdef');
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  });
 
   describe('buildRequests()', function() {
     before(function () {
@@ -374,7 +405,7 @@ describe('Nexx360 bid adapter tests', function () {
         expect(requestContent.imp[1].tagid).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.adUnitCode).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.divId).to.be.eql('div-2-abcd');
-        expect(requestContent.ext.bidderVersion).to.be.eql('3.0');
+        expect(requestContent.ext.bidderVersion).to.be.eql('4.1');
         expect(requestContent.ext.source).to.be.eql('prebid.js');
       });
 
@@ -561,7 +592,7 @@ describe('Nexx360 bid adapter tests', function () {
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].ext.vastXml);
+      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].adm);
       expect(output[0].mediaType).to.be.eql('video');
       expect(output[0].currency).to.be.eql(response.body.cur);
       expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
@@ -585,11 +616,11 @@ describe('Nexx360 bid adapter tests', function () {
                   'crid': '97517771',
                   'h': 1,
                   'w': 1,
+                  'adm': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>Nexx360 Wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[http://localhost:8081/cache?uuid=7fcc7c63-3699-4544-a6d5-8ea33ee5bdcb]]></VASTAdTagURI>\n        <Impression><![CDATA[http://localhost:8085/track-imp?ssp=appnexus&type=booster&price=4.710315591144606&cur=EUR&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&consent=1&abtest_id=0&tag_id=yqsc1tfj&uuid=d8fbebb6-f5d7-4ebd-b86b-8b1584c9445e&seat=9325&adomain=appnexus.com&mediatype=video]]></Impression>\n        <Impression><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=impression]]></Impression>\n        <Creatives>\n          <Creative>\n            <Linear>\n              <TrackingEvents>\n                <Tracking event="start"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=start]]></Tracking>\n                <Tracking event="firstQuartile"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=firstQuartile]]></Tracking>\n                <Tracking event="midpoint"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=midpoint]]></Tracking>\n                <Tracking event="thirdQuartile"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=thirdQuartile]]></Tracking>\n                <Tracking event="complete"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=complete]]></Tracking>\n                <Tracking event="creativeView"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=creativeView]]></Tracking>\n              </TrackingEvents>\n            </Linear>\n          </Creative>\n        </Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>',
                   'ext': {
                     'mediaType': 'outstream',
                     'ssp': 'appnexus',
                     'adUnitCode': 'div-1',
-                    'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>Nexx360 Wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[http://localhost:8081/cache?uuid=7fcc7c63-3699-4544-a6d5-8ea33ee5bdcb]]></VASTAdTagURI>\n        <Impression><![CDATA[http://localhost:8085/track-imp?ssp=appnexus&type=booster&price=4.710315591144606&cur=EUR&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&consent=1&abtest_id=0&tag_id=yqsc1tfj&uuid=d8fbebb6-f5d7-4ebd-b86b-8b1584c9445e&seat=9325&adomain=appnexus.com&mediatype=video]]></Impression>\n        <Impression><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=impression]]></Impression>\n        <Creatives>\n          <Creative>\n            <Linear>\n              <TrackingEvents>\n                <Tracking event="start"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=start]]></Tracking>\n                <Tracking event="firstQuartile"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=firstQuartile]]></Tracking>\n                <Tracking event="midpoint"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=midpoint]]></Tracking>\n                <Tracking event="thirdQuartile"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=thirdQuartile]]></Tracking>\n                <Tracking event="complete"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=complete]]></Tracking>\n                <Tracking event="creativeView"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=creativeView]]></Tracking>\n              </TrackingEvents>\n            </Linear>\n          </Creative>\n        </Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
                   }
                 }
               ],
@@ -602,7 +633,7 @@ describe('Nexx360 bid adapter tests', function () {
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].ext.vastXml);
+      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].adm);
       expect(output[0].mediaType).to.be.eql('video');
       expect(output[0].currency).to.be.eql(response.body.cur);
       expect(typeof output[0].renderer).to.be.eql('object');

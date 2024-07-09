@@ -1,4 +1,5 @@
-import { logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import * as utils from '../src/utils.js';
+import { logMessage, logError, isEmpty, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -184,17 +185,12 @@ function _buildPostBody(bidRequests, bidderRequest) {
     return imp;
   });
 
-  let eids = [
-    ...getUnifiedIdEids([bidRequests[0]]),
-    ...getIdentityLinkEids([bidRequests[0]]),
-    ...getCriteoEids([bidRequests[0]]),
-    ...getPubCommonEids([bidRequests[0]]),
-    ...getUniversalEids(bidRequests[0])
-  ];
+  let eids = [];
 
-  if (eids.length > 0) {
+  if (bidRequests[0].userIdAsEids) {
+    eids = utils.deepAccess(bidRequests[0], 'userIdAsEids');
     data.user = {
-      ext: {eids}
+      ext: { eids }
     };
   }
 
@@ -240,20 +236,7 @@ function _getORTBVideo(bidRequest) {
   } catch (err) {
     logWarn('Video size not defined', err);
   }
-  // honor existing publisher settings
-  if (video.context === 'instream') {
-    if (!video.placement) {
-      video.placement = 1;
-    }
-  }
-  if (video.context === 'outstream') {
-    if (!video.placement) {
-      video.placement = 3
-    } else if ([3, 4, 5].indexOf(video.placement) === -1) {
-      logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
-      video.placement = 3
-    }
-  }
+
   if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
     video.playbackmethod = Array.from(String(video.playbackmethod), Number);
   }
@@ -361,78 +344,6 @@ function _getExt(schain, fpd) {
     ext.fpd = { ...fpd };
   }
   return ext;
-}
-
-function getUnifiedIdEids(bidRequest) {
-  return getEids(bidRequest, 'tdid', 'adserver.org', 'TDID');
-}
-
-function getIdentityLinkEids(bidRequest) {
-  return getEids(bidRequest, 'idl_env', 'liveramp.com', 'idl');
-}
-
-function getCriteoEids(bidRequest) {
-  return getEids(bidRequest, 'criteoId', 'criteo.com', 'criteoId');
-}
-
-function getPubCommonEids(bidRequest) {
-  return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
-}
-
-function getUniversalEids(bidRequest) {
-  let common = ['adserver.org', 'liveramp.com', 'criteo.com', 'pubcid.org'];
-  let eids = [];
-  if (bidRequest.userIdAsEids) {
-    bidRequest.userIdAsEids.forEach(id => {
-      try {
-        if (common.indexOf(id.source) === -1) {
-          let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
-          eids.push({ source: id.source, uids });
-        }
-      } catch (err) {
-        logWarn(`Triplelift: Error attempting to add ${id} to bid request`, err);
-      }
-    });
-  }
-  return eids;
-}
-
-function getEids(bidRequest, type, source, rtiPartner) {
-  return bidRequest
-    .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter(filterEids(type)) // filter out unqualified userIds
-    .map(formatEid(source, rtiPartner)); // userIds -> eid objects
-}
-
-const filterEids = type => (userId, i, arr) => {
-  let isValidUserId =
-    !!userId && // is not null nor empty
-    (isStr(userId)
-      ? !!userId
-      : isPlainObject(userId) && // or, is object
-        !isArray(userId) && // not an array
-        !isEmpty(userId) && // is not empty
-        userId.id && // contains nested id field
-        isStr(userId.id) && // nested id field is a string
-        !!userId.id); // that is not empty
-  if (!isValidUserId && arr[0] !== undefined) {
-    logWarn(`Triplelift: invalid ${type} userId format`);
-  }
-  return isValidUserId;
-};
-
-function getUserId(type) {
-  return bid => bid && bid.userId && bid.userId[type];
-}
-
-function formatEid(source, rtiPartner) {
-  return (userId) => ({
-    source,
-    uids: [{
-      id: userId.id ? userId.id : userId,
-      ext: { rtiPartner }
-    }]
-  });
 }
 
 function _sizes(sizeArray) {

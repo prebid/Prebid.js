@@ -3,31 +3,30 @@
    access to a publisher page from creative payloads.
  */
 
-import * as events from './events.js';
-import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native.js';
-import constants from './constants.json';
+import {getAllAssetsMessage, getAssetMessage} from './native.js';
+import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
-import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
-import {emitAdRenderFail, emitAdRenderSucceeded, handleRender} from './adRendering.js';
-import {PREBID_EVENT, PREBID_NATIVE, PREBID_REQUEST, PREBID_RESPONSE} from '../libraries/creativeRender/constants.js';
+import {getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender, markWinningBid} from './adRendering.js';
+import {getCreativeRendererSource} from './creativeRenderers.js';
 
-const BID_WON = constants.EVENTS.BID_WON;
-const WON_AD_IDS = new WeakSet();
+const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
 const HANDLER_MAP = {
-  [PREBID_REQUEST]: handleRenderRequest,
-  [PREBID_EVENT]: handleEventRequest,
+  [REQUEST]: handleRenderRequest,
+  [EVENT]: handleEventRequest,
 };
 
 if (FEATURES.NATIVE) {
   Object.assign(HANDLER_MAP, {
-    [PREBID_NATIVE]: handleNativeRequest,
+    [NATIVE]: handleNativeRequest,
   });
 }
 
 export function listenMessagesFromCreative() {
-  window.addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', function (ev) {
+    receiveMessage(ev);
+  }, false);
 }
 
 export function getReplier(ev) {
@@ -48,6 +47,12 @@ export function getReplier(ev) {
   }
 }
 
+function ensureAdId(adId, reply) {
+  return function (data, ...args) {
+    return reply(Object.assign({}, data, {adId}), ...args);
+  }
+}
+
 export function receiveMessage(ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
@@ -57,23 +62,34 @@ export function receiveMessage(ev) {
     return;
   }
 
-  if (data && data.adId && data.message) {
-    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
-      return bid.adId === data.adId;
-    });
-    if (HANDLER_MAP.hasOwnProperty(data.message)) {
-      HANDLER_MAP[data.message](getReplier(ev), data, adObject);
-    }
+  if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
+    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST).then(adObject => {
+      HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
+    })
   }
 }
 
+function getResizer(adId, bidResponse) {
+  // in some situations adId !== bidResponse.adId
+  // the first is the one that was requested and is tied to the element
+  // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
+  return function (width, height) {
+    resizeRemoteCreative({...bidResponse, width, height, adId});
+  }
+}
 function handleRenderRequest(reply, message, bidResponse) {
-  handleRender(function (adData) {
-    resizeRemoteCreative(bidResponse);
-    reply(Object.assign({
-      message: PREBID_RESPONSE,
-    }, adData));
-  }, {options: message.options, adId: message.adId, bidResponse});
+  handleRender({
+    renderFn(adData) {
+      reply(Object.assign({
+        message: RESPONSE,
+        renderer: getCreativeRendererSource(bidResponse)
+      }, adData));
+    },
+    resizeFn: getResizer(message.adId, bidResponse),
+    options: message.options,
+    adId: message.adId,
+    bidResponse
+  });
 }
 
 function handleNativeRequest(reply, data, adObject) {
@@ -87,10 +103,8 @@ function handleNativeRequest(reply, data, adObject) {
     return;
   }
 
-  if (!WON_AD_IDS.has(adObject)) {
-    WON_AD_IDS.add(adObject);
-    auctionManager.addWinningBid(adObject);
-    events.emit(BID_WON, adObject);
+  if (adObject.status !== BID_STATUS.RENDERED) {
+    markWinningBid(adObject);
   }
 
   switch (data.action) {
@@ -100,13 +114,8 @@ function handleNativeRequest(reply, data, adObject) {
     case 'allAssetRequest':
       reply(getAllAssetsMessage(data, adObject));
       break;
-    case 'resizeNativeHeight':
-      adObject.height = data.height;
-      adObject.width = data.width;
-      resizeRemoteCreative(adObject);
-      break;
     default:
-      fireNativeTrackers(data, adObject);
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(adObject)})
   }
 }
 
@@ -115,40 +124,25 @@ function handleEventRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
-  if (adObject.status !== constants.BID_STATUS.RENDERED) {
-    logWarn(`Received x-origin event request without corresponding render request for ad '${data.adId}'`);
+  if (adObject.status !== BID_STATUS.RENDERED) {
+    logWarn(`Received x-origin event request without corresponding render request for ad '${adObject.adId}'`);
     return;
   }
-  switch (data.event) {
-    case constants.EVENTS.AD_RENDER_FAILED:
-      emitAdRenderFail({
-        bid: adObject,
-        id: data.adId,
-        reason: data.info.reason,
-        message: data.info.message
-      });
-      break;
-    case constants.EVENTS.AD_RENDER_SUCCEEDED:
-      emitAdRenderSucceeded({
-        doc: null,
-        bid: adObject,
-        id: data.adId
-      });
-      break;
-    default:
-      logError(`Received x-origin event request for unsupported event: '${data.event}' (adId: '${data.adId}')`);
-  }
+  return handleCreativeEvent(data, adObject);
 }
 
 export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
+  function getDimension(value) {
+    return value ? value + 'px' : '100%';
+  }
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
     let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
-      elementStyle.width = width ? width + 'px' : '100%';
-      elementStyle.height = height + 'px';
+      elementStyle.width = getDimension(width)
+      elementStyle.height = getDimension(height);
     } else {
       logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }

@@ -8,7 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isFn, isPlainObject, isStr, logError, logInfo} from '../src/utils.js';
+import {isFn, isPlainObject, isStr, logError, logInfo, logMessage} from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 /**
@@ -66,7 +66,18 @@ export const adqueryIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    logInfo('adqueryIdSubmodule getId');
+    logMessage('adqueryIdSubmodule getId');
+
+    let qid = storage.getDataFromLocalStorage('qid');
+
+    if (qid) {
+      return {
+        callback: function (callback) {
+          callback(qid);
+        }
+      }
+    }
+
     if (!isPlainObject(config.params)) {
       config.params = {};
     }

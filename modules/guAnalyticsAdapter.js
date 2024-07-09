@@ -1,7 +1,7 @@
 // see http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
+import { EVENTS } from '../src/constants.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 
@@ -18,8 +18,8 @@ const analyticsType = 'endpoint';
 const SENDALL_ON = {};
 
 // Look there: http://jsben.ch/qhIE6
-SENDALL_ON[CONSTANTS.EVENTS.AUCTION_END] = true;
-SENDALL_ON[CONSTANTS.EVENTS.BID_WON] = true;
+SENDALL_ON[EVENTS.AUCTION_END] = true;
+SENDALL_ON[EVENTS.BID_WON] = true;
 
 let analyticsAdapter = Object.assign(adapter({analyticsType}),
   {
@@ -29,32 +29,32 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
       }
       let handler = null;
       switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
+        case EVENTS.AUCTION_INIT:
           if (analyticsAdapter.context.queue) {
             analyticsAdapter.context.queue.init();
           }
           handler = trackAuctionInit;
           break;
-        case CONSTANTS.EVENTS.BID_REQUESTED:
+        case EVENTS.BID_REQUESTED:
           handler = trackBidRequest;
           break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
+        case EVENTS.BID_RESPONSE:
           handler = trackBidResponse;
           break;
-        case CONSTANTS.EVENTS.NO_BID:
+        case EVENTS.NO_BID:
           handler = trackNoBid;
           break;
-        case CONSTANTS.EVENTS.AUCTION_END:
+        case EVENTS.AUCTION_END:
           handler = trackAuctionEnd;
           break;
-        case CONSTANTS.EVENTS.BID_WON:
+        case EVENTS.BID_WON:
           handler = trackBidWon;
           break;
       }
       if (handler) {
         let events = handler(args);
         if (events && analyticsAdapter.context.queue) {
-          if (eventType === CONSTANTS.EVENTS.BID_WON) {
+          if (eventType === EVENTS.BID_WON) {
             // clear queue to avoid sending late bids with bidWon event
             analyticsAdapter.context.queue.init();
           }

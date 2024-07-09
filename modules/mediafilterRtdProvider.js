@@ -14,7 +14,7 @@ import { submodule } from '../src/hook.js';
 import { logError, generateUUID } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 /** The event type for Media Filter. */
 export const MEDIAFILTER_EVENT_TYPE = 'com.mediatrust.pbjs.';
@@ -65,7 +65,7 @@ export const MediaFilter = {
   generateEventHandler: function(configurationHash) {
     return (windowEvent) => {
       if (windowEvent.data.type === MEDIAFILTER_EVENT_TYPE.concat('.', configurationHash)) {
-        events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+        events.emit(EVENTS.BILLABLE_EVENT, {
           'billingId': generateUUID(),
           'configurationHash': configurationHash,
           'type': 'impression',
