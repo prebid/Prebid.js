@@ -20,6 +20,7 @@ const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_GVLID = 1043;
+/*
 const DEFAULT_SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb-multi',
@@ -29,7 +30,7 @@ const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
   PIXEL: 'pixel'
 };
-
+*/
 export const spec = {
   code: BIDDER_CODE,
   aliases: [
