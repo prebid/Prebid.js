@@ -76,11 +76,11 @@ export function isSyncMethodAllowed(syncRule, bidderCode) {
   return isInclude && contains(bidders, bidderCode);
 }
 
-export function getEndpoint(testMode, baseUrl, modes) {
-  return testMode
-    ? `${baseUrl}${modes.TEST}`
-    : `${baseUrl}${modes.PRODUCTION}`;
+export function getEndpoint(testMode, baseUrl, MODES) {
+  const url = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  return testMode ? `${url}${MODES.TEST}` : `${url}${MODES.PRODUCTION}`;
 }
+
 
 export function getDeviceType(ua) {
   if (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(ua.toLowerCase())) {
