@@ -14,7 +14,6 @@ const MODULE = `${MODULE_NAME}AnalyticProvider`;
  * Custom tracking server that gets internal events from EightPod's ad unit
  */
 const trackerUrl = 'https://demo.8pod.com/tracker/track';
-const context = {};
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
 
 const {
@@ -22,6 +21,7 @@ const {
 } = EVENTS;
 
 export let queue = [];
+let context = {};
 
 /**
  * Create eightPod Analytic adapter
@@ -43,15 +43,15 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
   },
 
   /**
-   * Execute on bid won - subscribe on events from adUnit
+   * Execute on bid won upload events from local storage
    */
   setupPage() {
-    queue = getEventFromLocalStorage();
+    queue = this.getEventFromLocalStorage();
   },
+
   /**
    * Subscribe on internal ad unit tracking events
    */
-
   eventSubscribe() {
     window.addEventListener('message', async (event) => {
       const data = event.data;
@@ -70,7 +70,11 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
   },
   getContext() {
     return context;
-  }
+  },
+  resetContext() {
+    context = {};
+  },
+  getEventFromLocalStorage,
 });
 
 /**
@@ -94,8 +98,9 @@ export function trackEvent(event, adUnitCode) {
   if (!event.detail) {
     return;
   }
+
   const fullEvent = {
-    context: context[adUnitCode],
+    context: eightPodAnalytics.getContext()[adUnitCode],
     eventType: event.detail.type,
     eventClass: 'adunit',
     timestamp: new Date().getTime(),
@@ -170,6 +175,7 @@ eightPodAnalytics.originEnableAnalytics = eightPodAnalytics.enableAnalytics;
 eightPodAnalytics.eventsStorage = [];
 
 // override enableAnalytics so we can get access to the config passed in from the page
+// Subscribe on events from adUnit
 eightPodAnalytics.enableAnalytics = function (config) {
   eightPodAnalytics.originEnableAnalytics(config);
   logInfo(MODULE, 'init', config);
