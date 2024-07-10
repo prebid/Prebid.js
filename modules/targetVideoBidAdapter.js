@@ -2,7 +2,7 @@ import {_each, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {formatRequest, getRtbBid, getSiteObj, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
-import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS} from '../libraries/targetVideoUtils/constants.js';
+import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -102,7 +102,7 @@ export const spec = {
               payload.schain = bidRequests[0].schain;
             }
 
-            requests.push(formatRequest(payload, VIDEO, bidId));
+            requests.push(formatRequest({ payload, url: VIDEO_ENDPOINT_URL, bidId }));
             break;
           }
 
@@ -133,7 +133,7 @@ export const spec = {
               payload.us_privacy = bidderRequest.uspConsent
             }
 
-            return formatRequest(payload, BANNER, bidderRequest);
+            return formatRequest({ payload, url: BANNER_ENDPOINT_URL, bidderRequest });
           }
         }
       }
@@ -157,7 +157,7 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid && rtbBid.cpm !== 0 && rtbBid.ad_type == VIDEO) {
-          bids.push(bannerBid(serverBid, rtbBid, bidderRequest));
+          bids.push(bannerBid(serverBid, rtbBid, bidderRequest, MARGIN));
         }
       });
     }
@@ -168,7 +168,7 @@ export const spec = {
           const requestId = bidRequest.bidId;
           const params = bidRequest.params;
 
-          bids.push(videoBid(bid, requestId, currency, params));
+          bids.push(videoBid(bid, requestId, currency, params, TIME_TO_LIVE));
         });
       });
     }

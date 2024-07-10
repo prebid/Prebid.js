@@ -1,8 +1,6 @@
-import {BANNER, VIDEO} from '../../src/mediaTypes.js';
-import {find} from '../../src/polyfill.js';
+import {VIDEO} from '../../src/mediaTypes.js';
 import {getRefererInfo} from '../../src/refererDetection.js';
 import {createTrackPixelHtml, deepAccess, getBidRequest, logError} from '../../src/utils.js';
-import {BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from './constants.js';
 
 export function getSizes(request) {
   let sizes = request.sizes;
@@ -19,26 +17,22 @@ export function getSizes(request) {
   return sizes;
 }
 
-export function formatRequest(payload, requestType, config) {
+export function formatRequest({payload, url, bidderRequest, bidId}) {
   const request = {
     method: 'POST',
     data: JSON.stringify(payload),
+    url,
     options: {
       withCredentials: true,
     }
   }
 
-  switch (requestType) {
-    case BANNER:
-      request.url = BANNER_ENDPOINT_URL;
-      request.bidderRequest = config;
-      break;
-    case VIDEO:
-      request.url = VIDEO_ENDPOINT_URL;
-      request.bidId = config;
-      break;
-    default:
-      logError('Unsupported media type');
+  if (bidderRequest) {
+    request.bidderRequest = bidderRequest;
+  }
+
+  if (bidId) {
+    request.bidId = bidId;
   }
 
   return request;
@@ -66,12 +60,12 @@ export function createVideoTag(bid) {
   return tag;
 }
 
-export function bannerBid(serverBid, rtbBid, bidderRequest) {
+export function bannerBid(serverBid, rtbBid, bidderRequest, margin) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const sizes = getSizes(bidRequest);
   const bid = {
     requestId: serverBid.uuid,
-    cpm: rtbBid.cpm / MARGIN,
+    cpm: rtbBid.cpm / margin,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
     currency: 'USD',
@@ -98,7 +92,7 @@ export function bannerBid(serverBid, rtbBid, bidderRequest) {
   return bid;
 }
 
-export function videoBid(serverBid, requestId, currency, params) {
+export function videoBid(serverBid, requestId, currency, params, ttl) {
   const {ad, adUrl, vastUrl, vastXml} = getAd(serverBid);
 
   const bid = {
@@ -110,7 +104,7 @@ export function videoBid(serverBid, requestId, currency, params) {
     height: serverBid.h,
     creativeId: serverBid.adid || serverBid.crid,
     netRevenue: false,
-    ttl: TIME_TO_LIVE,
+    ttl,
     meta: {
       advertiserDomains: serverBid.adomain || []
     }
@@ -129,7 +123,7 @@ export function videoBid(serverBid, requestId, currency, params) {
 }
 
 export function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
+  return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
 }
 
 export function getBannerHtml(vastUrl) {
