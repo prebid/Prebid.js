@@ -1,6 +1,6 @@
 import {VIDEO} from '../../src/mediaTypes.js';
 import {getRefererInfo} from '../../src/refererDetection.js';
-import {createTrackPixelHtml, deepAccess, getBidRequest, logError} from '../../src/utils.js';
+import {createTrackPixelHtml, deepAccess, getBidRequest} from '../../src/utils.js';
 
 export function getSizes(request) {
   let sizes = request.sizes;
