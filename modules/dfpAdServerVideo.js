@@ -3,6 +3,7 @@
  */
 
 import { DEFAULT_DFP_PARAMS, DFP_ENDPOINT } from '../libraries/dfpUtils/dfpUtils.js';
+import { getSignals } from '../libraries/gptUtils/gptUtils.js';
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
 import { getPPID } from '../src/adserver.js';
@@ -11,7 +12,6 @@ import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
 import { getHook } from '../src/hook.js';
-import { getSignals } from '../src/pps.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
 import {

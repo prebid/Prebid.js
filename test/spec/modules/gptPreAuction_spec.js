@@ -11,7 +11,7 @@ import {
 } from 'modules/gptPreAuction.js';
 import { config } from 'src/config.js';
 import { makeSlot } from '../integration/faker/googletag.js';
-import { taxonomies } from '../../../modules/gptPreAuction.js';
+import { taxonomies } from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('GPT pre-auction module', () => {
   let sandbox;

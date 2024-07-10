@@ -461,15 +461,15 @@ export function newTargeting(auctionManager) {
       });
     });
 
-    targeting.getReadyTargetingSetForGPT(targetingSet);
+    targeting.targetingDone(targetingSet);
 
     // emit event
     events.emit(EVENTS.SET_TARGETING, targetingSet);
   }, 'setTargetingForGPT');
 
-  targeting.getReadyTargetingSetForGPT = hook('sync', function (targetingSet) {
+  targeting.targetingDone = hook('sync', function (targetingSet) {
     return targetingSet;
-  }, 'getReadyTargetingSetForGPT');
+  }, 'targetingDone');
 
   /**
    * normlizes input to a `adUnit.code` array

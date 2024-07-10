@@ -1,41 +1,30 @@
+import { getSignals as getSignalsFn, getSegments as getSegmentsFn, taxonomies } from '../libraries/gptUtils/gptUtils.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { config } from '../src/config.js';
+import { TARGETING_KEYS } from '../src/constants.js';
+import { getHook } from '../src/hook.js';
+import { find } from '../src/polyfill.js';
 import {
   deepAccess,
+  deepSetValue,
   isAdUnitCodeMatchingSlot,
   isGptPubadsDefined,
   logInfo,
+  logWarn,
   pick,
-  deepSetValue, logWarn, uniques
+  uniques
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getHook} from '../src/hook.js';
-import {find} from '../src/polyfill.js';
-import { auctionManager } from '../src/auctionManager.js';
-import { CLIENT_SECTIONS } from '../src/fpd/oneClient.js';
-import { TARGETING_KEYS } from '../src/constants.js';
 
 const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig = {};
 let hooksAdded = false;
 
-export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
-
 export function getSegments(fpd, sections, segtax) {
-  return sections
-    .flatMap(section => deepAccess(fpd, section) || [])
-    .filter(datum => datum.ext?.segtax === segtax)
-    .flatMap(datum => datum.segment?.map(seg => seg.id))
-    .filter(ob => ob)
-    .filter(uniques)
+  return getSegmentsFn(fpd, sections, segtax);
 }
 
 export function getSignals(fpd) {
-  const signals = Object.entries({
-    [taxonomies[0]]: getSegments(fpd, ['user.data'], 4),
-    [taxonomies[1]]: getSegments(fpd, CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
-  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
-    .filter(ob => ob);
-
-  return signals;
+  return getSignalsFn(fpd);
 }
 
 export function getSignalsArrayByAuctionsIds(auctionIds, index = auctionManager.index) {
@@ -212,7 +201,7 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   return fn.call(this, adUnits, ...args);
 };
 
-const setPPSConfigForGPT = (next, targetingSet) => {
+const getPpsConfigFromTargetingSet = (next, targetingSet) => {
   // set gpt config
   const auctionsIds = getAuctionsIdsFromTargeting(targetingSet);
   const signals = getSignalsIntersection(getSignalsArrayByAuctionsIds(auctionsIds));
@@ -233,14 +222,14 @@ const handleSetGptConfig = moduleConfig => {
   if (_currentConfig.enabled) {
     if (!hooksAdded) {
       getHook('makeBidRequests').before(makeBidRequestsHook);
-      getHook('getReadyTargetingSetForGPT').after(setPPSConfigForGPT)
+      getHook('targetingDone').after(getPpsConfigFromTargetingSet)
       hooksAdded = true;
     }
   } else {
     logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
     getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}).remove();
-    getHook('getReadyTargetingSetForGPT').getHooks({hook: setPPSConfigForGPT}).remove();
+    getHook('targetingDone').getHooks({hook: getPpsConfigFromTargetingSet}).remove();
     hooksAdded = false;
   }
 };
