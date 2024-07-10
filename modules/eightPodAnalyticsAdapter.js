@@ -187,7 +187,7 @@ eightPodAnalytics.enableAnalytics = function (config) {
  */
 adapterManager.registerAnalyticsAdapter({
   adapter: eightPodAnalytics,
-  code: 'eightPod'
+  code: MODULE_NAME
 });
 
 export default eightPodAnalytics;
