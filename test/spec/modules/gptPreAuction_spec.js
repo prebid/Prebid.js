@@ -11,6 +11,7 @@ import {
 } from 'modules/gptPreAuction.js';
 import { config } from 'src/config.js';
 import { makeSlot } from '../integration/faker/googletag.js';
+import { taxonomies } from '../../../modules/gptPreAuction.js';
 
 describe('GPT pre-auction module', () => {
   let sandbox;
@@ -551,7 +552,7 @@ describe('GPT pre-auction module', () => {
 
     it('should return signals from fpd', () => {
       const signals = getSignals(mocksAuctions[0].getFPD().global);
-      const expectedSignals = [{ taxonomy: 'IAB_AUDIENCE_1_1', values: ['1', '2'] }];
+      const expectedSignals = [{ taxonomy: taxonomies[0], values: ['1', '2'] }];
       expect(JSON.stringify(signals)).to.equal(JSON.stringify(expectedSignals));
     });
 
@@ -584,7 +585,7 @@ describe('GPT pre-auction module', () => {
 
     it('should return properly formatted object for getSignalsIntersection invoked with empty array', () => {
       const signals = getSignalsIntersection([]);
-      expect(Object.keys(signals)).to.contain.members(['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2']);
+      expect(Object.keys(signals)).to.contain.members(taxonomies);
     });
   });
 });

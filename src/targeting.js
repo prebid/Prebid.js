@@ -16,7 +16,6 @@ import { hook } from './hook.js';
 import { ADPOD } from './mediaTypes.js';
 import { NATIVE_TARGETING_KEYS } from './native.js';
 import { find, includes } from './polyfill.js';
-import { getAuctionsIdsFromTargeting, getSignalsArrayByAuctionsIds, getSignalsIntersection } from './pps.js';
 import {
   deepAccess,
   deepClone,
@@ -462,14 +461,15 @@ export function newTargeting(auctionManager) {
       });
     });
 
-    // set gpt config
-    const auctionsIds = getAuctionsIdsFromTargeting(targetingSet);
-    const signals = getSignalsIntersection(getSignalsArrayByAuctionsIds(auctionsIds));
-    window.googletag.setConfig && window.googletag.setConfig({pps: { taxonomies: signals }});
+    targeting.getReadyTargetingSetForGPT(targetingSet);
 
     // emit event
     events.emit(EVENTS.SET_TARGETING, targetingSet);
   }, 'setTargetingForGPT');
+
+  targeting.getReadyTargetingSetForGPT = hook('sync', function (targetingSet) {
+    return targetingSet;
+  }, 'getReadyTargetingSetForGPT');
 
   /**
    * normlizes input to a `adUnit.code` array

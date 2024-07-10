@@ -17,7 +17,7 @@ const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig = {};
 let hooksAdded = false;
 
-const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
+export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
 
 export function getSegments(fpd, sections, segtax) {
   return sections
@@ -212,6 +212,14 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   return fn.call(this, adUnits, ...args);
 };
 
+const setPPSConfigForGPT = (next, targetingSet) => {
+  // set gpt config
+  const auctionsIds = getAuctionsIdsFromTargeting(targetingSet);
+  const signals = getSignalsIntersection(getSignalsArrayByAuctionsIds(auctionsIds));
+  window.googletag.setConfig && window.googletag.setConfig({pps: { taxonomies: signals }});
+  next(targetingSet);
+};
+
 const handleSetGptConfig = moduleConfig => {
   _currentConfig = pick(moduleConfig, [
     'enabled', enabled => enabled !== false,
@@ -225,12 +233,14 @@ const handleSetGptConfig = moduleConfig => {
   if (_currentConfig.enabled) {
     if (!hooksAdded) {
       getHook('makeBidRequests').before(makeBidRequestsHook);
+      getHook('getReadyTargetingSetForGPT').after(setPPSConfigForGPT)
       hooksAdded = true;
     }
   } else {
     logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
     getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}).remove();
+    getHook('getReadyTargetingSetForGPT').getHooks({hook: setPPSConfigForGPT}).remove();
     hooksAdded = false;
   }
 };
