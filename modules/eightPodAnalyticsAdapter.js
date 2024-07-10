@@ -160,7 +160,7 @@ function sendEvents() {
  * Send event to our custom tracking server
  */
 function sendEventsApi(eventList, callbacks) {
-  ajax(trackerUrl, callbacks, JSON.stringify(eventList));
+  ajax(trackerUrl, callbacks, JSON.stringify(eventList), {keepalive: true});
 }
 
 /**
