@@ -138,15 +138,15 @@ export const spec = {
       // OR GDPR applies and we have global consent
       deepAccess(bidderRequest, 'gdprConsent.vendorData.hasGlobalConsent') === true ||
       (
+        // Vendor consent
         deepAccess(bidderRequest, 'gdprConsent.vendorData.vendor.consents.573') === true &&
-        deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.consents.1') === true &&
-        deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.consents.3') === true &&
-        deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.consents.4') === true &&
-        // emulate flexible purpose by checking if the default consent or legitimate interest is set
-        (deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.consents.2') === true || deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.legitimateInterests.2') === true) &&
-        (deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.consents.7') === true || deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.legitimateInterests.7') === true) &&
-        (deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.consents.9') === true || deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.legitimateInterests.9') === true) &&
-        (deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.consents.10') === true || deepAccess(bidderRequest, 'gdprConsent.vendorData.purpose.legitimateInterests.10') === true)
+        // Purposes
+        [1, 3, 4].every(v => deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true) &&
+        // Flexible purposes
+        [2, 7, 9, 10].every(v =>
+          deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true ||
+          deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.legitimateInterests.${v}`) === true
+        )
       );
 
     return validBidRequests.map(bid => ({
