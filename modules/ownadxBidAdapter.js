@@ -12,10 +12,6 @@ const BIDDER_CODE = 'ownadx';
 const CUR = 'USD';
 const CREATIVE_TTL = 300;
 
-let tkn;
-let seatid;
-let sspid;
-let mtype = 0;
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -27,16 +23,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (bid.mediaTypes[BANNER]) {
-      mtype = 1;
-    } else {
-      mtype = 2;
-    }
-
-    tkn = bid.params.tokenId;
-    seatid = bid.params.seatId;
-    sspid = bid.params.sspId;
-    return !!(bid.params.tokenId);
+    return !!(bid.params.tokenId && bid.params.sspId && bid.params.seatId);
   },
 
   /**
@@ -49,6 +36,16 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
+      let mtype = 0;
+      if (bidRequest.mediaTypes[BANNER]) {
+        mtype = 1;
+      } else {
+        mtype = 2;
+      }
+
+      let tkn = bidRequest.params.tokenId;
+      let seatid = bidRequest.params.seatId;
+      let sspid = bidRequest.params.sspId;
 
       const payload = {
         sizes: sizes,
