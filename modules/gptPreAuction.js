@@ -58,7 +58,8 @@ export function getAuctionsIdsFromTargeting(targeting, am = auctionManager) {
     .flatMap(x => Object.entries(x))
     .filter((entry) => entry[0] === TARGETING_KEYS.AD_ID || entry[0].startsWith(TARGETING_KEYS.AD_ID + '_'))
     .flatMap(entry => entry[1])
-    .map(adId => am.findBidByAdId(adId).auctionId)
+    .map(adId => am.findBidByAdId(adId)?.auctionId)
+    .filter(id => id != null)
     .filter(uniques);
 }
 

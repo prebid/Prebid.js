@@ -561,6 +561,14 @@ describe('GPT pre-auction module', () => {
       expect(JSON.stringify(auctionsIds)).to.equal(JSON.stringify([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]))
     });
 
+    it('should filter out adIds that do not map to any auction', () => {
+      const auctionsIds = getAuctionsIdsFromTargeting({
+        ...mockTargeting,
+        'au': {'hb_adid': 'missing'},
+      }, mockAuctionManager);
+      expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]);
+    })
+
     it('should properly return empty array of auction ids for invalid targeting', () => {
       let auctionsIds = getAuctionsIdsFromTargeting({}, mockAuctionManager);
       expect(Array.isArray(auctionsIds)).to.equal(true);
