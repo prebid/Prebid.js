@@ -2,7 +2,7 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { DEFAULT_DFP_PARAMS, DFP_ENDPOINT } from '../libraries/dfpUtils/dfpUtils.js';
+import { DEFAULT_DFP_PARAMS, DFP_ENDPOINT, setGdprConsent } from '../libraries/dfpUtils/dfpUtils.js';
 import { getSignals } from '../libraries/gptUtils/gptUtils.js';
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
@@ -114,11 +114,7 @@ export function buildDfpVideoUrl(options) {
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
   const gdprConsent = gdprDataHandler.getConsentData();
-  if (gdprConsent) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
-    if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
-    if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
-  }
+  setGdprConsent(gdprConsent, queryParams);
 
   if (!queryParams.ppid) {
     const ppid = getPPID();

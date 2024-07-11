@@ -139,7 +139,7 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
  * @param {Array<String>} adUnitCodes
  * @param customSlotMatching
  * @param getSlots
- * @return {{[p: string]: any}}
+ * @return {Object.<string,any>}
  */
 export function getGPTSlotsForAdUnits(adUnitCodes, customSlotMatching, getSlots = () => window.googletag.pubads().getSlots()) {
   return getSlots().reduce((auToSlots, slot) => {
