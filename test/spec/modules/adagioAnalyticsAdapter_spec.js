@@ -1,9 +1,9 @@
-import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter.js';
-import { expect } from 'chai';
-import * as utils from 'src/utils.js';
-import { server } from 'test/mocks/xhr.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
+import * as utils from 'src/utils.js';
+import adagioAnalyticsAdapter, { _internal } from 'modules/adagioAnalyticsAdapter.js';
 import { EVENTS } from 'src/constants.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
@@ -14,23 +14,18 @@ describe('adagio analytics adapter - adagio.js', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-
     sandbox.stub(events, 'getEvents').returns([]);
-
-    const w = utils.getWindowTop();
 
     adapterManager.registerAnalyticsAdapter({
       code: 'adagio',
       adapter: adagioAnalyticsAdapter
     });
 
-    w.ADAGIO = w.ADAGIO || {};
-    w.ADAGIO.queue = w.ADAGIO.queue || [];
-
-    adagioQueuePushSpy = sandbox.spy(w.ADAGIO.queue, 'push');
+    adagioQueuePushSpy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
   });
 
   afterEach(() => {
+    _internal.getAdagioNs().queue = [];
     sandbox.restore();
   });
 
@@ -105,73 +100,6 @@ describe('adagio analytics adapter - adagio.js', () => {
       }
 
       Object.entries(testEvents).forEach(([ev, payload]) => sinon.assert.calledWith(adagioQueuePushSpy, eventItem(ev, payload)));
-    });
-  });
-
-  describe('no track', () => {
-    beforeEach(() => {
-      sandbox.stub(utils, 'getWindowTop').throws();
-
-      adapterManager.enableAnalytics({
-        provider: 'adagio'
-      });
-    });
-
-    afterEach(() => {
-      adagioAnalyticsAdapter.disableAnalytics();
-      sandbox.restore();
-    });
-
-    it('builds and sends auction data', () => {
-      let bidRequest = {
-        bids: [{
-          adUnitCode: 'div-1',
-          params: {
-            features: {
-              siteId: '2',
-              placement: 'pave_top',
-              pagetype: 'article',
-              category: 'IAB12,IAB12-2',
-              device: '2',
-            }
-          }
-        }, {
-          adUnitCode: 'div-2',
-          params: {
-            features: {
-              siteId: '2',
-              placement: 'ban_top',
-              pagetype: 'article',
-              category: 'IAB12,IAB12-2',
-              device: '2',
-            }
-          },
-        }],
-      };
-      let bidResponse = {
-        bidderCode: 'adagio',
-        width: 300,
-        height: 250,
-        statusMessage: 'Bid available',
-        cpm: 6.2189757658226075,
-        currency: '',
-        netRevenue: false,
-        adUnitCode: 'div-1',
-        timeToRespond: 132,
-      };
-
-      // Step 1: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, bidRequest);
-
-      // Step 2: Send bid response event
-      events.emit(EVENTS.BID_RESPONSE, bidResponse);
-
-      // Step 3: Send auction end event
-      events.emit(EVENTS.AUCTION_END, {});
-
-      utils.getWindowTop.restore();
-
-      sandbox.assert.callCount(adagioQueuePushSpy, 0);
     });
   });
 });
@@ -687,6 +615,7 @@ describe('adagio analytics adapter', () => {
   });
 
   afterEach(() => {
+    _internal.getAdagioNs().queue = [];
     sandbox.restore();
   });
 

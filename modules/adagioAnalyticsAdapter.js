@@ -2,12 +2,13 @@
  * Analytics Adapter for Adagio
  */
 
+import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
+import { deepAccess, logError, logInfo } from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getWindowTop, getWindowSelf, deepAccess, logInfo, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const emptyUrl = '';
@@ -19,6 +20,13 @@ const PREBID_VERSION = '$prebid.version$';
 const ENDPOINT = 'https://c.4dex.io/pba.gif';
 const CURRENCY_USD = 'USD';
 const ADAGIO_CODE = 'adagio';
+
+export const _internal = {
+  getAdagioNs: function() {
+    return _ADAGIO;
+  }
+};
+
 const cache = {
   auctions: {},
   getAuction: function(auctionId, adUnitCode) {
@@ -47,34 +55,6 @@ const cache = {
   }
 };
 const enc = window.encodeURIComponent;
-
-/**
-/* BEGIN ADAGIO.JS CODE
- */
-
-function canAccessTopWindow() {
-  try {
-    if (getWindowTop().location.href) {
-      return true;
-    }
-  } catch (error) {
-    return false;
-  }
-};
-
-function getCurrentWindow() {
-  return currentWindow;
-};
-
-let currentWindow;
-
-const adagioEnqueue = function adagioEnqueue(action, data) {
-  getCurrentWindow().ADAGIO.queue.push({ action, data, ts: Date.now() });
-};
-
-/**
- * END ADAGIO.JS CODE
- */
 
 /**
  * UTILS FUNCTIONS
@@ -194,7 +174,7 @@ function getTargetedAuctionId(bid) {
  */
 
 function handlerAuctionInit(event) {
-  const w = getCurrentWindow();
+  const w = getBestWindowForAdagio();
 
   const prebidAuctionId = event.auctionId;
   const adUnitCodes = removeDuplicates(event.adUnitCodes, adUnitCode => adUnitCode);
@@ -408,7 +388,11 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
 
     try {
       if (typeof args !== 'undefined' && events.indexOf(eventType) !== -1) {
-        adagioEnqueue('pb-analytics-event', { eventName: eventType, args });
+        _internal.getAdagioNs().queue.push({
+          action: 'pb-analytics-event',
+          data: { eventName: eventType, args },
+          ts: Date.now()
+        });
       }
     } catch (error) {
       logError('Error on Adagio Analytics Adapter - adagio.js', error);
@@ -419,13 +403,7 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
 adagioAdapter.originEnableAnalytics = adagioAdapter.enableAnalytics;
 
 adagioAdapter.enableAnalytics = config => {
-  const w = (canAccessTopWindow()) ? getWindowTop() : getWindowSelf();
-  currentWindow = w;
-
-  w.ADAGIO = w.ADAGIO || {};
-  w.ADAGIO.queue = w.ADAGIO.queue || [];
-  w.ADAGIO.versions = w.ADAGIO.versions || {};
-  w.ADAGIO.versions.adagioAnalyticsAdapter = VERSION;
+  _internal.getAdagioNs().versions.adagioAnalyticsAdapter = VERSION;
 
   adagioAdapter.originEnableAnalytics(config);
 }
