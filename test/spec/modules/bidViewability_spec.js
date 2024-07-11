@@ -245,7 +245,7 @@ describe('#bidViewability', function() {
     let logWinningBidNotFoundSpy;
     let callBidViewableBidderSpy;
     let winningBidsArray;
-    let callBidBillableBidderSpy;
+    let triggerBillingSpy;
     let adUnits = [
       {
         'code': 'abc123',
@@ -262,7 +262,7 @@ describe('#bidViewability', function() {
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
       eventsEmitSpy = sandbox.spy(events, ['emit']);
       callBidViewableBidderSpy = sandbox.spy(adapterManager, ['callBidViewableBidder']);
-      callBidBillableBidderSpy = sandbox.spy(adapterManager, ['callBidBillableBidder']);
+      triggerBillingSpy = sandbox.spy(adapterManager, ['triggerBilling']);
       // mocking winningBidsArray
       winningBidsArray = [];
       sandbox.stub(prebidGlobal, 'getGlobal').returns({
@@ -307,22 +307,16 @@ describe('#bidViewability', function() {
       expect(eventsEmitSpy.callCount).to.equal(0);
     });
 
-    it('should call the callBidBillableBidder function if the viewable bid is associated with an ad unit with deferBilling set to true', function() {
+    it('should call the triggerBilling function if the viewable bid has deferBilling set to true', function() {
       let moduleConfig = {};
-      const deferredBillingAdUnit = {
-        'code': '/harshad/Jan/2021/',
-        'deferBilling': true,
-        'bids': [
-          {
-            'bidder': 'pubmatic'
-          }
-        ]
-      };
-      adUnits.push(deferredBillingAdUnit);
-      winningBidsArray.push(PBJS_WINNING_BID);
+      const bid = {
+        ...PBJS_WINNING_BID,
+        deferBilling: true
+      }
+      winningBidsArray.push(bid);
       bidViewability.impressionViewableHandler(moduleConfig, GPT_SLOT, null);
-      expect(callBidBillableBidderSpy.callCount).to.equal(1);
-      sinon.assert.calledWith(callBidBillableBidderSpy, PBJS_WINNING_BID);
+      expect(triggerBillingSpy.callCount).to.equal(1);
+      sinon.assert.calledWith(triggerBillingSpy, bid);
     });
   });
 });

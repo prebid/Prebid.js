@@ -18,13 +18,12 @@ import {
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {auctionManager} from '../src/auctionManager.js';
-import {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {getPPID} from '../src/adserver.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';
-import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT} from '../libraries/dfpUtils/dfpUtils.js';
+import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -109,17 +108,12 @@ export function buildDfpVideoUrl(options) {
     urlComponents.search,
     derivedParams,
     options.params,
-    { cust_params: encodedCustomParams }
+    { cust_params: encodedCustomParams },
+    gdprParams()
   );
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
-  const gdprConsent = gdprDataHandler.getConsentData();
-  if (gdprConsent) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
-    if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
-    if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
-  }
 
   if (!queryParams.ppid) {
     const ppid = getPPID();
