@@ -56,7 +56,7 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
     window.addEventListener('message', async (event) => {
       const data = event.data;
 
-      const frameElement = event.source.frameElement;
+      const frameElement = event.source?.frameElement;
       const parentElement = frameElement?.parentElement;
       const adUnitCode = parentElement?.id;
 
