@@ -553,12 +553,12 @@ describe('GPT pre-auction module', () => {
     it('should return signals from fpd', () => {
       const signals = getSignals(mocksAuctions[0].getFPD().global);
       const expectedSignals = [{ taxonomy: taxonomies[0], values: ['1', '2'] }];
-      expect(JSON.stringify(signals)).to.equal(JSON.stringify(expectedSignals));
+      expect(signals).to.eql(expectedSignals);
     });
 
     it('should properly get auctions ids from targeting', () => {
       const auctionsIds = getAuctionsIdsFromTargeting(mockTargeting, mockAuctionManager);
-      expect(JSON.stringify(auctionsIds)).to.equal(JSON.stringify([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]))
+      expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId])
     });
 
     it('should filter out adIds that do not map to any auction', () => {
