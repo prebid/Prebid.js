@@ -1,3 +1,21 @@
+import { auctionManager } from './auctionManager.js';
+import { getTTL } from './bidTTL.js';
+import { bidderSettings } from './bidderSettings.js';
+import { config } from './config.js';
+import {
+  BID_STATUS,
+  DEFAULT_TARGETING_KEYS,
+  EVENTS,
+  JSON_MAPPING,
+  NATIVE_KEYS,
+  STATUS,
+  TARGETING_KEYS
+} from './constants.js';
+import * as events from './events.js';
+import { hook } from './hook.js';
+import { ADPOD } from './mediaTypes.js';
+import { NATIVE_TARGETING_KEYS } from './native.js';
+import { find, includes } from './polyfill.js';
 import {
   deepAccess,
   deepClone,
@@ -14,25 +32,7 @@ import {
   timestamp,
   uniques,
 } from './utils.js';
-import {config} from './config.js';
-import {NATIVE_TARGETING_KEYS} from './native.js';
-import {auctionManager} from './auctionManager.js';
-import {ADPOD} from './mediaTypes.js';
-import {hook} from './hook.js';
-import {bidderSettings} from './bidderSettings.js';
-import {find, includes} from './polyfill.js';
-import {
-  BID_STATUS,
-  DEFAULT_TARGETING_KEYS,
-  EVENTS,
-  JSON_MAPPING,
-  NATIVE_KEYS,
-  STATUS,
-  TARGETING_KEYS
-} from './constants.js';
-import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
-import {getTTL} from './bidTTL.js';
-import * as events from './events.js';
+import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
 
 var pbTargetingKeys = [];
 
@@ -139,7 +139,7 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
  * @param {Array<String>} adUnitCodes
  * @param customSlotMatching
  * @param getSlots
- * @return {{[p: string]: any}}
+ * @return {Object.<string,any>}
  */
 export function getGPTSlotsForAdUnits(adUnitCodes, customSlotMatching, getSlots = () => window.googletag.pubads().getSlots()) {
   return getSlots().reduce((auToSlots, slot) => {
@@ -461,9 +461,15 @@ export function newTargeting(auctionManager) {
       });
     });
 
+    targeting.targetingDone(targetingSet);
+
     // emit event
     events.emit(EVENTS.SET_TARGETING, targetingSet);
   }, 'setTargetingForGPT');
+
+  targeting.targetingDone = hook('sync', function (targetingSet) {
+    return targetingSet;
+  }, 'targetingDone');
 
   /**
    * normlizes input to a `adUnit.code` array
