@@ -201,7 +201,7 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   return fn.call(this, adUnits, ...args);
 };
 
-const getPpsConfigFromTargetingSet = (next, targetingSet) => {
+const setPpsConfigFromTargetingSet = (next, targetingSet) => {
   // set gpt config
   const auctionsIds = getAuctionsIdsFromTargeting(targetingSet);
   const signals = getSignalsIntersection(getSignalsArrayByAuctionsIds(auctionsIds));
@@ -222,14 +222,14 @@ const handleSetGptConfig = moduleConfig => {
   if (_currentConfig.enabled) {
     if (!hooksAdded) {
       getHook('makeBidRequests').before(makeBidRequestsHook);
-      getHook('targetingDone').after(getPpsConfigFromTargetingSet)
+      getHook('targetingDone').after(setPpsConfigFromTargetingSet)
       hooksAdded = true;
     }
   } else {
     logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
     getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}).remove();
-    getHook('targetingDone').getHooks({hook: getPpsConfigFromTargetingSet}).remove();
+    getHook('targetingDone').getHooks({hook: setPpsConfigFromTargetingSet}).remove();
     hooksAdded = false;
   }
 };
