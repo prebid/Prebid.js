@@ -646,21 +646,22 @@ const spec = {
 
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
-    const response = serverResponse.body;
+    const { body: response = {} } = serverResponse;
+    const { seatbid: responseSeat, ext: responseExt = {} } = response;
+    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
     pageView.sn = site.sn; // store site_name (for syncing and notifications)
-    let seat;
 
-    if (response.seatbid !== undefined) {
+    if (responseSeat !== undefined) {
       /*
         Match response to request, by comparing bid id's
         'bidid-' prefix indicates oneCode (parameterless) request and response
       */
-      response.seatbid.forEach(seatbid => {
-        seat = seatbid.seat;
-        seatbid.bid.forEach(serverBid => {
+      responseSeat.forEach(seatbid => {
+        const { seat, bid } = seatbid;
+        bid.forEach(serverBid => {
           // get data from bid response
           const { adomain, crid = `mcad_${bidderRequest.auctionId}_${site.slot}`, impid, exp = 300, ext = {}, price, w, h } = serverBid;
 
@@ -764,7 +765,7 @@ const spec = {
       });
     }
 
-    return bids;
+    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
   },
   getUserSyncs(syncOptions, serverResponses, gdprConsent) {
     let mySyncs = [];
