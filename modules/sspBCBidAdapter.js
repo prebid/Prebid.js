@@ -101,7 +101,7 @@ const getNotificationPayload = bidData => {
       }
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
-        const { platform } = meta;
+        const { platform = 'wpartner' } = meta;
         const params = unpackParams(bidParams);
 
         // basic notification data
