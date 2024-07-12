@@ -7,6 +7,11 @@ function isValidIdentity(identity) {
   return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
 }
 
+// Helper function to prepend message
+function prependMessage(message) {
+  return `UID2 shared library - ${message}`;
+}
+
 // This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
 export class Uid2ApiClient {
   constructor(opts, clientId, logInfo, logWarn) {
@@ -35,7 +40,7 @@ export class Uid2ApiClient {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
       return response;
-    } else { return `Response didn't contain a valid status`; }
+    } else { return prependMessage(`Response didn't contain a valid status`); }
   }
   callRefreshApi(refreshDetails) {
     const url = this._baseUrl + '/v2/token/refresh';
@@ -53,7 +58,7 @@ export class Uid2ApiClient {
             this._logInfo('No response decryption key available, assuming unencrypted JSON');
             const response = JSON.parse(responseText);
             const result = this.ResponseToRefreshResult(response);
-            if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+            if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
           } else {
             this._logInfo('Decrypting refresh API response');
             const encodeResp = this.createArrayBuffer(atob(responseText));
@@ -69,12 +74,12 @@ export class Uid2ApiClient {
                 this._logInfo('Decrypted to:', decryptedResponse);
                 const response = JSON.parse(decryptedResponse);
                 const result = this.ResponseToRefreshResult(response);
-                if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
-              }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
-            }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
+                if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
+              }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
+            }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
           }
         } catch (_err) {
-          rejectPromise(responseText);
+          rejectPromise(prependMessage(responseText));
         }
       },
       error: (error, xhr) => {
@@ -82,9 +87,9 @@ export class Uid2ApiClient {
           this._logInfo('Error status, assuming unencrypted JSON');
           const response = JSON.parse(xhr.responseText);
           const result = this.ResponseToRefreshResult(response);
-          if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+          if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
         } catch (_e) {
-          rejectPromise(error)
+          rejectPromise(prependMessage(error));
         }
       }
     }, refreshDetails.refresh_token, { method: 'POST',
