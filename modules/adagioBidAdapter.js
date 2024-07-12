@@ -724,7 +724,6 @@ export const spec = {
     // Those params are not sent to the server.
     // They are used for further operations on analytics adapter.
     validBidRequests.forEach(rawBidRequest => {
-      rawBidRequest.params.adagioAuctionId = aucId
       rawBidRequest.params.pageviewId = pageviewId
     });
 
