@@ -318,7 +318,7 @@ export const connectIdSubmodule = {
    */
   userHasOptedOut() {
     try {
-      return storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1';
+      return (!storage.localStorageIsEnabled() || storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1');
     } catch {
       return false;
     }
