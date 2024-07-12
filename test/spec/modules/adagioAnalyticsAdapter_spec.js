@@ -1,9 +1,9 @@
-import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter.js';
-import { expect } from 'chai';
-import * as utils from 'src/utils.js';
-import { server } from 'test/mocks/xhr.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
+import * as utils from 'src/utils.js';
+import adagioAnalyticsAdapter, { _internal } from 'modules/adagioAnalyticsAdapter.js';
 import { EVENTS } from 'src/constants.js';
+import { expect } from 'chai';
+import { server } from 'test/mocks/xhr.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
@@ -14,23 +14,18 @@ describe('adagio analytics adapter - adagio.js', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-
     sandbox.stub(events, 'getEvents').returns([]);
-
-    const w = utils.getWindowTop();
 
     adapterManager.registerAnalyticsAdapter({
       code: 'adagio',
       adapter: adagioAnalyticsAdapter
     });
 
-    w.ADAGIO = w.ADAGIO || {};
-    w.ADAGIO.queue = w.ADAGIO.queue || [];
-
-    adagioQueuePushSpy = sandbox.spy(w.ADAGIO.queue, 'push');
+    adagioQueuePushSpy = sandbox.spy(_internal.getAdagioNs().queue, 'push');
   });
 
   afterEach(() => {
+    _internal.getAdagioNs().queue = [];
     sandbox.restore();
   });
 
@@ -93,7 +88,6 @@ describe('adagio analytics adapter - adagio.js', () => {
 
       // Step 1-3: Send events
       Object.entries(testEvents).forEach(([ev, payload]) => events.emit(ev, payload));
-
       function eventItem(eventName, args) {
         return sinon.match({
           action: 'pb-analytics-event',
@@ -108,79 +102,12 @@ describe('adagio analytics adapter - adagio.js', () => {
       Object.entries(testEvents).forEach(([ev, payload]) => sinon.assert.calledWith(adagioQueuePushSpy, eventItem(ev, payload)));
     });
   });
-
-  describe('no track', () => {
-    beforeEach(() => {
-      sandbox.stub(utils, 'getWindowTop').throws();
-
-      adapterManager.enableAnalytics({
-        provider: 'adagio'
-      });
-    });
-
-    afterEach(() => {
-      adagioAnalyticsAdapter.disableAnalytics();
-      sandbox.restore();
-    });
-
-    it('builds and sends auction data', () => {
-      let bidRequest = {
-        bids: [{
-          adUnitCode: 'div-1',
-          params: {
-            features: {
-              siteId: '2',
-              placement: 'pave_top',
-              pagetype: 'article',
-              category: 'IAB12,IAB12-2',
-              device: '2',
-            }
-          }
-        }, {
-          adUnitCode: 'div-2',
-          params: {
-            features: {
-              siteId: '2',
-              placement: 'ban_top',
-              pagetype: 'article',
-              category: 'IAB12,IAB12-2',
-              device: '2',
-            }
-          },
-        }],
-      };
-      let bidResponse = {
-        bidderCode: 'adagio',
-        width: 300,
-        height: 250,
-        statusMessage: 'Bid available',
-        cpm: 6.2189757658226075,
-        currency: '',
-        netRevenue: false,
-        adUnitCode: 'div-1',
-        timeToRespond: 132,
-      };
-
-      // Step 1: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, bidRequest);
-
-      // Step 2: Send bid response event
-      events.emit(EVENTS.BID_RESPONSE, bidResponse);
-
-      // Step 3: Send auction end event
-      events.emit(EVENTS.AUCTION_END, {});
-
-      utils.getWindowTop.restore();
-
-      sandbox.assert.callCount(adagioQueuePushSpy, 0);
-    });
-  });
 });
 
 const AUCTION_ID = '25c6d7f5-699a-4bfc-87c9-996f915341fa';
-const AUCTION_ID_ADAGIO = '6fc53663-bde5-427b-ab63-baa9ed296f47'
+const RTD_AUCTION_ID = '753b3784-12a1-44c2-9d08-d0e4ee910e69';
+const RTD_AUCTION_ID_CACHE = '04d991be-8f7d-4491-930b-2b7eefb3c447';
 const AUCTION_ID_CACHE = 'b43d24a0-13d4-406d-8176-3181402bafc4';
-const AUCTION_ID_CACHE_ADAGIO = 'a9cae98f-efb5-477e-9259-27350044f8db';
 
 const BID_ADAGIO = {
   bidder: 'adagio',
@@ -262,6 +189,14 @@ const PARAMS_ADG = {
   placement: 'pave_top',
   testName: 'test',
   testVersion: 'version',
+};
+
+const ORTB_DATA = {
+  pagetype: 'article',
+};
+
+const ADG_RTD = {
+  'uid': RTD_AUCTION_ID,
 };
 
 const AUCTION_INIT_ANOTHER = {
@@ -387,6 +322,18 @@ const AUCTION_INIT_ANOTHER = {
     'timeout': 3000,
     'refererInfo': {
       'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+    },
+    'ortb2': {
+      'site': {
+        'ext': {
+          'data': {
+            'adg_rtd': {
+              ...ADG_RTD
+            },
+            ...ORTB_DATA
+          }
+        }
+      }
     }
   }, {
     'bidderCode': 'adagio',
@@ -395,8 +342,7 @@ const AUCTION_INIT_ANOTHER = {
     'bids': [ {
       'bidder': 'adagio',
       'params': {
-        ...PARAMS_ADG,
-        adagioAuctionId: AUCTION_ID_ADAGIO
+        ...PARAMS_ADG
       },
       'mediaTypes': {
         'banner': {
@@ -416,6 +362,18 @@ const AUCTION_INIT_ANOTHER = {
     'timeout': 3000,
     'refererInfo': {
       'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+    },
+    'ortb2': {
+      'site': {
+        'ext': {
+          'data': {
+            'adg_rtd': {
+              ...ADG_RTD
+            },
+            ...ORTB_DATA
+          }
+        }
+      }
     }
   }
   ],
@@ -524,6 +482,19 @@ const AUCTION_INIT_CACHE = {
     'timeout': 3000,
     'refererInfo': {
       'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+    },
+    'ortb2': {
+      'site': {
+        'ext': {
+          'data': {
+            'adg_rtd': {
+              ...ADG_RTD,
+              'uid': RTD_AUCTION_ID_CACHE
+            },
+            ...ORTB_DATA
+          }
+        }
+      }
     }
   }, {
     'bidderCode': 'adagio',
@@ -532,8 +503,7 @@ const AUCTION_INIT_CACHE = {
     'bids': [ {
       'bidder': 'adagio',
       'params': {
-        ...PARAMS_ADG,
-        adagioAuctionId: AUCTION_ID_CACHE_ADAGIO
+        ...PARAMS_ADG
       },
       'mediaTypes': {
         'banner': {
@@ -553,6 +523,19 @@ const AUCTION_INIT_CACHE = {
     'timeout': 3000,
     'refererInfo': {
       'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+    },
+    'ortb2': {
+      'site': {
+        'ext': {
+          'data': {
+            'adg_rtd': {
+              ...ADG_RTD,
+              'uid': RTD_AUCTION_ID_CACHE
+            },
+            ...ORTB_DATA
+          }
+        }
+      }
     }
   }
   ],
@@ -632,6 +615,7 @@ describe('adagio analytics adapter', () => {
   });
 
   afterEach(() => {
+    _internal.getAdagioNs().queue = [];
     sandbox.restore();
   });
 
@@ -676,7 +660,7 @@ describe('adagio analytics adapter', () => {
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('1');
         expect(search.pbjsv).to.equal('$prebid.version$');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
+        expect(search.auct_id).to.equal(RTD_AUCTION_ID);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.org_id).to.equal('1001');
         expect(search.site).to.equal('test-com');
@@ -708,7 +692,7 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('3');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
+        expect(search.auct_id).to.equal(RTD_AUCTION_ID);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.win_bdr).to.equal('another');
         expect(search.win_mt).to.equal('ban');
@@ -743,13 +727,14 @@ describe('adagio analytics adapter', () => {
 
       expect(server.requests.length).to.equal(5, 'requests count');
       {
+        // the first request is getting cached we expect to see its auction id later when it's re-used
         const { protocol, hostname, pathname, search } = utils.parseUrl(server.requests[0].url);
         expect(protocol).to.equal('https');
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('1');
         expect(search.pbjsv).to.equal('$prebid.version$');
-        expect(search.auct_id).to.equal(AUCTION_ID_CACHE_ADAGIO);
+        expect(search.auct_id).to.equal(RTD_AUCTION_ID_CACHE);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.org_id).to.equal('1001');
         expect(search.site).to.equal('test-com');
@@ -772,7 +757,7 @@ describe('adagio analytics adapter', () => {
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('1');
         expect(search.pbjsv).to.equal('$prebid.version$');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
+        expect(search.auct_id).to.equal(RTD_AUCTION_ID);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.org_id).to.equal('1001');
         expect(search.site).to.equal('test-com');
@@ -804,8 +789,8 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('3');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
-        expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE_ADAGIO);
+        expect(search.auct_id).to.equal(RTD_AUCTION_ID);
+        expect(search.auct_id_c).to.equal(RTD_AUCTION_ID_CACHE);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.win_bdr).to.equal('adagio');
         expect(search.win_mt).to.equal('ban');
@@ -821,8 +806,8 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('4');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
-        expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE_ADAGIO);
+        expect(search.auct_id).to.equal(RTD_AUCTION_ID);
+        expect(search.auct_id_c).to.equal(RTD_AUCTION_ID_CACHE);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.rndr).to.equal('0');
       }
