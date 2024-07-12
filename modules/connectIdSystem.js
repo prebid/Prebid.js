@@ -318,7 +318,11 @@ export const connectIdSubmodule = {
    */
   userHasOptedOut() {
     try {
-      return (!storage.localStorageIsEnabled() || storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1');
+      if (storage.localStorageIsEnabled()) {
+        return storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1';
+      } else {
+        return true;
+      }
     } catch {
       return false;
     }
