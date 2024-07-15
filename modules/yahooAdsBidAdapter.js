@@ -3,12 +3,15 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahooAds';
-const BIDDER_ALIASES = ['yahoossp', 'yahooAdvertising']
 const GVLID = 25;
+const BIDDER_ALIASES = [
+  { code: 'yahoossp', gvlid: GVLID },
+  { code: 'yahooAdvertising', gvlid: GVLID }
+];
 const ADAPTER_VERSION = '1.1.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;

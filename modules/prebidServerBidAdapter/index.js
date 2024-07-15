@@ -25,7 +25,7 @@ import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
-import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../../src/utils/gdpr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
@@ -179,7 +179,7 @@ function setS2sConfig(options) {
 
   const activeBidders = [];
   const optionsValid = normalizedOptions.every((option, i, array) => {
-    formatUrlParams(options);
+    formatUrlParams(option);
     const updateSuccess = updateConfigDefaultVendor(option);
     if (updateSuccess !== false) {
       const valid = validateConfigRequiredProps(option);
@@ -515,7 +515,9 @@ export function PrebidServer() {
           }
         },
         onFledge: (params) => {
-          addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
+          config.runWithBidder(params.bidder, () => {
+            addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
+          })
         }
       })
     }

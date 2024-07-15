@@ -876,14 +876,15 @@ describe('adnuntiusBidAdapter', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
-          useCookie: false
+          useCookie: false,
+          advertiserTransparency: true
         }
       });
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
-      expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE);
+      expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE + '&advertiserTransparency=true');
     });
   });
 
@@ -981,7 +982,9 @@ describe('adnuntiusBidAdapter', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
-          maxDeals: 2
+          maxDeals: 2,
+          useCookie: 'ignore-this',
+          advertiserTransparency: 'ignore-this-as-well'
         }
       });
 
