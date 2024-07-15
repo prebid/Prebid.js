@@ -198,10 +198,13 @@ function processCmpData(consentObject, {onSuccess, onError}, customVendorConsent
  */
 function storeConsentData(cmpConsentObject, customVendorConsents) {
   consentData = {
-    consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
-    vendorData: (cmpConsentObject) || undefined,
+    consentString: cmpConsentObject ? cmpConsentObject.tcString : undefined,
+    vendorData: cmpConsentObject || undefined,
     customVendorConsents: customVendorConsents,
-    gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
+    gdprApplies:
+      cmpConsentObject && typeof cmpConsentObject.gdprApplies === "boolean"
+        ? cmpConsentObject.gdprApplies
+        : gdprScope,
   };
   if (cmpConsentObject && cmpConsentObject.addtlConsent && isStr(cmpConsentObject.addtlConsent)) {
     consentData.addtlConsent = cmpConsentObject.addtlConsent;
