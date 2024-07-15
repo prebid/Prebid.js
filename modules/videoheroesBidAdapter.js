@@ -95,9 +95,14 @@ export const spec = {
       data.site.ref = bidderRequest.refererInfo.ref;
     }
 
+    if(bidderRequest.userIdAsEids){
+      data['user'] = {'ext': {'eids': bidderRequest.userIdAsEids }};
+    }
+
     if (bidderRequest.gdprConsent) {
       data['regs'] = {'ext': {'gdpr': bidderRequest.gdprConsent.gdprApplies ? 1 : 0}};
-      data['user'] = {'ext': {'consent': bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''}};
+      if(!data['user'] || !data['user']['ext'])data['user'] = {'ext':{}};
+      data['user']['ext']['consent'] = bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''}};
     }
 
     if (bidderRequest.uspConsent !== undefined) {
