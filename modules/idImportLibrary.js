@@ -3,6 +3,10 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import MD5 from 'crypto-js/md5.js';
+import { isActivityAllowed } from '../src/activities/rules.js';
+import { ACTIVITY_ENRICH_UFPD } from '../src/activities/activities.js';
+import { activityParams } from '../src/activities/activityParams.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 let email;
 let conf;
@@ -255,6 +259,10 @@ export function setConfig(config) {
   }
   if (!config.url) {
     _logError('The required url is not configured');
+    return;
+  }
+  if (!isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_UID, 'idImportLibrary'))) {
+    _logError('Permission for id import was denied by CMP');
     return;
   }
   if (typeof config.debounce !== 'number') {
