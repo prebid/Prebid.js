@@ -1,4 +1,5 @@
 import {
+  logDetails,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -16,8 +17,8 @@ import {
   logInfo,
   logMessage,
   logWarn,
-  mergeDeep
-} from '../src/utils.js';
+  mergeDeep,
+} from "../src/utils.js";
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -411,6 +412,9 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
+    logDetails("interpretResponse for: " + bidderRequest.bidderCode);
+    logDetails(bidderRequest);
+    logDetails(serverResponse);
     const bids = [];
     if (!serverResponse || serverResponse.error) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
@@ -432,6 +436,8 @@ export const spec = {
         }
       });
     }
+
+     logDetails(bids);
 
     if (serverResponse.debug && serverResponse.debug.debug_info) {
       let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
@@ -566,7 +572,13 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
-    currency: rtbBid.publisher_currency_codename || 'USD',
+    dealPriority: rtbBid.deal_priority,
+    advertiserId: rtbBid.advertiser_id,
+    brandCategoryId: rtbBid.brand_category_id,
+    buyerMemberId: rtbBid.buyer_member_id,
+    mediaTypeId: rtbBid.media_type_id,
+    mediaSubtypeId: rtbBid.media_subtype_id,
+    currency: rtbBid.publisher_currency_codename || "USD",
     netRevenue: true,
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,

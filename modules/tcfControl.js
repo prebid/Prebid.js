@@ -45,6 +45,26 @@ const CONSENT_PATHS = {
   feature: 'specialFeatureOptins'
 };
 
+let customizePrebidId = "";
+
+const TCF2CustomVendor = {
+  1: {
+    id: "",
+    name1: "Store and/or access information on a device",
+    name2: "Store and/or access information on a device",
+  },
+  2: {
+    id: "",
+    name1: "Select basic ads",
+    name2: "Use limited data to select advertising",
+  },
+  7: {
+    id: "",
+    name1: "Measure ad performance",
+    name2: "Measure advertising performance",
+  },
+};
+
 const CONFIGURABLE_RULES = {
   storage: {
     type: 'purpose',
@@ -168,6 +188,43 @@ export function shouldEnforce(consentData, purpose, name) {
   return consentData && consentData.gdprApplies;
 }
 
+function getCustomVendorPurposeId(customVendorConsents, purposeName) {
+  try {
+    return customVendorConsents.consentedPurposes.filter(
+      (consentedPurpose) => consentedPurpose.name == purposeName
+    )[0]["_id"];
+  } catch (e) {
+    return "";
+  }
+}
+
+function validateCustomPrebid(purpose, consentData) {
+  if (customizePrebidId) {
+    if (!consentData) return false;
+    const customVendorConsents = consentData.customVendorConsents;
+    if (!TCF2CustomVendor[purpose].id) {
+      let customVendorPurposeId = getCustomVendorPurposeId(
+        customVendorConsents,
+        TCF2CustomVendor[purpose].name1
+      );
+      if (!customVendorPurposeId) {
+        customVendorPurposeId = getCustomVendorPurposeId(
+          customVendorConsents,
+          TCF2CustomVendor[purpose].name2
+        );
+      }
+      TCF2CustomVendor[purpose].id = customVendorPurposeId;
+    }
+    const purposeId = TCF2CustomVendor[purpose].id;
+    return !!deepAccess(
+      customVendorConsents,
+      `grants.${customizePrebidId}.purposeGrants.${purposeId}`
+    );
+  } else {
+    return true;
+  }
+}
+
 function getConsentOrLI(consentData, path, id, acceptLI) {
   const data = deepAccess(consentData, `vendorData.${path}`);
   return !!data?.consents?.[id] || (acceptLI && !!data?.legitimateInterests?.[id]);
@@ -218,6 +275,8 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback = () =>
     if (shouldEnforce(consentData, purposeNo, modName)) {
       const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
       let allow = !!checkConsent(consentData, modName, gvlid);
+      const isPrebidAllowed = validateCustomPrebid(purposeNo, consentData);
+      allow = allow && isPrebidAllowed;
       if (!allow) {
         blocked && blocked.add(modName);
         return {allow};
@@ -317,6 +376,7 @@ export function setEnforcementConfig(config) {
   }
   rules = Object.fromEntries((rules || []).map(r => [r.purpose, r]));
   strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
+  customizePrebidId = deepAccess(config, "gdpr.customizePrebidId");
 
   Object.entries(CONFIGURABLE_RULES).forEach(([name, opts]) => {
     ACTIVE_RULES[opts.type][opts.id] = rules[name] ?? opts.default;

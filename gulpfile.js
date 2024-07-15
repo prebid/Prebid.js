@@ -267,6 +267,7 @@ function wrapWithHeaderAndFooter(dev, modules) {
     const tpl = _.template(fs.readFileSync('./bundle-template.txt'))({
       prebid,
       modules: getModulesListToAddInBanner(modules),
+      website: argv.website ? argv.website : '',
       enable: !argv.manualEnable
     });
     (dev ? Promise.resolve(tpl) : minify(tpl, {format: {comments: true}}).then((res) => res.code))

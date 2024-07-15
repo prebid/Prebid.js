@@ -303,6 +303,36 @@ pbjsInstance.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 };
 
 /**
+ * This function returns the bid requested
+ * @alias module:pbjs.getBidsRequested
+ * @return {Object}            map | object that contains the bidsRequested
+ */
+pbjsInstance.getBidsRequested = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getBidsRequested', arguments);
+  return auctionManager.getBidsRequested();
+};
+
+/**
+ * This function returns the USP consent data
+ * @alias module:pbjs.getUSPConsentData
+ * @return {Object}            map | object that contains the usp consent data
+ */
+pbjsInstance.getUSPConsentData = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getUSPConsentData', arguments);
+  return uspDataHandler.getConsentData();
+};
+
+/**
+ * This function returns the USP consent data
+ * @alias module:pbjs.getGDPRConsentData
+ * @return {Object}            map | object that contains the gdpr consent data
+ */
+pbjsInstance.getGDPRConsentData = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getGDPRConsentData', arguments);
+  return gdprDataHandler.getConsentData();
+};
+
+/**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adunitCode {string} adUnitCode to get the bid responses for
  * @alias module:pbjs.getHighestUnusedBidResponseForAdUnitCode
@@ -913,6 +943,7 @@ pbjsInstance.getConfig = config.getAnyConfig;
 pbjsInstance.readConfig = config.readAnyConfig;
 pbjsInstance.mergeConfig = config.mergeConfig;
 pbjsInstance.mergeBidderConfig = config.mergeBidderConfig;
+pbjsInstance.getBidderConfig = config.getBidderConfig;
 
 /**
  * Set Prebid config options.

@@ -1,4 +1,4 @@
-/* <%= prebid.name %> v<%= prebid.version %>
+/* <%= prebid.name %> v<%= prebid.version %>  News Corp Customized For: <%= website %>
 Updated: <%= (new Date()).toISOString().substring(0, 10) %>
 Modules: <%= modules %> */
 

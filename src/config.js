@@ -30,6 +30,7 @@ import {
 import {DEBUG_MODE} from './constants.js';
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
+const DEFAULT_DETAILDEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === "DETAILS";
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
@@ -144,7 +145,7 @@ export function newConfig() {
     }
     let newConfig = {
       // `debug` is equivalent to legacy `pbjs.logging` property
-      debug: DEFAULT_DEBUG,
+      debug: DEFAULT_DEBUG || DEFAULT_DETAILDEBUG,
       bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
       enableSendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
       useBidCache: DEFAULT_BID_CACHE,

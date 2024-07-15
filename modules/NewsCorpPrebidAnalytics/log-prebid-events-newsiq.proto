@@ -1,0 +1,49 @@
+message LogPrebidEventsNewsIQ {
+    optional fixed64 timestamp = 1;
+    optional string remote_addr_macro = 2;
+    optional string user_agent_macro = 3;
+    optional string referer_url = 4;
+    optional uint32 seller_member_id = 5;
+    optional string domain = 6;
+    optional string device = 7;
+    optional string platform = 9;
+
+    message Auction {
+        optional string version = 1;
+        optional fixed64 auction_init_timestamp = 2;
+        optional string prebid_auction_id = 3;
+        optional uint32 configured_timeout_ms = 4;
+        optional uint32 msg_type = 6;
+
+        message AdUnit {
+            optional string ad_unit_code = 1;
+
+            message Bid {
+                optional string bid_id = 1;
+                optional double price = 2;
+                optional string bidder_code = 3;
+                optional string bidder_ad_unit_id = 4;
+                optional fixed64 request_timestamp = 5;
+                optional fixed64 response_timestamp = 6;
+                optional uint32 status_code = 7;
+                optional string source = 9;
+
+                message Creative {
+                    optional string creative_id = 1;
+                    optional uint32 width = 2;
+                    optional uint32 height = 3;
+                    optional string brand = 4;
+                }
+                optional Creative creative = 8;
+            }
+            repeated Bid bids = 2;
+            message Param {
+                optional string key = 1;
+                optional string value = 2;
+            }
+            repeated Param params = 3;
+        }
+        repeated AdUnit ad_units = 5;
+    }
+    repeated Auction auctions = 8;
+}

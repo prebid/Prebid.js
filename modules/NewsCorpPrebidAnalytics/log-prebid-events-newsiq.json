@@ -1,0 +1,241 @@
+{
+  "package": null,
+  "messages": [
+    {
+      "name": "LogPrebidEventsNewsIQ",
+      "fields": [
+        {
+          "rule": "optional",
+          "type": "fixed64",
+          "name": "timestamp",
+          "id": 1
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "remote_addr_macro",
+          "id": 2
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "user_agent_macro",
+          "id": 3
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "referer_url",
+          "id": 4
+        },
+        {
+          "rule": "optional",
+          "type": "uint32",
+          "name": "seller_member_id",
+          "id": 5
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "domain",
+          "id": 6
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "device",
+          "id": 7
+        },
+        {
+          "rule": "repeated",
+          "type": "Auction",
+          "name": "auctions",
+          "id": 8
+        },
+        {
+          "rule": "optional",
+          "type": "string",
+          "name": "platform",
+          "id": 9
+        }
+      ],
+      "messages": [
+        {
+          "name": "Auction",
+          "fields": [
+            {
+              "rule": "optional",
+              "type": "string",
+              "name": "version",
+              "id": 1
+            },
+            {
+              "rule": "optional",
+              "type": "fixed64",
+              "name": "auction_init_timestamp",
+              "id": 2
+            },
+            {
+              "rule": "optional",
+              "type": "string",
+              "name": "prebid_auction_id",
+              "id": 3
+            },
+            {
+              "rule": "optional",
+              "type": "uint32",
+              "name": "configured_timeout_ms",
+              "id": 4
+            },
+            {
+              "rule": "repeated",
+              "type": "AdUnit",
+              "name": "ad_units",
+              "id": 5
+            },
+            {
+              "rule": "optional",
+              "type": "uint32",
+              "name": "msg_type",
+              "id": 6
+            }
+          ],
+          "messages": [
+            {
+              "name": "AdUnit",
+              "fields": [
+                {
+                  "rule": "optional",
+                  "type": "string",
+                  "name": "ad_unit_code",
+                  "id": 1
+                },
+                {
+                  "rule": "repeated",
+                  "type": "Bid",
+                  "name": "bids",
+                  "id": 2
+                },
+                {
+                  "rule": "repeated",
+                  "type": "Param",
+                  "name": "params",
+                  "id": 3
+                }
+              ],
+              "messages": [
+                {
+                  "name": "Bid",
+                  "fields": [
+                    {
+                      "rule": "optional",
+                      "type": "string",
+                      "name": "bid_id",
+                      "id": 1
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "double",
+                      "name": "price",
+                      "id": 2
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "string",
+                      "name": "bidder_code",
+                      "id": 3
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "string",
+                      "name": "bidder_ad_unit_id",
+                      "id": 4
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "fixed64",
+                      "name": "request_timestamp",
+                      "id": 5
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "fixed64",
+                      "name": "response_timestamp",
+                      "id": 6
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "uint32",
+                      "name": "status_code",
+                      "id": 7
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "string",
+                      "name": "source",
+                      "id": 9
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "Creative",
+                      "name": "creative",
+                      "id": 8
+                    }
+                  ],
+                  "messages": [
+                    {
+                      "name": "Creative",
+                      "fields": [
+                        {
+                          "rule": "optional",
+                          "type": "string",
+                          "name": "creative_id",
+                          "id": 1
+                        },
+                        {
+                          "rule": "optional",
+                          "type": "uint32",
+                          "name": "width",
+                          "id": 2
+                        },
+                        {
+                          "rule": "optional",
+                          "type": "uint32",
+                          "name": "height",
+                          "id": 3
+                        },
+                        {
+                          "rule": "optional",
+                          "type": "string",
+                          "name": "brand",
+                          "id": 4
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Param",
+                  "fields": [
+                    {
+                      "rule": "optional",
+                      "type": "string",
+                      "name": "key",
+                      "id": 1
+                    },
+                    {
+                      "rule": "optional",
+                      "type": "string",
+                      "name": "value",
+                      "id": 2
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
