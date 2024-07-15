@@ -46,6 +46,42 @@ export const spec = {
 
     logInfo(anonymizedBidRequests);
     return anonymizedBidRequests;
+  },
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function (bid) {
+    if (!baseAdapter.isBidRequestValid) { return false; }
+    return baseAdapter.isBidRequestValid(bid);
+  },
+
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function (serverResponse, params) {
+    if (!baseAdapter.interpretResponse) { return []; }
+    return baseAdapter.interpretResponse(serverResponse, params);
+  },
+
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+    if (!baseAdapter.getUserSyncs) { return []; }
+    return baseAdapter.getUserSyncs(syncOptions, responses, gdprConsent);
+  },
+
+  /**
+   * Add element selector to javascript tracker to improve native viewability
+   * @param {Bid} bid
+   */
+  onBidWon: function (bid) {
+    if (!baseAdapter.onBidWon) { return; }
+    baseAdapter.onBidWon(bid);
   }
 };
 
