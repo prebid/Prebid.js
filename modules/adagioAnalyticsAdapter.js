@@ -226,6 +226,7 @@ function handlerAuctionInit(event) {
     const auctionId = rtdUid || prebidAuctionId;
 
     const adgRtdSession = deepAccess(event.bidderRequests[0], 'ortb2.site.ext.data.adg_rtd.session', {});
+
     const qp = {
       org_id: adagioAdapter.options.organizationId,
       site: adagioAdapter.options.site,
@@ -246,6 +247,7 @@ function handlerAuctionInit(event) {
       s_new: adgRtdSession.new || null,
       bdrs_src: biddersSrc,
     };
+
     if (adagioBidRequest && adagioBidRequest.bids) {
       const adagioAdUnitBids = adagioBidRequest.bids.filter(bid => bid.adUnitCode === adUnitCode);
       if (adagioAdUnitBids.length > 0) {
@@ -424,7 +426,7 @@ adagioAdapter.enableAnalytics = config => {
   _internal.getAdagioNs().versions.adagioAnalyticsAdapter = VERSION;
 
   let modules = getGlobal().installedModules;
-  if (modules && (modules.length == 0 || modules.indexOf('adagioRtdProvider') == -1 || modules.indexOf('rtdModule') == -1)) {
+  if (modules && (!modules.length || modules.indexOf('adagioRtdProvider') === -1 || modules.indexOf('rtdModule') === -1)) {
     logError('Adagio Analytics Adapter requires rtdModule & adagioRtdProvider modules which are not installed. No beacon will be sent');
     return;
   }
