@@ -68,20 +68,6 @@ export const spec = {
   interpretResponse: function (serverResponse, params) {
     if (!baseAdapter.interpretResponse) { return []; }
     return baseAdapter.interpretResponse(serverResponse, params);
-  },
-
-  getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (!baseAdapter.getUserSyncs) { return []; }
-    return baseAdapter.getUserSyncs(syncOptions, responses, gdprConsent);
-  },
-
-  /**
-   * Add element selector to javascript tracker to improve native viewability
-   * @param {Bid} bid
-   */
-  onBidWon: function (bid) {
-    if (!baseAdapter.onBidWon) { return; }
-    baseAdapter.onBidWon(bid);
   }
 };
 
