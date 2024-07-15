@@ -125,7 +125,7 @@ const converter = ortbConverter({
       deepSetValue(request, 'ext.localStorage.nexx360Id', nexx360LocalStorage.nexx360Id);
     }
     const amxId = getAmxId();
-    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId());
+    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId);
     deepSetValue(request, 'ext.version', '$prebid.version$');
     deepSetValue(request, 'ext.source', 'prebid.js');
     deepSetValue(request, 'ext.pageViewId', PAGE_VIEW_ID);
