@@ -130,76 +130,96 @@ export const spec = {
    * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (validBidRequests = [], bidderRequest) => validBidRequests.map(bid => ({
-    method: 'POST',
-    url: 'https://pb.dmxleo.com',
-    data: {
-      pbv: '$prebid.version$',
-      bidder_request: {
-        gdprConsent: {
-          apiVersion: deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1),
-          consentString: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
-          // Cast boolean in any case (eg: if value is int) to ensure type
-          gdprApplies: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies'),
-        },
-        refererInfo: {
-          page: deepAccess(bidderRequest, 'refererInfo.page', ''),
-        },
-        uspConsent: deepAccess(bidderRequest, 'uspConsent', ''),
-        gppConsent: {
-          gppString: deepAccess(bidderRequest, 'gppConsent.gppString') ||
-            deepAccess(bidderRequest, 'ortb2.regs.gpp', ''),
-          applicableSections: deepAccess(bidderRequest, 'gppConsent.applicableSections') ||
-            deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', []),
-        },
-      },
-      config: {
-        api_key: bid.params.apiKey
-      },
-      // Cast boolean in any case (value should be 0 or 1) to ensure type
-      coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),
-      // In app context, we need to retrieve additional informations
-      ...(!deepAccess(bidderRequest, 'ortb2.site') && !!deepAccess(bidderRequest, 'ortb2.app') ? {
-        appBundle: deepAccess(bidderRequest, 'ortb2.app.bundle', ''),
-        appStoreUrl: deepAccess(bidderRequest, 'ortb2.app.storeurl', ''),
-      } : {}),
-      ...(deepAccess(bidderRequest, 'ortb2.device') ? {
-        device: {
-          lmt: deepAccess(bidderRequest, 'ortb2.device.lmt', null),
-          ifa: deepAccess(bidderRequest, 'ortb2.device.ifa', ''),
-          atts: deepAccess(bidderRequest, 'ortb2.device.ext.atts', 0),
-        },
-      } : {}),
-      request: {
-        adUnitCode: deepAccess(bid, 'adUnitCode', ''),
-        auctionId: deepAccess(bid, 'auctionId', ''),
-        bidId: deepAccess(bid, 'bidId', ''),
-        mediaTypes: {
-          video: {
-            api: bid.mediaTypes?.[VIDEO]?.api || [],
-            mimes: bid.mediaTypes?.[VIDEO]?.mimes || [],
-            minduration: bid.mediaTypes?.[VIDEO]?.minduration || 0,
-            maxduration: bid.mediaTypes?.[VIDEO]?.maxduration || 0,
-            playbackmethod: bid.mediaTypes?.[VIDEO]?.playbackmethod || [],
-            plcmt: bid.mediaTypes?.[VIDEO]?.plcmt || 1, // Fallback to instream considering logic of `isBidRequestValid`
-            protocols: bid.mediaTypes?.[VIDEO]?.protocols || [],
-            skip: bid.mediaTypes?.[VIDEO]?.skip || 0,
-            skipafter: bid.mediaTypes?.[VIDEO]?.skipafter || 0,
-            skipmin: bid.mediaTypes?.[VIDEO]?.skipmin || 0,
-            startdelay: bid.mediaTypes?.[VIDEO]?.startdelay || 0,
-            w: bid.mediaTypes?.[VIDEO]?.w || 0,
-            h: bid.mediaTypes?.[VIDEO]?.h || 0,
+  buildRequests: function(validBidRequests = [], bidderRequest) {
+    // check consent to be able to read user cookie
+    const allowCookieReading =
+      // No GDPR applies
+      !deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ||
+      // OR GDPR applies and we have global consent
+      deepAccess(bidderRequest, 'gdprConsent.vendorData.hasGlobalConsent') === true ||
+      (
+        // Vendor consent
+        deepAccess(bidderRequest, 'gdprConsent.vendorData.vendor.consents.573') === true &&
+        // Purposes
+        [1, 3, 4].every(v => deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true) &&
+        // Flexible purposes
+        [2, 7, 9, 10].every(v =>
+          deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true ||
+          deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.legitimateInterests.${v}`) === true
+        )
+      );
+
+    return validBidRequests.map(bid => ({
+      method: 'POST',
+      url: 'https://pb.dmxleo.com',
+      data: {
+        pbv: '$prebid.version$',
+        bidder_request: {
+          gdprConsent: {
+            apiVersion: deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1),
+            consentString: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
+            // Cast boolean in any case (eg: if value is int) to ensure type
+            gdprApplies: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies'),
+          },
+          refererInfo: {
+            page: deepAccess(bidderRequest, 'refererInfo.page', ''),
+          },
+          uspConsent: deepAccess(bidderRequest, 'uspConsent', ''),
+          gppConsent: {
+            gppString: deepAccess(bidderRequest, 'gppConsent.gppString') ||
+          deepAccess(bidderRequest, 'ortb2.regs.gpp', ''),
+            applicableSections: deepAccess(bidderRequest, 'gppConsent.applicableSections') ||
+          deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', []),
           },
         },
-        sizes: bid.sizes || [],
+        config: {
+          api_key: bid.params.apiKey
+        },
+        // Cast boolean in any case (value should be 0 or 1) to ensure type
+        coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),
+        // In app context, we need to retrieve additional informations
+        ...(!deepAccess(bidderRequest, 'ortb2.site') && !!deepAccess(bidderRequest, 'ortb2.app') ? {
+          appBundle: deepAccess(bidderRequest, 'ortb2.app.bundle', ''),
+          appStoreUrl: deepAccess(bidderRequest, 'ortb2.app.storeurl', ''),
+        } : {}),
+        ...(deepAccess(bidderRequest, 'ortb2.device') ? {
+          device: {
+            lmt: deepAccess(bidderRequest, 'ortb2.device.lmt', null),
+            ifa: deepAccess(bidderRequest, 'ortb2.device.ifa', ''),
+            atts: deepAccess(bidderRequest, 'ortb2.device.ext.atts', 0),
+          },
+        } : {}),
+        request: {
+          adUnitCode: deepAccess(bid, 'adUnitCode', ''),
+          auctionId: deepAccess(bid, 'auctionId', ''),
+          bidId: deepAccess(bid, 'bidId', ''),
+          mediaTypes: {
+            video: {
+              api: bid.mediaTypes?.[VIDEO]?.api || [],
+              mimes: bid.mediaTypes?.[VIDEO]?.mimes || [],
+              minduration: bid.mediaTypes?.[VIDEO]?.minduration || 0,
+              maxduration: bid.mediaTypes?.[VIDEO]?.maxduration || 0,
+              playbackmethod: bid.mediaTypes?.[VIDEO]?.playbackmethod || [],
+              plcmt: bid.mediaTypes?.[VIDEO]?.plcmt,
+              protocols: bid.mediaTypes?.[VIDEO]?.protocols || [],
+              skip: bid.mediaTypes?.[VIDEO]?.skip || 0,
+              skipafter: bid.mediaTypes?.[VIDEO]?.skipafter || 0,
+              skipmin: bid.mediaTypes?.[VIDEO]?.skipmin || 0,
+              startdelay: bid.mediaTypes?.[VIDEO]?.startdelay,
+              w: bid.mediaTypes?.[VIDEO]?.w || 0,
+              h: bid.mediaTypes?.[VIDEO]?.h || 0,
+            },
+          },
+          sizes: bid.sizes || [],
+        },
+        video_metadata: getVideoMetadata(bid, bidderRequest),
       },
-      video_metadata: getVideoMetadata(bid, bidderRequest),
-    },
-    options: {
-      withCredentials: true,
-      crossOrigin: true,
-    },
-  })),
+      options: {
+        withCredentials: allowCookieReading,
+        crossOrigin: true,
+      },
+    }));
+  },
 
   /**
    * Map the response from the server into a list of bids.
@@ -224,7 +244,7 @@ export const spec = {
       const pixelSyncs = [];
 
       serverResponses.forEach((response) => {
-        (response.user_syncs || []).forEach((syncUrl) => {
+        (response?.body?.userSyncs || []).forEach((syncUrl) => {
           if (syncUrl.type === 'image') {
             pixelSyncs.push({ url: syncUrl.url, type: 'image' });
           }

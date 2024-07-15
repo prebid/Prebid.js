@@ -26,7 +26,7 @@ import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
-import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, TARGETING_KEYS } from 'src/constants.js';
+import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
 
 var assert = require('chai').assert;
@@ -235,6 +235,11 @@ describe('Unit: Prebid Module', function () {
     filters.isActualBid.restore();
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
+
+  it('should insert a locator frame on the page', () => {
+    $$PREBID_GLOBAL$$.processQueue();
+    expect(window.frames[PB_LOCATOR]).to.exist;
+  })
 
   describe('and global adUnits', () => {
     const startingAdUnits = [

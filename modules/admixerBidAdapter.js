@@ -13,7 +13,7 @@ const ALIASES = [
   {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
   {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
   {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
-  {code: 'admixerwl', endpoint: 'https://inv-nets-adxwl.admixer.com/adxwlprebid.aspx'},
+  'rtbstack'
 ];
 export const spec = {
   code: BIDDER_CODE,
@@ -23,8 +23,8 @@ export const spec = {
    * Determines whether or not the given bid request is valid.
    */
   isBidRequestValid: function (bid) {
-    return bid.bidder === 'admixerwl'
-      ? !!bid.params.clientId && !!bid.params.endpointId
+    return bid.bidder === 'rtbstack'
+      ? !!bid.params.tagId
       : !!bid.params.zone;
   },
   /**
@@ -51,8 +51,12 @@ export const spec = {
     };
     let endpointUrl;
     if (bidderRequest) {
-      const {bidderCode} = bidderRequest;
-      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
+      // checks if there is specified any endpointUrl in bidder config
+      endpointUrl = config.getConfig('bidderURL');
+      if (!endpointUrl && bidderRequest.bidderCode === 'rtbstack') {
+        logError('The bidderUrl config is required for RTB Stack bids. Please set it with setBidderConfig() for "rtbstack".');
+        return;
+      }
       // TODO: is 'page' the right value here?
       if (bidderRequest.refererInfo?.page) {
         payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
@@ -82,7 +86,7 @@ export const spec = {
     let urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
     return {
       method: 'POST',
-      url: bidderRequest.bidderCode === 'admixerwl' ? `${urlForRequest}?client=${payload.imps[0]?.params?.clientId}` : urlForRequest,
+      url: urlForRequest,
       data: payload,
     };
   },

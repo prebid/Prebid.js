@@ -1,5 +1,6 @@
+import { CLIENT_SECTIONS } from '../../src/fpd/oneClient.js';
 import {find} from '../../src/polyfill.js';
-import {compareCodeAndSlot, isGptPubadsDefined} from '../../src/utils.js';
+import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques} from '../../src/utils.js';
 
 /**
  * Returns filter function to match adUnitCode in slot
@@ -34,4 +35,25 @@ export function getGptSlotInfoForAdUnitCode(adUnitCode) {
     };
   }
   return {};
+}
+
+export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
+
+export function getSignals(fpd) {
+  const signals = Object.entries({
+    [taxonomies[0]]: getSegments(fpd, ['user.data'], 4),
+    [taxonomies[1]]: getSegments(fpd, CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
+  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
+    .filter(ob => ob);
+
+  return signals;
+}
+
+export function getSegments(fpd, sections, segtax) {
+  return sections
+    .flatMap(section => deepAccess(fpd, section) || [])
+    .filter(datum => datum.ext?.segtax === segtax)
+    .flatMap(datum => datum.segment?.map(seg => seg.id))
+    .filter(ob => ob)
+    .filter(uniques)
 }
