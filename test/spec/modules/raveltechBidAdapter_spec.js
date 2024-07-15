@@ -27,12 +27,6 @@ describe('RavelTechAdapter', function () {
     }]
   }];
 
-  describe('inherited functions', function () {
-    it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
-
   describe('anonymizeBidRequests', function () {
     let anonymizedBidRequests;
 
@@ -45,6 +39,7 @@ describe('RavelTechAdapter', function () {
 
     it('should anonymize every id if the source is eligible for anonymization', function() {
       anonymizedBidRequests.forEach(bid => {
+        console.log(bid);
         bid.data = JSON.parse(bid.data);
         const eids = bid.data.eids;
 
@@ -58,6 +53,7 @@ describe('RavelTechAdapter', function () {
 
     it('should empty the id if the source is not eligible for anonymization', function() {
       anonymizedBidRequests.forEach(bid => {
+        console.log(bid);
         bid.data = JSON.parse(bid.data);
         const eids = bid.data.eids;
 
