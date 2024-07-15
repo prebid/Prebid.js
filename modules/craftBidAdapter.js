@@ -4,11 +4,9 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
@@ -99,24 +97,6 @@ export const spec = {
     } catch (e) {
       return [];
     }
-  },
-
-  transformBidParams: function(params, isOpenRtb) {
-    params = convertTypes({
-      'sitekey': 'string',
-      'placementId': 'string',
-      'keywords': transformBidderParamKeywords,
-    }, params);
-    if (isOpenRtb) {
-      Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-    }
-    return params;
   },
 
   onBidWon: function(bid) {

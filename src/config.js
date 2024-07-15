@@ -27,17 +27,18 @@ import {
   logWarn,
   mergeDeep
 } from './utils.js';
-import CONSTANTS from './constants.json';
+import {DEBUG_MODE} from './constants.js';
 
-const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
+const DEFAULT_MAXBID_VALUE = 5000
 
-const DEFAULT_TIMEOUTBUFFER = 400;
+const DEFAULT_IFRAMES_CONFIG = {};
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';
@@ -154,12 +155,16 @@ export function newConfig() {
        */
       deviceAccess: DEFAULT_DEVICE_ACCESS,
 
-      // timeout buffer to adjust for bidder CDN latency
-      timeoutBuffer: DEFAULT_TIMEOUTBUFFER,
       disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
 
       // default max nested iframes for referer detection
       maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
+
+      // default max bid
+      maxBid: DEFAULT_MAXBID_VALUE,
+      userSync: {
+        topics: DEFAULT_IFRAMES_CONFIG
+      }
     };
 
     Object.defineProperties(newConfig,

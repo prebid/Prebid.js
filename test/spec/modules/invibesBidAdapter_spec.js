@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import { config } from 'src/config.js';
-import {spec, resetInvibes, stubDomainOptions, readGdprConsent} from 'modules/invibesBidAdapter.js';
+import {spec, resetInvibes, stubDomainOptions, readGdprConsent, storage} from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -187,6 +187,8 @@ describe('invibesBidAdapter:', function () {
     };
   }
 
+  let sandbox;
+
   beforeEach(function () {
     resetInvibes();
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -196,11 +198,13 @@ describe('invibesBidAdapter:', function () {
     };
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     this.cStub1.restore();
+    sandbox.restore();
   });
 
   describe('isBidRequestValid:', function () {
@@ -528,6 +532,8 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends undefined lid when no cookie', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      sandbox.stub(storage, 'getCookie').returns(null);
       let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.lId).to.be.undefined;
     });
@@ -558,6 +564,50 @@ describe('invibesBidAdapter:', function () {
 
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
+    });
+
+    it('does not send handIid when it doesnt exist in cookie', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      sandbox.stub(storage, 'getCookie').returns(null)
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              436: true
+            }
+          }
+        },
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      };
+      SetBidderAccess();
+
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.handIid).to.not.exist;
+    });
+
+    it('sends handIid when comes on cookie', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      global.document.cookie = 'handIid=abcdefghijkk';
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              436: true
+            }
+          }
+        },
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      };
+      SetBidderAccess();
+
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.handIid).to.equal('abcdefghijkk');
     });
 
     it('should send purpose 1', function () {

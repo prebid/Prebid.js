@@ -9,7 +9,7 @@ const fixturesPath = path.join(__dirname, 'fixtures');
 /**
  * Matches 'req.body' with the responseBody pair
  * @param {object} requestBody - `req.body` of incoming request hitting middleware 'fakeResponder'.
- * @returns {objct} responseBody
+ * @returns {object} responseBody
  */
 const matchResponse = function (requestBody) {
   let actualUuids = [];

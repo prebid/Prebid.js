@@ -1,23 +1,21 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {deepClone, generateUUID, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName} from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.1.0';
+export const ANALYTICS_VERSION = '2.3.0';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_TIMEOUT,
-    BILLABLE_EVENT,
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_TIMEOUT,
+  BILLABLE_EVENT,
+} = EVENTS;
 
 export const BIDDER_STATUS = {
   BID: 'bid',
@@ -28,6 +26,11 @@ export const BIDDER_STATUS = {
 const analyticsOptions = {};
 
 export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
+  const isSamplingForced = getParameterByName('greenbids_force_sampling');
+  if (isSamplingForced) {
+    logInfo('Greenbids Analytics: sampling flag detected, forcing analytics');
+    return true;
+  }
   if (samplingRate < 0 || samplingRate > 1) {
     logWarn('Sampling rate must be between 0 and 1');
     return true;
@@ -113,6 +116,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       bidder: bid.bidder,
       isTimeout: (status === BIDDER_STATUS.TIMEOUT),
       hasBid: (status === BIDDER_STATUS.BID),
+      params: (bid.params && Object.keys(bid.params).length > 0) ? bid.params : {},
     };
   },
   addBidResponseToMessage(message, bid, status) {
@@ -130,8 +134,11 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (bidderIndex === -1) {
       message.adUnits[adUnitIndex].bidders.push(this.serializeBidResponse(bid, status));
     } else {
+      message.adUnits[adUnitIndex].bidders[bidderIndex].params = (bid.params && Object.keys(bid.params).length > 0) ? bid.params : {};
       if (status === BIDDER_STATUS.BID) {
         message.adUnits[adUnitIndex].bidders[bidderIndex].hasBid = true;
+        message.adUnits[adUnitIndex].bidders[bidderIndex].cpm = bid.cpm;
+        message.adUnits[adUnitIndex].bidders[bidderIndex].currency = bid.currency;
       } else if (status === BIDDER_STATUS.TIMEOUT) {
         message.adUnits[adUnitIndex].bidders[bidderIndex].isTimeout = true;
       }

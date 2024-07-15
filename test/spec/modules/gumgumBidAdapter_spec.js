@@ -44,9 +44,9 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'inSlot': '789'
       };
 
@@ -54,33 +54,33 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return true when inslot sends sizes and trackingid', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'inSlot': '789',
         'sizes': [[0, 1], [2, 3], [4, 5], [6, 7]]
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
 
     it('should return false when no unit type is specified', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placementId': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when bidfloor is not a number', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'inSlot': '789',
         'bidfloor': '0.50'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false if invalid request id is found', function () {
@@ -100,6 +100,28 @@ describe('gumgumAdapter', function () {
 
   describe('buildRequests', function () {
     let sizesArray = [[300, 250], [300, 600]];
+    const bidderRequest = {
+      ortb2: {
+        site: {
+          content: {
+            data: [{
+              name: 'www.iris.com',
+              ext: {
+                segtax: 500,
+                cids: ['iris_c73g5jq96mwso4d8']
+              }
+            }]
+          },
+          page: 'http://pub.com/news',
+          ref: 'http://google.com',
+          publisher: {
+            id: 'p10000',
+            domain: 'pub.com'
+          }
+        }
+      }
+    };
+
     let bidRequests = [
       {
         gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
@@ -192,6 +214,8 @@ describe('gumgumAdapter', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.aun).to.equal(bidRequests[0].adUnitCode);
+      expect(bidRequest.data.displaymanager).to.equal('Prebid.js - gumgum');
+      expect(bidRequest.data.displaymanagerver).to.equal(JCSI.pbv);
     });
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
@@ -257,19 +281,17 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.have.property('iriscat');
     });
+    it('should set the irisid param when found iris_c73g5jq96mwso4d8', function() {
+      const request = { ...bidRequests[0], params: { irisid: 'abc123' } };
+      const bidRequest = spec.buildRequests([request], bidderRequest)[0];
+      expect(bidRequest.data).to.have.property('irisid', 'iris_c73g5jq96mwso4d8');
+    });
 
     it('should not set the iriscat param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.not.have.property('iriscat');
     });
-
-    it('should set the irisid param when found', function () {
-      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.have.property('irisid');
-    });
-
     it('should not set the irisid param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
@@ -283,10 +305,38 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set the global placement id (gpid) if in adserver property', function () {
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const req = { ...bidRequests[0],
+        ortb2Imp: {
+          ext: {
+            gpid: '/17037559/jeusol/jeusol_D_1',
+            data: {
+              adserver: {
+                name: 'test',
+                adslot: 123456
+              }
+            }
+          }
+        } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(123456);
+      expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
+    });
+    it('should set ae value to 1 for PAAPI', function () {
+      const req = { ...bidRequests[0],
+        ortb2Imp: {
+          ext: {
+            ae: 1,
+            data: {
+              adserver: {
+                name: 'test',
+                adslot: 123456
+              }
+            }
+          }
+        } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('ae');
+      expect(bidRequest.data.ae).to.equal(true);
     });
 
     it('should set the global placement id (gpid) if in pbadslot property', function () {
@@ -586,6 +636,29 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gppString).to.eq('')
       expect(bidRequest.data.gppSid).to.eq('')
+    });
+    it('should add DSA information to payload if available', function () {
+      // Define the sample ORTB2 object with DSA information
+      const ortb2 = {
+        regs: {
+          ext: {
+            dsa: {
+              dsarequired: '1',
+              pubrender: '2',
+              datatopub: '3',
+              transparency: [{
+                domain: 'test.com',
+                dsaparams: [1, 2, 3]
+              }]
+            }
+          }
+        }
+      };
+      const fakeBidRequest = { ortb2 };
+      // Call the buildRequests function to generate the bid request
+      const [bidRequest] = spec.buildRequests(bidRequests, fakeBidRequest);
+      // Assert that the DSA information in the bid request matches the provided ORTB2 data
+      expect(bidRequest.data.dsa).to.deep.equal(JSON.stringify(fakeBidRequest.ortb2.regs.ext.dsa));
     });
     it('should not set coppa parameter if coppa config is set to false', function () {
       config.setConfig({

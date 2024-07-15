@@ -5,7 +5,7 @@ import {includes} from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adnow';
-const ENDPOINT = 'https://n.ads3-adnow.com/a';
+const ENDPOINT = 'https://n.nnowa.com/a';
 
 /**
  * @typedef {object} CommonBidData

@@ -2,7 +2,7 @@ import { logError, deepClone, generateUUID, deepSetValue, deepAccess } from '../
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
 const MODULE_VERSION = '2.0.0';
@@ -28,7 +28,7 @@ function onAuctionInitEvent(auctionDetails) {
   let greenbidsId = deepAccess(auctionDetails.adUnits[0], 'ortb2Imp.ext.greenbids.greenbidsId', defaultId);
   /* greenbids was successfully called so we emit the event */
   if (greenbidsId !== defaultId) {
-    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+    events.emit(EVENTS.BILLABLE_EVENT, {
       type: 'auction',
       billingId: generateUUID(),
       auctionId: auctionDetails.auctionId,

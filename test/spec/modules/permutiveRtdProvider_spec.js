@@ -212,6 +212,28 @@ describe('permutiveRtdProvider', function () {
               return { id: seg }
             }),
           },
+          {
+            name: 'permutive.com',
+            ext: {
+              segtax: 600
+            },
+            segment: [
+              { id: '1' },
+              { id: '2' },
+              { id: '3' },
+            ],
+          },
+          {
+            name: 'permutive.com',
+            ext: {
+              segtax: 601
+            },
+            segment: [
+              { id: '100' },
+              { id: '101' },
+              { id: '102' },
+            ],
+          },
         ])
       })
     })
@@ -462,7 +484,9 @@ describe('permutiveRtdProvider', function () {
           _psegs: [],
           _ppam: [],
           _pcrprs: [],
-          _pssps: { ssps: [], cohorts: [] }
+          _pindexs: [],
+          _pssps: { ssps: [], cohorts: [] },
+          _ppsts: {},
         })
 
         setBidderRtb(bidderConfig, moduleConfig, segmentsData)
@@ -546,6 +570,7 @@ describe('permutiveRtdProvider', function () {
       const data = transformedTargeting()
       expect(getSegments(250)).to.deep.equal(data)
     })
+
     it('should enforce max segments', function () {
       const max = 1
       const segments = getSegments(max)
@@ -553,10 +578,34 @@ describe('permutiveRtdProvider', function () {
       for (const key in segments) {
         if (key === 'ssp') {
           expect(segments[key].cohorts).to.have.length(max)
+        } else if (key === 'topics') {
+          for (const topic in segments[key]) {
+            expect(segments[key][topic]).to.have.length(max)
+          }
         } else {
           expect(segments[key]).to.have.length(max)
         }
       }
+    })
+
+    it('should coerce numbers to strings', function () {
+      setLocalStorage({ _prubicons: [1, 2, 3], _pssps: { ssps: ['foo', 'bar'], cohorts: [4, 5, 6] } })
+
+      const segments = getSegments(200)
+
+      expect(segments.rubicon).to.deep.equal(['1', '2', '3'])
+      expect(segments.ssp.ssps).to.deep.equal(['foo', 'bar'])
+      expect(segments.ssp.cohorts).to.deep.equal(['4', '5', '6'])
+    })
+
+    it('should return empty values on unexpected format', function () {
+      setLocalStorage({ _prubicons: 'a string instead?', _pssps: 123 })
+
+      const segments = getSegments(200)
+
+      expect(segments.rubicon).to.deep.equal([])
+      expect(segments.ssp.ssps).to.deep.equal([])
+      expect(segments.ssp.cohorts).to.deep.equal([])
     })
   })
 
@@ -677,13 +726,25 @@ function getConfig () {
 }
 
 function transformedTargeting (data = getTargetingData()) {
+  const topics = (() => {
+    const topics = {}
+    for (const topic in data._ppsts) {
+      topics[topic] = data._ppsts[topic].map(String)
+    }
+    return topics
+  })()
+
   return {
-    ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
-    appnexus: data._papns,
-    ix: data._pindexs,
-    rubicon: data._prubicons,
-    gam: data._pdfps,
-    ssp: data._pssps,
+    ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)].map(String),
+    appnexus: data._papns.map(String),
+    ix: data._pindexs.map(String),
+    rubicon: data._prubicons.map(String),
+    gam: data._pdfps.map(String),
+    ssp: {
+      ssps: data._pssps.ssps.map(String),
+      cohorts: data._pssps.cohorts.map(String)
+    },
+    topics,
   }
 }
 
@@ -696,7 +757,8 @@ function getTargetingData () {
     _ppam: ['ppam1', 'ppam2'],
     _pindexs: ['pindex1', 'pindex2'],
     _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
-    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] }
+    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] },
+    _ppsts: { '600': [1, 2, 3], '601': [100, 101, 102] },
   }
 }
 

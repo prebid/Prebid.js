@@ -1,12 +1,12 @@
-import {deepClone, logError, getParameterByName} from '../src/utils.js';
+import {deepClone, logError, getParameterByName, logMessage} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const VERSION = '2.0.0';
+const VERSION = '2.0.2';
 const MODULE_NAME = 'nobidAnalyticsAdapter';
 const ANALYTICS_OPT_FLUSH_TIMEOUT_SECONDS = 5 * 1000;
 const RETENTION_SECONDS = 1 * 24 * 3600;
@@ -17,19 +17,16 @@ const url = 'localhost:8383/event';
 const GVLID = 816;
 const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME, moduleType: MODULE_TYPE_ANALYTICS});
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    BID_REQUESTED,
-    BID_TIMEOUT,
-    BID_RESPONSE,
-    BID_WON,
-    AUCTION_END,
-    AD_RENDER_SUCCEEDED
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  BID_REQUESTED,
+  BID_TIMEOUT,
+  BID_RESPONSE,
+  BID_WON,
+  AUCTION_END,
+  AD_RENDER_SUCCEEDED
+} = EVENTS;
 function log (msg) {
-  // eslint-disable-next-line no-console
-  console.log(`%cNoBid Analytics ${VERSION}`, 'padding: 2px 8px 2px 8px; background-color:#f50057; color: white', msg);
+  logMessage(`%cNoBid Analytics ${VERSION}: ${msg}`);
 }
 function isJson (str) {
   return str && str.startsWith('{') && str.endsWith('}');
@@ -54,6 +51,8 @@ function sendEvent (event, eventType) {
     return;
   }
   try {
+    event.version = VERSION;
+    event.pbver = '$prebid.version$';
     const endpoint = `${resolveEndpoint()}/event/${eventType}?pubid=${nobidAnalytics.initOptions.siteId}`;
     ajax(endpoint,
       function (response) {
@@ -83,7 +82,7 @@ function cleanupObjectAttributes (obj, attributes) {
 }
 function sendBidWonEvent (event, eventType) {
   const data = deepClone(event);
-  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'timeToRespond']);
+  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'currency', 'originalCpm', 'originalCurrency', 'timeToRespond']);
   if (nobidAnalytics.topLocation) data.topLocation = nobidAnalytics.topLocation;
   sendEvent(data, eventType);
 }
@@ -95,7 +94,7 @@ function sendAuctionEndEvent (event, eventType) {
 
   cleanupObjectAttributes(data, ['timestamp', 'timeout', 'auctionId', 'bidderRequests', 'bidsReceived']);
   if (data) cleanupObjectAttributes(data.bidderRequests, ['bidderCode', 'bidderRequestId', 'bids', 'refererInfo']);
-  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm']);
+  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm', 'currency', 'originalCpm', 'originalCurrency']);
   if (data) cleanupObjectAttributes(data.noBids, ['bidder', 'sizes', 'bidId']);
   if (data.bidderRequests) {
     data.bidderRequests.forEach(bidderRequest => {
@@ -176,10 +175,9 @@ nobidAnalytics = {
   ANALYTICS_DATA_NAME: 'analytics.nobid.io',
   ANALYTICS_OPT_NAME: 'analytics.nobid.io.optData'
 }
-
 adapterManager.registerAnalyticsAdapter({
   adapter: nobidAnalytics,
-  code: 'nobidAnalytics',
+  code: 'nobid',
   gvlid: GVLID
 });
 nobidAnalytics.originalAdUnits = {};
@@ -242,7 +240,7 @@ window.nobidCarbonizer = {
       adunit.bids = allowedBidders;
     }
     for (const adunit of adunits) {
-      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = JSON.parse(JSON.stringify(adunit));
+      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = deepClone(adunit);
     };
     if (this.isActive()) {
       // 5% of the time do not block;

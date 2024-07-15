@@ -32,7 +32,7 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll', 'iionads', 'apester'],
+  aliases: ['pll', 'iionads', 'apester', 'adsyield'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -62,7 +62,7 @@ export const spec = {
     }
     const placements = groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
     return Object.keys(placements)
-      .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit)));
+      .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit), bidderRequest));
   },
 
   /**
@@ -119,7 +119,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function buildRequest(winTop, host, adUnits) {
+function buildRequest(winTop, host, adUnits, bidderRequest) {
   return {
     method: 'POST',
     url: `https://${host}/hb`,
@@ -127,7 +127,9 @@ function buildRequest(winTop, host, adUnits) {
       secure: (location.protocol === 'https:'),
       deviceWidth: winTop.screen.width,
       deviceHeight: winTop.screen.height,
-      adUnits: adUnits
+      adUnits: adUnits,
+      sua: bidderRequest?.ortb2?.device?.sua,
+      page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
     }
   }
 }
