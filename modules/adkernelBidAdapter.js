@@ -97,7 +97,6 @@ export const spec = {
     {code: 'digiad'},
     {code: 'monetix'},
     {code: 'hyperbrainz'},
-    {code: 'globalsun'},
     {code: 'voisetech'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
