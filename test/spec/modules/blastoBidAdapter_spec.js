@@ -1,16 +1,15 @@
-import { expect } from 'chai';
-import { spec } from 'modules/blastoBidAdapter';
+import {expect} from 'chai';
+import {spec} from 'modules/blastoBidAdapter';
 import 'modules/priceFloors.js';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { config } from '../../../src/config.js';
-import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {config} from '../../../src/config.js';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 
 // load modules that register ORTB processors
 import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
-import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
@@ -143,13 +142,6 @@ const NATIVE_BID_REQUEST = {
   uspConsent: 'uspConsent'
 };
 
-const bidderRequest = {
-  refererInfo: {
-    page: 'https://publisher.com/home',
-    ref: 'https://referrer'
-  }
-};
-
 const gdprConsent = {
   apiVersion: 2,
   consentString: 'CONSENT',
@@ -160,6 +152,18 @@ const gdprConsent = {
 
 describe('blastoAdapter', function () {
   const adapter = newBidder(spec);
+
+  let bidderRequest;
+
+  beforeEach(() => {
+    bidderRequest = {
+      refererInfo: {
+        page: 'https://publisher.com/home',
+        ref: 'https://referrer'
+      }
+    }
+  })
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -171,20 +175,26 @@ describe('blastoAdapter', function () {
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
         .returns(true);
-      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
-      expect(serverRequest.data.regs.coppa).to.equal(1);
-      config.getConfig.restore();
+      return addFPDToBidderRequest(bidderRequest).then(bidderRequest => {
+        const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], bidderRequest);
+        expect(serverRequest.data.regs.coppa).to.equal(1);
+        config.getConfig.restore();
+      })
     });
 
     it('should send the GDPR Consent data in the request', function () {
-      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest({ ...bidderRequest, gdprConsent }));
-      expect(serverRequest.data.regs.ext.gdpr).to.exist.and.to.equal(1);
-      expect(serverRequest.data.user.ext.consent).to.equal('CONSENT');
+      return addFPDToBidderRequest({ ...bidderRequest, gdprConsent }).then(bidderRequest => {
+        const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], bidderRequest);
+        expect(serverRequest.data.regs.ext.gdpr).to.exist.and.to.equal(1);
+        expect(serverRequest.data.user.ext.consent).to.equal('CONSENT');
+      })
     });
 
     it('should send the CCPA data in the request', function () {
-      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}));
-      expect(serverRequest.data.regs.ext.us_privacy).to.equal('1YYY');
+      return addFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}).then(bidderRequest => {
+        const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], bidderRequest);
+        expect(serverRequest.data.regs.ext.us_privacy).to.equal('1YYY');
+      })
     });
   });
 
@@ -202,14 +212,18 @@ describe('blastoAdapter', function () {
   });
 
   describe('build request', function () {
+    beforeEach(() => {
+      return addFPDToBidderRequest(bidderRequest).then(br => { bidderRequest = br });
+    });
+
     it('should return an empty array when no bid requests', function () {
-      const bidRequest = spec.buildRequests([], syncAddFPDToBidderRequest(bidderRequest));
+      const bidRequest = spec.buildRequests([], bidderRequest);
       expect(bidRequest).to.be.an('array');
       expect(bidRequest.length).to.equal(0);
     });
 
     it('should return a valid bid request object', function () {
-      const request = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([SIMPLE_BID_REQUEST], bidderRequest);
       expect(request).to.not.equal('array');
       expect(request.data).to.be.an('object');
       expect(request.method).to.equal('POST');
@@ -225,7 +239,7 @@ describe('blastoAdapter', function () {
     });
 
     it('should return a valid bid BANNER request object', function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([BANNER_BID_REQUEST], bidderRequest);
       expect(request.data.imp[0].banner).to.exist;
       expect(request.data.imp[0].banner.format[0].w).to.be.an('number');
       expect(request.data.imp[0].banner.format[0].h).to.be.an('number');
@@ -233,7 +247,7 @@ describe('blastoAdapter', function () {
 
     if (FEATURES.VIDEO) {
       it('should return a valid bid VIDEO request object', function () {
-        const request = spec.buildRequests([VIDEO_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
+        const request = spec.buildRequests([VIDEO_BID_REQUEST], bidderRequest);
         expect(request.data.imp[0].video).to.exist;
         expect(request.data.imp[0].video.w).to.be.an('number');
         expect(request.data.imp[0].video.h).to.be.an('number');
@@ -241,7 +255,7 @@ describe('blastoAdapter', function () {
     }
 
     it('should return a valid bid NATIVE request object', function () {
-      const request = spec.buildRequests([NATIVE_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([NATIVE_BID_REQUEST], bidderRequest);
       expect(request.data.imp[0]).to.be.an('object');
     });
   })
@@ -291,7 +305,7 @@ describe('blastoAdapter', function () {
         }
       };
       it('should interpret server response', function () {
-        const bidRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+        const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
         const bids = spec.interpretResponse(serverResponse, bidRequest);
         expect(bids).to.be.an('array');
         const bid = bids[0];
