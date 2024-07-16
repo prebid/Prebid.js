@@ -12,7 +12,7 @@ import {
 } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { BID_STATUS, EVENTS, TARGETING_KEYS } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../src/auction.js';
@@ -36,8 +36,7 @@ const PRICE_GRANULARITY = {
 };
 
 const MEDIANET_BIDDER_CODE = 'medianet';
-// eslint-disable-next-line no-undef
-const PREBID_VERSION = getGlobal().version;
+const PREBID_VERSION = '$prebid.version$'
 const ERROR_CONFIG_JSON_PARSE = 'analytics_config_parse_fail';
 const ERROR_CONFIG_FETCH = 'analytics_config_ajax_fail';
 const ERROR_WINNING_BID_ABSENT = 'winning_bid_absent';
@@ -590,7 +589,7 @@ function bidResponseHandler(bid) {
     dfpbd = bid[priceGranularityKey] || cpm;
   }
   bidObj.dfpbd = dfpbd;
-  if (bid.status === CONSTANTS.BID_STATUS.BID_REJECTED) {
+  if (bid.status === BID_STATUS.BID_REJECTED) {
     bidObj.status = BID_FLOOR_REJECTED;
   } else {
     bidObj.status = BID_SUCCESS;
@@ -660,12 +659,12 @@ function setTargetingHandler(params) {
       adunitObj.targeting = params[adunit];
       auctionObj.setTargetingTime = Date.now();
       let targetingObj = Object.keys(params[adunit]).reduce((result, key) => {
-        if (key.indexOf(CONSTANTS.TARGETING_KEYS.AD_ID) !== -1) {
+        if (key.indexOf(TARGETING_KEYS.AD_ID) !== -1) {
           result[key] = params[adunit][key]
         }
         return result;
       }, {});
-      const winnerAdId = params[adunit][CONSTANTS.TARGETING_KEYS.AD_ID];
+      const winnerAdId = params[adunit][TARGETING_KEYS.AD_ID];
       let winningBid;
       let bidAdIds = Object.keys(targetingObj).map(k => targetingObj[k]);
       auctionObj.bidWrapper.bidObjs.filter((bid) => bidAdIds.indexOf(bid.adId) !== -1).map(function(bid) {
@@ -845,35 +844,35 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
       logInfo(eventType, args);
     }
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT: {
+      case EVENTS.AUCTION_INIT: {
         auctionInitHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.BID_REQUESTED: {
+      case EVENTS.BID_REQUESTED: {
         bidRequestedHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.BID_RESPONSE: {
+      case EVENTS.BID_RESPONSE: {
         bidResponseHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.BID_TIMEOUT: {
+      case EVENTS.BID_TIMEOUT: {
         bidTimeoutHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.NO_BID: {
+      case EVENTS.NO_BID: {
         noBidResponseHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.AUCTION_END: {
+      case EVENTS.AUCTION_END: {
         auctionEndHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.SET_TARGETING : {
+      case EVENTS.SET_TARGETING: {
         setTargetingHandler(args);
         break;
       }
-      case CONSTANTS.EVENTS.BID_WON: {
+      case EVENTS.BID_WON: {
         bidWonHandler(args);
         break;
       }

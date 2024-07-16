@@ -1,5 +1,6 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
+import {getStorageManager} from 'src/storageManager.js';
 import {spec} from 'modules/seedingAllianceBidAdapter.js';
 import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
@@ -97,6 +98,84 @@ describe('SeedingAlliance adapter', function () {
       assert.equal(assets[3].id, 2);
       assert.equal(assets[4].id, 4);
       assert.equal(assets[5].id, 5);
+    });
+  });
+
+  describe('check user ID functionality', function () {
+    let storage = getStorageManager({ bidderCode: 'seedingAlliance' });
+    let localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+    let getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    const bidRequests = [{
+      bidId: 'bidId',
+      params: {}
+    }];
+    const bidderRequest = {
+      refererInfo: { referer: 'page' },
+      gdprConsent: 'CP0j9IAP0j9IAAGABCENAYEgAP_gAAAAAAYgIxBVBCpNDWFAMHBVAJIgCYAU1sARIAQAABCAAyAFAAOA8IAA0QECEAQAAAACAAAAgVABAAAAAABEAACAAAAEAQFkAAQQgAAIAAAAAAEQQgBQAAgAAAAAEAAIgAABAwQAkACQIYLEBUCAhIAgCgAAAIgBgICAAgMACEAYAAAAAAIAAIBAAgIEMIAAAAECAQAAAFhIEoACAAKgAcgA-AEAAMgAaABEACYAG8APwAhIBDAESAJYATQAw4B9gH6ARQAjQBKQC5gF6AMUAbQA3ACdgFDgLzAYMAw0BmYDVwGsgOCAcmA8cCEMELQQuCAAgGQgQMHQKAAKgAcgA-AEAAMgAaABEACYAG8AP0AhgCJAEsAJoAYYA0YB9gH6ARQAiwBIgCUgFzAL0AYoA2gBuAEXgJkATsAocBeYDBgGGgMqAZYAzMBpoDVwHFgOTAeOBC0cAHAAQABcAKACEAF0AMEAZCQgFABMADeARQAlIBcwDFAG0AeOBCgCFpAAGAAgBggEMyUAwABAAHAAPgBEACZAIYAiQB-AFzAMUAi8BeYEISQAMAC4DLAIZlIEAAFQAOQAfACAAGQANAAiABMACkAH6AQwBEgDRgH4AfoBFgCRAEpALmAYoA2gBuAEXgJ2AUOAvMBhoDLAGsgOCAcmA8cCEIELQIZlAAoAFwB9gLoAYIBAwtADAL0AzMB44AAA.f_wAAAAAAAAA'
+    }
+    let request;
+
+    before(function () {
+      storage.removeDataFromLocalStorage('nativendo_id');
+      const localStorageData = {
+        nativendo_id: '123'
+      };
+
+      getDataFromLocalStorageStub.callsFake(function (key) {
+        return localStorageData[key];
+      });
+    });
+
+    it('should return an empty array if local storage is not enabled', function () {
+      localStorageIsEnabledStub.returns(false);
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        seedingAlliance: {
+          storageAllowed: false
+        }
+      };
+
+      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      expect(request.user.ext.eids).to.be.an('array').that.is.empty;
+    });
+
+    it('should return an empty array if local storage is enabled but storageAllowed is false', function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        seedingAlliance: {
+          storageAllowed: false
+        }
+      };
+      localStorageIsEnabledStub.returns(true);
+
+      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      expect(request.user.ext.eids).to.be.an('array').that.is.empty;
+    });
+
+    it('should return a non empty array if local storage is enabled and storageAllowed is true', function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        seedingAlliance: {
+          storageAllowed: true
+        }
+      };
+      localStorageIsEnabledStub.returns(true);
+
+      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+      expect(request.user.ext.eids).to.be.an('array').that.is.not.empty;
+    });
+
+    it('should return an array containing the nativendoUserEid', function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        seedingAlliance: {
+          storageAllowed: true
+        }
+      };
+      localStorageIsEnabledStub.returns(true);
+
+      let nativendoUserEid = { source: 'nativendo.de', uids: [{ id: '123', atype: 1 }] };
+      storage.setDataInLocalStorage('nativendo_id', '123');
+
+      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(request.user.ext.eids).to.deep.include(nativendoUserEid);
     });
   });
 

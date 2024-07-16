@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * This module adds uid2 ID support to the User ID module
  * The {@link module:modules/userId} module is required.
@@ -69,7 +68,7 @@ export const uid2IdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleConfig} [configparams]
+   * @param {SubmoduleConfig} config
    * @param {ConsentData|undefined} consentData
    * @returns {uid2Id}
    */
@@ -108,6 +107,10 @@ function decodeImpl(value) {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
     const result = { uid2: { id: value } };
     return result;
+  }
+  if (value.latestToken === 'optout') {
+    _logInfo('Found optout token.  Refresh is unavailable for this token.');
+    return { uid2: { optout: true } };
   }
   if (Date.now() < value.latestToken.identity_expires) {
     return { uid2: { id: value.latestToken.advertising_token } };

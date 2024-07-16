@@ -3,6 +3,16 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const NETWORK_ID = 10922;
 const AD_TYPES = [4309, 641];
 const DTX_TYPES = [5061];
@@ -15,6 +25,7 @@ const DEFAULT_CREATIVE_TYPE = 'NativeX';
 const VALID_CREATIVE_TYPES = ['DTX', 'NativeX'];
 const FLIPP_USER_KEY = 'flipp-uid';
 const COMPACT_DEFAULT_HEIGHT = 600;
+const STANDARD_DEFAULT_HEIGHT = 1800;
 
 let userKey = null;
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -97,7 +108,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} validBidRequests[] an array of bids
+   * @param {validBidRequests} validBidRequests an array of bids
    * @param {BidderRequest} bidderRequest master bidRequest object
    * @return ServerRequest Info describing the request to the server.
    */
@@ -156,7 +167,10 @@ export const spec = {
     if (!isEmpty(res) && !isEmpty(res.decisions) && !isEmpty(res.decisions.inline)) {
       return res.decisions.inline.map(decision => {
         const placement = placements.find(p => p.prebid.requestId === decision.prebid?.requestId);
-        const height = placement.options?.startCompact ? COMPACT_DEFAULT_HEIGHT : decision.height;
+        const customData = decision.contents[0]?.data?.customData;
+        const height = placement.options?.startCompact
+          ? customData?.compactHeight ?? COMPACT_DEFAULT_HEIGHT
+          : customData?.standardHeight ?? STANDARD_DEFAULT_HEIGHT;
         return {
           bidderCode: BIDDER_CODE,
           requestId: decision.prebid?.requestId,

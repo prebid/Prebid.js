@@ -707,4 +707,67 @@ describe('jixie Adapter', function () {
       expect(jixieaux.ajax.calledWith(TRACKINGURL_)).to.equal(true);
     })
   }); // describe
+
+  describe('getUserSyncs', function () {
+    it('it should favour iframe over pixel if publisher allows iframe usersync', function () {
+      const syncOptions = {
+        'iframeEnabled': true,
+        'pixelEnabled': true,
+      }
+      const response = {
+        'userSyncs': [
+          {
+            'uf': 'https://syncstuff.jixie.io/',
+            'up': 'https://syncstuff.jixie.io/image.gif'
+          },
+          {
+            'up': 'https://syncstuff.jixie.io/image1.gif'
+          }
+        ]
+      }
+      let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+      expect(result[0].type).to.equal('iframe')
+      expect(result[1].type).to.equal('image')
+    })
+
+    it('it should pick pixel if publisher not allow iframe', function () {
+      const syncOptions = {
+        'iframeEnabled': false,
+        'pixelEnabled': true,
+      }
+      const response = {
+        'userSyncs': [
+          {
+            'uf': 'https://syncstuff.jixie.io/',
+            'up': 'https://syncstuff.jixie.io/image.gif'
+          },
+          {
+            'up': 'https://syncstuff.jixie.io/image1.gif'
+          }
+        ]
+      }
+      let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+      expect(result[0].type).to.equal('image')
+      expect(result[1].type).to.equal('image')
+    })
+
+    it('it should return nothing if pub only allow pixel but all usersyncs are iframe only', function () {
+      const syncOptions = {
+        'iframeEnabled': false,
+        'pixelEnabled': true,
+      }
+      const response = {
+        'userSyncs': [
+          {
+            'uf': 'https://syncstuff.jixie.io/',
+          },
+          {
+            'uf': 'https://syncstuff2.jixie.io/',
+          }
+        ]
+      }
+      let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
+      expect(result.length).to.equal(0)
+    })
+  })
 });

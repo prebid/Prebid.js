@@ -5,8 +5,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import {parseDomain} from '../src/refererDetection.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { parseDomain } from '../src/refererDetection.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
@@ -35,7 +38,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'h': DATA_TYPES.NUMBER,
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
-  'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
@@ -490,7 +493,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = (getGlobal().version !== null) ? encodeURIComponent(getGlobal().version) : -1;
+  let pbjsv = 'v' + '$prebid.version$';
 
   return {
     method: 'POST',

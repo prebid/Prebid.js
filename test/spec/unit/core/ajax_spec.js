@@ -232,7 +232,7 @@ describe('attachCallbacks', () => {
     };
   }
 
-  function expectNullXHR(response) {
+  function expectNullXHR(response, reason) {
     return new Promise((resolve, reject) => {
       attachCallbacks(Promise.resolve(response), {
         success: () => {
@@ -246,7 +246,8 @@ describe('attachCallbacks', () => {
             statusText: '',
             responseText: '',
             response: '',
-            responseXML: null
+            responseXML: null,
+            reason
           });
           expect(xhr.getResponseHeader('any')).to.be.null;
           resolve();
@@ -256,8 +257,20 @@ describe('attachCallbacks', () => {
   }
 
   it('runs error callback on rejections', () => {
-    return expectNullXHR(Promise.reject(new Error()));
+    const err = new Error();
+    return expectNullXHR(Promise.reject(err), err);
   });
+
+  it('sets timedOut = true on fetch timeout', (done) => {
+    const ctl = new AbortController();
+    ctl.abort();
+    attachCallbacks(fetch('/', {signal: ctl.signal}), {
+      error(_, xhr) {
+        expect(xhr.timedOut).to.be.true;
+        done();
+      }
+    });
+  })
 
   Object.entries({
     '2xx response': {
@@ -368,8 +381,9 @@ describe('attachCallbacks', () => {
       });
 
       it(`runs error callback if body cannot be retrieved`, () => {
-        response.text = () => Promise.reject(new Error());
-        return expectNullXHR(response);
+        const err = new Error();
+        response.text = () => Promise.reject(err);
+        return expectNullXHR(response, err);
       });
 
       if (success) {
@@ -391,24 +405,22 @@ describe('attachCallbacks', () => {
     }).forEach(([cbType, makeResponse]) => {
       it(`do not choke ${cbType} callbacks`, () => {
         const {response} = makeResponse();
-        return new Promise((resolve) => {
-          const result = {success: false, error: false};
-          attachCallbacks(Promise.resolve(response), {
-            success() {
-              result.success = true;
-              throw new Error();
-            },
-            error() {
-              result.error = true;
-              throw new Error();
-            }
+        const result = {success: false, error: false};
+        return attachCallbacks(Promise.resolve(response), {
+          success() {
+            result.success = true;
+            throw new Error();
+          },
+          error() {
+            result.error = true;
+            throw new Error();
+          }
+        }).catch(() => null)
+          .then(() => {
+            Object.entries(result).forEach(([typ, ran]) => {
+              expect(ran).to.be[typ === cbType ? 'true' : 'false'];
+            });
           });
-          setTimeout(() => resolve(result), 20);
-        }).then(result => {
-          Object.entries(result).forEach(([typ, ran]) => {
-            expect(ran).to.be[typ === cbType ? 'true' : 'false']
-          })
-        });
       });
     });
   });

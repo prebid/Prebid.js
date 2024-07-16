@@ -131,7 +131,7 @@ import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
-import CONSTANTS from '../../src/constants.json';
+import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, EID_CONFIG} from './eids.js';
 import {
@@ -147,7 +147,6 @@ import {
   getPrebidInternal,
   isArray,
   isEmpty,
-  isEmptyStr,
   isFn,
   isGptPubadsDefined,
   isNumber,
@@ -166,12 +165,11 @@ import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
+import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
 const LOCAL_STORAGE = STORAGE_TYPE_LOCALSTORAGE;
-const DEFAULT_SYNC_DELAY = 500;
-const NO_AUCTION_DELAY = 0;
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
@@ -239,6 +237,29 @@ function cookieSetter(submodule, storageMgr) {
   }
 }
 
+function setValueInCookie(submodule, valueStr, expiresStr) {
+  const storage = submodule.config.storage;
+  const setCookie = cookieSetter(submodule);
+
+  setCookie(null, valueStr, expiresStr);
+  setCookie('_cst', getConsentHash(), expiresStr);
+  if (typeof storage.refreshInSeconds === 'number') {
+    setCookie('_last', new Date().toUTCString(), expiresStr);
+  }
+}
+
+function setValueInLocalStorage(submodule, valueStr, expiresStr) {
+  const storage = submodule.config.storage;
+  const mgr = submodule.storageMgr;
+
+  mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
+  mgr.setDataInLocalStorage(`${storage.name}_cst`, getConsentHash());
+  mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
+  if (typeof storage.refreshInSeconds === 'number') {
+    mgr.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
+  }
+}
+
 /**
  * @param {SubmoduleContainer} submodule
  * @param {(Object|string)} value
@@ -248,54 +269,62 @@ export function setStoredValue(submodule, value) {
    * @type {SubmoduleStorage}
    */
   const storage = submodule.config.storage;
-  const mgr = submodule.storageMgr;
 
   try {
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
-    if (storage.type === COOKIE) {
-      const setCookie = cookieSetter(submodule);
-      setCookie(null, valueStr, expiresStr);
-      setCookie('_cst', getConsentHash(), expiresStr);
-      if (typeof storage.refreshInSeconds === 'number') {
-        setCookie('_last', new Date().toUTCString(), expiresStr);
+
+    submodule.enabledStorageTypes.forEach(storageType => {
+      switch (storageType) {
+        case COOKIE:
+          setValueInCookie(submodule, valueStr, expiresStr);
+          break;
+        case LOCAL_STORAGE:
+          setValueInLocalStorage(submodule, valueStr, expiresStr);
+          break;
       }
-    } else if (storage.type === LOCAL_STORAGE) {
-      mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
-      mgr.setDataInLocalStorage(`${storage.name}_cst`, getConsentHash());
-      mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
-      if (typeof storage.refreshInSeconds === 'number') {
-        mgr.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
-      }
-    }
+    });
   } catch (error) {
     logError(error);
   }
 }
 
+function deleteValueFromCookie(submodule) {
+  const setCookie = cookieSetter(submodule, coreStorage);
+  const expiry = (new Date(Date.now() - 1000 * 60 * 60 * 24)).toUTCString();
+
+  ['', '_last', '_cst'].forEach(suffix => {
+    try {
+      setCookie(suffix, '', expiry);
+    } catch (e) {
+      logError(e);
+    }
+  })
+}
+
+function deleteValueFromLocalStorage(submodule) {
+  ['', '_last', '_exp', '_cst'].forEach(suffix => {
+    try {
+      coreStorage.removeDataFromLocalStorage(submodule.config.storage.name + suffix);
+    } catch (e) {
+      logError(e);
+    }
+  });
+}
+
 export function deleteStoredValue(submodule) {
-  let deleter, suffixes;
-  switch (submodule.config?.storage?.type) {
-    case COOKIE:
-      const setCookie = cookieSetter(submodule, coreStorage);
-      const expiry = (new Date(Date.now() - 1000 * 60 * 60 * 24)).toUTCString();
-      deleter = (suffix) => setCookie(suffix, '', expiry)
-      suffixes = ['', '_last', '_cst'];
-      break;
-    case LOCAL_STORAGE:
-      deleter = (suffix) => coreStorage.removeDataFromLocalStorage(submodule.config.storage.name + suffix)
-      suffixes = ['', '_last', '_exp', '_cst'];
-      break;
-  }
-  if (deleter) {
-    suffixes.forEach(suffix => {
-      try {
-        deleter(suffix)
-      } catch (e) {
-        logError(e);
-      }
-    });
-  }
+  populateEnabledStorageTypes(submodule);
+
+  submodule.enabledStorageTypes.forEach(storageType => {
+    switch (storageType) {
+      case COOKIE:
+        deleteValueFromCookie(submodule);
+        break;
+      case LOCAL_STORAGE:
+        deleteValueFromLocalStorage(submodule);
+        break;
+    }
+  });
 }
 
 function setPrebidServerEidPermissions(initializedSubmodules) {
@@ -305,30 +334,46 @@ function setPrebidServerEidPermissions(initializedSubmodules) {
   }
 }
 
+function getValueFromCookie(submodule, storedKey) {
+  return submodule.storageMgr.getCookie(storedKey)
+}
+
+function getValueFromLocalStorage(submodule, storedKey) {
+  const mgr = submodule.storageMgr;
+  const storage = submodule.config.storage;
+  const storedValueExp = mgr.getDataFromLocalStorage(`${storage.name}_exp`);
+
+  // empty string means no expiration set
+  if (storedValueExp === '') {
+    return mgr.getDataFromLocalStorage(storedKey);
+  } else if (storedValueExp && ((new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+    return decodeURIComponent(mgr.getDataFromLocalStorage(storedKey));
+  }
+}
+
 /**
  * @param {SubmoduleContainer} submodule
  * @param {String|undefined} key optional key of the value
  * @returns {string}
  */
 function getStoredValue(submodule, key = undefined) {
-  const mgr = submodule.storageMgr;
   const storage = submodule.config.storage;
   const storedKey = key ? `${storage.name}_${key}` : storage.name;
   let storedValue;
   try {
-    if (storage.type === COOKIE) {
-      storedValue = mgr.getCookie(storedKey);
-    } else if (storage.type === LOCAL_STORAGE) {
-      const storedValueExp = mgr.getDataFromLocalStorage(`${storage.name}_exp`);
-      // empty string means no expiration set
-      if (storedValueExp === '') {
-        storedValue = mgr.getDataFromLocalStorage(storedKey);
-      } else if (storedValueExp) {
-        if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(mgr.getDataFromLocalStorage(storedKey));
-        }
+    submodule.enabledStorageTypes.find(storageType => {
+      switch (storageType) {
+        case COOKIE:
+          storedValue = getValueFromCookie(submodule, storedKey);
+          break;
+        case LOCAL_STORAGE:
+          storedValue = getValueFromLocalStorage(submodule, storedKey);
+          break;
       }
-    }
+
+      return !!storedValue;
+    });
+
     // support storing a string or a stringified object
     if (typeof storedValue === 'string' && storedValue.trim().charAt(0) === '{') {
       storedValue = JSON.parse(storedValue);
@@ -538,8 +583,8 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       if (auctionDelay > 0) {
         startCallbacks.resolve();
       } else {
-        events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-          events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+        events.on(EVENTS.AUCTION_END, function auctionEndHandler() {
+          events.off(EVENTS.AUCTION_END, auctionEndHandler);
           delay(syncDelay).then(startCallbacks.resolve);
         });
       }
@@ -776,8 +821,10 @@ function populateSubmoduleId(submodule, forceRefresh, allSubmodules) {
     }
 
     if (!storedId || refreshNeeded || forceRefresh || consentChanged(submodule)) {
+      const extendedConfig = Object.assign({ enabledStorageTypes: submodule.enabledStorageTypes }, submodule.config);
+
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(submodule.config, gdprConsent, storedId);
+      response = submodule.submodule.getId(extendedConfig, gdprConsent, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
       response = submodule.submodule.extendId(submodule.config, gdprConsent, storedId);
@@ -834,6 +881,8 @@ function initSubmodules(dest, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
 
+    submodules.forEach(submod => populateEnabledStorageTypes(submod));
+
     /**
      * filter out submodules that:
      *
@@ -884,6 +933,16 @@ function updateInitializedSubmodules(dest, submodule) {
   }
 }
 
+function getConfiguredStorageTypes(config) {
+  return config?.storage?.type?.trim().split(/\s*&\s*/) || [];
+}
+
+function hasValidStorageTypes(config) {
+  const storageTypes = getConfiguredStorageTypes(config);
+
+  return storageTypes.every(storageType => ALL_STORAGE_TYPES.has(storageType));
+}
+
 /**
  * list of submodule configurations with valid 'storage' or 'value' obj definitions
  * storage config: contains values for storing/retrieving User ID data in browser storage
@@ -891,55 +950,91 @@ function updateInitializedSubmodules(dest, submodule) {
  * @param {SubmoduleConfig[]} configRegistry
  * @returns {SubmoduleConfig[]}
  */
-function getValidSubmoduleConfigs(configRegistry) {
+export function getValidSubmoduleConfigs(configRegistry) {
+  function err(msg, ...args) {
+    logWarn(`Invalid userSync.userId config: ${msg}`, ...args)
+  }
   if (!Array.isArray(configRegistry)) {
+    if (configRegistry != null) {
+      err('must be an array', configRegistry);
+    }
     return [];
   }
-  return configRegistry.reduce((carry, config) => {
-    // every submodule config obj must contain a valid 'name'
-    if (!config || isEmptyStr(config.name)) {
-      return carry;
+  return configRegistry.filter(config => {
+    if (!config?.name) {
+      return err('must specify "name"', config);
+    } else if (config.storage) {
+      if (!config.storage.name || !config.storage.type) {
+        return err('must specify "storage.name" and "storage.type"', config);
+      } else if (!hasValidStorageTypes(config)) {
+        return err('invalid "storage.type"', config)
+      }
+      ['expires', 'refreshInSeconds'].forEach(param => {
+        let value = config.storage[param];
+        if (value != null && typeof value !== 'number') {
+          value = Number(value)
+          if (isNaN(value)) {
+            err(`storage.${param} must be a number and will be ignored`, config);
+            delete config.storage[param];
+          } else {
+            config.storage[param] = value;
+          }
+        }
+      });
     }
-    // Validate storage config contains 'type' and 'name' properties with non-empty string values
-    // 'type' must be one of html5, cookies
-    if (config.storage &&
-      !isEmptyStr(config.storage.type) &&
-      !isEmptyStr(config.storage.name) &&
-      ALL_STORAGE_TYPES.has(config.storage.type)) {
-      carry.push(config);
-    } else if (isPlainObject(config.value)) {
-      carry.push(config);
-    } else if (!config.storage && !config.value) {
-      carry.push(config);
-    }
-    return carry;
-  }, []);
+    return true;
+  })
 }
 
 const ALL_STORAGE_TYPES = new Set([LOCAL_STORAGE, COOKIE]);
 
-function canUseStorage(submodule) {
-  switch (submodule.config?.storage?.type) {
-    case LOCAL_STORAGE:
-      if (submodule.storageMgr.localStorageIsEnabled()) {
-        if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-          logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
-          return false
-        }
-        return true;
-      }
-      break;
-    case COOKIE:
-      if (submodule.storageMgr.cookiesAreEnabled()) {
-        if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-          logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
-          return false;
-        }
-        return true
-      }
-      break;
+function canUseLocalStorage(submodule) {
+  if (!submodule.storageMgr.localStorageIsEnabled()) {
+    return false;
   }
-  return false;
+
+  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
+    return false
+  }
+
+  return true;
+}
+
+function canUseCookies(submodule) {
+  if (!submodule.storageMgr.cookiesAreEnabled()) {
+    return false;
+  }
+
+  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
+    return false;
+  }
+
+  return true
+}
+
+function populateEnabledStorageTypes(submodule) {
+  if (submodule.enabledStorageTypes) {
+    return;
+  }
+
+  const storageTypes = getConfiguredStorageTypes(submodule.config);
+
+  submodule.enabledStorageTypes = storageTypes.filter(type => {
+    switch (type) {
+      case LOCAL_STORAGE:
+        return canUseLocalStorage(submodule);
+      case COOKIE:
+        return canUseCookies(submodule);
+    }
+
+    return false;
+  });
+}
+
+function canUseStorage(submodule) {
+  return !!submodule.enabledStorageTypes.length;
 }
 
 function updateEIDConfig(submodules) {
@@ -971,7 +1066,6 @@ function updateSubmodules() {
     const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
       (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
-    i.findRootDomain = findRootDomain;
     return submoduleConfig ? {
       submodule: i,
       config: submoduleConfig,
@@ -1031,6 +1125,7 @@ export function requestDataDeletion(next, ...args) {
  * @param {Submodule} submodule
  */
 export function attachIdSystem(submodule) {
+  submodule.findRootDomain = findRootDomain;
   if (!find(submoduleRegistry, i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid)
@@ -1074,8 +1169,8 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
         configRegistry = userSync.userIds;
-        syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
-        auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
+        syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
+        auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
         updateSubmodules();
         updateIdPriority(userSync.idPriority, submodules);
         initIdSystem({ready: true});
@@ -1096,7 +1191,7 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
 // init config update listener to start the application
 init(config);
 
-module('userId', attachIdSystem);
+module('userId', attachIdSystem, { postInstallAllowed: true });
 
 export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
   const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');

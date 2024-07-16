@@ -1,10 +1,5 @@
 import {spec, resetBidderConfigs} from 'modules/relevantdigitalBidAdapter.js';
-import { parseUrl, deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
-import CONSTANTS from 'src/constants.json';
-
-import adapterManager, {
-} from 'src/adapterManager.js';
+import { parseUrl } from 'src/utils.js';
 
 const expect = require('chai').expect;
 
@@ -13,17 +8,6 @@ const PLACEMENT_ID = 'example_placement_id';
 const ACCOUNT_ID = 'example_account_id';
 const TEST_DOMAIN = 'example.com';
 const TEST_PAGE = `https://${TEST_DOMAIN}/page.html`;
-
-const CONFIG = {
-  enabled: true,
-  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
-  timeout: 1000,
-  maxBids: 1,
-  adapter: 'prebidServer',
-  bidders: ['relevantdigital'],
-  accountId: 'abc'
-};
-
 const ADUNIT_CODE = '/19968336/header-bid-tag-0';
 
 const BID_PARAMS = {
@@ -312,64 +296,4 @@ describe('Relevant Digital Bid Adaper', function () {
       expect(allSyncs).to.deep.equal(expectedResult)
     });
   });
-  describe('transformBidParams', function () {
-    beforeEach(() => {
-      config.setConfig({
-        s2sConfig: CONFIG,
-      });
-    });
-    afterEach(() => {
-      config.resetConfig();
-    });
-
-    const adUnit = (params) => ({
-      code: ADUNIT_CODE,
-      bids: [
-        {
-          bidder: 'relevantdigital',
-          adUnitCode: ADUNIT_CODE,
-          params,
-        }
-      ]
-    });
-
-    const request = (params) => adapterManager.makeBidRequests([adUnit(params)], 123, 'auction-id', 123, [], {})[0];
-
-    it('transforms adunit bid params and config params correctly', function () {
-      config.setConfig({
-        relevantdigital: {
-          pbsHost: PBS_HOST,
-          accountId: ACCOUNT_ID,
-        },
-      });
-      const adUnitParams = { placementId: PLACEMENT_ID };
-      const expextedTransformedBidParams = {
-        ...BID_PARAMS.params, pbsHost: `https://${BID_PARAMS.params.pbsHost}`, 'pbsBufferMs': 250
-      };
-      expect(spec.transformBidParams(adUnitParams, null, null, [request(adUnitParams)])).to.deep.equal(expextedTransformedBidParams);
-    });
-    it('transforms adunit bid params correctly', function () {
-      const adUnitParams = { ...BID_PARAMS.params, pbsHost: 'host.relevant-digital.com', pbsBufferMs: 500 };
-      const expextedTransformedBidParams = {
-        ...BID_PARAMS.params, pbsHost: 'host.relevant-digital.com', pbsBufferMs: 500
-      };
-      expect(spec.transformBidParams(adUnitParams, null, null, [request(adUnitParams)])).to.deep.equal(expextedTransformedBidParams);
-    });
-    it('transforms adunit bid params correctly', function () {
-      const adUnitParams = { ...BID_PARAMS.params, pbsHost: 'host.relevant-digital.com', pbsBufferMs: 500 };
-      const expextedTransformedBidParams = {
-        ...BID_PARAMS.params, pbsHost: 'host.relevant-digital.com', pbsBufferMs: 500
-      };
-      expect(spec.transformBidParams(adUnitParams, null, null, [request(adUnitParams)])).to.deep.equal(expextedTransformedBidParams);
-    });
-    it('does not transform bid params if placementId is missing', function () {
-      const adUnitParams = { ...BID_PARAMS.params, placementId: null };
-      expect(spec.transformBidParams(adUnitParams, null, null, [request(adUnitParams)])).to.equal(undefined);
-    });
-    it('does not transform bid params s2s config is missing', function () {
-      config.resetConfig();
-      const adUnitParams = BID_PARAMS.params;
-      expect(spec.transformBidParams(adUnitParams, null, null, [request(adUnitParams)])).to.equal(undefined);
-    });
-  })
 });

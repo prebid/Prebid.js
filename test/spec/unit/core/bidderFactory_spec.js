@@ -1,11 +1,11 @@
-import {addComponentAuction, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
+import {addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import {expect} from 'chai';
 import {userSync} from 'src/userSync.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
@@ -38,10 +38,6 @@ const MOCK_BIDS_REQUEST = {
   ]
 }
 
-function onTimelyResponseStub() {
-
-}
-
 before(() => {
   hook.ready();
 });
@@ -49,6 +45,10 @@ before(() => {
 let wrappedCallback = config.callbackWithBidder(CODE);
 
 describe('bidderFactory', () => {
+  let onTimelyResponseStub;
+  beforeEach(() => {
+    onTimelyResponseStub = sinon.stub();
+  })
   describe('bidders created by newBidder', function () {
     let spec;
     let bidder;
@@ -552,7 +552,7 @@ describe('bidderFactory', () => {
 
         expect(ajaxStub.calledTwice).to.equal(true);
         expect(eventEmitterSpy.getCalls()
-          .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP)
+          .filter(call => call.args[0] === EVENTS.BEFORE_BIDDER_HTTP)
         ).to.length(2);
 
         eventEmitterSpy.restore();
@@ -581,6 +581,14 @@ describe('bidderFactory', () => {
         userSyncStub.restore();
         utils.logError.restore();
       });
+
+      it('should call onTimelyResponse', () => {
+        const bidder = newBidder(spec);
+        spec.isBidRequestValid.returns(true);
+        spec.buildRequests.returns({method: 'POST', url: 'test', data: {}});
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        sinon.assert.called(onTimelyResponseStub);
+      })
 
       it('should call spec.interpretResponse() with the response content', function () {
         const bidder = newBidder(spec);
@@ -800,12 +808,13 @@ describe('bidderFactory', () => {
       let ajaxStub;
       let callBidderErrorStub;
       let eventEmitterStub;
-      let xhrErrorMock = {
-        status: 500,
-        statusText: 'Internal Server Error'
-      };
+      let xhrErrorMock;
 
       beforeEach(function () {
+        xhrErrorMock = {
+          status: 500,
+          statusText: 'Internal Server Error'
+        };
         ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
           callbacks.error('ajax call failed.', xhrErrorMock);
         });
@@ -820,6 +829,20 @@ describe('bidderFactory', () => {
         callBidderErrorStub.restore();
         eventEmitterStub.restore();
       });
+
+      Object.entries({
+        'timeouts': true,
+        'other errors': false
+      }).forEach(([t, timedOut]) => {
+        it(`should ${timedOut ? 'NOT ' : ''}call onTimelyResponse on ${t}`, () => {
+          Object.assign(xhrErrorMock, {timedOut});
+          const bidder = newBidder(spec);
+          spec.isBidRequestValid.returns(true);
+          spec.buildRequests.returns({method: 'POST', url: 'test', data: {}});
+          bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          sinon.assert[timedOut ? 'notCalled' : 'called'](onTimelyResponseStub);
+        })
+      })
 
       it('should not spec.interpretResponse()', function () {
         const bidder = newBidder(spec);
@@ -840,7 +863,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -866,7 +889,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -892,7 +915,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -918,7 +941,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -1086,7 +1109,7 @@ describe('bidderFactory', () => {
     if (FEATURES.NATIVE) {
       it('should add native bids that do have required assets', function () {
         adUnits = [{
-          transactionId: 'au',
+          adUnitId: 'au',
           nativeParams: {
             title: {'required': true},
           }
@@ -1097,7 +1120,7 @@ describe('bidderFactory', () => {
             bidId: '1',
             auctionId: 'first-bid-id',
             adUnitCode: 'mock/placement',
-            transactionId: 'au',
+            adUnitId: 'au',
             params: {
               param: 5
             },
@@ -1433,70 +1456,88 @@ describe('bidderFactory', () => {
           transactionId: 'au',
         }]
       };
-      const fledgeAuctionConfig = {
+      const paapiConfig = {
         bidId: '1',
         config: {
           foo: 'bar'
+        },
+        igb: {
+          foo: 'bar'
         }
       }
-      describe('when response has FLEDGE auction config', function() {
-        let fledgeStub;
 
-        function fledgeHook(next, ...args) {
-          fledgeStub(...args);
+      it('should unwrap bids', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: bids,
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
+      });
+
+      it('does not unwrap bids from a bid that happens to have a "bids" property', () => {
+        const bidder = newBidder(spec);
+        const bid = Object.assign({
+          bids: ['a', 'b']
+        }, bids[0]);
+        spec.interpretResponse.returns(bid);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
+      })
+
+      describe('when response has PAAPI config', function() {
+        let paapiStub;
+
+        function paapiHook(next, ...args) {
+          paapiStub(...args);
+        }
+
+        function runBidder(response) {
+          const bidder = newBidder(spec);
+          spec.interpretResponse.returns(response);
+          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         }
 
         before(() => {
-          addComponentAuction.before(fledgeHook);
+          addPaapiConfig.before(paapiHook);
         });
 
         after(() => {
-          addComponentAuction.getHooks({hook: fledgeHook}).remove();
+          addPaapiConfig.getHooks({hook: paapiHook}).remove();
         })
 
         beforeEach(function () {
-          fledgeStub = sinon.stub();
+          paapiStub = sinon.stub();
         });
 
-        it('should unwrap bids', function() {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns({
-            bids: bids,
-            fledgeAuctionConfigs: []
+        describe(`when response has paapi`, () => {
+          it('should call paapi config hook with auction configs', function () {
+            runBidder({
+              bids: bids,
+              paapi: [paapiConfig]
+            });
+            expect(paapiStub.calledOnce).to.equal(true);
+            sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
+            sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
           });
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-          expect(addBidResponseStub.calledOnce).to.equal(true);
-          expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+
+          Object.entries({
+            'missing': undefined,
+            'an empty array': []
+          }).forEach(([t, bids]) => {
+            it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function () {
+              runBidder({
+                bids,
+                paapi: [paapiConfig]
+              });
+              expect(paapiStub.calledOnce).to.be.true;
+              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
+              expect(addBidResponseStub.calledOnce).to.equal(false);
+            });
+          });
         });
-
-        it('should call fledgeManager with FLEDGE configs', function() {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns({
-            bids: bids,
-            fledgeAuctionConfigs: [fledgeAuctionConfig]
-          });
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
-          expect(fledgeStub.calledOnce).to.equal(true);
-          sinon.assert.calledWith(fledgeStub, bidRequest.bids[0], fledgeAuctionConfig.config);
-          expect(addBidResponseStub.calledOnce).to.equal(true);
-          expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
-        })
-
-        it('should call fledgeManager with FLEDGE configs even if no bids returned', function() {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns({
-            bids: [],
-            fledgeAuctionConfigs: [fledgeAuctionConfig]
-          });
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
-          expect(fledgeStub.calledOnce).to.be.true;
-          sinon.assert.calledWith(fledgeStub, bidRequest.bids[0], fledgeAuctionConfig.config);
-          expect(addBidResponseStub.calledOnce).to.equal(false);
-        })
-      })
-    })
+      });
+    });
   });
 
   describe('bid response isValid', () => {

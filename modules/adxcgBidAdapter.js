@@ -1,6 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
@@ -17,7 +16,7 @@ const BIDDER_CODE = 'adxcg';
 const SECURE_BID_URL = 'https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1';
 
 const DEFAULT_CURRENCY = 'EUR';
-const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'battr', 'deals'];
+const KNOWN_PARAMS = ['battr', 'deals'];
 const DEFAULT_TMAX = 500;
 
 /**
@@ -88,14 +87,6 @@ export const spec = {
     if (bid.nurl) {
       triggerPixel(replaceAuctionPrice(bid.nurl, bid.originalCpm))
     }
-  },
-  transformBidParams: function (params) {
-    return convertTypes({
-      'cf': 'string',
-      'cp': 'number',
-      'ct': 'number',
-      'adzoneid': 'string'
-    }, params);
   }
 };
 

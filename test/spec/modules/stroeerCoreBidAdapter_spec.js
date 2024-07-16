@@ -169,16 +169,17 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupSingleWindow(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    const win = createWindow('http://www.xyz.com/', {
-      parent: win, top: win, frameElement: createElement(undefined, 304), placementElements: placementElements
+    let singleWin = null
+    singleWin = createWindow('http://www.xyz.com/', {
+      parent: singleWin, top: singleWin, frameElement: createElement(undefined, 304), placementElements: placementElements
     });
 
-    win.innerHeight = 200;
+    singleWin.innerHeight = 200;
 
-    sandBox.stub(utils, 'getWindowSelf').returns(win);
-    sandBox.stub(utils, 'getWindowTop').returns(win);
+    sandBox.stub(utils, 'getWindowSelf').returns(singleWin);
+    sandBox.stub(utils, 'getWindowTop').returns(singleWin);
 
-    return win;
+    return singleWin;
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
@@ -407,7 +408,6 @@ describe('stroeerCore bid adapter', function () {
           'timeout': expectedTimeout,
           'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
-          'ssl': false,
           'url': 'https://www.example.com/monkey/index.html',
           'bids': [{
             'sid': 'NDA=',
@@ -844,6 +844,60 @@ describe('stroeerCore bid adapter', function () {
           assert.nestedPropertyVal(bid, 'ban.fp.cur', 'EUR');
           assert.deepNestedPropertyVal(bid, 'ban.fp.siz', [{w: 160, h: 60, p: 2.7}]);
         });
+
+        it('should add the DSA signals', () => {
+          const bidReq = buildBidderRequest();
+          const dsa = {
+            dsarequired: 3,
+            pubrender: 0,
+            datatopub: 2,
+            transparency: [
+              {
+                domain: 'testplatform.com',
+                dsaparams: [1],
+              },
+              {
+                domain: 'testdomain.com',
+                dsaparams: [1, 2]
+              }
+            ]
+          }
+          const ortb2 = {
+            regs: {
+              ext: {
+                dsa
+              }
+            }
+          }
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+
+          assert.deepEqual(sentOrtb2, ortb2);
+        });
+
+        it('should add the Cookie Deprecation Label', () => {
+          const bidReq = buildBidderRequest();
+
+          const cDepObj = {
+            cdep: 'example_label_1'
+          };
+
+          const ortb2 = {
+            device: {
+              ext: cDepObj
+            }
+          };
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+
+          assert.deepEqual(sentOrtb2, ortb2);
+        });
       });
     });
   });
@@ -882,13 +936,32 @@ describe('stroeerCore bid adapter', function () {
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
 
-    it('should add data to meta object', () => {
+    it('should add advertiser domains to meta object', () => {
       const response = buildBidderResponse();
       response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
       const result = spec.interpretResponse({body: response});
-      assert.deepPropertyVal(result[0], 'meta', {advertiserDomains: ['website.org', 'domain.com']});
-      // nothing provided for the second bid
-      assert.deepPropertyVal(result[1], 'meta', {advertiserDomains: undefined});
+      assert.deepPropertyVal(result[0].meta, 'advertiserDomains', ['website.org', 'domain.com']);
+      assert.propertyVal(result[1].meta, 'advertiserDomains', undefined);
+    });
+
+    it('should add dsa info to meta object', () => {
+      const dsaResponse = {
+        behalf: 'AdvertiserA',
+        paid: 'AdvertiserB',
+        transparency: [{
+          domain: 'dspexample.com',
+          dsaparams: [1, 2],
+        }],
+        adrender: 1
+      };
+
+      const response = buildBidderResponse();
+      response.bids[0] = Object.assign(response.bids[0], {dsa: utils.deepClone(dsaResponse)});
+
+      const result = spec.interpretResponse({body: response});
+
+      assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
+      assert.propertyVal(result[1].meta, 'dsa', undefined);
     });
   });
 

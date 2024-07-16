@@ -25,7 +25,7 @@ const MODULE_NAME = 'hadronId';
 const AU_GVLID = 561;
 const DEFAULT_HADRON_URL_ENDPOINT = 'https://id.hadron.ad.gt/api/v1/pbhid';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'hadron'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
  * Param or default.
@@ -115,7 +115,7 @@ export const hadronIdSubmodule = {
         // config.params.url and config.params.urlArg are not documented
         // since their use is for debugging purposes only
         paramOrDefault(config.params.url, DEFAULT_HADRON_URL_ENDPOINT, config.params.urlArg),
-        `partner_id=${partnerId}&_it=prebid&t=1&src=id` // src=id => the backend was called from getId
+        `partner_id=${partnerId}&_it=prebid&t=1&src=id&domain=${document.location.hostname}` // src=id => the backend was called from getId
       );
       if (isDebug) {
         url += '&debug=1'

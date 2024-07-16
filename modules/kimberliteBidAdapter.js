@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { deepSetValue, logWarn } from '../src/utils.js';
+import { deepSetValue } from '../src/utils.js';
 
 const VERSION = '1.0.0';
 
@@ -86,7 +86,7 @@ export const spec = {
   interpretResponse(serverResponse, bidRequest) {
     const bids = converter.fromORTB({response: serverResponse.body, request: bidRequest.data}).bids;
     return bids;
-  },
+  }
 };
 
 registerBidder(spec);

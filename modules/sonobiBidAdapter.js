@@ -7,6 +7,12 @@ import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -95,6 +101,8 @@ export const spec = {
     const fpd = bidderRequest.ortb2;
 
     if (fpd) {
+      delete fpd.experianRtidData; // Omit the experian data since we already pass this through a dedicated query param
+      delete fpd.experianRtidKey
       payload.fpd = JSON.stringify(fpd);
     }
 
@@ -148,11 +156,6 @@ export const spec = {
       payload.coppa = 1;
     } else {
       payload.coppa = 0;
-    }
-
-    if (deepAccess(bidderRequest, 'ortb2.experianRtidData') && deepAccess(bidderRequest, 'ortb2.experianRtidKey')) {
-      payload.expData = deepAccess(bidderRequest, 'ortb2.experianRtidData');
-      payload.expKey = deepAccess(bidderRequest, 'ortb2.experianRtidKey');
     }
 
     // If there is no key_maker data, then don't make the request.
@@ -326,7 +329,7 @@ function _validateFloor(bid) {
 }
 
 function _validateGPID(bid) {
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
 
   if (gpid) {
     return `gpid=${gpid},`
@@ -411,8 +414,6 @@ export function _getPlatform(context = window) {
  * @return {object} firstPartyData - Data object containing first party information
  */
 function loadOrCreateFirstPartyData() {
-  var localStorageEnabled;
-
   var FIRST_PARTY_KEY = '_iiq_fdata';
   var tryParse = function (data) {
     try {
@@ -423,19 +424,14 @@ function loadOrCreateFirstPartyData() {
   };
   var readData = function (key) {
     if (hasLocalStorage()) {
+      // TODO FIX RULES VIOLATION
+      // eslint-disable-next-line prebid/no-global
       return window.localStorage.getItem(key);
     }
     return null;
   };
+  // TODO FIX RULES VIOLATION - USE STORAGE MANAGER
   var hasLocalStorage = function () {
-    if (typeof localStorageEnabled != 'undefined') { return localStorageEnabled; } else {
-      try {
-        localStorageEnabled = !!window.localStorage;
-        return localStorageEnabled;
-      } catch (e) {
-        localStorageEnabled = false;
-      }
-    }
     return false;
   };
   var generateGUID = function () {
@@ -449,6 +445,8 @@ function loadOrCreateFirstPartyData() {
   var storeData = function (key, value) {
     try {
       if (hasLocalStorage()) {
+        // TODO FIX RULES VIOLATION
+        // eslint-disable-next-line prebid/no-global
         window.localStorage.setItem(key, value);
       }
     } catch (error) {

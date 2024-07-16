@@ -4,6 +4,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {parseSizesInput, isFn, deepAccess, logError, isArray, getBidIdParameter} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const CUR = 'USD';
 const BIDDER_CODE = 'xe';
 const ENDPOINT = 'https://pbjs.xe.works/bid';

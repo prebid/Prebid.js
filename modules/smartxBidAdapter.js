@@ -21,6 +21,12 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
 const GVLID = 115;
@@ -113,12 +119,6 @@ export const spec = {
       const pos = getBidIdParameter('pos', bid.params) || 1;
       const api = getBidIdParameter('api', bid.params) || [2];
       const protocols = getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
-      var contextcustom = deepAccess(bid, 'mediaTypes.video.context');
-      var placement = 1;
-
-      if (contextcustom === 'outstream') {
-        placement = 3;
-      }
 
       let smartxReq = [{
         id: bid.bidId,
@@ -138,7 +138,6 @@ export const spec = {
           maxbitrate: maxbitrate,
           delivery: delivery,
           pos: pos,
-          placement: placement,
           api: api,
           ext: ext
         },

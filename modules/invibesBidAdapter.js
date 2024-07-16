@@ -2,6 +2,11 @@ import {logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
   BID_ENDPOINT: '.videostep.com/Bid/VideoAdContent',
@@ -9,7 +14,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 11,
+  PREBID_VERSION: 12,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
@@ -17,7 +22,7 @@ const CONSTANTS = {
   DISABLE_USER_SYNC: true
 };
 
-const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -35,7 +40,7 @@ export const spec = {
   buildRequests: buildRequest,
   /**
    * @param {*} responseObj
-   * @param {requestParams} bidRequests
+   * @param {*} requestParams
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function (responseObj, requestParams) {
@@ -127,7 +132,6 @@ function buildRequest(bidRequests, bidderRequest) {
     window.invibes.placementIds.push(bidRequest.params.placementId);
 
     _placementIds.push(bidRequest.params.placementId);
-    _placementIds.push(bidRequest.params.placementId);
     _adUnitCodes.push(bidRequest.adUnitCode);
     _domainId = _domainId || bidRequest.params.domainId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
@@ -175,8 +179,17 @@ function buildRequest(bidRequests, bidderRequest) {
     isLocalStorageEnabled: storage.hasLocalStorage(),
     preventPageViewEvent: preventPageViewEvent,
     isPlacementRefresh: isPlacementRefresh,
-    isInfiniteScrollPage: isInfiniteScrollPage,
+    isInfiniteScrollPage: isInfiniteScrollPage
   };
+
+  if (bidderRequest.refererInfo && bidderRequest.refererInfo.ref) {
+    data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300);
+  }
+
+  let hid = invibes.getCookie('handIid');
+  if (hid) {
+    data.handIid = hid;
+  }
 
   let lid = readFromLocalStorage('ivbsdid');
   if (!lid) {

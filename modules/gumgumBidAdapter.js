@@ -6,6 +6,15 @@ import {getStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ALIAS_BIDDER_CODE = ['gg'];
@@ -206,11 +215,12 @@ function _getVidParams(attributes) {
 }
 
 /**
- * Gets bidfloor
- * @param {Object} mediaTypes
- * @param {Number} bidfloor
- * @param {Object} bid
- * @returns {Number} floor
+ * Retrieves the bid floor value, which is the minimum acceptable bid for an ad unit.
+ * This function calculates the bid floor based on the given media types and other bidding parameters.
+ * @param {Object} mediaTypes - The media types specified for the bid, which might influence floor calculations.
+ * @param {number} staticBidFloor - The default or static bid floor set for the bid.
+ * @param {Object} bid - The bid object which may contain a method to get dynamic floor values.
+ * @returns {Object} An object containing the calculated bid floor and its currency.
  */
 function _getFloor(mediaTypes, staticBidFloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
@@ -281,10 +291,10 @@ function getEids(userId) {
 }
 
 /**
- * Make a server request from the list of BidRequests.
- *
- * @param {validBidRequests[]} - an array of bids
- * @return ServerRequest Info describing the request to the server.
+ * Builds requests for bids.
+ * @param {validBidRequests[]} validBidRequests - An array of valid bid requests.
+ * @param {Object} bidderRequest - The bidder's request information.
+ * @returns {Object[]} An array of server requests.
  */
 function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
@@ -306,10 +316,12 @@ function buildRequests(validBidRequests, bidderRequest) {
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
-    const gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot') || deepAccess(ortb2Imp, 'ext.data.adserver.adslot');
+    const gpid = deepAccess(ortb2Imp, 'ext.gpid') || deepAccess(ortb2Imp, 'ext.data.pbadslot');
+    const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
     let sizes = [1, 1];
     let data = {};
-
+    data.displaymanager = 'Prebid.js - gumgum';
+    data.displaymanagerver = '$prebid.version$';
     const date = new Date();
     const lt = date.getTime();
     const to = date.getTimezoneOffset();
@@ -363,15 +375,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.fp = floor;
       data.fpc = currency;
     }
-
+    if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
+      setIrisId(data, bidderRequest.ortb2.site, params);
+    }
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
     }
-
-    if (params.irisid && typeof params.irisid === 'string') {
-      data.irisid = params.irisid;
-    }
-
     if (params.zone || params.pubId) {
       params.zone ? (data.t = params.zone) : (data.pubId = params.pubId);
 
@@ -395,7 +404,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) };
     }
-
+    if (paapiEligible) {
+      data.ae = paapiEligible
+    }
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
     }
@@ -411,6 +422,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
       data.gppString = bidderRequest.ortb2.regs.gpp
       data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
+    }
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      data.dsa = JSON.stringify(dsa)
     }
     if (coppa) {
       data.coppa = coppa;
@@ -432,6 +447,27 @@ function buildRequests(validBidRequests, bidderRequest) {
     });
   });
   return bids;
+}
+export function getCids(site) {
+  if (site.content && Array.isArray(site.content.data)) {
+    for (const dataItem of site.content.data) {
+      if (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv')) {
+        return dataItem.ext.cids.join(',');
+      }
+    }
+  }
+  return null;
+}
+export function setIrisId(data, site, params) {
+  let irisID = getCids(site);
+  if (irisID) {
+    data.irisid = irisID;
+  } else {
+    // Just adding this chechk for safty and if needed  we can remove
+    if (params.irisid && typeof params.irisid === 'string') {
+      data.irisid = params.irisid;
+    }
+  }
 }
 
 function handleLegacyParams(params, sizes) {
@@ -539,15 +575,15 @@ function interpretResponse(serverResponse, bidRequest) {
     mediaType: type || mediaType
   };
   let sizes = parseSizesInput(bidRequest.sizes);
-
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
-  } else if (product === 2 && includes(sizes, '1x1')) {
+  // added logic for in-slot multi-szie
+  } else if ((product === 2 && includes(sizes, '1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
       const [ width, height ] = current;
-      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
+      if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];
     sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
