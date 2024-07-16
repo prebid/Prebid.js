@@ -17,17 +17,17 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'maxduration': (value) => isInteger(value),
   'protocols': (value) => isArrayOfNums(value), // protocols values supported by Inticator, according to the OpenRTB spec
   'startdelay': (value) => isInteger(value),
-  'linearity': (value) => isInteger(value) && [1].includes(value),
-  'skip': (value) => isInteger(value) && [1, 0].includes(value),
   'skipmin': (value) => isInteger(value),
-  'skipafter': (value) => isInteger(value),
-  'sequence': (value) => isInteger(value),
+  'linearity': (value) => isInteger(value) && [1].includes(value),
   'battr': (value) => isArrayOfNums(value),
+  'skipafter': (value) => isInteger(value),
+  'skip': (value) => isInteger(value) && [1, 0].includes(value),
   'maxextended': (value) => isInteger(value),
-  'minbitrate': (value) => isInteger(value),
   'maxbitrate': (value) => isInteger(value),
-  'playbackmethod': (value) => isArrayOfNums(value),
+  'minbitrate': (value) => isInteger(value),
   'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
+  'playbackmethod': (value) => isArrayOfNums(value),
+  'sequence': (value) => isInteger(value),
   'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
   'api': (value) => isArrayOfNums(value),
@@ -173,6 +173,14 @@ function buildImpression(bidRequest) {
     },
   }
 
+  if (bidRequest?.params?.adUnitId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.adUnitId', bidRequest.params.adUnitId);
+  }
+
+  if (bidRequest?.params?.publisherId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.publisherId', bidRequest.params.publisherId);
+  }
+
   let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
 
   if (!isNaN(bidFloor)) {
@@ -247,7 +255,7 @@ function buildDevice(bidRequest) {
   const device = {
     w: window.innerWidth,
     h: window.innerHeight,
-    js: true,
+    js: 1,
     ext: {
       localStorage: storage.localStorageIsEnabled(),
       cookies: storage.cookiesAreEnabled(),
