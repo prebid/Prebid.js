@@ -4,7 +4,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { deepSetValue } from '../src/utils.js';
 import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 const BIDDER_CODE = 'kimberlite';
 const METHOD = 'POST';
