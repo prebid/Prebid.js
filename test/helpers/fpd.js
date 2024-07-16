@@ -38,8 +38,6 @@ export function addFPDEnrichments(ortb2 = {}, overrides) {
   return enrichFPD(GreedyPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }
 
-export const syncAddFPDEnrichments = synchronize(addFPDEnrichments);
-
 export function addFPDToBidderRequest(bidderRequest, overrides) {
   overrides = Object.assign({}, {
     getRefererInfo() {
