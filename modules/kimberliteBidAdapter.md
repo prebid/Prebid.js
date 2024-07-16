@@ -34,3 +34,30 @@ var adUnits = [
   }
 ]
 ```
+
+## Video AdUnit
+
+```javascript
+var adUnits = [
+  {
+    code: 'test-div',
+    mediaTypes: {
+      video: {
+        mimes: ['video/mp4'],
+        placement: 1,
+        protocols: [3, 6],
+        linearity: 1,
+        startdelay: 0
+      }
+    },
+    bids: [
+      {
+        bidder: "kimberlite",
+        params: {
+          placementId: 'testVideo'
+        }
+      }
+    ]
+  }
+]
+```
