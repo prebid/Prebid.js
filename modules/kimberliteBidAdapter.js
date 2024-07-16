@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { deepSetValue } from '../src/utils.js';
+import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
 const VERSION = '1.0.0';
 
@@ -47,7 +48,9 @@ const converter = ortbConverter({
     if (!bid.price) return;
 
     const [type] = Object.keys(context.bidRequest.mediaTypes);
-    context.mediaType = type;
+    if (Object.values(ORTB_MTYPES).includes(type)) {
+      context.mediaType = type;
+    }
 
     const bidResponse = buildBidResponse(bid, context);
     return bidResponse;

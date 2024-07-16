@@ -129,13 +129,15 @@ describe('kimberliteBidAdapter', function () {
       assert.equal(formatData.w, sizes[0][0]);
       assert.equal(formatData.h, sizes[0][1]);
 
-      const impVideoData = requestData.imp[1];
-      expect(impVideoData.video).is.to.be.an('Object').and.have.all.keys(['mimes', 'linearity', 'placement', 'startdelay', 'protocols']);
+      if (FEATURES.VIDEO) {
+        const impVideoData = requestData.imp[1];
+        expect(impVideoData.video).is.to.be.an('Object').and.have.all.keys(['mimes', 'linearity', 'placement', 'startdelay', 'protocols']);
 
-      const videoData = impVideoData.video;
-      expect(videoData.mimes).to.be.an('array').and.is.not.empty;
-      expect(videoData.mimes[0]).to.be.a('string').that.equals('video/mp4');
-      expect(videoData.protocols).to.be.an('array').and.is.not.empty;
+        const videoData = impVideoData.video;
+        expect(videoData.mimes).to.be.an('array').and.is.not.empty;
+        expect(videoData.mimes[0]).to.be.a('string').that.equals('video/mp4');
+        expect(videoData.protocols).to.be.an('array').and.is.not.empty;
+      }
     });
   });
 
@@ -178,7 +180,7 @@ describe('kimberliteBidAdapter', function () {
           {
             bidId: 1,
             mediaTypes: {
-              [BANNER]: {sizes: sizes}
+              banner: {sizes: sizes}
             },
             params: {
               placementId: 'test-placement'
@@ -187,7 +189,7 @@ describe('kimberliteBidAdapter', function () {
           {
             bidId: 2,
             mediaTypes: {
-              [VIDEO]: {
+              video: {
                 mimes: ['video/mp4']
               }
             },
@@ -229,7 +231,9 @@ describe('kimberliteBidAdapter', function () {
     it('pass on valid request', function () {
       const bids = spec.interpretResponse(bidderResponse, bidRequest);
       assert.deepEqual(bids[0], expectedBids[0]);
-      assert.deepEqual(bids[1], expectedBids[1]);
+      if (FEATURES.VIDEO) {
+        assert.deepEqual(bids[1], expectedBids[1]);
+      }
     });
 
     it('fails on empty response', function () {
