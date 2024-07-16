@@ -1,4 +1,4 @@
-import {GreedyPromise, defer} from '../../../../src/utils/promise.js';
+import {GreedyPromise, defer, timeout} from '../../../../src/utils/promise.js';
 
 describe('GreedyPromise', () => {
   it('throws when resolver is not a function', () => {
@@ -165,7 +165,6 @@ describe('GreedyPromise', () => {
   });
 
   describe('.timeout', () => {
-    const timeout = GreedyPromise.timeout;
 
     it('should resolve immediately when ms is 0', () => {
       let cbRan = false;

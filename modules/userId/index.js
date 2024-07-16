@@ -156,7 +156,7 @@ import {
   logWarn
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
-import {defer, GreedyPromise} from '../../src/utils/promise.js';
+import {defer, GreedyPromise, timeout} from '../../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
@@ -519,7 +519,7 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 
 const INIT_CANCELED = {};
 
-function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
+function idSystemInitializer({delay = timeout} = {}) {
   const startInit = defer();
   const startCallbacks = defer();
   let cancel;
@@ -636,7 +636,7 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
+export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = timeout, getIds = getUserIdsAsync} = {}) {
   GreedyPromise.race([
     getIds().catch(() => null),
     delay(auctionDelay)
@@ -1149,7 +1149,7 @@ function normalizePromise(fn) {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config, {delay = GreedyPromise.timeout} = {}) {
+export function init(config, {delay = timeout} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
