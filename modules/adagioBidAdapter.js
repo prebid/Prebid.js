@@ -20,11 +20,11 @@ import {
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
 import { OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
+import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { find } from '../src/polyfill.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
 
@@ -174,17 +174,6 @@ function _getCoppa() {
 
 function _getUspConsent(bidderRequest) {
   return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
-}
-
-function _getGppConsent(bidderRequest) {
-  let gpp = deepAccess(bidderRequest, 'gppConsent.gppString')
-  let gppSid = deepAccess(bidderRequest, 'gppConsent.applicableSections')
-
-  if (!gpp || !gppSid) {
-    gpp = deepAccess(bidderRequest, 'ortb2.regs.gpp', '')
-    gppSid = deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', [])
-  }
-  return { gpp, gppSid }
 }
 
 function _getSchain(bidRequest) {
@@ -559,7 +548,7 @@ export const spec = {
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
     const coppa = _getCoppa();
-    const gppConsent = _getGppConsent(bidderRequest)
+    const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
     const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
@@ -747,8 +736,8 @@ export const spec = {
             gdpr: gdprConsent,
             coppa: coppa,
             ccpa: uspConsent,
-            gpp: gppConsent.gpp,
-            gppSid: gppConsent.gppSid,
+            gpp: gpp || '',
+            gppSid: gppSid || [],
             dsa: dsa // populated if exists
           },
           schain: schain,
