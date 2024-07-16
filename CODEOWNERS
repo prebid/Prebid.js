@@ -13,7 +13,7 @@ package.json                        @guardian/commercial-dev
 webpack.conf.js                     @guardian/commercial-dev
 src/auction.js                      @guardian/commercial-dev
 src/targeting.js                    @guardian/commercial-dev
-src/constants.json                  @guardian/commercial-dev
+src/constants.js                    @guardian/commercial-dev
 test/fixtures/fixtures.js           @guardian/commercial-dev
 modules/appnexusBidAdapter.js       @guardian/commercial-dev
 modules/openxBidAdapter.js          @guardian/commercial-dev

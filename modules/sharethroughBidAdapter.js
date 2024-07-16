@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, generateUUID, inIframe } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -92,6 +92,10 @@ export const sharethroughAdapterSpec = {
       req.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
     }
 
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      req.regs.ext.dsa = bidderRequest.ortb2.regs.ext.dsa;
+    }
+
     const imps = bidRequests
       .map((bidReq) => {
         const impression = { ext: {} };
@@ -99,10 +103,14 @@ export const sharethroughAdapterSpec = {
         // mergeDeep(impression, bidReq.ortb2Imp); // leaving this out for now as we may want to leave stuff out on purpose
         const tid = deepAccess(bidReq, 'ortb2Imp.ext.tid');
         if (tid) impression.ext.tid = tid;
-        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot'));
+        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid') || deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
         if (gpid) impression.ext.gpid = gpid;
 
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
+
+        if (bidderRequest.fledgeEnabled && bidReq.mediaTypes.banner) {
+          mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
+        }
 
         if (videoRequest) {
           // default playerSize, only change this if we know width and height are properly defined in the request
@@ -115,6 +123,14 @@ export const sharethroughAdapterSpec = {
           ) {
             [w, h] = videoRequest.playerSize[0];
           }
+
+          const getVideoPlacementValue = (vidReq) => {
+            if (vidReq.plcmt) {
+              return vidReq.placement;
+            } else {
+              return vidReq.context === 'instream' ? 1 : +deepAccess(vidReq, 'placement', 4);
+            }
+          };
 
           impression.video = {
             pos: nullish(videoRequest.pos, 0),
@@ -132,7 +148,8 @@ export const sharethroughAdapterSpec = {
             startdelay: nullish(videoRequest.startdelay, 0),
             skipmin: nullish(videoRequest.skipmin, 0),
             skipafter: nullish(videoRequest.skipafter, 0),
-            placement: videoRequest.context === 'instream' ? 1 : +deepAccess(videoRequest, 'placement', 4),
+            placement: getVideoPlacementValue(videoRequest),
+            plcmt: videoRequest.plcmt ? videoRequest.plcmt : null,
           };
 
           if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
@@ -179,7 +196,9 @@ export const sharethroughAdapterSpec = {
       return [];
     }
 
-    return body.seatbid[0].bid.map((bid) => {
+    const fledgeAuctionEnabled = body.ext?.auctionConfigs;
+
+    const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
       // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
       const response = {
         requestId: bid.impid,
@@ -219,6 +238,15 @@ export const sharethroughAdapterSpec = {
 
       return response;
     });
+
+    if (fledgeAuctionEnabled) {
+      return {
+        bids: bidsFromExchange,
+        fledgeAuctionConfigs: body.ext?.auctionConfigs || {},
+      };
+    } else {
+      return bidsFromExchange;
+    }
   },
 
   getUserSyncs: (syncOptions, serverResponses) => {

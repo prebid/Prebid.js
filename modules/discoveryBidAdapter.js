@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getHLen, getHC, getDM } from '../src/fpd/navigator.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -24,6 +25,9 @@ const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://asset.popin.cc';
+
+const UTM_KEY = '_ss_pp_utm';
+let UTMValue = {};
 
 const NATIVERET = {
   id: 'id',
@@ -65,7 +69,7 @@ const NATIVERET = {
 };
 
 /**
- * get page title
+ * get page title111
  * @returns {string}
  */
 
@@ -133,10 +137,11 @@ export const getPmgUID = () => {
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
-    try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
-    } catch (e) {}
   }
+  // Extend the expiration time of pmguid
+  try {
+    storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
+  } catch (e) {}
   return pmgUid;
 };
 
@@ -408,6 +413,20 @@ function getItems(validBidRequests, bidderRequest) {
   return items;
 }
 
+export const buildUTMTagData = (url) => {
+  if (!storage.cookiesAreEnabled()) return;
+  const urlParams = utils.parseUrl(url).search || {};
+  const UTMParams = {};
+  Object.keys(urlParams).forEach(key => {
+    if (/^utm_/.test(key)) {
+      UTMParams[key] = urlParams[key];
+    }
+  });
+  UTMValue = JSON.parse(storage.getCookie(UTM_KEY) || '{}');
+  Object.assign(UTMValue, UTMParams);
+  storage.setCookie(UTM_KEY, JSON.stringify(UTMValue), getCurrentTimeToUTCString());
+}
+
 /**
  * get rtb qequest params
  *
@@ -436,10 +455,35 @@ function getParam(validBidRequests, bidderRequest) {
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
-  const topWindow = window.top;
+  const tpData = utils.deepAccess(bidderRequest, 'ortb2.user.data') || undefined;
   const title = getPageTitle();
   const desc = getPageDescription();
   const keywords = getPageKeywords();
+  let ext = {};
+  try {
+    ext = {
+      eids,
+      firstPartyData,
+      ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
+      pmguid: getPmgUID(),
+      tpData,
+      utm: storage.getCookie(UTM_KEY),
+      page: {
+        title: title ? title.slice(0, 100) : undefined,
+        desc: desc ? desc.slice(0, 300) : undefined,
+        keywords: keywords ? keywords.slice(0, 100) : undefined,
+        hLen: getHLen(),
+      },
+      device: {
+        nbw: getConnectionDownLink(),
+        hc: getHC(),
+        dm: getDM()
+      }
+    }
+  } catch (error) {}
+  try {
+    buildUTMTagData(page);
+  } catch (error) { }
 
   if (items && items.length) {
     let c = {
@@ -457,23 +501,7 @@ function getParam(validBidRequests, bidderRequest) {
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language,
       },
-      ext: {
-        eids,
-        firstPartyData,
-        ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
-        pmguid: getPmgUID(),
-        page: {
-          title: title ? title.slice(0, 100) : undefined,
-          desc: desc ? desc.slice(0, 300) : undefined,
-          keywords: keywords ? keywords.slice(0, 100) : undefined,
-          hLen: topWindow.history?.length || undefined,
-        },
-        device: {
-          nbw: getConnectionDownLink(),
-          hc: topWindow.navigator?.hardwareConcurrency || undefined,
-          dm: topWindow.navigator?.deviceMemory || undefined,
-        }
-      },
+      ext,
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
         id: sharedid || pubcid,

@@ -55,11 +55,6 @@ export const spec = {
 
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const bidRequest = validBidRequests[i];
-      if (
-        (bidRequest.mediaTypes?.native || bidRequest.mediaTypes?.video) &&
-        bidRequest.mediaTypes?.banner) {
-        continue
-      }
 
       let queryString = '';
 
@@ -71,10 +66,8 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'cdep', bidRequest.ortb2?.device?.ext?.cdep)
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
-
-      if (pageUrl) {
-        queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
-      }
+      queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
+      queryString = tryAppendQueryString(queryString, 'schain', spec.serializeSupplyChain(bidRequest.schain || []))
 
       const adFormatIDs = pickAdFormats(bidRequest)
       if (adFormatIDs && adFormatIDs.length > 0) {
@@ -172,6 +165,31 @@ export const spec = {
 
     return syncs;
   },
+
+  /**
+   * Serialize supply chain object
+   * @param {Object} supplyChain
+   * @returns {String | undefined}
+   */
+  serializeSupplyChain: function(supplyChain) {
+    if (!supplyChain || !supplyChain.nodes) return undefined
+    const { ver, complete, nodes } = supplyChain
+    return `${ver},${complete}!${spec.serializeSupplyChainNodes(nodes)}`
+  },
+
+  /**
+   * Serialize each supply chain nodes
+   * @param {Array} nodes
+   * @returns {String}
+   */
+  serializeSupplyChainNodes: function(nodes) {
+    const fields = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
+    return nodes.map((n) => {
+      return fields.map((f) => {
+        return encodeURIComponent(n[f] || '').replace(/!/g, '%21')
+      }).join(',')
+    }).join('!')
+  }
 }
 
 function pickAdFormats(bidRequest) {

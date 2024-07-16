@@ -1,6 +1,6 @@
 {
   "name": "@guardian/prebid.js",
-  "version": "8.34.0",
+  "version": "8.52.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "files": [
@@ -76,6 +76,7 @@
     "gulp-eslint": "^6.0.0",
     "gulp-if": "^3.0.0",
     "gulp-js-escape": "^1.0.1",
+    "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.8.0",
     "gulp-sourcemaps": "^3.0.0",
@@ -137,8 +138,9 @@
     "dset": "3.1.2",
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
-    "just-clone": "^1.0.2",
-    "live-connect-js": "^6.3.4"
+    "gulp-wrap": "^0.15.0",
+    "klona": "^2.0.6",
+    "live-connect-js": "^6.7.3"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

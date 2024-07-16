@@ -153,7 +153,7 @@ export function getDomLoadingDuration() {
 }
 
 /**
- * @param bidRequest
+ * @param bidResponse
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
 export const buildBid = (bidResponse) => {
@@ -285,7 +285,6 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @description Parse the response (from buildRequests) and generate one or more bid objects.
  *
  * @param serverResponse
- * @param request
  * @return
  */
 const interpretResponse = (serverResponse) => {

@@ -67,7 +67,7 @@ export const spec = {
         },
         test: 0,
         at: 2,
-        tmax: bid.params.timeout || config.getConfig('bidderTimeout') || 100,
+        tmax: bidderRequest.timeout,
         cur: ['USD'],
         regs: {
           ext: {

@@ -226,6 +226,36 @@ const PVID_RESPONSE = Object.assign({}, VIDEO_RESPONSE, {
   pvid: '43513f11-55a0-4a83-94e5-0ebc08f54a2c',
 });
 
+const DIGITAL_SERVICES_ACT_RESPONSE = Object.assign({}, RESPONSE, {
+  dsa: {
+    behalf: 'some-behalf',
+    paid: 'some-paid',
+    transparency: [{
+      domain: 'test.com',
+      dsaparams: [1, 2, 3]
+    }],
+    adrender: 1
+  }
+});
+
+const DIGITAL_SERVICES_ACT_CONFIG = {
+  ortb2: {
+    regs: {
+      ext: {
+        dsa: {
+          dsarequired: '1',
+          pubrender: '2',
+          datatopub: '3',
+          transparency: [{
+            domain: 'test.com',
+            dsaparams: [1, 2, 3]
+          }]
+        },
+      }
+    },
+  }
+}
+
 const REQPARAMS = {
   json: true,
   ts: 1234567890,
@@ -486,6 +516,145 @@ describe('yieldlabBidAdapter', () => {
         expect(request.url).to.not.include('sizes');
       });
     });
+
+    describe('Digital Services Act handling', () => {
+      beforeEach(() => {
+        config.setConfig(DIGITAL_SERVICES_ACT_CONFIG);
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('does pass dsarequired parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsarequired=1');
+      });
+
+      it('does pass dsapubrender parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsapubrender=2');
+      });
+
+      it('does pass dsadatatopub parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsadatatopub=3');
+      });
+
+      it('does pass dsadomain parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsadomain=test.com');
+      });
+
+      it('does pass encoded dsaparams parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsaparams=1%2C2%2C3');
+      });
+
+      it('does pass multiple transparencies in dsatransparency param', () => {
+        const DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES = {
+          ortb2: {
+            regs: {
+              ext: {
+                dsa: {
+                  dsarequired: '1',
+                  pubrender: '2',
+                  datatopub: '3',
+                  transparency: [
+                    {
+                      domain: 'test.com',
+                      dsaparams: [1, 2, 3]
+                    },
+                    {
+                      domain: 'example.com',
+                      dsaparams: [4, 5, 6]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        };
+
+        config.setConfig(DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES);
+
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES });
+
+        expect(request.url).to.include('dsatransparency=test.com~1_2_3~~example.com~4_5_6');
+        expect(request.url).to.not.include('dsadomain');
+        expect(request.url).to.not.include('dsaparams');
+      });
+    });
+
+    describe('google topics handling', () => {
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('does pass segtax, segclass, segments for google topics data', () => {
+        const GOOGLE_TOPICS_DATA = {
+          ortb2: {
+            user: {
+              data: [
+                {
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {id: '717'}, {id: '808'},
+                  ]
+                }
+              ]
+            },
+          },
+        }
+        config.setConfig(GOOGLE_TOPICS_DATA);
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA });
+        expect(request.url).to.include('segtax=600&segclass=v1&segments=717%2C808');
+      });
+
+      it('does not pass topics params for invalid topics data', () => {
+        const INVALID_TOPICS_DATA = {
+          ortb2: {
+            user: {
+              data: [
+                {
+                  segment: []
+                },
+                {
+                  segment: [{id: ''}]
+                },
+                {
+                  segment: [{id: null}]
+                },
+                {
+                  segment: [{id: 'dummy'}, {id: '123'}]
+                },
+                {
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {
+                      name: 'dummy'
+                    }
+                  ]
+                },
+              ]
+            }
+          }
+        };
+
+        config.setConfig(INVALID_TOPICS_DATA);
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...INVALID_TOPICS_DATA });
+
+        expect(request.url).to.not.include('segtax');
+        expect(request.url).to.not.include('segclass');
+        expect(request.url).to.not.include('segments');
+      });
+    });
   });
 
   describe('interpretResponse', () => {
@@ -675,6 +844,17 @@ describe('yieldlabBidAdapter', () => {
     it('should append iab_content to vastUrl', () => {
       const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS_IAB_CONTENT});
       expect(result[0].vastUrl).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0');
+    });
+
+    it('should get digital services act object in matched bid response', () => {
+      const result = spec.interpretResponse({body: [DIGITAL_SERVICES_ACT_RESPONSE]}, {validBidRequests: [{...DEFAULT_REQUEST(), ...DIGITAL_SERVICES_ACT_CONFIG}], queryParams: REQPARAMS});
+
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].meta.dsa.behalf).to.equal('some-behalf');
+      expect(result[0].meta.dsa.paid).to.equal('some-paid');
+      expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com');
+      expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3]);
+      expect(result[0].meta.dsa.adrender).to.equal(1);
     });
   });
 

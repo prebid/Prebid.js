@@ -35,7 +35,9 @@ const cmpCallMap = {
 
 /**
  * This function reads the consent string from the config to obtain the consent information of the user.
- * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
+ * @param {Object} options - An object containing the callbacks.
+ * @param {function(Object): void} options.onSuccess - Acts as a success callback when the value is read from config; pass along consentObject from CMP.
+ * @param {function(string, ...Object?): void} [options.onError] - Acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging). Optional.
  */
 function lookupStaticConsentData({onSuccess, onError}) {
   processCmpData(staticConsentData, {onSuccess, onError})
@@ -45,8 +47,10 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function({})} onSuccess acts as a success callback when CMP returns a value; pass along consentObjectfrom CMP
- * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
+ * @param {Object} options - An object containing the callbacks.
+ * @param {function(Object): void} options.onSuccess - Acts as a success callback when CMP returns a value; pass along consentObject from CMP.
+ * @param {function(string, ...Object?): void} options.onError - Acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging).
+ * @param {function(Object): void} options.onEvent - Acts as an event callback for processing TCF data events from CMP.
  */
 function lookupIabConsent({onSuccess, onError, onEvent}) {
   function cmpResponseCallback(tcfData, success) {
@@ -250,7 +254,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
  */
 export function setConsentConfig(config) {
   // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.

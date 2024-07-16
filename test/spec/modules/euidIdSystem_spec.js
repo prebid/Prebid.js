@@ -1,4 +1,4 @@
-import {coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
+import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import {euidIdSubmodule} from 'modules/euidIdSystem.js';
 import 'modules/consentManagement.js';
@@ -8,6 +8,7 @@ import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSys
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 import {server} from 'test/mocks/xhr';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 let expect = require('chai').expect;
 
@@ -22,6 +23,7 @@ const refreshedToken = 'refreshed-advertising-token';
 const auctionDelayMs = 10;
 
 const makeEuidIdentityContainer = (token) => ({euid: {id: token}});
+const makeEuidOptoutContainer = (token) => ({euid: {optout: true}});
 const useLocalStorage = true;
 
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
@@ -30,12 +32,15 @@ const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => (
 
 const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
 const clientSideGeneratedToken = 'client-side-generated-advertising-token';
+const optoutToken = 'optout-token';
 
 const apiUrl = 'https://prod.euid.eu/v2/token/refresh';
 const cstgApiUrl = 'https://prod.euid.eu/v2/token/client-generate';
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = (token) => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
+const makeOptoutResponseBody = (token) => btoa(JSON.stringify({ status: 'optout', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
 const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidIdentityContainer(token));
+const expectOptout = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidOptoutContainer(token));
 const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
 
 describe('EUID module', function() {
@@ -146,5 +151,35 @@ describe('EUID module', function() {
       const bid = await runAuction();
       expectToken(bid, clientSideGeneratedToken);
     });
+    it('Should receive an optout response when the user has opted out.', async function() {
+      setGdprApplies(true);
+      const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
+      configureEuidCstgResponse(200, makeOptoutResponseBody(optoutToken));
+      config.setConfig(makePrebidConfig({ euidToken, ...cstgConfigParams, email: 'optout@test.com' }));
+      apiHelpers.respondAfterDelay(1, server);
+
+      const bid = await runAuction();
+      expectOptout(bid, optoutToken);
+    });
   }
+
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(euidIdSubmodule);
+    });
+    it('euid', function() {
+      const userId = {
+        euid: {'id': 'Sample_AD_Token'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'euid.eu',
+        uids: [{
+          id: 'Sample_AD_Token',
+          atype: 3
+        }]
+      });
+    });
+  })
 });

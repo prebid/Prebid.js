@@ -31,7 +31,8 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1,
             ext: {
-                rtiPartner: 'TDID'
+                rtiPartner: 'TDID',
+                provider: 'liveintent.com'
             }
         }]
     },
@@ -106,7 +107,7 @@ userIdAsEids = [
             segments: ['s1', 's2']
         }
     },
-    
+
     {
         source: 'bidswitch.net',
         uids: [{
@@ -117,7 +118,7 @@ userIdAsEids = [
             }
         }]
     },
-    
+
     {
         source: 'liveintent.indexexchange.com',
         uids: [{
@@ -160,7 +161,7 @@ userIdAsEids = [
                 provider: 'liveintent.com'
             }
         }]
-    },   
+    },
 
     {
         source: 'media.net',
@@ -172,7 +173,7 @@ userIdAsEids = [
             }
         }]
     },
-
+    
     {
         source: 'rubiconproject.com',
         uids: [{
@@ -185,10 +186,13 @@ userIdAsEids = [
     },
 
     {
-        source: 'rubiconproject.com',
+        source: 'fpid.liveintent.com',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 1,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
