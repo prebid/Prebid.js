@@ -6,7 +6,7 @@ Module Type: Bidder Adapter
 Maintainer: tech.stack@doceree.com
 ```
 
-<!-- # Description  -->
+<!-- # Description -->
 
 Connects to Doceree demand source to fetch bids.  
 Please use `docereeadmanager` as the bidder code.
