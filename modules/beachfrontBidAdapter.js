@@ -4,9 +4,7 @@ import {
   deepSetValue,
   getUniqueIdentifierStr,
   isArray,
-  isFn,
   logWarn,
-  parseSizesInput,
   parseUrl,
   formatQS
 } from '../src/utils.js';
@@ -14,7 +12,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
-import { parseSizes, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor} from '../libraries/advangUtils/index.js';
+import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation, getTopWindowReferrer } from '../libraries/advangUtils/index.js';
 
 const ADAPTER_VERSION = '1.21';
 const ADAPTER_NAME = 'BFIO_PREBID';
@@ -244,10 +242,6 @@ function isBannerBidValid(bid) {
   return isBannerBid(bid) && getBannerBidParam(bid, 'appId') && getBannerBidParam(bid, 'bidfloor');
 }
 
-function getTopWindowLocation(bidderRequest) {
-  return parseUrl(bidderRequest?.refererInfo?.page, { decodeSearchAsString: true });
-}
-
 function getEids(bid) {
   return SUPPORTED_USER_IDS
     .map(getUserId(bid))
@@ -273,22 +267,6 @@ function formatEid(id, source, rtiPartner, atype) {
     source,
     uids: [uid]
   };
-}
-
-function getVideoTargetingParams(bid) {
-  const result = {};
-  const excludeProps = ['playerSize', 'context', 'w', 'h'];
-  Object.keys(Object(bid.mediaTypes.video))
-    .filter(key => !includes(excludeProps, key))
-    .forEach(key => {
-      result[ key ] = bid.mediaTypes.video[ key ];
-    });
-  Object.keys(Object(bid.params.video))
-    .filter(key => includes(VIDEO_TARGETING, key))
-    .forEach(key => {
-      result[ key ] = bid.params.video[ key ];
-    });
-  return result;
 }
 
 function createVideoRequestData(bid, bidderRequest) {
