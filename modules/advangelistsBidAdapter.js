@@ -43,7 +43,7 @@ export const spec = {
       requests.push({
         method: 'POST',
         url: BANNER_ENDPOINT + pubid,
-        data: createRequestData(bid, bidderRequest, false, getBannerBidParam, getBannerSizes, getBannerBidFloor),
+        data: createRequestData(bid, bidderRequest, false, getBannerBidParam, getBannerSizes, getBannerBidFloor, BIDDER_CODE, ADAPTER_VERSION) {),
         bidRequest: bid
       });
     });
