@@ -2,6 +2,7 @@ import {deepAccess, generateUUID, isEmpty, isFn, parseSizesInput, parseUrl} from
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
+import {config} from '../src/config.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
@@ -219,7 +220,7 @@ function getVideoTargetingParams(bid) {
 }
 
 function createVideoRequestData(bid, bidderRequest) {
-  return createRequestData(bid, bidderRequest, true); 
+  return createRequestData(bid, bidderRequest, true);
 }
 
 function getTopWindowLocation(bidderRequest) {
@@ -227,7 +228,7 @@ function getTopWindowLocation(bidderRequest) {
 }
 
 function createBannerRequestData(bid, bidderRequest) {
-  return createRequestData(bid, bidderRequest, false); 
+  return createRequestData(bid, bidderRequest, false);
 }
 
 registerBidder(spec);
@@ -289,7 +290,6 @@ function createRequestData(bid, bidderRequest, isVideo) {
   });
 
   let placement = isVideo ? getVideoBidParam(bid, 'placement') : getBannerBidParam(bid, 'placement');
-  let mediaType = isVideo ? 'video' : 'banner';
   let impType = isVideo ? {
     'video': Object.assign({
       'id': generateUUID(),
