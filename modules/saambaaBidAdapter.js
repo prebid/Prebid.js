@@ -297,7 +297,6 @@ function createRequestData(bid, bidderRequest, isVideo) {
   });
 
   let placement = isVideo ? getVideoBidParam(bid, 'placement') : getBannerBidParam(bid, 'placement');
-  let mediaType = isVideo ? 'video' : 'banner';
   let impType = isVideo ? {
     'video': Object.assign({
       'id': generateUUID(),
@@ -314,7 +313,6 @@ function createRequestData(bid, bidderRequest, isVideo) {
       'h': firstSize.h
     }
   };
-  
   for (let j = 0; j < sizes.length; j++) {
     o.imp.push({
       'id': '' + j,
@@ -324,7 +322,7 @@ function createRequestData(bid, bidderRequest, isVideo) {
       'bidfloor': floor,
       'bidfloorcur': 'USD',
       'secure': secure,
-       ...impType
+      ...impType
     });
   }
   if (coppa) {
