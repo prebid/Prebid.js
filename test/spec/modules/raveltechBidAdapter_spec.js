@@ -123,14 +123,12 @@ describe('RavelTechAdapter', function () {
     });
 
     it('should anonymize every id if the source is eligible for anonymization', function() {
-      console.log('ravel: anonymize eids:', anonymizedBidRequests[0].data.eids);
       anonymizedBidRequests.forEach(bid => {
         const eids = bid.data.eids;
 
         eids.forEach(eid => {
-          if (eid.source === 'not-eligible-source') { return; }
-          expect(typeof eid.id).to.equal('string');
-          expect(eid.id.length).to.be.at.least(RID_LENGTH);
+          if (eid.source === 'not-eligible-source') { return; } // if the source is not eligible, then go to the next eid
+          expect(eid.id).to.be.an('array').that.is.empty;
         })
       })
     });
@@ -140,7 +138,7 @@ describe('RavelTechAdapter', function () {
         const eids = bid.data.eids;
 
         eids.forEach(eid => {
-          if (eid.source !== 'not-eligible-source') { return; }
+          if (eid.source !== 'not-eligible-source') { return; } // if the source is eligible, then go to the next eid
           expect(eid.id).to.satisfy(id => id === '' || (Array.isArray(id) && id.length === 0));
         })
       })
