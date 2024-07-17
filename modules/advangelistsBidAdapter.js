@@ -5,7 +5,7 @@ import { createRequestData, getBannerBidFloor, getBannerBidParam, getBannerSizes
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
-
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip', 'playerSize', 'context'];
 export const VIDEO_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';
 export const BANNER_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';
 export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
