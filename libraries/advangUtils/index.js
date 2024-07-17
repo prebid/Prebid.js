@@ -2,7 +2,6 @@ import { deepAccess, generateUUID, isFn, parseSizesInput, parseUrl } from '../..
 import { config } from '../../src/config.js';
 import { find, includes } from '../../src/polyfill.js';
 
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip', 'playerSize', 'context'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export function isBannerBid(bid) {
@@ -112,7 +111,7 @@ export function getTopWindowLocation(bidderRequest) {
   return parseUrl(bidderRequest?.refererInfo?.page, {decodeSearchAsString: true});
 }
 
-export function getVideoTargetingParams(bid) {
+export function getVideoTargetingParams(bid, VIDEO_TARGETING) {
   const result = {};
   const excludeProps = ['playerSize', 'context', 'w', 'h'];
   Object.keys(Object(bid.mediaTypes.video))
