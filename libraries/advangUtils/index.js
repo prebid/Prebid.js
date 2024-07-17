@@ -204,7 +204,7 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
 
   for (let j = 0; j < sizes.length; j++) {
     o.imp.push({
-      'id': '' + j
+      'id': '' + j,
       'displaymanager': '' + BIDDER_CODE,
       'displaymanagerver': '' + ADAPTER_VERSION,
       'tagId': placement,
