@@ -197,7 +197,7 @@ function buildVideo(video) {
     mimes: video.mimes,
     minduration: video.minduration,
     maxduration: video.maxduration,
-    placement: video.placement,
+    placement: video.plcmt,
     playbackmethod: video.playbackmethod,
     pos: video.position || 0,
     protocols: video.protocols,
