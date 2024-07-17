@@ -1,6 +1,6 @@
-import { deepAccess, generateUUID, isFn, parseSizesInput, parseUrl } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { find, includes } from '../src/polyfill.js';
+import { deepAccess, generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
+import { config } from '../../src/config.js';
+import { find, includes } from '../../src/polyfill.js';
 
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip', 'playerSize', 'context'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
@@ -128,7 +128,7 @@ export function getVideoTargetingParams(bid) {
   return result;
 }
 
-export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getSizes, getBidFloor) {
+export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getSizes, getBidFloor, BIDDER_CODE, ADAPTER_VERSION) {) {
   let topLocation = getTopWindowLocation(bidderRequest);
   let topReferrer = getTopWindowReferrer(bidderRequest);
   let paramSize = getBidParam(bid, 'size');
