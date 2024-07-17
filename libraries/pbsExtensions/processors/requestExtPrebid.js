@@ -9,10 +9,6 @@ export function setRequestExtPrebid(ortbRequest, bidderRequest) {
     mergeDeep(
       {
         auctiontimestamp: bidderRequest.auctionStart,
-        targeting: {
-          includewinners: true,
-          includebidderkeys: false
-        }
       },
       ortbRequest.ext?.prebid,
     )
