@@ -15,7 +15,7 @@ let pubid = '';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-
+  aliases: ['saambaa'],
   isBidRequestValid(bidRequest) {
     if (typeof bidRequest !== 'undefined') {
       if (bidRequest.bidder !== BIDDER_CODE && typeof bidRequest.params === 'undefined') { return false; }
