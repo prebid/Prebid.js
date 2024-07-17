@@ -16,5 +16,6 @@
   "smartadserverBidAdapter",
   "sonobiBidAdapter",
   "tripleliftBidAdapter",
-  "kargoBidAdapter"
+  "kargoBidAdapter",
+  "rubiconBidAdapter"
 ]
