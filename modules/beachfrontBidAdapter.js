@@ -271,7 +271,7 @@ function formatEid(id, source, rtiPartner, atype) {
 function createVideoRequestData(bid, bidderRequest) {
   let sizes = getVideoSizes(bid);
   let firstSize = getFirstSize(sizes);
-  let video = getVideoTargetingParams(bid);
+  let video = getVideoTargetingParams(bid, VIDEO_TARGETING);
   let appId = getVideoBidParam(bid, 'appId');
   let bidfloor = getVideoBidFloor(bid);
   let tagid = getVideoBidParam(bid, 'tagid');
