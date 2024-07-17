@@ -84,7 +84,7 @@ describe('kimberliteBidAdapter', function () {
         {
           mediaTypes: {
             [VIDEO]: {
-              mimes: ['video/mp4']
+              mimes: ['video/mp4'],
             }
           },
           params: {
@@ -131,12 +131,11 @@ describe('kimberliteBidAdapter', function () {
 
       if (FEATURES.VIDEO) {
         const impVideoData = requestData.imp[1];
-        expect(impVideoData.video).is.to.be.an('Object').and.have.all.keys(['mimes', 'linearity', 'placement', 'startdelay', 'protocols']);
+        expect(impVideoData.video).is.to.be.an('Object').and.have.all.keys(['mimes']);
 
         const videoData = impVideoData.video;
         expect(videoData.mimes).to.be.an('array').and.is.not.empty;
         expect(videoData.mimes[0]).to.be.a('string').that.equals('video/mp4');
-        expect(videoData.protocols).to.be.an('array').and.is.not.empty;
       }
     });
   });

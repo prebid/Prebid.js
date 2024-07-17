@@ -34,13 +34,6 @@ const converter = ortbConverter({
   imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = bidRequest.params.placementId;
-    const mediaTypes = bidRequest.mediaTypes;
-    if (imp[VIDEO]) {
-      deepSetValue(imp, 'video.linearity', mediaTypes[VIDEO].linearity || 1);
-      deepSetValue(imp, 'video.protocols', mediaTypes[VIDEO].protocols || [3, 6]);
-      deepSetValue(imp, 'video.placement', mediaTypes[VIDEO].placement || 1);
-      deepSetValue(imp, 'video.startdelay', mediaTypes[VIDEO].startdelay || 0);
-    }
     return imp;
   },
 
