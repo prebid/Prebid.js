@@ -128,7 +128,7 @@ export function getVideoTargetingParams(bid) {
   return result;
 }
 
-export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getSizes, getBidFloor, BIDDER_CODE, ADAPTER_VERSION) {) {
+export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getSizes, getBidFloor, BIDDER_CODE, ADAPTER_VERSION) {
   let topLocation = getTopWindowLocation(bidderRequest);
   let topReferrer = getTopWindowReferrer(bidderRequest);
   let paramSize = getBidParam(bid, 'size');
