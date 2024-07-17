@@ -25,7 +25,7 @@ describe('docereeadmanager', function () {
           userid: '',
           zipcode: '',
           userconsent: '',
-          platformUid : ''
+          platformUid: ''
         },
       },
     },
