@@ -1,7 +1,7 @@
-import { deepAccess, generateUUID, isEmpty } from '../src/utils.js';
+import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { createRequestData, getBannerBidFloor, getBannerBidParam, getBannerSizes, getTopWindowLocation, getVideoBidFloor, getVideoBidParam, getVideoSizes, isBannerBid, isBannerBidValid, isVideoBid, isVideoBidValid, isConnectedTV, isMobile, getDoNotTrack, findAndFillParam, getOsVersion, getFirstSize, getVideoTargetingParams, VIDEO_TARGETING, DEFAULT_MIMES } from '../libraries/advangUtils/index.js';
+import { createRequestData, getBannerBidFloor, getBannerBidParam, getBannerSizes, getVideoBidFloor, getVideoBidParam, getVideoSizes, isBannerBidValid, isVideoBid, isVideoBidValid } from '../libraries/advangUtils/index.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
