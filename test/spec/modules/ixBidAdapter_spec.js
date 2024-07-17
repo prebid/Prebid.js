@@ -5379,16 +5379,42 @@ describe('IndexexchangeAdapter', function () {
         device: {
           ip: '127.0.0.1'
         }
-      }
-      r = addDeviceInfo(r);
+      };
+      r = addDeviceInfo(r, {device: {}});
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
     });
     it('should add device to request when device doesnt exist', () => {
-      let r = {}
-      r = addDeviceInfo(r);
+      let r = {};
+      r = addDeviceInfo(r, {device: {}});
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
+    });
+    it('should send all available device info', () => {
+      const _deviceData = {
+        w: 980,
+        h: 1720,
+        dnt: 0,
+        ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+        language: 'en',
+        devicetype: 1,
+        make: 'Apple',
+        model: 'iPhone 12 Pro Max',
+        os: 'iOS',
+        osv: '17.4'
+      };
+      let r = {};
+      r = addDeviceInfo(r, {
+        device: _deviceData,
+      });
+      // ensure that the screen width and height are used in the request,
+      // instead of viewport size
+      const _expectedDeviceData = {
+        ..._deviceData,
+        w: window.screen.width,
+        h: window.screen.height,
+      };
+      expect(r.device).to.deep.equal(_expectedDeviceData);
     });
   });
 });

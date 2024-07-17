@@ -746,7 +746,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const isLastAdUnit = adUnitIndex === impKeys.length - 1;
 
-    r = addDeviceInfo(r);
+    r = addDeviceInfo(r, bidderRequest?.ortb2);
     r = deduplicateImpExtFields(r);
     r = removeSiteIDs(r);
 
@@ -2079,14 +2079,21 @@ function isValidAuctionConfig(config) {
 }
 
 /**
- * Adds device.w / device.h info
+ * Adds device info from ORTB2 data to the request
  * @param {object} r
+ * @param {object} ortb2Data
  * @returns object
  */
-export function addDeviceInfo(r) {
-  if (r.device == undefined) {
-    r.device = {};
+export function addDeviceInfo(r, ortb2Data) {
+  // add device object if not present
+  r.device = r.device || {};
+
+  // if present, merge device object from ortb2Data
+  if (ortb2Data?.device) {
+    mergeDeep(r.device, ortb2Data.device);
   }
+
+  // override screen width and height with window.screen values
   r.device.h = window.screen.height;
   r.device.w = window.screen.width;
 
