@@ -218,173 +218,112 @@ function getVideoTargetingParams(bid) {
   return result;
 }
 
-function createVideoRequestData(bid, bidderRequest) {
-  let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = getTopWindowReferrer(bidderRequest);
-
-  let sizes = getVideoSizes(bid);
-  let firstSize = getFirstSize(sizes);
-  let bidfloor = (getVideoBidFloor(bid) == null || typeof getVideoBidFloor(bid) == 'undefined') ? 2 : getVideoBidFloor(bid);
-  let video = getVideoTargetingParams(bid);
-  const o = {
-    'device': {
-      'langauge': (global.navigator.language).split('-')[0],
-      'dnt': (global.navigator.doNotTrack === 1 ? 1 : 0),
-      'devicetype': isMobile() ? 4 : isConnectedTV() ? 3 : 2,
-      'js': 1,
-      'os': getOsVersion()
-    },
-    'at': 2,
-    'site': {},
-    'tmax': Math.min(3000, bidderRequest.timeout),
-    'cur': ['USD'],
-    'id': bid.bidId,
-    'imp': [],
-    'regs': {
-      'ext': {
-      }
-    },
-    'user': {
-      'ext': {
-      }
-    }
-  };
-
-  o.site['page'] = topLocation.href;
-  o.site['domain'] = topLocation.hostname;
-  o.site['search'] = topLocation.search;
-  o.site['domain'] = topLocation.hostname;
-  o.site['ref'] = topReferrer;
-  o.site['mobile'] = isMobile() ? 1 : 0;
-  const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
-
-  o.device['dnt'] = getDoNotTrack() ? 1 : 0;
-
-  findAndFillParam(o.site, 'name', function() {
-    return global.top.document.title;
-  });
-
-  findAndFillParam(o.device, 'h', function() {
-    return global.screen.height;
-  });
-  findAndFillParam(o.device, 'w', function() {
-    return global.screen.width;
-  });
-
-  let placement = getVideoBidParam(bid, 'placement');
-
-  for (let j = 0; j < sizes.length; j++) {
-    o.imp.push({
-      'id': '' + j,
-      'displaymanager': '' + BIDDER_CODE,
-      'displaymanagerver': '' + ADAPTER_VERSION,
-      'tagId': placement,
-      'bidfloor': bidfloor,
-      'bidfloorcur': 'USD',
-      'secure': secure,
-      'video': Object.assign({
-        'id': generateUUID(),
-        'pos': 0,
-        'w': firstSize.w,
-        'h': firstSize.h,
-        'mimes': DEFAULT_MIMES
-      }, video)
-
-    });
-  }
-
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-    o.regs.ext = {'gdpr': gdprApplies ? 1 : 0};
-    o.user.ext = {'consent': consentString};
-  }
-
-  return o;
+function createVideoRequestData(bid, bidderRequest) { 
+    return createRequestData(bid, bidderRequest, true); 
 }
 
-function getTopWindowLocation(bidderRequest) {
-  return parseUrl(bidderRequest?.refererInfo?.page, {decodeSearchAsString: true});
-}
-
-function createBannerRequestData(bid, bidderRequest) {
-  let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = getTopWindowReferrer(bidderRequest);
-
-  let sizes = getBannerSizes(bid);
-  let bidfloor = (getBannerBidFloor(bid) == null || typeof getBannerBidFloor(bid) == 'undefined') ? 2 : getBannerBidFloor(bid);
-
-  const o = {
-    'device': {
-      'langauge': (global.navigator.language).split('-')[0],
-      'dnt': (global.navigator.doNotTrack === 1 ? 1 : 0),
-      'devicetype': isMobile() ? 4 : isConnectedTV() ? 3 : 2,
-      'js': 1
-    },
-    'at': 2,
-    'site': {},
-    'tmax': Math.min(3000, bidderRequest.timeout),
-    'cur': ['USD'],
-    'id': bid.bidId,
-    'imp': [],
-    'regs': {
-      'ext': {
-      }
-    },
-    'user': {
-      'ext': {
-      }
-    }
-  };
-
-  o.site['page'] = topLocation.href;
-  o.site['domain'] = topLocation.hostname;
-  o.site['search'] = topLocation.search;
-  o.site['domain'] = topLocation.hostname;
-  o.site['ref'] = topReferrer;
-  o.site['mobile'] = isMobile() ? 1 : 0;
-  const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
-
-  o.device['dnt'] = getDoNotTrack() ? 1 : 0;
-
-  findAndFillParam(o.site, 'name', function() {
-    return global.top.document.title;
-  });
-
-  findAndFillParam(o.device, 'h', function() {
-    return global.screen.height;
-  });
-  findAndFillParam(o.device, 'w', function() {
-    return global.screen.width;
-  });
-
-  let placement = getBannerBidParam(bid, 'placement');
-  for (let j = 0; j < sizes.length; j++) {
-    let size = sizes[j];
-
-    o.imp.push({
-      'id': '' + j,
-      'displaymanager': '' + BIDDER_CODE,
-      'displaymanagerver': '' + ADAPTER_VERSION,
-      'tagId': placement,
-      'bidfloor': bidfloor,
-      'bidfloorcur': 'USD',
-      'secure': secure,
-      'banner': {
-        'id': generateUUID(),
-        'pos': 0,
-        'w': size['w'],
-        'h': size['h']
-      }
-    });
-  }
-
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-    o.regs.ext = {'gdpr': gdprApplies ? 1 : 0};
-    o.user.ext = {'consent': consentString};
-  }
-
-  return o;
+function createBannerRequestData(bid, bidderRequest) { 
+    return createRequestData(bid, bidderRequest, false); 
 }
 
 registerBidder(spec);
+
+function createRequestData(bid, bidderRequest, isVideo) {
+    let topLocation = getTopWindowLocation(bidderRequest);
+    let topReferrer = getTopWindowReferrer(bidderRequest);
+    let paramSize = isVideo ? getVideoBidParam(bid, 'size') : getBannerBidParam(bid, 'size');
+    let sizes = [];
+    let coppa = config.getConfig('coppa');
+
+    if (typeof paramSize !== 'undefined' && paramSize != '') {
+        sizes = parseSizes(paramSize);
+    } else {
+        sizes = isVideo ? getVideoSizes(bid) : getBannerSizes(bid);
+    }
+
+    const firstSize = getFirstSize(sizes);
+    let floor = (isVideo ? getVideoBidFloor(bid) : getBannerBidFloor(bid)) || (isVideo ? 0.5 : 0.1);
+    const o = {
+        'device': {
+            'langauge': (global.navigator.language).split('-')[0],
+            'dnt': (global.navigator.doNotTrack === 1 ? 1 : 0),
+            'devicetype': isMobile() ? 4 : isConnectedTV() ? 3 : 2,
+            'js': 1,
+            'os': getOsVersion()
+        },
+        'at': 2,
+        'site': {},
+        'tmax': Math.min(3000, bidderRequest.timeout),
+        'cur': ['USD'],
+        'id': bid.bidId,
+        'imp': [],
+        'regs': {
+            'ext': {}
+        },
+        'user': {
+            'ext': {}
+        }
+    };
+
+    o.site['page'] = topLocation.href;
+    o.site['domain'] = topLocation.hostname;
+    o.site['search'] = topLocation.search;
+    o.site['ref'] = topReferrer;
+    o.site['mobile'] = isMobile() ? 1 : 0;
+    const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
+
+    o.device['dnt'] = getDoNotTrack() ? 1 : 0;
+
+    findAndFillParam(o.site, 'name', function() {
+        return global.top.document.title;
+    });
+
+    findAndFillParam(o.device, 'h', function() {
+        return global.screen.height;
+    });
+    findAndFillParam(o.device, 'w', function() {
+        return global.screen.width;
+    });
+
+    let placement = isVideo ? getVideoBidParam(bid, 'placement') : getBannerBidParam(bid, 'placement');
+    let mediaType = isVideo ? 'video' : 'banner';
+    let impType = isVideo ? {
+        'video': Object.assign({
+            'id': generateUUID(),
+            'pos': 0,
+            'w': firstSize.w,
+            'h': firstSize.h,
+            'mimes': DEFAULT_MIMES
+        }, getVideoTargetingParams(bid))
+    } : {
+        'banner': {
+            'id': generateUUID(),
+            'pos': 0,
+            'w': firstSize.w,
+            'h': firstSize.h
+        }
+    };
+
+    for (let j = 0; j < sizes.length; j++) {
+        o.imp.push({
+            'id': '' + j,
+            'displaymanager': '' + BIDDER_CODE,
+            'displaymanagerver': '' + ADAPTER_VERSION,
+            'tagId': placement,
+            'bidfloor': floor,
+            'bidfloorcur': 'USD',
+            'secure': secure,
+            ...impType
+        });
+    }
+    if (coppa) {
+        o.regs.ext = {'coppa': 1};
+    }
+    if (bidderRequest && bidderRequest.gdprConsent) {
+        let { gdprApplies, consentString } = bidderRequest.gdprConsent;
+        o.regs.ext = {'gdpr': gdprApplies ? 1 : 0};
+        o.user.ext = {'consent': consentString};
+    }
+
+    return o;
+}
