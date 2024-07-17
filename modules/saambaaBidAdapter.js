@@ -1,6 +1,5 @@
 // TODO: this adapter appears to have no tests
 
-import { deepAccess, generateUUID, isEmpty, parseUrl } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -45,7 +44,7 @@ export const spec = {
       requests.push({
         method: 'POST',
         url: BANNER_ENDPOINT + pubid,
-        data: createRequestData(bid, bidderRequest, false, getBannerBidParam, getBannerSizes, getBannerBidFloor),
+        data: createRequestData(bid, bidderRequest, false, getBannerBidParam, getBannerSizes, getBannerBidFloor, BIDDER_CODE, ADAPTER_VERSION) {),
         bidRequest: bid
       });
     });
