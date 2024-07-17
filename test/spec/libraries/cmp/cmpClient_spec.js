@@ -255,7 +255,7 @@ describe('cmpClient', () => {
 
           beforeEach(() => {
             callId = null;
-            messenger.reset();
+            messenger.restore();
             messenger.callsFake((msg) => {
               if (msg.mockApiCall) callId = msg.mockApiCall.callId;
             });
