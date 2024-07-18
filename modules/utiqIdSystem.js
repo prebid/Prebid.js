@@ -27,11 +27,6 @@ function getUtiqFromStorage() {
   let utiqPassStorage = JSON.parse(
     storage.getDataFromLocalStorage('utiqPass')
   );
-  logInfo(
-    `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
-      utiqPassStorage
-    )}`
-  );
 
   if (
     utiqPassStorage &&
@@ -40,12 +35,19 @@ function getUtiqFromStorage() {
     utiqPassStorage.connectId.idGraph.length > 0
   ) {
     utiqPass = utiqPassStorage.connectId.idGraph[0];
+
+    logInfo(
+      `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
+        utiqPassStorage
+      )}`
+    );
+
+    logInfo(
+      `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
+        utiqPass
+      )}`
+    );
   }
-  logInfo(
-    `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
-      utiqPass
-    )}`
-  );
 
   return {
     utiq:

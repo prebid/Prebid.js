@@ -10,6 +10,7 @@ const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
 const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 
+const GVLID = 1218
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
 
@@ -232,6 +233,7 @@ function hasValidParameters(bidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function(bidRequest) {
     logInfo('bid: ', bidRequest);

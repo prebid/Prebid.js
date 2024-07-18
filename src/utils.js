@@ -748,6 +748,7 @@ export function hasDeviceAccess() {
  * @returns {(boolean|undefined)}
  */
 export function checkCookieSupport() {
+  // eslint-disable-next-line prebid/no-member
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }
@@ -1107,6 +1108,14 @@ export function safeJSONParse(data) {
   try {
     return JSON.parse(data);
   } catch (e) {}
+}
+
+export function safeJSONEncode(data) {
+  try {
+    return JSON.stringify(data);
+  } catch (e) {
+    return '';
+  }
 }
 
 /**
