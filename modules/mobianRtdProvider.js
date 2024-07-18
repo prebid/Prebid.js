@@ -1,8 +1,6 @@
 /**
  * This module adds the Mobian RTD provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * @module modules/anonymisedRtdProvider
- * @requires module:modules/realTimeData
  */
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
