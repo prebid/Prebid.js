@@ -164,8 +164,12 @@ const sendEvent = payload => {
 
 const sendAuctionEvent = (auctionId, trigger) => {
   let auctionCache = cache.auctions[auctionId];
+
   const auctionEvent = formatAuction(auctionCache.auction);
 
+  console.log(trigger)
+  console.log(JSON.stringify(auctionEvent) + '/nEvent')
+  console.log(JSON.stringify(auctionCache))
   auctionCache.sent = true;
   sendEvent({
     auctions: [auctionEvent],
@@ -767,11 +771,51 @@ const handleBidResponse = (args, bidStatus) => {
   bid.httpLatencyMillis = latencies.net;
   bid.bidResponse = parseBidResponse(args, bid.bidResponse);
 
+  const analyticsTags = findTimeoutOptimization(args?.ext?.prebid);
+  if (analyticsTags) {
+    analyticsTags.forEach(tag => {
+      tag.activities.forEach(activity => {
+        if (activity.name === 'optimize-tmax' && activity.status === 'success') {
+          setAnalyticsTagData(activity.results[0]?.values, deepAccess(cache, `auctions.${args.auctionId}.auction`))
+        }
+      })
+    });
+  }
+
   // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
   const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
   if (pbsBidId && !cache.bidsCachedClientSide.has(args)) {
     bid.pbsBidId = pbsBidId;
   }
+}
+
+const findTimeoutOptimization = (bidResponse) => {
+  const tags = deepAccess(bidResponse, 'analytics.tags');
+  let timeoutOpt;
+  if (tags) {
+    tags.forEach(tag => {
+      if (tag.module === 'mgni-timeout-optimization') {
+        timeoutOpt = tag.analyticstags;
+      }
+    })
+  }
+  return timeoutOpt;
+}
+
+const setAnalyticsTagData = (values, auction) => {
+  let data = {
+    name: values.scenario,
+    rule: values.rule,
+    value: values.tmax
+  }
+
+  console.log(data)
+  const experiments = deepAccess(auction, 'experiments') || [];
+  experiments.push(data);
+
+  console.log(experiments)
+  deepSetValue(auction, 'experiments', experiments);
+  console.log(JSON.stringify(auction))
 }
 
 const getLatencies = (args, auctionStart) => {
@@ -975,6 +1019,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       if (!auctionCache) {
         break;
       }
+      console.log(JSON.stringify(auctionCache));
       // Set this auction as being done
       auctionCache.auction.auctionEnd = args.auctionEnd;
 
