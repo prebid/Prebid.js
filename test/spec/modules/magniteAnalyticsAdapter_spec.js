@@ -639,6 +639,48 @@ describe('magnite analytics adapter', function () {
       ]);
     });
 
+    it('should pass along atag data', function () {
+      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      bidResponse.ext = {
+        prebid: {
+          analytics: {
+            tags: [{
+              'stage': 'processed-auction-request',
+              'module': 'mgni-timeout-optimization',
+              'analyticstags': [{
+                activities: [{
+                  name: 'optimize-tmax',
+                  status: 'success',
+                  results: [{
+                    status: 'success',
+                    values: {
+                      'scenario': 'a',
+                      'rule': 'b',
+                      'tmax': 3
+                    }
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+      }
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, bidResponse);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message.auctions[0].experiments[0]).to.deep.equal({
+        name: 'a',
+        rule: 'b',
+        value: 3
+      });
+    });
+
     it('should pass along user ids', function () {
       let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].userId = {
