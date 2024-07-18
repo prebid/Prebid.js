@@ -22,7 +22,7 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '4.1';
+const BIDDER_VERSION = '4.2';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
@@ -33,6 +33,7 @@ const ALIASES = [
   { code: 'league-m', gvlid: 965 },
   { code: 'prjads' },
   { code: 'pubtech' },
+  { code: '1accord', gvlid: 965 },
 ];
 
 export const storage = getStorageManager({
