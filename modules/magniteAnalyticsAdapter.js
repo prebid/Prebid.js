@@ -167,9 +167,6 @@ const sendAuctionEvent = (auctionId, trigger) => {
 
   const auctionEvent = formatAuction(auctionCache.auction);
 
-  console.log(trigger)
-  console.log(JSON.stringify(auctionEvent) + '/nEvent')
-  console.log(JSON.stringify(auctionCache))
   auctionCache.sent = true;
   sendEvent({
     auctions: [auctionEvent],
@@ -809,13 +806,10 @@ const setAnalyticsTagData = (values, auction) => {
     value: values.tmax
   }
 
-  console.log(data)
   const experiments = deepAccess(auction, 'experiments') || [];
   experiments.push(data);
 
-  console.log(experiments)
   deepSetValue(auction, 'experiments', experiments);
-  console.log(JSON.stringify(auction))
 }
 
 const getLatencies = (args, auctionStart) => {
@@ -1019,7 +1013,6 @@ magniteAdapter.track = ({ eventType, args }) => {
       if (!auctionCache) {
         break;
       }
-      console.log(JSON.stringify(auctionCache));
       // Set this auction as being done
       auctionCache.auction.auctionEnd = args.auctionEnd;
 
