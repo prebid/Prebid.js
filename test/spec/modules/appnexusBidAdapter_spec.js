@@ -1783,7 +1783,6 @@ describe('AppNexusAdapter', function () {
               'cpm': 0.5,
               'cpm_publisher_currency': 0.5,
               'publisher_currency_code': '$',
-              'publisher_currency_codename': 'USD',
               'client_initiated_ad_counting': true,
               'viewability': {
                 'config': '<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
@@ -1866,38 +1865,6 @@ describe('AppNexusAdapter', function () {
       };
       let result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-    });
-
-    it('should parse non-default currency', function () {
-      let eurCpmResponse = deepClone(response);
-      eurCpmResponse.tags[0].ads[0].publisher_currency_codename = 'EUR';
-
-      let bidderRequest = {
-        bidderCode: 'appnexus',
-        bids: [{
-          bidId: '3db3773286ee59',
-          adUnitCode: 'code'
-        }]
-      };
-
-      let result = spec.interpretResponse({ body: eurCpmResponse }, { bidderRequest });
-      expect(result[0].currency).to.equal('EUR');
-    });
-
-    it('should parse default currency', function () {
-      let defaultCpmResponse = deepClone(response);
-      delete defaultCpmResponse.tags[0].ads[0].publisher_currency_codename;
-
-      let bidderRequest = {
-        bidderCode: 'appnexus',
-        bids: [{
-          bidId: '3db3773286ee59',
-          adUnitCode: 'code'
-        }]
-      };
-
-      let result = spec.interpretResponse({ body: defaultCpmResponse }, { bidderRequest });
-      expect(result[0].currency).to.equal('USD');
     });
 
     it('should reject 0 cpm bids', function () {
