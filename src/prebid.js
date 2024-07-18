@@ -869,6 +869,10 @@ pbjsInstance.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
 
+pbjsInstance.clearAllAuctions = function () {
+  auctionManager.clearAllAuctions();
+};
+
 if (FEATURES.VIDEO) {
   /**
    * Mark the winning bid as used, should only be used in conjunction with video
