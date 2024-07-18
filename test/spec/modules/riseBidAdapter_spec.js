@@ -434,6 +434,31 @@ describe('riseAdapter', function () {
       expect(request.data.bids[0].sua).to.not.exist;
     });
 
+    it('should send ORTB2 device data in bid request', function() {
+      const ortb2 = {
+        device: {
+          w: 980,
+          h: 1720,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+          language: 'en',
+          devicetype: 1,
+          make: 'Apple',
+          model: 'iPhone 12 Pro Max',
+          os: 'iOS',
+          osv: '17.4',
+          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+        },
+      };
+
+      const request = spec.buildRequests(bidRequests, {
+        ...bidderRequest,
+        ortb2,
+      });
+
+      expect(request.data.device).to.deep.equal(ortb2.device);
+    });
+
     describe('COPPA Param', function() {
       it('should set coppa equal 0 in bid request if coppa is set to false', function() {
         const request = spec.buildRequests(bidRequests, bidderRequest);

@@ -63,6 +63,7 @@ export const spec = {
 
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
     combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
+    combinedRequestsObject.device = generateDeviceParams(bidderRequest?.ortb2);
 
     return {
       method: 'POST',
@@ -491,4 +492,13 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
 
   return generalParams;
+}
+
+/**
+ * Generate device params
+ * @param {Object} ortb2Data
+ * @returns {Object} device params object
+ */
+function generateDeviceParams(ortb2Data) {
+  return ortb2Data?.device || {};
 }
