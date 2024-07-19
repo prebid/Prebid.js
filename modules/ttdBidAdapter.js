@@ -202,8 +202,8 @@ function getImpression(bidRequest) {
   return impression;
 }
 
-function getEndpoint() {
-  return BIDDER_ENDPOINT;
+function getEndpoint(validBidRequests) {
+  return validBidRequests[0].params.endpoint || BIDDER_ENDPOINT;
 }
 
 function getSizes(sizes) {
@@ -447,8 +447,7 @@ export const spec = {
       topLevel.pmp = firstPartyData.pmp
     }
 
-    let endpoint = getEndpoint()
-    let url = endpoint + bidderRequest.bids[0].params.supplySourceId;
+    let url = getEndpoint(validBidRequests) + bidderRequest.bids[0].params.supplySourceId;
 
     let serverRequest = {
       method: 'POST',
