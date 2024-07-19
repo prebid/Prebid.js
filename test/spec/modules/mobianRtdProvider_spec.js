@@ -35,7 +35,7 @@ describe('Mobian RTD Submodule', function () {
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('no_risk');
+      expect(risk['mobianGarmRisk']).to.equal('none');
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
@@ -52,7 +52,7 @@ describe('Mobian RTD Submodule', function () {
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('low_risk');
+      expect(risk['mobianGarmRisk']).to.equal('low');
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
@@ -69,7 +69,7 @@ describe('Mobian RTD Submodule', function () {
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('medium_risk');
+      expect(risk['mobianGarmRisk']).to.equal('medium');
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
@@ -86,7 +86,7 @@ describe('Mobian RTD Submodule', function () {
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('high_risk');
+      expect(risk['mobianGarmRisk']).to.equal('high');
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
@@ -97,95 +97,85 @@ describe('Mobian RTD Submodule', function () {
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('unknown');
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(risk).to.deep.equal({});
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal({});
     });
   });
 
-  // New tests for GARM content categories, sentiment, and emotions
-  it('should return correct GARM content categories', function () {
+  it('should handle response as string', function () {
+    const responseString = JSON.stringify({
+      garm_risk: 'none',
+      garm_no_risk: true,
+      sentiment_positive: true,
+      emotion_joy: true
+    });
+
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        garm_content_category_adult: false,
-        garm_content_category_arms: true,
-        garm_content_category_crime: true,
-        garm_content_category_death_injury: false,
-      });
+      callbacks.success(responseString);
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('garmContentCategories');
-      expect(risk['garmContentCategories']).to.deep.equal(['arms', 'crime']);
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(risk).to.deep.equal({
+        mobianGarmRisk: 'none',
+        garmContentCategories: [],
+        sentiment: 'positive',
+        emotions: ['joy']
+      });
     });
   });
 
-  it('should return correct sentiment', function () {
+  it('should handle response as object', function () {
+    const responseObject = {
+      garm_risk: 'low',
+      garm_low_risk: true,
+      garm_content_category_arms: true,
+      sentiment_negative: true,
+      emotion_anger: true
+    };
+
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        sentiment_positive: false,
-        sentiment_negative: true,
-        sentiment_neutral: false,
-      });
+      callbacks.success(responseObject);
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('sentiment');
-      expect(risk['sentiment']).to.equal('negative');
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(risk).to.deep.equal({
+        mobianGarmRisk: 'low',
+        garmContentCategories: ['arms'],
+        sentiment: 'negative',
+        emotions: ['anger']
+      });
     });
   });
 
-  it('should return correct emotions', function () {
+  it('should handle response with no garm_risk field', function () {
+    const response = {
+      garm_medium_risk: true,
+      garm_content_category_crime: true,
+      sentiment_neutral: true,
+      emotion_surprise: true
+    };
+
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        emotion_love: false,
-        emotion_joy: true,
-        emotion_anger: false,
-        emotion_surprise: true,
-        emotion_sadness: false,
-        emotion_fear: true,
-      });
+      callbacks.success(response);
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('emotions');
-      expect(risk['emotions']).to.deep.equal(['joy', 'surprise', 'fear']);
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(risk).to.deep.equal({
+        mobianGarmRisk: 'medium',
+        garmContentCategories: ['crime'],
+        sentiment: 'neutral',
+        emotions: ['surprise']
+      });
     });
   });
 
-  it('should handle all new properties correctly', function () {
+  it('should handle error response', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        garm_no_risk: false,
-        garm_low_risk: true,
-        garm_medium_risk: false,
-        garm_high_risk: false,
-        garm_content_category_adult: false,
-        garm_content_category_arms: true,
-        garm_content_category_crime: false,
-        sentiment_positive: false,
-        sentiment_negative: false,
-        sentiment_neutral: true,
-        emotion_love: false,
-        emotion_joy: true,
-        emotion_anger: false,
-        emotion_surprise: false,
-      });
+      callbacks.error();
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('low_risk');
-      expect(risk).to.have.property('garmContentCategories');
-      expect(risk['garmContentCategories']).to.deep.equal(['arms']);
-      expect(risk).to.have.property('sentiment');
-      expect(risk['sentiment']).to.equal('neutral');
-      expect(risk).to.have.property('emotions');
-      expect(risk['emotions']).to.deep.equal(['joy']);
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(risk).to.deep.equal({});
     });
   });
 });
