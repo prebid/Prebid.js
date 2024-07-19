@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {isNumber} from '../src/utils.js';
+import { isNumber, getConnectionType } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -98,33 +98,6 @@ function getDevice(firstPartyData) {
 
   return device;
 };
-
-function getConnectionType() {
-  const connection = navigator.connection || navigator.webkitConnection;
-  if (!connection) {
-    return 0;
-  }
-  switch (connection.type) {
-    case 'ethernet':
-      return 1;
-    case 'wifi':
-      return 2;
-    case 'cellular':
-      switch (connection.effectiveType) {
-        case 'slow-2g':
-        case '2g':
-          return 4;
-        case '3g':
-          return 5;
-        case '4g':
-          return 6;
-        default:
-          return 3;
-      }
-    default:
-      return 0;
-  }
-}
 
 function getUser(bidderRequest, firstPartyData) {
   let user = {};
