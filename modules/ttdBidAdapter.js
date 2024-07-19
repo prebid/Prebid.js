@@ -202,11 +202,7 @@ function getImpression(bidRequest) {
   return impression;
 }
 
-function getEndpoint(validBidRequests) {
-  if (validBidRequests[0].params.endpoint) {
-    return validBidRequests[0].params.endpoint;
-  }
-
+function getEndpoint() {
   return BIDDER_ENDPOINT;
 }
 
@@ -451,7 +447,7 @@ export const spec = {
       topLevel.pmp = firstPartyData.pmp
     }
 
-    let endpoint = getEndpoint(validBidRequests)
+    let endpoint = getEndpoint()
     let url = endpoint + bidderRequest.bids[0].params.supplySourceId;
 
     let serverRequest = {
