@@ -277,6 +277,13 @@ describe('ttdBidAdapter', function () {
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
     });
 
+    it('sends bid requests to the correct custom endpoint', function () {
+      let bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
+      bannerBidRequestsWithCustomEndpoint[0].params.endpoint = 'https://d2.adsrvr.org/bid/bidder/'
+      const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
+      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
+    });
+
     it('sends publisher id', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.site).to.be.not.null;
