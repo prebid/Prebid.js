@@ -4,7 +4,7 @@
  */
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { deepSetValue } from '../src/utils.js';
+import { deepSetValue, safeJSONParse } from '../src/utils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -23,20 +23,6 @@ function init() {
   return true;
 }
 
-function safeJSONParse(input) {
-  if (typeof input === 'string') {
-    try {
-      return JSON.parse(input);
-    } catch (error) {
-      return null;
-    }
-  } else if (typeof input === 'object' && input !== null) {
-    return input;
-  } else {
-    return null;
-  }
-}
-
 function getBidRequestData(bidReqConfig, callback, config) {
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const pageUrl = encodeURIComponent(getPageUrl());
@@ -48,7 +34,7 @@ function getBidRequestData(bidReqConfig, callback, config) {
     ajax(requestUrl, {
       success: function(responseData) {
         let response = safeJSONParse(responseData);
-        if (response === null) {
+        if (!response) {
           resolve({});
           callback();
           return;

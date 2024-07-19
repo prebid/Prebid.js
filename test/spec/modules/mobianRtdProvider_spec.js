@@ -25,12 +25,12 @@ describe('Mobian RTD Submodule', function () {
 
   it('should return no_risk when server responds with garm_no_risk', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
+      callbacks.success(JSON.stringify({
         garm_no_risk: true,
         garm_low_risk: false,
         garm_medium_risk: false,
         garm_high_risk: false
-      });
+      }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
@@ -42,12 +42,12 @@ describe('Mobian RTD Submodule', function () {
 
   it('should return low_risk when server responds with garm_low_risk', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
+      callbacks.success(JSON.stringify({
         garm_no_risk: false,
         garm_low_risk: true,
         garm_medium_risk: false,
         garm_high_risk: false
-      });
+      }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
@@ -59,12 +59,12 @@ describe('Mobian RTD Submodule', function () {
 
   it('should return medium_risk when server responds with garm_medium_risk', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
+      callbacks.success(JSON.stringify({
         garm_no_risk: false,
         garm_low_risk: false,
         garm_medium_risk: true,
         garm_high_risk: false
-      });
+      }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
@@ -76,12 +76,12 @@ describe('Mobian RTD Submodule', function () {
 
   it('should return high_risk when server responds with garm_high_risk', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
+      callbacks.success(JSON.stringify({
         garm_no_risk: false,
         garm_low_risk: false,
         garm_medium_risk: false,
         garm_high_risk: true
-      });
+      }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
@@ -91,33 +91,30 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  it('should return empty object and not modify bidReqConfig when server response is not of the expected shape', function () {
-    const originalBidReqConfig = JSON.parse(JSON.stringify(bidReqConfig));
+  it('should return empty object when server response is not valid JSON', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success('unexpected output not even of the right type');
     });
+    const originalConfig = JSON.parse(JSON.stringify(bidReqConfig));
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.deep.equal({});
       // Check that bidReqConfig hasn't been modified
-      expect(bidReqConfig).to.deep.equal(originalBidReqConfig);
+      expect(bidReqConfig).to.deep.equal(originalConfig);
     });
   });
 
-  it('should handle response as string', function () {
-    const responseString = JSON.stringify({
-      garm_risk: 'none',
-      garm_no_risk: true,
-      sentiment_positive: true,
-      emotion_joy: true
-    });
-
+  it('should handle response with direct garm_risk field', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success(responseString);
+      callbacks.success(JSON.stringify({
+        garm_risk: 'low',
+        sentiment_positive: true,
+        emotion_joy: true
+      }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.deep.equal({
-        mobianGarmRisk: 'none',
+        mobianGarmRisk: 'low',
         garmContentCategories: [],
         sentiment: 'positive',
         emotions: ['joy']
@@ -125,47 +122,24 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  it('should handle response as object', function () {
-    const responseObject = {
-      garm_risk: 'low',
-      garm_low_risk: true,
-      garm_content_category_arms: true,
-      sentiment_negative: true,
-      emotion_anger: true
-    };
-
+  it('should handle response with GARM content categories, sentiment, and emotions', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success(responseObject);
-    });
-
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({
-        mobianGarmRisk: 'low',
-        garmContentCategories: ['arms'],
-        sentiment: 'negative',
-        emotions: ['anger']
-      });
-    });
-  });
-
-  it('should handle response with no garm_risk field', function () {
-    const response = {
-      garm_medium_risk: true,
-      garm_content_category_crime: true,
-      sentiment_neutral: true,
-      emotion_surprise: true
-    };
-
-    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success(response);
+      callbacks.success(JSON.stringify({
+        garm_risk: 'medium',
+        garm_content_category_arms: true,
+        garm_content_category_crime: true,
+        sentiment_negative: true,
+        emotion_anger: true,
+        emotion_fear: true
+      }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.deep.equal({
         mobianGarmRisk: 'medium',
-        garmContentCategories: ['crime'],
-        sentiment: 'neutral',
-        emotions: ['surprise']
+        garmContentCategories: ['arms', 'crime'],
+        sentiment: 'negative',
+        emotions: ['anger', 'fear']
       });
     });
   });
