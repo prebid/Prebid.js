@@ -13,7 +13,7 @@ import {isNumber} from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2023.09.05';
+const BIDADAPTERVERSION = 'TTD-PREBID-2024.07.26';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -443,7 +443,7 @@ export const spec = {
       topLevel.pmp = firstPartyData.pmp
     }
 
-    let url = BIDDER_ENDPOINT + bidderRequest.bids[0].params.supplySourceId;
+    let url = (bidderRequest.bids[0].params.endpoint || BIDDER_ENDPOINT) + bidderRequest.bids[0].params.supplySourceId;
 
     let serverRequest = {
       method: 'POST',
