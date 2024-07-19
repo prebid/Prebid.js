@@ -91,14 +91,15 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  it('should return unknown when server response is not of the expected shape', function () {
+  it('should return empty object and not modify bidReqConfig when server response is not of the expected shape', function () {
+    const originalBidReqConfig = JSON.parse(JSON.stringify(bidReqConfig));
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success('unexpected output not even of the right type');
     });
-
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
       expect(risk).to.deep.equal({});
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal({});
+      // Check that bidReqConfig hasn't been modified
+      expect(bidReqConfig).to.deep.equal(originalBidReqConfig);
     });
   });
 
