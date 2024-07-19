@@ -202,10 +202,6 @@ function getImpression(bidRequest) {
   return impression;
 }
 
-function getEndpoint(validBidRequests) {
-  return validBidRequests[0].params.endpoint || BIDDER_ENDPOINT;
-}
-
 function getSizes(sizes) {
   const sizeStructs = utils.parseSizesInput(sizes)
     .filter(x => x) // sizes that don't conform are returned as null, which we want to ignore
@@ -447,7 +443,7 @@ export const spec = {
       topLevel.pmp = firstPartyData.pmp
     }
 
-    let url = getEndpoint(validBidRequests) + bidderRequest.bids[0].params.supplySourceId;
+    let url = BIDDER_ENDPOINT + bidderRequest.bids[0].params.supplySourceId;
 
     let serverRequest = {
       method: 'POST',
