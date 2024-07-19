@@ -95,11 +95,11 @@ function getPayload(bid, userData) {
 
   const data = {
     userid: platformUid || userid || '',
-    email: email || '',
-    firstname: firstname || '',
-    lastname: lastname || '',
+    email: '',
+    firstname: '',
+    lastname: '',
     specialization: specialization || '',
-    hcpid: hcpid || '',
+    hcpid: '',
     gender: gender || '',
     city: city || '',
     state: state || '',
@@ -113,7 +113,7 @@ function getPayload(bid, userData) {
     hashedmobile: hashedmobile || '',
     country: country || '',
     organization: organization || '',
-    dob: dob || '',
+    dob: '',
     userconsent: 1,
     mobile: mobile || ''
   };
