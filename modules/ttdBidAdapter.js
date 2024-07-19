@@ -202,6 +202,10 @@ function getImpression(bidRequest) {
   return impression;
 }
 
+function getEndpoint(validBidRequests) {
+  return validBidRequests[0].params.endpoint || BIDDER_ENDPOINT;
+}
+
 function getSizes(sizes) {
   const sizeStructs = utils.parseSizesInput(sizes)
     .filter(x => x) // sizes that don't conform are returned as null, which we want to ignore
