@@ -182,6 +182,32 @@ function buildRequest(bidRequests, bidderRequest) {
     isInfiniteScrollPage: isInfiniteScrollPage
   };
 
+  // Adds device data to the request,
+  // the properties are only added if they are not null
+  const deviceData = bidderRequest?.ortb2?.device;
+  const deviceDataProperties = {
+    ortb2DeviceDevicetype: deviceData?.devicetype,
+    ortb2DeviceMake: deviceData?.make,
+    ortb2DeviceModel: deviceData?.model,
+    ortb2DeviceOs: deviceData?.os,
+    ortb2DeviceOsv: deviceData?.osv,
+    ortb2DeviceH: deviceData?.h,
+    ortb2DeviceW: deviceData?.w,
+    ortb2DevicePxratio: deviceData?.pxratio,
+    ortb2DevicePpi: deviceData?.ppi,
+    ortb2DeviceExtFiftyonedegreesDeviceId: deviceData?.ext?.fiftyonedegrees_deviceId,
+  };
+  const filteredDeviceDataProperties = Object
+    .keys(deviceDataProperties)
+    .reduce((r, key) => {
+      if (deviceDataProperties[key]) {
+        r[key] = deviceDataProperties[key];
+      }
+      return r;
+    }, {});
+
+  data = {...data, ...filteredDeviceDataProperties};
+
   if (bidderRequest.refererInfo && bidderRequest.refererInfo.ref) {
     data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300);
   }
