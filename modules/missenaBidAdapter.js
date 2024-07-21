@@ -125,13 +125,13 @@ export const spec = {
         timeout: bidderRequest.timeout,
       };
 
-      if (bidderRequest?.refererInfo) {
+      if (bidderRequest && bidderRequest.refererInfo) {
         payload.referer = bidderRequest.refererInfo.ref;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
         payload.location = bidderRequest.refererInfo.topmostLocation;
       }
 
-      if (bidderRequest?.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
