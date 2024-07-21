@@ -99,7 +99,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests An array of bids
+   * @param {Object} bidderRequest Bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -211,7 +212,7 @@ export const spec = {
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} timeoutData Containing timeout specific data
    */
   onTimeout: function onTimeout(timeoutData) {
     logInfo('Missena - Timeout from adapter', timeoutData);
@@ -219,7 +220,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
