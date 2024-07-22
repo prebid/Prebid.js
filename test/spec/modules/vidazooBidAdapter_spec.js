@@ -160,8 +160,8 @@ const BIDDER_REQUEST = {
     },
     source: {
       ext: {
-        omidpn: "MyIntegrationPartner",
-        omidpv: "7.1"
+        omidpn: 'MyIntegrationPartner',
+        omidpv: '7.1'
       }
     }
   }
@@ -380,8 +380,8 @@ describe('VidazooBidAdapter', function () {
               startdelay: 0
             }
           },
-          omidpn: "MyIntegrationPartner",
-          omidpv: "7.1"
+          omidpn: 'MyIntegrationPartner',
+          omidpv: '7.1'
         }
       })
       ;
