@@ -1,7 +1,5 @@
-const SUCCESS = 0;
-const FAIL = 1;
 
-export function timeout(delayMs = 0) {
+export function timeout(delayMs = 0, timeoutError) {
   return new GreedyPromise((resolve) => {
     setTimeout(resolve, delayMs);
   });
