@@ -449,7 +449,9 @@ describe('ttdBidAdapter', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       const battr = [1, 2, 3];
       clonedBannerRequests[0].ortb2Imp = {
-        battr: battr
+        banner: {
+          battr: battr
+        }
       };
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.battr).to.equal(battr);

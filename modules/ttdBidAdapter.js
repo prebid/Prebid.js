@@ -216,7 +216,7 @@ function banner(bid) {
     },
     optionalParams);
 
-  const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
+  const battr = utils.deepAccess(bid, 'ortb2Imp.banner.battr');
   if (battr) {
     banner.battr = battr;
   }
@@ -293,7 +293,7 @@ function video(bid) {
       video.maxbitrate = maxbitrate;
     }
 
-    const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
+    const battr = utils.deepAccess(bid, 'ortb2Imp.video.battr');
     if (battr) {
       video.battr = battr;
     }
