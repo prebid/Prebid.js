@@ -2,10 +2,10 @@
 import { spec as baseAdapter } from './appnexusBidAdapter.js'; // eslint-disable-line prebid/validate-imports
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { logInfo } from '../src/utils.js';
+import { BidRequest, Bid } from '../src/bidfactory.js';
 
 const BIDDER_CODE = 'raveltech';
 const URL = 'https://pb1.rvlproxy.net/bid/bid';
-// const URL_SIMPLE = 'https://pb1.rvlproxy.net/bid/simplebid';
 
 export const spec = {
   code: BIDDER_CODE,
