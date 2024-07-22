@@ -17,6 +17,7 @@ const BIDADAPTERVERSION = 'TTD-PREBID-2024.07.26';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
+const BIDDER_ENDPOINT_HTTP2 = 'https://d2.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
 
 const MEDIA_TYPE = {
@@ -327,6 +328,13 @@ function video(bid) {
   }
 }
 
+function selectEndpoint(params) {
+  if (params.useHttp2) {
+    return BIDDER_ENDPOINT_HTTP2;
+  }
+  return BIDDER_ENDPOINT;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 21,
@@ -443,7 +451,7 @@ export const spec = {
       topLevel.pmp = firstPartyData.pmp
     }
 
-    let url = (bidderRequest.bids[0].params.endpoint || BIDDER_ENDPOINT) + bidderRequest.bids[0].params.supplySourceId;
+    let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
 
     let serverRequest = {
       method: 'POST',

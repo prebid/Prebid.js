@@ -279,7 +279,7 @@ describe('ttdBidAdapter', function () {
 
     it('sends bid requests to the correct custom endpoint', function () {
       let bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
-      bannerBidRequestsWithCustomEndpoint[0].params.endpoint = 'https://d2.adsrvr.org/bid/bidder/'
+      bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
       const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
       expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
     });
