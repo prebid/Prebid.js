@@ -92,7 +92,7 @@ const VIDEO_BID = {
       'minduration': 0,
       'startdelay': 0,
       'linearity': 1,
-      'api': [2],
+      'api': [2, 7],
       'placement': 1
     }
   }
@@ -157,8 +157,14 @@ const BIDDER_REQUEST = {
           segment: [{id: '243'}],
         },
       ],
+    },
+    source: {
+      ext: {
+        omidpn: "MyIntegrationPartner",
+        omidpv: "7.1"
+      }
     }
-  },
+  }
 };
 
 const SERVER_RESPONSE = {
@@ -359,7 +365,7 @@ describe('VidazooBidAdapter', function () {
           webSessionId: webSessionId,
           mediaTypes: {
             video: {
-              api: [2],
+              api: [2, 7],
               context: 'instream',
               linearity: 1,
               maxduration: 60,
@@ -373,7 +379,9 @@ describe('VidazooBidAdapter', function () {
               protocols: [2, 3, 5, 6],
               startdelay: 0
             }
-          }
+          },
+          omidpn: "MyIntegrationPartner",
+          omidpv: "7.1"
         }
       })
       ;
