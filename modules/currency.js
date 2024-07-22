@@ -1,4 +1,4 @@
-import {logError, logInfo, logMessage, logWarn} from '../src/utils.js';
+import {deepSetValue, logError, logInfo, logMessage, logWarn} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
@@ -8,6 +8,7 @@ import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {on as onEvent, off as offEvent} from '../src/events.js';
+import { enrichFPD } from '../src/fpd/enrichment.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -162,6 +163,7 @@ function initCurrency() {
     getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
     getHook('addBidResponse').before(addBidResponseHook, 100);
     getHook('responsesReady').before(responsesReadyHook);
+    enrichFPD.before(enrichFPDHook);
     onEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
     onEvent(EVENTS.AUCTION_INIT, loadRates);
     loadRates();
@@ -172,6 +174,7 @@ function resetCurrency() {
   if (currencySupportEnabled) {
     getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
     getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
+    enrichFPD.getHooks({hook: enrichFPDHook}).remove();
     offEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
     offEvent(EVENTS.AUCTION_INIT, loadRates);
     delete getGlobal().convertCurrency;
@@ -334,4 +337,11 @@ export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
   }
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});
+registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency, priority: 100});
+
+function enrichFPDHook(next, fpd) {
+  return next(fpd.then(ortb2 => {
+    deepSetValue(ortb2, 'cur', [adServerCurrency]);
+    return ortb2;
+  }))
+}
