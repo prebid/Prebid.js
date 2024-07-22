@@ -475,7 +475,9 @@ export function PrebidServer() {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
-          if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
+          const { emitSeatNonBid, emitAtag } = shouldEmitAnalyticsEvent(s2sBidRequest.s2sConfig, response)
+          // should be deprecated in Prebid 10
+          if (emitSeatNonBid) {
             events.emit(EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
               auctionId: bidRequests[0].auctionId,
@@ -483,6 +485,18 @@ export function PrebidServer() {
               response,
               adapterMetrics
             });
+          }
+          // pbs analytics event
+          if (emitSeatNonBid || emitAtag) {
+            const data = {
+              seatnonbid: emitSeatNonBid ? response.ext.seatnonbid : undefined,
+              atag: emitAtag ? response.ext.prebid.analytics.tags : undefined,
+              auctionId: bidRequests[0].auctionId,
+              requestedBidders,
+              response,
+              adapterMetrics
+            }
+            events.emit(EVENTS.PBS_ANALYTICS, data);
           }
           done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
@@ -601,8 +615,18 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   }
 }, 'processPBSRequest');
 
+function shouldEmitAnalyticsEvent(s2sConfig, response) {
+  return {
+    emitAtag: shouldEmitAtag(response),
+    emitSeatNonBid: shouldEmitNonbids(s2sConfig, response)
+  }
+}
 function shouldEmitNonbids(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
+}
+
+function shouldEmitAtag(response) {
+  return response?.ext?.prebid?.analytics?.tags;
 }
 
 /**
