@@ -12,6 +12,7 @@ import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
 import {consentManagementHook, lookupConsentData} from '../libraries/consentManagement/cmUtils.js';
+import {GreedyPromise} from '../test/helpers/greedyPromise';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -33,8 +34,11 @@ const cmpCallMap = {
   'static': lookupStaticConsentData
 };
 
-async function lookupStaticConsentData() {
-  gdprDataHandler.setConsentData(processCmpData(staticConsentData))
+function lookupStaticConsentData() {
+  return new GreedyPromise((resolve) => {
+    gdprDataHandler.setConsentData(processCmpData(staticConsentData));
+    resolve();
+  });
 }
 
 /**

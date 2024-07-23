@@ -24,8 +24,8 @@ let staticConsentData;
 export let consentDataLoaded;
 let addedConsentHook = false;
 
-async function lookupStaticConsentData() {
-  return processCmpData(staticConsentData);
+function lookupStaticConsentData() {
+  return new GreedyPromise((resolve) => resolve(processCmpData(staticConsentData)));
 }
 
 class GPPError {
@@ -147,8 +147,8 @@ export class GPPClient {
   }
 }
 
-async function lookupIabConsent() {
-  return GPPClient.get().refresh();
+function lookupIabConsent() {
+  return new GreedyPromise((resolve) => resolve(GPPClient.get().refresh()))
 }
 
 // add new CMPs here, with their dedicated lookup function
