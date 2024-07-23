@@ -2637,7 +2637,7 @@ describe('Unit: Prebid Module', function () {
       if (!FEATURES.NATIVE) {
         return;
       }
-      let adUnits;
+      let adUnits, auctionStarted;
 
       beforeEach(function () {
         adUnits = [{
@@ -2656,15 +2656,21 @@ describe('Unit: Prebid Module', function () {
         }];
         adUnitCodes = ['adUnit-code'];
         configObj.setConfig({maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999});
-        sinon.spy(adapterManager, 'callBids');
+        auctionStarted = new Promise(resolve => {
+          sinon.stub(adapterManager, 'callBids').callsFake(function() {
+            resolve();
+            return adapterManager.callBids.wrappedMethod.apply(this, arguments);
+          });
+        })
       })
 
       afterEach(function () {
         adapterManager.callBids.restore();
       });
 
-      it('bidders that support one of the declared formats are allowed to participate', function () {
+      it('bidders that support one of the declared formats are allowed to participate', async function () {
         $$PREBID_GLOBAL$$.requestBids({adUnits});
+        await auctionStarted;
         sinon.assert.calledOnce(adapterManager.callBids);
 
         const spyArgs = adapterManager.callBids.getCall(0);
@@ -2674,10 +2680,11 @@ describe('Unit: Prebid Module', function () {
         expect(biddersCalled.length).to.equal(2);
       });
 
-      it('bidders that do not support one of the declared formats are dropped', function () {
+      it('bidders that do not support one of the declared formats are dropped', async function () {
         delete adUnits[0].mediaTypes.banner;
 
         $$PREBID_GLOBAL$$.requestBids({adUnits});
+        await auctionStarted;
         sinon.assert.calledOnce(adapterManager.callBids);
 
         const spyArgs = adapterManager.callBids.getCall(0);
@@ -2692,44 +2699,10 @@ describe('Unit: Prebid Module', function () {
         return;
       }
       let spyCallBids;
-      let createAuctionStub;
-      let adUnits;
-
-      before(function () {
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-          bids: [
-            {bidder: 'appnexus', params: {placementId: '10433394'}}
-          ]
-        }];
-        let adUnitCodes = ['adUnit-code'];
-        let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-        adUnits[0]['mediaTypes'] = { native: {} };
-        adUnitCodes = ['adUnit-code'];
-        let auction1 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-
-        adUnits = [{
-          code: 'adUnit-code',
-          mediaTypes: { native: { type: 'image' } },
-          sizes: [[300, 250], [300, 600]],
-          bids: [
-            {bidder: 'appnexus', params: {placementId: 'id'}}
-          ]
-        }];
-        let auction3 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-
-        let createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.onCall(0).returns(auction1);
-        createAuctionStub.onCall(2).returns(auction3);
-        createAuctionStub.returns(auction);
-      });
-
-      after(function () {
-        auctionModule.newAuction.restore();
-      });
+      let adUnits, adUnitCodes;
 
       beforeEach(function () {
+        adUnitCodes = ['adUnit-code'];
         spyCallBids = sinon.spy(adapterManager, 'callBids');
       })
 
@@ -2737,32 +2710,50 @@ describe('Unit: Prebid Module', function () {
         adapterManager.callBids.restore();
       })
 
-      it('should callBids if a native adUnit has all native bidders', function () {
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledOnce(adapterManager.callBids);
-      });
+      function runAuction(request = {}) {
+        const auctionStarted = new Promise(resolve => {
+          sandbox.stub(auctionModule, 'newAuction').callsFake((...args) => {
+            resolve();
+            return auctionModule.newAuction.wrappedMethod(...args);
+          });
+        })
+        $$PREBID_GLOBAL$$.requestBids(request);
+        return auctionStarted;
+      }
 
-      it('should call callBids function on adapterManager', function () {
-        let adUnits = [{
+      it('should callBids if a native adUnit has all native bidders', async function () {
+        adUnits = [{
           code: 'adUnit-code',
-          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+          mediaTypes: { native: {} },
           bids: [
             {bidder: 'appnexus', params: {placementId: '10433394'}}
           ]
         }];
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
+        await runAuction({adUnits});
+        sinon.assert.calledOnce(adapterManager.callBids);
+      });
+
+      it('should call callBids function on adapterManager', async function () {
+        adUnits = [{
+          code: 'adUnit-code',
+          mediaTypes: {banner: {sizes: [[300, 250], [300, 600]]}},
+          bids: [
+            {bidder: 'appnexus', params: {placementId: '10433394'}}
+          ]
+        }];
+        await runAuction({adUnits});
         assert.ok(spyCallBids.called, 'called adapterManager.callBids');
       });
 
-      it('splits native type to individual native assets', function () {
-        let adUnits = [{
+      it('splits native type to individual native assets', async function () {
+        adUnits = [{
           code: 'adUnit-code',
           mediaTypes: {native: {type: 'image'}},
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}}
           ]
         }];
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
+        await runAuction({adUnits});
         const spyArgs = adapterManager.callBids.getCall(0);
         const nativeRequest = spyArgs.args[1][0].bids[0].nativeParams;
         expect(nativeRequest.ortb.assets).to.deep.equal([
