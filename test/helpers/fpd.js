@@ -57,13 +57,3 @@ export function addFPDToBidderRequest(bidderRequest, overrides) {
     }
   });
 }
-
-export const syncAddFPDToBidderRequest = synchronize(addFPDToBidderRequest);
-
-function synchronize(fn) {
-  return function () {
-    let result;
-    fn.apply(this, arguments).then(res => { result = res });
-    return result;
-  }
-}
