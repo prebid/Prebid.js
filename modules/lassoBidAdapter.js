@@ -130,10 +130,10 @@ function getBidRequestUrl(aimXR, params) {
   if (params && params.dtc) {
     path = '/dtc-request';
   }
-  if (!aimXR && !(params.npi || params.npiHash)) {
-    return GET_IUD_URL + ENDPOINT_URL + path;
+  if (aimXR || params.npi || params.npiHash) {
+    return ENDPOINT_URL + path;
   }
-  return ENDPOINT_URL + path;
+  return GET_IUD_URL + ENDPOINT_URL + path;
 }
 
 function getDeviceData() {
