@@ -1912,20 +1912,26 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('startAuction', () => {
-    let sandbox, newAuctionStub;
+    let sandbox, newAuctionStub, auctionStarted;
+
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      newAuctionStub = sandbox.stub(auctionManager, 'createAuction').callsFake(() => ({
-        getAuctionId: () => 'mockAuctionId',
-        callBids: sinon.stub()
-      }));
+      auctionStarted = new Promise(resolve => {
+        newAuctionStub = sandbox.stub(auctionManager, 'createAuction').callsFake(() => {
+          resolve();
+          return {
+            getAuctionId: () => 'mockAuctionId',
+            callBids: sinon.stub()
+          }
+        });
+      });
     });
 
     afterEach(() => {
       sandbox.restore();
     });
 
-    it('passes ortb2 fragments to createAuction', () => {
+    it('passes ortb2 fragments to createAuction', async () => {
       const ortb2Fragments = {};
       pbjsModule.startAuction({
         adUnits: [{
@@ -1936,6 +1942,7 @@ describe('Unit: Prebid Module', function () {
         adUnitCodes: ['au'],
         ortb2Fragments
       });
+      await auctionStarted;
       sinon.assert.calledWith(newAuctionStub, sinon.match({
         ortb2Fragments: sinon.match.same(ortb2Fragments)
       }));

@@ -10,6 +10,7 @@ describe('events', () => {
   });
   afterEach(() => {
     clock.restore();
+    config.resetConfig();
   });
 
   it('should clear event log using eventHistoryTTL config', async () => {
