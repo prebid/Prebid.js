@@ -13,7 +13,9 @@ export function getConnectionType() {
       return 1;
     case 'wifi':
       return 2;
-    case 'cellular':
+    case 'wimax':
+      return 6;
+    default:
       switch (connection.effectiveType) {
         case 'slow-2g':
         case '2g':
@@ -23,9 +25,7 @@ export function getConnectionType() {
         case '4g':
           return 6;
         default:
-          return 3;
+          return connection.type == 'cellular' ? 3 : 0;
       }
-    default:
-      return 0;
   }
 }
