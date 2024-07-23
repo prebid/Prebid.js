@@ -24,6 +24,8 @@ export function getConnectionType() {
           return 5;
         case '4g':
           return 6;
+        case '5g':
+          return 7;
         default:
           return connection.type == 'cellular' ? 3 : 0;
       }
