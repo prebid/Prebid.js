@@ -108,19 +108,21 @@ export const spec = {
     if (!body.results || body.results.length < 1) {
       return [];
     }
+    const adResult = body.results[0];
+
     const targetImp = bidRequests.data.pb_ortb2.imp[0];
     const requestId = targetImp.id;
 
     const bidResponse = {
       requestId: requestId,
-      cpm: body.cpm || 0,
-      width: body.w ? body.w : 1,
-      height: body.h ? body.h : 1,
-      creativeId: body.creativeid || '',
+      cpm: adResult.cpm || 0,
+      width: adResult.w ? adResult.w : 1,
+      height: adResult.h ? adResult.h : 1,
+      creativeId: adResult || '',
       dealId: body.dealid || '',
       currency: getCurrencyFromBidderRequest(bidRequests.bidderRequest),
       netRevenue: true,
-      ttl: body.ttl || 10,
+      ttl: adResult.ttl || 10,
     };
     if (body.adomain && Array.isArray(body.adomain) && body.adomain.length) {
       bidResponse.meta = {
@@ -128,11 +130,11 @@ export const spec = {
       }
     }
     if (isNative(body)) {
-      bidResponse.native = createNativeAd(body);
+      bidResponse.native = createNativeAd(body.native_ad, body.beaconurl);
       bidResponse.mediaType = NATIVE;
     } else {
       // banner
-      bidResponse.ad = createAd(body, targetImp.ext.params, requestId);
+      bidResponse.ad = createAd(adResult, body?.location_params, targetImp.ext.params, requestId);
     }
     return [bidResponse];
   },
@@ -150,25 +152,25 @@ export const spec = {
   }
 };
 
-function createAd(body, bidParams, requestId) {
+function createAd(adResult, locationPrams, bidParams, requestId) {
   adgLogger.logInfo('params', bidParams);
-  let ad = body.ad;
-  if (body.vastxml && body.vastxml.length > 0) {
-    if (isUpperBillboard(body)) {
+  let ad = adResult.ad;
+  if (adResult.vastxml && adResult.vastxml.length > 0) {
+    if (isUpperBillboard(locationPrams)) {
       const marginTop = bidParams.marginTop ? bidParams.marginTop : '0';
-      ad = `<body>${createADGBrowserMTag()}${insertVASTMethodForADGBrowserM(body.vastxml, marginTop)}</body>`;
+      ad = `<body>${createADGBrowserMTag()}${insertVASTMethodForADGBrowserM(adResult.vastxml, marginTop)}</body>`;
     } else {
-      ad = `<body><div id="apvad-${requestId}"></div>${createAPVTag()}${insertVASTMethodForAPV(requestId, body.vastxml)}</body>`;
+      ad = `<body><div id="apvad-${requestId}"></div>${createAPVTag()}${insertVASTMethodForAPV(requestId, adResult.vastxml)}</body>`;
     }
   }
-  ad = appendChildToBody(ad, body.beacon);
+  ad = appendChildToBody(ad, adResult.beacon);
   if (removeWrapper(ad)) return removeWrapper(ad);
   return ad;
 }
 
-function isUpperBillboard(body) {
-  if (body.location_params && body.location_params.option && body.location_params.option.ad_type) {
-    return body.location_params.option.ad_type === 'upper_billboard';
+function isUpperBillboard(locationParams) {
+  if (locationParams && locationParams.option && locationParams.option.ad_type) {
+    return locationParams.option.ad_type === 'upper_billboard';
   }
   return false;
 }
@@ -178,10 +180,10 @@ function isNative(body) {
   return body.native_ad && body.native_ad.assets.length > 0;
 }
 
-function createNativeAd(body) {
+function createNativeAd(nativeAd, beaconUrl) {
   let native = {};
-  if (body.native_ad && body.native_ad.assets.length > 0) {
-    const assets = body.native_ad.assets;
+  if (nativeAd && nativeAd.assets.length > 0) {
+    const assets = nativeAd.assets;
     for (let i = 0, len = assets.length; i < len; i++) {
       switch (assets[i].id) {
         case 1:
@@ -215,11 +217,11 @@ function createNativeAd(body) {
           break;
       }
     }
-    native.clickUrl = body.native_ad.link.url;
-    native.clickTrackers = body.native_ad.link.clicktrackers || [];
-    native.impressionTrackers = body.native_ad.imptrackers || [];
-    if (body.beaconurl && body.beaconurl != '') {
-      native.impressionTrackers.push(body.beaconurl);
+    native.clickUrl = nativeAd.link.url;
+    native.clickTrackers = nativeAd.link.clicktrackers || [];
+    native.impressionTrackers = nativeAd.imptrackers || [];
+    if (beaconUrl && beaconUrl != '') {
+      native.impressionTrackers.push(beaconUrl);
     }
   }
   return native;
