@@ -12,7 +12,7 @@ import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
 import {consentManagementHook, lookupConsentData} from '../libraries/consentManagement/cmUtils.js';
-import {GreedyPromise} from '../test/helpers/greedyPromise';
+import {GreedyPromise} from '../src/utils/promise.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;

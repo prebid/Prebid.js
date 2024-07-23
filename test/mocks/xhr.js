@@ -1,5 +1,5 @@
 import {getUniqueIdentifierStr} from '../../src/utils.js';
-import {GreedyPromise} from '../helpers/greedyPromise.js';
+import {GreedyPromise} from 'libraries/greedy/greedyPromise.js';
 import {fakeXhr} from 'nise';
 import {dep} from 'src/ajax.js';
 

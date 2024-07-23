@@ -21,7 +21,7 @@ describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
   const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
   const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
-  const PB_ENDPOINT = 'pb';[]
+  const PB_ENDPOINT = 'pb'; []
   const AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
   const BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
   const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';

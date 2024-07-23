@@ -28,7 +28,6 @@ import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
-import {CONTEXT as FEATURES} from '../../../libraries/video/constants/ortb';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -2310,7 +2309,7 @@ describe('Unit: Prebid Module', function () {
               expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
               expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
             })
-            if(FEATURES.VIDEO) {
+            if (FEATURES.VIDEO) {
               it('mixed ad unit', async () => {
                 let mixedAdUnit = [{
                   code: 'test3',

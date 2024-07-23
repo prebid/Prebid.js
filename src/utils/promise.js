@@ -1,7 +1,7 @@
 
-export function delay(delayMs = 0) {
-  return new GreedyPromise((resolve) => {
-    setTimeout(resolve, delayMs);
+export function delay(delayMs = 0, P = GreedyPromise) {
+  return new P((resolve) => {
+    delayMs > 0 ? setTimeout(resolve, delayMs) : resolve();
   });
 }
 

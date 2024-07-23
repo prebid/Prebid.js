@@ -1,6 +1,6 @@
 import {defer} from '../../../../src/utils/promise.js';
 
-describe('promiseControls', () => {
+describe('defer', () => {
   Object.entries({
     'resolve': (p) => p,
     'reject': (p) => p.then(() => 'wrong', (v) => v)
