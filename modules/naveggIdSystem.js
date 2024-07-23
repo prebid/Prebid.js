@@ -6,8 +6,8 @@
  */
 import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { ajax } from '../src/ajax.js';
-import {getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE} from '../src/storageManager.js';
+import * as ajaxLib from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 /**
@@ -19,54 +19,46 @@ const MODULE_NAME = 'naveggId';
 const OLD_NAVEGG_ID = 'nid';
 const NAVEGG_ID = 'nvggid';
 const BASE_URL = 'https://id.navegg.com/uid/';
-const DEFAULT_EXPIRE = 8 * 24 * 3600 * 1000;
-const INVALID_EXPIRE = 3600 * 1000;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /* eslint-disable no-console */
 function getIdFromAPI(toStore, storedName) {
   const resp = function (callback) {
-    ajax(BASE_URL, {
-      success: response => {
+    ajaxLib.ajaxBuilder()(
+      BASE_URL,
+      response => {
         if (response) {
+          let responseObj;
+
           try {
-            const responseObj = {'nvggid': 'bmF2ZWdnaWQK'} // JSON.parse(response);
-            console.log('responseObj: ' + responseObj)
-            callback(responseObj[NAVEGG_ID])
+            responseObj = JSON.parse(response);
+            console.log(JSON.stringify(responseObj))
           } catch (error) {
             logError(error);
-            callback()
+            const fallbackValue = getOldCookie();
+            callback(fallbackValue)
+          }
+
+          if (responseObj && responseObj[NAVEGG_ID]) {
+            callback(responseObj[NAVEGG_ID]);
+          } else {
+            const fallbackValue = getOldCookie();
+            console.log('fallbackValue ' + fallbackValue)
+            callback(fallbackValue);
           }
         }
       },
-      error: error => {
+      error => {
         logError('Navegg ID fetch encountered an error', error);
-      }
-    },
-    undefined, { method: 'GET', withCredentials: false });
-  }
+        const fallbackValue = getOldCookie();
+        callback(fallbackValue)
+      },
+      {method: 'GET', withCredentials: false});
+  };
   return resp
 }
 
-/**
- * @returns {string | null}
- */
-function readNaveggIdFromLocalStorage() {
-  return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(NAVEGG_ID) : null;
-}
-/**
- * @returns {string | null}
- */
-function readNaveggIdFromCookie() {
-  return storage.cookiesAreEnabled ? storage.getCookie(NAVEGG_ID) : null;
-}
-/**
- * @returns {string | null}
- */
-function readOldNaveggIdFromCookie() {
-  return storage.cookiesAreEnabled ? storage.getCookie(OLD_NAVEGG_ID) : null;
-}
 /**
  * @returns {string | null}
  */
@@ -78,6 +70,17 @@ function readNvgIdFromCookie() {
  */
 function readNavIdFromCookie() {
   return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null;
+}
+/**
+ * @returns {string | null}
+ */
+function readOldNaveggIdFromCookie() {
+  return storage.cookiesAreEnabled ? storage.getCookie(OLD_NAVEGG_ID) : null;
+}
+
+function getOldCookie() {
+  const oldCookie = readOldNaveggIdFromCookie() || readNvgIdFromCookie() || readNavIdFromCookie();
+  return oldCookie;
 }
 
 /** @type {Submodule} */
@@ -94,7 +97,6 @@ export const naveggIdSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    console.log('decode value: ' + value)
     const naveggIdVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return naveggIdVal ? {
       'naveggId': naveggIdVal.split('|')[0]
@@ -107,31 +109,8 @@ export const naveggIdSubmodule = {
    * @param {SubmoduleConfig} config
    * @return {{id: string | undefined } | undefined}
    */
-  getId({ name, enabledStorageTypes = [], storage: storageConfig = {} }) {
+  getId({ name, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsent, storedId) {
     const resp = getIdFromAPI(enabledStorageTypes, storageConfig.name)
-
-    // const naveggIdOldString = readOldNaveggIdFromCookie() || readNvgIdFromCookie() || readNavIdFromCookie()
-    // const naveggIdLocalStorage = readNaveggIdFromLocalStorage()
-    // const naveggIdCookie = readNaveggIdFromCookie()
-    // let toStore = []
-
-    // if (!naveggIdLocalStorage && enabledStorageTypes.indexOf(STORAGE_TYPE_LOCALSTORAGE) > -1) { toStore.push(STORAGE_TYPE_LOCALSTORAGE) }
-    // if (!naveggIdCookie && enabledStorageTypes.indexOf(STORAGE_TYPE_COOKIES) > -1) { toStore.push(STORAGE_TYPE_COOKIES) }
-    // saveNaveggIdFromApi(toStore, storageConfig.name)
-
-    // const naveggIdString = readNaveggIdFromCookie() || readNaveggIdFromLocalStorage();
-
-    // console.log('naveggIdString: ' + naveggIdString)
-    // console.log('----------------------------')
-
-    // if (typeof naveggIdString == 'string' && naveggIdString) {
-    //   try {
-    //     return { id: naveggIdString };
-    //   } catch (error) {
-    //     logError(error);
-    //   }
-    // }
-    // return undefined;
     return {callback: resp}
   },
   eids: {
