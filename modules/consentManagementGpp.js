@@ -262,7 +262,6 @@ export function setConsentConfig(config) {
   });
   return consentDataLoaded.catch(() => null);
 }
-
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
 export function enrichFPDHook(next, fpd) {
