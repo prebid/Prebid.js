@@ -1188,6 +1188,11 @@ export function init(config, {delay = timeout} = {}) {
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }
 
+export function resetUserIds() {
+  config.setConfig({userSync: {}})
+  init(config);
+}
+
 // init config update listener to start the application
 init(config);
 

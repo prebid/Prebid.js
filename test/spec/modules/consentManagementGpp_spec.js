@@ -16,6 +16,7 @@ let expect = require('chai').expect;
 
 describe('consentManagementGpp', function () {
   beforeEach(resetConsentData);
+  after(resetConsentData);
 
   async function runHook(request = {}) {
     let hookRan = false;

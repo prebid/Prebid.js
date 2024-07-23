@@ -23,6 +23,7 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
+import 'modules/consentManagementGpp.js';
 import 'modules/schain.js';
 import 'modules/paapi.js';
 import * as redactor from 'src/activities/redactor.js';
@@ -964,8 +965,8 @@ describe('S2S Adapter', function () {
         adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
-        expect(requestBid.regs).to.not.exist;
-        expect(requestBid.user).to.not.exist;
+        expect(requestBid.regs?.ext?.gdpr).to.not.exist;
+        expect(requestBid.user?.ext?.consent).to.not.exist;
       });
 
       it('adds additional consent information to ortb2 request depending on presence of module', async function () {
@@ -1017,7 +1018,7 @@ describe('S2S Adapter', function () {
         adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
-        expect(requestBid.regs).to.not.exist;
+        expect(requestBid.regs?.ext?.us_privacy).to.not.exist;
       });
     });
 
