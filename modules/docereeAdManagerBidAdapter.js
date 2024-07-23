@@ -70,7 +70,7 @@ export const spec = {
   },
 };
 
-function getPayload(bid, userData) {
+export function getPayload(bid, userData) {
   if (!userData || !bid) {
     return false;
   }
