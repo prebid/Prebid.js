@@ -78,11 +78,7 @@ export function getPayload(bid, userData) {
   const { placementId } = params;
   const {
     userid,
-    email,
-    firstname,
-    lastname,
     specialization,
-    hcpid,
     gender,
     city,
     state,
@@ -93,7 +89,6 @@ export function getPayload(bid, userData) {
     hashedmobile,
     country,
     organization,
-    dob,
     platformUid,
     mobile
   } = userData;
