@@ -2852,11 +2852,19 @@ describe('Unit: Prebid Module', function () {
         });
       };
 
+      let auctionsStarted;
+
       beforeEach(function() {
         spyCallBids = sinon.spy(adapterManager, 'callBids');
         auctionManagerStub = sinon.stub(auctionManager, 'createAuction');
-        auctionManagerStub.onCall(0).returns(auction1);
-        auctionManagerStub.onCall(1).returns(auction2);
+        auctionsStarted = Promise.all(
+          [auction1, auction2].map((au, i) => new Promise((resolve) => {
+            auctionManagerStub.onCall(i).callsFake(() => {
+              resolve();
+              return au;
+            });
+          }))
+        );
       });
 
       afterEach(function() {
@@ -2864,15 +2872,17 @@ describe('Unit: Prebid Module', function () {
         adapterManager.callBids.restore();
       });
 
-      it('should not queue bid requests when a previous bid request is in process', function () {
+      it('should not queue bid requests when a previous bid request is in process', async function () {
         var requestObj1 = {
-          bidsBackHandler: function bidsBackHandlerCallback() {},
+          bidsBackHandler: function bidsBackHandlerCallback() {
+          },
           timeout: 2000,
           adUnits: auction1.getAdUnits()
         };
 
         var requestObj2 = {
-          bidsBackHandler: function bidsBackHandlerCallback() {},
+          bidsBackHandler: function bidsBackHandlerCallback() {
+          },
           timeout: 2000,
           adUnits: auction2.getAdUnits()
         };
@@ -2881,6 +2891,7 @@ describe('Unit: Prebid Module', function () {
 
         $$PREBID_GLOBAL$$.requestBids(requestObj1);
         $$PREBID_GLOBAL$$.requestBids(requestObj2);
+        await auctionsStarted;
 
         assert.ok(spyCallBids.calledTwice, 'When two requests for bids are made both should be' +
           ' callBids immediately');
@@ -2944,6 +2955,7 @@ describe('Unit: Prebid Module', function () {
       let bidRequestedHandler;
       let beforeRequestBidsHandler;
       let bidsBackHandler = function bidsBackHandler() {};
+      let auctionStarted;
 
       let bidsBackSpy;
       let bidRequestedSpy;
@@ -2953,6 +2965,10 @@ describe('Unit: Prebid Module', function () {
         resetAuction();
         bidsBackSpy = sinon.spy(bidsBackHandler);
         googletag.pubads().setSlots(createSlotArrayScenario2());
+        auctionStarted = new Promise((resolve) => sandbox.stub(adapterManager, 'callBids').callsFake(function() {
+          resolve()
+          return adapterManager.callBids.wrappedMethod.apply(this, arguments);
+        }));
       });
 
       afterEach(function () {
@@ -2969,7 +2985,7 @@ describe('Unit: Prebid Module', function () {
         }
       });
 
-      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', function () {
+      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -3023,11 +3039,13 @@ describe('Unit: Prebid Module', function () {
           bidsBackHandler: bidsBackSpy
         });
 
+        await auctionStarted;
+
         sinon.assert.calledOnce(beforeRequestBidsSpy);
         sinon.assert.calledOnce(bidRequestedSpy);
       });
 
-      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', function () {
+      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -3109,12 +3127,13 @@ describe('Unit: Prebid Module', function () {
           }],
           bidsBackHandler: bidsBackSpy
         });
+        await auctionStarted;
 
         sinon.assert.calledOnce(beforeRequestBidsSpy);
         sinon.assert.calledOnce(bidRequestedSpy);
       });
 
-      it('should not create a context property on adUnits if not added by handler', function () {
+      it('should not create a context property on adUnits if not added by handler', async function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -3156,6 +3175,7 @@ describe('Unit: Prebid Module', function () {
           }],
           bidsBackHandler: bidsBackSpy
         });
+        await auctionStarted;
 
         sinon.assert.calledOnce(beforeRequestBidsSpy);
         sinon.assert.calledOnce(bidRequestedSpy);
