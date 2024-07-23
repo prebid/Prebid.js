@@ -1,213 +1,222 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {parseSizesInput, isFn, deepAccess, getBidIdParameter, logError, isArray} from '../src/utils.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {findIndex} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
+const CUR = 'USD';
 const BIDDER_CODE = 'anyclip';
-const ENDPOINT_URL = 'https://prebid.anyclip.com';
-const DEFAULT_CURRENCY = 'USD';
-const NET_REVENUE = false;
+const ENDPOINT = 'https://prebid.anyclip.com';
 
-/*
- * Get the bid floor value from the bidRequest object, either using the getFloor function or by accessing the 'params.floor' property.
- * If the bid floor cannot be determined, return 0 as a fallback value.
+/**
+ * Determines whether or not the given bid request is valid.
+ *
+ * @param {BidRequest} bid The bid params to validate.
+ * @return boolean True  if this is a valid bid, and false otherwise.
  */
-function getBidFloor(bidRequest) {
-  if (!isFn(bidRequest.getFloor)) {
-    return deepAccess(bidRequest, 'params.floor', 0);
+function isBidRequestValid(bid) {
+  if (bid && typeof bid.params !== 'object') {
+    logError('Params is not defined or is incorrect in the bidder settings');
+    return false;
   }
 
-  try {
-    const bidFloor = bidRequest.getFloor({
-      currency: DEFAULT_CURRENCY,
-      mediaType: '*',
-      size: '*',
-    });
-    return bidFloor.floor;
-  } catch (err) {
-    logError(err);
-    return 0;
+  if (!getBidIdParameter('publisherId', bid.params) || !getBidIdParameter('supplyTagId', bid.params)) {
+    logError('PublisherId or supplyTagId is not present in bidder params');
+    return false;
   }
-}
 
-/** @type {BidderSpec} */
-export const spec = {
-  code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
-
-  /**
-   * @param {object} bid
-   * @return {boolean}
-   */
-  isBidRequestValid: (bid = {}) => {
-    const bidder = deepAccess(bid, 'bidder');
-    const params = deepAccess(bid, 'params', {});
-    const mediaTypes = deepAccess(bid, 'mediaTypes', {});
-    const banner = deepAccess(mediaTypes, BANNER, {});
-
-    const isValidBidder = (bidder === BIDDER_CODE);
-    const isValidSize = (Boolean(banner.sizes) && isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0);
-    const hasSizes = mediaTypes[BANNER] ? isValidSize : false;
-    const hasRequiredBidParams = Boolean(params.publisherId && params.supplyTagId);
-
-    const isValid = isValidBidder && hasSizes && hasRequiredBidParams;
-    if (!isValid) {
-      logError(`Invalid bid request: isValidBidder: ${isValidBidder}, hasSizes: ${hasSizes}, hasRequiredBidParams: ${hasRequiredBidParams}`);
-    }
-    return isValid;
-  },
-
-  /**
-   * @param {BidRequest[]} validBidRequests
-   * @param {*} bidderRequest
-   * @return {ServerRequest}
-   */
-  buildRequests: (validBidRequests, bidderRequest) => {
-    const bidRequest = validBidRequests[0];
-
-    let refererInfo;
-    if (bidderRequest && bidderRequest.refererInfo) {
-      refererInfo = bidderRequest.refererInfo;
-    }
-
-    const timeout = bidderRequest.timeout;
-    const timeoutAdjustment = timeout - ((20 / 100) * timeout); // timeout adjustment - 20%
-
-    if (isPubTagAvailable()) {
-      // Options
-      const options = {
-        publisherId: bidRequest.params.publisherId,
-        supplyTagId: bidRequest.params.supplyTagId,
-        url: refererInfo.page,
-        domain: refererInfo.domain,
-        prebidTimeout: timeoutAdjustment,
-        gpid: bidRequest.adUnitCode,
-        ext: {
-          transactionId: bidRequest.transactionId
-        },
-        sizes: bidRequest.sizes.map((size) => {
-          return {width: size[0], height: size[1]}
-        })
-      }
-      // Floor
-      const floor = parseFloat(getBidFloor(bidRequest));
-      if (!isNaN(floor)) {
-        options.ext.floor = floor;
-      }
-      // Supply Chain (Schain)
-      if (bidRequest?.schain) {
-        options.schain = bidRequest.schain
-      }
-      // GDPR & Consent (EU)
-      if (bidderRequest?.gdprConsent) {
-        options.gdpr = (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-        options.consent = bidderRequest.gdprConsent.consentString;
-      }
-      // GPP
-      if (bidderRequest?.gppConsent?.gppString) {
-        options.gpp = {
-          gppVersion: bidderRequest.gppConsent.gppVersion,
-          sectionList: bidderRequest.gppConsent.sectionList,
-          applicableSections: bidderRequest.gppConsent.applicableSections,
-          gppString: bidderRequest.gppConsent.gppString
-        }
-      }
-      // CCPA (US Privacy)
-      if (bidderRequest?.uspConsent) {
-        options.usPrivacy = bidderRequest.uspConsent;
-      }
-      // COPPA
-      if (config.getConfig('coppa') === true) {
-        options.coppa = 1;
-      }
-      // Eids
-      if (bidRequest?.userIdAsEids) {
-        const eids = bidRequest.userIdAsEids;
-        if (eids && eids.length) {
-          options.eids = eids;
-        }
-      }
-
-      // Request bids
-      const requestBidsPromise = window._anyclip.pubTag.requestBids(options);
-      if (requestBidsPromise !== undefined) {
-        requestBidsPromise
-          .then(() => {
-            logInfo('PubTag requestBids done');
-          })
-          .catch((err) => {
-            logError('PubTag requestBids error', err);
-          });
-      }
-
-      // Request
-      const payload = {
-        tmax: timeoutAdjustment
-      }
-
-      return {
-        method: 'GET',
-        url: ENDPOINT_URL,
-        data: payload,
-        bidRequest
-      }
-    }
-  },
-
-  /**
-   * @param {*} serverResponse
-   * @param {ServerRequest} bidRequest
-   * @return {Bid[]}
-   */
-  interpretResponse: (serverResponse, { bidRequest }) => {
-    const bids = [];
-
-    if (bidRequest && isPubTagAvailable()) {
-      const bidResponse = window._anyclip.pubTag.getBids(bidRequest.transactionId);
-      if (bidResponse) {
-        const { adServer } = bidResponse;
-        if (adServer) {
-          bids.push({
-            requestId: bidRequest.bidId,
-            creativeId: adServer.bid.creativeId,
-            cpm: bidResponse.cpm,
-            width: adServer.bid.width,
-            height: adServer.bid.height,
-            currency: adServer.bid.currency || DEFAULT_CURRENCY,
-            netRevenue: NET_REVENUE,
-            ttl: adServer.bid.ttl,
-            ad: adServer.bid.ad,
-            meta: adServer.bid.meta
-          });
-        }
-      }
-    }
-
-    return bids;
-  },
-
-  /**
-   * @param {Bid} bid
-   */
-  onBidWon: (bid) => {
-    if (isPubTagAvailable()) {
-      window._anyclip.pubTag.bidWon(bid);
-    }
+  if (deepAccess(bid, 'mediaTypes.video') && !isArray(deepAccess(bid, 'mediaTypes.video.playerSize'))) {
+    logError('mediaTypes.video.playerSize is required for video');
+    return false;
   }
+
+  return true;
 }
 
 /**
- * @return {boolean}
+ * Make a server request from the list of BidRequests.
+ *
+ * @param {validBidRequest?pbjs_debug=trues[]} - an array of bids
+ * @return ServerRequest Info describing the request to the server.
  */
-const isPubTagAvailable = () => {
-  return !!(window._anyclip && window._anyclip.pubTag);
+function buildRequests(validBidRequests, bidderRequest) {
+  const {refererInfo = {}, gdprConsent = {}, uspConsent} = bidderRequest;
+  const requests = validBidRequests.map(req => {
+    const request = {};
+    request.bidId = req.bidId;
+    request.banner = deepAccess(req, 'mediaTypes.banner');
+    request.auctionId = req.ortb2?.source?.tid;
+    request.transactionId = req.ortb2Imp?.ext?.tid;
+    request.sizes = parseSizesInput(getAdUnitSizes(req));
+    request.schain = req.schain;
+    request.location = {
+      page: refererInfo.page,
+      location: refererInfo.location,
+      domain: refererInfo.domain,
+      whost: window.location.host,
+      ref: refererInfo.ref,
+      isAmp: refererInfo.isAmp
+    };
+    request.device = {
+      ua: navigator.userAgent,
+      lang: navigator.language
+    };
+    request.env = {
+      publisherId: req.params.publisherId,
+      supplyTagId: req.params.supplyTagId,
+      floor: getBidFloor(req)
+    };
+    request.ortb2 = req.ortb2;
+    request.ortb2Imp = req.ortb2Imp;
+    request.tz = new Date().getTimezoneOffset();
+    request.ext = req.params.ext;
+    request.bc = req.bidRequestsCount;
+
+    if (req.userIdAsEids && req.userIdAsEids.length !== 0) {
+      request.userEids = req.userIdAsEids;
+    } else {
+      request.userEids = [];
+    }
+    if (gdprConsent.gdprApplies) {
+      request.gdprApplies = Number(gdprConsent.gdprApplies);
+      request.consentString = gdprConsent.consentString;
+    } else {
+      request.gdprApplies = 0;
+      request.consentString = '';
+    }
+    if (uspConsent) {
+      request.usPrivacy = uspConsent;
+    } else {
+      request.usPrivacy = '';
+    }
+    if (config.getConfig('coppa')) {
+      request.coppa = 1;
+    } else {
+      request.coppa = 0;
+    }
+
+    const video = deepAccess(req, 'mediaTypes.video');
+    if (video) {
+      request.sizes = parseSizesInput(deepAccess(req, 'mediaTypes.video.playerSize'));
+      request.video = video;
+    }
+
+    return request;
+  });
+
+  return {
+    method: 'POST',
+    url: ENDPOINT + '/bid',
+    data: JSON.stringify(requests),
+    withCredentials: true,
+    bidderRequest,
+    options: {
+      contentType: 'application/json',
+    }
+  };
+}
+
+/**
+ * Unpack the response from the server into a list of bids.
+ *
+ * @param {ServerResponse} serverResponse A successful response from the server.
+ * @return {Bid[]} An array of bids which were nested inside the server.
+ */
+function interpretResponse(serverResponse, {bidderRequest}) {
+  const response = [];
+  if (!isArray(deepAccess(serverResponse, 'body.data'))) {
+    return response;
+  }
+
+  serverResponse.body.data.forEach(serverBid => {
+    const bidIndex = findIndex(bidderRequest.bids, (bidRequest) => {
+      return bidRequest.bidId === serverBid.requestId;
+    });
+
+    if (bidIndex !== -1) {
+      const bid = {
+        requestId: serverBid.requestId,
+        dealId: bidderRequest.dealId || null,
+        ...serverBid
+      };
+      response.push(bid);
+    }
+  });
+
+  return response;
+}
+
+/**
+ * Register the user sync pixels which should be dropped after the auction.
+ *
+ * @param {SyncOptions} syncOptions Which user syncs are allowed?
+ * @param {ServerResponse[]} serverResponses List of server's responses.
+ * @return {UserSync[]} The user syncs which should be dropped.
+ */
+function getUserSyncs(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+  const syncs = [];
+  const pixels = deepAccess(serverResponses, '0.body.data.0.ext.pixels');
+
+  if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled) && isArray(pixels) && pixels.length !== 0) {
+    const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+    const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
+    const usPrivacy = `us_privacy=${encodeURIComponent(uspConsent)}`;
+
+    pixels.forEach(pixel => {
+      const [type, url] = pixel;
+      const sync = {type, url: `${url}&${usPrivacy}${gdprFlag}${gdprString}`};
+      if (type === 'iframe' && syncOptions.iframeEnabled) {
+        syncs.push(sync)
+      } else if (type === 'image' && syncOptions.pixelEnabled) {
+        syncs.push(sync)
+      }
+    });
+  }
+
+  return syncs;
+}
+
+/**
+ * Get valid floor value from getFloor fuction.
+ *
+ * @param {Object} bid Current bid request.
+ * @return {null|Number} Returns floor value when bid.getFloor is function and returns valid floor object with USD currency, otherwise returns null.
+ */
+export function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return null;
+  }
+
+  let floor = bid.getFloor({
+    currency: CUR,
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (typeof floor === 'object' && !isNaN(floor.floor) && floor.currency === CUR) {
+    return floor.floor;
+  }
+
+  return null;
+}
+
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['anyclip'],
+  supportedMediaTypes: [BANNER, VIDEO],
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  getUserSyncs
 }
 
 registerBidder(spec);
