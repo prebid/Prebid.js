@@ -4,14 +4,19 @@
  */
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'uBidId';
 
 export const storage = getStorageManager({
-  moduleType: MODULE_TYPE_UID,
+  moduleType: MODULE_TYPE_ANALYTICS,
   moduleName: MODULE_NAME,
 });
+
+const pbjs = window.pbjs || {
+  que: [],
+  onEvent: function() {}
+}
 
 export var uBidIdModule = {
   /**
@@ -54,3 +59,8 @@ export var uBidIdModule = {
 };
 
 submodule(MODULE_NAME, uBidIdModule);
+
+pbjs.que.push(function() {
+  pbjs.addModule(MODULE_NAME);
+  uBidIdModule.onPbjsReady();
+});

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { uBidIdModule } from 'modules/uBidIdAnalyticsAdapter.js';
 
-const code = "div-uBidIdModule"
+const code = 'div-uBidIdModule'
 
 var adUnit = {
   code,
@@ -15,10 +15,10 @@ var adUnit = {
   },
   bids: [
     {
-      bidder: "uBidId",
+      bidder: 'uBidId',
       params: {
-        inventoryId: "-1",
-        adUnitId: "-3",
+        inventoryId: '-1',
+        adUnitId: '-3',
       },
     },
   ],
