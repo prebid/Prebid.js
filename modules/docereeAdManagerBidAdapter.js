@@ -74,16 +74,11 @@ function getPayload(bid, userData) {
   if (!userData || !bid) {
     return false;
   }
-
   const { bidId, params } = bid;
   const { placementId } = params;
   const {
     userid,
-    email,
-    firstname,
-    lastname,
     specialization,
-    hcpid,
     gender,
     city,
     state,
@@ -94,16 +89,17 @@ function getPayload(bid, userData) {
     hashedmobile,
     country,
     organization,
-    dob,
+    platformUid,
+    mobile
   } = userData;
 
   const data = {
-    userid: userid || '',
-    email: email || '',
-    firstname: firstname || '',
-    lastname: lastname || '',
+    userid: platformUid || userid || '',
+    email: '',
+    firstname: '',
+    lastname: '',
     specialization: specialization || '',
-    hcpid: hcpid || '',
+    hcpid: '',
     gender: gender || '',
     city: city || '',
     state: state || '',
@@ -117,8 +113,9 @@ function getPayload(bid, userData) {
     hashedmobile: hashedmobile || '',
     country: country || '',
     organization: organization || '',
-    dob: dob || '',
+    dob: '',
     userconsent: 1,
+    mobile: mobile || ''
   };
   return {
     data,

@@ -389,7 +389,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);
-      expect(data.device.js).to.equal(true);
+      expect(data.device.js).to.equal(1);
       expect(data.device.ext).to.be.an('object');
       expect(data.device.ext.localStorage).to.equal(true);
       expect(data.device.ext.cookies).to.equal(false);
@@ -439,6 +439,13 @@ describe('InsticatorBidAdapter', function () {
           insticator: {
             adUnitId: bidRequest.params.adUnitId,
           },
+          prebid: {
+            bidder: {
+              insticator: {
+                adUnitId: bidRequest.params.adUnitId,
+              }
+            }
+          }
         }
       }]);
       expect(data.ext).to.be.an('object');

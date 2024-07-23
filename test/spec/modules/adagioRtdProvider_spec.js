@@ -118,6 +118,7 @@ describe('Adagio Rtd Provider', function () {
     describe('store session data in localStorage', function () {
       const session = {
         lastActivityTime: 1714116520700,
+        id: 'uid-1234',
         rnd: 0.5697,
         vwSmplg: 0.1,
         vwSmplgNxt: 0.1
@@ -128,6 +129,7 @@ describe('Adagio Rtd Provider', function () {
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Date, 'now').returns(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -136,6 +138,7 @@ describe('Adagio Rtd Provider', function () {
         const expected = {
           session: {
             new: true,
+            id: utils.generateUUID(),
             rnd: Math.random()
           }
         }
@@ -176,6 +179,7 @@ describe('Adagio Rtd Provider', function () {
         sandbox.stub(Date, 'now').returns(1715679344351);
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-5678');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -185,9 +189,77 @@ describe('Adagio Rtd Provider', function () {
           session: {
             ...session,
             new: true,
+            id: utils.generateUUID(),
             rnd: Math.random(),
           }
         }
+
+        expect(spy.withArgs({
+          action: 'session',
+          ts: Date.now(),
+          data: expected,
+        }).calledOnce).to.be.true;
+      });
+    });
+
+    describe('store session data in localStorage when used with external AB Test snippet', function () {
+      const sessionWithABTest = {
+        lastActivityTime: 1714116520700,
+        id: 'uid-1234',
+        rnd: 0.5697,
+        vwSmplg: 0.1,
+        vwSmplgNxt: 0.1,
+        testName: 'adg-test',
+        testVersion: 'srv',
+        initiator: 'snippet'
+      };
+
+      it('store new session data instancied by the AB Test snippet for further usage', function () {
+        const sessionWithNewFlag = { ...sessionWithABTest, new: true };
+        const storageValue = JSON.stringify({session: sessionWithNewFlag});
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        sandbox.stub(Date, 'now').returns(1714116520710);
+        sandbox.stub(Math, 'random').returns(0.8);
+
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+
+        adagioRtdSubmodule.init(config);
+
+        const expected = {
+          session: {
+            ...sessionWithNewFlag
+          }
+        }
+
+        expect(spy.withArgs({
+          action: 'session',
+          ts: Date.now(),
+          data: expected,
+        }).calledOnce).to.be.true;
+      });
+
+      it('store new session data after removing AB Test props when initiator is not the snippet', function () {
+        const sessionWithNewFlag = { ...sessionWithABTest, new: false, initiator: 'adgjs' };
+        const storageValue = JSON.stringify({session: sessionWithNewFlag});
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        sandbox.stub(Date, 'now').returns(1714116520710);
+        sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-5678');
+
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+
+        adagioRtdSubmodule.init(config);
+
+        const expected = {
+          session: {
+            ...sessionWithNewFlag,
+            new: true,
+            id: utils.generateUUID(),
+            rnd: Math.random(),
+          }
+        }
+        delete expected.session.testName;
+        delete expected.session.testVersion;
 
         expect(spy.withArgs({
           action: 'session',
