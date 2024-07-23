@@ -5,7 +5,7 @@
 import { config } from '../../src/config.js';
 import { module, getHook } from '../../src/hook.js';
 import {logError} from '../../src/utils.js';
-import {GreedyPromise} from '../../src/utils/promise.js';
+import {PbPromise} from '../../src/utils/promise.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 let submodules = [];
@@ -20,12 +20,12 @@ export function reset() {
 
 export function processFpd({global = {}, bidder = {}} = {}) {
   let modConf = config.getConfig('firstPartyData') || {};
-  let result = GreedyPromise.resolve({global, bidder});
+  let result = PbPromise.resolve({global, bidder});
   submodules.sort((a, b) => {
     return ((a.queue || 1) - (b.queue || 1));
   }).forEach(submodule => {
     result = result.then(
-      ({global, bidder}) => GreedyPromise.resolve(submodule.processFpd(modConf, {global, bidder}))
+      ({global, bidder}) => PbPromise.resolve(submodule.processFpd(modConf, {global, bidder}))
         .catch((err) => {
           logError(`Error in FPD module ${submodule.name}`, err);
           return {};

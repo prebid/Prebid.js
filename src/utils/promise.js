@@ -1,16 +1,18 @@
+import {GreedyPromise} from '../../libraries/greedy/greedyPromise.js';
+import {getGlobal} from '../prebidGlobal.js';
 
-export function delay(delayMs = 0, P = GreedyPromise) {
+export const PbPromise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise);
+
+export function delay(delayMs = 0, P = PbPromise) {
   return new P((resolve) => {
     delayMs > 0 ? setTimeout(resolve, delayMs) : resolve();
   });
 }
 
-export const GreedyPromise = Promise;
-
 /**
  * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
  */
-export function defer({promiseFactory = (resolver) => new GreedyPromise(resolver)} = {}) {
+export function defer({promiseFactory = (resolver) => new PbPromise(resolver)} = {}) {
   function invoker(delegate) {
     return (val) => delegate(val);
   }

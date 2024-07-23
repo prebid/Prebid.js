@@ -4,7 +4,7 @@ import {getGlobal} from './prebidGlobal.js';
 import {logMessage, prefixLog} from './utils.js';
 import {createBid} from './bidfactory.js';
 import {loadExternalScript} from './adloader.js';
-import {GreedyPromise} from './utils/promise.js';
+import {PbPromise} from './utils/promise.js';
 
 export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
 
@@ -13,7 +13,7 @@ function isDebuggingInstalled() {
 }
 
 function loadScript(url) {
-  return new GreedyPromise((resolve) => {
+  return new PbPromise((resolve) => {
     loadExternalScript(url, 'debugging', resolve);
   });
 }
@@ -22,7 +22,7 @@ export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, 
   let loading = null;
   return function () {
     if (loading == null) {
-      loading = new GreedyPromise((resolve, reject) => {
+      loading = new PbPromise((resolve, reject) => {
         // run this in a 0-delay timeout to give installedModules time to be populated
         setTimeout(() => {
           if (alreadyInstalled()) {
@@ -46,7 +46,7 @@ export function debuggingControls({load = debuggingModuleLoader(), hook = getHoo
   let promise = null;
   let enabled = false;
   function waitForDebugging(next, ...args) {
-    return (promise || GreedyPromise.resolve()).then(() => next.apply(this, args))
+    return (promise || PbPromise.resolve()).then(() => next.apply(this, args))
   }
   function enable() {
     if (!enabled) {

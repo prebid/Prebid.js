@@ -5,7 +5,7 @@ import {auctionStore} from '../libraries/weakStore/weakStore.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {emit} from '../src/events.js';
 import {BID_STATUS, EVENTS} from '../src/constants.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {getBidToRender, getRenderingData, markWinningBid} from '../src/adRendering.js';
 
 let getPAAPIConfig, expandFilters, moduleConfig;
@@ -42,7 +42,7 @@ function bidIfRenderable(bid) {
 
 const forRenderStack = [];
 
-function renderPaapiHook(next, adId, forRender = true, override = GreedyPromise.resolve()) {
+function renderPaapiHook(next, adId, forRender = true, override = PbPromise.resolve()) {
   forRenderStack.push(forRender);
   const ids = parsePaapiAdId(adId);
   if (ids) {

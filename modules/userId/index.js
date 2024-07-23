@@ -156,7 +156,7 @@ import {
   logWarn
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
-import {defer, GreedyPromise, delay} from '../../src/utils/promise.js';
+import {defer, PbPromise, delay} from '../../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
@@ -532,7 +532,7 @@ function idSystemInitializer({mkDelay = delay} = {}) {
       cancel.reject(INIT_CANCELED);
     }
     cancel = defer();
-    return GreedyPromise.race([promise, cancel.promise])
+    return PbPromise.race([promise, cancel.promise])
       .finally(initMetrics.startTiming('userId.total'))
   }
 
@@ -556,7 +556,7 @@ function idSystemInitializer({mkDelay = delay} = {}) {
   }
 
   let done = cancelAndTry(
-    GreedyPromise.all([hooksReady, startInit.promise])
+    PbPromise.all([hooksReady, startInit.promise])
       .then(timeConsent)
       .then(checkRefs(() => {
         initSubmodules(initModules, allModules);
@@ -565,7 +565,7 @@ function idSystemInitializer({mkDelay = delay} = {}) {
       .then(checkRefs(() => {
         const modWithCb = initModules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
+          return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
         }
       }))
   );
@@ -603,7 +603,7 @@ function idSystemInitializer({mkDelay = delay} = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return new GreedyPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
+              return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
             }
           }))
       );
@@ -637,7 +637,7 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
-  GreedyPromise.race([
+  PbPromise.race([
     getIds().catch(() => null),
     mkDelay(auctionDelay)
   ]).then(() => {
@@ -780,7 +780,7 @@ function getUserIdsAsync() {
         return Promise.resolve().then(getUserIdsAsync)
       } else {
         logError('Error initializing userId', e)
-        return GreedyPromise.reject(e)
+        return PbPromise.reject(e)
       }
     }
   );

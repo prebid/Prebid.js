@@ -10,7 +10,7 @@ import {gppDataHandler} from '../src/adapterManager.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {buildActivityParams} from '../src/activities/params.js';
 import {consentManagementHook, lookupConsentData} from '../libraries/consentManagement/cmUtils.js';
 
@@ -25,7 +25,7 @@ export let consentDataLoaded;
 let addedConsentHook = false;
 
 function lookupStaticConsentData() {
-  return new GreedyPromise((resolve) => resolve(processCmpData(staticConsentData)));
+  return new PbPromise((resolve) => resolve(processCmpData(staticConsentData)));
 }
 
 class GPPError {
@@ -110,7 +110,7 @@ export class GPPClient {
    * @returns {Promise<{}>} a promise to GPP consent data
    */
   updateConsent(pingData) {
-    return new GreedyPromise(resolve => {
+    return new PbPromise(resolve => {
       if (pingData == null || isEmpty(pingData)) {
         throw new GPPError('Received empty response from CMP', pingData);
       }
@@ -126,7 +126,7 @@ export class GPPClient {
    * @returns {Promise<{}>}
    */
   nextUpdate() {
-    return new GreedyPromise((resolve, reject) => {
+    return new PbPromise((resolve, reject) => {
       this.#pending.push([resolve, reject]);
     });
   }
@@ -148,7 +148,7 @@ export class GPPClient {
 }
 
 function lookupIabConsent() {
-  return new GreedyPromise((resolve) => resolve(GPPClient.get().refresh()))
+  return new PbPromise((resolve) => resolve(GPPClient.get().refresh()))
 }
 
 // add new CMPs here, with their dedicated lookup function
