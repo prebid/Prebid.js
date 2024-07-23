@@ -1,4 +1,4 @@
-import {gdprDataHandler} from 'src/adapterManager.js';
+import {gdprDataHandler, gppDataHandler} from 'src/adapterManager.js';
 import {PbPromise} from '../../src/utils/promise.js';
 
 export function mockGdprConsent(sandbox, getConsentData = () => null) {
@@ -9,4 +9,5 @@ export function mockGdprConsent(sandbox, getConsentData = () => null) {
 
 beforeEach(() => {
   gdprDataHandler.reset();
+  gppDataHandler.reset();
 })
