@@ -1,5 +1,5 @@
 
-export function timeout(delayMs = 0, timeoutError) {
+export function delay(delayMs = 0) {
   return new GreedyPromise((resolve) => {
     setTimeout(resolve, delayMs);
   });

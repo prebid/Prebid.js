@@ -156,7 +156,7 @@ import {
   logWarn
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
-import {defer, GreedyPromise, timeout} from '../../src/utils/promise.js';
+import {defer, GreedyPromise, delay} from '../../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
@@ -519,7 +519,7 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 
 const INIT_CANCELED = {};
 
-function idSystemInitializer({delay = timeout} = {}) {
+function idSystemInitializer({mkDelay = delay} = {}) {
   const startInit = defer();
   const startCallbacks = defer();
   let cancel;
@@ -585,7 +585,7 @@ function idSystemInitializer({delay = timeout} = {}) {
       } else {
         events.on(EVENTS.AUCTION_END, function auctionEndHandler() {
           events.off(EVENTS.AUCTION_END, auctionEndHandler);
-          delay(syncDelay).then(startCallbacks.resolve);
+          mkDelay(syncDelay).then(startCallbacks.resolve);
         });
       }
     }
@@ -636,10 +636,10 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = timeout, getIds = getUserIdsAsync} = {}) {
+export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
   GreedyPromise.race([
     getIds().catch(() => null),
-    delay(auctionDelay)
+    mkDelay(auctionDelay)
   ]).then(() => {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
@@ -1149,13 +1149,13 @@ function normalizePromise(fn) {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config, {delay = timeout} = {}) {
+export function init(config, {mkDelay = delay} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
   addedUserIdHook = false;
   initializedSubmodules = [];
-  initIdSystem = idSystemInitializer({delay});
+  initIdSystem = idSystemInitializer({mkDelay});
   if (configListener != null) {
     configListener();
   }
