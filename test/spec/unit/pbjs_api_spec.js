@@ -3829,4 +3829,15 @@ describe('Unit: Prebid Module', function () {
       sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
     });
   });
+
+  describe('clearAllAuctions', () => {
+    after(() => {
+      resetAuction();
+    });
+    it('clears auction data', function () {
+      expect(auctionManager.getBidsReceived().length).to.not.equal(0);
+      $$PREBID_GLOBAL$$.clearAllAuctions();
+      expect(auctionManager.getBidsReceived().length).to.equal(0);
+    });
+  });
 });
