@@ -2,6 +2,7 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import { deepAccess } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 /**
  * This RTD module has a dependency on the priceFloors module.
  * We utilize the createFloorsDataForAuction function from the priceFloors module to incorporate price floors data into the current auction.
@@ -16,6 +17,7 @@ export const FloorsApiStatus = Object.freeze({
   SUCCESS: 'SUCCESS',
   ERROR: 'ERROR',
 });
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode });
 export const FLOORS_EVENT_HANDLE = 'floorsApi';
 export const FLOORS_END_POINT = 'https://floor.pbxai.com/';
 export const FLOOR_PROVIDER = 'PubxFloorProvider';
@@ -80,31 +82,48 @@ export const setFloorsApiStatus = (status) => {
 
 export const getUrl = (provider) => {
   const { pubxId, endpoint } = deepAccess(provider, 'params');
-  return `${endpoint || FLOORS_END_POINT}?pubxId=${pubxId}&page=${
-    window.location.href
-  }`;
+  if (!endpoint) {
+    return null; // Indicate that no endpoint is provided
+  }
+  return `${endpoint || FLOORS_END_POINT}?pubxId=${pubxId}&page=${window.location.href}`;
 };
 
 export const fetchFloorRules = async (provider) => {
   return new Promise((resolve, reject) => {
     setFloorsApiStatus(FloorsApiStatus.IN_PROGRESS);
-    ajax(getUrl(provider), {
-      success: (responseText, response) => {
-        try {
-          if (response && response.response) {
-            const floorsResponse = JSON.parse(response.response);
-            resolve(floorsResponse);
-          } else {
-            resolve(null);
+    const url = getUrl(provider);
+    if (url) {
+      // Fetch from remote endpoint
+      ajax(url, {
+        success: (responseText, response) => {
+          try {
+            if (response && response.response) {
+              const floorsResponse = JSON.parse(response.response);
+              resolve(floorsResponse);
+            } else {
+              resolve(null);
+            }
+          } catch (error) {
+            reject(error);
           }
-        } catch (error) {
-          reject(error);
+        },
+        error: (responseText, response) => {
+          reject(response);
+        },
+      });
+    } else {
+      // Fetch from local storage
+      try {
+        const localData = storage.getDataFromLocalStorage('pubx:dynamicFloors') || window.__pubxDynamicFloors__;
+        if (localData) {
+          resolve(JSON.parse(localData));
+        } else {
+          resolve(null);
         }
-      },
-      error: (responseText, response) => {
-        reject(response);
-      },
-    });
+      } catch (error) {
+        reject(error);
+      }
+    }
   });
 };
 
