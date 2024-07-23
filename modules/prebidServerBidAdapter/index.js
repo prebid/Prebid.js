@@ -476,7 +476,6 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
           const { emitSeatNonBid, emitAtag } = shouldEmitAnalyticsEvent(s2sBidRequest.s2sConfig, response)
-          // should be deprecated in Prebid 10
           if (emitSeatNonBid) {
             events.emit(EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
