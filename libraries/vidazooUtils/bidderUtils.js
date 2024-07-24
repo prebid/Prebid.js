@@ -245,6 +245,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
   const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
+  const device = deepAccess(bidderRequest, 'ortb2.device', {});
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -286,6 +287,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestsCount: bidderRequestsCount,
     bidderWinsCount: bidderWinsCount,
     bidderTimeout: bidderTimeout,
+    device,
     ...uniqueRequestData
   };
 
