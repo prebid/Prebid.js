@@ -22,36 +22,32 @@ const BASE_URL = 'https://id.navegg.com/uid/';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-/* eslint-disable no-console */
-function getIdFromAPI(toStore, storedName) {
+function getIdFromAPI() {
   const resp = function (callback) {
     ajaxLib.ajaxBuilder()(
       BASE_URL,
       response => {
         if (response) {
           let responseObj;
-
           try {
             responseObj = JSON.parse(response);
-            console.log(JSON.stringify(responseObj))
           } catch (error) {
             logError(error);
-            const fallbackValue = getOldCookie();
+            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
             callback(fallbackValue)
           }
 
           if (responseObj && responseObj[NAVEGG_ID]) {
             callback(responseObj[NAVEGG_ID]);
           } else {
-            const fallbackValue = getOldCookie();
-            console.log('fallbackValue ' + fallbackValue)
+            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
             callback(fallbackValue);
           }
         }
       },
       error => {
         logError('Navegg ID fetch encountered an error', error);
-        const fallbackValue = getOldCookie();
+        const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
         callback(fallbackValue)
       },
       {method: 'GET', withCredentials: false});
@@ -69,18 +65,26 @@ function readNvgIdFromCookie() {
  * @returns {string | null}
  */
 function readNavIdFromCookie() {
-  return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null;
+  return storage.cookiesAreEnabled() ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null;
 }
 /**
  * @returns {string | null}
  */
 function readOldNaveggIdFromCookie() {
-  return storage.cookiesAreEnabled ? storage.getCookie(OLD_NAVEGG_ID) : null;
+  return storage.cookiesAreEnabled() ? storage.getCookie(OLD_NAVEGG_ID) : null;
 }
-
+/**
+ * @returns {string | null}
+ */
 function getOldCookie() {
   const oldCookie = readOldNaveggIdFromCookie() || readNvgIdFromCookie() || readNavIdFromCookie();
   return oldCookie;
+}
+/**
+ * @returns {string | null}
+ */
+function getNaveggIdFromLocalStorage() {
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(NAVEGG_ID) : null;
 }
 
 /** @type {Submodule} */
@@ -109,8 +113,8 @@ export const naveggIdSubmodule = {
    * @param {SubmoduleConfig} config
    * @return {{id: string | undefined } | undefined}
    */
-  getId({ name, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsent, storedId) {
-    const resp = getIdFromAPI(enabledStorageTypes, storageConfig.name)
+  getId(config, consentData) {
+    const resp = getIdFromAPI()
     return {callback: resp}
   },
   eids: {

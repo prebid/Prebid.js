@@ -4,28 +4,9 @@ import { server } from 'test/mocks/xhr.js';
 import * as ajaxLib from 'src/ajax.js';
 
 const NAVEGGID_CONFIG_COOKIE_HTML5 = {
-  name: 'naveggId',
   storage: {
     name: 'nvggid',
     type: 'cookie&html5',
-    expires: 8
-  }
-}
-
-const NAVEGGID_CONFIG_COOKIE = {
-  name: 'naveggId',
-  storage: {
-    name: 'nvggid',
-    type: 'cookie',
-    expires: 8
-  }
-}
-
-const NAVEGGID_CONFIG_HTML5 = {
-  name: 'naveggId',
-  storage: {
-    name: 'nvggid',
-    type: 'html5',
     expires: 8
   }
 }
@@ -56,18 +37,39 @@ function deleteAllCookies() {
   });
 }
 
-/* eslint-disable no-console */
+function setLocalStorage() {
+  storage.setDataInLocalStorage('nvggid', 'localstorage_value');
+}
+
 describe('getId', function () {
   let ajaxStub, ajaxBuilderStub;
 
   beforeEach(function() {
-    ajaxStub = sinon.stub()
+    ajaxStub = sinon.stub();
     ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').returns(ajaxStub);
   });
 
   afterEach(function() {
     ajaxBuilderStub.restore();
     deleteAllCookies();
+    storage.removeDataFromLocalStorage('nvggid');
+  });
+
+  it('should get the value from the existing localstorage', function() {
+    setLocalStorage();
+
+    const callback = sinon.spy();
+    const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
+
+    ajaxStub.callsFake((url, successCallbacks, errorCallback, options) => {
+      if (successCallbacks && typeof successCallbacks === 'function') {
+        successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
+      }
+    });
+    apiCallback(callback)
+
+    expect(callback.calledOnce).to.be.true;
+    expect(callback.calledWith('localstorage_value')).to.be.true;
   });
 
   it('should get the value from a nid cookie', function() {
@@ -147,7 +149,6 @@ describe('getId', function () {
       }
     });
     apiCallback(callback)
-    console.log('result: ' + callback.lastCall.lastArg)
     expect(callback.calledOnce).to.be.true;
     expect(callback.calledWith(undefined)).to.be.true;
     done();
