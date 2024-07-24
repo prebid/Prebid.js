@@ -154,7 +154,7 @@ function initCustomer(config) {
  * Add event listener to the script tag for the expected events from the external script.
  * @param { HTMLScriptElement } script
  * @param { String } tagId
- * @param { String } config
+ * @param { String } prebidConfig
  */
 function addExternalScriptEventListener(script, tagId, prebidConfig) {
   script.addEventListener(
