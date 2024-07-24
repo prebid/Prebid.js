@@ -2,7 +2,7 @@ import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { replaceAuctionPrice } from '../../src/utils.js';
 import { ajax } from '../../src/ajax.js';
 
-export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
+export const buildRequests = (endpoint,storage2,buyerKey) => (validBidRequests = [], bidderRequest) => {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -29,7 +29,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     }),
     user: {
       id: validBidRequests[0].userId.pubcid || '',
-      buyeruid: window.localStorage.getItem('_pre|id'),
+      buyeruid: readFromAllStorages (buyerKey,storage2),
       geo: {
         country: validBidRequests[0].params.region || city,
       },

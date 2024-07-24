@@ -7,10 +7,12 @@ import { getUserSyncs, buildRequests, interpretResponse, onBidWon, readFromAllSt
 
 const BIDDER__CODE = 'preciso';
 const strId = '_sharedid';
+const buyerKey = '_pre|id';
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GVLID = 874;
 let precisoId = 'NA';
 let sharedId = 'NA'
+
 const endpoint = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
 const syncEndpoint = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 // const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=';
@@ -27,7 +29,7 @@ export const spec = {
     sharedId = readFromAllStorages(strId, storage);
     let precisoBid = true;
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
-    precisoId = window.localStorage.getItem('_pre|id');
+    precisoId = readFromAllStorages(buyerKey, storage);
 
     if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
       if (!bid.precisoBid) {
@@ -38,7 +40,7 @@ export const spec = {
 
     return Boolean(bid.bidId && bid.params && bid.params.publisherId && precisoBid);
   },
-  buildRequests: buildRequests(endpoint),
+  buildRequests: buildRequests(endpoint,storage2,buyerKey),
   interpretResponse,
   onBidWon,
   getUserSyncs: getUserSyncs(syncEndpoint)
