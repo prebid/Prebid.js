@@ -166,16 +166,24 @@ describe('consent management utils', () => {
     });
 
     [123, 0].forEach(timeout => {
-      it(`should resolve if cmp handler resolves (cmpTimeout: ${timeout})`, async () => {
+      beforeEach(() => {
         cmpTimeout = timeout;
         cmpHandlerMap.mockCmp.callsFake(() => {
           consentDataHandler.getConsentData.returns({consent: 'data'});
           return Promise.resolve();
         });
+      })
+      it(`should resolve if cmp handler resolves (cmpTimeout: ${timeout})`, async () => {
         const {consentData, error} = await runLookup();
         expect(consentData).to.eql({consent: 'data'});
         expect(error).to.not.exist;
       });
+
+      it('should not time out after it resolves', async () => {
+        await runLookup();
+        await new Promise((resolve) => setTimeout(resolve, timeout + 10));
+        sinon.assert.notCalled(consentDataHandler.setConsentData);
+      })
     })
 
     describe('when cmp handler does not reply', () => {

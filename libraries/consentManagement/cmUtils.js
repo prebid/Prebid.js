@@ -63,8 +63,9 @@ export function lookupConsentData(
   }
 ) {
   consentDataHandler.enable();
+  let timeoutHandle;
+
   return new Promise((resolve, reject) => {
-    let timer;
     let provisionalConsent;
     let cmpLoaded = false;
 
@@ -77,16 +78,16 @@ export function lookupConsentData(
     }
 
     function resetTimeout(timeout) {
-      if (timer != null) clearTimeout(timer);
+      if (timeoutHandle != null) clearTimeout(timeoutHandle);
       if (timeout != null) {
-        timer = setTimeout(() => {
+        timeoutHandle = setTimeout(() => {
           const consentData = consentDataHandler.getConsentData() ?? (cmpLoaded ? provisionalConsent : getNullConsent());
           const message = `timeout waiting for ${cmpLoaded ? 'user action on CMP' : 'CMP to load'}`;
           consentDataHandler.setConsentData(consentData);
           resolve({consentData, error: new Error(`${name} ${message}`)});
         }, timeout);
       } else {
-        timer = null;
+        timeoutHandle = null;
       }
     }
 
@@ -100,6 +101,8 @@ export function lookupConsentData(
         .then(() => resolve({consentData: consentDataHandler.getConsentData()}), reject);
       cmpTimeout != null && resetTimeout(cmpTimeout);
     }
+  }).finally(() => {
+    timeoutHandle && clearTimeout(timeoutHandle);
   }).catch((e) => {
     consentDataHandler.setConsentData(null);
     throw e;
