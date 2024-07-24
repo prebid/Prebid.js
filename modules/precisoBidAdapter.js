@@ -40,7 +40,7 @@ export const spec = {
 
     return Boolean(bid.bidId && bid.params && bid.params.publisherId && precisoBid);
   },
-  buildRequests: buildRequests(endpoint,storage2,buyerKey),
+  buildRequests: buildRequests(endpoint, storage2, buyerKey),
   interpretResponse,
   onBidWon,
   getUserSyncs: getUserSyncs(syncEndpoint)

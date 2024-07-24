@@ -61,7 +61,7 @@ describe('bidderOperations', function () {
 
   const spec = {
     // isBidRequestValid: isBidRequestValid(),
-    buildRequests: buildRequests(bidEndPoint),
+    buildRequests: buildRequests(bidEndPoint, storage, cookieName),
     interpretResponse,
     getUserSyncs: getUserSyncs(syncEndPoint, cookieName, storage)
   };
