@@ -1,8 +1,7 @@
-import { deepAccess, generateUUID, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { createEidsArray } from './userId/eids.js';
+import { deepAccess, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -19,14 +18,14 @@ export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
   gvlid: 80,
-  isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
+  isBidRequestValid: (bid) => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const timeout = config.getConfig('bidderTimeout');
+    const timeout = bidderRequest.timeout;
     const firstPartyData = bidderRequest.ortb2 || {};
 
     const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
-    const secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+    const secure = nonHttp || sharethroughInternal.getProtocol().indexOf('https') > -1;
 
     const req = {
       id: generateUUID(),
@@ -46,13 +45,14 @@ export const sharethroughAdapterSpec = {
         dnt: navigator.doNotTrack === '1' ? 1 : 0,
         h: window.screen.height,
         w: window.screen.width,
+        ext: {},
       },
       regs: {
         coppa: config.getConfig('coppa') === true ? 1 : 0,
         ext: {},
       },
       source: {
-        tid: bidderRequest.auctionId,
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           version: '$prebid.version$',
           str: VERSION,
@@ -64,9 +64,18 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
+    if (bidderRequest.ortb2?.device?.ext?.cdep) {
+      req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
+    }
+
+    // if present, merge device object from ortb2 into `req.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(req.device, bidderRequest.ortb2.device);
+    }
+
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
-    req.user.ext.eids = createEidsArray(deepAccess(bidRequests[0], 'userId')) || [];
+    req.user.ext.eids = bidRequests[0].userIdAsEids || [];
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
@@ -80,64 +89,96 @@ export const sharethroughAdapterSpec = {
       req.regs.ext.us_privacy = bidderRequest.uspConsent;
     }
 
-    const imps = bidRequests.map(bidReq => {
-      const impression = { ext: {} };
+    if (bidderRequest?.gppConsent?.gppString) {
+      req.regs.gpp = bidderRequest.gppConsent.gppString;
+      req.regs.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      req.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      req.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
 
-      // mergeDeep(impression, bidReq.ortb2Imp); // leaving this out for now as we may want to leave stuff out on purpose
-      const tid = deepAccess(bidReq, 'ortb2Imp.ext.tid');
-      if (tid) impression.ext.tid = tid;
-      const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot'));
-      if (gpid) impression.ext.gpid = gpid;
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      req.regs.ext.dsa = bidderRequest.ortb2.regs.ext.dsa;
+    }
 
-      const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
+    const imps = bidRequests
+      .map((bidReq) => {
+        const impression = { ext: {} };
 
-      if (videoRequest) {
-        // default playerSize, only change this if we know width and height are properly defined in the request
-        let [w, h] = [640, 360];
-        if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[1]) {
-          [w, h] = videoRequest.playerSize;
+        // mergeDeep(impression, bidReq.ortb2Imp); // leaving this out for now as we may want to leave stuff out on purpose
+        const tid = deepAccess(bidReq, 'ortb2Imp.ext.tid');
+        if (tid) impression.ext.tid = tid;
+        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid') || deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
+        if (gpid) impression.ext.gpid = gpid;
+
+        const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
+
+        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
+          mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
         }
 
-        impression.video = {
-          pos: nullish(videoRequest.pos, 0),
-          topframe: inIframe() ? 0 : 1,
-          skip: nullish(videoRequest.skip, 0),
-          linearity: nullish(videoRequest.linearity, 1),
-          minduration: nullish(videoRequest.minduration, 5),
-          maxduration: nullish(videoRequest.maxduration, 60),
-          playbackmethod: videoRequest.playbackmethod || [2],
-          api: getVideoApi(videoRequest),
-          mimes: videoRequest.mimes || ['video/mp4'],
-          protocols: getVideoProtocols(videoRequest),
-          w,
-          h,
-          startdelay: nullish(videoRequest.startdelay, 0),
-          skipmin: nullish(videoRequest.skipmin, 0),
-          skipafter: nullish(videoRequest.skipafter, 0),
-          placement: videoRequest.context === 'instream' ? 1 : +deepAccess(videoRequest, 'placement', 4),
+        if (videoRequest) {
+          // default playerSize, only change this if we know width and height are properly defined in the request
+          let [w, h] = [640, 360];
+          if (
+            videoRequest.playerSize &&
+            videoRequest.playerSize[0] &&
+            videoRequest.playerSize[0][0] &&
+            videoRequest.playerSize[0][1]
+          ) {
+            [w, h] = videoRequest.playerSize[0];
+          }
+
+          const getVideoPlacementValue = (vidReq) => {
+            if (vidReq.plcmt) {
+              return vidReq.placement;
+            } else {
+              return vidReq.context === 'instream' ? 1 : +deepAccess(vidReq, 'placement', 4);
+            }
+          };
+
+          impression.video = {
+            pos: nullish(videoRequest.pos, 0),
+            topframe: inIframe() ? 0 : 1,
+            skip: nullish(videoRequest.skip, 0),
+            linearity: nullish(videoRequest.linearity, 1),
+            minduration: nullish(videoRequest.minduration, 5),
+            maxduration: nullish(videoRequest.maxduration, 60),
+            playbackmethod: videoRequest.playbackmethod || [2],
+            api: getVideoApi(videoRequest),
+            mimes: videoRequest.mimes || ['video/mp4'],
+            protocols: getVideoProtocols(videoRequest),
+            w,
+            h,
+            startdelay: nullish(videoRequest.startdelay, 0),
+            skipmin: nullish(videoRequest.skipmin, 0),
+            skipafter: nullish(videoRequest.skipafter, 0),
+            placement: getVideoPlacementValue(videoRequest),
+            plcmt: videoRequest.plcmt ? videoRequest.plcmt : null,
+          };
+
+          if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
+          if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
+          if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
+        } else {
+          impression.banner = {
+            pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
+            topframe: inIframe() ? 0 : 1,
+            format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
+          };
+        }
+
+        return {
+          id: bidReq.bidId,
+          tagid: String(bidReq.params.pkey),
+          secure: secure ? 1 : 0,
+          bidfloor: getBidRequestFloor(bidReq),
+          ...impression,
         };
+      })
+      .filter((imp) => !!imp);
 
-        if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
-        if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
-        if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
-      } else {
-        impression.banner = {
-          pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
-          topframe: inIframe() ? 0 : 1,
-          format: bidReq.sizes.map(size => ({ w: +size[0], h: +size[1] })),
-        };
-      }
-
-      return {
-        id: bidReq.bidId,
-        tagid: String(bidReq.params.pkey),
-        secure: secure ? 1 : 0,
-        bidfloor: getBidRequestFloor(bidReq),
-        ...impression,
-      };
-    }).filter(imp => !!imp);
-
-    return imps.map(impression => {
+    return imps.map((impression) => {
       return {
         method: 'POST',
         url: STR_ENDPOINT,
@@ -150,11 +191,20 @@ export const sharethroughAdapterSpec = {
   },
 
   interpretResponse: ({ body }, req) => {
-    if (!body || !body.seatbid || body.seatbid.length === 0 || !body.seatbid[0].bid || body.seatbid[0].bid.length === 0) {
+    if (
+      !body ||
+      !body.seatbid ||
+      body.seatbid.length === 0 ||
+      !body.seatbid[0].bid ||
+      body.seatbid[0].bid.length === 0
+    ) {
       return [];
     }
 
-    return body.seatbid[0].bid.map(bid => {
+    const fledgeAuctionEnabled = body.ext?.auctionConfigs;
+
+    const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
+      // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
       const response = {
         requestId: bid.impid,
         width: +bid.w,
@@ -170,6 +220,19 @@ export const sharethroughAdapterSpec = {
         nurl: bid.nurl,
         meta: {
           advertiserDomains: bid.adomain || [],
+          networkId: bid.ext?.networkId || null,
+          networkName: bid.ext?.networkName || null,
+          agencyId: bid.ext?.agencyId || null,
+          agencyName: bid.ext?.agencyName || null,
+          advertiserId: bid.ext?.advertiserId || null,
+          advertiserName: bid.ext?.advertiserName || null,
+          brandId: bid.ext?.brandId || null,
+          brandName: bid.ext?.brandName || null,
+          demandSource: bid.ext?.demandSource || null,
+          dchain: bid.ext?.dchain || null,
+          primaryCatId: bid.ext?.primaryCatId || null,
+          secondaryCatIds: bid.ext?.secondaryCatIds || null,
+          mediaType: bid.ext?.mediaType || null,
         },
       };
 
@@ -180,27 +243,32 @@ export const sharethroughAdapterSpec = {
 
       return response;
     });
+
+    if (fledgeAuctionEnabled) {
+      return {
+        bids: bidsFromExchange,
+        paapi: body.ext?.auctionConfigs || {},
+      };
+    } else {
+      return bidsFromExchange;
+    }
   },
 
   getUserSyncs: (syncOptions, serverResponses) => {
-    const shouldCookieSync = syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
+    const shouldCookieSync =
+      syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    return shouldCookieSync
-      ? serverResponses[0].body.cookieSyncUrls.map(url => ({ type: 'image', url: url }))
-      : [];
+    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
   },
 
   // Empty implementation for prebid core to be able to find it
-  onTimeout: (data) => {
-  },
+  onTimeout: (data) => {},
 
   // Empty implementation for prebid core to be able to find it
-  onBidWon: (bid) => {
-  },
+  onBidWon: (bid) => {},
 
   // Empty implementation for prebid core to be able to find it
-  onSetTargeting: (bid) => {
-  },
+  onSetTargeting: (bid) => {},
 };
 
 function getVideoApi({ api }) {
@@ -227,7 +295,7 @@ function getBidRequestFloor(bid) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner',
-      size: bid.sizes.map(size => ({ w: size[0], h: size[1] })),
+      size: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
     });
     if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);

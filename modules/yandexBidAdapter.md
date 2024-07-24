@@ -8,7 +8,9 @@ Maintainer: prebid@yandex-team.com
 
 # Description
 
-Yandex Bidder Adapter for Prebid.js.
+The Yandex Prebid Adapter is designed for seamless integration with Yandex's advertising services. It facilitates effective bidding by leveraging Yandex's robust ad-serving technology, ensuring publishers can maximize their ad revenue through efficient and targeted ad placements.
+
+For comprehensive auction analytics, consider using the [Yandex Analytics Adapter](https://docs.prebid.org/dev-docs/analytics/yandex.html). This tool provides essential insights into auction dynamics and user interactions, empowering publishers to fine-tune their strategies for optimal ad performance.
 
 # Parameters
 
@@ -20,21 +22,58 @@ Yandex Bidder Adapter for Prebid.js.
 
 # Test Parameters
 
-```
-var adUnits = [{
-  code: 'banner-1',
-  mediaTypes: {
-    banner: {
-      sizes: [[240, 400], [300, 600]],
-    }
+```javascript
+var adUnits = [
+  { // banner
+    code: 'banner-1',
+    mediaTypes: {
+      banner: {
+        sizes: [[240, 400], [300, 600]],
+      }
+    },
+    bids: [
+      {
+        bidder: 'yandex',
+        params: {
+          placementId: '346580-1'
+        },
+      }
+    ],
   },
-  bids: [{
-    {
-      bidder: 'yandex',
-      params: {
-        placementId: '346580-1'
+  { // native
+    code: 'banner-2',
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+          len: 25
+        },
+        image: {
+          required: true,
+          sizes: [300, 250],
+        },
+        icon: {
+          sizes: [32, 32],
+        },
+        body: {
+          len: 90
+        },
+        body2: {
+          len: 90
+        },
+        sponsoredBy: {
+          len: 25,
+        }
       },
-    }
-  }]
-}];
+    },
+    bids: [
+      {
+        bidder: 'yandex',
+        params: {
+          placementId: '346580-1'
+        },
+      }
+    ],
+  },
+];
 ```

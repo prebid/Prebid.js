@@ -1,8 +1,11 @@
-import { thirthyThreeAcrossIdSubmodule } from 'modules/33acrossIdSystem.js';
+import { thirthyThreeAcrossIdSubmodule, storage, domainUtils } from 'modules/33acrossIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
-import { uspDataHandler } from 'src/adapterManager.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler } from 'src/adapterManager.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
+import {attachIdSystem} from '../../../modules/userId/index.js';
 
 describe('33acrossIdSystem', () => {
   describe('name', () => {
@@ -50,10 +53,525 @@ describe('33acrossIdSystem', () => {
       expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
     });
 
-    context('when GDPR applies', () => {
-      it('should call endpoint with \'gdpr=1\'', () => {
+    const additionalOptions = {
+      'by an option': { storeFpid: true, storeTpid: true },
+      'by default': { } // No storeFpid, default value should be true
+    };
+
+    Object.entries(additionalOptions).forEach(([caseTitle, opts]) => {
+      context(`if the use of a first-party ID has been enabled ${caseTitle}`, () => {
+        context('and the response includes a first-party ID', () => {
+          context('and the enabled storage types include "cookie"', () => {
+            it('should store the provided first-party ID in a cookie', () => {
+              const completeCallback = () => {};
+
+              const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+                params: {
+                  pid: '12345',
+                  ...opts
+                },
+                enabledStorageTypes: [ 'cookie' ],
+                storage: { expires: 30 }
+              });
+
+              callback(completeCallback);
+
+              const [request] = server.requests;
+
+              const setCookie = sinon.stub(storage, 'setCookie');
+              sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+              request.respond(200, {
+                'Content-Type': 'application/json'
+              }, JSON.stringify({
+                succeeded: true,
+                data: {
+                  envelope: 'foo',
+                  fp: 'bar'
+                },
+                expires: 1645667805067
+              }));
+
+              expect(setCookie.calledWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+              setCookie.restore();
+              domainUtils.domainOverride.restore();
+            });
+          });
+
+          context('and the enabled storage types include "html5"', () => {
+            it('should store the provided first-party ID in local storage', () => {
+              const completeCallback = () => {};
+
+              const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+                params: {
+                  pid: '12345',
+                  ...opts
+                },
+                enabledStorageTypes: [ 'html5' ],
+                storage: {}
+              });
+
+              callback(completeCallback);
+
+              const [request] = server.requests;
+
+              const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+              request.respond(200, {
+                'Content-Type': 'application/json'
+              }, JSON.stringify({
+                succeeded: true,
+                data: {
+                  envelope: 'foo',
+                  fp: 'bar'
+                },
+                expires: 1645667805067
+              }));
+
+              expect(setDataInLocalStorage.calledWithExactly('33acrossIdFp', 'bar')).to.be.true;
+
+              setDataInLocalStorage.restore();
+            });
+          });
+
+          context('and the enabled storage types are "cookie" and "html5"', () => {
+            it('should store the provided first-party ID in each storage type', () => {
+              const completeCallback = () => {};
+
+              const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+                params: {
+                  pid: '12345',
+                  ...opts
+                },
+                enabledStorageTypes: [ 'cookie', 'html5' ],
+                storage: {}
+              });
+
+              callback(completeCallback);
+
+              const [request] = server.requests;
+
+              const setCookie = sinon.stub(storage, 'setCookie');
+              sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+              const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+              request.respond(200, {
+                'Content-Type': 'application/json'
+              }, JSON.stringify({
+                succeeded: true,
+                data: {
+                  envelope: 'foo',
+                  fp: 'bar'
+                },
+                expires: 1645667805067
+              }));
+
+              expect(setCookie.calledWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+              expect(setDataInLocalStorage.calledWithExactly('33acrossIdFp', 'bar')).to.be.true;
+
+              setCookie.restore();
+              domainUtils.domainOverride.restore();
+              setDataInLocalStorage.restore();
+            });
+          });
+        });
+
+        context('and the response lacks a first-party ID', () => {
+          it('should wipe any existing first-party ID from storage', () => {
+            const completeCallback = () => {};
+
+            const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+              params: {
+                pid: '12345',
+                ...opts
+              },
+              enabledStorageTypes: [ 'html5' ],
+              storage: {}
+            });
+
+            callback(completeCallback);
+
+            const [request] = server.requests;
+
+            const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+            const setCookie = sinon.stub(storage, 'setCookie');
+            sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+            request.respond(200, {
+              'Content-Type': 'application/json'
+            }, JSON.stringify({
+              succeeded: true,
+              data: {
+                envelope: 'foo' // no 'fp' field
+              },
+              expires: 1645667805067
+            }));
+
+            expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdFp')).to.be.true;
+            expect(setCookie.calledWithExactly('33acrossIdFp', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+            removeDataFromLocalStorage.restore();
+            setCookie.restore();
+            domainUtils.domainOverride.restore();
+          });
+        });
+      });
+
+      context(`if the use of a supplemental third-party ID has been enabled ${caseTitle}`, () => {
+        context('and the response includes a third-party ID', () => {
+          context('and the enabled storage type include "cookie"', () => {
+            it('should store the provided third-party ID in a cookie', () => {
+              const completeCallback = () => {};
+
+              const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+                params: {
+                  pid: '12345',
+                  ...opts
+                },
+                enabledStorageTypes: [ 'cookie' ],
+                storage: { expires: 30 }
+              });
+
+              callback(completeCallback);
+
+              const [request] = server.requests;
+
+              const setCookie = sinon.stub(storage, 'setCookie');
+              sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+              request.respond(200, {
+                'Content-Type': 'application/json'
+              }, JSON.stringify({
+                succeeded: true,
+                data: {
+                  envelope: 'foo',
+                  tp: 'bar'
+                },
+                expires: 1645667805067
+              }));
+
+              expect(setCookie.calledWithExactly('33acrossIdTp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+              setCookie.restore();
+              domainUtils.domainOverride.restore();
+            });
+          });
+
+          context('and the enabled storage types include "html5"', () => {
+            it('should store the provided third-party ID in local storage', () => {
+              const completeCallback = () => {};
+
+              const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+                params: {
+                  pid: '12345',
+                  ...opts
+                },
+                enabledStorageTypes: [ 'html5' ],
+                storage: {}
+              });
+
+              callback(completeCallback);
+
+              const [request] = server.requests;
+
+              const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+              request.respond(200, {
+                'Content-Type': 'application/json'
+              }, JSON.stringify({
+                succeeded: true,
+                data: {
+                  envelope: 'foo',
+                  tp: 'bar'
+                },
+                expires: 1645667805067
+              }));
+
+              expect(setDataInLocalStorage.calledWithExactly('33acrossIdTp', 'bar')).to.be.true;
+
+              setDataInLocalStorage.restore();
+            });
+          });
+
+          context('and the enabled storage types are "cookie" and "html5"', () => {
+            it('should store the provided third-party ID in each storage type', () => {
+              const completeCallback = () => {};
+
+              const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+                params: {
+                  pid: '12345',
+                  ...opts
+                },
+                enabledStorageTypes: [ 'cookie', 'html5' ],
+                storage: {}
+              });
+
+              callback(completeCallback);
+
+              const [request] = server.requests;
+
+              const setCookie = sinon.stub(storage, 'setCookie');
+              sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+              const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+              request.respond(200, {
+                'Content-Type': 'application/json'
+              }, JSON.stringify({
+                succeeded: true,
+                data: {
+                  envelope: 'foo',
+                  tp: 'bar'
+                },
+                expires: 1645667805067
+              }));
+
+              expect(setCookie.calledWithExactly('33acrossIdTp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+              expect(setDataInLocalStorage.calledWithExactly('33acrossIdTp', 'bar')).to.be.true;
+
+              setCookie.restore();
+              domainUtils.domainOverride.restore();
+              setDataInLocalStorage.restore();
+            });
+          });
+        });
+
+        context('and the response lacks a third-party ID', () => {
+          it('should wipe any existing third-party ID from storage', () => {
+            const completeCallback = () => {};
+
+            const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+              params: {
+                pid: '12345',
+                ...opts
+              },
+              enabledStorageTypes: [ 'html5' ],
+              storage: {}
+            });
+
+            callback(completeCallback);
+
+            const [request] = server.requests;
+
+            const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+            const setCookie = sinon.stub(storage, 'setCookie');
+            sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+            request.respond(200, {
+              'Content-Type': 'application/json'
+            }, JSON.stringify({
+              succeeded: true,
+              data: {
+                envelope: 'foo' // no 'tp' field
+              },
+              expires: 1645667805067
+            }));
+
+            expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdTp')).to.be.true;
+            expect(setCookie.calledWithExactly('33acrossIdTp', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+            removeDataFromLocalStorage.restore();
+            setCookie.restore();
+            domainUtils.domainOverride.restore();
+          });
+        });
+      });
+    });
+
+    context('if the use of a first-party ID has been disabled', () => {
+      context('and the response includes a first-party ID', () => {
+        it('should not store the provided first-party ID in a cookie', () => {
+          const completeCallback = () => {};
+
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345',
+              storeFpid: false
+            },
+            enabledStorageTypes: [ 'cookie' ],
+            storage: {
+              expires: 30
+            }
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          const setCookie = sinon.stub(storage, 'setCookie');
+          sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {
+              envelope: 'foo',
+              fp: 'bar'
+            },
+            expires: 1645667805067
+          }));
+
+          expect(setCookie.calledWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.false;
+
+          setCookie.restore();
+          domainUtils.domainOverride.restore();
+        });
+
+        it('should not store the provided first-party ID in local storage', () => {
+          const completeCallback = () => {};
+
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345',
+              storeFpid: false
+            },
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {
+              envelope: 'foo',
+              fp: 'bar'
+            },
+            expires: 1645667805067
+          }));
+
+          expect(setDataInLocalStorage.calledWithExactly('33acrossIdFp', 'bar')).to.be.false;
+
+          setDataInLocalStorage.restore();
+        });
+      });
+    });
+
+    context('if the use of a supplemental third-party ID has been disabled', () => {
+      context('and the response includes a third-party ID', () => {
+        it('should not store the provided third-party ID in a cookie', () => {
+          const completeCallback = () => {};
+
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345',
+              storeTpid: false
+            },
+            enabledStorageTypes: [ 'cookie' ],
+            storage: {
+              expires: 30
+            }
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          const setCookie = sinon.stub(storage, 'setCookie');
+
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {
+              envelope: 'foo',
+              tp: 'bar'
+            },
+            expires: 1645667805067
+          }));
+
+          expect(setCookie.calledWithExactly('33acrossIdTp', 'bar', sinon.match.string, 'Lax')).to.be.false;
+
+          setCookie.restore();
+        });
+
+        it('should not store the provided third-party ID in local storage', () => {
+          const completeCallback = () => {};
+
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345',
+              storeTpid: false
+            },
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {
+              envelope: 'foo',
+              tp: 'bar'
+            },
+            expires: 1645667805067
+          }));
+
+          expect(setDataInLocalStorage.calledWithExactly('33acrossIdTp', 'bar')).to.be.false;
+
+          setDataInLocalStorage.restore();
+        });
+      });
+    });
+
+    context('if the response lacks the 33across "envelope" ID', () => {
+      it('should wipe any existing "envelope" ID from storage', () => {
         const completeCallback = () => {};
+
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            envelope: '' // no 'envelope' field
+          },
+          expires: 1645667805067
+        }));
+
+        expect(removeDataFromLocalStorage.calledWith('33acrossId')).to.be.true;
+        expect(setCookie.calledWithExactly('33acrossId', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+        removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        domainUtils.domainOverride.restore();
+      });
+    });
+
+    context('when GDPR applies', () => {
+      it('should log a warning and don\'t expect a call to the endpoint', () => {
+        const logWarnSpy = sinon.spy(utils, 'logWarn');
+
+        const result = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -61,48 +579,22 @@ describe('33acrossIdSystem', () => {
           gdprApplies: true
         });
 
-        callback(completeCallback);
+        expect(logWarnSpy.calledOnceWithExactly('33acrossId: Submodule cannot be used where GDPR applies')).to.be.true;
+        expect(result).to.be.undefined;
 
-        const [request] = server.requests;
-
-        expect(request.url).to.contain('gdpr=1');
-      });
-
-      context('and the consent string is given', () => {
-        it('should call endpoint with the GDPR consent string', () => {
-          [
-            { consentString: '', expected: '' },
-            { consentString: undefined, expected: '' },
-            { consentString: 'foo', expected: 'foo' }
-          ].forEach(({ consentString, expected }, index) => {
-            const completeCallback = () => {};
-            const { callback } = thirthyThreeAcrossIdSubmodule.getId({
-              params: {
-                pid: '12345'
-              }
-            }, {
-              gdprApplies: true,
-              consentString
-            });
-
-            callback(completeCallback);
-
-            expect(server.requests[index].url).to.contain(`gdpr_consent=${expected}`);
-          });
-        });
+        logWarnSpy.restore();
       });
     });
 
     context('when GDPR doesn\'t apply', () => {
-      it('should call endpoint with \'gdpr=0\' and no GDPR consent string parameter', () => {
+      it('should call endpoint with \'gdpr=0\'', () => {
         const completeCallback = () => {};
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
         }, {
-          gdprApplies: false,
-          consentString: 'foo'
+          gdprApplies: false
         });
 
         callback(completeCallback);
@@ -110,7 +602,26 @@ describe('33acrossIdSystem', () => {
         const [request] = server.requests;
 
         expect(request.url).to.contain('gdpr=0');
-        expect(request.url).not.to.contain('gdpr_consent');
+      });
+
+      context('but the GDPR consent string is given', () => {
+        it('should call endpoint with the GDPR consent string', () => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          }, {
+            gdprApplies: false,
+            consentString: 'foo'
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).to.contain('gdpr_consent=foo');
+        });
       });
     });
 
@@ -154,6 +665,242 @@ describe('33acrossIdSystem', () => {
         expect(request.url).not.to.contain('us_privacy');
 
         uspDataHandler.getConsentData.restore();
+      });
+    });
+
+    context('when coppa is enabled', () => {
+      it('should call endpoint with an enabled coppa signal', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(coppaDataHandler, 'getCoppa').returns(true);
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('coppa=1');
+
+        coppaDataHandler.getCoppa.restore();
+      });
+    });
+
+    context('when coppa is not enabled', () => {
+      it('should call endpoint with coppa signal not enabled', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(coppaDataHandler, 'getCoppa').returns(false);
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('coppa=0');
+
+        coppaDataHandler.getCoppa.restore();
+      });
+    });
+
+    context('when a GPP consent string is given', () => {
+      beforeEach(() => {
+        sinon.stub(gppDataHandler, 'getConsentData');
+      });
+
+      afterEach(() => {
+        gppDataHandler.getConsentData.restore();
+      });
+
+      it('should call endpoint with the GPP consent string', () => {
+        [
+          { gppString: '', expected: '' },
+          { gppString: undefined, expected: '' },
+          { gppString: 'foo', expected: 'foo' },
+        ].forEach(({ gppString, expected }, index) => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
+
+          gppDataHandler.getConsentData.onCall(index).returns({
+            gppString
+          });
+
+          callback(completeCallback);
+
+          expect(server.requests[index].url).to.contain(`gpp=${expected}`);
+        });
+      });
+
+      it('should call endpoint with the GPP applicable sections', () => {
+        const gppString = 'foo';
+
+        [
+          { applicableSections: [], expected: '' },
+          { applicableSections: undefined, expected: '' },
+          { applicableSections: ['1'], expected: '1' },
+          { applicableSections: ['1', '2'], expected: '1%2C2' },
+        ].forEach(({ applicableSections, expected }, index) => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
+
+          gppDataHandler.getConsentData.onCall(index).returns({
+            gppString: 'foo',
+            applicableSections
+          });
+
+          callback(completeCallback);
+
+          expect(server.requests[index].url).to.contain(`gpp_sid=${expected}`);
+        });
+      });
+    });
+
+    context('when a first-party ID is present in local storage', () => {
+      it('should call endpoint with the encoded first-party ID included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        sinon.stub(storage, 'getDataFromLocalStorage')
+          .withArgs('33acrossIdFp')
+          .returns('33acrossIdFpValue+');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('fp=33acrossIdFpValue%2B');
+
+        storage.getDataFromLocalStorage.restore();
+      });
+    });
+
+    context('when a first-party ID is present in cookie storage', () => {
+      it('should call endpoint with the first-party ID included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'cookie' ],
+          storage: {}
+        });
+
+        sinon.stub(storage, 'getCookie')
+          .withArgs('33acrossIdFp')
+          .returns('33acrossIdFpValue');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('fp=33acrossIdFpValue');
+
+        storage.getCookie.restore();
+      });
+    });
+
+    context('when a first-party ID is not present in storage', () => {
+      it('should not call endpoint with the first-party ID included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).not.to.contain('fp=');
+      });
+    });
+
+    context('when a third-party ID is present in local storage', () => {
+      it('should call endpoint with the encoded third-party ID included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        sinon.stub(storage, 'getDataFromLocalStorage')
+          .withArgs('33acrossIdTp')
+          .returns('33acrossIdTpValue+');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('tp=33acrossIdTpValue%2B');
+
+        storage.getDataFromLocalStorage.restore();
+      });
+    });
+
+    context('when a third-party ID is present in cookie storage', () => {
+      it('should call endpoint with the third-party ID included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'cookie' ],
+          storage: {}
+        });
+
+        sinon.stub(storage, 'getCookie')
+          .withArgs('33acrossIdTp')
+          .returns('33acrossIdTpValue');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('tp=33acrossIdTpValue');
+
+        storage.getCookie.restore();
+      });
+    });
+
+    context('when a third-party ID is not present in storage', () => {
+      it('should not call endpoint with the third-party ID included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).not.to.contain('tp=');
       });
     });
 
@@ -282,7 +1029,7 @@ describe('33acrossIdSystem', () => {
           error: 'foo'
         }));
 
-        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: Unsuccessful response`)).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: Unsuccessful response foo`)).to.be.true;
 
         logErrorSpy.restore();
       });
@@ -413,4 +1160,25 @@ describe('33acrossIdSystem', () => {
       });
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(thirthyThreeAcrossIdSubmodule);
+    })
+    it('33acrossId', function() {
+      const userId = {
+        '33acrossId': {
+          envelope: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: '33across.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1
+        }]
+      });
+    });
+  })
 });

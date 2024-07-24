@@ -58,7 +58,6 @@ export const spec = {
       if (isVideoBid(bidRequest)) {
         let bidResponse = {
           requestId: response.id,
-          bidderCode: BIDDER_CODE,
           cpm: response.seatbid[0].bid[0].price,
           width: response.seatbid[0].bid[0].w,
           height: response.seatbid[0].bid[0].h,
@@ -237,7 +236,7 @@ function createVideoRequestData(bid, bidderRequest) {
     },
     'at': 2,
     'site': {},
-    'tmax': 3000,
+    'tmax': Math.min(3000, bidderRequest.timeout),
     'cur': ['USD'],
     'id': bid.bidId,
     'imp': [],
@@ -323,7 +322,7 @@ function createBannerRequestData(bid, bidderRequest) {
     },
     'at': 2,
     'site': {},
-    'tmax': 3000,
+    'tmax': Math.min(3000, bidderRequest.timeout),
     'cur': ['USD'],
     'id': bid.bidId,
     'imp': [],

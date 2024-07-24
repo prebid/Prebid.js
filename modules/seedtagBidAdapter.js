@@ -1,7 +1,16 @@
-import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _map, isArray, triggerPixel } from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
@@ -60,6 +69,10 @@ function hasVideoMediaType(bid) {
   return !!bid.mediaTypes && !!bid.mediaTypes.video;
 }
 
+function hasBannerMediaType(bid) {
+  return !!bid.mediaTypes && !!bid.mediaTypes.banner;
+}
+
 function hasMandatoryDisplayParams(bid) {
   const p = bid.params;
   return (
@@ -72,17 +85,27 @@ function hasMandatoryDisplayParams(bid) {
 function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid);
 
-  return (
+  let isValid =
     !!bid.params.publisherId &&
     !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
     !!videoParams.playerSize &&
     isArray(videoParams.playerSize) &&
-    videoParams.playerSize.length > 0 &&
-    // only instream is supported for video
-    videoParams.context === 'instream' &&
-    bid.params.placement === 'inStream'
-  );
+    videoParams.playerSize.length > 0;
+
+  switch (bid.params.placement) {
+    // instream accept only video format
+    case 'inStream':
+      return isValid && videoParams.context === 'instream';
+    // outstream accept banner/native/video format
+    default:
+      return (
+        isValid &&
+        videoParams.context === 'outstream' &&
+        hasBannerMediaType(bid) &&
+        hasMandatoryDisplayParams(bid)
+      );
+  }
 }
 
 function buildBidRequest(validBidRequest) {
@@ -93,16 +116,17 @@ function buildBidRequest(validBidRequest) {
       return mediaTypesMap[pbjsType];
     }
   );
-
   const bidRequest = {
     id: validBidRequest.bidId,
-    transactionId: validBidRequest.transactionId,
+    transactionId: validBidRequest.ortb2Imp?.ext?.tid,
+    gpid: validBidRequest.ortb2Imp?.ext?.gpid,
     sizes: validBidRequest.sizes,
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
     adUnitCode: validBidRequest.adUnitCode,
+    geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefined
+    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
   };
 
   if (hasVideoMediaType(validBidRequest)) {
@@ -184,6 +208,27 @@ function ttfb() {
   return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
 }
 
+function geom(adunitCode) {
+  const slot = document.getElementById(adunitCode);
+  if (slot) {
+    const scrollY = window.scrollY;
+    const { top, left, width, height } = slot.getBoundingClientRect();
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    return {
+      scrollY,
+      top,
+      left,
+      width,
+      height,
+      viewport,
+    };
+  }
+}
+
 export function getTimeoutUrl(data) {
   let queryParams = '';
   if (
@@ -240,6 +285,7 @@ export const spec = {
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),
+      user: { topics: [], eids: [] }
     };
 
     if (payload.cmp) {
@@ -260,7 +306,39 @@ export const spec = {
       payload.coppa = coppa;
     }
 
+    if (bidderRequest.gppConsent) {
+      payload.gppConsent = {
+        gppString: bidderRequest.gppConsent.gppString,
+        applicableSections: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      payload.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid
+      }
+    }
+
+    if (bidderRequest.ortb2?.user?.data) {
+      payload.user.topics = bidderRequest.ortb2.user.data
+    }
+    if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
+      payload.user.eids = validBidRequests[0].userIdAsEids
+    }
+
+    if (bidderRequest.ortb2?.bcat) {
+      payload.bcat = bidderRequest.ortb2?.bcat
+    }
+
+    if (bidderRequest.ortb2?.badv) {
+      payload.badv = bidderRequest.ortb2?.badv
+    }
+
+    if (bidderRequest.ortb2?.device?.sua) {
+      payload.sua = bidderRequest.ortb2.device.sua
+    }
+
     const payloadString = JSON.stringify(payload);
+
     return {
       method: 'POST',
       url: SEEDTAG_SSP_ENDPOINT,

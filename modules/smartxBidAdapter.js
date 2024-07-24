@@ -1,4 +1,17 @@
-import { logError, deepAccess, isArray, getBidIdParameter, getDNT, generateUUID, isEmpty, _each, logMessage, logWarn, isFn, isPlainObject } from '../src/utils.js';
+import {
+  logError,
+  deepAccess,
+  isArray,
+  getDNT,
+  generateUUID,
+  isEmpty,
+  _each,
+  logMessage,
+  logWarn,
+  isFn,
+  isPlainObject,
+  getBidIdParameter
+} from '../src/utils.js';
 import {
   Renderer
 } from '../src/Renderer.js';
@@ -8,10 +21,18 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
+const GVLID = 115;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -76,6 +97,7 @@ export const spec = {
       const bidfloor = getBidFloor(bid) || 0;
       const bidfloorcur = getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
       const siteId = getBidIdParameter('siteId', bid.params);
+      const sitekey = getBidIdParameter('sitekey', bid.params);
       const domain = getBidIdParameter('domain', bid.params);
       const cat = getBidIdParameter('cat', bid.params) || [''];
       let pubcid = null;
@@ -97,12 +119,6 @@ export const spec = {
       const pos = getBidIdParameter('pos', bid.params) || 1;
       const api = getBidIdParameter('api', bid.params) || [2];
       const protocols = getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
-      var contextcustom = deepAccess(bid, 'mediaTypes.video.context');
-      var placement = 1;
-
-      if (contextcustom === 'outstream') {
-        placement = 3;
-      }
 
       let smartxReq = [{
         id: bid.bidId,
@@ -122,7 +138,6 @@ export const spec = {
           maxbitrate: maxbitrate,
           delivery: delivery,
           pos: pos,
-          placement: placement,
           api: api,
           ext: ext
         },
@@ -189,6 +204,11 @@ export const spec = {
             }
           };
         }
+      }
+
+      // Add sitekey if available
+      if (sitekey) {
+        requestPayload.site.content.ext.sitekey = sitekey;
       }
 
       // Add common id if available

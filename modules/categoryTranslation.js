@@ -12,7 +12,7 @@
  */
 
 import {config} from '../src/config.js';
-import {hook, setupBeforeHookFnOnce} from '../src/hook.js';
+import {hook, setupBeforeHookFnOnce, ready} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {logError, timestamp} from '../src/utils.js';
 import {addBidResponse} from '../src/auction.js';
@@ -32,7 +32,8 @@ export const registerAdserver = hook('async', function(adServer) {
     initTranslation(url, DEFAULT_IAB_TO_FW_MAPPING_KEY);
   }
 }, 'registerAdserver');
-registerAdserver();
+
+ready.then(() => registerAdserver());
 
 export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook(fn, adUnitCode, bid, reject) {
   if (!bid) {

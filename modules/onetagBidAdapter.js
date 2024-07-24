@@ -8,12 +8,17 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 
-const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Determines whether or not the given bid request is valid.
@@ -58,11 +63,21 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     payload.gdprConsent = {
       consentString: bidderRequest.gdprConsent.consentString,
-      consentRequired: bidderRequest.gdprConsent.gdprApplies
+      consentRequired: bidderRequest.gdprConsent.gdprApplies,
+      addtlConsent: bidderRequest.gdprConsent.addtlConsent
     };
+  }
+  if (bidderRequest && bidderRequest.gppConsent) {
+    payload.gppConsent = {
+      consentString: bidderRequest.gppConsent.gppString,
+      applicableSections: bidderRequest.gppConsent.applicableSections
+    }
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
+  }
+  if (bidderRequest && bidderRequest.ortb2) {
+    payload.ortb2 = bidderRequest.ortb2;
   }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
@@ -78,6 +93,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = navigator.connection || navigator.webkitConnection;
   payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
   payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
+  payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -92,10 +108,10 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
+  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
     return bids;
   }
-  body.bids.forEach(bid => {
+  Array.isArray(body.bids) && body.bids.forEach(bid => {
     const responseBid = {
       requestId: bid.requestId,
       cpm: bid.cpm,
@@ -112,6 +128,9 @@ function interpretResponse(serverResponse, bidderRequest) {
       },
       ttl: bid.ttl || 300
     };
+    if (bid.dsa) {
+      responseBid.meta.dsa = bid.dsa;
+    }
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
@@ -132,7 +151,16 @@ function interpretResponse(serverResponse, bidderRequest) {
     }
     bids.push(responseBid);
   });
-  return bids;
+
+  if (body.fledgeAuctionConfigs && Array.isArray(body.fledgeAuctionConfigs)) {
+    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
+    return {
+      bids,
+      paapi: fledgeAuctionConfigs,
+    }
+  } else {
+    return bids;
+  }
 }
 
 function createRenderer(bid, rendererOptions = {}) {
@@ -258,11 +286,12 @@ function setGeneralInfo(bidRequest) {
   this['adUnitCode'] = bidRequest.adUnitCode;
   this['bidId'] = bidRequest.bidId;
   this['bidderRequestId'] = bidRequest.bidderRequestId;
-  this['auctionId'] = bidRequest.auctionId;
-  this['transactionId'] = bidRequest.transactionId;
+  this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
+  this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
   this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
+  this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
   if (params.pubClick) {
     this['click'] = params.pubClick;
   }
@@ -340,7 +369,7 @@ function getSizes(sizes) {
   return ret;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   let syncs = [];
   let params = '';
   if (gdprConsent) {
@@ -349,6 +378,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     }
     if (typeof gdprConsent.consentString === 'string') {
       params += '&gdpr_consent=' + gdprConsent.consentString;
+    }
+  }
+  if (gppConsent) {
+    if (typeof gppConsent.gppString === 'string') {
+      params += '&gpp_consent=' + gppConsent.gppString;
     }
   }
   if (uspConsent && typeof uspConsent === 'string') {

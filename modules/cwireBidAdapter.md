@@ -1,25 +1,27 @@
 # Overview
 
-Module Name: C-WIRE Bid Adapter
-Module Type: Adagio Adapter
-Maintainer: publishers@cwire.ch
+```
+Module Name:  C-WIRE Bid Adapter
+Module Type:  Bidder Adapter
+Maintainer: devs@cwire.com
+```
 
 ## Description
 
-Connects to C-WIRE demand source to fetch bids.
+Prebid.js Adapter for C-Wire.
 
 ## Configuration
 
-
 Below, the list of C-WIRE params and where they can be set.
 
-| Param name | Global config | AdUnit config | Type   | Required |
-| ---------- | ------------- | ------------- |--------| ---------|
-| pageId |  | x | number | YES |
-| placementId |  | x | number | YES |
-| refgroups | | x | string | NO |
-| cwcreative |  | x | string | NO |
-| cwapikey | | x | string | NO |
+| Param name  | URL parameter | AdUnit config |   Type   |   Required    |
+|-------------|:-------------:|:-------------:|:--------:|:-------------:|
+| pageId      |               |       x       |  number  |      YES      |
+| placementId |               |       x       |  number  |      YES      |
+| cwgroups    |       x       |               |  string  |      NO       |
+| cwcreative  |       x       |               |  string  |      NO       |
+| cwdebug     |       x       |               | boolean  |      NO       |
+| cwfeatures  |       x       |               |  string  |      NO       |
 
 
 ### adUnit configuration
@@ -32,17 +34,22 @@ var adUnits = [
       bidder: 'cwire',
       mediaTypes: {
         banner: {
-          sizes: [[1, 1]],
+          sizes: [[400, 600]],
         }
       },
       params: {
         pageId: 1422,                 // required - number
         placementId: 2211521,         // required - number
-        cwcreative: '42',             // optional - id of creative to force
-        refgroups: 'test-user',       // optional - name of group or coma separated list of groups to force
-        cwapikey: 'api_key_xyz',      // optional - api key for integration testing        
       }
     }]
   }
 ];
 ```
+
+### URL parameters
+
+For debugging and testing purposes url parameters can be set.
+
+**Example:**
+
+`https://www.some-site.com/article.html?cwdebug=true&cwfeatures=feature1,feature2&cwcreative=1234`

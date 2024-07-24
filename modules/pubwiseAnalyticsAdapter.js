@@ -2,9 +2,11 @@ import { getParameterByName, logInfo, generateUUID, debugTurnedOn } from '../src
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-import { getStorageManager } from '../src/storageManager.js';
-const storage = getStorageManager();
+import { EVENTS } from '../src/constants.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+const MODULE_CODE = 'pubwise';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 /****
  * PubWise.io Analytics
@@ -174,13 +176,13 @@ function flushEvents() {
 
 function isIngestedEvent(eventType) {
   const ingested = [
-    CONSTANTS.EVENTS.AUCTION_INIT,
-    CONSTANTS.EVENTS.BID_REQUESTED,
-    CONSTANTS.EVENTS.BID_RESPONSE,
-    CONSTANTS.EVENTS.BID_WON,
-    CONSTANTS.EVENTS.BID_TIMEOUT,
-    CONSTANTS.EVENTS.AD_RENDER_FAILED,
-    CONSTANTS.EVENTS.TCF2_ENFORCEMENT
+    EVENTS.AUCTION_INIT,
+    EVENTS.BID_REQUESTED,
+    EVENTS.BID_RESPONSE,
+    EVENTS.BID_WON,
+    EVENTS.BID_TIMEOUT,
+    EVENTS.AD_RENDER_FAILED,
+    EVENTS.TCF2_ENFORCEMENT
   ];
   return ingested.indexOf(eventType) !== -1;
 }
@@ -276,9 +278,9 @@ pubwiseAnalytics.handleEvent = function(eventType, data) {
     metaData = enrichWithCustomSegments(metaData);
 
     // add data on init to the metadata container
-    if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+    if (eventType === EVENTS.AUCTION_INIT) {
       data = filterAuctionInit(data);
-    } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
+    } else if (eventType === EVENTS.BID_RESPONSE) {
       data = filterBidResponse(data);
     }
 
@@ -292,7 +294,7 @@ pubwiseAnalytics.handleEvent = function(eventType, data) {
   }
 
   // once the auction ends, or the event is a bid won send events
-  if (eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON) {
+  if (eventType === EVENTS.AUCTION_END || eventType === EVENTS.BID_WON) {
     flushEvents();
   }
 };
@@ -304,11 +306,14 @@ pubwiseAnalytics.storeSessionID = function (userSessID) {
 
 // ensure a session exists, if not make one, always store it
 pubwiseAnalytics.ensureSession = function () {
-  if (sessionExpired() === true || userSessionID() === null || userSessionID() === '') {
+  let sessionId = userSessionID();
+  if (sessionExpired() === true || sessionId === null || sessionId === '') {
     let generatedId = generateUUID();
     expireUtmData();
     this.storeSessionID(generatedId);
     sessionData.sessionId = generatedId;
+  } else if (sessionId != null) {
+    sessionData.sessionId = sessionId;
   }
   // eslint-disable-next-line
   // console.log('ensured session');
@@ -331,7 +336,7 @@ pubwiseAnalytics.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,
-  code: 'pubwise',
+  code: MODULE_CODE,
   gvlid: 842
 });
 

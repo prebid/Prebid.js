@@ -10,6 +10,7 @@ import {
   parseSizesInput,
   deepSetValue,
   formatQS,
+  setOnAny
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -112,7 +113,7 @@ export const spec = {
       setOnAny(validBidRequests, 'params.pt') ||
       setOnAny(validBidRequests, 'params.priceType') ||
       'net';
-    const tid = bidderRequest.auctionId;
+    const tid = bidderRequest.ortb2?.source?.tid;
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
@@ -353,15 +354,6 @@ function parseNative(bid) {
   });
 
   return result;
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

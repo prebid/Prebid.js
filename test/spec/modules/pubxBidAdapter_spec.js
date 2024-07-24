@@ -26,10 +26,10 @@ describe('pubxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -39,14 +39,22 @@ describe('pubxAdapter', function () {
         id: '26c1ee0038ac11',
         params: {
           sid: '12345abc'
+        },
+        ortb2: {
+          site: {
+            page: `${location.href}?test=1`
+          }
         }
       }
     ];
 
     const data = {
       banner: {
-        sid: '12345abc'
-      }
+        sid: '12345abc',
+        pu: encodeURIComponent(
+          utils.deepAccess(bidRequests[0], 'ortb2.site.page').replace(/\?.*$/, '')
+        ),
+      },
     };
 
     it('sends bid request to ENDPOINT via GET', function () {

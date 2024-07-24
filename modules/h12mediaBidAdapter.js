@@ -41,7 +41,7 @@ export const spec = {
 
       const bidrequest = {
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         adunitId: bidRequest.adUnitCode,
         pubid: bidderParams.pubid,
         placementid: bidderParams.placementid || '',

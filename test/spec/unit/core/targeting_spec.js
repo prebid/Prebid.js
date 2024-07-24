@@ -1,15 +1,22 @@
-import { expect } from 'chai';
-import { targeting as targetingInstance, filters, getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
-import { config } from 'src/config.js';
-import { createBidReceived } from 'test/fixtures/fixtures.js';
-import CONSTANTS from 'src/constants.json';
-import { auctionManager } from 'src/auctionManager.js';
+import {expect} from 'chai';
+import {
+  getGPTSlotsForAdUnits,
+  filters,
+  getHighestCpmBidsFromBidPool,
+  sortByDealAndPriceBucketOrCpm,
+  targeting as targetingInstance
+} from 'src/targeting.js';
+import {config} from 'src/config.js';
+import {createBidReceived} from 'test/fixtures/fixtures.js';
+import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, STATUS, TARGETING_KEYS } from 'src/constants.js';
+import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
 import {createBid} from '../../../../src/bidfactory.js';
 import {hook} from '../../../../src/hook.js';
+import {getHighestCpm} from '../../../../src/utils/reducers.js';
 
-function mkBid(bid, status = CONSTANTS.STATUS.GOOD) {
+function mkBid(bid, status = STATUS.GOOD) {
   return Object.assign(createBid(status), bid);
 }
 
@@ -34,10 +41,10 @@ const sampleBid = {
   'size': '300x250',
   'adserverTargeting': {
     'foobar': '300x250',
-    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
-    [CONSTANTS.TARGETING_KEYS.AD_ID]: '148018fe5e',
-    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.53',
-    [CONSTANTS.TARGETING_KEYS.DEAL]: '1234'
+    [TARGETING_KEYS.BIDDER]: 'rubicon',
+    [TARGETING_KEYS.AD_ID]: '148018fe5e',
+    [TARGETING_KEYS.PRICE_BUCKET]: '0.53',
+    [TARGETING_KEYS.DEAL]: '1234'
   },
   'dealId': '1234',
   'netRevenue': true,
@@ -68,9 +75,9 @@ const bid2 = mkBid({
   'size': '300x250',
   'adserverTargeting': {
     'foobar': '300x250',
-    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
-    [CONSTANTS.TARGETING_KEYS.AD_ID]: '5454545',
-    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.25'
+    [TARGETING_KEYS.BIDDER]: 'rubicon',
+    [TARGETING_KEYS.AD_ID]: '5454545',
+    [TARGETING_KEYS.PRICE_BUCKET]: '0.25'
   },
   'netRevenue': true,
   'currency': 'USD',
@@ -98,9 +105,9 @@ const bid3 = mkBid({
   'size': '300x600',
   'adserverTargeting': {
     'foobar': '300x600',
-    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'rubicon',
-    [CONSTANTS.TARGETING_KEYS.AD_ID]: '48747745',
-    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.75'
+    [TARGETING_KEYS.BIDDER]: 'rubicon',
+    [TARGETING_KEYS.AD_ID]: '48747745',
+    [TARGETING_KEYS.PRICE_BUCKET]: '0.75'
   },
   'netRevenue': true,
   'currency': 'USD',
@@ -160,18 +167,18 @@ const nativeBid1 = mkBid({
   'pbCg': '',
   'size': '0x0',
   'adserverTargeting': {
-    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'appnexus',
-    [CONSTANTS.TARGETING_KEYS.AD_ID]: '591e7c9354b633',
-    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '10.00',
-    [CONSTANTS.TARGETING_KEYS.SIZE]: '0x0',
-    [CONSTANTS.TARGETING_KEYS.SOURCE]: 'client',
-    [CONSTANTS.TARGETING_KEYS.FORMAT]: 'native',
-    [CONSTANTS.NATIVE_KEYS.title]: 'This is a Prebid Native Creative',
-    [CONSTANTS.NATIVE_KEYS.body]: 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
-    [CONSTANTS.NATIVE_KEYS.sponsoredBy]: 'Prebid.org',
-    [CONSTANTS.NATIVE_KEYS.clickUrl]: 'http://prebid.org/dev-docs/show-native-ads.html',
-    [CONSTANTS.NATIVE_KEYS.image]: 'http://vcdn.adnxs.com/p/creative-image/94/22/cd/0f/9422cd0f-f400-45d3-80f5-2b92629d9257.jpg',
-    [CONSTANTS.NATIVE_KEYS.icon]: 'http://vcdn.adnxs.com/p/creative-image/bd/59/a6/c6/bd59a6c6-0851-411d-a16d-031475a51312.png'
+    [TARGETING_KEYS.BIDDER]: 'appnexus',
+    [TARGETING_KEYS.AD_ID]: '591e7c9354b633',
+    [TARGETING_KEYS.PRICE_BUCKET]: '10.00',
+    [TARGETING_KEYS.SIZE]: '0x0',
+    [TARGETING_KEYS.SOURCE]: 'client',
+    [TARGETING_KEYS.FORMAT]: 'native',
+    [NATIVE_KEYS.title]: 'This is a Prebid Native Creative',
+    [NATIVE_KEYS.body]: 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
+    [NATIVE_KEYS.sponsoredBy]: 'Prebid.org',
+    [NATIVE_KEYS.clickUrl]: 'http://prebid.org/dev-docs/show-native-ads.html',
+    [NATIVE_KEYS.image]: 'http://vcdn.adnxs.com/p/creative-image/94/22/cd/0f/9422cd0f-f400-45d3-80f5-2b92629d9257.jpg',
+    [NATIVE_KEYS.icon]: 'http://vcdn.adnxs.com/p/creative-image/bd/59/a6/c6/bd59a6c6-0851-411d-a16d-031475a51312.png'
   }
 });
 
@@ -219,17 +226,17 @@ const nativeBid2 = mkBid({
   'pbCg': '',
   'size': '0x0',
   'adserverTargeting': {
-    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'dgads',
-    [CONSTANTS.TARGETING_KEYS.AD_ID]: '6e0aba55ed54e5',
-    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '1.90',
-    [CONSTANTS.TARGETING_KEYS.SIZE]: '0x0',
-    [CONSTANTS.TARGETING_KEYS.SOURCE]: 'client',
-    [CONSTANTS.TARGETING_KEYS.FORMAT]: 'native',
-    [CONSTANTS.NATIVE_KEYS.image]: 'https://ads-tr.bigmining.com/img/300x250.png',
-    [CONSTANTS.NATIVE_KEYS.title]: 'Test Title',
-    [CONSTANTS.NATIVE_KEYS.body]: 'Test Description',
-    [CONSTANTS.NATIVE_KEYS.sponsoredBy]: 'test.com',
-    [CONSTANTS.NATIVE_KEYS.clickUrl]: 'http://prebid.org/'
+    [TARGETING_KEYS.BIDDER]: 'dgads',
+    [TARGETING_KEYS.AD_ID]: '6e0aba55ed54e5',
+    [TARGETING_KEYS.PRICE_BUCKET]: '1.90',
+    [TARGETING_KEYS.SIZE]: '0x0',
+    [TARGETING_KEYS.SOURCE]: 'client',
+    [TARGETING_KEYS.FORMAT]: 'native',
+    [NATIVE_KEYS.image]: 'https://ads-tr.bigmining.com/img/300x250.png',
+    [NATIVE_KEYS.title]: 'Test Title',
+    [NATIVE_KEYS.body]: 'Test Description',
+    [NATIVE_KEYS.sponsoredBy]: 'test.com',
+    [NATIVE_KEYS.clickUrl]: 'http://prebid.org/'
   }
 });
 
@@ -334,12 +341,6 @@ describe('targeting tests', function () {
       bidExpiryStub.restore();
     });
 
-    it('should filter out NO_BID bids', () => {
-      bidsReceived = [mkBid(sampleBid, CONSTANTS.STATUS.NO_BID)];
-      const tg = targetingInstance.getAllTargeting();
-      expect(tg[bidsReceived[0].adUnitCode]).to.eql({});
-    });
-
     describe('when handling different adunit targeting value types', function () {
       const adUnitCode = '/123456/header-bid-tag-0';
       const adServerTargeting = {};
@@ -351,7 +352,7 @@ describe('targeting tests', function () {
           return [
             {
               'code': adUnitCode,
-              [CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]: adServerTargeting
+              [JSON_MAPPING.ADSERVER_TARGETING]: adServerTargeting
             }
           ];
         });
@@ -457,7 +458,7 @@ describe('targeting tests', function () {
           }
         });
 
-        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, 2);
 
         expect(bids.length).to.equal(3);
         expect(bids[0].adId).to.equal('8383838');
@@ -473,7 +474,7 @@ describe('targeting tests', function () {
           }
         });
 
-        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, 2);
 
         expect(bids.length).to.equal(3);
         expect(bids[0].adId).to.equal('8383838');
@@ -489,7 +490,7 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
 
         expect(limitedBids.length).to.equal(1);
       });
@@ -502,7 +503,7 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
 
         expect(limitedBids.length).to.equal(2);
       });
@@ -515,7 +516,7 @@ describe('targeting tests', function () {
         });
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
 
         expect(limitedBids.length).to.equal(2);
       });
@@ -611,7 +612,7 @@ describe('targeting tests', function () {
       beforeEach(function () {
         bidsReceived = [bid1, bid2, nativeBid1, nativeBid2].map(deepClone);
         bidsReceived.forEach((bid) => {
-          bid.adserverTargeting[CONSTANTS.TARGETING_KEYS.SOURCE] = 'test-source';
+          bid.adserverTargeting[TARGETING_KEYS.SOURCE] = 'test-source';
           bid.adUnitCode = 'adunit';
           if (winningBid == null || bid.cpm > winningBid.cpm) {
             winningBid = bid;
@@ -642,7 +643,7 @@ describe('targeting tests', function () {
             addTargetingKeys: ['SOURCE']
           }
         });
-        expect(targetingResult()).to.include.all.keys(...expandKey(CONSTANTS.TARGETING_KEYS.SOURCE));
+        expect(targetingResult()).to.include.all.keys(...expandKey(TARGETING_KEYS.SOURCE));
       });
 
       it('should keep default and native keys', function() {
@@ -651,9 +652,9 @@ describe('targeting tests', function () {
             addTargetingKeys: ['SOURCE']
           }
         });
-        const defaultKeys = new Set(Object.values(CONSTANTS.DEFAULT_TARGETING_KEYS));
+        const defaultKeys = new Set(Object.values(DEFAULT_TARGETING_KEYS));
         if (FEATURES.NATIVE) {
-          Object.values(CONSTANTS.NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
+          Object.values(NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
         }
 
         const expectedKeys = new Set();
@@ -670,8 +671,8 @@ describe('targeting tests', function () {
       it('should not be allowed together with allowTargetingKeys', function () {
         config.setConfig({
           targetingControls: {
-            allowTargetingKeys: [CONSTANTS.TARGETING_KEYS.BIDDER],
-            addTargetingKeys: [CONSTANTS.TARGETING_KEYS.SOURCE]
+            allowTargetingKeys: [TARGETING_KEYS.BIDDER],
+            addTargetingKeys: [TARGETING_KEYS.SOURCE]
           }
         });
         expect(targetingResult).to.throw();
@@ -849,12 +850,12 @@ describe('targeting tests', function () {
       // we should only get the targeting data for the one requested adunit
       expect(Object.keys(targeting).length).to.equal(1);
 
-      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+      let sendAllBidCpm = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
       // we shouldn't get more than 1 key for hb_pb_${bidder}
       expect(sendAllBidCpm.length).to.equal(1);
 
       // expect the winning CPM to be equal to the sendAllBidCPM
-      expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
+      expect(targeting['/123456/header-bid-tag-0'][TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][TARGETING_KEYS.PRICE_BUCKET]);
     });
 
     if (FEATURES.NATIVE) {
@@ -955,6 +956,7 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
 
         useBidCache = false;
 
@@ -962,6 +964,7 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
       });
 
       it('should use bidCacheFilterFunction', function() {
@@ -989,9 +992,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching Off, No Filter Function
         useBidCache = false;
@@ -1000,9 +1007,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching On AGAIN, No Filter Function (should be same as first time)
         useBidCache = true;
@@ -1011,9 +1022,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching On, with Filter Function to Exclude video
         useBidCache = true;
@@ -1026,9 +1041,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
         // filter function should have been called for each cached bid (4 times)
         expect(bcffCalled).to.equal(4);
 
@@ -1044,9 +1063,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
         // filter function should not have been called
         expect(bcffCalled).to.equal(0);
       });
@@ -1288,6 +1311,17 @@ describe('targeting tests', function () {
   describe('setTargetingForAst', function () {
     let sandbox,
       apnTagStub;
+
+    before(() => {
+      if (window.apntag?.setKeywords == null) {
+        const orig = window.apntag;
+        window.apntag = {setKeywords: () => {}}
+        after(() => {
+          window.apntag = orig;
+        })
+      }
+    });
+
     beforeEach(function() {
       sandbox = sinon.createSandbox();
       sandbox.stub(targetingInstance, 'resetPresetTargetingAST');
@@ -1324,4 +1358,62 @@ describe('targeting tests', function () {
       expect(apnTagStub.getCall(1).args[1]).to.deep.equal({HB_BIDDER: 'appnexus'});
     });
   });
+
+  describe('getGPTSlotsForAdUnits', () => {
+    function mockSlot(path, elId) {
+      return {
+        getAdUnitPath() {
+          return path;
+        },
+        getSlotElementId() {
+          return elId;
+        }
+      }
+    }
+
+    let slots;
+
+    beforeEach(() => {
+      slots = [
+        mockSlot('slot/1', 'div-1'),
+        mockSlot('slot/2', 'div-2'),
+      ]
+    });
+
+    Object.entries({
+      'ad unit path': ['slot/1', 'slot/2'],
+      'element id': ['div-1', 'div-2']
+    }).forEach(([t, adUnitCodes]) => {
+      it(`can find slots by ${t}`, () => {
+        expect(getGPTSlotsForAdUnits(adUnitCodes, null, () => slots)).to.eql(Object.fromEntries(adUnitCodes.map((au, i) => [au, [slots[i]]])));
+      })
+    });
+
+    it('returns empty list on no match', () => {
+      expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], null, () => slots)).to.eql({
+        missing: [],
+        'slot/2': [slots[1]]
+      });
+    });
+
+    it('can use customSlotMatching', () => {
+      const csm = (slot) => {
+        if (slot.getAdUnitPath() === 'slot/1') {
+          return (au) => {
+            return au === 'custom'
+          }
+        }
+      }
+      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], csm, () => slots)).to.eql({
+        'custom': [slots[0]],
+        'div-2': [slots[1]]
+      })
+    });
+
+    it('can handle repeated adUnitCodes', () => {
+      expect(getGPTSlotsForAdUnits(['div-1', 'div-1'], null, () => slots)).to.eql({
+        'div-1': [slots[0]]
+      })
+    })
+  })
 });

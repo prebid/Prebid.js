@@ -1,15 +1,20 @@
 import {
   deepAccess,
-  getBidIdParameter,
   getWindowTop,
   triggerPixel,
   logInfo,
-  logError
+  logError, getBidIdParameter
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/4222 for details on linting exception
+ * ShowHeroes only imports after winning a bid
+ * Also see https://github.com/prebid/Prebid.js/issues/11656
+ */
+// eslint-disable-next-line no-restricted-imports
 import { loadExternalScript } from '../src/adloader.js';
 
 const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
@@ -29,8 +34,11 @@ function getEnvURLs(isStage) {
   }
 }
 
+const GVLID = 111;
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['showheroesBs'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function(bid) {
@@ -38,7 +46,9 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let adUnits = [];
-    const pageURL = validBidRequests[0].params.contentPageUrl || bidderRequest.refererInfo.referer;
+    const pageURL = validBidRequests[0].params.contentPageUrl ||
+      bidderRequest.refererInfo.canonicalUrl ||
+      deepAccess(window, 'location.href');
     const isStage = !!validBidRequests[0].params.stage;
     const isViralize = !!validBidRequests[0].params.unitId;
     const isOutstream = deepAccess(validBidRequests[0], 'mediaTypes.video.context') === 'outstream';
@@ -50,6 +60,7 @@ export const spec = {
     const defaultSchain = validBidRequests[0].schain || {};
 
     const consentData = bidderRequest.gdprConsent || {};
+    const uspConsent = bidderRequest.uspConsent || '';
     const gdprConsent = {
       apiVersion: consentData.apiVersion || 2,
       gdprApplies: consentData.gdprApplies || 0,
@@ -82,8 +93,8 @@ export const spec = {
           adUnitCode: bid.adUnitCode,
           bidId: bid.bidId,
           context: context,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: bidderRequest.auctionId,
-          bidderCode: BIDDER_CODE,
           start: +new Date(),
           timeout: 3000,
           params: bid.params,
@@ -104,6 +115,7 @@ export const spec = {
             height: size[1]
           };
           rBid.gdprConsent = gdprConsent;
+          rBid.uspConsent = uspConsent;
         }
 
         return rBid;
@@ -138,6 +150,7 @@ export const spec = {
         'bidRequests': adUnits,
         'context': {
           'gdprConsent': gdprConsent,
+          'uspConsent': uspConsent,
           'schain': defaultSchain,
           'pageURL': QA.pageURL || encodeURIComponent(pageURL)
         }
@@ -325,7 +338,7 @@ function createOutstreamEmbedCode(bid) {
 
   const fragment = window.document.createDocumentFragment();
 
-  let script = loadExternalScript(urls.pubTag, 'outstream', function () {
+  let script = loadExternalScript(urls.pubTag, 'showheroes-bs', function () {
     window.ShowheroesTag = this;
   });
   script.setAttribute('data-player-host', urls.vlHost);

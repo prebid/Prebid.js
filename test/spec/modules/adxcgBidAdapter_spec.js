@@ -1,831 +1,18 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert} from 'chai';
-import {spec} from 'modules/adxcgBidAdapter.js';
-import {config} from 'src/config.js';
-import {createEidsArray} from 'modules/userId/eids.js';
+import { assert } from 'chai';
+import { spec } from 'modules/adxcgBidAdapter.js';
+import { config } from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
+/* eslint dot-notation:0, quote-props:0 */
+import { expect } from 'chai';
+
+import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
+import { deepClone } from '../../../src/utils';
+
 const utils = require('src/utils');
 
 describe('Adxcg adapter', function () {
   let bids = [];
-
-  describe('isBidRequestValid', function () {
-    let bid = {
-      'bidder': 'adxcg',
-      'params': {
-        'adzoneid': '19910113'
-      }
-    };
-
-    it('should return true when required params found', function () {
-      assert(spec.isBidRequestValid(bid));
-
-      bid.params = {
-        adzoneid: 4332,
-      };
-      assert(spec.isBidRequestValid(bid));
-    });
-
-    it('should return false when required params are missing', function () {
-      bid.params = {};
-      assert.isFalse(spec.isBidRequestValid(bid));
-
-      bid.params = {
-        mname: 'some-placement'
-      };
-      assert.isFalse(spec.isBidRequestValid(bid));
-
-      bid.params = {
-        inv: 1234
-      };
-      assert.isFalse(spec.isBidRequestValid(bid));
-    });
-  });
-
-  describe('buildRequests', function () {
-    beforeEach(function () {
-      config.resetConfig();
-    });
-    it('should send request with correct structure', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {
-          adzoneid: '19910113'
-        }
-      }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page', domain: 'localhost'}});
-
-      assert.equal(request.method, 'POST');
-      assert.equal(request.url, 'https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
-      assert.deepEqual(request.options, {contentType: 'application/json'});
-      assert.ok(request.data);
-    });
-
-    describe('user privacy', function () {
-      it('should send GDPR Consent data to exchange if gdprApplies', function () {
-        let validBidRequests = [{bidId: 'bidId', params: {test: 1}}];
-        let bidderRequest = {
-          gdprConsent: {gdprApplies: true, consentString: 'consentDataString'},
-          refererInfo: {referer: 'page'}
-        };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(request.user.ext.consent, bidderRequest.gdprConsent.consentString);
-        assert.equal(request.regs.ext.gdpr, bidderRequest.gdprConsent.gdprApplies);
-        assert.equal(typeof request.regs.ext.gdpr, 'number');
-      });
-
-      it('should send gdpr as number', function () {
-        let validBidRequests = [{bidId: 'bidId', params: {test: 1}}];
-        let bidderRequest = {
-          gdprConsent: {gdprApplies: true, consentString: 'consentDataString'},
-          refererInfo: {referer: 'page'}
-        };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(typeof request.regs.ext.gdpr, 'number');
-        assert.equal(request.regs.ext.gdpr, 1);
-      });
-
-      it('should send CCPA Consent data to exchange', function () {
-        let validBidRequests = [{bidId: 'bidId', params: {test: 1}}];
-        let bidderRequest = {uspConsent: '1YA-', refererInfo: {referer: 'page'}};
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(request.regs.ext.us_privacy, '1YA-');
-
-        bidderRequest = {
-          uspConsent: '1YA-',
-          gdprConsent: {gdprApplies: true, consentString: 'consentDataString'},
-          refererInfo: {referer: 'page'}
-        };
-        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(request.regs.ext.us_privacy, '1YA-');
-        assert.equal(request.user.ext.consent, 'consentDataString');
-        assert.equal(request.regs.ext.gdpr, 1);
-      });
-
-      it('should not send GDPR Consent data to adxcg if gdprApplies is undefined', function () {
-        let validBidRequests = [{
-          bidId: 'bidId',
-          params: {siteId: 'siteId'}
-        }];
-        let bidderRequest = {
-          gdprConsent: {gdprApplies: false, consentString: 'consentDataString'},
-          refererInfo: {referer: 'page'}
-        };
-        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(request.user.ext.consent, 'consentDataString');
-        assert.equal(request.regs.ext.gdpr, 0);
-
-        bidderRequest = {gdprConsent: {consentString: 'consentDataString'}, refererInfo: {referer: 'page'}};
-        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
-
-        assert.equal(request.user, undefined);
-        assert.equal(request.regs, undefined);
-      });
-      it('should send default GDPR Consent data to exchange', function () {
-        let validBidRequests = [{
-          bidId: 'bidId',
-          params: {siteId: 'siteId'}
-        }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
-
-        assert.equal(request.user, undefined);
-        assert.equal(request.regs, undefined);
-      });
-    });
-
-    it('should add test and is_debug to request, if test is set in parameters', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {test: 1}
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
-
-      assert.ok(request.is_debug);
-      assert.equal(request.test, 1);
-    });
-
-    it('should have default request structure', function () {
-      let keys = 'site,geo,device,source,ext,imp'.split(',');
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {siteId: 'siteId'}
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
-      let data = Object.keys(request);
-
-      assert.deepEqual(keys, data);
-    });
-
-    it('should set request keys correct values', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {siteId: 'siteId'},
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}, auctionId: 'tid'}).data);
-
-      assert.equal(request.source.tid, 'tid');
-      assert.equal(request.source.fd, 1);
-    });
-
-    it('should send info about device', function () {
-      config.setConfig({
-        device: {w: 100, h: 100}
-      });
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {adzoneid: '1000'}
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {page: 'page', domain: 'localhost'}}).data);
-
-      assert.equal(request.device.ua, navigator.userAgent);
-      assert.equal(request.device.w, 100);
-      assert.equal(request.device.h, 100);
-    });
-
-    it('should send app info', function () {
-      config.setConfig({
-        app: {id: 'appid'},
-      });
-      const ortb2 = {app: {name: 'appname'}}
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {adzoneid: '1000'},
-        ortb2
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}, ortb2}).data);
-
-      assert.equal(request.app.id, 'appid');
-      assert.equal(request.app.name, 'appname');
-      assert.equal(request.site, undefined);
-    });
-
-    it('should send info about the site', function () {
-      config.setConfig({
-        site: {
-          id: '123123',
-          publisher: {
-            domain: 'publisher.domain.com'
-          }
-        },
-      });
-      const ortb2 = {
-        site: {
-          publisher: {
-            id: 4441,
-            name: 'publisher\'s name'
-          }
-        }
-      };
-
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {adzoneid: '1000'},
-        ortb2
-      }];
-      let refererInfo = {page: 'page', domain: 'localhost'};
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo, ortb2}).data);
-
-      assert.deepEqual(request.site, {
-        domain: 'localhost',
-        id: '123123',
-        page: refererInfo.page,
-        publisher: {
-          domain: 'publisher.domain.com',
-          id: 4441,
-          name: 'publisher\'s name'
-        }
-      });
-    });
-
-    it('should pass extended ids', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {},
-        userIdAsEids: createEidsArray({
-          tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-          pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
-        })
-      }];
-
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
-      assert.deepEqual(request.user.ext.eids, [
-        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
-        {source: 'pubcid.org', uids: [{id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1}]}
-      ]);
-    });
-
-    it('should send currency if defined', function () {
-      config.setConfig({currency: {adServerCurrency: 'EUR'}});
-      let validBidRequests = [{params: {}}];
-      let refererInfo = {referer: 'page'};
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo}).data);
-
-      assert.deepEqual(request.cur, ['EUR']);
-    });
-
-    it('should pass supply chain object', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {},
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
-          }
-        }
-      }];
-
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
-      assert.deepEqual(request.source.ext.schain, {
-        validation: 'strict',
-        config: {
-          ver: '1.0'
-        }
-      });
-    });
-
-    describe('bids', function () {
-      it('should add more than one bid to the request', function () {
-        let validBidRequests = [{
-          bidId: 'bidId',
-          params: {siteId: 'siteId'}
-        }, {
-          bidId: 'bidId2',
-          params: {siteId: 'siteId'}
-        }];
-        let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
-
-        assert.equal(request.imp.length, 2);
-      });
-      it('should add incrementing values of id', function () {
-        let validBidRequests = [{
-          bidId: 'bidId',
-          params: {adzoneid: '1000'},
-          mediaTypes: {video: {}}
-        }, {
-          bidId: 'bidId2',
-          params: {adzoneid: '1000'},
-          mediaTypes: {video: {}}
-        }, {
-          bidId: 'bidId3',
-          params: {adzoneid: '1000'},
-          mediaTypes: {video: {}}
-        }];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp;
-
-        for (let i = 0; i < 3; i++) {
-          assert.equal(imps[i].id, i + 1);
-        }
-      });
-
-      it('should add adzoneid', function () {
-        let validBidRequests = [{bidId: 'bidId', params: {adzoneid: 1000}, mediaTypes: {video: {}}},
-          {bidId: 'bidId2', params: {adzoneid: 1001}, mediaTypes: {video: {}}},
-          {bidId: 'bidId3', params: {adzoneid: 1002}, mediaTypes: {video: {}}}];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp;
-        for (let i = 0; i < 3; i++) {
-          assert.equal(imps[i].tagid, validBidRequests[i].params.adzoneid);
-        }
-      });
-
-      describe('price floors', function () {
-        it('should not add if floors module not configured', function () {
-          const validBidRequests = [{bidId: 'bidId', params: {adzoneid: 1000}, mediaTypes: {video: {}}}];
-          let imp = getRequestImps(validBidRequests)[0];
-
-          assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, undefined);
-        });
-
-        it('should not add if floor price not defined', function () {
-          const validBidRequests = [getBidWithFloor()];
-          let imp = getRequestImps(validBidRequests)[0];
-
-          assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, 'USD');
-        });
-
-        it('should request floor price in adserver currency', function () {
-          config.setConfig({currency: {adServerCurrency: 'DKK'}});
-          const validBidRequests = [getBidWithFloor()];
-          let imp = getRequestImps(validBidRequests)[0];
-
-          assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, 'DKK');
-        });
-
-        it('should add correct floor values', function () {
-          const expectedFloors = [1, 1.3, 0.5];
-          const validBidRequests = expectedFloors.map(getBidWithFloor);
-          let imps = getRequestImps(validBidRequests);
-
-          expectedFloors.forEach((floor, index) => {
-            assert.equal(imps[index].bidfloor, floor);
-            assert.equal(imps[index].bidfloorcur, 'USD');
-          });
-        });
-
-        function getBidWithFloor(floor) {
-          return {
-            params: {adzoneid: 1},
-            mediaTypes: {video: {}},
-            getFloor: ({currency}) => {
-              return {
-                currency: currency,
-                floor
-              };
-            }
-          };
-        }
-      });
-
-      describe('multiple media types', function () {
-        it('should use all configured media types for bidding', function () {
-          let validBidRequests = [{
-            bidId: 'bidId',
-            params: {adzoneid: 1000},
-            mediaTypes: {
-              banner: {
-                sizes: [[100, 100], [200, 300]]
-              },
-              video: {}
-            }
-          }, {
-            bidId: 'bidId1',
-            params: {adzoneid: 1000},
-            mediaTypes: {
-              video: {},
-              native: {}
-            }
-          }, {
-            bidId: 'bidId2',
-            params: {adzoneid: 1000},
-            nativeParams: {
-              title: {required: true, len: 140}
-            },
-            mediaTypes: {
-              banner: {
-                sizes: [[100, 100], [200, 300]]
-              },
-              native: {},
-              video: {}
-            }
-          }];
-          let [first, second, third] = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp;
-
-          assert.ok(first.banner);
-          assert.ok(first.video);
-          assert.equal(first.native, undefined);
-
-          assert.ok(second.video);
-          assert.equal(second.banner, undefined);
-          assert.equal(second.native, undefined);
-
-          assert.ok(third.native);
-          assert.ok(third.video);
-          assert.ok(third.banner);
-        });
-      });
-
-      describe('banner', function () {
-        it('should convert sizes to openrtb format', function () {
-          let validBidRequests = [{
-            bidId: 'bidId',
-            params: {adzoneid: 1000},
-            mediaTypes: {
-              banner: {
-                sizes: [[100, 100], [200, 300]]
-              }
-            }
-          }];
-          let {banner} = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0];
-          assert.deepEqual(banner, {
-            format: [{w: 100, h: 100}, {w: 200, h: 300}]
-          });
-        });
-      });
-
-      describe('video', function () {
-        it('should pass video mediatype config', function () {
-          let validBidRequests = [{
-            bidId: 'bidId',
-            params: {adzoneid: 1000},
-            mediaTypes: {
-              video: {
-                playerSize: [640, 480],
-                context: 'outstream',
-                mimes: ['video/mp4']
-              }
-            }
-          }];
-          let {video} = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0];
-          assert.deepEqual(video, {
-            playerSize: [640, 480],
-            context: 'outstream',
-            mimes: ['video/mp4']
-          });
-        });
-      });
-
-      describe('native', function () {
-        describe('assets', function () {
-          it('should set correct asset id', function () {
-            let validBidRequests = [{
-              bidId: 'bidId',
-              params: {adzoneid: 1000},
-              nativeParams: {
-                title: {required: true, len: 140},
-                image: {required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif']},
-                body: {len: 140}
-              }
-            }];
-            let nativeRequest = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0].native.request;
-            let assets = JSON.parse(nativeRequest).assets;
-
-            assert.equal(assets[0].id, 0);
-            assert.equal(assets[1].id, 3);
-            assert.equal(assets[2].id, 4);
-          });
-          it('should add required key if it is necessary', function () {
-            let validBidRequests = [{
-              bidId: 'bidId',
-              params: {adzoneid: 1000},
-              nativeParams: {
-                title: {required: true, len: 140},
-                image: {required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif']},
-                body: {len: 140},
-                sponsoredBy: {required: true, len: 140}
-              }
-            }];
-
-            let nativeRequest = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0].native.request;
-            let assets = JSON.parse(nativeRequest).assets;
-
-            assert.equal(assets[0].required, 1);
-            assert.ok(!assets[1].required);
-            assert.ok(!assets[2].required);
-            assert.equal(assets[3].required, 1);
-          });
-
-          it('should map img and data assets', function () {
-            let validBidRequests = [{
-              bidId: 'bidId',
-              params: {adzoneid: 1000},
-              nativeParams: {
-                title: {required: true, len: 140},
-                image: {required: true, sizes: [150, 50]},
-                icon: {required: false, sizes: [50, 50]},
-                body: {required: false, len: 140},
-                sponsoredBy: {required: true},
-                cta: {required: false},
-                clickUrl: {required: false}
-              }
-            }];
-
-            let nativeRequest = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0].native.request;
-            let assets = JSON.parse(nativeRequest).assets;
-            assert.ok(assets[0].title);
-            assert.equal(assets[0].title.len, 140);
-            assert.deepEqual(assets[1].img, {type: 3, w: 150, h: 50});
-            assert.deepEqual(assets[2].img, {type: 1, w: 50, h: 50});
-            assert.deepEqual(assets[3].data, {type: 2, len: 140});
-            assert.deepEqual(assets[4].data, {type: 1});
-            assert.deepEqual(assets[5].data, {type: 12});
-            assert.ok(!assets[6]);
-          });
-
-          describe('icon/image sizing', function () {
-            it('should flatten sizes and utilise first pair', function () {
-              const validBidRequests = [{
-                bidId: 'bidId',
-                params: {adzoneid: 1000},
-                nativeParams: {
-                  image: {
-                    sizes: [[200, 300], [100, 200]]
-                  },
-                }
-              }];
-
-              let nativeRequest = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0].native.request;
-              let assets = JSON.parse(nativeRequest).assets;
-              assert.ok(assets[0].img);
-              assert.equal(assets[0].img.w, 200);
-              assert.equal(assets[0].img.h, 300);
-            });
-          });
-
-          it('should utilise aspect_ratios', function () {
-            const validBidRequests = [{
-              bidId: 'bidId',
-              params: {adzoneid: 1000},
-              nativeParams: {
-                image: {
-                  aspect_ratios: [{
-                    min_width: 100,
-                    ratio_height: 3,
-                    ratio_width: 1
-                  }]
-                },
-                icon: {
-                  aspect_ratios: [{
-                    min_width: 10,
-                    ratio_height: 5,
-                    ratio_width: 2
-                  }]
-                }
-              }
-            }];
-
-            let nativeRequest = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0].native.request;
-            let assets = JSON.parse(nativeRequest).assets;
-            assert.ok(assets[0].img);
-            assert.equal(assets[0].img.wmin, 100);
-            assert.equal(assets[0].img.hmin, 300);
-
-            assert.ok(assets[1].img);
-            assert.equal(assets[1].img.wmin, 10);
-            assert.equal(assets[1].img.hmin, 25);
-          });
-
-          it('should not throw error if aspect_ratios config is not defined', function () {
-            const validBidRequests = [{
-              bidId: 'bidId',
-              params: {adzoneid: 1000},
-              nativeParams: {
-                image: {
-                  aspect_ratios: []
-                },
-                icon: {
-                  aspect_ratios: []
-                }
-              }
-            }];
-
-            assert.doesNotThrow(() => spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}));
-          });
-        });
-
-        it('should expect any dimensions if min_width not passed', function () {
-          const validBidRequests = [{
-            bidId: 'bidId',
-            params: {adzoneid: 1000},
-            nativeParams: {
-              image: {
-                aspect_ratios: [{
-                  ratio_height: 3,
-                  ratio_width: 1
-                }]
-              }
-            }
-          }];
-
-          let nativeRequest = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp[0].native.request;
-          let assets = JSON.parse(nativeRequest).assets;
-          assert.ok(assets[0].img);
-          assert.equal(assets[0].img.wmin, 0);
-          assert.equal(assets[0].img.hmin, 0);
-          assert.ok(!assets[1]);
-        });
-      });
-    });
-
-    function getRequestImps(validBidRequests) {
-      return JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data).imp;
-    }
-  });
-
-  describe('interpretResponse', function () {
-    it('should return if no body in response', function () {
-      let serverResponse = {};
-      let bidRequest = {};
-
-      assert.ok(!spec.interpretResponse(serverResponse, bidRequest));
-    });
-    it('should return more than one bids', function () {
-      let serverResponse = {
-        body: {
-          seatbid: [{
-            bid: [{
-              impid: '1',
-              native: {ver: '1.1', link: {url: 'link'}, assets: [{id: 1, title: {text: 'Asset title text'}}]}
-            }]
-          }, {
-            bid: [{
-              impid: '2',
-              native: {ver: '1.1', link: {url: 'link'}, assets: [{id: 1, data: {value: 'Asset title text'}}]}
-            }]
-          }]
-        }
-      };
-      let bidRequest = {
-        data: {},
-        bids: [
-          {
-            bidId: 'bidId1',
-            params: {adzoneid: 1000},
-            nativeParams: {
-              title: {required: true, len: 140},
-              image: {required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif']},
-              body: {len: 140}
-            }
-          },
-          {
-            bidId: 'bidId2',
-            params: {adzoneid: 1000},
-            nativeParams: {
-              title: {required: true, len: 140},
-              image: {required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif']},
-              body: {len: 140}
-            }
-          }
-        ]
-      };
-
-      bids = spec.interpretResponse(serverResponse, bidRequest);
-      assert.equal(spec.interpretResponse(serverResponse, bidRequest).length, 2);
-    });
-
-    it('should set correct values to bid', function () {
-      let nativeExample1 = {
-        assets: [],
-        link: {url: 'link'},
-        imptrackers: ['imptrackers url1', 'imptrackers url2']
-      }
-
-      let serverResponse = {
-        body: {
-          id: null,
-          bidid: null,
-          seatbid: [{
-            bid: [
-              {
-                impid: '1',
-                price: 93.1231,
-                crid: '12312312',
-                adm: JSON.stringify(nativeExample1),
-                dealid: 'deal-id',
-                adomain: ['demo.com'],
-                ext: {
-                  crType: 'native',
-                  advertiser_id: 'adv1',
-                  advertiser_name: 'advname',
-                  agency_name: 'agname',
-                  mediaType: 'native'
-                }
-              }
-            ]
-          }],
-          cur: 'EUR'
-        }
-      };
-      let bidRequest = {
-        data: {},
-        bids: [
-          {
-            bidId: 'bidId1',
-            params: {adzoneid: 1000},
-            nativeParams: {
-              title: {required: true, len: 140},
-              image: {required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif']},
-              body: {len: 140}
-            }
-          }
-        ]
-      };
-
-      const bids = spec.interpretResponse(serverResponse, bidRequest);
-      const bid = serverResponse.body.seatbid[0].bid[0];
-      assert.deepEqual(bids[0].requestId, bidRequest.bids[0].bidId);
-      assert.deepEqual(bids[0].cpm, bid.price);
-      assert.deepEqual(bids[0].creativeId, bid.crid);
-      assert.deepEqual(bids[0].ttl, 300);
-      assert.deepEqual(bids[0].netRevenue, false);
-      assert.deepEqual(bids[0].currency, serverResponse.body.cur);
-      assert.deepEqual(bids[0].mediaType, 'native');
-      assert.deepEqual(bids[0].meta.mediaType, 'native');
-      assert.deepEqual(bids[0].meta.advertiserDomains, ['demo.com']);
-
-      assert.deepEqual(bids[0].meta.advertiserName, 'advname');
-      assert.deepEqual(bids[0].meta.agencyName, 'agname');
-
-      assert.deepEqual(bids[0].dealId, 'deal-id');
-    });
-
-    it('should return empty when there is no bids in response', function () {
-      const serverResponse = {
-        body: {
-          id: null,
-          bidid: null,
-          seatbid: [{bid: []}],
-          cur: 'EUR'
-        }
-      };
-      let bidRequest = {
-        data: {},
-        bids: [{bidId: 'bidId1'}]
-      };
-      const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.ok(!result);
-    });
-
-    describe('banner', function () {
-      it('should set ad content on response', function () {
-        let serverResponse = {
-          body: {
-            seatbid: [{
-              bid: [{impid: '1', adm: '<banner>', ext: {crType: 'banner'}}]
-            }]
-          }
-        };
-        let bidRequest = {
-          data: {},
-          bids: [
-            {
-              bidId: 'bidId1',
-              params: {adzoneid: 1000}
-            }
-          ]
-        };
-
-        bids = spec.interpretResponse(serverResponse, bidRequest);
-        assert.equal(bids.length, 1);
-        assert.equal(bids[0].ad, '<banner>');
-        assert.equal(bids[0].mediaType, 'banner');
-        assert.equal(bids[0].meta.mediaType, 'banner');
-      });
-    });
-
-    describe('video', function () {
-      it('should set vastXml on response', function () {
-        let serverResponse = {
-          body: {
-            seatbid: [{
-              bid: [{impid: '1', adm: '<vast>', ext: {crType: 'video'}}]
-            }]
-          }
-        };
-        let bidRequest = {
-          data: {},
-          bids: [
-            {
-              bidId: 'bidId1',
-              params: {adzoneid: 1000}
-            }
-          ]
-        };
-
-        bids = spec.interpretResponse(serverResponse, bidRequest);
-        assert.equal(bids.length, 1);
-        assert.equal(bids[0].vastXml, '<vast>');
-        assert.equal(bids[0].mediaType, 'video');
-        assert.equal(bids[0].meta.mediaType, 'video');
-      });
-    });
-  });
 
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://usersync-url.com';
@@ -843,55 +30,55 @@ describe('Adxcg adapter', function () {
     })
 
     it('should return user sync if pixel enabled with adxcg config', function () {
-      const ret = spec.getUserSyncs({pixelEnabled: true})
-      expect(ret).to.deep.equal([{type: 'image', url: usersyncUrl}])
+      const ret = spec.getUserSyncs({ pixelEnabled: true })
+      expect(ret).to.deep.equal([{ type: 'image', url: usersyncUrl }])
     })
 
     it('should not return user sync if pixel disabled', function () {
-      const ret = spec.getUserSyncs({pixelEnabled: false})
+      const ret = spec.getUserSyncs({ pixelEnabled: false })
       expect(ret).to.be.an('array').that.is.empty
     })
 
     it('should not return user sync if url is not set', function () {
       config.resetConfig()
-      const ret = spec.getUserSyncs({pixelEnabled: true})
+      const ret = spec.getUserSyncs({ pixelEnabled: true })
       expect(ret).to.be.an('array').that.is.empty
     })
 
-    it('should pass GDPR consent', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+    it('should pass GDPR consent', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=`
       }]);
     });
 
-    it('should pass US consent', function() {
+    it('should pass US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=1NYN`
       }]);
     });
 
-    it('should pass GDPR and US consent', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+    it('should pass GDPR and US consent', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
       }]);
     });
   });
 
-  describe('onBidWon', function() {
-    beforeEach(function() {
+  describe('onBidWon', function () {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 
-    it('Should trigger pixel if bid nurl', function() {
+    it('Should trigger pixel if bid nurl', function () {
       const bid = {
         nurl: 'http://example.com/win/${AUCTION_PRICE}',
         cpm: 2.1,
@@ -901,4 +88,489 @@ describe('Adxcg adapter', function () {
       expect(utils.triggerPixel.callCount).to.equal(1)
     })
   })
+
+  it('should return just to have at least 1 karma test ok', function () {
+    assert(true);
+  });
+});
+
+describe('adxcg v8 oRtbConverter Adapter Tests', function () {
+  const slotConfigs = [{
+    placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90], [160, 600]]
+      }
+    },
+    bidId: 'bid12345',
+    params: {
+      adzoneid: '77'
+    }
+  }, {
+    placementCode: '/DfpAccount2/slot2',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    },
+    bidId: 'bid23456',
+    params: {
+      adzoneid: '77'
+    }
+  }];
+  const nativeOrtbRequest = {
+    assets: [{
+      id: 1,
+      required: 1,
+      img: {
+        type: 3,
+        w: 150,
+        h: 50,
+      }
+    },
+    {
+      id: 2,
+      required: 1,
+      title: {
+        len: 80
+      }
+    },
+    {
+      id: 3,
+      required: 0,
+      data: {
+        type: 1
+      }
+    }]
+  };
+  const nativeSlotConfig = [{
+    placementCode: '/DfpAccount1/slot3',
+    bidId: 'bid12345',
+    mediaTypes: {
+      native: {
+        sendTargetingKeys: false,
+        ortb: nativeOrtbRequest
+      }
+    },
+    nativeOrtbRequest,
+    params: {
+
+      adzoneid: '77'
+    }
+  }];
+  const videoSlotConfig = [{
+    placementCode: '/DfpAccount1/slotVideo',
+    bidId: 'bid12345',
+    mediaTypes: {
+      video: {
+        playerSize: [400, 300],
+        w: 400,
+        h: 300,
+        minduration: 5,
+        maxduration: 10,
+        startdelay: 0,
+        skip: 1,
+        minbitrate: 200,
+        protocols: [1, 2, 4]
+      }
+    },
+    params: {
+      adzoneid: '77'
+    }
+  }];
+  const additionalParamsConfig = [{
+    placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
+    bidId: 'bid12345',
+    params: {
+      adzoneid: '77',
+      extra_key1: 'extra_val1',
+      extra_key2: 12345,
+      extra_key3: {
+        key1: 'val1',
+        key2: 23456,
+      },
+      extra_key4: [1, 2, 3]
+    }
+  }];
+
+  const schainParamsSlotConfig = [{
+    placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
+    bidId: 'bid12345',
+    params: {
+      adzoneid: '77',
+      bcat: ['IAB-1', 'IAB-20'],
+      battr: [1, 2, 3],
+      bidfloor: 1.5,
+      badv: ['cocacola.com', 'lays.com']
+    },
+    schain: {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'exchange1.com',
+          'sid': '1234',
+          'hp': 1,
+          'rid': 'bid-request-1',
+          'name': 'publisher',
+          'domain': 'publisher.com'
+        }
+      ]
+    },
+  }];
+
+  const bidderRequest = {
+    refererInfo: {
+      page: 'https://publisher.com/home',
+      ref: 'https://referrer'
+    }
+  };
+
+  it('Verify build request', function () {
+    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = request.data;
+    // site object
+    expect(ortbRequest.site).to.not.equal(null);
+    expect(ortbRequest.site.publisher).to.not.equal(null);
+    expect(ortbRequest.site.page).to.equal('https://publisher.com/home');
+    expect(ortbRequest.imp).to.have.lengthOf(2);
+    // device object
+    expect(ortbRequest.device).to.not.equal(null);
+    expect(ortbRequest.device.ua).to.equal(navigator.userAgent);
+    // slot 1
+    expect(ortbRequest.imp[0].banner).to.not.equal(null);
+    expect(ortbRequest.imp[0].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }, { 'w': 160, 'h': 600 }]);
+    // slot 2
+    expect(ortbRequest.imp[1].banner).to.not.equal(null);
+    expect(ortbRequest.imp[1].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }]);
+  });
+
+  it('Verify parse response', function () {
+    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    const ortbRequest = request.data;
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: 'This is an Ad',
+          crid: 'Creative#123',
+          mtype: 1,
+          w: 300,
+          h: 250,
+          exp: 20,
+          adomain: ['advertiser.com']
+        }]
+      }]
+    };
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    expect(bids).to.have.lengthOf(1);
+    // verify first bid
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.25);
+    expect(bid.ad).to.equal('This is an Ad');
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.creative_id).to.equal('Creative#123');
+    expect(bid.creativeId).to.equal('Creative#123');
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.currency).to.equal('EUR');
+    expect(bid.ttl).to.equal(20);
+    expect(bid.meta).to.not.be.null;
+    expect(bid.meta.advertiserDomains).to.eql(['advertiser.com']);
+  });
+
+  it('Verify full passback', function () {
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    const bids = spec.interpretResponse({ body: null }, request)
+    expect(bids).to.have.lengthOf(0);
+  });
+
+  if (FEATURES.NATIVE) {
+    it('Verify Native request', function () {
+      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      // native impression
+      expect(ortbRequest.imp[0].tagid).to.equal('77');
+      expect(ortbRequest.imp[0].banner).to.be.undefined;
+      const nativePart = ortbRequest.imp[0]['native'];
+      expect(nativePart).to.not.equal(null);
+      expect(nativePart.request).to.not.equal(null);
+      // native request assets
+      const nativeRequest = JSON.parse(ortbRequest.imp[0]['native'].request);
+      expect(nativeRequest).to.not.equal(null);
+      expect(nativeRequest.assets).to.have.lengthOf(3);
+      // image asset
+      expect(nativeRequest.assets[0].id).to.equal(1);
+      expect(nativeRequest.assets[0].required).to.equal(1);
+      expect(nativeRequest.assets[0].title).to.be.undefined;
+      expect(nativeRequest.assets[0].img).to.not.equal(null);
+      expect(nativeRequest.assets[0].img.w).to.equal(150);
+      expect(nativeRequest.assets[0].img.h).to.equal(50);
+      expect(nativeRequest.assets[0].img.type).to.equal(3);
+      // title asset
+      expect(nativeRequest.assets[1].id).to.equal(2);
+      expect(nativeRequest.assets[1].required).to.equal(1);
+      expect(nativeRequest.assets[1].title).to.not.equal(null);
+      expect(nativeRequest.assets[1].title.len).to.equal(80);
+      // data asset
+      expect(nativeRequest.assets[2].id).to.equal(3);
+      expect(nativeRequest.assets[2].required).to.equal(0);
+      expect(nativeRequest.assets[2].title).to.be.undefined;
+      expect(nativeRequest.assets[2].data).to.not.equal(null);
+      expect(nativeRequest.assets[2].data.type).to.equal(1);
+    });
+
+    it('Verify Native response', function () {
+      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      const nativeResponse = {
+        assets: [
+          { id: 1, img: { type: 3, url: 'https://images.cdn.brand.com/123' } },
+          { id: 2, title: { text: 'Ad Title' } },
+          { id: 3, data: { type: 1, value: 'Sponsored By: Brand' } }
+        ],
+        link: { url: 'https://brand.clickme.com/' },
+        imptrackers: ['https://imp1.trackme.com/', 'https://imp1.contextweb.com/']
+
+      };
+      const ortbResponse = {
+        seatbid: [{
+          bid: [{
+            impid: ortbRequest.imp[0].id,
+            price: 1.25,
+            adm: JSON.stringify(nativeResponse),
+            mtype: 4
+          }]
+        }]
+      };
+      const bids = spec.interpretResponse({ body: ortbResponse }, request);
+      // verify bid
+      const bid = bids[0];
+      expect(bid.cpm).to.equal(1.25);
+      expect(bid.requestId).to.equal('bid12345');
+      expect(bid.ad).to.be.undefined;
+      expect(bid.mediaType).to.equal('native');
+      expect(bid['native']).to.not.be.null;
+      expect(bid['native'].ortb).to.not.be.null;
+      const nativeBid = bid['native'].ortb;
+      expect(nativeBid.assets).to.have.lengthOf(3);
+      expect(nativeBid.assets[0].id).to.equal(1);
+      expect(nativeBid.assets[0].img).to.not.be.null;
+      expect(nativeBid.assets[0].img.type).to.equal(3);
+      expect(nativeBid.assets[0].img.url).to.equal('https://images.cdn.brand.com/123');
+      expect(nativeBid.assets[1].id).to.equal(2);
+      expect(nativeBid.assets[1].title).to.not.be.null;
+      expect(nativeBid.assets[1].title.text).to.equal('Ad Title');
+      expect(nativeBid.assets[2].id).to.equal(3);
+      expect(nativeBid.assets[2].data).to.not.be.null;
+      expect(nativeBid.assets[2].data.type).to.equal(1);
+      expect(nativeBid.assets[2].data.value).to.equal('Sponsored By: Brand');
+      expect(nativeBid.link).to.not.be.null;
+      expect(nativeBid.link.url).to.equal('https://brand.clickme.com/');
+      expect(nativeBid.imptrackers).to.have.lengthOf(2);
+      expect(nativeBid.imptrackers[0]).to.equal('https://imp1.trackme.com/');
+      expect(nativeBid.imptrackers[1]).to.equal('https://imp1.contextweb.com/');
+    });
+  }
+
+  it('Verifies bidder code', function () {
+    expect(spec.code).to.equal('adxcg');
+  });
+
+  it('Verifies bidder aliases', function () {
+    expect(spec.aliases).to.have.lengthOf(1);
+    expect(spec.aliases[0]).to.equal('mediaopti');
+  });
+
+  it('Verifies supported media types', function () {
+    expect(spec.supportedMediaTypes).to.have.lengthOf(3);
+    expect(spec.supportedMediaTypes[0]).to.equal('banner');
+    expect(spec.supportedMediaTypes[1]).to.equal('native');
+    expect(spec.supportedMediaTypes[2]).to.equal('video');
+  });
+
+  if (FEATURES.VIDEO) {
+    it('Verify Video request', function () {
+      const request = spec.buildRequests(videoSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      expect(ortbRequest).to.not.equal(null);
+      expect(ortbRequest.imp).to.have.lengthOf(1);
+      expect(ortbRequest.imp[0].video).to.not.be.null;
+      expect(ortbRequest.imp[0].native).to.be.undefined;
+      expect(ortbRequest.imp[0].banner).to.be.undefined;
+      expect(ortbRequest.imp[0].video.w).to.equal(400);
+      expect(ortbRequest.imp[0].video.h).to.equal(300);
+      expect(ortbRequest.imp[0].video.minduration).to.equal(5);
+      expect(ortbRequest.imp[0].video.maxduration).to.equal(10);
+      expect(ortbRequest.imp[0].video.startdelay).to.equal(0);
+      expect(ortbRequest.imp[0].video.skip).to.equal(1);
+      expect(ortbRequest.imp[0].video.minbitrate).to.equal(200);
+      expect(ortbRequest.imp[0].video.protocols).to.eql([1, 2, 4]);
+    });
+  }
+
+  it('Verify extra parameters', function () {
+    let request = spec.buildRequests(additionalParamsConfig, syncAddFPDToBidderRequest(bidderRequest));
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].ext).to.not.equal(null);
+    expect(ortbRequest.imp[0].ext.prebid).to.not.equal(null);
+    expect(ortbRequest.imp[0].ext.prebid).to.not.be.null;
+    expect(ortbRequest.imp[0].ext.prebid.extra_key1).to.equal('extra_val1');
+    expect(ortbRequest.imp[0].ext.prebid.extra_key2).to.equal(12345);
+    expect(ortbRequest.imp[0].ext.prebid.extra_key3).to.not.be.null;
+    expect(ortbRequest.imp[0].ext.prebid.extra_key3.key1).to.equal('val1');
+    expect(ortbRequest.imp[0].ext.prebid.extra_key3.key2).to.equal(23456);
+    expect(ortbRequest.imp[0].ext.prebid.extra_key4).to.eql([1, 2, 3]);
+    expect(Object.keys(ortbRequest.imp[0].ext.prebid)).to.eql(['adzoneid', 'extra_key1', 'extra_key2', 'extra_key3', 'extra_key4']);
+    // attempting with a configuration with no unknown params.
+    request = spec.buildRequests(videoSlotConfig, bidderRequest);
+    ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    // expect(ortbRequest.imp[0].ext).to.be.undefined;
+  });
+
+  it('Verify user level first party data', function () {
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://publisher.com/home',
+        ref: 'https://referrer'
+      },
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'serialized_gdpr_data'
+      },
+      ortb2: {
+        user: {
+          yob: 1985,
+          gender: 'm',
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      }
+    };
+    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.user).to.not.equal(null);
+  });
+
+  it('Verify site level first party data', function () {
+    const bidderRequest = {
+      ortb2: {
+        site: {
+          content: {
+            data: [{
+              name: 'www.iris.com',
+              ext: {
+                segtax: 500,
+                cids: ['iris_c73g5jq96mwso4d8']
+              }
+            }]
+          },
+          page: 'http://pub.com/news',
+          ref: 'http://google.com',
+          publisher: {
+            domain: 'pub.com'
+          }
+        }
+      }
+    };
+    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.site).to.not.equal(null);
+    expect(ortbRequest.site).to.deep.equal({
+      content: {
+        data: [{
+          name: 'www.iris.com',
+          ext: {
+            segtax: 500,
+            cids: ['iris_c73g5jq96mwso4d8']
+          }
+        }]
+      },
+      page: 'http://pub.com/news',
+      ref: 'http://google.com',
+      publisher: {
+        domain: 'pub.com'
+      }
+    });
+  });
+
+  it('Verify impression/slot level first party data', function () {
+    const bidderRequests = [{
+      placementCode: '/DfpAccount1/slot1',
+      mediaTypes: {
+        banner: {
+          sizes: [[1, 1]]
+        }
+      },
+      bidId: 'bid12345',
+      params: {
+        adzoneid: '77',
+        extra_key1: 'extra_val1',
+        extra_key2: 12345
+      },
+      ortb2Imp: {
+        ext: {
+          data: {
+            pbadslot: 'homepage-top-rect',
+            adUnitSpecificAttribute: '123'
+          }
+        }
+      }
+    }];
+    let request = spec.buildRequests(bidderRequests, bidderRequest);
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].ext).to.not.equal(null);
+    expect(ortbRequest.imp[0].ext).to.deep.equal({
+      prebid: {
+        adzoneid: '77',
+        extra_key1: 'extra_val1',
+        extra_key2: 12345
+      },
+      data: {
+        pbadslot: 'homepage-top-rect',
+        adUnitSpecificAttribute: '123'
+      }
+    });
+  });
+
+  it('Verify bid request timeouts', function () {
+    const mkRequest = (bidderRequest) => spec.buildRequests(slotConfigs, bidderRequest).data;
+    // assert default is used when no bidderRequest.timeout value is available
+    expect(mkRequest(bidderRequest).tmax).to.equal(500)
+
+    // assert bidderRequest value is used when available
+    expect(mkRequest(Object.assign({}, { timeout: 6000 }, bidderRequest)).tmax).to.equal(6000)
+  });
 });

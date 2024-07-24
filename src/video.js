@@ -1,25 +1,21 @@
-import adapterManager from './adapterManager.js';
-import { deepAccess, logError } from './utils.js';
-import { config } from '../src/config.js';
-import {includes} from './polyfill.js';
-import { hook } from './hook.js';
+import {deepAccess, logError} from './utils.js';
+import {config} from '../src/config.js';
+import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 
-const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
 
-/**
- * Helper functions for working with video-enabled adUnits
- */
-export const videoAdUnit = adUnit => {
-  const mediaType = adUnit.mediaType === VIDEO_MEDIA_TYPE;
-  const mediaTypes = deepAccess(adUnit, 'mediaTypes.video');
-  return mediaType || mediaTypes;
-};
-export const videoBidder = bid => includes(adapterManager.videoAdapters, bid.bidder);
-export const hasNonVideoBidder = adUnit =>
-  adUnit.bids.filter(bid => !videoBidder(bid)).length;
+export function fillVideoDefaults(adUnit) {
+  const video = adUnit?.mediaTypes?.video;
+  if (video != null && video.plcmt == null) {
+    if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
+      video.plcmt = 4;
+    } else if (video.context !== OUTSTREAM && [2, 6].includes(video.playbackmethod)) {
+      video.plcmt = 2;
+    }
+  }
+}
 
 /**
  * @typedef {object} VideoBid
@@ -29,7 +25,8 @@ export const hasNonVideoBidder = adUnit =>
 /**
  * Validate that the assets required for video context are present on the bid
  * @param {VideoBid} bid Video bid to validate
- * @param index
+ * @param {Object} [options] - Options object
+ * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
