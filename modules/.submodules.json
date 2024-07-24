@@ -87,6 +87,7 @@
       "jwplayerRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
+      "mobianRtdProvider",
       "neuwoRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
@@ -97,6 +98,7 @@
       "reconciliationRtdProvider",
       "relevadRtdProvider",
       "sirdataRtdProvider",
+      "symitriDapRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider"
     ],

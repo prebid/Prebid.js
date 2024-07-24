@@ -1,10 +1,11 @@
-import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {deepAccess, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
@@ -32,7 +33,7 @@ const LOG_ERROR_MESS = {
   onlyVideoInstream: `Only video ${VIDEO_INSTREAM} supported`,
   videoMissing: 'Bid request videoType property is missing - '
 };
-const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
+const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN', 'CHF', 'SEK'];
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const _bidResponseTimeLogged = [];
 export const spec = {
@@ -69,6 +70,7 @@ export const spec = {
     let payloadSite;
     let payloadRegs;
     let payloadContent;
+    let payloadUser;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -116,6 +118,24 @@ export const spec = {
 
       const { ortb2 } = bidderRequest;
       const { device, site, regs, content } = ortb2;
+      const userOrtb2 = ortb2.user;
+      let user;
+      let userReq;
+      const vads = _getUserId();
+      if (payloadUserEids || payload.gdpr_consent || vads) {
+        user = {
+          ext: {
+            ...(payloadUserEids && { eids: payloadUserEids }),
+            ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
+            ...(vads && { vads })
+          }
+        };
+      }
+      if (user) {
+        userReq = mergeDeep(user, userOrtb2);
+      } else {
+        userReq = userOrtb2;
+      }
       if (device) {
         payloadDevice = device;
       }
@@ -128,6 +148,9 @@ export const spec = {
       if (content) {
         payloadContent = content;
       }
+      if (userReq) {
+        payloadUser = userReq;
+      }
     }
 
     const tmax = timeout;
@@ -139,14 +162,6 @@ export const spec = {
       }
     };
 
-    const vads = _getUserId();
-    const user = {
-      ext: {
-        ...(payloadUserEids && { eids: payloadUserEids }),
-        ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
-        ...(vads && { vads })
-      }
-    };
     if (payloadRegs === undefined) {
       payloadRegs = ('gdpr_applies' in payload) && {
         ext: {
@@ -161,7 +176,7 @@ export const spec = {
       tmax,
       cur: [currency],
       source,
-      ...(Object.keys(user.ext).length && { user }),
+      ...(payloadUser && { user: payloadUser }),
       ...(payloadRegs && {regs: payloadRegs}),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
@@ -190,7 +205,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses);
+        _addBidResponse(getBidFromResponse(respItem, LOG_ERROR_MESS), bidsMap, currency, bidResponses);
       });
     }
     if (errorMessage) logError(errorMessage);
@@ -260,13 +275,7 @@ function makeBanner(bannerParams) {
   if (bannerSizes) {
     const sizes = parseSizesInput(bannerSizes);
     if (sizes.length) {
-      const format = sizes.map(size => {
-        const [ width, height ] = size.split('x');
-        const w = parseInt(width, 10);
-        const h = parseInt(height, 10);
-        return { w, h };
-      });
-
+      const format = sizesToSizeTuples(bannerSizes).map(sizeTupleToRtbSize);
       return { format };
     }
   }
@@ -304,17 +313,6 @@ function buildImpObject(bid) {
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
   }
-}
-
-function _getBidFromResponse(respItem) {
-  if (!respItem) {
-    logError(LOG_ERROR_MESS.emptySeatbid);
-  } else if (!respItem.bid) {
-    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
-  } else if (!respItem.bid[0]) {
-    logError(LOG_ERROR_MESS.noBid);
-  }
-  return respItem && respItem.bid && respItem.bid[0];
 }
 
 function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
