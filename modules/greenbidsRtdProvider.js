@@ -75,9 +75,8 @@ function createPromise(reqBidsConfigObj, greenbidsId) {
 
 function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbidsId) {
   clearTimeout(timeoutId);
-  let responseAdUnits;
   try {
-    responseAdUnits = JSON.parse(response);
+    const responseAdUnits = JSON.parse(response);
     updateAdUnitsBasedOnResponse(reqBidsConfigObj.adUnits, responseAdUnits, greenbidsId);
   } catch (e) {
     logWarn('GreenbidsRtdProvider: Greenbids API response parsing error, skipping shaping');
