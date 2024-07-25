@@ -223,7 +223,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
         this.handleAuctionInit(args);
       }
 
-      if (this.getCachedAuction(args?.auctionId)?.isSampled) {
+      if (this.getCachedAuction(args?.auctionId)?.isSampled ?? true) {
         switch (eventType) {
           case BID_TIMEOUT:
             this.handleBidTimeout(args);
