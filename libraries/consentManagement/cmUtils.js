@@ -47,7 +47,7 @@ export function consentManagementHook(name, loadConsentData) {
  * @param {Object} options
  * @param {String} options.name e.g. 'GPP'. Used only for log messages.
  * @param {ConsentHandler} options.consentDataHandler consent data handler object (from src/consentHandler)
- * @param {CmpLookupFn} setupCmp
+ * @param {CmpLookupFn} options.setupCmp
  * @param {Number?} options.cmpTimeout timeout (in ms) after which the auction should continue without consent data.
  * @param {Number?} options.actionTimeout timeout (in ms) from when provisional consent is available to when the auction should continue with it
  * @param {() => {}} options.getNullConsent consent data to use on timeout

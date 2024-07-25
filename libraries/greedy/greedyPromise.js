@@ -106,3 +106,11 @@ export class GreedyPromise {
     return new this((resolve, reject) => reject(error))
   }
 }
+
+export function greedySetTimeout(fn, delayMs = 0) {
+  if (delayMs > 0) {
+    return setTimeout(fn, delayMs)
+  } else {
+    fn()
+  }
+}

@@ -1,11 +1,12 @@
-import {GreedyPromise} from '../../libraries/greedy/greedyPromise.js';
+import {GreedyPromise, greedySetTimeout} from '../../libraries/greedy/greedyPromise.js';
 import {getGlobal} from '../prebidGlobal.js';
 
+export const pbSetTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout)
 export const PbPromise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise);
 
-export function delay(delayMs = 0, P = PbPromise) {
-  return new P((resolve) => {
-    delayMs > 0 ? setTimeout(resolve, delayMs) : resolve();
+export function delay(delayMs = 0) {
+  return new PbPromise((resolve) => {
+    pbSetTimeout(resolve, delayMs);
   });
 }
 

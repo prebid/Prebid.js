@@ -1,4 +1,4 @@
-import {GreedyPromise} from '../../../../libraries/greedy/greedyPromise.js';
+import {GreedyPromise, greedySetTimeout} from '../../../../libraries/greedy/greedyPromise.js';
 import {delay} from '../../../../src/utils/promise.js';
 
 describe('GreedyPromise', () => {
@@ -166,20 +166,44 @@ describe('GreedyPromise', () => {
   });
 });
 
-describe('delay', () => {
-  it('should resolve immediately when ms is 0', () => {
-    let cbRan = false;
-    delay(0.0, GreedyPromise).then(() => { cbRan = true });
-    expect(cbRan).to.be.true;
-  });
-
-  it('should schedule timeout on ms > 0', (done) => {
-    let cbRan = false;
-    delay(5, GreedyPromise).then(() => { cbRan = true });
-    expect(cbRan).to.be.false;
-    setTimeout(() => {
+describe('greedySetTimeout', () => {
+  describe('delay = 0', () => {
+    it('should resolve immediately', () => {
+      let cbRan = false;
+      greedySetTimeout(() => { cbRan = true }, 0);
       expect(cbRan).to.be.true;
-      done();
-    }, 10)
-  });
+    });
+
+    it('should not choke when cleared', () => {
+      clearTimeout(greedySetTimeout(() => {}, 0));
+    });
+  })
+
+  describe('delay > 0', () => {
+    it('should schedule timeout', (done) => {
+      let cbRan = false;
+      greedySetTimeout(() => {
+        cbRan = true;
+      }, 5);
+      expect(cbRan).to.be.false;
+      setTimeout(() => {
+        expect(cbRan).to.be.true;
+        done();
+      }, 10)
+    });
+
+    it('can be cleared', (done) => {
+      let cbRan = false;
+      const handle = greedySetTimeout(() => {
+        cbRan = true;
+      }, 5);
+      setTimeout(() => {
+        clearTimeout(handle);
+        setTimeout(() => {
+          expect(cbRan).to.be.false;
+          done()
+        }, 10)
+      }, 0)
+    })
+  })
 });
