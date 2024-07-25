@@ -1,4 +1,4 @@
-import {consentConfig, gdprScope, resetConsentData, setConsentConfig,} from 'modules/consentManagementTcf.js';
+import {consentConfig, gdprScope, resetConsentData, setConsentConfig, } from 'modules/consentManagementTcf.js';
 import {gdprDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';

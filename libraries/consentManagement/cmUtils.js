@@ -1,8 +1,9 @@
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
-import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn, prefixLog} from '../../src/utils.js';
+import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../../src/utils.js';
 import {ConsentHandler} from '../../src/consentHandler.js';
-import {getGlobal} from '../../src/prebidGlobal';
-import {PbPromise} from '../../src/utils/promise';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import {PbPromise} from '../../src/utils/promise.js';
+import {buildActivityParams} from '../../src/activities/params.js';
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -118,7 +119,7 @@ export function configParser(
   }
   let requestBidsHook, consentDataLoaded, staticConsentData;
 
-  return function getModuleConfig(config) {
+  return function getConsentConfig(config) {
     config = config?.[namespace];
     if (!config || typeof config !== 'object') {
       logWarn(msg(`config not defined, exiting consent manager module`));
@@ -157,7 +158,7 @@ export function configParser(
     }
     consentDataLoaded = lookupConsentData({
       name: displayName,
-      consentDataHandler: consentDataHandler,
+      consentDataHandler,
       setupCmp,
       cmpTimeout,
       actionTimeout,
@@ -166,6 +167,9 @@ export function configParser(
     if (requestBidsHook == null) {
       requestBidsHook = consentManagementHook(namespace, () => consentDataLoaded);
       getGlobal().requestBids.before(requestBidsHook, 50);
+      buildActivityParams.before((next, params) => {
+        return next(Object.assign({[`${namespace}Consent`]: consentDataHandler.getConsentData()}, params));
+      });
     }
     logInfo(`${displayName} consentManagement module has been activated...`)
     return {
