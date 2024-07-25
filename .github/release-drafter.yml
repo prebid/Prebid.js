@@ -3,14 +3,15 @@ name-template: 'Prebid $RESOLVED_VERSION Release'
 tag-template: '$RESOLVED_VERSION'
 categories:
   - title: '🚀 New Features'
-    label: 'feature'
+      label: 'feature'
   - title: '🛠 Maintenance'
-    label: 'maintenance'    
+      label: 'maintenance'    
   - title: '🐛 Bug Fixes'
-    labels:
-      - 'fix'
-      - 'bugfix'
-      - 'bug'      
+      labels:
+        - 'fix'
+        - 'bugfix'
+        - 'bug'
+    default: maintenance
 change-template: '- $TITLE (#$NUMBER)'
 version-resolver:
   major:
