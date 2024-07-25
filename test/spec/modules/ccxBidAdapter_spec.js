@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd';
 import { spec } from 'modules/ccxBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -39,6 +40,7 @@ describe('ccxAdapter', function () {
       transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
     }
   ];
+
   describe('isBidRequestValid', function () {
     it('Valid bid requests', function () {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
@@ -75,6 +77,7 @@ describe('ccxAdapter', function () {
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.true;
     });
   });
+
   describe('buildRequests', function () {
     it('No valid bids', function () {
       expect(spec.buildRequests([])).to.be.undefined;
@@ -173,6 +176,7 @@ describe('ccxAdapter', function () {
 
       expect(data.imp).to.deep.have.same.members(imps);
     });
+
     it('Valid bid request - sizes old style', function () {
       let bidsClone = utils.deepClone(bids);
       delete (bidsClone[0].mediaTypes);
@@ -218,6 +222,7 @@ describe('ccxAdapter', function () {
 
       expect(data.imp).to.deep.have.same.members(imps);
     });
+
     it('Valid bid request - sizes old style - no media type', function () {
       let bidsClone = utils.deepClone(bids);
       delete (bidsClone[0].mediaTypes);
@@ -385,6 +390,7 @@ describe('ccxAdapter', function () {
       expect(spec.interpretResponse({})).to.be.empty;
     });
   });
+
   describe('getUserSyncs', function () {
     it('Valid syncs - all', function () {
       let syncOptions = {
@@ -434,6 +440,7 @@ describe('ccxAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.be.empty;
     });
   });
+
   describe('mediaTypesVideoParams', function () {
     it('Valid video mediaTypes', function () {
       let bids = [
@@ -488,4 +495,31 @@ describe('ccxAdapter', function () {
       expect(data.imp).to.deep.have.same.members(imps);
     });
   });
+
+  describe('FLEDGE', function () {
+    it('should properly build a request when FLEDGE is enabled', function () {
+      const bidderRequest = {
+        paapi: {
+          enabled: true
+        }
+      };
+
+      const ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest)).data;
+      expect(ortbRequest.imp[0].ext.igs.ae).to.equal(1);
+      expect(ortbRequest.imp[1].ext.igs.ae).to.equal(1);
+    });
+
+    it('should properly build a request when FLEDGE is disabled', function () {
+      const bidderRequest = {
+        paapi: {
+          enabled: false
+        },
+      };
+
+      const ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest)).data;
+      expect(ortbRequest.imp[0].ext.igs?.ae).to.be.undefined;
+      expect(ortbRequest.imp[1].ext.igs?.ae).to.be.undefined;
+    });
+  });
+
 });
