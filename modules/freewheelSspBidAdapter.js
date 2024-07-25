@@ -315,7 +315,7 @@ var getOutstreamScript = function(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheelssp
+  aliases: ['stickyadstv', 'freewheel-ssp'], //  aliases for freewheelssp
   /**
   * Determines whether or not the given bid request is valid.
   *
