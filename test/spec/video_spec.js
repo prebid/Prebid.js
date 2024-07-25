@@ -1,10 +1,24 @@
 import {fillVideoDefaults, isValidVideoBid, validateOrtbVideoFields} from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
+import * as utils from '../../src/utils.js';
 
 describe('video.js', function () {
+  let sandbox;
+  let utilsMock;
+
   before(() => {
     hook.ready();
+  });
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    utilsMock = sandbox.mock(utils);
+  })
+
+  afterEach(() => {
+    utilsMock.restore();
+    sandbox.restore();
   });
 
   describe('fillVideoDefaults', () => {
@@ -78,16 +92,9 @@ describe('video.js', function () {
   })
 
   describe('validateOrtbVideoFields', () => {
-    function validate(videoMediaType = {}) {
-      const adUnit = {
-        mediaTypes: { video: videoMediaType }
-      };
-      const video = adUnit.mediaTypes.video;
-      validateOrtbVideoFields(video);
-      return adUnit.mediaTypes.video;
-    }
-
     it('remove incorrect ortb properties, and keep non ortb ones', () => {
+      sandbox.spy(utils, 'logWarn');
+
       const mt = {
         content: 'outstream',
 
@@ -131,7 +138,44 @@ describe('video.js', function () {
       const expected = {...mt};
       delete expected.api;
 
-      expect(validate(mt)).to.eql(expected)
+      const adUnit = {
+        code: 'adUnitCode',
+        mediaTypes: { video: mt }
+      };
+      validateOrtbVideoFields(adUnit);
+
+      expect(adUnit.mediaTypes.video).to.eql(expected);
+      sinon.assert.callCount(utils.logWarn, 1);
+    });
+
+    it('Early return when 1st param is not a plain object', () => {
+      sandbox.spy(utils, 'logWarn');
+
+      validateOrtbVideoFields();
+      validateOrtbVideoFields([]);
+      validateOrtbVideoFields(null);
+      validateOrtbVideoFields('hello');
+      validateOrtbVideoFields(() => {});
+
+      sinon.assert.callCount(utils.logWarn, 5);
+    });
+
+    it('Calls onInvalidParam when a property is invalid', () => {
+      const onInvalidParam = sandbox.spy();
+      const adUnit = {
+        code: 'adUnitCode',
+        mediaTypes: {
+          video: {
+            content: 'outstream',
+            mimes: ['video/mp4'],
+            api: 6
+          }
+        }
+      };
+      validateOrtbVideoFields(adUnit, onInvalidParam);
+
+      sinon.assert.calledOnce(onInvalidParam);
+      sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
     });
   })
 

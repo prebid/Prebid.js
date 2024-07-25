@@ -134,7 +134,7 @@ function validateVideoMediaType(adUnit) {
       delete validatedAdUnit.mediaTypes.video.playerSize;
     }
   }
-  validateOrtbVideoFields(video);
+  validateOrtbVideoFields(validatedAdUnit);
   return validatedAdUnit;
 }
 

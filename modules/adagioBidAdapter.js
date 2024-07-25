@@ -180,8 +180,8 @@ function _buildVideoBidRequest(bidRequest) {
     videoParams.playerName = getPlayerName(bidRequest);
   }
 
-  validateOrtbVideoFields(videoParams)
   bidRequest.mediaTypes.video = videoParams;
+  validateOrtbVideoFields(bidRequest);
 }
 
 function _parseNativeBidResponse(bid) {

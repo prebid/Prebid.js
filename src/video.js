@@ -1,4 +1,4 @@
-import {deepAccess, isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn} from './utils.js';
+import {deepAccess, isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
 import {config} from '../src/config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
@@ -59,21 +59,35 @@ export function fillVideoDefaults(adUnit) {
 }
 
 /**
- * validateOrtbVideoFields mutates the `videoParams` object by removing invalid ortb properties.
+ * validateOrtbVideoFields mutates the `adUnit.mediaTypes.video` object by removing invalid ortb properties (default).
+ * The onInvalidParam callback can be used to handle invalid properties differently.
  * Other properties are ignored and kept as is.
  *
- * @param {object} videoParams
+ * @param {Object} adUnit - The adUnit object.
+ * @param {Function} onInvalidParam - The callback function to be called with key, value, and adUnit.
  * @returns {void}
  */
-export function validateOrtbVideoFields(videoParams) {
+export function validateOrtbVideoFields(adUnit, onInvalidParam) {
+  const videoParams = adUnit?.mediaTypes?.video;
+
+  if (!isPlainObject(videoParams)) {
+    logWarn(`validateOrtbVideoFields: videoParams must be an object.`);
+    return;
+  }
+
   if (videoParams != null) {
     Object.entries(videoParams)
       .forEach(([key, value]) => {
-        if (ORTB_VIDEO_PARAMS.has(key)) {
-          const valid = ORTB_VIDEO_PARAMS.get(key).validate(value);
-          if (!valid) {
+        if (!ORTB_VIDEO_PARAMS.has(key)) {
+          return
+        }
+        const valid = ORTB_VIDEO_PARAMS.get(key).validate(value);
+        if (!valid) {
+          if (typeof onInvalidParam === 'function') {
+            onInvalidParam(key, value, adUnit);
+          } else {
             delete videoParams[key];
-            logWarn(`Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
+            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
           }
         }
       });
