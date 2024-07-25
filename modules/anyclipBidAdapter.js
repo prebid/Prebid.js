@@ -1,4 +1,3 @@
-import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {parseSizesInput, isFn, deepAccess, getBidIdParameter, logError, isArray} from '../src/utils.js';
@@ -98,12 +97,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else {
       request.usPrivacy = '';
     }
-    if (config.getConfig('coppa')) {
-      request.coppa = 1;
-    } else {
-      request.coppa = 0;
-    }
-
     const video = deepAccess(req, 'mediaTypes.video');
     if (video) {
       request.sizes = parseSizesInput(deepAccess(req, 'mediaTypes.video.playerSize'));
