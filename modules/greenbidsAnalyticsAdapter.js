@@ -181,7 +181,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       timeoutBids: [],
       greenbidsId: null,
       billingId: null,
-      isSampled: false,
+      isSampled: true,
     };
     return this.cachedAuctions[auctionId];
   },
@@ -197,9 +197,12 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
-    this.sendEventMessage('/',
-      this.createBidMessage(auctionEndArgs, cachedAuction)
-    );
+    const isFilteringForced = getParameterByName('greenbids_force_filtering');
+    if (!isFilteringForced) {
+      this.sendEventMessage('/',
+        this.createBidMessage(auctionEndArgs, cachedAuction)
+      )
+    };
   },
   handleBidTimeout(timeoutBids) {
     timeoutBids.forEach((bid) => {
