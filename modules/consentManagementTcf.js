@@ -4,42 +4,23 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepSetValue, isStr, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
-import {consentManagementHook, lookupConsentData} from '../libraries/consentManagement/cmUtils.js';
-import {PbPromise} from '../src/utils/promise.js';
+import {configParser} from '../libraries/consentManagement/cmUtils.js';
 
-const DEFAULT_CMP = 'iab';
-const DEFAULT_CONSENT_TIMEOUT = 10000;
-const CMP_VERSION = 2;
-
-export let userCMP;
-export let consentTimeout;
+export let consentConfig = {};
 export let gdprScope;
-export let staticConsentData;
-let dsaPlatform = false;
-let actionTimeout;
-
-export let consentDataLoaded;
-let addedConsentHook = false;
+let dsaPlatform;
+const CMP_VERSION = 2;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
   'iab': lookupIabConsent,
-  'static': lookupStaticConsentData
 };
-
-function lookupStaticConsentData() {
-  return new PbPromise((resolve) => {
-    gdprDataHandler.setConsentData(processCmpData(staticConsentData));
-    resolve();
-  });
-}
 
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
@@ -50,13 +31,13 @@ function lookupIabConsent(setProvisionalConsent) {
       logInfo('Received a response from CMP', tcfData);
       if (success) {
         try {
-          setProvisionalConsent(processCmpData(tcfData));
+          setProvisionalConsent(parseConsentData(tcfData));
         } catch (e) {
         }
 
         if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
           try {
-            gdprDataHandler.setConsentData(processCmpData(tcfData));
+            gdprDataHandler.setConsentData(parseConsentData(tcfData));
             resolve();
           } catch (e) {
             reject(e);
@@ -89,17 +70,7 @@ function lookupIabConsent(setProvisionalConsent) {
   })
 }
 
-/**
- * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
- * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
- * data as part of a gdprConsent object which gets transferred to adapterManager's gdprDataHandler object.
- * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
- * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
- * @param {function} fn required; The next function in the chain, used by hook.js
- */
-export const requestBidsHook = consentManagementHook('gdpr', () => consentDataLoaded);
-
-function processCmpData(consentObject) {
+function parseConsentData(consentObject) {
   function checkData() {
     // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
     const gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
@@ -113,15 +84,11 @@ function processCmpData(consentObject) {
   if (checkData()) {
     throw Object.assign(new Error(`CMP returned unexpected value during lookup process.`), {args: [consentObject]})
   } else {
-    return parseCmpConsent(consentObject);
+    return toConsentData(consentObject);
   }
 }
 
-/**
- * Stores CMP data locally in module to make information available in adaptermanager.js for later in the auction
- * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
- */
-function parseCmpConsent(cmpConsentObject) {
+function toConsentData(cmpConsentObject) {
   const consentData = {
     consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
     vendorData: (cmpConsentObject) || undefined,
@@ -138,12 +105,18 @@ function parseCmpConsent(cmpConsentObject) {
  * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
  */
 export function resetConsentData() {
-  consentDataLoaded = undefined;
-  userCMP = undefined;
-  consentTimeout = undefined;
+  consentConfig = {};
   gdprDataHandler.reset();
 }
 
+const parseConfig = configParser({
+  namespace: 'gdpr',
+  displayName: 'TCF',
+  consentDataHandler: gdprDataHandler,
+  cmpHandlers: cmpCallMap,
+  parseConsentData,
+  getNullConsent: () => toConsentData(null)
+})
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
@@ -152,58 +125,13 @@ export function setConsentConfig(config) {
   // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
   // else for backward compatability, just use `config`
   config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
-  if (!config || typeof config !== 'object') {
-    logWarn('consentManagement (gdpr) config not defined, exiting consent manager');
-    return;
+  if (config?.consentData?.getTCData != null) {
+    config.consentData = config.consentData.getTCData;
   }
-  if (isStr(config.cmpApi)) {
-    userCMP = config.cmpApi;
-  } else {
-    userCMP = DEFAULT_CMP;
-    logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
-  }
-
-  if (isNumber(config.timeout)) {
-    consentTimeout = config.timeout;
-  } else {
-    consentTimeout = DEFAULT_CONSENT_TIMEOUT;
-    logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
-  }
-
-  actionTimeout = isNumber(config.actionTimeout) ? config.actionTimeout : null;
-
-  // if true, then gdprApplies should be set to true
-  gdprScope = config.defaultGdprScope === true;
-  dsaPlatform = !!config.dsaPlatform;
-
-  logInfo('consentManagement module has been activated...');
-
-  if (userCMP === 'static') {
-    if (isPlainObject(config.consentData)) {
-      staticConsentData = config.consentData;
-      if (staticConsentData?.getTCData != null) {
-        // accept static config with or without `getTCData` - see https://github.com/prebid/Prebid.js/issues/9581
-        staticConsentData = staticConsentData.getTCData;
-      }
-      consentTimeout = null;
-    } else {
-      logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
-    }
-  }
-  if (!addedConsentHook) {
-    getGlobal().requestBids.before(requestBidsHook, 50);
-  }
-  addedConsentHook = true;
-  consentDataLoaded = lookupConsentData({
-    name: 'TCF',
-    consentDataHandler: gdprDataHandler,
-    cmpHandler: userCMP,
-    cmpHandlerMap: cmpCallMap,
-    cmpTimeout: consentTimeout,
-    actionTimeout,
-    getNullConsent: () => parseCmpConsent()
-  })
-  return consentDataLoaded.catch(() => null);
+  gdprScope = config?.defaultGdprScope === true;
+  dsaPlatform = !!config?.dsaPlatform;
+  consentConfig = parseConfig({gdpr: config});
+  return consentConfig.consentDataLoaded?.catch(() => null);
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 

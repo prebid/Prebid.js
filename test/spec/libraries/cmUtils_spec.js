@@ -108,7 +108,7 @@ describe('consent management utils', () => {
     });
   });
   describe('lookupConsentData', () => {
-    let name, consentDataHandler, cmpHandler, cmpHandlerMap, cmpTimeout, actionTimeout, getNullConsent;
+    let name, consentDataHandler, setupCmp, cmpTimeout, actionTimeout, getNullConsent;
     beforeEach(() => {
       name = 'TEST';
       consentDataHandler = {
@@ -116,10 +116,7 @@ describe('consent management utils', () => {
         setConsentData: sinon.stub(),
         getConsentData: sinon.stub()
       };
-      cmpHandler = 'mockCmp';
-      cmpHandlerMap = {
-        mockCmp: sinon.stub()
-      };
+      setupCmp = sinon.stub();
       cmpTimeout = 0;
       actionTimeout = null;
       getNullConsent = sinon.stub().returns({
@@ -131,8 +128,7 @@ describe('consent management utils', () => {
       return lookupConsentData({
         name,
         consentDataHandler,
-        cmpHandler,
-        cmpHandlerMap,
+        setupCmp,
         cmpTimeout,
         actionTimeout,
         getNullConsent
@@ -144,18 +140,9 @@ describe('consent management utils', () => {
       sinon.assert.calledWith(consentDataHandler.enable);
     });
 
-    it('should resolve with an error if cmp handler is missing', async () => {
-      cmpHandler = 'missing';
-      consentDataHandler.setConsentData({not: 'relevant'});
-      const {error, consentData} = await runLookup();
-      expect(error.message).to.match(/.*missing.*not a supported.*/);
-      expect(consentData).to.not.exist;
-      sinon.assert.calledWith(consentDataHandler.setConsentData, null);
-    });
-
     it('should reject if cmp handler rejects', async () => {
       const err = new Error();
-      cmpHandlerMap.mockCmp.returns(Promise.reject(err));
+      setupCmp.returns(Promise.reject(err));
       try {
         await runLookup();
         sinon.assert.fail('should throw');
@@ -166,30 +153,33 @@ describe('consent management utils', () => {
     });
 
     [123, 0].forEach(timeout => {
-      beforeEach(() => {
-        cmpTimeout = timeout;
-        cmpHandlerMap.mockCmp.callsFake(() => {
-          consentDataHandler.getConsentData.returns({consent: 'data'});
-          return Promise.resolve();
+      describe(`when cmpTimeout is ${timeout}`, () => {
+        beforeEach(() => {
+          cmpTimeout = timeout;
+          setupCmp.callsFake(() => {
+            consentDataHandler.getConsentData.returns({consent: 'data'});
+            return Promise.resolve();
+          });
         });
-      })
-      it(`should resolve if cmp handler resolves (cmpTimeout: ${timeout})`, async () => {
-        const {consentData, error} = await runLookup();
-        expect(consentData).to.eql({consent: 'data'});
-        expect(error).to.not.exist;
-      });
 
-      it('should not time out after it resolves', async () => {
-        await runLookup();
-        await new Promise((resolve) => setTimeout(resolve, timeout + 10));
-        sinon.assert.notCalled(consentDataHandler.setConsentData);
-      })
-    })
+        it(`should resolve if cmp handler resolves`, async () => {
+          const {consentData, error} = await runLookup();
+          expect(consentData).to.eql({consent: 'data'});
+          expect(error).to.not.exist;
+        });
+
+        it('should not time out after it resolves', async () => {
+          await runLookup();
+          await new Promise((resolve) => setTimeout(resolve, timeout + 10));
+          sinon.assert.notCalled(consentDataHandler.setConsentData);
+        });
+      });
+    });
 
     describe('when cmp handler does not reply', () => {
       let setProvisionalConsent;
       beforeEach(() => {
-        cmpHandlerMap.mockCmp.callsFake((setPC) => {
+        setupCmp.callsFake((setPC) => {
           setProvisionalConsent = setPC;
           return new Promise((resolve) => {
             setTimeout(resolve, 300)

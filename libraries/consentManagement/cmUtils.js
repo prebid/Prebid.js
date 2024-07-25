@@ -1,6 +1,8 @@
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
-import {logError, logInfo, logWarn} from '../../src/utils.js';
+import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn, prefixLog} from '../../src/utils.js';
 import {ConsentHandler} from '../../src/consentHandler.js';
+import {getGlobal} from '../../src/prebidGlobal';
+import {PbPromise} from '../../src/utils/promise';
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -44,8 +46,7 @@ export function consentManagementHook(name, loadConsentData) {
  * @param {Object} options
  * @param {String} options.name e.g. 'GPP'. Used only for log messages.
  * @param {ConsentHandler} options.consentDataHandler consent data handler object (from src/consentHandler)
- * @param {String} options.cmpHandler name of the CMP handler to use, which in turn should be present in `cmpHandlerMap`.
- * @param {{[cmpHandler: String]: CmpLookupFn}} options.cmpHandlerMap Map from name to CMP lookup function.
+ * @param {CmpLookupFn} setupCmp
  * @param {Number?} options.cmpTimeout timeout (in ms) after which the auction should continue without consent data.
  * @param {Number?} options.actionTimeout timeout (in ms) from when provisional consent is available to when the auction should continue with it
  * @param {() => {}} options.getNullConsent consent data to use on timeout
@@ -55,8 +56,7 @@ export function lookupConsentData(
   {
     name,
     consentDataHandler,
-    cmpHandler,
-    cmpHandlerMap,
+    setupCmp,
     cmpTimeout,
     actionTimeout,
     getNullConsent
@@ -90,21 +90,91 @@ export function lookupConsentData(
         timeoutHandle = null;
       }
     }
-
-    if (!cmpHandlerMap.hasOwnProperty(cmpHandler)) {
-      consentDataHandler.setConsentData(null);
-      resolve({
-        error: new Error(`${name} CMP framework (${cmpHandler}) is not a supported framework.  Aborting consentManagement module and resuming auction.`)
-      });
-    } else {
-      cmpHandlerMap[cmpHandler](setProvisionalConsent)
-        .then(() => resolve({consentData: consentDataHandler.getConsentData()}), reject);
-      cmpTimeout != null && resetTimeout(cmpTimeout);
-    }
+    setupCmp(setProvisionalConsent)
+      .then(() => resolve({consentData: consentDataHandler.getConsentData()}), reject);
+    cmpTimeout != null && resetTimeout(cmpTimeout);
   }).finally(() => {
     timeoutHandle && clearTimeout(timeoutHandle);
   }).catch((e) => {
     consentDataHandler.setConsentData(null);
     throw e;
   });
+}
+
+export function configParser(
+  {
+    namespace,
+    displayName,
+    consentDataHandler,
+    parseConsentData,
+    getNullConsent,
+    cmpHandlers,
+    DEFAULT_CMP = 'iab',
+    DEFAULT_CONSENT_TIMEOUT = 10000
+  } = {}
+) {
+  function msg(message) {
+    return `consentManagement.${namespace} ${message}`;
+  }
+  let requestBidsHook, consentDataLoaded, staticConsentData;
+
+  return function getModuleConfig(config) {
+    config = config?.[namespace];
+    if (!config || typeof config !== 'object') {
+      logWarn(msg(`config not defined, exiting consent manager module`));
+      return {};
+    }
+    let cmpHandler;
+    if (isStr(config.cmpApi)) {
+      cmpHandler = config.cmpApi;
+    } else {
+      cmpHandler = DEFAULT_CMP;
+      logInfo(msg(`config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`));
+    }
+    let cmpTimeout;
+    if (isNumber(config.timeout)) {
+      cmpTimeout = config.timeout;
+    } else {
+      cmpTimeout = DEFAULT_CONSENT_TIMEOUT;
+      logInfo(msg(`config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`));
+    }
+    const actionTimeout = isNumber(config.actionTimeout) ? config.actionTimeout : null;
+    let setupCmp;
+    if (cmpHandler === 'static') {
+      if (isPlainObject(config.consentData)) {
+        staticConsentData = config.consentData;
+        cmpTimeout = null;
+        setupCmp = () => new PbPromise(resolve => resolve(consentDataHandler.setConsentData(parseConsentData(staticConsentData))))
+      } else {
+        logError(msg(`config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`));
+      }
+    } else if (!cmpHandlers.hasOwnProperty(cmpHandler)) {
+      consentDataHandler.setConsentData(null);
+      logWarn(`${displayName} CMP framework (${cmpHandler}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
+      setupCmp = () => PbPromise.resolve();
+    } else {
+      setupCmp = cmpHandlers[cmpHandler];
+    }
+    consentDataLoaded = lookupConsentData({
+      name: displayName,
+      consentDataHandler: consentDataHandler,
+      setupCmp,
+      cmpTimeout,
+      actionTimeout,
+      getNullConsent,
+    })
+    if (requestBidsHook == null) {
+      requestBidsHook = consentManagementHook(namespace, () => consentDataLoaded);
+      getGlobal().requestBids.before(requestBidsHook, 50);
+    }
+    logInfo(`${displayName} consentManagement module has been activated...`)
+    return {
+      cmpHandler,
+      cmpTimeout,
+      actionTimeout,
+      staticConsentData,
+      consentDataLoaded,
+      requestBidsHook
+    }
+  }
 }

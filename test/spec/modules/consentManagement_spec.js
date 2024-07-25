@@ -1,14 +1,4 @@
-import {
-  actionTimeout, consentDataLoaded,
-  consentTimeout,
-  gdprScope,
-  loadConsentData,
-  requestBidsHook,
-  resetConsentData,
-  setConsentConfig,
-  staticConsentData,
-  userCMP
-} from 'modules/consentManagementTcf.js';
+import {consentConfig, gdprScope, resetConsentData, setConsentConfig,} from 'modules/consentManagementTcf.js';
 import {gdprDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
@@ -33,27 +23,27 @@ describe('consentManagement', function () {
 
       it('should use system default values', async function () {
         await setConsentConfig({});
-        expect(userCMP).to.be.equal('iab');
-        expect(consentTimeout).to.be.equal(10000);
+        expect(consentConfig.cmpHandler).to.be.equal('iab');
+        expect(consentConfig.cmpTimeout).to.be.equal(10000);
         expect(gdprScope).to.be.equal(false);
         sinon.assert.callCount(utils.logInfo, 3);
       });
 
       it('should exit consent manager if config is not an object', async function () {
         await setConsentConfig('');
-        expect(userCMP).to.be.undefined;
+        expect(consentConfig.cmpHandler).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
 
       it('should exit consent manager if gdpr not set with new config structure', async function () {
         await setConsentConfig({usp: {cmpApi: 'iab', timeout: 50}});
-        expect(userCMP).to.be.undefined;
+        expect(consentConfig.cmpHandler).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
 
       it('should exit consentManagement module if config is "undefined"', async function () {
         await setConsentConfig(undefined);
-        expect(userCMP).to.be.undefined;
+        expect(consentConfig.cmpHandler).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
 
@@ -83,8 +73,8 @@ describe('consentManagement', function () {
         };
 
         await setConsentConfig(allConfig);
-        expect(userCMP).to.be.equal('iab');
-        expect(consentTimeout).to.be.equal(7500);
+        expect(consentConfig.cmpHandler).to.be.equal('iab');
+        expect(consentConfig.cmpTimeout).to.be.equal(7500);
         expect(gdprScope).to.be.true;
       });
 
@@ -93,8 +83,8 @@ describe('consentManagement', function () {
           gdpr: {cmpApi: 'daa', timeout: 8700}
         });
 
-        expect(userCMP).to.be.equal('daa');
-        expect(consentTimeout).to.be.equal(8700);
+        expect(consentConfig.cmpHandler).to.be.equal('daa');
+        expect(consentConfig.cmpTimeout).to.be.equal(8700);
       });
 
       it('should ignore config.usp and use config.gdpr, with default cmpApi', async function () {
@@ -103,8 +93,8 @@ describe('consentManagement', function () {
           usp: {cmpApi: 'daa', timeout: 50}
         });
 
-        expect(userCMP).to.be.equal('iab');
-        expect(consentTimeout).to.be.equal(5000);
+        expect(consentConfig.cmpHandler).to.be.equal('iab');
+        expect(consentConfig.cmpTimeout).to.be.equal(5000);
       });
 
       it('should ignore config.usp and use config.gdpr, with default cmpAip and timeout', async function () {
@@ -113,8 +103,8 @@ describe('consentManagement', function () {
           usp: {cmpApi: 'daa', timeout: 50}
         });
 
-        expect(userCMP).to.be.equal('iab');
-        expect(consentTimeout).to.be.equal(10000);
+        expect(consentConfig.cmpHandler).to.be.equal('iab');
+        expect(consentConfig.cmpTimeout).to.be.equal(10000);
       });
 
       it('should recognize config.gdpr, with default cmpAip and timeout', async function () {
@@ -122,8 +112,8 @@ describe('consentManagement', function () {
           gdpr: {}
         });
 
-        expect(userCMP).to.be.equal('iab');
-        expect(consentTimeout).to.be.equal(10000);
+        expect(consentConfig.cmpHandler).to.be.equal('iab');
+        expect(consentConfig.cmpTimeout).to.be.equal(10000);
       });
 
       it('should fallback to old consent manager config object if no config.gdpr', async function () {
@@ -133,8 +123,8 @@ describe('consentManagement', function () {
           gdpr: false
         });
 
-        expect(userCMP).to.be.equal('iab');
-        expect(consentTimeout).to.be.equal(3333);
+        expect(consentConfig.cmpHandler).to.be.equal('iab');
+        expect(consentConfig.cmpTimeout).to.be.equal(3333);
         expect(gdprScope).to.be.equal(false);
       });
 
@@ -225,12 +215,12 @@ describe('consentManagement', function () {
               timeout: 7500,
               consentData: packageCfg(consentData)
             });
-            expect(userCMP).to.be.equal('static');
+            expect(consentConfig.cmpHandler).to.be.equal('static');
             expect(gdprScope).to.be.equal(false);
             const consent = gdprDataHandler.getConsentData();
             expect(consent.consentString).to.eql(consentData.tcString);
             expect(consent.vendorData).to.eql(consentData);
-            expect(staticConsentData).to.be.equal(consentData);
+            expect(consentConfig.staticConsentData).to.be.equal(consentData);
           });
         });
       });
@@ -254,11 +244,11 @@ describe('consentManagement', function () {
 
     async function runHook(request = {}) {
       let hookRan = false;
-      requestBidsHook(() => {
+      consentConfig.requestBidsHook(() => {
         hookRan = true
       }, request);
       try {
-        await consentDataLoaded;
+        await consentConfig.consentDataLoaded;
       } catch (e) {
       }
       return hookRan;
@@ -281,7 +271,7 @@ describe('consentManagement', function () {
           cmpApi: 'bad'
         };
         await setConsentConfig(badCMPConfig);
-        expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
+        expect(consentConfig.cmpHandler).to.be.equal(badCMPConfig.cmpApi);
         expect(await runHook()).to.be.true;
         let consent = gdprDataHandler.getConsentData();
         sinon.assert.calledOnce(utils.logWarn);
@@ -597,7 +587,7 @@ describe('consentManagement', function () {
             });
             return new Promise((resolve, reject) => {
               let hookRan = false;
-              requestBidsHook(() => {
+              consentConfig.requestBidsHook(() => {
                 hookRan = true;
               }, {});
               setTimeout(() => hookRan ? resolve() : reject(new Error('Auction did not run')), 20);
@@ -658,7 +648,7 @@ describe('consentManagement', function () {
               defaultGdprScope: true
             });
             let hookRan = false;
-            requestBidsHook(() => {
+            consentConfig.requestBidsHook(() => {
               hookRan = true;
             }, {});
             return new Promise((resolve) => setTimeout(resolve, 200))
