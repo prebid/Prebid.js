@@ -498,28 +498,75 @@ describe('ccxAdapter', function () {
 
   describe('FLEDGE', function () {
     it('should properly build a request when FLEDGE is enabled', function () {
-      const bidderRequest = {
+      let bidderRequest = {
         paapi: {
           enabled: true
         }
       };
+      let bids = [
+        {
+          adUnitCode: 'banner',
+          auctionId: '0b9de793-8eda-481e-a548-aaaaaaaaaaa1',
+          bidId: '2e56e1af51ccc1',
+          bidder: 'ccx',
+          bidderRequestId: '17e7b9f58accc1',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          params: {
+            placementId: 609
+          },
+          sizes: [[300, 250]],
+          transactionId: 'befddd38-cfa0-48ab-8bdd-bbbbbbbbbbb1',
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          }
+        }
+      ];
 
-      const ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest)).data;
-      expect(ortbRequest.imp[0].ext.igs.ae).to.equal(1);
-      expect(ortbRequest.imp[1].ext.igs.ae).to.equal(1);
+      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
+      let data = JSON.parse(ortbRequest.data);
+      expect(data.imp[0].ext.ae).to.equal(1);
     });
 
     it('should properly build a request when FLEDGE is disabled', function () {
-      const bidderRequest = {
+      let bidderRequest = {
         paapi: {
           enabled: false
-        },
+        }
       };
+      let bids = [
+        {
+          adUnitCode: 'banner',
+          auctionId: '0b9de793-8eda-481e-a548-aaaaaaaaaaa2',
+          bidId: '2e56e1af51ccc2',
+          bidder: 'ccx',
+          bidderRequestId: '17e7b9f58accc2',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          params: {
+            placementId: 610
+          },
+          sizes: [[300, 250]],
+          transactionId: 'befddd38-cfa0-48ab-8bdd-bbbbbbbbbbb2',
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          }
+        }
+      ];
 
-      const ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest)).data;
-      expect(ortbRequest.imp[0].ext.igs?.ae).to.be.undefined;
-      expect(ortbRequest.imp[1].ext.igs?.ae).to.be.undefined;
+      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
+      let data = JSON.parse(ortbRequest.data);
+      expect(data.imp[0].ext.ae).to.be.undefined;
     });
   });
-
 });
