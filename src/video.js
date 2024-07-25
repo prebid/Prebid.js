@@ -7,44 +7,44 @@ export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
 
 /**
- * Basic validation of OpenRTB 2.x video object properties.
+ * List of OpenRTB 2.x video object properties with simple validators.
  * Not included: `companionad`, `durfloors`, `ext`
  * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
  */
 export const ORTB_VIDEO_PARAMS = new Map([
-  [ 'mimes', { validate: (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') } ],
-  [ 'minduration', { validate: (value) => isInteger(value) } ],
-  [ 'maxduration', { validate: (value) => isInteger(value) } ],
-  [ 'startdelay', { validate: (value) => isInteger(value) } ],
-  [ 'maxseq', { validate: (value) => isInteger(value) } ],
-  [ 'poddur', { validate: (value) => isInteger(value) } ],
-  [ 'protocols', { validate: (value) => isArrayOfNums(value) } ],
-  [ 'w', { validate: (value) => isInteger(value) } ],
-  [ 'h', { validate: (value) => isInteger(value) } ],
-  [ 'podid', { validate: (value) => isStr(value) } ],
-  [ 'podseq', { validate: (value) => isInteger(value) } ],
-  [ 'rqddurs', { validate: (value) => isArrayOfNums(value) } ],
-  [ 'placement', { validate: (value) => isInteger(value) } ], // deprecated, see plcmt
-  [ 'plcmt', { validate: (value) => isInteger(value) } ],
-  [ 'linearity', { validate: (value) => isInteger(value) } ],
-  [ 'skip', { validate: (value) => [1, 0].includes(value) } ],
-  [ 'skipmin', { validate: (value) => isInteger(value) } ],
-  [ 'skipafter', { validate: (value) => isInteger(value) } ],
-  [ 'sequence', { validate: (value) => isInteger(value) } ], // deprecated
-  [ 'slotinpod', { validate: (value) => isInteger(value) } ],
-  [ 'mincpmpersec', { validate: (value) => isNumber(value) } ],
-  [ 'battr', { validate: (value) => isArrayOfNums(value) } ],
-  [ 'maxextended', { validate: (value) => isInteger(value) } ],
-  [ 'minbitrate', { validate: (value) => isInteger(value) } ],
-  [ 'maxbitrate', { validate: (value) => isInteger(value) } ],
-  [ 'boxingallowed', { validate: (value) => isInteger(value) } ],
-  [ 'playbackmethod', { validate: (value) => isArrayOfNums(value) } ],
-  [ 'playbackend', { validate: (value) => isInteger(value) } ],
-  [ 'delivery', { validate: (value) => isArrayOfNums(value) } ],
-  [ 'pos', { validate: (value) => isInteger(value) } ],
-  [ 'api', { validate: (value) => isArrayOfNums(value) } ],
-  [ 'companiontype', { validate: (value) => isArrayOfNums(value) } ],
-  [ 'poddedupe', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
+  [ 'minduration', isInteger ],
+  [ 'maxduration', isInteger ],
+  [ 'startdelay', isInteger ],
+  [ 'maxseq', isInteger ],
+  [ 'poddur', isInteger ],
+  [ 'protocols', isArrayOfNums ],
+  [ 'w', isInteger ],
+  [ 'h', isInteger ],
+  [ 'podid', isStr ],
+  [ 'podseq', isInteger ],
+  [ 'rqddurs', isArrayOfNums ],
+  [ 'placement', isInteger ], // deprecated, see plcmt
+  [ 'plcmt', isInteger ],
+  [ 'linearity', isInteger ],
+  [ 'skip', value => [1, 0].includes(value) ],
+  [ 'skipmin', isInteger ],
+  [ 'skipafter', isInteger ],
+  [ 'sequence', isInteger ], // deprecated
+  [ 'slotinpod', isInteger ],
+  [ 'mincpmpersec', isNumber ],
+  [ 'battr', isArrayOfNums ],
+  [ 'maxextended', isInteger ],
+  [ 'minbitrate', isInteger ],
+  [ 'maxbitrate', isInteger ],
+  [ 'boxingallowed', isInteger ],
+  [ 'playbackmethod', isArrayOfNums ],
+  [ 'playbackend', isInteger ],
+  [ 'delivery', isArrayOfNums ],
+  [ 'pos', isInteger ],
+  [ 'api', isArrayOfNums ],
+  [ 'companiontype', isArrayOfNums ],
+  [ 'poddedupe', isArrayOfNums ]
 ]);
 
 export function fillVideoDefaults(adUnit) {
@@ -81,8 +81,8 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam) {
         if (!ORTB_VIDEO_PARAMS.has(key)) {
           return
         }
-        const valid = ORTB_VIDEO_PARAMS.get(key).validate(value);
-        if (!valid) {
+        const isValid = ORTB_VIDEO_PARAMS.get(key)(value);
+        if (!isValid) {
           if (typeof onInvalidParam === 'function') {
             onInvalidParam(key, value, adUnit);
           } else {
