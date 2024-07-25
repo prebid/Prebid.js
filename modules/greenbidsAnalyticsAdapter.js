@@ -6,7 +6,7 @@ import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName}
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.3.0';
+export const ANALYTICS_VERSION = '2.3.1';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
