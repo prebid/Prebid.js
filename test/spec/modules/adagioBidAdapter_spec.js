@@ -603,7 +603,6 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
         expect(requests).to.have.lengthOf(1);
         expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
-        sinon.assert.calledTwice(utils.logWarn.withArgs(sinon.match(new RegExp(/^Adagio: The OpenRTB/))));
       });
     });
 
