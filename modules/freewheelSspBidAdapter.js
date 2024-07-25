@@ -3,7 +3,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 
-const BIDDER_CODE = 'freewheel-ssp';
+const BIDDER_CODE = 'freewheelssp';
 
 const PROTOCOL = getProtocol();
 const FREEWHEEL_ADSSETUP = PROTOCOL + '://ads.stickyadstv.com/www/delivery/swfIndex.php';
@@ -315,7 +315,7 @@ var getOutstreamScript = function(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
+  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheelssp
   /**
   * Determines whether or not the given bid request is valid.
   *
