@@ -12,7 +12,6 @@ import {isFn, isStr, isPlainObject, logError, logInfo} from '../src/utils.js';
 import { config } from '../src/config.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
-import call from "webdriverio/build/commands/browser/call";
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -86,12 +85,12 @@ export const hadronIdSubmodule = {
     }
     let hadronId = '';
     // at this point hadronId was not found by prebid, let check if it is in the webpage by other ways
-    // hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
-    // if (isStr(hadronId) && hadronId.length > 0) {
-    //   logInfo(LOG_PREFIX, `${LS_TAM_KEY} found in localStorage = ${hadronId}`)
-    //   return {callback: function(cb) { cb(hadronId) }};
-    //   // return {id: hadronId}
-    // }
+    hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
+    if (isStr(hadronId) && hadronId.length > 0) {
+      logInfo(LOG_PREFIX, `${LS_TAM_KEY} found in localStorage = ${hadronId}`)
+      // return {callback: function(cb) { cb(hadronId) }};
+      return {id: hadronId}
+    }
     const partnerId = config.params.partnerId | 0;
     const resp = function (callback) {
       let responseObj = {};
