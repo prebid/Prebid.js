@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/freewheel-sspBidAdapter.js';
+import { spec } from 'modules/freewheelsspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
@@ -17,7 +17,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
   describe('isBidRequestValidForBanner', () => {
     let bid = {
-      'bidder': 'freewheel-ssp',
+      'bidder': 'freewheelssp',
       'params': {
         'zoneId': '277225'
       },
@@ -51,7 +51,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
   describe('isBidRequestValidForVideo', () => {
     let bid = {
-      'bidder': 'freewheel-ssp',
+      'bidder': 'freewheelssp',
       'params': {
         'zoneId': '277225'
       },
@@ -84,7 +84,7 @@ describe('freewheelSSP BidAdapter Test', () => {
   describe('buildRequestsForBanner', () => {
     let bidRequests = [
       {
-        'bidder': 'freewheel-ssp',
+        'bidder': 'freewheelssp',
         'params': {
           'zoneId': '277225',
           'bidfloor': 2.00,
@@ -264,7 +264,7 @@ describe('freewheelSSP BidAdapter Test', () => {
   describe('buildRequestsForVideo', () => {
     let bidRequests = [
       {
-        'bidder': 'freewheel-ssp',
+        'bidder': 'freewheelssp',
         'params': {
           'zoneId': '277225'
         },
@@ -359,7 +359,7 @@ describe('freewheelSSP BidAdapter Test', () => {
   describe('buildRequestsForVideoWithContextAndPlacement', () => {
     let bidRequests = [
       {
-        'bidder': 'freewheel-ssp',
+        'bidder': 'freewheelssp',
         'params': {
           'zoneId': '277225'
         },
@@ -391,7 +391,7 @@ describe('freewheelSSP BidAdapter Test', () => {
   describe('interpretResponseForBanner', () => {
     let bidRequests = [
       {
-        'bidder': 'freewheel-ssp',
+        'bidder': 'freewheelssp',
         'params': {
           'zoneId': '277225'
         },
@@ -412,7 +412,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     let formattedBidRequests = [
       {
-        'bidder': 'freewheel-ssp',
+        'bidder': 'freewheelssp',
         'params': {
           'zoneId': '277225',
           'format': 'floorad'
@@ -546,7 +546,7 @@ describe('freewheelSSP BidAdapter Test', () => {
   describe('interpretResponseForVideo', () => {
     let bidRequests = [
       {
-        'bidder': 'freewheel-ssp',
+        'bidder': 'freewheelssp',
         'params': {
           'zoneId': '277225'
         },
@@ -565,7 +565,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     let formattedBidRequests = [
       {
-        'bidder': 'freewheel-ssp',
+        'bidder': 'freewheelssp',
         'params': {
           'zoneId': '277225',
           'format': 'floorad'
