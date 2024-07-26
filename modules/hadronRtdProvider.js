@@ -10,7 +10,7 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isFn, isStr, isArray, deepEqual, isPlainObject, logError, logInfo} from '../src/utils.js';
+import {isFn, isStr, isArray, isEmpty, deepEqual, isPlainObject, logError, logInfo} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
@@ -18,15 +18,15 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const LOG_PREFIX = 'User ID - HadronRtdProvider submodule: ';
+const LOG_PREFIX = '[HadronRtdProvider] ';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'hadron';
 const AU_GVLID = 561;
 const HADRON_ID_DEFAULT_URL = 'https://id.hadron.ad.gt/api/v1/hadronid?_it=prebid';
-const HADRON_SEGMENT_URL = 'https://id.hadron.ad.gt/api/v1/rtd';
-export const HADRONID_LOCAL_NAME = 'auHadronId';
-export const RTD_LOCAL_NAME = 'auHadronRtd';
-export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
+const HADRON_SEGMENT_URL = 'https://prebid-rtd.audigent.workers.dev'; // https://id.hadron.ad.gt/api/v1/rtd';
+const LS_TAM_KEY = 'auHadronId';
+const RTD_LOCAL_NAME = 'auHadronRtd';
+const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 
 /**
  * @param {string} url
@@ -128,7 +128,7 @@ function paramOrDefault(param, defaultVal, arg) {
  * @param {Object} rtd
  * @param {Object} rtdConfig
  */
-export function addRealTimeData(bidConfig, rtd, rtdConfig) {
+function addRealTimeData(bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else {
@@ -166,14 +166,29 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
 
   const userIds = {};
 
-  let hadronId = storage.getDataFromLocalStorage(HADRONID_LOCAL_NAME);
-  if (isStr(hadronId)) {
-    if (typeof getGlobal().refreshUserIds === 'function') {
-      (getGlobal()).refreshUserIds({submoduleNames: 'hadronId'});
+  const allUserIds = getGlobal().getUserIds();
+  if (allUserIds.hasOwnProperty('hadronId')) {
+    userIds['hadronId'] = allUserIds.hadronId;
+    logInfo(LOG_PREFIX, 'hadronId user module found', allUserIds.hadronId);
+  } else {
+    let hadronId = storage.getDataFromLocalStorage(LS_TAM_KEY);
+    if (isStr(hadronId) && hadronId.length > 0) {
+      userIds['hadronId'] = hadronId;
+      logInfo(LOG_PREFIX, 'hadronId TAM found', hadronId);
     }
-    userIds.hadronId = hadronId;
+  }
+  if (!isEmpty(userIds)) {
+    // if (typeof getGlobal().refreshUserIds === 'function') {
+    //   (getGlobal()).refreshUserIds({submoduleNames: 'hadronId'});
+    // }
+    // userIds.hadronId = hadronId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
+    // the hadronId was not found, reasons can be:
+    //    1) prebid wasn't compiled with hadronIdSystem
+    //    2) prebid wasn't configured to use hadronId user module
+    //    3) all previous and no other hadronId snippet configured in the page
+    // then need to load hadron.js from the CDN
     window.pubHadronCb = (hadronId) => {
       userIds.hadronId = hadronId;
       getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
@@ -184,8 +199,8 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
       paramOrDefault(hadronIdUrl, HADRON_ID_DEFAULT_URL, userIds),
       `partner_id=${partnerId}&_it=prebid`
     );
-    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, 'hadron', () => {
-      logInfo(LOG_PREFIX, 'hadronIdTag loaded', scriptUrl);
+    loadExternalScript(scriptUrl, SUBMODULE_NAME, () => {
+      logInfo(LOG_PREFIX, 'hadronId JS snippet loaded', scriptUrl);
     })
   }
 }
@@ -198,7 +213,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
  * @param {Object} userConsent
  * @param {Object} userIds
  */
-export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds) {
+function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds) {
   let reqParams = {};
 
   if (isPlainObject(rtdConfig)) {
@@ -223,7 +238,7 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
             onDone();
           }
         } catch (err) {
-          logError('unable to parse audigent segment data');
+          logError(LOG_PREFIX, 'unable to parse audigent segment data');
           onDone();
         }
       } else if (req.status === 204) {
@@ -233,7 +248,7 @@ export function getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, 
     },
     error: function () {
       onDone();
-      logError('unable to get audigent segment data');
+      logError(LOG_PREFIX, 'unable to get audigent segment data');
     }
   },
   JSON.stringify({'userIds': userIds, 'config': reqParams}),
