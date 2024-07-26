@@ -217,15 +217,6 @@ export function generateBidParameters(bid, bidderRequest) {
   return bidObject;
 }
 
-/**
- * Generate device params
- * @param {Object} ortb2Data
- * @returns {Object} device params object
- */
-export function generateDeviceParams(ortb2Data) {
-  return ortb2Data.device;
-}
-
 export function buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL, VIDEO, BANNER) {
   const bidResponse = {
     requestId: adUnit.requestId,
@@ -296,6 +287,10 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
   }
   if (ortb2Metadata.user) {
     generalParams.user_metadata = JSON.stringify(ortb2Metadata.user);
+  }
+
+  if (ortb2Metadata.device) {
+    generalParams.device = ortb2Metadata.device;
   }
 
   if (syncEnabled) {

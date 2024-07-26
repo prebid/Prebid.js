@@ -10,7 +10,6 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   getEndpoint,
   generateBidsParams,
-  generateDeviceParams,
   generateGeneralParams,
   buildBidResponse,
 } from '../libraries/riseUtils/index.js';
@@ -59,7 +58,6 @@ export const spec = {
 
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
     combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
-    combinedRequestsObject.device = generateDeviceParams(bidderRequest.ortb2);
 
     return {
       method: 'POST',

@@ -457,7 +457,7 @@ describe('riseAdapter', function () {
         ortb2,
       });
 
-      expect(request.data.device).to.deep.equal(ortb2.device);
+      expect(request.data.params.device).to.deep.equal(ortb2.device);
     });
 
     describe('COPPA Param', function() {
