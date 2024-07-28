@@ -31,20 +31,19 @@ export const spec = {
   isBidRequestValid: (bid) => {
     const { params, mediaTypes } = bid;
 
-    if (isStr(params.placementId) && params.placementId.length === 32 && mediaTypes){
+    if (isStr(params.placementId) && params.placementId.length === 32 && mediaTypes) {
       if (
         (mediaTypes[BANNER] && mediaTypes[BANNER].sizes) ||
         (mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize) ||
         (mediaTypes[NATIVE])
-      ){ return true; }
+      ) { return true; }
     }
 
     return false;
-
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    if(bidderRequest == undefined || validBidRequests[0] == undefined)return [];
+    if (bidderRequest == undefined || validBidRequests[0] == undefined) { return []; }
 
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -76,7 +75,6 @@ export const spec = {
     }
 
     const bidsArray = serverResponse.body.seatbid[0].bid.map((bidItem) => {
-
       let bidObject = {
         requestId: bidItem.impid,
         cpm: bidItem.price,
@@ -91,22 +89,18 @@ export const spec = {
         netRevenue: true
       }
 
-      if (bidObject.mediaType === VIDEO){
+      if (bidObject.mediaType === VIDEO) {
         bidObject.vastXml = bidItem.adm;
-      }
-      else if (bidObject.mediaType === NATIVE){
+      } else if (bidObject.mediaType === NATIVE) {
         bidObject.native = prepareNativeAd(bidItem.adm);
-      }
-      else {
+      } else {
         bidObject.ad = bidItem.adm;
       }
 
       return bidObject;
-
     });
 
     return bidsArray;
-
   },
 
   onBidWon: (bid) => {
@@ -123,10 +117,9 @@ const getMediaTypeValues = {
     let [w, h] = [300, 250];
     let format = [];
 
-    if (isArrayOfNums(adUnit.mediaTypes.banner.sizes)){
+    if (isArrayOfNums(adUnit.mediaTypes.banner.sizes)) {
       [w, h] = adUnit.mediaTypes.banner.sizes;
-    }
-    else if (isArray(adUnit.mediaTypes.banner.sizes)){
+    } else if (isArray(adUnit.mediaTypes.banner.sizes)) {
       [w, h] = adUnit.mediaTypes.banner.sizes[0];
       if (adUnit.mediaTypes.banner.sizes.length > 1){ format = adUnit.mediaTypes.banner.sizes.map((size) => ({ w: size[0], h: size[1] })); }
     }
@@ -152,8 +145,8 @@ const getMediaTypeValues = {
         assetItem[assetName] = {...NATIVE_ASSETS_TYPES[asset][assetName]};
 
         assetItem[assetName].required = adUnit.mediaTypes.native[asset].required ? 1 : 0;
-        if(adUnit.mediaTypes.native[asset].len)assetItem[assetName].len = adUnit.mediaTypes.native[asset].len;
-        if(adUnit.mediaTypes.native[asset].sizes) {
+        if (adUnit.mediaTypes.native[asset].len) { assetItem[assetName].len = adUnit.mediaTypes.native[asset].len; }
+        if (adUnit.mediaTypes.native[asset].sizes) {
           const size = Array.isArray(adUnit.mediaTypes.native[asset].sizes[0]) ? adUnit.mediaTypes.native[asset].sizes[0] : adUnit.mediaTypes.native[asset].sizes;
           assetItem[assetName].w = size[0];
           assetItem[assetName].h = size[1];
@@ -185,7 +178,7 @@ const getMediaTypeValues = {
   }
 }
 
-function getFloor(adUnit, mediaType){
+function getFloor(adUnit, mediaType) {
   let floor = DEF_FLOOR;
 
   if (!isFn(adUnit.getFloor)) {
@@ -198,15 +191,14 @@ function getFloor(adUnit, mediaType){
     size: '*'
   });
 
-  if(isPlainObject(floorObj) && !isNaN(parseFloat(floorObj.floor))){
+  if (isPlainObject(floorObj) && !isNaN(parseFloat(floorObj.floor))) {
     floor = parseFloat(floorObj.floor) || floor;
   }
 
   return floor;
-
 }
 
-function prepareImpression(adUnit){
+function prepareImpression(adUnit) {
   let mediaType = Object.keys(adUnit.mediaTypes)[0];
 
   const impObj = {
@@ -216,10 +208,9 @@ function prepareImpression(adUnit){
   };
 
   impObj[mediaType] = getMediaTypeValues[mediaType](adUnit);
-
 }
 
-function prepareSite(adUnit, request){
+function prepareSite(adUnit, request) {
 
   let siteObj = {};
 
@@ -237,7 +228,7 @@ function prepareSite(adUnit, request){
   return siteObj;
 }
 
-function prepareDevice(){
+function prepareDevice() {
 
   let deviceObj = {};
 
@@ -249,7 +240,7 @@ function prepareDevice(){
   return deviceObj;
 }
 
-function prepareConsents(data, request){
+function prepareConsents(data, request) {
   if (request.gdprConsent !== undefined) {
     data.regs.ext.gdpr = request.gdprConsent.gdprApplies ? 1 : 0;
     data.user.ext.consent = request.gdprConsent.consentString ? request.gdprConsent.consentString : '';
@@ -262,7 +253,7 @@ function prepareConsents(data, request){
   return true;
 }
 
-function prepareEids(data, adUnit){
+function prepareEids(data, adUnit) {
   if (adUnit.userIdAsEids !== undefined){
     data.user.ext.eids = adUnit.userIdAsEids;
   }
@@ -270,7 +261,7 @@ function prepareEids(data, adUnit){
   return true;
 }
 
-function prepareNativeAd(adm){
+function prepareNativeAd(adm) {
   const nativeObj = JSON.parse(adm).native;
 
   let native = {
@@ -286,9 +277,13 @@ function prepareNativeAd(adm){
   nativeObj.assets.forEach(asset => {
     let kind = NATIVE_ASSETS_IDS[asset.id];
 
-    if(asset.title != undefined)native[kind] = asset.title.text;
-    else if(asset.img != undefined)native[kind] = {url: asset.img.url, width: asset.img.w, height: asset.img.h};
-    else if(asset.data != undefined)native[kind] = asset.data.value;
+    if (asset.title != undefined) {
+      native[kind] = asset.title.text;
+    } else if (asset.img != undefined) {
+      native[kind] = {url: asset.img.url, width: asset.img.w, height: asset.img.h};
+    } else if (asset.data != undefined) {
+      native[kind] = asset.data.value;
+    }
   });
 
   return native;
