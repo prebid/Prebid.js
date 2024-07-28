@@ -138,7 +138,7 @@ const getMediaTypeValues = {
     let assets = Object.keys(adUnit.mediaTypes.native);
 
     for (let asset of assets) {
-      if(NATIVE_ASSETS_TYPES[asset]) {
+      if (NATIVE_ASSETS_TYPES[asset]) {
         const assetItem = { ...NATIVE_ASSETS_TYPES[asset] };
         let assetName = NATIVE_ASSETS_IDS[assetItem.id];
         assetItem[assetName] = {...NATIVE_ASSETS_TYPES[asset][assetName]};
