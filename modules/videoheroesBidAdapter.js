@@ -121,7 +121,7 @@ const getMediaTypeValues = {
       [w, h] = adUnit.mediaTypes.banner.sizes;
     } else if (isArray(adUnit.mediaTypes.banner.sizes)) {
       [w, h] = adUnit.mediaTypes.banner.sizes[0];
-      if (adUnit.mediaTypes.banner.sizes.length > 1){ format = adUnit.mediaTypes.banner.sizes.map((size) => ({ w: size[0], h: size[1] })); }
+      if (adUnit.mediaTypes.banner.sizes.length > 1) { format = adUnit.mediaTypes.banner.sizes.map((size) => ({ w: size[0], h: size[1] })); }
     }
 
     return {
@@ -138,9 +138,8 @@ const getMediaTypeValues = {
     let assets = Object.keys(adUnit.mediaTypes.native);
 
     for (let asset of assets) {
-      if(NATIVE_ASSETS_TYPES[asset]){
-
-        const assetItem = {...NATIVE_ASSETS_TYPES[asset]};
+      if(NATIVE_ASSETS_TYPES[asset]) {
+        const assetItem = { ...NATIVE_ASSETS_TYPES[asset] };
         let assetName = NATIVE_ASSETS_IDS[assetItem.id];
         assetItem[assetName] = {...NATIVE_ASSETS_TYPES[asset][assetName]};
 
@@ -153,7 +152,6 @@ const getMediaTypeValues = {
         }
 
         req.assets.push(assetItem);
-
       }
     }
 
@@ -203,7 +201,7 @@ function prepareImpression(adUnit) {
 
   const impObj = {
     id: adUnit.bidId,
-    secure: window.location.protocol.indexOf("https") !== -1 ? 1 : 0,
+    secure: window.location.protocol.indexOf('https') !== -1 ? 1 : 0,
     bidfloor: getFloor(adUnit, mediaType)
   };
 
@@ -211,7 +209,6 @@ function prepareImpression(adUnit) {
 }
 
 function prepareSite(adUnit, request) {
-
   let siteObj = {};
 
   siteObj.publisher = {
@@ -229,7 +226,6 @@ function prepareSite(adUnit, request) {
 }
 
 function prepareDevice() {
-
   let deviceObj = {};
 
   [deviceObj.w, deviceObj.h] = [screen.width, screen.height];
@@ -254,7 +250,7 @@ function prepareConsents(data, request) {
 }
 
 function prepareEids(data, adUnit) {
-  if (adUnit.userIdAsEids !== undefined){
+  if (adUnit.userIdAsEids !== undefined) {
     data.user.ext.eids = adUnit.userIdAsEids;
   }
 
@@ -269,8 +265,8 @@ function prepareNativeAd(adm) {
     jstracker: nativeObj.jstracker || []
   };
 
-  if(nativeObj.link){
-    native.clickUrl = nativeObj.link.url || "";
+  if (nativeObj.link) {
+    native.clickUrl = nativeObj.link.url || '';
     native.clickTrackers = nativeObj.link.clicktrackers || [];
   }
 
