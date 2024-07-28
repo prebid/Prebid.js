@@ -11,7 +11,7 @@ const CUR = 'USD';
 const TTL = 1200;
 const ENDPOINT_URL = `https://point.contextualadv.com/?t=2&partner=`;
 
-const NATIVE_ASSETS_IDS = { 1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'rating', 7: 'downloads' , 8: 'cta' };
+const NATIVE_ASSETS_IDS = { 1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'rating', 7: 'downloads', 8: 'cta' };
 
 const NATIVE_ASSETS_TYPES = {
   title: {id: 1, title: {len: 25}},
@@ -21,7 +21,7 @@ const NATIVE_ASSETS_TYPES = {
   body: {id: 5, data: {type: 2, len: 100}},
   rating: {id: 6, data: {type: 3, len: 25}},
   downloads: {id: 7, data: {type: 5, len: 25}},
-  cta: {id: 8, data: {type: 12, len: 25}},
+  cta: {id: 8, data: {type: 12, len: 25}}
 };
 
 export const spec = {
