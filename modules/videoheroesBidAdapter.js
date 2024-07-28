@@ -31,13 +31,12 @@ export const spec = {
   isBidRequestValid: (bid) => {
     const { params, mediaTypes } = bid;
 
-    if(isStr(params.placementId) && params.placementId.length === 32 && mediaTypes){
-      if(
+    if (isStr(params.placementId) && params.placementId.length === 32 && mediaTypes){
+      if (
         (mediaTypes[BANNER] && mediaTypes[BANNER].sizes) ||
         (mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize) ||
         (mediaTypes[NATIVE])
-      )
-      return true;
+      ){ return true; }
     }
 
     return false;
@@ -92,13 +91,13 @@ export const spec = {
         netRevenue: true
       }
 
-      if(bidObject.mediaType === VIDEO){
+      if (bidObject.mediaType === VIDEO){
         bidObject.vastXml = bidItem.adm;
       }
-      else if(bidObject.mediaType === NATIVE){
+      else if (bidObject.mediaType === NATIVE){
         bidObject.native = prepareNativeAd(bidItem.adm);
       }
-      else{
+      else {
         bidObject.ad = bidItem.adm;
       }
 
@@ -124,12 +123,12 @@ const getMediaTypeValues = {
     let [w, h] = [300, 250];
     let format = [];
 
-    if(isArrayOfNums(adUnit.mediaTypes.banner.sizes)){
+    if (isArrayOfNums(adUnit.mediaTypes.banner.sizes)){
       [w, h] = adUnit.mediaTypes.banner.sizes;
     }
-    else if(isArray(adUnit.mediaTypes.banner.sizes)){
+    else if (isArray(adUnit.mediaTypes.banner.sizes)){
       [w, h] = adUnit.mediaTypes.banner.sizes[0];
-      if(adUnit.mediaTypes.banner.sizes.length > 1)format = adUnit.mediaTypes.banner.sizes.map((size) => ({ w: size[0], h: size[1] }))
+      if (adUnit.mediaTypes.banner.sizes.length > 1){ format = adUnit.mediaTypes.banner.sizes.map((size) => ({ w: size[0], h: size[1] })); }
     }
 
     return {
@@ -264,7 +263,7 @@ function prepareConsents(data, request){
 }
 
 function prepareEids(data, adUnit){
-  if(adUnit.userIdAsEids !== undefined){
+  if (adUnit.userIdAsEids !== undefined){
     data.user.ext.eids = adUnit.userIdAsEids;
   }
 
