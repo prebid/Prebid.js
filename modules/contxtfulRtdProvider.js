@@ -146,18 +146,17 @@ function initCustomer(config) {
     pathname: `/${version}/prebid/${customer}/connector/rxConnector.js`,
   });
 
-  const externalScript = loadExternalScript(CONNECTOR_URL, MODULE_NAME);
-  addExternalScriptEventListener(externalScript, customer, config);
+  addConnectorEventListener(customer, config);
+  loadExternalScript(CONNECTOR_URL, MODULE_NAME);
 }
 
 /**
  * Add event listener to the script tag for the expected events from the external script.
- * @param { HTMLScriptElement } script
  * @param { String } tagId
  * @param { String } prebidConfig
  */
-function addExternalScriptEventListener(script, tagId, prebidConfig) {
-  script.addEventListener(
+function addConnectorEventListener(tagId, prebidConfig) {
+  window.addEventListener(
     'rxConnectorIsReady',
     async ({ detail: rxConnector }) => {
       // Fetch the customer configuration
