@@ -34,9 +34,9 @@ describe('yieldoneBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 

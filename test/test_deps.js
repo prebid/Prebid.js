@@ -19,3 +19,4 @@ require('test/helpers/prebidGlobal.js');
 require('test/mocks/adloaderStub.js');
 require('test/mocks/xhr.js');
 require('test/mocks/analyticsStub.js');
+require('test/mocks/ortbConverter.js')

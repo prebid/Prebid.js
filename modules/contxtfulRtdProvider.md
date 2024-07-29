@@ -63,6 +63,7 @@ pbjs.setConfig({
   }
 });
 ```
+
 ## Parameters
 
 | Name                | Type     | Scope    | Description                                |
