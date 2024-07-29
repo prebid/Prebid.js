@@ -7,10 +7,10 @@ import {
   safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -118,7 +118,7 @@ export const spec = {
       const bidFloor = getFloor(bidRequest);
       payload.floor = bidFloor?.floor;
       payload.floor_currency = bidFloor?.currency;
-      payload.currency = config.getConfig('currency.adServerCurrency') || 'EUR';
+      payload.currency = getCurrencyFromBidderRequest(bidderRequest) || 'EUR';
 
       return {
         method: 'POST',

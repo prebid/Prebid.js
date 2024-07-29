@@ -4,6 +4,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
+import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -20,9 +21,9 @@ const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVi
 const TTL = 60;
 const GVLID = 206;
 
-function buildBidRequests(validBidRequests) {
+function buildBidRequests(validBidRequests, bidderRequest) {
   return _map(validBidRequests, function(bid) {
-    const currency = getConfig('currency.adServerCurrency');
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const floorInfo = bid.getFloor ? bid.getFloor({
       currency: currency || 'USD'
     }) : {};
@@ -218,7 +219,7 @@ export const spec = {
       // TODO: is 'page' the right value here?
       url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
-      bidRequests: buildBidRequests(validBidRequests)
+      bidRequests: buildBidRequests(validBidRequests, bidderRequest)
     };
 
     if (payload.cmp) {

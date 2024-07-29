@@ -2,6 +2,7 @@ import { deepAccess, deepClone, isArrayOfNums, isFn, isInteger, isPlainObject, l
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -171,7 +172,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // use bidderRequest.bids[] to get bidder-dependent request info
-    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
     const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
     const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
 

@@ -4,6 +4,7 @@ import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -36,7 +37,7 @@ export const spec = {
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
-        currencyCode: config.getConfig('currency.adServerCurrency'),
+        currencyCode: getCurrencyFromBidderRequest(bidderRequest),
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,

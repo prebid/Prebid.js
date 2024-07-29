@@ -7,6 +7,7 @@ import {_map, generateUUID, deepSetValue, isArray, isEmpty, replaceAuctionPrice}
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
 
 const GVL_ID = 371;
 const BIDDER_CODE = 'seedingAlliance';
@@ -119,7 +120,7 @@ export const spec = {
       site: {
         page: url
       },
-      cur: [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR],
+      cur: [getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CUR],
       imp: imps,
       tmax: bidderRequest.timeout,
       regs: {
