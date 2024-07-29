@@ -3987,6 +3987,16 @@ describe('the rubicon adapter', function () {
             let bids = spec.interpretResponse({body: response}, {data: request});
             expect(bids).to.have.nested.property('[0].native');
           });
+          it('should set 0 to bids width and height if `w` and `h` in response object not defined', () => {
+            const nativeBidderRequest = addNativeToBidRequest(bidderRequest);
+            const request = converter.toORTB({bidderRequest: nativeBidderRequest, bidRequests: nativeBidderRequest.bids});
+            let response = getNativeResponse({impid: request.imp[0].id});
+            delete response.seatbid[0].bid[0].w;
+            delete response.seatbid[0].bid[0].h
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            expect(bids[0].width).to.equal(0);
+            expect(bids[0].height).to.equal(0);
+          })
         });
       }
 

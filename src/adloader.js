@@ -32,6 +32,7 @@ const _approvedLoadExternalJSList = [
   'dynamicAdBoost',
   '51Degrees',
   'symitridap',
+  'wurfl',
   // UserId Submodules
   'justtag',
   'tncId',

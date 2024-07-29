@@ -158,6 +158,18 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          all: {
+            bidders: '*',
+            filter: 'include'
+          }
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -169,6 +181,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -790,6 +803,18 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          iframe: {
+            bidders: ['dailymotion'],
+            filter: 'include'
+          }
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -800,6 +825,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -942,6 +968,22 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          image: {
+            bidders: ['dailymotion'],
+            filter: 'include'
+          },
+          iframe: {
+            bidders: ['dailymotion'],
+            filter: 'exclude',
+          },
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -952,6 +994,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -1012,6 +1055,12 @@ describe('dailymotionBidAdapterTests', () => {
       },
     }];
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: false,
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestDataWithApi, {}),
@@ -1025,6 +1074,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.false;
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.false;
     expect(reqData.bidder_request).to.eql({
       gdprConsent: {
         apiVersion: 1,
