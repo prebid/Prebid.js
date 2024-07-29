@@ -34,7 +34,7 @@ function getIdFromAPI() {
           } catch (error) {
             logError(error);
             const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-            callback(fallbackValue)
+            callback(fallbackValue);
           }
 
           if (responseObj && responseObj[NAVEGG_ID]) {
@@ -48,11 +48,11 @@ function getIdFromAPI() {
       error => {
         logError('Navegg ID fetch encountered an error', error);
         const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-        callback(fallbackValue)
+        callback(fallbackValue);
       },
       {method: 'GET', withCredentials: false});
   };
-  return resp
+  return resp;
 }
 
 /**
