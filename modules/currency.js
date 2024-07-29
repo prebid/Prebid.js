@@ -170,7 +170,7 @@ function initCurrency() {
   }
 }
 
-function resetCurrency() {
+export function resetCurrency() {
   if (currencySupportEnabled) {
     getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
     getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();

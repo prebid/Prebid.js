@@ -1,8 +1,8 @@
-import {getValue, formatQS, logError, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
 import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, formatQS, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -73,7 +73,7 @@ export const spec = {
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
-    const currency = config.getConfig('currency.adServerCurrency') || 'TRY';
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || 'TRY';
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {

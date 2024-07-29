@@ -29,3 +29,7 @@ export function currencyNormalizer(toCurrency = null, bestEffort = true, convert
 export function currencyCompare(get = (obj) => [obj.cpm, obj.currency], normalize = currencyNormalizer()) {
   return keyCompare(obj => normalize.apply(null, get(obj)))
 }
+
+export function getCurrencyFromBidderRequest(bidderRequest) {
+  return (bidderRequest?.ortb2?.cur || [])[0];
+}

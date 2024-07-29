@@ -15,6 +15,7 @@ import {
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
 
 const { getConfig } = config;
 
@@ -114,7 +115,7 @@ export const spec = {
       setOnAny(validBidRequests, 'params.priceType') ||
       'net';
     const tid = bidderRequest.ortb2?.source?.tid;
-    const currency = getConfig('currency.adServerCurrency');
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const schain = setOnAny(validBidRequests, 'schain');

@@ -4,6 +4,8 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {NATIVE} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import prebid from '../../../package.json';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
@@ -248,14 +250,12 @@ describe('AdgenerationAdapter', function () {
       config.resetConfig();
     });
     it('allows setConfig to set bidder currency for USD', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'USD'
-        }
+      setCurrencyConfig({ adServerCurrency: 'USD' });
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        const bidRequest = spec.buildRequests(bidRequests, res)[0];
+        expect(bidRequest.data).to.equal(data.bannerUSD);
+        setCurrencyConfig({});
       });
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data).to.equal(data.bannerUSD);
-      config.resetConfig();
     });
   });
   describe('interpretResponse', function () {

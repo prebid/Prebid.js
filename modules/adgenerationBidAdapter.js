@@ -1,10 +1,9 @@
-import {deepAccess, getBidIdParameter} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
+import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { deepAccess, getBidIdParameter } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -61,7 +60,7 @@ export const spec = {
       data = tryAppendQueryString(data, 't', 'json3');
       data = tryAppendQueryString(data, 'transactionid', validReq.ortb2Imp?.ext?.tid);
       data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
-      data = tryAppendQueryString(data, 'currency', getCurrencyType());
+      data = tryAppendQueryString(data, 'currency', getCurrencyType(bidderRequest));
       data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
       data = tryAppendQueryString(data, 'sdkname', 'prebidjs');
       data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
@@ -119,7 +118,7 @@ export const spec = {
       height: body.h ? body.h : 1,
       creativeId: body.creativeid || '',
       dealId: body.dealid || '',
-      currency: getCurrencyType(),
+      currency: getCurrencyType(bidRequests.bidRequest),
       netRevenue: true,
       ttl: body.ttl || 10,
     };
@@ -304,9 +303,11 @@ function getSizes(validReq) {
 /**
  * @return {?string} USD or JPY
  */
-function getCurrencyType() {
-  if (config.getConfig('currency.adServerCurrency') && config.getConfig('currency.adServerCurrency').toUpperCase() === 'USD') return 'USD';
-  return 'JPY';
+function getCurrencyType(bidderRequest) {
+  if (!Array.isArray(bidderRequest.ortb2?.cur)) return 'JPY';
+  const [currency] = bidderRequest.ortb2.cur;
+  if (currency.toUpperCase() === 'USD') return 'USD';
+  return 'JPY'; 
 }
 
 /**
