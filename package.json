@@ -2,16 +2,7 @@
   "name": "prebid.js",
   "version": "9.7.0-pre",
   "description": "Header Bidding Management Library",
-  "main": "src/prebid.public.js",
-  "exports": {
-    ".": "./src/prebid.public.js",
-    "./prebid.js": "./src/prebid.public.js",
-    "./prebid": "./src/prebid.public.js",
-    "./.babelrc.js": "./.babelrc.js",
-    "./babelConfig.js": "./babelConfig.js",
-    "./modules/*": "./modules/*",
-    "./modules/*.js": "./modules/*.js"
-  },
+  "main": "src/prebid.js",
   "scripts": {
     "serve": "gulp serve",
     "test": "gulp test",
