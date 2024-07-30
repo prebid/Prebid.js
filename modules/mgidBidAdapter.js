@@ -56,6 +56,8 @@ const DEFAULT_IMAGE_HEIGHT = 328;
 const DEFAULT_ICON_WIDTH = 50;
 const DEFAULT_ICON_HEIGHT = 50;
 const DEFAULT_TITLE_LENGTH = 80;
+const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
+const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
 
 let isInvalidNativeRequest = false;
 
@@ -370,7 +372,7 @@ export const spec = {
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
     logInfo(LOG_INFO_PREFIX + `getUserSyncs`);
     const spb = isPlainObject(config.getConfig('userSync')) &&
-        isNumber(config.getConfig('userSync').syncsPerBidder)
+      isNumber(config.getConfig('userSync').syncsPerBidder)
       ? config.getConfig('userSync').syncsPerBidder : USERSYNC_DEFAULT_CONFIG.syncsPerBidder;
 
     if (spb > 0 && isPlainObject(syncOptions) && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
@@ -407,14 +409,14 @@ export const spec = {
       if (syncOptions.iframeEnabled) {
         syncs.push({
           type: 'iframe',
-          url: 'https://cm.mgid.com/i.html?' + q.replace('{cbuster}', Math.round(new Date().getTime()))
+          url: IFRAME_SYNC_URL + '?' + q.replace('{cbuster}', Math.round(new Date().getTime()))
         });
       } else if (syncOptions.pixelEnabled) {
         if (pixels.length === 0) {
           for (let i = 0; i < spb; i++) {
             syncs.push({
               type: 'image',
-              url: 'https://cm.mgid.com/i.gif?' + q.replace('{cbuster}', Math.round(new Date().getTime())) // randomly selects partner if sync required
+              url: PIXEL_SYNC_URL + '?' + q.replace('{cbuster}', Math.round(new Date().getTime())) // randomly selects partner if sync required
             });
           }
         } else {
@@ -531,7 +533,7 @@ function createBannerRequest(bid) {
   if (sizes.length > 1) {
     for (let f = 0; f < sizes.length; f++) {
       if (sizes[f].length === 2) {
-        format.push({w: sizes[f][0], h: sizes[f][1]});
+        format.push({ w: sizes[f][0], h: sizes[f][1] });
       }
     }
   }
@@ -776,5 +778,5 @@ function getBidFloor(bid, cur) {
   if (reqCur === cur) {
     cur = ''
   }
-  return {floor: bidFloor, cur: cur}
+  return { floor: bidFloor, cur: cur }
 }
