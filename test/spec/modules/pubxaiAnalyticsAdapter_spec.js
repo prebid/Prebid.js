@@ -31,9 +31,10 @@ describe('pubxai analytics adapter', () => {
   });
 
   describe('track', () => {
+    const pubxId = '6c415fc0-8b0e-4cf5-be73-01526a4db625'
     let initOptions = {
       samplingRate: '1',
-      pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625',
+      pubxId: pubxId,
     };
 
     let originalVS;
@@ -148,7 +149,7 @@ describe('pubxai analytics adapter', () => {
         timeout: 1000,
         config: {
           samplingRate: '1',
-          pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625',
+          pubxId: pubxId,
         },
       },
       bidRequested: {
@@ -529,7 +530,7 @@ describe('pubxai analytics adapter', () => {
             null,
           auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
           sizes: '300x250',
-          renderStatus: 2,
+          bidType: 2,
           requestTimestamp: 1616654312804,
           creativeId: 96846035,
           currency: 'USD',
@@ -651,7 +652,7 @@ describe('pubxai analytics adapter', () => {
         placementId: 13144370,
         renderedSize: '300x250',
         sizes: '300x250',
-        renderStatus: 4,
+        bidType: 4,
         responseTimestamp: 1616654313071,
         requestTimestamp: 1616654312804,
         status: 'rendered',
@@ -758,7 +759,7 @@ describe('pubxai analytics adapter', () => {
         const [expectedUrl, expectedData] = arg;
         const parsedUrl = new URL(expectedUrl);
         expect(parsedUrl.pathname).to.equal(
-          ['/analytics/bidwon', '/analytics/auction'][index]
+          [`/analytics/${pubxId}/bidwon`, `/analytics/${pubxId}/auction`][index]
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
@@ -800,7 +801,7 @@ describe('pubxai analytics adapter', () => {
       // Step 7: check the pathname of the calls is correct (sent only to the auction endpoint)
       const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
       const parsedUrl = new URL(expectedUrl);
-      expect(parsedUrl.pathname).to.equal('/analytics/auction');
+      expect(parsedUrl.pathname).to.equal(`/analytics/${pubxId}/auction`);
 
       // Step 8: check that the meta information in the call is correct
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
@@ -926,7 +927,7 @@ describe('pubxai analytics adapter', () => {
         const parsedUrl = new URL(expectedUrl);
         const auctionIdMapFn = index < 2 ? (i, _) => i : replaceProperty;
         expect(parsedUrl.pathname).to.equal(
-          ['/analytics/bidwon', '/analytics/auction'][index % 2]
+          [`/analytics/${pubxId}/bidwon`, `/analytics/${pubxId}/auction`][index % 2]
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
@@ -1042,7 +1043,7 @@ describe('pubxai analytics adapter', () => {
         const [expectedUrl, expectedData] = arg;
         const parsedUrl = new URL(expectedUrl);
         expect(parsedUrl.pathname).to.equal(
-          ['/analytics/bidwon', '/analytics/auction'][index]
+          [`/analytics/${pubxId}/bidwon`, `/analytics/${pubxId}/auction`][index]
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',

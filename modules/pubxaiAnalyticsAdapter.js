@@ -20,8 +20,6 @@ const analyticsType = 'endpoint';
 const adapterCode = 'pubxai';
 const pubxaiAnalyticsVersion = 'v2.0.0';
 const defaultHost = 'api.pbxai.com';
-const auctionPath = '/analytics/auction';
-const winningBidPath = '/analytics/bidwon';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
 
 /**
@@ -236,9 +234,10 @@ const prepareSend = (auctionId) => {
   if (!shouldFireEventRequest(auctionId, initOptions.samplingRate)) {
     return;
   }
+  const pubxID = initOptions.pubxId;
   [
     {
-      path: winningBidPath,
+      path: `/analytics/${pubxID}/bidwon`,
       requiredKeys: [
         'winningBid',
         'pageDetail',
@@ -253,7 +252,7 @@ const prepareSend = (auctionId) => {
       eventType: 'win',
     },
     {
-      path: auctionPath,
+      path: `/analytics/${pubxID}/auction`,
       requiredKeys: [
         'bids',
         'pageDetail',
