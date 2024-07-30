@@ -1,9 +1,9 @@
-import {config} from './config.js';
-import {klona} from 'klona/json';
-import {includes} from './polyfill.js';
+import { config } from './config.js';
+import { klona } from 'klona/json';
+import { includes } from './polyfill.js';
 import { EVENTS, S2S } from './constants.js';
-import {GreedyPromise} from './utils/promise.js';
-import {getGlobal} from './prebidGlobal.js';
+import { GreedyPromise } from './utils/promise.js';
+import { getGlobal } from './prebidGlobal.js';
 import { default as deepAccess } from 'dlv/index.js';
 
 export { deepAccess };
@@ -172,7 +172,7 @@ export function parseGPTSingleSizeArray(singleSize) {
 }
 
 export function sizeTupleToRtbSize(size) {
-  return {w: size[0], h: size[1]};
+  return { w: size[0], h: size[1] };
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -430,7 +430,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
       let insertBeforeEl = asLastChildChild ? null : parentEl.firstChild;
       return parentEl.insertBefore(elm, insertBeforeEl);
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 /**
@@ -444,7 +444,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
   return new GreedyPromise((resolve) => {
-    const onLoad = function() {
+    const onLoad = function () {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
       if (timer != null) {
@@ -689,7 +689,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, {AUCTION_PRICE: cpm})
+  return replaceMacros(str, { AUCTION_PRICE: cpm })
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -786,7 +786,7 @@ export function delayExecution(func, numRequiredCalls) {
  * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
  */
 export function groupBy(xs, key) {
-  return xs.reduce(function(rv, x) {
+  return xs.reduce(function (rv, x) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
@@ -874,7 +874,7 @@ export function isAdUnitCodeMatchingSlot(slot) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' }).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
@@ -1000,7 +1000,7 @@ export function buildUrl(obj) {
  * @param {boolean} [options.checkTypes=false] - If set, two objects with identical properties but different constructors will *not* be considered equivalent.
  * @returns {boolean} - Returns `true` if the objects are equivalent, `false` otherwise.
  */
-export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
+export function deepEqual(obj1, obj2, { checkTypes = false } = {}) {
   if (obj1 === obj2) return true;
   else if (
     (typeof obj1 === 'object' && obj1 !== null) &&
@@ -1011,7 +1011,7 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
     if (props1.length !== Object.keys(obj2).length) return false;
     for (let prop of props1) {
       if (obj2.hasOwnProperty(prop)) {
-        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
+        if (!deepEqual(obj1[prop], obj2[prop], { checkTypes })) {
           return false;
         }
       } else {
@@ -1069,7 +1069,7 @@ export function mergeDeep(target, ...sources) {
 export function cyrb53Hash(str, seed = 0) {
   // IE doesn't support imul
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul#Polyfill
-  let imul = function(opA, opB) {
+  let imul = function (opA, opB) {
     if (isFn(Math.imul)) {
       return Math.imul(opA, opB);
     } else {
@@ -1107,7 +1107,7 @@ export function cyrb53Hash(str, seed = 0) {
 export function safeJSONParse(data) {
   try {
     return JSON.parse(data);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 export function safeJSONEncode(data) {
@@ -1162,7 +1162,7 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
  */
 export function convertObjectToArray(obj) {
   return Object.keys(obj).map(key => {
-    return {[key]: obj[key]};
+    return { [key]: obj[key] };
   });
 }
 
@@ -1257,4 +1257,22 @@ export function setOnAny(collection, key) {
     }
   }
   return undefined;
+}
+
+export function extractDomainFromHost(pageHost) {
+  let domain = null;
+  try {
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+  } catch (e) {
+    domain = null;
+  }
+  return domain;
 }

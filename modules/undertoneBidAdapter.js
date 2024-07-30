@@ -2,9 +2,9 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { deepAccess, parseUrl, extractDomainFromHost } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -24,24 +24,6 @@ function getBidFloor(bidRequest, mediaType) {
   });
 
   return (floor && floor.currency === 'USD' && floor.floor) || 0;
-}
-
-function extractDomainFromHost(pageHost) {
-  let domain = null;
-  try {
-    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
-    if (domains != null && domains.length > 0) {
-      domain = domains[0];
-      for (let i = 1; i < domains.length; i++) {
-        if (domains[i].length > domain.length) {
-          domain = domains[i];
-        }
-      }
-    }
-  } catch (e) {
-    domain = null;
-  }
-  return domain;
 }
 
 function getGdprQueryParams(gdprConsent) {
@@ -78,13 +60,13 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);
       return true;
     }
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
     const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
     const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
@@ -168,7 +150,7 @@ export const spec = {
       data: JSON.stringify(payload)
     };
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const bids = [];
     const body = serverResponse.body;
 
@@ -198,7 +180,7 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
     let gdprParams = getGdprQueryParams(gdprConsent);
@@ -230,10 +212,10 @@ export const spec = {
         type: 'image',
         url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
       },
-      {
-        type: 'image',
-        url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
-      });
+        {
+          type: 'image',
+          url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
+        });
     }
     return syncs;
   }

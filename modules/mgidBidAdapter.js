@@ -12,6 +12,7 @@ import {
   isFn,
   isNumber,
   isBoolean,
+  extractDomainFromHost,
   isInteger, deepSetValue, getBidIdParameter, setOnAny
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -233,7 +234,7 @@ export const spec = {
     const page = deepAccess(bidderRequest, 'refererInfo.page') || info.location
     if (!isStr(deepAccess(request.site, 'domain'))) {
       const hostname = parseUrl(page).hostname;
-      request.site.domain = extractDomainFromHost(hostname) || hostname
+      request.site.domain = extractDomainFromHostExceptLocalhost(hostname) || hostname
     }
     if (!isStr(deepAccess(request.site, 'page'))) {
       request.site.page = page
@@ -481,25 +482,11 @@ function setMediaType(bid, newBid) {
   }
 }
 
-function extractDomainFromHost(pageHost) {
+function extractDomainFromHostExceptLocalhost(pageHost) {
   if (pageHost === 'localhost') {
     return 'localhost'
   }
-  let domain = null;
-  try {
-    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
-    if (domains != null && domains.length > 0) {
-      domain = domains[0];
-      for (let i = 1; i < domains.length; i++) {
-        if (domains[i].length > domain.length) {
-          domain = domains[i];
-        }
-      }
-    }
-  } catch (e) {
-    domain = null;
-  }
-  return domain;
+  return extractDomainFromHost(pageHost)
 }
 
 function getLanguage() {
