@@ -40,7 +40,7 @@ describe('AdmixerAdapter', function () {
     let rtbBid = {
       bidder: RTB_BIDDER_CODE,
       params: {
-        endpointId: ENDPOINT_ID,
+        tagId: ENDPOINT_ID,
       },
       adUnitCode: 'adunit-code',
       sizes: [
@@ -133,7 +133,7 @@ describe('AdmixerAdapter', function () {
         {
           bidder: bidder,
           params: bidder === 'rtbstack' ? {
-            endpointId: ENDPOINT_ID
+            tagId: ENDPOINT_ID
           } : {
             zone: ZONE_ID,
           },
