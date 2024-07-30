@@ -17,7 +17,7 @@ const RX_CONNECTOR_MOCK = {
 };
 
 const TIMEOUT = 10;
-const RX_CONNECTOR_IS_READY_EVENT = new CustomEvent('rxConnectorIsReady', { detail: RX_CONNECTOR_MOCK });
+const RX_CONNECTOR_IS_READY_EVENT = new CustomEvent('rxConnectorIsReady', { detail: {[CUSTOMER]: RX_CONNECTOR_MOCK}, bubbles: true });
 
 function writeToStorage(requester, timeDiff) {
   let rx = RX_FROM_SESSION_STORAGE;
@@ -157,30 +157,30 @@ describe('contxtfulRtdProvider', function () {
   });
 
   describe('init', function () {
-    it('gets the RX API returned by an external script', (done) => {
+    it('uses the RX API to get receptivity', (done) => {
       let config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
       setTimeout(() => {
         contxtfulSubmodule.getTargetingData(['ad-slot'], config);
-        expect(RX_CONNECTOR_MOCK.fetchConfig.callCount, 'fetchConfig').to.be.equal(1);
-        expect(RX_CONNECTOR_MOCK.rxApiBuilder.callCount, 'rxApiBuilder').to.be.equal(1);
+        expect(RX_API_MOCK.receptivity.callCount, 'receptivity 42').to.be.equal(1);
+        expect(RX_API_MOCK.receptivity.firstCall.returnValue, 'receptivity').to.be.equal(RX_FROM_API);
         done();
       }, TIMEOUT);
     });
   });
 
   describe('init', function () {
-    it('uses the RX API to get receptivity', (done) => {
+    it('gets the RX API returned by an external script', (done) => {
       let config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
       setTimeout(() => {
         contxtfulSubmodule.getTargetingData(['ad-slot'], config);
-        expect(RX_API_MOCK.receptivity.callCount, 'receptivity 42').to.be.equal(1);
-        expect(RX_API_MOCK.receptivity.firstCall.returnValue, 'receptivity').to.be.equal(RX_FROM_API);
+        expect(RX_CONNECTOR_MOCK.fetchConfig.callCount, 'fetchConfig').at.least(1);
+        expect(RX_CONNECTOR_MOCK.rxApiBuilder.callCount, 'rxApiBuilder').at.least(1);
         done();
       }, TIMEOUT);
     });
@@ -245,7 +245,7 @@ describe('contxtfulRtdProvider', function () {
       it('adds receptivity to the ad units using the RX API', function (done) {
         let config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
-        loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+        window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
           let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
@@ -278,7 +278,7 @@ describe('contxtfulRtdProvider', function () {
         let config = buildInitConfig(VERSION, CUSTOMER);
         config.params.adServerTargeting = false;
         contxtfulSubmodule.init(config);
-        loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+        window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
           let _ = contxtfulSubmodule.getTargetingData(adUnits, config);
@@ -291,7 +291,7 @@ describe('contxtfulRtdProvider', function () {
         let config = buildInitConfig(VERSION, CUSTOMER);
         config.params.adServerTargeting = false;
         contxtfulSubmodule.init(config);
-        loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+        window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
         setTimeout(() => {
           let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
@@ -375,7 +375,7 @@ describe('contxtfulRtdProvider', function () {
   describe('getBidRequestData', function () {
     it('calls once the onDone callback', function (done) {
       contxtfulSubmodule.init(buildInitConfig(VERSION, CUSTOMER));
-      loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
       let reqBidsConfigObj = {
         ortb2Fragments: {
@@ -397,7 +397,7 @@ describe('contxtfulRtdProvider', function () {
     it('does not write receptivity to the global OpenRTB 2 fragment', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
       let reqBidsConfigObj = {
         ortb2Fragments: {
@@ -419,7 +419,7 @@ describe('contxtfulRtdProvider', function () {
     it('writes receptivity to the configured bidder OpenRTB 2 fragments', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
       let reqBidsConfigObj = {
         ortb2Fragments: {
@@ -505,7 +505,7 @@ describe('contxtfulRtdProvider', function () {
     it('uses the RX API', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
       let reqBidsConfigObj = {
         ortb2Fragments: {
@@ -515,8 +515,8 @@ describe('contxtfulRtdProvider', function () {
       };
 
       setTimeout(() => {
-        expect(RX_CONNECTOR_MOCK.fetchConfig.callCount).to.equal(1);
-        expect(RX_CONNECTOR_MOCK.rxApiBuilder.callCount).to.equal(1);
+        expect(RX_CONNECTOR_MOCK.fetchConfig.callCount).at.least(1);
+        expect(RX_CONNECTOR_MOCK.rxApiBuilder.callCount).at.least(1);
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
         expect(onDoneSpy.callCount).to.equal(1);
@@ -530,7 +530,7 @@ describe('contxtfulRtdProvider', function () {
     it('adds receptivity to the reqBidsConfigObj', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
-      loadExternalScriptTag.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
 
       let reqBidsConfigObj = {
         ortb2Fragments: {

@@ -158,7 +158,10 @@ function initCustomer(config) {
 function addConnectorEventListener(tagId, prebidConfig) {
   window.addEventListener(
     'rxConnectorIsReady',
-    async ({ detail: rxConnector }) => {
+    async ({ detail: { [tagId]: rxConnector } }) => {
+      if (!rxConnector) {
+        return;
+      }
       // Fetch the customer configuration
       const { rxApiBuilder, fetchConfig } = rxConnector;
       let config = await fetchConfig(tagId);
