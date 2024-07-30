@@ -1,6 +1,6 @@
 import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
 import { getGlobal } from '../src/prebidGlobal.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
@@ -13,6 +13,10 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = bidRequest.adUnitCode
+    if (imp.ext) imp.ext.placementId = bidRequest.params.placementId
+
+    console.log('bidRequest.getFloor', bidRequest.getFloor)
+
     return imp;
   }
 });
@@ -24,7 +28,7 @@ const GVLID = 263
 
 const TIME_TO_LIVE = 360
 
-const SUPPORTED_AD_TYPES = [BANNER]
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
 const FLOOR_PRICE_CURRENCY = 'USD'
 const PRICE_FLOOR_WILDCARD = '*'
 
@@ -190,6 +194,9 @@ export const spec = {
         floorPriceData[bidRequest.adUnitCode] = bidRequestFloorPriceData
       }
 
+      console.log('bidRequest', bidRequest)
+      const bidFloor = deepAccess(bidRequest, 'params.floors')
+      if (bidFloor) floorPriceData[bidRequest.adUnitCode] = bidFloor
       requestData.processBidRequestData(bidRequest, bidderRequest)
     })
     bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
@@ -284,6 +291,14 @@ export const spec = {
       params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
     }
 
+    // Temp adding ntv_userip
+    params.unshift({ key: 'ntv_userip', value: '2.2.2.2' })
+
+    // console.log('[[[bidderRequest]]]', bidderRequest)
+    // if (bidderRequest.userId) {
+    //   params.unshift({ key: 'user_id', value: bidderRequest.userId })
+    // }
+
     const qsParamStrings = [requestData.getRequestDataQueryString(), arrayToQS(params)]
     const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
 
@@ -337,6 +352,7 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain,
             },
+            mediaType: 'video'
           }
 
           if (bid.ext) extData[bid.id] = bid.ext

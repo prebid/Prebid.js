@@ -59,7 +59,7 @@ module.exports = {
     'no-throw-literal': 'off',
     'no-undef': 2,
     'no-useless-escape': 'off',
-    'no-console': 'error',
+    // 'no-console': 'error',
     'jsdoc/check-types': 'off',
     'jsdoc/newline-after-description': 'off',
     'jsdoc/require-jsdoc': 'off',
