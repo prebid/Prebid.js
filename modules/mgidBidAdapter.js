@@ -600,25 +600,25 @@ function commonNativeRequestObject(nativeAsset, params) {
 function parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
-    let adm = '';
+    let nativeAdm = '';
     try {
-      adm = JSON.parse(bid.adm);
+      nativeAdm = JSON.parse(bid.adm);
     } catch (ex) {
       logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native response for ad response: ' + newBid.adm);
       return;
     }
-    if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
+    if (nativeAdm && nativeAdm.native && nativeAdm.native.assets && nativeAdm.native.assets.length > 0) {
       newBid.mediaType = NATIVE;
-      for (let i = 0, len = adm.native.assets.length; i < len; i++) {
-        switch (adm.native.assets[i].id) {
+      for (let i = 0, len = nativeAdm.native.assets.length; i < len; i++) {
+        switch (nativeAdm.native.assets[i].id) {
           case NATIVE_ASSETS.TITLE.ID:
-            newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
+            newBid.native.title = nativeAdm.native.assets[i].title && nativeAdm.native.assets[i].title.text;
             break;
           case NATIVE_ASSETS.IMAGE.ID:
-            newBid.native.image = copyFromAdmAsset(adm.native.assets[i]);
+            newBid.native.image = copyFromAdmAsset(nativeAdm.native.assets[i]);
             break;
           case NATIVE_ASSETS.ICON.ID:
-            newBid.native.icon = copyFromAdmAsset(adm.native.assets[i]);
+            newBid.native.icon = copyFromAdmAsset(nativeAdm.native.assets[i]);
             break;
           case NATIVE_ASSETS.SPONSOREDBY.ID:
           case NATIVE_ASSETS.SPONSORED.ID:
@@ -628,14 +628,14 @@ function parseNativeResponse(bid, newBid) {
           case NATIVE_ASSETS.BODY.ID:
           case NATIVE_ASSETS.DISPLAYURL.ID:
           case NATIVE_ASSETS.CTA.ID:
-            newBid.native[spec.NATIVE_ASSET_ID_TO_KEY_MAP[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
+            newBid.native[spec.NATIVE_ASSET_ID_TO_KEY_MAP[nativeAdm.native.assets[i].id]] = nativeAdm.native.assets[i].data && nativeAdm.native.assets[i].data.value;
             break;
         }
       }
-      newBid.native.clickUrl = adm.native.link && adm.native.link.url;
-      newBid.native.clickTrackers = (adm.native.link && adm.native.link.clicktrackers) || [];
-      newBid.native.impressionTrackers = adm.native.imptrackers || [];
-      newBid.native.jstracker = adm.native.jstracker || [];
+      newBid.native.clickUrl = nativeAdm.native.link && nativeAdm.native.link.url;
+      newBid.native.clickTrackers = (nativeAdm.native.link && nativeAdm.native.link.clicktrackers) || [];
+      newBid.native.impressionTrackers = nativeAdm.native.imptrackers || [];
+      newBid.native.jstracker = nativeAdm.native.jstracker || [];
       newBid.width = 0;
       newBid.height = 0;
     }
