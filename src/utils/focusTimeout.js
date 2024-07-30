@@ -1,4 +1,4 @@
-let outOfFocusStart;
+let outOfFocusStart = null; // enforce null otherwise it could be undefined and the callback wouldn't execute
 let timeOutOfFocus = 0;
 let suspendedTimeouts = [];
 
@@ -6,9 +6,9 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     outOfFocusStart = Date.now()
   } else {
-    timeOutOfFocus += Date.now() - outOfFocusStart
-    suspendedTimeouts.forEach(({ callback, startTime, setTimerId }) => setTimerId(setFocusTimeout(callback, timeOutOfFocus - startTime)()))
-    outOfFocusStart = null;
+    timeOutOfFocus += Date.now() - (outOfFocusStart ?? 0); // when the page is loaded in hidden state outOfFocusStart is undefined, which results in timeoutOffset being NaN
+    outOfFocusStart = null; // out of focus time should be cleared prior looping the suspendedTimeouts, as the callbacks could reached their timelimit and could be executed immediately
+    suspendedTimeouts.forEach(({ callback, startTime, setTimerId }) => setTimerId(setFocusTimeout(callback, timeOutOfFocus - startTime)()));
   }
 });
 
@@ -21,6 +21,7 @@ document.addEventListener('visibilitychange', () => {
  */
 export default function setFocusTimeout(callback, milliseconds) {
   const startTime = timeOutOfFocus;
+  suspendedTimeouts = suspendedTimeouts.filter((cbObj) => cbObj.callback !== callback); // remove the callback from the suspendedTimeouts, to prevent unbounded growth of the array
   let timerId = setTimeout(() => {
     if (timeOutOfFocus === startTime && outOfFocusStart == null) {
       callback();
