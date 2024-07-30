@@ -14,12 +14,12 @@ import {
   isBoolean,
   isInteger, deepSetValue, getBidIdParameter, setOnAny
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
+import { USERSYNC_DEFAULT_CONFIG } from '../src/userSync.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -30,7 +30,7 @@ import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
@@ -207,7 +207,7 @@ export const spec = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
       site: ortb2Data?.site || {},
       cur: [cur],
-      geo: {utcoffset: info.timeOffset},
+      geo: { utcoffset: info.timeOffset },
       device: ortb2Data?.device || {},
       ext: {
         mgid_ver: spec.VERSION,
@@ -692,18 +692,10 @@ function parseNativeResponse(bid, newBid) {
             newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
             break;
           case NATIVE_ASSETS.IMAGE.ID:
-            newBid.native.image = {
-              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
-              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
-              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
-            };
+            newBid.native.image = copyFromAdmAsset(adm.native.assets[i]);
             break;
           case NATIVE_ASSETS.ICON.ID:
-            newBid.native.icon = {
-              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
-              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
-              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
-            };
+            newBid.native.icon = copyFromAdmAsset(adm.native.assets[i]);
             break;
           case NATIVE_ASSETS.SPONSOREDBY.ID:
           case NATIVE_ASSETS.SPONSORED.ID:
@@ -779,4 +771,12 @@ function getBidFloor(bid, cur) {
     cur = ''
   }
   return { floor: bidFloor, cur: cur }
+}
+
+function copyFromAdmAsset(asset) {
+  return {
+    url: asset.img && asset.img.url,
+    height: asset.img && asset.img.h,
+    width: asset.img && asset.img.w,
+  }
 }
