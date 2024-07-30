@@ -8,6 +8,7 @@ import {
   parseUrl,
   isEmpty,
   triggerPixel,
+  triggerNurlWithCpm,
   logWarn,
   isFn,
   isNumber,
@@ -347,13 +348,9 @@ export const spec = {
   },
   onBidWon: (bid) => {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
-    if (isStr(bid.nurl) && bid.nurl !== '') {
-      bid.nurl = bid.nurl.replace(
-        /\${AUCTION_PRICE}/,
-        cpm
-      );
-      triggerPixel(bid.nurl);
-    }
+
+    triggerNurlWithCpm(bid, cpm)
+
     if (bid.isBurl) {
       if (bid.mediaType === BANNER) {
         bid.ad = bid.ad.replace(

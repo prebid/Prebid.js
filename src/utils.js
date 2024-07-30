@@ -1276,3 +1276,13 @@ export function extractDomainFromHost(pageHost) {
   }
   return domain;
 }
+
+export function triggerNurlWithCpm(bid, cpm) {
+  if (isStr(bid.nurl) && bid.nurl !== '') {
+    bid.nurl = bid.nurl.replace(
+      /\${AUCTION_PRICE}/,
+      cpm
+    );
+    triggerPixel(bid.nurl);
+  }
+}

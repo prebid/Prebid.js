@@ -3,7 +3,7 @@ import {
   isStr,
   deepAccess,
   getWindowTop,
-  triggerPixel
+  triggerNurlWithCpm
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -145,10 +145,7 @@ export const spec = {
 
   onBidWon: (bid) => {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
-    if (isStr(bid.nurl) && bid.nurl !== '') {
-      bid.nurl = bid.nurl.replace(/\${AUCTION_PRICE}/, cpm);
-      triggerPixel(bid.nurl);
-    }
+    triggerNurlWithCpm(bid, cpm)
   }
 };
 
