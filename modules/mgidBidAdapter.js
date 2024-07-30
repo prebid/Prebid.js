@@ -16,12 +16,12 @@ import {
   extractDomainFromHost,
   isInteger, deepSetValue, getBidIdParameter, setOnAny
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { USERSYNC_DEFAULT_CONFIG } from '../src/userSync.js';
+import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -209,7 +209,7 @@ export const spec = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
       site: ortb2Data?.site || {},
       cur: [cur],
-      geo: { utcoffset: info.timeOffset },
+      geo: {utcoffset: info.timeOffset},
       device: ortb2Data?.device || {},
       ext: {
         mgid_ver: spec.VERSION,
@@ -456,7 +456,7 @@ function createBannerRequest(bid) {
   if (sizes.length > 1) {
     for (let f = 0; f < sizes.length; f++) {
       if (sizes[f].length === 2) {
-        format.push({ w: sizes[f][0], h: sizes[f][1] });
+        format.push({w: sizes[f][0], h: sizes[f][1]});
       }
     }
   }
@@ -693,7 +693,7 @@ function getBidFloor(bid, cur) {
   if (reqCur === cur) {
     cur = ''
   }
-  return { floor: bidFloor, cur: cur }
+  return {floor: bidFloor, cur: cur}
 }
 
 function copyFromAdmAsset(asset) {
