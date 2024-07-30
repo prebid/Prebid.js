@@ -2,9 +2,9 @@
  * Adapter to send bids to Undertone
  */
 
-import { deepAccess, parseUrl, extractDomainFromHost } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {deepAccess, parseUrl, extractDomainFromHost} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -60,13 +60,13 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function (bid) {
+  isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);
       return true;
     }
   },
-  buildRequests: function (validBidRequests, bidderRequest) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
     const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
     const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
@@ -150,7 +150,7 @@ export const spec = {
       data: JSON.stringify(payload)
     };
   },
-  interpretResponse: function (serverResponse, request) {
+  interpretResponse: function(serverResponse, request) {
     const bids = [];
     const body = serverResponse.body;
 
@@ -180,7 +180,7 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, usPrivacy) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
     let gdprParams = getGdprQueryParams(gdprConsent);
@@ -212,10 +212,10 @@ export const spec = {
         type: 'image',
         url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
       },
-        {
-          type: 'image',
-          url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
-        });
+      {
+        type: 'image',
+        url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
+      });
     }
     return syncs;
   }
