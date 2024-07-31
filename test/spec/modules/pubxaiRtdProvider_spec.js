@@ -142,7 +142,7 @@ describe('pubxaiRtdProvider', () => {
     let storageStub;
 
     beforeEach(() => {
-      storageStub = sinon.stub(getStorageManager({ moduleType: 'rtd', moduleName: 'pubxai' }), 'getDataFromLocalStorage');
+      storageStub = sinon.stub(getStorageManager({ moduleType: 'rtd', moduleName: 'pubxai' }), 'getDataFromSessionStorage');
     });
 
     afterEach(() => {
