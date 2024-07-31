@@ -245,6 +245,39 @@ function _getFloor(mediaTypes, staticBidFloor, bid) {
 }
 
 /**
+ * Retrieves the device data from the ORTB2 object
+ * @param {Object} ortb2Data ORTB2 object
+ * @returns {Object} Device data
+ */
+function _getDeviceData(ortb2Data) {
+  const _device = deepAccess(ortb2Data, 'device') || {};
+
+  // set device data params from ortb2
+  const _deviceRequestParams = {
+    ua: _device.ua,
+    dnt: _device.dnt,
+    os: _device.os,
+    osv: _device.osv,
+    dt: _device.devicetype,
+    lang: _device.language,
+    make: _device.make,
+    model: _device.model,
+    ppi: _device.ppi,
+    pxratio: _device.pxratio,
+    foddid: _device?.ext?.fiftyonedegrees_deviceId,
+  };
+
+  // return device data params with only non-empty values
+  return Object.keys(_deviceRequestParams)
+    .reduce((r, key) => {
+      if (_deviceRequestParams[key] !== undefined) {
+        r[key] = _deviceRequestParams[key];
+      }
+      return r;
+    }, {});
+}
+
+/**
  * loops through bannerSizes array to get greatest slot dimensions
  * @param {number[][]} sizes
  * @returns {number[]}
@@ -433,6 +466,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
+    Object.assign(
+      data,
+      _getBrowserParams(topWindowUrl),
+      _getDeviceData(bidderRequest?.ortb2),
+    );
 
     bids.push({
       id: bidId,
@@ -443,7 +481,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl))
+      data
     });
   });
   return bids;
