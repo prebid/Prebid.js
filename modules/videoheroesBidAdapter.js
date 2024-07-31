@@ -51,7 +51,7 @@ export const spec = {
       id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(adUnit => prepareImpression(adUnit)),
       site: prepareSite(validBidRequests[0], bidderRequest),
-      device: bidderRequest.ortb2.device || {};
+      device: bidderRequest.ortb2.device || {},
       tmax: bidderRequest.timeout,
       cur: [ CUR ],
       user: { ext: {} },
