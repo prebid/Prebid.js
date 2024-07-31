@@ -5,14 +5,16 @@ SourceNode otherWindow() {
  result = globalVarRef("top") or
  result = globalVarRef("self") or
  result = globalVarRef("parent") or
- result = globalVarRef("frames").getAPropertyRead()
+ result = globalVarRef("frames").getAPropertyRead() or
+ result = DOM::documentRef().getAPropertyRead("defaultView")
 }
 
 SourceNode connectedWindow(SourceNode win) {
   result = win.getAPropertyRead("self") or
   result = win.getAPropertyRead("top") or
   result = win.getAPropertyRead("parent") or
-  result = win.getAPropertyRead("frames").getAPropertyRead()
+  result = win.getAPropertyRead("frames").getAPropertyRead() or
+  result = win.getAPropertyRead("document").getAPropertyRead("defaultView")
 }
 
 SourceNode relatedWindow(SourceNode win) {
