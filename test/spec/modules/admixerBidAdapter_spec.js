@@ -101,11 +101,13 @@ describe('AdmixerAdapter', function () {
       },
     };
 
-    it('should add referrer and imp to be equal bidRequest', function () {
+    it('should add referrer and imp to be equal bidRequest with bid floor', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = request.data;
+      const expectedPayload = {...validRequest[0]};
+      expectedPayload.bidFloor = 0;
       expect(payload.referrer).to.not.be.undefined;
-      expect(payload.imps[0]).to.deep.equal(validRequest[0]);
+      expect(payload.imps[0]).to.deep.equal(expectedPayload);
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
@@ -226,7 +228,7 @@ describe('AdmixerAdapter', function () {
       },
     };
     it('gets floor', function () {
-      bidderRequest.getFloor = () => {
+      validRequest[0].getFloor = () => {
         return { floor: 0.6 };
       };
       const request = spec.buildRequests(validRequest, bidderRequest);
