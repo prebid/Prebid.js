@@ -117,9 +117,11 @@ export const spec = {
     return pixels;
   }
 };
+
 function getEndpointUrl(code) {
   return find(ALIASES, (val) => val.code === code)?.endpoint || ENDPOINT_URL;
 }
+
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidFloor', 0);
