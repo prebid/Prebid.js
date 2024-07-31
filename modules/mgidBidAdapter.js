@@ -22,7 +22,6 @@ import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
-import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js' 
 
 /**
