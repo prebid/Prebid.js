@@ -2,6 +2,7 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import { deepAccess } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
 /**
  * This RTD module has a dependency on the priceFloors module.
@@ -17,7 +18,7 @@ export const FloorsApiStatus = Object.freeze({
   SUCCESS: 'SUCCESS',
   ERROR: 'ERROR',
 });
-const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode });
+const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 export const FLOORS_EVENT_HANDLE = 'floorsApi';
 export const FLOORS_END_POINT = 'https://floor.pbxai.com/';
 export const FLOOR_PROVIDER = 'PubxFloorProvider';
