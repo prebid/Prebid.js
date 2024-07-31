@@ -87,6 +87,7 @@
       "jwplayerRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
+      "mobianRtdProvider",
       "neuwoRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
@@ -99,7 +100,8 @@
       "sirdataRtdProvider",
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider",
+      "wurflRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",

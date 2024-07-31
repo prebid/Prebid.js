@@ -11,3 +11,10 @@ export const DFP_ENDPOINT = {
   host: 'securepubads.g.doubleclick.net',
   pathname: '/gampad/ads'
 }
+
+export const setGdprConsent = (gdprConsent, queryParams) => {
+  if (!gdprConsent) { return; }
+  if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
+  if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
+  if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
+}

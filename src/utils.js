@@ -1110,6 +1110,14 @@ export function safeJSONParse(data) {
   } catch (e) {}
 }
 
+export function safeJSONEncode(data) {
+  try {
+    return JSON.stringify(data);
+  } catch (e) {
+    return '';
+  }
+}
+
 /**
  * Returns a memoized version of `fn`.
  *

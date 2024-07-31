@@ -24,7 +24,7 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     return bid.bidder === 'rtbstack'
-      ? !!bid.params.endpointId
+      ? !!bid.params.tagId
       : !!bid.params.zone;
   },
   /**
