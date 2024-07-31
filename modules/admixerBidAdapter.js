@@ -77,7 +77,7 @@ export const spec = {
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
       imp.ortb2 && delete imp.ortb2;
       let bidFloor = getBidFloor(bid);
-      if(bidFloor){
+      if(bidFloor) {
         imp.bidFloor = bidFloor;
       }
       payload.imps.push(imp);
