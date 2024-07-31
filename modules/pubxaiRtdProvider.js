@@ -115,7 +115,7 @@ export const fetchFloorRules = async (provider) => {
     } else {
       // Fetch from local storage
       try {
-        const localData = storage.getDataFromLocalStorage('pubx:dynamicFloors') || window.__pubxDynamicFloors__;
+        const localData = storage.getDataFromSessionStorage('pubx:dynamicFloors') || window.__pubxDynamicFloors__;
         if (localData) {
           resolve(JSON.parse(localData));
         } else {
