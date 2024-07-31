@@ -25,22 +25,26 @@ export function buildVideoUrl(options) {
   const isURL = /^(https?:\/\/)/i;
   const adUnit = options.adUnit;
   const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
+  const allTargetingData = getAllTargetingData(options);
+  const cust_params = options.params.cust_params;
+  let iu = options.params.iu;
 
-  if (isURL.test(options.params.iu)) {
-    const url = new URL(options.params?.iu);
+  if (isURL.test(iu)) {
+    iu = appendCustParams(iu, cust_params);
+    const url = new URL(iu);
 
-    for (const [key, value] of Object.entries(bid.adserverTargeting)) {
+    for (const [key, value] of Object.entries({...allTargetingData, ...bid.adserverTargeting})) {
       url.searchParams.append(key, value);
     }
 
-    return decodeURIComponent(url.href);
+    return url.toString();
   }
 
   const search = {
-    iu: options.params.iu,
+    iu,
   };
 
-  for (const [key, value] of Object.entries(bid.adserverTargeting)) {
+  for (const [key, value] of Object.entries({...allTargetingData, ...bid.adserverTargeting})) {
     if (!search.hasOwnProperty(key) && value && typeof value === 'string') {
       search[key] = value;
     }
@@ -52,6 +56,43 @@ export function buildVideoUrl(options) {
     pathname: '/ads/bid',
     search
   });
+}
+
+function getAllTargetingData(options) {
+  let allTargetingData = {};
+  const adUnit = options && options.adUnit;
+  if (adUnit) {
+    let allTargeting = targeting.getAllTargeting(adUnit.code);
+    allTargetingData = allTargeting ? allTargeting[adUnit.code] : {};
+  }
+
+  return allTargetingData;
+}
+
+function appendCustParams(iu, cust_params) {
+  if (iu.includes('cust_params')) {
+    const [url, search] = iu.split('?');
+    const searchParams = new URLSearchParams(search);
+    const merged = searchParams.get('cust_params') + "%26" + mergeCustParams();
+
+    searchParams.delete('cust_params');
+    searchParams.set('cust_params', merged);
+
+    return url + '?' + searchParams.toString();
+  } else {
+    iu += "&cust_params=" + mergeCustParams();
+  }
+
+  function mergeCustParams() {
+    let customParams = [];
+    for (const [key, value] of Object.entries(cust_params)) {
+      if (!iu.includes(key)) {
+        customParams.push(key + "=" + value);
+      }
+    }
+
+    return customParams.join("&");
+  }
 }
 
 registerVideoSupport('targetVideo', {
