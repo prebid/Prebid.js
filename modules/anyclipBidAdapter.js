@@ -44,8 +44,9 @@ function isBidRequestValid(bid) {
 /**
  * Make a server request from the list of BidRequests.
  *
- * @param {validBidRequest?pbjs_debug=trues[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
+ * @param validBidRequests
+ * @param bidderRequest
  */
 function buildRequests(validBidRequests, bidderRequest) {
   const {refererInfo = {}, gdprConsent = {}, uspConsent} = bidderRequest;
@@ -122,6 +123,7 @@ function buildRequests(validBidRequests, bidderRequest) {
  * Unpack the response from the server into a list of bids.
  *
  * @param {ServerResponse} serverResponse A successful response from the server.
+ * @param bidderRequest
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
 function interpretResponse(serverResponse, {bidderRequest}) {
@@ -153,6 +155,8 @@ function interpretResponse(serverResponse, {bidderRequest}) {
  *
  * @param {SyncOptions} syncOptions Which user syncs are allowed?
  * @param {ServerResponse[]} serverResponses List of server's responses.
+ * @param gdprConsent The GDPR consent parameters
+ * @param uspConsent The USP consent parameters
  * @return {UserSync[]} The user syncs which should be dropped.
  */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
