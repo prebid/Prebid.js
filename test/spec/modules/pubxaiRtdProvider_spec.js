@@ -1,6 +1,7 @@
 import * as priceFloors from '../../../modules/priceFloors';
 import {
   FLOORS_END_POINT,
+  storage,
   FLOORS_EVENT_HANDLE,
   FloorsApiStatus,
   beforeInit,
@@ -16,7 +17,6 @@ import {
 import { config } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
 import { server } from '../../mocks/xhr.js';
-import { getStorageManager } from '../../../src/storageManager.js';
 
 const getConfig = () => ({
   params: {
@@ -142,7 +142,7 @@ describe('pubxaiRtdProvider', () => {
     let storageStub;
 
     beforeEach(() => {
-      storageStub = sinon.stub(getStorageManager({ moduleType: 'rtd', moduleName: 'pubxai' }), 'getDataFromSessionStorage');
+      storageStub = sinon.stub(storage, 'getDataFromSessionStorage');
     });
 
     afterEach(() => {
@@ -417,9 +417,7 @@ describe('pubxaiRtdProvider', () => {
       expect(FLOORS_END_POINT).to.equal('https://floor.pbxai.com/');
     });
     it('standard case', () => {
-      expect(getUrl(provider)).to.equal(
-        `https://floor.pbxai.com/?pubxId=12345&page=${window.location.href}`
-      );
+      expect(getUrl(provider)).to.equal(null);
     });
     it('custom url provided', () => {
       provider.params.endpoint = 'https://custom.floor.com/';

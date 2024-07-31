@@ -18,7 +18,7 @@ export const FloorsApiStatus = Object.freeze({
   SUCCESS: 'SUCCESS',
   ERROR: 'ERROR',
 });
-const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 export const FLOORS_EVENT_HANDLE = 'floorsApi';
 export const FLOORS_END_POINT = 'https://floor.pbxai.com/';
 export const FLOOR_PROVIDER = 'PubxFloorProvider';
