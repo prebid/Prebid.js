@@ -51,7 +51,7 @@ export const spec = {
       id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(adUnit => prepareImpression(adUnit)),
       site: prepareSite(validBidRequests[0], bidderRequest),
-      device: prepareDevice(),
+      device: bidderRequest.ortb2.device || {};
       tmax: bidderRequest.timeout,
       cur: [ CUR ],
       user: { ext: {} },
@@ -223,17 +223,6 @@ function prepareSite(adUnit, request) {
   }
 
   return siteObj;
-}
-
-function prepareDevice() {
-  let deviceObj = {};
-
-  [deviceObj.w, deviceObj.h] = [screen.width, screen.height];
-  deviceObj.language = navigator.language;
-  deviceObj.dnt = navigator.doNotTrack === '1' ? 1 : 0
-  deviceObj.ua = navigator.userAgent;
-
-  return deviceObj;
 }
 
 function prepareConsents(data, request) {
