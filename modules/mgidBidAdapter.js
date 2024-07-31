@@ -22,7 +22,7 @@ import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
-import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js' 
+import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -59,8 +59,6 @@ const DEFAULT_IMAGE_HEIGHT = 328;
 const DEFAULT_ICON_WIDTH = 50;
 const DEFAULT_ICON_HEIGHT = 50;
 const DEFAULT_TITLE_LENGTH = 80;
-const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
-const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
 
 let isInvalidNativeRequest = false;
 
