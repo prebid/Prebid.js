@@ -1258,3 +1258,31 @@ export function setOnAny(collection, key) {
   }
   return undefined;
 }
+
+export function extractDomainFromHost(pageHost) {
+  let domain = null;
+  try {
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+  } catch (e) {
+    domain = null;
+  }
+  return domain;
+}
+
+export function triggerNurlWithCpm(bid, cpm) {
+  if (isStr(bid.nurl) && bid.nurl !== '') {
+    bid.nurl = bid.nurl.replace(
+      /\${AUCTION_PRICE}/,
+      cpm
+    );
+    triggerPixel(bid.nurl);
+  }
+}
