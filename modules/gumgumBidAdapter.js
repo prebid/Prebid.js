@@ -85,6 +85,7 @@ function _getBrowserParams(topWindowUrl) {
     sw: topScreen.width,
     sh: topScreen.height,
     pu: stripGGParams(topUrl),
+    wl: window.location.href || '',
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
     jcsi: JSON.stringify(JCSI),
