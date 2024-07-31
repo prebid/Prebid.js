@@ -231,7 +231,7 @@ describe('AdmixerAdapter', function () {
       };
       const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = request.data;
-      expect(payload.bidFloor).to.deep.equal(0.6);
+      expect(payload.imps[0].bidFloor).to.deep.equal(0.6);
     });
   });
 
