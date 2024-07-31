@@ -219,9 +219,9 @@ export const converter = ortbConverter({
     const {bidRequest} = context;
 
     let [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
-
-    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth;
-    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight;
+    // 0 by default to avoid undefined size
+    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth || 0;
+    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight || 0;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
@@ -736,7 +736,7 @@ export const spec = {
     });
 
     if (fledgeAuctionConfigs) {
-      return { bids, fledgeAuctionConfigs };
+      return { bids, paapi: fledgeAuctionConfigs };
     } else {
       return bids;
     }

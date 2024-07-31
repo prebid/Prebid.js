@@ -1,12 +1,11 @@
 import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizesInput, parseUrl} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import {ajax, fetch} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS, STATUS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {includes as strIncludes} from '../src/polyfill.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'yuktamedia';
@@ -37,7 +36,7 @@ const _pageInfo = {
   referer: referer,
   refererDomain: parseUrl(referer).host,
   yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
-  prebidVersion: getGlobal().version
+  prebidVersion: 'v' + 'prebid.version$'
 };
 
 function getParameterByName(param) {
@@ -49,10 +48,6 @@ function getParameterByName(param) {
     }
   );
   return vars[param] ? vars[param] : '';
-}
-
-function isNavigatorSendBeaconSupported() {
-  return ('navigator' in window) && ('sendBeacon' in window.navigator);
 }
 
 function updateSessionId() {
@@ -89,11 +84,14 @@ function send(data, status) {
     hostname: 'analytics-prebid.yuktamedia.com',
     pathname: '/api/bids'
   });
-  if (isNavigatorSendBeaconSupported()) {
-    window.navigator.sendBeacon(yuktamediaAnalyticsRequestUrl, JSON.stringify(data));
-  } else {
+  fetch(yuktamediaAnalyticsRequestUrl, {
+    body: JSON.stringify(data),
+    keepalive: true,
+    withCredentials: true,
+    method: 'POST'
+  }).catch((_e) => {
     ajax(yuktamediaAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
-  }
+  });
 }
 
 var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {

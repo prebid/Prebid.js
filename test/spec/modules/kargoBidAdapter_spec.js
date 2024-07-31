@@ -1832,7 +1832,7 @@ describe('kargo adapter tests', function() {
       });
     });
 
-    it('should return fledgeAuctionConfigs if provided in bid response', function () {
+    it('should return paapi if provided in bid response', function () {
       const auctionConfig = {
         seller: 'https://kargo.com',
         decisionLogicUrl: 'https://kargo.com/decision_logic.js',
@@ -1865,11 +1865,11 @@ describe('kargo adapter tests', function() {
         expect(bid).to.have.property('meta').that.is.an('object');
       });
 
-      // Test properties of fledgeAuctionConfigs
-      expect(result.fledgeAuctionConfigs).to.have.lengthOf(3);
+      // Test properties of paapi
+      expect(result.paapi).to.have.lengthOf(3);
 
       const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
-      result.fledgeAuctionConfigs.forEach(config => {
+      result.paapi.forEach(config => {
         expect(config).to.have.property('bidId');
         expect(expectedBidIds).to.include(config.bidId);
 
@@ -1885,16 +1885,15 @@ describe('kargo adapter tests', function() {
   describe('getUserSyncs', function() {
     let crb = {};
     const clientId = 'random-client-id-string';
-    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=0&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
+    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
 
-    function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=0&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
+    function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
       let syncs = [];
-      for (let i = 0; i < 5; i++) {
-        syncs.push({
-          type: 'iframe',
-          url: baseUrl.replace(/idx=\d+&/, `idx=${i}&`),
-        });
-      }
+
+      syncs.push({
+        type: 'iframe',
+        url: baseUrl
+      });
 
       return syncs;
     }

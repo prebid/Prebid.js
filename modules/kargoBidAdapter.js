@@ -48,7 +48,7 @@ const SUA_ATTRIBUTES = [
 
 const CERBERUS = Object.freeze({
   KEY: 'krg_crb',
-  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}&gpp={GPP_STRING}&gpp_sid={GPP_SID}',
+  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}&gpp={GPP_STRING}&gpp_sid={GPP_SID}',
   SYNC_COUNT: 5,
   PAGE_VIEW_ID: 'pageViewId',
   PAGE_VIEW_TIMESTAMP: 'pageViewTimestamp',
@@ -251,7 +251,7 @@ function interpretResponse(response, bidRequest) {
   if (fledgeAuctionConfigs.length > 0) {
     return {
       bids: bidResponses,
-      fledgeAuctionConfigs
+      paapi: fledgeAuctionConfigs
     }
   } else {
     return bidResponses;
@@ -274,19 +274,16 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
     return syncs;
   }
   if (syncOptions.iframeEnabled && seed && clientId) {
-    for (let i = 0; i < CERBERUS.SYNC_COUNT; i++) {
-      syncs.push({
-        type: 'iframe',
-        url: CERBERUS.SYNC_URL.replace('{UUID}', clientId)
-          .replace('{SEED}', seed)
-          .replace('{INDEX}', i)
-          .replace('{GDPR}', gdpr)
-          .replace('{GDPR_CONSENT}', gdprConsentString)
-          .replace('{US_PRIVACY}', usPrivacy || '')
-          .replace('{GPP_STRING}', gppString)
-          .replace('{GPP_SID}', gppApplicableSections)
-      });
-    }
+    syncs.push({
+      type: 'iframe',
+      url: CERBERUS.SYNC_URL.replace('{UUID}', clientId)
+        .replace('{SEED}', seed)
+        .replace('{GDPR}', gdpr)
+        .replace('{GDPR_CONSENT}', gdprConsentString)
+        .replace('{US_PRIVACY}', usPrivacy || '')
+        .replace('{GPP_STRING}', gppString)
+        .replace('{GPP_SID}', gppApplicableSections)
+    })
   }
   return syncs;
 }

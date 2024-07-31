@@ -1,6 +1,6 @@
 name: Check for Duplicated Code
 
-on: 
+on:
   pull_request_target:
     branches:
       - master
@@ -14,6 +14,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Fetch all history for all branches
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -28,7 +29,7 @@ jobs:
       run: |
         echo '{
           "threshold": 20,
-          "minTokens": 50,
+          "minTokens": 100,
           "reporters": [
             "json"
           ],
@@ -99,13 +100,16 @@ jobs:
           const fs = require('fs');
           const filteredReport = JSON.parse(fs.readFileSync('filtered-jscpd-report.json', 'utf8'));
           let comment = "Whoa there, partner! 🌵🤠 We wrangled some duplicated code in your PR:\n\n";
+          function link(dup) {
+             return `https://github.com/${{ github.event.repository.full_name }}/blob/${{ github.event.pull_request.head.sha }}/${dup.name}#L${dup.start + 1}-L${dup.end - 1}`
+          }
           filteredReport.forEach(duplication => {
-            const firstFile = duplication.firstFile.name;
-            const secondFile = duplication.secondFile.name;
+            const firstFile = duplication.firstFile;
+            const secondFile = duplication.secondFile;
             const lines = duplication.lines;
-            comment += `- \`${firstFile}\` has ${lines} duplicated lines with \`${secondFile}\`\n`;
+            comment += `- [\`${firstFile.name}\`](${link(firstFile)}) has ${lines} duplicated lines with [\`${secondFile.name}\`](${link(secondFile)})\n`;
           });
-          comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Please move the common code from both files into a library and import it in each. Keep up the great work! 🚀";
+          comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Please move the common code from both files into a library and import it in each. We hate that we have to mention this, however, commits designed to hide from this utility by renaming variables or reordering an object are poor conduct. We will not look upon them kindly! Keep up the great work! 🚀";
           github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,

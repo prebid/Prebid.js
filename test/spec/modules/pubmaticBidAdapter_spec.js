@@ -2948,7 +2948,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: false} });
           let data = JSON.parse(req.data);
           if (data.imp[0].ext) {
             expect(data.imp[0].ext).to.not.have.property('ae');
@@ -2961,7 +2961,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: true} });
           let data = JSON.parse(req.data);
           expect(data.imp[0].ext.ae).to.equal(1);
         });
@@ -2974,6 +2974,24 @@ describe('PubMatic adapter', function () {
           expect(data.device).to.include.any.keys('connectiontype');
         }
       });
+
+      it('should send imp.pmp in request if pmp json is present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        originalBidRequests[0].ortb2Imp.pmp = {
+          'private_auction': 0,
+          'deals': [{ 'id': '5678' }]
+        }
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.exist.and.to.be.an('object');
+      })
+
+      it('should not send imp.pmp in request if pmp json is not present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.deep.equal(undefined);
+      })
   	});
 
     it('Request params dctr check', function () {
@@ -3786,9 +3804,9 @@ describe('PubMatic adapter', function () {
       response = spec.interpretResponse({ body: bidResponse }, bidRequest);
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test_bid_id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test_bid_id');
       });
     });
 
@@ -4084,6 +4102,46 @@ describe('PubMatic adapter', function () {
         })
       });
     }
+
+    describe('Banner Request param battr checking', function() {
+      it('should add battr params to bannerObj if present in ortb2Imp.banner', function() {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let bannerObj = utils.deepClone(originalBidRequests[0].ortb2Imp.banner);
+        originalBidRequests[0].ortb2Imp.banner = Object.assign(bannerObj, {
+          battr: [1, 2]
+        });
+
+        const req = spec.buildRequests(originalBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.exist.and.to.be.an('array');
+        expect(data.imp[0]['banner']['battr'][0]).to.equal(originalBidRequests[0].ortb2Imp.banner['battr'][0]);
+        expect(data.imp[0]['banner']['battr'][1]).to.equal(originalBidRequests[0].ortb2Imp.banner['battr'][1]);
+      });
+
+      it('should not add battr params to bannerObj if not present in ortb2Imp.banner', function() {
+        const req = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.equal(undefined);
+      });
+
+      it('should not add battr params if _checkParamDataType returns undefined (Mismatch data type)', function() {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let bannerObj = utils.deepClone(originalBidRequests[0].ortb2Imp.banner);
+        originalBidRequests[0].ortb2Imp.banner = Object.assign(bannerObj, {
+          battr: 1
+        });
+
+        const req = spec.buildRequests(originalBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.equal(undefined);
+      });
+    });
   });
 
   if (FEATURES.VIDEO) {

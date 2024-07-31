@@ -68,6 +68,10 @@ const NATIVE_ASSET_IMAGE_TYPE = {
   'IMAGE': 3
 }
 
+const BANNER_CUSTOM_PARAMS = {
+  'battr': DATA_TYPES.ARRAY
+}
+
 const NET_REVENUE = true;
 const dealChannelValues = {
   1: 'PMP',
@@ -551,6 +555,14 @@ function _createBannerRequest(bid) {
     }
     bannerObj.pos = 0;
     bannerObj.topframe = inIframe() ? 0 : 1;
+
+    // Adding Banner custom params
+    const bannerCustomParams = {...deepAccess(bid, 'ortb2Imp.banner')};
+    for (let key in BANNER_CUSTOM_PARAMS) {
+      if (bannerCustomParams.hasOwnProperty(key)) {
+        bannerObj[key] = _checkParamDataType(key, bannerCustomParams[key], BANNER_CUSTOM_PARAMS[key]);
+      }
+    }
   } else {
     logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
@@ -663,7 +675,7 @@ function _createImpressionObject(bid, bidderRequest) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
-  var isFledgeEnabled = bidderRequest?.fledgeEnabled;
+  var isFledgeEnabled = bidderRequest?.paapi?.enabled;
 
   impObj = {
     id: bid.bidId,
@@ -675,7 +687,8 @@ function _createImpressionObject(bid, bidderRequest) {
     },
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY,
     displaymanager: 'Prebid.js',
-    displaymanagerver: '$prebid.version$' // prebid version
+    displaymanagerver: '$prebid.version$', // prebid version
+    pmp: bid.ortb2Imp?.pmp || undefined
   };
 
   _addPMPDealsInImpression(impObj, bid);
@@ -1094,7 +1107,6 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -1419,7 +1431,7 @@ export const spec = {
         });
         return {
           bids: bidResponses,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         }
       }
     } catch (error) {

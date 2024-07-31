@@ -3,8 +3,14 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
+ * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
+ * Also see https://github.com/prebid/Prebid.js/issues/11656
+ */
+// eslint-disable-next-line no-restricted-imports
 import {loadExternalScript} from '../src/adloader.js';
 
 /**
@@ -42,7 +48,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid && bid.params && (bid.params.placementId || (bid.params.placementKey && bid.params.publisherId)));
+    return !!(bid && bid.params && bid.params.placementId && bid.params.publisherId);
   },
 
   /**
@@ -136,14 +142,11 @@ export const CONVERTER = ortbConverter({
     }
     const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
     const placementId = bidRequest.params.placementId;
-    if (placementId) {
-      deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
-      if (context.extendMode) {
-        deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
-      }
-    } else {
-      deepSetValue(imp, `${bidderParamsPath}.publisherId`, getBidIdParameter('publisherId', bidRequest.params));
-      deepSetValue(imp, `${bidderParamsPath}.placementKey`, getBidIdParameter('placementKey', bidRequest.params));
+    const publisherId = bidRequest.params.publisherId;
+    deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
+    deepSetValue(imp, `${bidderParamsPath}.publisherId`, publisherId);
+    if (context.extendMode) {
+      deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
     }
     deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
 
@@ -206,9 +209,9 @@ export const CONVERTER = ortbConverter({
   overrides: {
     imp: {
       banner(fillImpBanner, imp, bidRequest, context) {
-        // override to disregard banner.sizes if usePrebidSizes is not set
+        // override to disregard banner.sizes if usePrebidSizes is false
         if (!bidRequest.mediaTypes[BANNER]) return;
-        if (config.getConfig('improvedigital.usePrebidSizes') !== true) {
+        if (config.getConfig('improvedigital.usePrebidSizes') === false) {
           const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
           bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
         }

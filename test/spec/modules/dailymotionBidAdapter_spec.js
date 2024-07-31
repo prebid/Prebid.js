@@ -158,6 +158,18 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          all: {
+            bidders: '*',
+            filter: 'include'
+          }
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -165,9 +177,11 @@ describe('dailymotionBidAdapterTests', () => {
 
     const { data: reqData } = request;
 
+    expect(request.options.withCredentials).to.eql(false);
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -178,7 +192,6 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.true;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-
     expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
@@ -196,12 +209,505 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
         playerVolume: bidRequestData[0].params.video.playerVolume,
       },
     });
+  });
+
+  it('validates buildRequests with global consent', () => {
+    const bidRequestData = [{
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidId: 123456,
+      adUnitCode: 'preroll',
+      mediaTypes: {
+        video: {
+          api: [2, 7],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
+          startdelay: 0,
+          w: 1280,
+          h: 720,
+        },
+      },
+      sizes: [[1920, 1080]],
+      params: {
+        apiKey: 'test_api_key',
+        video: {
+          description: 'this is a test video',
+          duration: 556,
+          iabcat1: ['IAB-1'],
+          iabcat2: ['6', '17'],
+          id: '54321',
+          lang: 'FR',
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          url: 'https://test.com/test',
+          topics: 'topic_1, topic_2',
+          xid: 'x123456',
+          livestream: 1,
+          isCreatedForKids: true,
+          videoViewsInSession: 2,
+          autoplay: true,
+          playerVolume: 8,
+        },
+      },
+    }];
+
+    const bidderRequestData = {
+      refererInfo: {
+        page: 'https://publisher.com',
+      },
+      uspConsent: '1YN-',
+      gdprConsent: {
+        apiVersion: 2,
+        consentString: 'xxx',
+        gdprApplies: true,
+        vendorData: {
+          hasGlobalConsent: true
+        }
+      },
+      gppConsent: {
+        gppString: 'xxx',
+        applicableSections: [5],
+      },
+      ortb2: {
+        regs: {
+          coppa: 1,
+        },
+        site: {
+          content: {
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequestData, bidderRequestData),
+    );
+
+    expect(request.options.withCredentials).to.eql(true);
+  });
+
+  it('validates buildRequests without gdpr applying', () => {
+    const bidRequestData = [{
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidId: 123456,
+      adUnitCode: 'preroll',
+      mediaTypes: {
+        video: {
+          api: [2, 7],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
+          startdelay: 0,
+          w: 1280,
+          h: 720,
+        },
+      },
+      sizes: [[1920, 1080]],
+      params: {
+        apiKey: 'test_api_key',
+        video: {
+          description: 'this is a test video',
+          duration: 556,
+          iabcat1: ['IAB-1'],
+          iabcat2: ['6', '17'],
+          id: '54321',
+          lang: 'FR',
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          url: 'https://test.com/test',
+          topics: 'topic_1, topic_2',
+          xid: 'x123456',
+          livestream: 1,
+          isCreatedForKids: true,
+          videoViewsInSession: 2,
+          autoplay: true,
+          playerVolume: 8,
+        },
+      },
+    }];
+
+    const bidderRequestData = {
+      refererInfo: {
+        page: 'https://publisher.com',
+      },
+      uspConsent: '1YN-',
+      gdprConsent: {
+        apiVersion: 2,
+        consentString: 'xxx',
+        gdprApplies: false,
+      },
+      gppConsent: {
+        gppString: 'xxx',
+        applicableSections: [5],
+      },
+      ortb2: {
+        regs: {
+          coppa: 1,
+        },
+        site: {
+          content: {
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequestData, bidderRequestData),
+    );
+
+    expect(request.options.withCredentials).to.eql(true);
+  });
+
+  it('validates buildRequests with detailed consent, no legitimate interest', () => {
+    const bidRequestData = [{
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidId: 123456,
+      adUnitCode: 'preroll',
+      mediaTypes: {
+        video: {
+          api: [2, 7],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
+          startdelay: 0,
+          w: 1280,
+          h: 720,
+        },
+      },
+      sizes: [[1920, 1080]],
+      params: {
+        apiKey: 'test_api_key',
+        video: {
+          description: 'this is a test video',
+          duration: 556,
+          iabcat1: ['IAB-1'],
+          iabcat2: ['6', '17'],
+          id: '54321',
+          lang: 'FR',
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          url: 'https://test.com/test',
+          topics: 'topic_1, topic_2',
+          xid: 'x123456',
+          livestream: 1,
+          isCreatedForKids: true,
+          videoViewsInSession: 2,
+          autoplay: true,
+          playerVolume: 8,
+        },
+      },
+    }];
+
+    const bidderRequestData = {
+      refererInfo: {
+        page: 'https://publisher.com',
+      },
+      uspConsent: '1YN-',
+      gdprConsent: {
+        apiVersion: 2,
+        consentString: 'xxx',
+        gdprApplies: true,
+        vendorData: {
+          hasGlobalConsent: false,
+          purpose: {
+            consents: {
+              1: true,
+              2: true,
+              3: true,
+              4: true,
+              7: true,
+              9: true,
+              10: true,
+            },
+          },
+          vendor: {
+            consents: {
+              573: true
+            }
+          },
+        },
+      },
+      gppConsent: {
+        gppString: 'xxx',
+        applicableSections: [5],
+      },
+      ortb2: {
+        regs: {
+          coppa: 1,
+        },
+        site: {
+          content: {
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequestData, bidderRequestData),
+    );
+
+    expect(request.options.withCredentials).to.eql(true);
+  });
+
+  it('validates buildRequests with detailed consent, with legitimate interest', () => {
+    const bidRequestData = [{
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidId: 123456,
+      adUnitCode: 'preroll',
+      mediaTypes: {
+        video: {
+          api: [2, 7],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
+          startdelay: 0,
+          w: 1280,
+          h: 720,
+        },
+      },
+      sizes: [[1920, 1080]],
+      params: {
+        apiKey: 'test_api_key',
+        video: {
+          description: 'this is a test video',
+          duration: 556,
+          iabcat1: ['IAB-1'],
+          iabcat2: ['6', '17'],
+          id: '54321',
+          lang: 'FR',
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          url: 'https://test.com/test',
+          topics: 'topic_1, topic_2',
+          xid: 'x123456',
+          livestream: 1,
+          isCreatedForKids: true,
+          videoViewsInSession: 2,
+          autoplay: true,
+          playerVolume: 8,
+        },
+      },
+    }];
+
+    const bidderRequestData = {
+      refererInfo: {
+        page: 'https://publisher.com',
+      },
+      uspConsent: '1YN-',
+      gdprConsent: {
+        apiVersion: 2,
+        consentString: 'xxx',
+        gdprApplies: true,
+        vendorData: {
+          hasGlobalConsent: false,
+          purpose: {
+            consents: {
+              1: true,
+              3: true,
+              4: true,
+            },
+            legitimateInterests: {
+              2: true,
+              7: true,
+              9: true,
+              10: true,
+            },
+          },
+          vendor: {
+            consents: {
+              573: true
+            }
+          },
+        },
+      },
+      gppConsent: {
+        gppString: 'xxx',
+        applicableSections: [5],
+      },
+      ortb2: {
+        regs: {
+          coppa: 1,
+        },
+        site: {
+          content: {
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequestData, bidderRequestData),
+    );
+
+    expect(request.options.withCredentials).to.eql(true);
+  });
+
+  it('validates buildRequests with insufficient consent', () => {
+    const bidRequestData = [{
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidId: 123456,
+      adUnitCode: 'preroll',
+      mediaTypes: {
+        video: {
+          api: [2, 7],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
+          startdelay: 0,
+          w: 1280,
+          h: 720,
+        },
+      },
+      sizes: [[1920, 1080]],
+      params: {
+        apiKey: 'test_api_key',
+        video: {
+          description: 'this is a test video',
+          duration: 556,
+          iabcat1: ['IAB-1'],
+          iabcat2: ['6', '17'],
+          id: '54321',
+          lang: 'FR',
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          url: 'https://test.com/test',
+          topics: 'topic_1, topic_2',
+          xid: 'x123456',
+          livestream: 1,
+          isCreatedForKids: true,
+          videoViewsInSession: 2,
+          autoplay: true,
+          playerVolume: 8,
+        },
+      },
+    }];
+
+    const bidderRequestData = {
+      refererInfo: {
+        page: 'https://publisher.com',
+      },
+      uspConsent: '1YN-',
+      gdprConsent: {
+        apiVersion: 2,
+        consentString: 'xxx',
+        gdprApplies: true,
+        vendorData: {
+          hasGlobalConsent: false,
+          purpose: {
+            consents: {
+              1: true,
+              3: true,
+              4: true,
+            },
+          },
+          vendor: {
+            consents: {
+              573: true
+            }
+          },
+        },
+      },
+      gppConsent: {
+        gppString: 'xxx',
+        applicableSections: [5],
+      },
+      ortb2: {
+        regs: {
+          coppa: 1,
+        },
+        site: {
+          content: {
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequestData, bidderRequestData),
+    );
+
+    expect(request.options.withCredentials).to.eql(false);
   });
 
   it('validates buildRequests with content values from App', () => {
@@ -297,6 +803,18 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          iframe: {
+            bidders: ['dailymotion'],
+            filter: 'include'
+          }
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -307,6 +825,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -342,7 +861,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: null,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,
@@ -449,6 +968,22 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          image: {
+            bidders: ['dailymotion'],
+            filter: 'include'
+          },
+          iframe: {
+            bidders: ['dailymotion'],
+            filter: 'exclude',
+          },
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -459,6 +994,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -479,7 +1015,7 @@ describe('dailymotionBidAdapterTests', () => {
       minduration: 0,
       maxduration: 0,
       playbackmethod: [],
-      plcmt: 1,
+      plcmt: undefined,
       protocols: [],
       skip: 0,
       skipafter: 0,
@@ -519,6 +1055,12 @@ describe('dailymotionBidAdapterTests', () => {
       },
     }];
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: false,
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestDataWithApi, {}),
@@ -532,6 +1074,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.false;
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.false;
     expect(reqData.bidder_request).to.eql({
       gdprConsent: {
         apiVersion: 1,
@@ -559,12 +1102,12 @@ describe('dailymotionBidAdapterTests', () => {
           minduration: 0,
           maxduration: 0,
           playbackmethod: [],
-          plcmt: 1,
+          plcmt: undefined,
           protocols: [],
           skip: 0,
           skipafter: 0,
           skipmin: 0,
-          startdelay: 0,
+          startdelay: undefined,
           w: 0,
           h: 0,
         },
@@ -588,7 +1131,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: false,
       isCreatedForKids: null,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,
@@ -647,7 +1190,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     // No permissions
     {
-      const responses = [{ user_syncs: [{ url: 'https://usersyncurl.com', type: 'image' }] }];
+      const responses = [{ body: { userSyncs: [{ url: 'https://usersyncurl.com', type: 'image' }] } }];
       const syncOptions = { iframeEnabled: false, pixelEnabled: false };
 
       expect(config.runWithBidder(
@@ -656,7 +1199,7 @@ describe('dailymotionBidAdapterTests', () => {
       )).to.eql([]);
     }
 
-    // Has permissions but no user_syncs urls
+    // Has permissions but no userSyncs urls
     {
       const responses = [{}];
       const syncOptions = { iframeEnabled: false, pixelEnabled: true };
@@ -667,14 +1210,16 @@ describe('dailymotionBidAdapterTests', () => {
       )).to.eql([]);
     }
 
-    // Return user_syncs urls for pixels
+    // Return userSyncs urls for pixels
     {
       const responses = [{
-        user_syncs: [
-          { url: 'https://usersyncurl.com', type: 'image' },
-          { url: 'https://usersyncurl2.com', type: 'image' },
-          { url: 'https://usersyncurl3.com', type: 'iframe' }
-        ],
+        body: {
+          userSyncs: [
+            { url: 'https://usersyncurl.com', type: 'image' },
+            { url: 'https://usersyncurl2.com', type: 'image' },
+            { url: 'https://usersyncurl3.com', type: 'iframe' }
+          ],
+        }
       }];
 
       const syncOptions = { iframeEnabled: false, pixelEnabled: true };
@@ -688,14 +1233,16 @@ describe('dailymotionBidAdapterTests', () => {
       ]);
     }
 
-    // Return user_syncs urls for iframes
+    // Return userSyncs urls for iframes
     {
       const responses = [{
-        user_syncs: [
-          { url: 'https://usersyncurl.com', type: 'image' },
-          { url: 'https://usersyncurl2.com', type: 'image' },
-          { url: 'https://usersyncurl3.com', type: 'iframe' }
-        ],
+        body: {
+          userSyncs: [
+            { url: 'https://usersyncurl.com', type: 'image' },
+            { url: 'https://usersyncurl2.com', type: 'image' },
+            { url: 'https://usersyncurl3.com', type: 'iframe' }
+          ],
+        }
       }];
 
       const syncOptions = { iframeEnabled: true, pixelEnabled: true };

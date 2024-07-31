@@ -252,6 +252,7 @@ export const spec = {
 
     const bidderConfig = config.getConfig();
     if (bidderConfig.useCookie === false) queryParamsAndValues.push('noCookies=true');
+    if (bidderConfig.advertiserTransparency === true) queryParamsAndValues.push('advertiserTransparency=true');
     if (bidderConfig.maxDeals > 0) queryParamsAndValues.push('ds=' + Math.min(bidderConfig.maxDeals, MAXIMUM_DEALS_LIMIT));
 
     const bidRequests = {};
