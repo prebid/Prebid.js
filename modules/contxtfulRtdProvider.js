@@ -101,8 +101,7 @@ function init(config) {
   rxApi = null;
 
   try {
-    const { version, customer, hostname } = extractParameters(config);
-    initCustomer(version, customer, hostname);
+    initCustomer(config);
     return true;
   } catch (error) {
     logError(MODULE, error);
@@ -137,35 +136,39 @@ export function extractParameters(config) {
 /**
  * Initialize sub module for a customer.
  * This will load the external resources for the sub module.
- * @param { String } version
- * @param { String } customer
- * @param { String } hostname
+ * @param { String } config
  */
-function initCustomer(version, customer, hostname) {
+function initCustomer(config) {
+  const { version, customer, hostname } = extractParameters(config);
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
     host: hostname,
     pathname: `/${version}/prebid/${customer}/connector/rxConnector.js`,
   });
 
-  const externalScript = loadExternalScript(CONNECTOR_URL, MODULE_NAME);
-  addExternalScriptEventListener(externalScript, customer);
+  addConnectorEventListener(customer, config);
+  loadExternalScript(CONNECTOR_URL, MODULE_NAME);
 }
 
 /**
  * Add event listener to the script tag for the expected events from the external script.
- * @param { HTMLScriptElement } script
+ * @param { String } tagId
+ * @param { String } prebidConfig
  */
-function addExternalScriptEventListener(script, tagId) {
-  script.addEventListener(
+function addConnectorEventListener(tagId, prebidConfig) {
+  window.addEventListener(
     'rxConnectorIsReady',
-    async ({ detail: rxConnector }) => {
+    async ({ detail: { [tagId]: rxConnector } }) => {
+      if (!rxConnector) {
+        return;
+      }
       // Fetch the customer configuration
       const { rxApiBuilder, fetchConfig } = rxConnector;
       let config = await fetchConfig(tagId);
       if (!config) {
         return;
       }
+      config['prebid'] = prebidConfig || {};
       rxApi = await rxApiBuilder(config);
     }
   );
