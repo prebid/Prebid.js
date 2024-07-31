@@ -1,4 +1,4 @@
-import {isStr, logError} from '../src/utils.js';
+import {isStr, logError, isFn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
@@ -118,7 +118,7 @@ function getEndpointUrl(code) {
   return find(ALIASES, (val) => val.code === code)?.endpoint || ENDPOINT_URL;
 }
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return utils.deepAccess(bid, 'params.bidFloor', 0);
   }
 
