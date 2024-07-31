@@ -1032,3 +1032,23 @@ describe('Mgid bid adapter', function () {
     });
   });
 });
+
+describe('copyFromAdmAsset', function() {
+  it('should return all params', function() {
+    const asset = {img: {w: 80, h: 80, url: "image_src"}} 
+    const returned = spec.copyFromAdmAsset(asset)
+    expect(returned).to.deep.equal({url: "image_src", height: 80, width: 80});
+  });
+
+  it('should return only height and width', function() {
+    const asset = {img: {w: 80, h: 80}} 
+    const returned = spec.copyFromAdmAsset(asset)
+    expect(returned).to.deep.equal({height: 80, width: 80});
+  });
+
+  it('should return nothing', function() {
+    const asset = {} 
+    const returned = spec.copyFromAdmAsset(asset)
+    expect(returned).to.deep.equal({});
+  });
+});

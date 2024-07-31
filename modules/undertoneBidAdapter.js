@@ -2,7 +2,7 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl, extractDomainFromHost} from '../src/utils.js';
+import {deepAccess, parseUrl} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -24,6 +24,24 @@ function getBidFloor(bidRequest, mediaType) {
   });
 
   return (floor && floor.currency === 'USD' && floor.floor) || 0;
+}
+
+function extractDomainFromHost(pageHost) {
+  let domain = null;
+  try {
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+  } catch (e) {
+    domain = null;
+  }
+  return domain;
 }
 
 function getGdprQueryParams(gdprConsent) {
