@@ -1,6 +1,5 @@
 import {
   isFn,
-  isStr,
   deepAccess,
   getWindowTop,
   triggerNurlWithCpm
