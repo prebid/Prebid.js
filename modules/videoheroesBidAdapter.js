@@ -246,6 +246,17 @@ function prepareEids(data, adUnit) {
   return true;
 }
 
+function prepareDevice() {
+  let deviceObj = {};
+
+  [deviceObj.w, deviceObj.h] = [screen.width, screen.height];
+  deviceObj.language = navigator.language;
+  deviceObj.dnt = navigator.doNotTrack === '1' ? 1 : 0
+  deviceObj.ua = navigator.userAgent;
+
+  return deviceObj;
+}
+
 function prepareNativeAd(adm) {
   const nativeObj = JSON.parse(adm).native;
 
