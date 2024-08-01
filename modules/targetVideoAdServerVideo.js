@@ -70,6 +70,10 @@ function getAllTargetingData(options) {
 }
 
 function appendCustParams(iu, cust_params) {
+  if (!Object.keys(cust_params).length) {
+    return iu;
+  }
+
   if (iu.includes('cust_params')) {
     const [url, search] = iu.split('?');
     const searchParams = new URLSearchParams(search);
