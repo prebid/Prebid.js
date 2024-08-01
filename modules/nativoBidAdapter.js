@@ -32,6 +32,10 @@ const PRICE_FLOOR_WILDCARD = '*'
 
 const localPbjsRef = getGlobal()
 
+function getMediaType(accessObj) {
+  return deepAccess(accessObj, 'mediaTypes.video') ? VIDEO : BANNER;
+}
+
 /**
  * Keep track of bid data by keys
  * @returns {Object} - Map of bid data that can be referenced by multiple keys
@@ -355,10 +359,6 @@ export const spec = {
 
       // Don't need the map anymore as it was unique for one request/response
       delete bidRequestMap[body.id]
-
-      function getMediaType(accessObj) {
-        return deepAccess(accessObj, 'mediaTypes.video') ? VIDEO : BANNER;
-      }
 
       return bidResponses
     } catch (error) {
