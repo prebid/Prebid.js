@@ -20,7 +20,7 @@ var adUnits = [
     code: 'test-div',
     mediaTypes: {
       banner: {
-        sizes: [[320, 250], [640, 480]],
+        sizes: [[320, 250], [640, 480]], // Required.
       }
     },
     bids: [
@@ -28,6 +28,35 @@ var adUnits = [
         bidder: "kimberlite",
         params: {
           placementId: 'testBanner'
+        }
+      }
+    ]
+  }
+]
+```
+
+## Video AdUnit
+
+```javascript
+var adUnits = [
+  {
+    code: 'test-div',
+    mediaTypes: {
+      video: {
+        // ORTB 2.5 options.
+        mimes: ['video/mp4'], // Required.
+        // Other options are optional.
+        placement: 1,
+        protocols: [3, 6],
+        linearity: 1,
+        startdelay: 0
+      }
+    },
+    bids: [
+      {
+        bidder: "kimberlite",
+        params: {
+          placementId: 'testVideo'
         }
       }
     ]

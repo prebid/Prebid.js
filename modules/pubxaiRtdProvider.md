@@ -32,7 +32,7 @@ pbjs.setConfig({
 	...,
 	realTimeData: {
 		auctionDelay: AUCTION_DELAY,
-		dataProviders: {
+		dataProviders: [{
 			name: "pubxai",
 			waitForIt: true,
 			params: {
@@ -42,7 +42,7 @@ pbjs.setConfig({
 				enforcement: `<enforcement>`, // (optional)
 				data: `<defaultConfig>` // (optional)
 			}
-		}
+		}]
 	}
 	// rest of the config
 	...,
