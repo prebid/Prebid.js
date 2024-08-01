@@ -9,12 +9,14 @@ const ALIASES = [
   {code: 'markapp', skipPbsAliasing: true},
   {code: 'jdpmedia', skipPbsAliasing: true},
   {code: 'tredio', skipPbsAliasing: true},
+  {code: 'felixads', skipPbsAliasing: true},
 ];
 const BASE_URLS = {
   smarthub: 'https://prebid.smart-hub.io/pbjs',
   markapp: 'https://markapp-prebid.smart-hub.io/pbjs',
   jdpmedia: 'https://jdpmedia-prebid.smart-hub.io/pbjs',
-  tredio: 'https://tredio-prebid.smart-hub.io/pbjs'
+  tredio: 'https://tredio-prebid.smart-hub.io/pbjs',
+  felixads: 'https://felixads-prebid.smart-hub.io/pbjs',
 };
 
 function getUrl(partnerName) {
