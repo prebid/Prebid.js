@@ -514,8 +514,7 @@ pbjsInstance.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return enrichFPD(GreedyPromise.resolve(ortb2Fragments.global)).then(global => {
-      ortb2Fragments.global = global;
+    return enrichFPD(GreedyPromise.resolve(ortb2Fragments)).then(ortb2Fragments => {
       return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
     })
   }, 'requestBids');

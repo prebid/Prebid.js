@@ -31,7 +31,8 @@ export const enrichFPD = hook('sync', (fpd) => {
   const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];
 
   return GreedyPromise.all(promArr)
-    .then(([ortb2, sua, cdep]) => {
+    .then(([ortb2Fragments, sua, cdep]) => {
+      let ortb2 = ortb2Fragments.global;
       const ri = dep.getRefererInfo();
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
         const data = getEnrichments(ortb2, ri);
@@ -59,7 +60,7 @@ export const enrichFPD = hook('sync', (fpd) => {
         }
       }
 
-      return ortb2;
+      return ortb2Fragments;
     });
 });
 
