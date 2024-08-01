@@ -128,8 +128,9 @@ function buildRequest(winTop, host, adUnits, bidderRequest) {
       deviceWidth: winTop.screen.width,
       deviceHeight: winTop.screen.height,
       adUnits: adUnits,
-      sua: bidderRequest?.ortb2?.device?.sua,
-      page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
+      ortb2: bidderRequest?.ortb2,
+      ortb2Imp: bidderRequest?.ortb2Imp,
+      refererInfo: bidderRequest?.refererInfo
     }
   }
 }
