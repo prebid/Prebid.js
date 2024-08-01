@@ -4,7 +4,7 @@ import {
   coreStorage,
   dep,
   findRootDomain,
-  getConsentHash,
+  getConsentHash, getValidSubmoduleConfigs,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   requestBidsHook,
@@ -187,6 +187,65 @@ describe('User ID', function () {
     it('are registered when ID submodule is registered', () => {
       attachIdSystem({name: 'gvlidMock', gvlid: 123});
       sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
+    })
+  })
+
+  describe('userId config validation', () => {
+    beforeEach(() => {
+      sandbox.stub(utils, 'logWarn');
+    });
+
+    function mockConfig(storageConfig = {}) {
+      return {
+        name: 'mockModule',
+        storage: {
+          name: 'mockStorage',
+          type: 'cookie',
+          ...storageConfig
+        }
+      }
+    }
+
+    Object.entries({
+      'not an object': 'garbage',
+      'missing name': {},
+      'empty name': {name: ''},
+      'empty storage config': {name: 'mockId', storage: {}},
+      'storage type, but no storage name': mockConfig({name: ''}),
+      'storage name, but no storage type': mockConfig({type: undefined}),
+    }).forEach(([t, config]) => {
+      it(`should log a warning and reject configuration with ${t}`, () => {
+        expect(getValidSubmoduleConfigs([config]).length).to.equal(0);
+        sinon.assert.called(utils.logWarn);
+      });
+    });
+
+    it('should reject non-array userId configuration', () => {
+      expect(getValidSubmoduleConfigs({})).to.eql([]);
+      sinon.assert.called(utils.logWarn);
+    });
+
+    it('should accept null configuration', () => {
+      expect(getValidSubmoduleConfigs()).to.eql([]);
+      sinon.assert.notCalled(utils.logWarn);
+    });
+
+    ['refreshInSeconds', 'expires'].forEach(param => {
+      describe(`${param} parameter`, () => {
+        it('should be made a number, when possible', () => {
+          expect(getValidSubmoduleConfigs([mockConfig({[param]: '123'})])[0].storage[param]).to.equal(123);
+        });
+
+        it('should log a warning when not a number', () => {
+          expect(getValidSubmoduleConfigs([mockConfig({[param]: 'garbage'})])[0].storage[param]).to.not.exist;
+          sinon.assert.called(utils.logWarn)
+        });
+
+        it('should be left untouched when not specified', () => {
+          expect(getValidSubmoduleConfigs([mockConfig()])[0].storage[param]).to.not.exist;
+          sinon.assert.notCalled(utils.logWarn);
+        });
+      })
     })
   })
 
@@ -2173,60 +2232,40 @@ describe('User ID', function () {
       });
     });
 
-    describe('Set cookie behavior', function () {
-      let cookie, cookieStub;
-
-      beforeEach(function () {
-        setSubmoduleRegistry([sharedIdSystemSubmodule]);
-        init(config);
-        cookie = document.cookie;
-        cookieStub = sinon.stub(document, 'cookie');
-        cookieStub.get(() => cookie);
-        cookieStub.set((val) => cookie = val);
-      });
-
-      afterEach(function () {
-        cookieStub.restore();
-      });
-
-      it('should allow submodules to override the domain', function () {
-        const submodule = {
-          submodule: {
-            domainOverride: function () {
-              return 'foo.com'
-            }
-          },
-          config: {
-            name: 'mockId',
-            storage: {
-              type: 'cookie'
-            }
-          },
-          storageMgr: {
-            setCookie: sinon.stub()
-          },
-          enabledStorageTypes: [ 'cookie' ]
-        }
-        setStoredValue(submodule, 'bar');
-        expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal('foo.com');
-      });
-
-      it('should pass no domain if submodule does not override the domain', function () {
-        const submodule = {
+    describe('Submodule ID storage', () => {
+      let submodule;
+      beforeEach(() => {
+        submodule = {
           submodule: {},
           config: {
             name: 'mockId',
-            storage: {
-              type: 'cookie'
-            }
           },
           storageMgr: {
-            setCookie: sinon.stub()
+            setCookie: sinon.stub(),
+            setDataInLocalStorage: sinon.stub()
           },
-          enabledStorageTypes: [ 'cookie' ]
+          enabledStorageTypes: ['cookie', 'html5']
         }
-        setStoredValue(submodule, 'bar');
-        expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal(null);
+      });
+
+      describe('Set cookie behavior', function () {
+        beforeEach(() => {
+          submodule.config.storage = {
+            type: 'cookie'
+          }
+        });
+        it('should allow submodules to override the domain', function () {
+          submodule.submodule.domainOverride = function() {
+            return 'foo.com'
+          }
+          setStoredValue(submodule, 'bar');
+          expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal('foo.com');
+        });
+
+        it('should pass no domain if submodule does not override the domain', function () {
+          setStoredValue(submodule, 'bar');
+          expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal(null);
+        });
       });
     });
 

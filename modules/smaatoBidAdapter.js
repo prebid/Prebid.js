@@ -19,10 +19,11 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.1'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.2'
 const TTL = 300;
 const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
+const SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -196,6 +197,22 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    if (syncOptions && syncOptions.pixelEnabled) {
+      let gdprParams = '';
+      if (gdprConsent && gdprConsent.consentString) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          gdprParams = `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          gdprParams = `&gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+
+      return [{
+        type: 'image',
+        url: SYNC_URL + gdprParams
+      }];
+    }
+
     return [];
   }
 }

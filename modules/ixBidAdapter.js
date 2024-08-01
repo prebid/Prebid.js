@@ -659,7 +659,6 @@ function getEidInfo(allEids) {
             rtiPartner: SOURCE_RTI_MAPPING[eid.source]
           };
         }
-        delete eid.uids[0].atype;
         toSend.push(eid);
         if (toSend.length >= MAX_EID_SOURCES) {
           break;

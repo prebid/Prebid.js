@@ -826,6 +826,20 @@ describe('S2S Adapter', function () {
       })
     })
 
+    it('should set customHeaders correctly when publisher has provided it', () => {
+      let configWithCustomHeaders = utils.deepClone(CONFIG);
+      configWithCustomHeaders.customHeaders = { customHeader1: 'customHeader1Value' };
+      config.setConfig({ s2sConfig: configWithCustomHeaders });
+
+      let reqWithNewConfig = utils.deepClone(REQUEST);
+      reqWithNewConfig.s2sConfig = configWithCustomHeaders;
+
+      adapter.callBids(reqWithNewConfig, BID_REQUESTS, addBidResponse, done, ajax);
+      const reqHeaders = server.requests[0].requestHeaders
+      expect(reqHeaders.customHeader1).to.exist;
+      expect(reqHeaders.customHeader1).to.equal('customHeader1Value');
+    });
+
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);
       badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };
@@ -3564,18 +3578,32 @@ describe('S2S Adapter', function () {
         sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), sinon.match({config: {id: 2}}))
       }
 
-      it('calls addComponentAuction alongside addBidResponse', function () {
+      it('calls addPaapiConfig alongside addBidResponse', function () {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(mergeDeep({}, RESPONSE_OPENRTB, FLEDGE_RESP)));
         expect(addBidResponse.called).to.be.true;
         expectFledgeCalls();
       });
 
-      it('calls addComponentAuction when there is no bid in the response', () => {
+      it('calls addPaapiConfig when there is no bid in the response', () => {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
         expect(addBidResponse.called).to.be.false;
         expectFledgeCalls();
+      });
+
+      it('wraps call in runWithBidder', () => {
+        let fail = false;
+        fledgeStub.callsFake(({bidder}) => {
+          try {
+            expect(bidder).to.exist.and.to.eql(config.getCurrentBidder());
+          } catch (e) {
+            fail = true;
+          }
+        });
+        adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
+        expect(fail).to.be.false;
       })
     });
   });

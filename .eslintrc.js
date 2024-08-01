@@ -61,6 +61,7 @@ module.exports = {
     'no-useless-escape': 'off',
     'no-console': 'error',
     'jsdoc/check-types': 'off',
+    'jsdoc/no-defaults': 'off',
     'jsdoc/newline-after-description': 'off',
     'jsdoc/require-jsdoc': 'off',
     'jsdoc/require-param': 'off',
@@ -83,27 +84,52 @@ module.exports = {
     files: key + '/**/*.js',
     rules: {
       'prebid/validate-imports': ['error', allowedModules[key]],
-      'prebid/no-innerText': ['error', allowedModules[key]],
       'no-restricted-globals': [
         'error',
         {
           name: 'require',
           message: 'use import instead'
         }
+      ],
+      'prebid/no-global': [
+        'error',
+        ...['localStorage', 'sessionStorage'].map(name => ({name, message: 'use storageManager instead'})),
+        {
+          name: 'XMLHttpRequest',
+          message: 'use ajax.js instead'
+        },
+      ],
+      'prebid/no-member': [
+        'error',
+        {
+          name: 'cookie',
+          target: 'document',
+          message: 'use storageManager instead'
+        },
+        {
+          name: 'sendBeacon',
+          target: 'navigator',
+          message: 'use ajax.js instead'
+        },
+        ...['outerText', 'innerText'].map(name => ({
+          name,
+          message: 'use .textContent instead'
+        }))
       ]
     }
   })).concat([{
     // code in other packages (such as plugins/eslint) is not "seen" by babel and its parser will complain.
     files: 'plugins/*/**/*.js',
     parser: 'esprima'
-  }, 
-  {
+  }, {
     files: '**BidAdapter.js',
     rules: {
       'no-restricted-imports': [
         'error', {
-          patterns: ["**/src/events.js",
-          "**/src/adloader.js"]
+          patterns: [
+            '**/src/events.js',
+            '**/src/adloader.js'
+          ]
         }
       ]
     }

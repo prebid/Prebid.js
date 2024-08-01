@@ -1223,6 +1223,25 @@ describe('Utils', function () {
       expect(script.id).to.equal('newId');
     });
   });
+
+  describe('safeJSONParse', () => {
+    it('correctly encodes valid input', () => {
+      const jsonObj = {
+        key1: 'val1',
+        key2: {
+          key3: 100,
+          key4: true
+        }
+      };
+      const result = utils.safeJSONEncode(jsonObj);
+      expect(result).to.equal(`{"key1":"val1","key2":{"key3":100,"key4":true}}`);
+    });
+    it('return empty string for stringify errors', () => {
+      const jsonObj = {k: 2n};
+      const result = utils.safeJSONEncode(jsonObj);
+      expect(result).to.equal('');
+    });
+  });
 });
 
 describe('memoize', () => {

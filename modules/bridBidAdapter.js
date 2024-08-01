@@ -1,7 +1,7 @@
-import {createTrackPixelHtml, _each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import {getAd, getSiteObj} from '../libraries/targetVideoUtils/bidderUtils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -180,50 +180,50 @@ export const spec = {
 
 }
 
-/**
- * Helper function to get ad
- *
- * @param {object} bid The bid.
- * @return {object} ad object.
- */
-function getAd(bid) {
-  let ad, adUrl, vastXml, vastUrl;
+// /**
+//  * Helper function to get ad
+//  *
+//  * @param {object} bid The bid.
+//  * @return {object} ad object.
+//  */
+// function getAd(bid) {
+//   let ad, adUrl, vastXml, vastUrl;
 
-  switch (deepAccess(bid, 'ext.prebid.type')) {
-    case VIDEO:
-      if (bid.adm.substr(0, 4) === 'http') {
-        vastUrl = bid.adm;
-      } else {
-        vastXml = bid.adm;
-      };
-      break;
-    default:
-      if (bid.adm && bid.nurl) {
-        ad = bid.adm;
-        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
-      } else if (bid.adm) {
-        ad = bid.adm;
-      } else if (bid.nurl) {
-        adUrl = bid.nurl;
-      };
-  }
+//   switch (deepAccess(bid, 'ext.prebid.type')) {
+//     case VIDEO:
+//       if (bid.adm.substr(0, 4) === 'http') {
+//         vastUrl = bid.adm;
+//       } else {
+//         vastXml = bid.adm;
+//       };
+//       break;
+//     default:
+//       if (bid.adm && bid.nurl) {
+//         ad = bid.adm;
+//         ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
+//       } else if (bid.adm) {
+//         ad = bid.adm;
+//       } else if (bid.nurl) {
+//         adUrl = bid.nurl;
+//       };
+//   }
 
-  return {ad, adUrl, vastXml, vastUrl};
-}
+//   return {ad, adUrl, vastXml, vastUrl};
+// }
 
-/**
- * Helper function to get site object
- *
- * @return {object} siteObj.
- */
-function getSiteObj() {
-  const refInfo = (getRefererInfo && getRefererInfo()) || {};
+// /**
+//  * Helper function to get site object
+//  *
+//  * @return {object} siteObj.
+//  */
+// function getSiteObj() {
+//   const refInfo = (getRefererInfo && getRefererInfo()) || {};
 
-  return {
-    page: refInfo.page,
-    ref: refInfo.ref,
-    domain: refInfo.domain
-  };
-}
+//   return {
+//     page: refInfo.page,
+//     ref: refInfo.ref,
+//     domain: refInfo.domain
+//   };
+// }
 
 registerBidder(spec);

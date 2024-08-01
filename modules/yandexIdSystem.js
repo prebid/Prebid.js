@@ -128,7 +128,7 @@ class YandexUidGenerator {
   }
 
   _getRandomGenerator() {
-    if (crypto) {
+    if (window.crypto) {
       return () => {
         const buffer = new Uint32Array(1);
         crypto.getRandomValues(buffer);

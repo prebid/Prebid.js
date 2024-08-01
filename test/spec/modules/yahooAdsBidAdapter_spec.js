@@ -193,7 +193,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it('should define the correct bidder aliases', () => {
-      expect(spec.aliases).to.deep.equal(['yahoossp', 'yahooAdvertising']);
+      expect(spec.aliases).to.deep.equal([{ 'code': 'yahoossp', 'gvlid': 25 }, { 'code': 'yahooAdvertising', 'gvlid': 25 }]);
     });
 
     it('should define the correct vendor ID', () => {
