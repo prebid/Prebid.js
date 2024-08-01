@@ -13,6 +13,7 @@ describe('PrecisoAdapter', function () {
     precisoBid: true,
     bidId: '23fhj33i987f',
     bidder: 'preciso',
+    buyerUid: 'testuid',
     mediaTypes: {
       banner: {
         sizes: [[DEFAULT_BANNER_WIDTH, DEFAULT_BANNER_HEIGHT]]
