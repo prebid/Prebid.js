@@ -1,5 +1,4 @@
 import { naveggIdSubmodule, storage, getIdFromAPI } from 'modules/naveggIdSystem.js';
-import * as utils from '../../../src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import * as ajaxLib from 'src/ajax.js';
 

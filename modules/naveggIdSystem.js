@@ -6,9 +6,9 @@
  */
 import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import * as ajaxLib from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -24,7 +24,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 
 function getIdFromAPI() {
   const resp = function (callback) {
-    ajaxLib.ajaxBuilder()(
+    ajaxBuilder()(
       BASE_URL,
       response => {
         if (response) {
