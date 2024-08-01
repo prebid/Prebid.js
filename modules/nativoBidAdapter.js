@@ -15,8 +15,6 @@ const converter = ortbConverter({
     imp.tagid = bidRequest.adUnitCode
     if (imp.ext) imp.ext.placementId = bidRequest.params.placementId
 
-    console.log('bidRequest.getFloor', bidRequest.getFloor)
-
     return imp;
   }
 });
@@ -194,7 +192,6 @@ export const spec = {
         floorPriceData[bidRequest.adUnitCode] = bidRequestFloorPriceData
       }
 
-      console.log('bidRequest', bidRequest)
       const bidFloor = deepAccess(bidRequest, 'params.floors')
       if (bidFloor) floorPriceData[bidRequest.adUnitCode] = bidFloor
       requestData.processBidRequestData(bidRequest, bidderRequest)
@@ -291,14 +288,6 @@ export const spec = {
       params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
     }
 
-    // Temp adding ntv_userip
-    params.unshift({ key: 'ntv_userip', value: '2.2.2.2' })
-
-    // console.log('[[[bidderRequest]]]', bidderRequest)
-    // if (bidderRequest.userId) {
-    //   params.unshift({ key: 'user_id', value: bidderRequest.userId })
-    // }
-
     const qsParamStrings = [requestData.getRequestDataQueryString(), arrayToQS(params)]
     const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
 
@@ -306,6 +295,7 @@ export const spec = {
       method: 'POST',
       url: requestUrl,
       data: openRTBDataString,
+      bidderRequest: bidderRequest
     }
 
     return serverRequest
@@ -335,9 +325,10 @@ export const spec = {
 
       // Step through and grab pertinent data
       let bidResponse, adUnit
-      seatbids.forEach((seatbid) => {
+      seatbids.forEach((seatbid, i) => {
         seatbid.bid.forEach((bid) => {
           adUnit = this.getAdUnitData(body.id, bid)
+
           bidResponse = {
             requestId: adUnit.bidId,
             cpm: bid.price,
@@ -352,10 +343,13 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain,
             },
-            mediaType: 'video'
+            mediaType: getMediaType(request.bidderRequest.bids[i]),
           }
 
           if (bid.ext) extData[bid.id] = bid.ext
+          if (bidResponse.mediaType === VIDEO) {
+            bidResponse.vastUrl = 'data:text/xml;charset=utf-8,' + encodeURIComponent(bid.adm)
+          }
 
           bidResponses.push(bidResponse)
         })
@@ -363,6 +357,10 @@ export const spec = {
 
       // Don't need the map anymore as it was unique for one request/response
       delete bidRequestMap[body.id]
+
+      function getMediaType(accessObj) {
+        return deepAccess(accessObj, 'mediaTypes.video') ? VIDEO : BANNER;
+      }
 
       return bidResponses
     } catch (error) {
