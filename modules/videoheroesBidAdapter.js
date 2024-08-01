@@ -47,11 +47,11 @@ export const spec = {
 
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let data = {
+    let data = {̉̉
       id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(adUnit => prepareImpression(adUnit)),
       site: prepareSite(validBidRequests[0], bidderRequest),
-      device: bidderRequest.ortb2?.device || {},
+      device: bidderRequest.ortb2?.device || prepareDevice(),
       tmax: bidderRequest.timeout,
       cur: [ CUR ],
       user: { ext: {} },
