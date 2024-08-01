@@ -837,3 +837,62 @@ describe('buildRequestUrl', () => {
     expect(url).to.be.equal(`${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`)
   })
 })
+
+describe('Prebid Video', function () {
+  it('should handle video bid requests', function () {
+    const videoBidRequest = {
+      bidder: 'nativo',
+      params: {
+        video: {
+          mimes: ['video/mp4'],
+          protocols: [2, 3, 5, 6],
+          playbackmethod: [1, 2],
+          skip: 1,
+          skipafter: 5
+        },
+      }
+    };
+
+    const isValid = spec.isBidRequestValid(videoBidRequest);
+    expect(isValid).to.be.true;
+  });
+});
+
+describe('Prebid Native', function () {
+  it('should handle native bid requests', function () {
+    const nativeBidRequest = {
+      bidder: 'nativo',
+      params: {
+        native: {
+          title: {
+            required: true,
+            len: 80
+          },
+          image: {
+            required: true,
+            sizes: [150, 50]
+          },
+          sponsoredBy: {
+            required: true
+          },
+          clickUrl: {
+            required: true
+          },
+          privacyLink: {
+            required: false
+          },
+          body: {
+            required: true
+          },
+          icon: {
+            required: true,
+            sizes: [50, 50]
+          }
+        },
+      }
+    };
+
+    const isValid = spec.isBidRequestValid(nativeBidRequest);
+    expect(isValid).to.be.true;
+  });
+});

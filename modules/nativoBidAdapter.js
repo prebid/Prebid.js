@@ -1,6 +1,6 @@
 import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
 import { getGlobal } from '../src/prebidGlobal.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
@@ -13,6 +13,8 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = bidRequest.adUnitCode
+    if (imp.ext) imp.ext.placementId = bidRequest.params.placementId
+
     return imp;
   }
 });
@@ -24,7 +26,7 @@ const GVLID = 263
 
 const TIME_TO_LIVE = 360
 
-const SUPPORTED_AD_TYPES = [BANNER]
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
 const FLOOR_PRICE_CURRENCY = 'USD'
 const PRICE_FLOOR_WILDCARD = '*'
 
@@ -291,6 +293,7 @@ export const spec = {
       method: 'POST',
       url: requestUrl,
       data: openRTBDataString,
+      bidderRequest: bidderRequest
     }
 
     return serverRequest
@@ -320,9 +323,10 @@ export const spec = {
 
       // Step through and grab pertinent data
       let bidResponse, adUnit
-      seatbids.forEach((seatbid) => {
+      seatbids.forEach((seatbid, i) => {
         seatbid.bid.forEach((bid) => {
           adUnit = this.getAdUnitData(body.id, bid)
+
           bidResponse = {
             requestId: adUnit.bidId,
             cpm: bid.price,
@@ -337,9 +341,13 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain,
             },
+            mediaType: getMediaType(request.bidderRequest.bids[i]),
           }
 
           if (bid.ext) extData[bid.id] = bid.ext
+          if (bidResponse.mediaType === VIDEO) {
+            bidResponse.vastUrl = 'data:text/xml;charset=utf-8,' + encodeURIComponent(bid.adm)
+          }
 
           bidResponses.push(bidResponse)
         })
@@ -347,6 +355,10 @@ export const spec = {
 
       // Don't need the map anymore as it was unique for one request/response
       delete bidRequestMap[body.id]
+
+      function getMediaType(accessObj) {
+        return deepAccess(accessObj, 'mediaTypes.video') ? VIDEO : BANNER;
+      }
 
       return bidResponses
     } catch (error) {
