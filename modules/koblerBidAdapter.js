@@ -7,10 +7,10 @@ import {
   replaceAuctionPrice,
   triggerPixel
 } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
@@ -18,6 +18,7 @@ const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_c
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
 const SUPPORTED_CURRENCY = 'USD';
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
+let adServerCurrency;
 
 export const isBidRequestValid = function (bid) {
   if (!bid || !bid.bidId) {
@@ -29,6 +30,7 @@ export const isBidRequestValid = function (bid) {
 };
 
 export const buildRequests = function (validBidRequests, bidderRequest) {
+  adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
   const bidderEndpoint = isTest(validBidRequests[0]) ? DEV_BIDDER_ENDPOINT : BIDDER_ENDPOINT;
   return {
     method: 'POST',
@@ -72,9 +74,9 @@ export const onBidWon = function (bid) {
   // We intentionally use the price set by the publisher to replace the ${AUCTION_PRICE} macro
   // instead of the `originalCpm` here. This notification is not used for billing, only for extra logging.
   const publisherPrice = bid.cpm || 0;
-  const publisherCurrency = bid.currency || config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
+  const publisherCurrency = bid.currency || adServerCurrency || SUPPORTED_CURRENCY;
   const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
-  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
+  const adServerPriceCurrency = adServerCurrency || SUPPORTED_CURRENCY;
   if (isStr(bid.nurl) && bid.nurl !== '') {
     const winNotificationUrl = replaceAuctionPrice(bid.nurl, publisherPrice)
       .replace(/\${AUCTION_PRICE_CURRENCY}/g, publisherCurrency)

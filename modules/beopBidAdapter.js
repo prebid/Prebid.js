@@ -1,4 +1,4 @@
-import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';

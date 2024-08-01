@@ -1,7 +1,7 @@
 import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

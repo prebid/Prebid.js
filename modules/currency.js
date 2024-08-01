@@ -341,7 +341,7 @@ registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency, pri
 
 function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
-    deepSetValue(ortb2, 'cur', [adServerCurrency]);
+    deepSetValue(ortb2, 'ext.cur', [adServerCurrency]);
     return ortb2;
   }))
 }

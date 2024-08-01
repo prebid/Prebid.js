@@ -3,8 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 import {Renderer} from '../src/Renderer.js';
-import {config} from '../src/config.js';
-import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -12,8 +11,6 @@ import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currenc
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
-
-const { getConfig } = config;
 
 const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';

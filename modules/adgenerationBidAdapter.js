@@ -1,4 +1,5 @@
 import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
@@ -14,6 +15,7 @@ import { deepAccess, getBidIdParameter } from '../src/utils.js';
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
+let adServerCurrency;
 
 export const spec = {
   code: ADG_BIDDER_CODE,
@@ -36,6 +38,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
+    adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const ADGENE_PREBID_VERSION = '1.6.3';
     let serverRequests = [];
@@ -118,7 +121,7 @@ export const spec = {
       height: body.h ? body.h : 1,
       creativeId: body.creativeid || '',
       dealId: body.dealid || '',
-      currency: getCurrencyType(bidRequests.bidRequest),
+      currency: adServerCurrency,
       netRevenue: true,
       ttl: body.ttl || 10,
     };
@@ -304,10 +307,8 @@ function getSizes(validReq) {
  * @return {?string} USD or JPY
  */
 function getCurrencyType(bidderRequest) {
-  if (!Array.isArray(bidderRequest.ortb2?.cur)) return 'JPY';
-  const [currency] = bidderRequest.ortb2.cur;
-  if (currency.toUpperCase() === 'USD') return 'USD';
-  return 'JPY'; 
+  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest) || ''
+  return adServerCurrency.toUpperCase() === 'USD' ? 'USD' : 'JPY'
 }
 
 /**

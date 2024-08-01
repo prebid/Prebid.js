@@ -6,7 +6,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

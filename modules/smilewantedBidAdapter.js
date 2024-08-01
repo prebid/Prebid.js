@@ -5,7 +5,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js'
 import {convertOrtbRequestToProprietaryNative, toOrtbNativeRequest, toLegacyResponse} from '../src/native.js';
-import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'smilewanted';
 

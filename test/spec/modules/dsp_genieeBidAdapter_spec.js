@@ -84,7 +84,6 @@ describe('Geniee adapter tests', () => {
         });
         setCurrencyConfig({});
       });
-      
     });
   });
   describe('interpretResponse function test', () => {

@@ -916,21 +916,26 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('handles ADGBrowserM responses', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'JPY'
+      setCurrencyConfig({ adServerCurrency: 'JPY' });
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://example.com'
         }
+      };
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        spec.buildRequests(bidRequests, res)[0];
+        const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, bidRequests.upperBillboard)[0];
+        expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
+        expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
+        expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);
+        expect(result.creativeId).to.equal(bidResponses.normal.upperBillboard.creativeId);
+        expect(result.dealId).to.equal(bidResponses.normal.upperBillboard.dealId);
+        expect(result.currency).to.equal(bidResponses.normal.upperBillboard.currency);
+        expect(result.netRevenue).to.equal(bidResponses.normal.upperBillboard.netRevenue);
+        expect(result.ttl).to.equal(bidResponses.normal.upperBillboard.ttl);
+        expect(result.ad).to.equal(bidResponses.normal.upperBillboard.ad);
+        setCurrencyConfig({});
       });
-      const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, bidRequests.upperBillboard)[0];
-      expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
-      expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
-      expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);
-      expect(result.creativeId).to.equal(bidResponses.normal.upperBillboard.creativeId);
-      expect(result.dealId).to.equal(bidResponses.normal.upperBillboard.dealId);
-      expect(result.currency).to.equal(bidResponses.normal.upperBillboard.currency);
-      expect(result.netRevenue).to.equal(bidResponses.normal.upperBillboard.netRevenue);
-      expect(result.ttl).to.equal(bidResponses.normal.upperBillboard.ttl);
-      expect(result.ad).to.equal(bidResponses.normal.upperBillboard.ad);
     });
 
     it('handles banner responses for empty adomain', function () {

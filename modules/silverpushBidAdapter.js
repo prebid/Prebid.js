@@ -1,4 +1,3 @@
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { mergeDeep } from '../src/utils.js';
@@ -6,6 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
 import { ajax } from '../src/ajax.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'silverpush';
 const bidderConfig = 'sp_pb_ortb';
@@ -31,6 +31,8 @@ const VIDEO_ORTB_PARAMS = [
   'api',
   'linearity'
 ];
+
+let adServerCurrency;
 
 export const VIDEO_ORTB_REQUIRED = ['api', 'mimes', 'placement', 'protocols', 'minduration', 'maxduration', 'startdelay'];
 
@@ -159,6 +161,7 @@ function isValidVideoRequest(bidRequest) {
 }
 
 function buildRequests(validBids, bidderRequest) {
+  adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
   let videoBids = validBids.filter(bid => isVideoBid(bid));
   let bannerBids = validBids.filter(bid => isBannerBid(bid));
   let requests = [];
@@ -248,7 +251,7 @@ function buildVideoOutstreamResponse(bidResponse, context) {
 }
 
 function getBidFloor(bid) {
-  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+  const currency = adServerCurrency || DEFAULT_CURRENCY;
 
   if (typeof bid.getFloor !== 'function') {
     return utils.deepAccess(bid, 'params.bidFloor', 0.05);

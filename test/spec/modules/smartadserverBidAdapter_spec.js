@@ -979,7 +979,7 @@ describe('Smart bid adapter tests', function () {
           }
         }
       });
-    
+
       return addFPDToBidderRequest(OUTSTREAM_DEFAULT_PARAMS[0]).then(res => {
         const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS, res);
         expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');

@@ -1,4 +1,4 @@
-import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

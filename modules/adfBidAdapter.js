@@ -6,7 +6,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
-import { getCurrencyFromBidderRequest } from '../libraries/currencyUtils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const { getConfig } = config;
 
