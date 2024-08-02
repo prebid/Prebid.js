@@ -22,7 +22,6 @@ export const mobianBrandSafetySubmodule = {
 function init() {
   return true;
 }
-
 function getBidRequestData(bidReqConfig, callback, config) {
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const pageUrl = encodeURIComponent(getPageUrl());
@@ -54,25 +53,55 @@ function getBidRequestData(bidReqConfig, callback, config) {
           .filter(key => key.startsWith('emotion_') && response[key])
           .map(key => key.replace('emotion_', ''));
 
-        const risk = {
-          'risk': mobianRisk,
-          'contentCategories': categories,
-          'sentiment': sentiment,
-          'emotions': emotions
+        const categoryFlags = {
+          adult: categories.includes('adult'),
+          arms: categories.includes('arms'),
+          crime: categories.includes('crime'),
+          death_injury: categories.includes('death_injury'),
+          piracy: categories.includes('piracy'),
+          hate_speech: categories.includes('hate_speech'),
+          obscenity: categories.includes('obscenity'),
+          drugs: categories.includes('drugs'),
+          spam: categories.includes('spam'),
+          terrorism: categories.includes('terrorism'),
+          debated_issue: categories.includes('debated_issue')
         };
 
-        resolve(risk);
-        deepSetValue(ortb2Site.ext, 'data.mobian', risk);
-        callback()
+        const emotionFlags = {
+          love: emotions.includes('love'),
+          joy: emotions.includes('joy'),
+          anger: emotions.includes('anger'),
+          surprise: emotions.includes('surprise'),
+          sadness: emotions.includes('sadness'),
+          fear: emotions.includes('fear')
+        };
+
+        deepSetValue(ortb2Site.ext, 'data.mobianRisk', mobianRisk);
+        deepSetValue(ortb2Site.ext, 'data.mobianSentiment', sentiment);
+
+        Object.entries(categoryFlags).forEach(([category, value]) => {
+          deepSetValue(ortb2Site.ext, `data.mobianCategory${category.charAt(0).toUpperCase() + category.slice(1)}`, value);
+        });
+
+        Object.entries(emotionFlags).forEach(([emotion, value]) => {
+          deepSetValue(ortb2Site.ext, `data.mobianEmotion${emotion.charAt(0).toUpperCase() + emotion.slice(1)}`, value);
+        });
+
+        resolve({
+          risk: mobianRisk,
+          sentiment: sentiment,
+          categoryFlags: categoryFlags,
+          emotionFlags: emotionFlags
+        });
+        callback();
       },
       error: function () {
         resolve({});
-        callback()
+        callback();
       }
     });
   });
 }
-
 function getPageUrl() {
   return window.location.href;
 }
