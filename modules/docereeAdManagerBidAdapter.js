@@ -104,7 +104,7 @@ export function getPayload(bid, userData) {
     firstname: firstname || '',
     lastname: lastname || '',
     specialization: specialization || '',
-    hcpid: hcpid || '',
+    hcpid: '',
     gender: gender || '',
     city: city || '',
     state: state || '',
@@ -118,7 +118,7 @@ export function getPayload(bid, userData) {
     hashedmobile: hashedmobile || '',
     country: country || '',
     organization: organization || '',
-    dob: dob || '',
+    dob: '',
     userconsent: 1,
     mobile: mobile || '',
     pageurl: publisherUrl || ''

@@ -10,7 +10,7 @@ import {
 } from 'modules/discoveryBidAdapter.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
 import * as utils from 'src/utils.js';
-import { getHLen, getHC, getDM } from '../../../src/fpd/navigator.js';
+import {getDM, getHC, getHLen} from '../../../libraries/navigatorData/navigatorData.js';
 
 describe('discovery:BidAdapterTests', function () {
   let sandbox;
