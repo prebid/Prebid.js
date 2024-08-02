@@ -856,7 +856,8 @@ describe('IndexexchangeAdapter', function () {
         source: 'identityinc.com',
         uids: [
           {
-            id: 'identityid'
+            id: 'identityid',
+            atype: 1
           }
         ]
       }
@@ -1383,8 +1384,14 @@ describe('IndexexchangeAdapter', function () {
 
       it('identity data in impression should have correct format and value (single identity partner)', function () {
         const impression = payload.user.eids;
+        expect(impression).to.be.an('array');
+        expect(impression).to.have.lengthOf(1);
         expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids).to.be.an('array');
+        expect(impression[0].uids).to.have.lengthOf(1);
         expect(impression[0].uids[0].id).to.equal(testCopy.IdentityIp.data.uids[0].id);
+        expect(impression[0].uids[0].atype).to.exist;
+        expect(impression[0].uids[0].atype).to.equal(testCopy.IdentityIp.data.uids[0].atype);
       });
     });
 
