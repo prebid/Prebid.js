@@ -35,6 +35,7 @@ describe('docereeadmanager', function () {
     bidder: 'docereeadmanager',
     params: {
       placementId: 'DOC-19-1',
+      publisherUrl: 'xxxxxx.com/xxxx',
       gdpr: '1',
       gdprconsent:
         'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g',
@@ -172,7 +173,8 @@ describe('docereeadmanager', function () {
         'organization',
         'dob',
         'userconsent',
-        'mobile'
+        'mobile',
+        'pageurl'
       );
       expect(payloadData.userid).to.equal('Xx.xxx.xxxxxx');
       expect(payloadData.email).to.equal('xxxx@mail.com');
@@ -196,6 +198,7 @@ describe('docereeadmanager', function () {
       expect(payloadData.requestId).to.equal('testing');
       expect(payloadData.mobile).to.equal('XXXXXXXXXX');
       expect(payloadData.adunit).to.equal('DOC-19-1');
+      expect(payloadData.pageurl).to.equal('xxxxxx.com/xxxx');
     })
   })
 });

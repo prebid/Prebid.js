@@ -75,9 +75,14 @@ export function getPayload(bid, userData) {
     return false;
   }
   const { bidId, params } = bid;
-  const { placementId } = params;
+  const { placementId, publisherUrl } = params;
   const {
     userid,
+    email,
+    firstname,
+    lastname,
+    hcpid,
+    dob,
     specialization,
     gender,
     city,
@@ -115,7 +120,8 @@ export function getPayload(bid, userData) {
     organization: organization || '',
     dob: dob || '',
     userconsent: 1,
-    mobile: mobile || ''
+    mobile: mobile || '',
+    pageurl: publisherUrl || ''
   };
   return {
     data,
