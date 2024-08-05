@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.16.5",
+    "@babel/plugin-proposal-private-methods": "^7.18.6",
     "@wdio/browserstack-service": "^8.29.0",
     "@wdio/cli": "^8.29.0",
     "@wdio/concise-reporter": "^8.29.0",
