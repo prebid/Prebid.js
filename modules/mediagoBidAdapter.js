@@ -271,8 +271,6 @@ function getParam(validBidRequests, bidderRequest) {
         },
         device: {
           nbw: getConnectionDownLink(),
-          // hc: getHC(),
-          // dm: getDM()
         }
       },
       user: {
