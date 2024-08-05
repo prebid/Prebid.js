@@ -11,19 +11,6 @@ const CUR = 'USD';
 const TTL = 1200;
 const ENDPOINT_URL = `https://point.contextualadv.com/?t=2&partner=`;
 
-const NATIVE_ASSETS_IDS = { 1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'rating', 7: 'downloads', 8: 'cta' };
-
-const NATIVE_ASSETS_TYPES = {
-  title: {id: 1, title: {len: 25}},
-  icon: {id: 2, img: {type: 1}},
-  image: {id: 3, img: {type: 3}},
-  sponsoredBy: {id: 4, data: {type: 1, len: 30}},
-  body: {id: 5, data: {type: 2, len: 100}},
-  rating: {id: 6, data: {type: 3, len: 25}},
-  downloads: {id: 7, data: {type: 5, len: 25}},
-  cta: {id: 8, data: {type: 12, len: 25}}
-};
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: MEDIA_TYPES,
@@ -138,20 +125,10 @@ const getMediaTypeValues = {
     let assets = Object.keys(adUnit.mediaTypes.native);
 
     for (let asset of assets) {
-      if (NATIVE_ASSETS_TYPES[asset]) {
-        const assetItem = { ...NATIVE_ASSETS_TYPES[asset] };
-        let assetName = NATIVE_ASSETS_IDS[assetItem.id];
-        assetItem[assetName] = {...NATIVE_ASSETS_TYPES[asset][assetName]};
-
-        assetItem[assetName].required = adUnit.mediaTypes.native[asset].required ? 1 : 0;
-        if (adUnit.mediaTypes.native[asset].len) { assetItem[assetName].len = adUnit.mediaTypes.native[asset].len; }
-        if (adUnit.mediaTypes.native[asset].sizes) {
-          const size = Array.isArray(adUnit.mediaTypes.native[asset].sizes[0]) ? adUnit.mediaTypes.native[asset].sizes[0] : adUnit.mediaTypes.native[asset].sizes;
-          assetItem[assetName].w = size[0];
-          assetItem[assetName].h = size[1];
-        }
-
-        req.assets.push(assetItem);
+      let item = prepareAsset(asset, adUnit.mediaTypes.native[asset]);
+      if (item) {
+        item.required = adUnit.mediaTypes.native[asset].required ? 1 : 0;
+        req.assets.push(item);
       }
     }
 
@@ -174,6 +151,77 @@ const getMediaTypeValues = {
 
     return videoObj;
   }
+}
+
+function prepareAsset(assetKey, asset) {
+  let item = false;
+
+  let sizeTmp = false;
+  if (asset.sizes) { sizeTmp = Array.isArray(asset.sizes[0]) ? asset.sizes[0] : asset.sizes; }
+
+  switch (assetKey) {
+    case 'title':
+      item = {
+        id: 1,
+        title: { len: asset.len || 25 }
+      };
+      break;
+
+    case 'icon':
+      item = {
+        id: 2,
+        img: { type: 1 },
+        w: sizeTmp[0] || 50,
+        h: sizeTmp[1] || 50
+      };
+      break;
+
+    case 'image':
+      item = {
+        id: 3,
+        img: { type: 3 },
+        w: sizeTmp[0] || 300,
+        h: sizeTmp[1] || 250
+      };
+      break;
+
+    case 'sponsoredBy':
+      item = {
+        id: 4,
+        data: { type: 1, length: asset.len || 30 }
+      };
+      break;
+
+    case 'body':
+      item = {
+        id: 5,
+        data: { type: 2, length: asset.len || 100 }
+      };
+      break;
+
+    case 'rating':
+      item = {
+        id: 6,
+        data: { type: 3, length: asset.len || 25 }
+      };
+      break;
+
+    case 'downloads':
+      item = {
+        id: 7,
+        data: { type: 5, length: asset.len || 25 }
+      };
+      break;
+
+    case 'cta':
+      item = {
+        id: 8,
+        data: { type: 12, length: asset.len || 25 }
+      };
+      break;
+  }
+
+  return item;
 }
 
 function getFloor(adUnit, mediaType) {
@@ -271,14 +319,38 @@ function prepareNativeAd(adm) {
   }
 
   nativeObj.assets.forEach(asset => {
-    let kind = NATIVE_ASSETS_IDS[asset.id];
+    switch (asset.id) {
+      case 1:
+        native.title = asset.title ? asset.title.text : '';
+        break;
 
-    if (asset.title != undefined) {
-      native[kind] = asset.title.text;
-    } else if (asset.img != undefined) {
-      native[kind] = {url: asset.img.url, width: asset.img.w, height: asset.img.h};
-    } else if (asset.data != undefined) {
-      native[kind] = asset.data.value;
+      case 2:
+        native.icon = asset.img ? {url: asset.img.url, width: asset.img.w, height: asset.img.h} : {};
+        break;
+
+      case 3:
+        native.image = asset.img ? {url: asset.img.url, width: asset.img.w, height: asset.img.h} : {};
+        break;
+
+      case 4:
+        native.sponsoredBy = asset.data ? asset.data.value : '';
+        break;
+
+      case 5:
+        native.body = asset.data ? asset.data.value : '';
+        break;
+
+      case 6:
+        native.rating = asset.data ? asset.data.value : '';
+        break;
+
+      case 7:
+        native.downloads = asset.data ? asset.data.value : '';
+        break;
+
+      case 8:
+        native.cta = asset.data ? asset.data.value : '';
+        break;
     }
   });
 
