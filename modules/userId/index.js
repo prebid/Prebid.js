@@ -133,7 +133,7 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
-import {buildEidPermissions, createEidsArray, EID_CONFIG} from './eids.js';
+import {buildEidPermissions, createEidsArray, EID_CONFIG, getEids} from './eids.js';
 import {
   getCoreStorageManager,
   getStorageManager,
@@ -466,32 +466,40 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
   return getPrioritizedCombinedSubmoduleIds(eligibleSubmodules);
 }
 
-function collectByPriority(submodules, getIds, getName) {
-  return Object.fromEntries(Object.entries(submodules.reduce((carry, submod) => {
-    const ids = getIds(submod);
-    ids && Object.keys(ids).forEach(key => {
-      const maybeCurrentIdPriority = idPriority[key]?.indexOf(getName(submod));
-      const currentIdPriority = isNumber(maybeCurrentIdPriority) ? maybeCurrentIdPriority : -1;
-      const currentIdState = {priority: currentIdPriority, value: ids[key]};
-      if (carry[key]) {
-        const winnerIdState = currentIdState.priority > carry[key].priority ? currentIdState : carry[key];
-        carry[key] = winnerIdState;
-      } else {
-        carry[key] = currentIdState;
-      }
-    });
-    return carry;
-  }, {})).map(([k, v]) => [k, v.value]));
+function getPrimaryIds(submodule) {
+  if (submodule.primaryIds) return submodule.primaryIds;
+  const ids = Object.keys(submodule.eids ?? {});
+  if (ids.length > 1) {
+    throw new Error(`ID submodule ${submodule.name} can provide multiple IDs, but does not specify 'primaryIds'`)
+  }
+  return ids;
+}
+
+function orderByPriority(items, getPrimaryIdKeys, getIdKeys, getName) {
+  const tally = {};
+  items.forEach(item => {
+    const primaryIds = getPrimaryIdKeys(item);
+    getIdKeys(item).forEach(key => {
+      const keyItems = tally[key] = tally[key] ?? []
+      const keyPriority = idPriority[key]?.indexOf(getName(item)) ?? (primaryIds.includes(key) ? 0 : -1);
+      const pos = keyItems.findIndex(([priority]) => priority < keyPriority);
+      keyItems.splice(pos === -1 ? keyItems.length : pos, 0, [keyPriority, item])
+    })
+  })
+  return Object.fromEntries(Object.entries(tally).map(([key, items]) => [key, items.map(([_, item]) => item)]))
 }
 
 /**
  * @param {SubmoduleContainer[]} submodules
  */
 function getPrioritizedCombinedSubmoduleIds(submodules) {
-  return collectByPriority(
-    submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length),
-    (submod) => submod.idObj,
-    (submod) => submod.submodule.name
+  return Object.fromEntries(
+    Object.entries(orderByPriority(
+      submodules,
+      submod => getPrimaryIds(submod.submodule),
+      submod => Object.keys(submod.idObj || {}),
+      submod => submod.submodule.name
+    )).map(([key, submodules]) => [key, submodules[0].idObj[key]])
   )
 }
 
@@ -1039,11 +1047,9 @@ function canUseStorage(submodule) {
 
 function updateEIDConfig(submodules) {
   EID_CONFIG.clear();
-  Object.entries(collectByPriority(
-    submodules,
-    (mod) => mod.eids,
-    (mod) => mod.name
-  )).forEach(([id, conf]) => EID_CONFIG.set(id, conf));
+  Object.entries(
+    orderByPriority(submodules, (mod) => getPrimaryIds(mod), (mod) => Object.keys(mod.eids || {}), (mod) => mod.name)
+  ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
 /**
@@ -1089,12 +1095,12 @@ function updateSubmodules() {
 /**
  * This function will update the idPriority according to the provided configuration
  * @param {Object} idPriorityConfig
- * @param {SubmoduleContainer[]} submodules
+ * @param {Submodule[]} submodules
  */
 function updateIdPriority(idPriorityConfig, submodules) {
   if (idPriorityConfig) {
     const result = {};
-    const aliasToName = new Map(submodules.map(s => s.submodule.aliasName ? [s.submodule.aliasName, s.submodule.name] : []));
+    const aliasToName = new Map(submodules.map(s => s.aliasName ? [s.aliasName, s.name] : []));
     Object.keys(idPriorityConfig).forEach(key => {
       const priority = isArray(idPriorityConfig[key]) ? [...idPriorityConfig[key]].reverse() : []
       result[key] = priority.map(s => aliasToName.has(s) ? aliasToName.get(s) : s);
@@ -1103,6 +1109,7 @@ function updateIdPriority(idPriorityConfig, submodules) {
   } else {
     idPriority = {};
   }
+  updateEIDConfig(submodules)
 }
 
 export function requestDataDeletion(next, ...args) {
@@ -1172,7 +1179,7 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
         updateSubmodules();
-        updateIdPriority(userSync.idPriority, submodules);
+        updateIdPriority(userSync.idPriority, submoduleRegistry);
         initIdSystem({ready: true});
       }
     }
@@ -1200,3 +1207,18 @@ export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
   }
 }
 registerOrtbProcessor({type: REQUEST, name: 'userExtEids', fn: setOrtbUserExtEids});
+
+
+export function enrichEids(next, fpd) {
+  next(fpd.then(ortb2Fragments => {
+    const modulesById = orderByPriority(
+      submodules,
+      (submod) => getPrimaryIds(submod.submodule),
+      (submod) => Object.keys(submod.idObj ?? {}),
+      (submod) => submod.submodule.name
+    )
+    const {global, bidder} = ortb2Fragments;
+    deepSetValue(global, 'user.ext.eids', getEids(modulesById))
+    return ortb2Fragments;
+  }));
+}

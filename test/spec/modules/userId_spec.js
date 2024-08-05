@@ -2,7 +2,7 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage,
-  dep,
+  dep, enrichEids,
   findRootDomain,
   getConsentHash, getValidSubmoduleConfigs,
   init,
@@ -70,6 +70,7 @@ describe('User ID', function () {
       decode(v) {
         return v;
       },
+      primaryIds: [],
       aliasName,
       eids
     }
@@ -2716,5 +2717,141 @@ describe('User ID', function () {
         });
       });
     })
+  });
+
+  describe('enrichEids', () => {
+    let idValues;
+
+    function mockIdSubmodule(key, ...extraKeys) {
+      return {
+        name: `${key}Module`,
+        decode(v) { return v },
+        getId() {
+          return {
+            id: Object.fromEntries(
+              idValues[key]?.map(mod => [mod, key === mod ? `${key}_value` : `${mod}_value_from_${key}Module`])
+            )
+          }
+        },
+        primaryIds: [key],
+        eids: {
+          [key]: {
+            source: `${key}.com`,
+            atype: 1,
+          },
+          ...Object.fromEntries(extraKeys.map(extraKey => [extraKey, {
+            source: `${extraKey}.com`,
+            atype: 1,
+            getUidExt() {
+              return {provider: `${key}Module`}
+            }
+          }]))
+        }
+      }
+    }
+
+    beforeEach(() => {
+      idValues = {
+        mockId1: ['mockId1'],
+        mockId2: ['mockId2', 'mockId3'],
+        mockId3: ['mockId1', 'mockId2', 'mockId3', 'mockId4'],
+        mockId4: ['mockId4']
+      }
+      init(config);
+
+      setSubmoduleRegistry([
+        mockIdSubmodule('mockId1'),
+        mockIdSubmodule('mockId2', 'mockId3'),
+        mockIdSubmodule('mockId3', 'mockId1', 'mockId2', 'mockId4'),
+        mockIdSubmodule('mockId4')
+      ]);
+    })
+
+    function enrich({global = {}, bidder = {}} = {}) {
+      let result;
+      enrichEids((res) => {
+        result = res;
+      }, getGlobal().getUserIdsAsync().then(() => ({global, bidder})));
+      return result;
+    }
+
+    function eidsFrom(nameFromModuleMapping) {
+      return Object.entries(nameFromModuleMapping).map(([key, module]) => {
+        const owner = `${key}Module` === module
+        const uid = {
+          id: owner ? `${key}_value` : `${key}_value_from_${module}`,
+          atype: 1,
+        };
+        if (!owner) {
+          uid.ext = {provider: module}
+        }
+        return {
+          source: `${key}.com`,
+          uids: [uid]
+        }
+      })
+    }
+
+    it('should use lower-priority module if higher priority module cannot provide an id', () => {
+      idValues.mockId3 = []
+      config.setConfig({
+        userSync: {
+          idPriority: {
+            mockId1: ['mockId3Module', 'mockId1Module']
+          },
+          auctionDelay: 10,
+          userIds: [
+            { name: 'mockId1Module' },
+            { name: 'mockId3Module' },
+          ]
+        }
+      });
+      return enrich().then(({global}) => {
+        expect(global.user.ext.eids).to.eql(eidsFrom({
+          mockId1: 'mockId1Module'
+        }))
+      });
+    });
+
+    it('should not choke if no id is available for a module', () => {
+      idValues.mockId1 = []
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [
+            { name: 'mockId1Module' },
+          ]
+        }
+      });
+      return enrich().then(({global}) => {
+        expect(global.user.ext.eids).to.eql([])
+      });
+    });
+
+    it('should add EIDs that are not bidder-restricted', () => {
+      config.setConfig({
+        userSync: {
+          idPriority: {
+            mockId1: ['mockId3Module', 'mockId1Module'],
+            mockId4: ['mockId4Module', 'mockId3Module']
+          },
+          auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
+          userIds: [
+            { name: 'mockId1Module' },
+            { name: 'mockId2Module' },
+            { name: 'mockId3Module' },
+            { name: 'mockId4Module' },
+          ]
+        }
+      });
+      return enrich().then(({global}) => {
+        expect(global.user.ext.eids).to.eql(eidsFrom({
+          mockId1: 'mockId3Module',
+          mockId2: 'mockId2Module',
+          mockId3: 'mockId3Module',
+          mockId4: 'mockId4Module'
+        }));
+      });
+    });
   });
 });
