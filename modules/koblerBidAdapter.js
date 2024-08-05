@@ -10,7 +10,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getAdditionalData, getCurrencyFromBidderRequest, setAdditionalData } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
@@ -18,7 +18,6 @@ const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_c
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
 const SUPPORTED_CURRENCY = 'USD';
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
-let adServerCurrency;
 
 export const isBidRequestValid = function (bid) {
   if (!bid || !bid.bidId) {
@@ -30,7 +29,6 @@ export const isBidRequestValid = function (bid) {
 };
 
 export const buildRequests = function (validBidRequests, bidderRequest) {
-  adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
   const bidderEndpoint = isTest(validBidRequests[0]) ? DEV_BIDDER_ENDPOINT : BIDDER_ENDPOINT;
   return {
     method: 'POST',
@@ -38,17 +36,18 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
     data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
     options: {
       contentType: 'application/json'
-    }
+    },
+    bidderRequest
   };
 };
 
-export const interpretResponse = function (serverResponse) {
+export const interpretResponse = function (serverResponse, request) {
   const res = serverResponse.body;
   const bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        bids.push({
+        const bid = {
           requestId: b.impid,
           cpm: b.price,
           currency: res.cur,
@@ -63,14 +62,18 @@ export const interpretResponse = function (serverResponse) {
           meta: {
             advertiserDomains: b.adomain
           }
-        })
+        }
+        setAdditionalData(bid, 'adServerCurrency', getCurrencyFromBidderRequest(request.bidderRequest));
+        bids.push(bid);
       })
     });
   }
+
   return bids;
 };
 
 export const onBidWon = function (bid) {
+  const adServerCurrency = getAdditionalData(bid, 'adServerCurrency');
   // We intentionally use the price set by the publisher to replace the ${AUCTION_PRICE} macro
   // instead of the `originalCpm` here. This notification is not used for billing, only for extra logging.
   const publisherPrice = bid.cpm || 0;

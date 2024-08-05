@@ -261,6 +261,9 @@ describe('AdgenerationAdapter', function () {
   describe('interpretResponse', function () {
     const bidRequests = {
       banner: {
+        bidderRequest: {
+          ortb2: { ext: { cur: ['JPY'] } }
+        },
         bidRequest: {
           bidder: 'adg',
           params: {
@@ -275,6 +278,9 @@ describe('AdgenerationAdapter', function () {
         },
       },
       native: {
+        bidderRequest: {
+          ortb2: { ext: { cur: ['JPY'] } }
+        },
         bidRequest: {
           bidder: 'adg',
           params: {
@@ -312,6 +318,9 @@ describe('AdgenerationAdapter', function () {
         },
       },
       upperBillboard: {
+        bidderRequest: {
+          ortb2: { ext: { cur: ['JPY'] } }
+        },
         bidRequest: {
           bidder: 'adg',
           params: {
@@ -924,7 +933,7 @@ describe('AdgenerationAdapter', function () {
       };
       return addFPDToBidderRequest(bidderRequest).then(res => {
         spec.buildRequests(bidRequests, res)[0];
-        const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, bidRequests.upperBillboard)[0];
+        const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, { ...bidRequests.upperBillboard, bidderRequest: res })[0];
         expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
         expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
         expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);

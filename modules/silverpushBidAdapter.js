@@ -32,8 +32,6 @@ const VIDEO_ORTB_PARAMS = [
   'linearity'
 ];
 
-let adServerCurrency;
-
 export const VIDEO_ORTB_REQUIRED = ['api', 'mimes', 'placement', 'protocols', 'minduration', 'maxduration', 'startdelay'];
 
 export const spec = {
@@ -67,7 +65,7 @@ export const CONVERTER = ortbConverter({
       imp = buildBannerImp(bidRequest, imp);
     }
 
-    const bidFloor = getBidFloor(bidRequest);
+    const bidFloor = getBidFloor(bidRequest, bidRequest.bidderRequest);
 
     utils.deepSetValue(imp, 'bidfloor', bidFloor);
 
@@ -161,7 +159,6 @@ function isValidVideoRequest(bidRequest) {
 }
 
 function buildRequests(validBids, bidderRequest) {
-  adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
   let videoBids = validBids.filter(bid => isVideoBid(bid));
   let bannerBids = validBids.filter(bid => isBannerBid(bid));
   let requests = [];
@@ -219,7 +216,8 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: REQUEST_URL,
-    data: CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
+    data: CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } }),
+    bidderRequest
   }
 }
 
@@ -250,8 +248,8 @@ function buildVideoOutstreamResponse(bidResponse, context) {
   return {...bidResponse};
 }
 
-function getBidFloor(bid) {
-  const currency = adServerCurrency || DEFAULT_CURRENCY;
+function getBidFloor(bid, bidderRequest) {
+  const currency = getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
   if (typeof bid.getFloor !== 'function') {
     return utils.deepAccess(bid, 'params.bidFloor', 0.05);

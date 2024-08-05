@@ -15,7 +15,6 @@ import { deepAccess, getBidIdParameter } from '../src/utils.js';
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
-let adServerCurrency;
 
 export const spec = {
   code: ADG_BIDDER_CODE,
@@ -38,7 +37,6 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
-    adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const ADGENE_PREBID_VERSION = '1.6.3';
     let serverRequests = [];
@@ -96,7 +94,8 @@ export const spec = {
         method: 'GET',
         url: url,
         data: data,
-        bidRequest: validBidRequests[i]
+        bidRequest: validBidRequests[i],
+        bidderRequest
       });
     }
     return serverRequests;
@@ -121,7 +120,7 @@ export const spec = {
       height: body.h ? body.h : 1,
       creativeId: body.creativeid || '',
       dealId: body.dealid || '',
-      currency: adServerCurrency,
+      currency: getCurrencyFromBidderRequest(bidRequests.bidderRequest),
       netRevenue: true,
       ttl: body.ttl || 10,
     };
