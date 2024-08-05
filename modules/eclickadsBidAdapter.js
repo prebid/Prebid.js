@@ -1,7 +1,7 @@
 import { NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 
 // ***** ECLICKADS ADAPTER *****
 export const BIDDER_CODE = 'eclickads';
@@ -21,18 +21,18 @@ export const spec = {
     const ortb2Device = bidderRequest.ortb2.device;
     const ortb2Site = bidderRequest.ortb2.site;
 
-    const winTop = getWindowTop();
-    const device = getDevice(ortb2Device.ua);
+    const isMobile = getDevice();
     const imp = [];
     const fENDPOINT = ENDPOINT + (ortb2ConfigFPD.fosp_uid || '');
     const request = {
-      deviceWidth: winTop.screen.width,
-      deviceHeight: winTop.screen.height,
+      deviceWidth: ortb2Device.w,
+      deviceHeight: ortb2Device.h,
+      ua: ortb2Device.ua,
       language: ortb2Device.language,
+      device: isMobile ? 'mobile' : 'desktop',
       host: ortb2Site.domain,
       page: ortb2Site.page,
       imp,
-      device,
       myvne_id: ortb2ConfigFPD.myvne_id || '',
       orig_aid: ortb2ConfigFPD.orig_aid,
       fosp_aid: ortb2ConfigFPD.fosp_aid,
@@ -78,21 +78,3 @@ export const spec = {
   },
 };
 registerBidder(spec);
-
-const getDevice = (ua = '') => {
-  if (
-    /(tablet|ipad|playbook|silk|android 3.0|xoom|sch-i800|kindle)|(android(?!.*mobi))/i.test(
-      ua.toLowerCase()
-    )
-  ) {
-    return 'tablet';
-  }
-  if (
-    /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series([46])0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(
-      ua.toLowerCase()
-    )
-  ) {
-    return 'mobile';
-  }
-  return 'desktop';
-};

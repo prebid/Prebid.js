@@ -108,6 +108,7 @@ describe('eclickadsBidAdapter', () => {
         'deviceHeight',
         'language',
         'host',
+        'ua',
         'page',
         'imp',
         'device',
