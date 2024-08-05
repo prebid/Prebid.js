@@ -33,7 +33,13 @@ const PRICE_FLOOR_WILDCARD = '*'
 const localPbjsRef = getGlobal()
 
 function getMediaType(accessObj) {
-  return deepAccess(accessObj, 'mediaTypes.video') ? VIDEO : BANNER;
+  if (deepAccess(accessObj, 'mediaTypes.video')) {
+    return VIDEO;
+  } else if (deepAccess(accessObj, 'mediaTypes.native')) {
+    return NATIVE;
+  } else {
+    return BANNER;
+  }
 }
 
 /**
@@ -352,7 +358,11 @@ export const spec = {
           if (bidResponse.mediaType === VIDEO) {
             bidResponse.vastUrl = 'data:text/xml;charset=utf-8,' + encodeURIComponent(bid.adm)
           }
-
+          if (bidResponse.mediaType === NATIVE) {
+            bidResponse.native = {
+              ortb: JSON.parse(bidResponse.ad)
+            };
+          }
           bidResponses.push(bidResponse)
         })
       })
@@ -433,7 +443,7 @@ export const spec = {
 
       body.seatbid.forEach((seatbid) => {
         // Grab the syncs for each seatbid
-        seatbid.syncUrls.forEach((sync) => {
+        seatbid.syncUrls?.forEach((sync) => {
           if (types[sync.type]) {
             if (sync.url.trim() !== '') {
               syncs.push({
