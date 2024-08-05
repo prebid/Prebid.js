@@ -343,7 +343,7 @@ var mapAsset = function mapAsset(paramName, paramValue) {
           id: id,
           required: required,
           title: {
-            len: len
+            len: len || 140
           }
         });
         break;
