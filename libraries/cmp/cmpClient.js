@@ -1,4 +1,4 @@
-import {GreedyPromise} from '../../src/utils/promise.js';
+import {PbPromise} from '../../src/utils/promise.js';
 
 /**
  * @typedef {function} CMPClient
@@ -130,7 +130,7 @@ export function cmpClient(
 
   if (isDirect) {
     client = function invokeCMPDirect(params = {}) {
-      return new GreedyPromise((resolve, reject) => {
+      return new PbPromise((resolve, reject) => {
         const ret = cmpFrame[apiName](...resolveParams({
           ...params,
           callback: (params.callback || mode === MODE_CALLBACK) ? wrapCallback(params.callback, resolve, reject) : undefined,
@@ -144,7 +144,7 @@ export function cmpClient(
     win.addEventListener('message', handleMessage, false);
 
     client = function invokeCMPFrame(params, once = false) {
-      return new GreedyPromise((resolve, reject) => {
+      return new PbPromise((resolve, reject) => {
         // call CMP via postMessage
         const callId = Math.random().toString();
         const msg = {
