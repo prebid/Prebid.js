@@ -41,8 +41,8 @@ export const spec = {
       device: bidderRequest.ortb2?.device || prepareDevice(),
       tmax: bidderRequest.timeout,
       cur: [ CUR ],
-      regs: { ext: {}, coppa: config.getConfig('coppa') == true ? 1 : 0 },
       source: { ext: { schain: validBidRequests[0].schain } },
+      regs: { ext: {}, coppa: config.getConfig('coppa') == true ? 1 : 0 },
       user: { ext: {} }
     };
 
