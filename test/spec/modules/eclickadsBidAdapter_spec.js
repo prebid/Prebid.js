@@ -15,6 +15,13 @@ describe('eclickadsBidAdapter', () => {
       zid: '7096',
     },
   };
+  const eclickadsBidderConfigData = {
+    orig_aid: 'xqf7zdmg7the65ac.1718271138.des',
+    fosp_aid: '1013000403',
+    fosp_uid: '7aab24a4663258a2c1d76a08b20f7e6e',
+    id: '84b2a41c4299bb9b8924423e',
+    myvne_id: '1013000403',
+  };
   const bidRequest = {
     code: 'test-div',
     size: [[320, 85]],
@@ -55,6 +62,9 @@ describe('eclickadsBidAdapter', () => {
         domain: 'page.example.com',
         page: 'https://page.example.com/here.html',
         ref: 'https://ref.example.com',
+        ext: {
+          data: eclickadsBidderConfigData,
+        },
       },
     },
   };
@@ -77,22 +87,6 @@ describe('eclickadsBidAdapter', () => {
   });
 
   describe('buildRequests', () => {
-    const eclickadsBidderConfig = {
-      site: {
-        orig_aid: 'xqf7zdmg7the65ac.1718271138.des',
-        fosp_aid: '1013000403',
-        fosp_uid: '7aab24a4663258a2c1d76a08b20f7e6e',
-        id: '84b2a41c4299bb9b8924423e',
-      },
-      user: {
-        myvne_id: '1013000403',
-      },
-    };
-    config.setBidderConfig({
-      bidders: ['eclickads'],
-      config: eclickadsBidderConfig,
-    });
-
     const bidList = [bidItem];
     const request = config.runWithBidder(BIDDER_CODE, () =>
       spec.buildRequests(bidList, bidRequest)
@@ -105,7 +99,7 @@ describe('eclickadsBidAdapter', () => {
       expect(request.method).to.be.exist;
       expect(request.method).equal('POST');
       expect(request.url).to.be.exist;
-      expect(request.url).equal(ENDPOINT + eclickadsBidderConfig.site.fosp_uid);
+      expect(request.url).equal(ENDPOINT + eclickadsBidderConfigData.fosp_uid);
     });
     it('should return valid data format if bid array is valid', () => {
       expect(_data).to.be.an('object');
