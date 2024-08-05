@@ -1083,3 +1083,29 @@ export function binarySearch(arr, el, key = (el) => el) {
   }
   return left;
 }
+
+const skipPatterns = [
+  /^\[object HTML.*]$/,
+  /^\[object Window.*]$/
+]
+
+export function cloneEventArguments(args) {
+  try {
+    return JSON.parse(
+      JSON.stringify(
+        args,
+        // When data has a reference to window or any html elements
+        // JSON.stringify fails with TypeError: Converting circular structure to JSON
+        // replacer function below excludes referenced html elements
+        (_key, value) => {
+          if (skipPatterns.some(pattern => pattern.test(String(value))) || typeof value === 'function') {
+            return undefined;
+          }
+          return value;
+        },
+      ),
+    );
+  } catch (e) {
+    return args;
+  }
+}

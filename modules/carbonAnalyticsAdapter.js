@@ -1,4 +1,4 @@
-import { deepAccess, generateUUID, logError } from '../src/utils.js';
+import { cloneEventArguments, deepAccess, generateUUID, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -31,7 +31,8 @@ let timeLastAuctionEvent = null;
 
 export let carbonAdapter = Object.assign(adapter({analyticsHost, ANALYTICS_TYPE}), {
   track({eventType, args}) {
-    args = args ? JSON.parse(JSON.stringify(args)) : {};
+    args = cloneEventArguments(args || {});
+
     switch (eventType) {
       case EVENTS.AUCTION_END: {
         registerEngagement();
