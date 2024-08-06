@@ -541,7 +541,6 @@ describe('Adf adapter', function () {
               mediaTypes: mediaTypes,
               getFloor: (args) => {
                 result = args;
-                console.log({args})
                 return {
                   currency: 'DKK',
                   floor

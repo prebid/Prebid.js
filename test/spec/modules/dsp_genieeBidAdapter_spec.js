@@ -83,6 +83,7 @@ describe('Geniee adapter tests', () => {
           url: 'https://rt.gsspat.jp/prebid_uncomfortable',
         });
         setCurrencyConfig({});
+        config.resetConfig();
       });
     });
   });
