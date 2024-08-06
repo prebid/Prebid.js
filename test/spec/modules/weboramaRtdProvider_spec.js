@@ -1510,7 +1510,7 @@ describe('weboramaRtdProvider', function() {
         };
         const data = {
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         };
 
         const entry = {
@@ -1620,7 +1620,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -1746,7 +1746,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -1868,7 +1868,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -2013,7 +2013,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -2156,7 +2156,7 @@ describe('weboramaRtdProvider', function() {
         };
         const data = {
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         };
 
         const entry = {
@@ -2217,7 +2217,7 @@ describe('weboramaRtdProvider', function() {
         };
         const data = {
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         };
 
         const entry = {
@@ -2289,7 +2289,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         });
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: {
@@ -2312,7 +2312,7 @@ describe('weboramaRtdProvider', function() {
 
       it('should use default profile in case of nothing on local storage', function() {
         const defaultProfile = {
-          webo_audiences: ['baz']
+          webo_audiences: [12345]
         };
         const moduleConfig = {
           params: {
@@ -2379,7 +2379,7 @@ describe('weboramaRtdProvider', function() {
 
       it('should use default profile if cant read from local storage', function() {
         const defaultProfile = {
-          webo_audiences: ['baz']
+          webo_audiences: [12345]
         };
         let onDataResponse = {};
         const moduleConfig = {
@@ -2489,7 +2489,7 @@ describe('weboramaRtdProvider', function() {
         };
         const data = {
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         };
 
         const entry = {
@@ -2550,7 +2550,7 @@ describe('weboramaRtdProvider', function() {
         expect(targeting).to.deep.equal({
           'adunit1': {
             webo_cs: ['foo', 'bar'],
-            webo_audiences: ['baz'],
+            webo_audiences: [12345],
             webo_foo: ['bar'],
           },
           'adunit2': data,
@@ -2569,7 +2569,7 @@ describe('weboramaRtdProvider', function() {
                 ext: {
                   data: {
                     webo_cs: ['foo', 'bar'],
-                    webo_audiences: ['baz'],
+                    webo_audiences: [12345],
                     webo_bar: ['baz'],
                   }
                 },
