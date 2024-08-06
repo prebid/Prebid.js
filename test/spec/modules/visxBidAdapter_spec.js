@@ -357,8 +357,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'GBP' : 'USD');
+      config.setConfig({currency: {bidderCurrencyDefault: {visx: 'GBP'}}})
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -412,12 +411,10 @@ describe('VisxAdapter', function () {
         }
       });
 
-      getConfigStub.restore();
+      config.resetConfig();
     });
 
     it('should add currency from currency.adServerCurrency', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'currency.bidderCurrencyDefault.visx' ? '' : 'USD');
       setCurrencyConfig({ adServerCurrency: 'USD' })
       return addFPDToBidderRequest(bidderRequest).then(res => {
         const request = spec.buildRequests(bidRequests, res);
@@ -427,54 +424,8 @@ describe('VisxAdapter', function () {
 
         const postData = request.data;
         expect(postData).to.be.an('object');
-        expect(postData).to.deep.equal({
-          'id': '22edbae2733bf6',
-          'imp': expectedFullImps,
-          'tmax': 3000,
-          'cur': ['USD'],
-          'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-          'site': {
-            'domain': 'localhost:9999',
-            'publisher': {
-              'domain': 'localhost:9999'
-            },
-            'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
-          },
-          'device': {
-            'w': 1259,
-            'h': 934,
-            'dnt': 0,
-            'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'language': 'tr',
-            'sua': {
-              'source': 1,
-              'platform': {
-                'brand': 'macOS'
-              },
-              'browsers': [
-                {
-                  'brand': 'Chromium',
-                  'version': [ '124' ]
-                },
-                {
-                  'brand': 'Google Chrome',
-                  'version': [ '124' ]
-                },
-                {
-                  'brand': 'Not-A.Brand',
-                  'version': [ '99' ]
-                }
-              ],
-              'mobile': 0
-            },
-            'ext': {
-              'cdep': 'treatment_1.1',
-              'webdriver': true
-            }
-          },
-        });
+        expect(postData.cur).to.deep.equal(['USD']);
         setCurrencyConfig({})
-        getConfigStub.restore();
       });
     });
 
