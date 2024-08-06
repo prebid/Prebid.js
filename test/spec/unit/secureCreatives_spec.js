@@ -416,12 +416,21 @@ describe('secureCreatives', () => {
 
       describe('resizing', () => {
         let container, slot;
+        before(() => {
+          const [gtag, atag] = [window.googletag, window.apntag];
+          delete window.googletag;
+          delete window.apntag;
+          after(() => {
+            window.googletag = gtag;
+            window.apntag = atag;
+          })
+        })
         beforeEach(() => {
           pushBidResponseToAuction({
-            adUnitCode: 'au'
+            adUnitCode: 'mock-au'
           });
           container = document.createElement('div');
-          container.id = 'au';
+          container.id = 'mock-au';
           slot = document.createElement('div');
           container.appendChild(slot);
           document.body.appendChild(container)
