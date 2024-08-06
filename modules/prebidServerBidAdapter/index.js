@@ -475,8 +475,8 @@ export function PrebidServer() {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
-          const { emitSeatNonBid, emitAtag } = shouldEmitAnalyticsEvent(s2sBidRequest.s2sConfig, response)
-          if (emitSeatNonBid) {
+          const { seatNonBidData, atagData } = getAnalyticsFlags(s2sBidRequest.s2sConfig, response)
+          if (seatNonBidData) {
             events.emit(EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
               auctionId: bidRequests[0].auctionId,
@@ -486,10 +486,10 @@ export function PrebidServer() {
             });
           }
           // pbs analytics event
-          if (emitSeatNonBid || emitAtag) {
+          if (seatNonBidData || atagData) {
             const data = {
-              seatnonbid: emitSeatNonBid ? response.ext.seatnonbid : undefined,
-              atag: emitAtag ? response.ext.prebid.analytics.tags : undefined,
+              seatnonbid: seatNonBidData,
+              atag: atagData,
               auctionId: bidRequests[0].auctionId,
               requestedBidders,
               response,
@@ -614,17 +614,17 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   }
 }, 'processPBSRequest');
 
-function shouldEmitAnalyticsEvent(s2sConfig, response) {
+function getAnalyticsFlags(s2sConfig, response) {
   return {
-    emitAtag: shouldEmitAtag(response),
-    emitSeatNonBid: shouldEmitNonbids(s2sConfig, response)
+    atagData: getAtagData(response),
+    seatNonBidData: getNonbidData(s2sConfig, response)
   }
 }
-function shouldEmitNonbids(s2sConfig, response) {
-  return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
+function getNonbidData(s2sConfig, response) {
+  return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid: undefined;
 }
 
-function shouldEmitAtag(response) {
+function getAtagData(response) {
   return response?.ext?.prebid?.analytics?.tags;
 }
 
