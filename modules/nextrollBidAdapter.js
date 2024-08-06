@@ -11,6 +11,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getOsVersion } from '../libraries/advangUtils/index.js';
 
 import {find} from '../src/polyfill.js';
 
@@ -312,7 +313,7 @@ function _getDevice(_bidRequest) {
     ua: navigator.userAgent,
     language: navigator['language'],
     os: _getOs(navigator.userAgent.toLowerCase()),
-    osv: _getOsVersion(navigator.userAgent)
+    osv: getOsVersion()
   };
 }
 
@@ -341,27 +342,6 @@ function _getOs(userAgent) {
       return os;
     }
   }) || 'etc';
-}
-
-function _getOsVersion(userAgent) {
-  const clientStrings = [
-    { s: 'Android', r: /Android/ },
-    { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
-    { s: 'Mac OS X', r: /Mac OS X/ },
-    { s: 'Mac OS', r: /(MacPPC|MacIntel|Mac_PowerPC|Macintosh)/ },
-    { s: 'Linux', r: /(Linux|X11)/ },
-    { s: 'Windows 10', r: /(Windows 10.0|Windows NT 10.0)/ },
-    { s: 'Windows 8.1', r: /(Windows 8.1|Windows NT 6.3)/ },
-    { s: 'Windows 8', r: /(Windows 8|Windows NT 6.2)/ },
-    { s: 'Windows 7', r: /(Windows 7|Windows NT 6.1)/ },
-    { s: 'Windows Vista', r: /Windows NT 6.0/ },
-    { s: 'Windows Server 2003', r: /Windows NT 5.2/ },
-    { s: 'Windows XP', r: /(Windows NT 5.1|Windows XP)/ },
-    { s: 'UNIX', r: /UNIX/ },
-    { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
-  ];
-  let cs = find(clientStrings, cs => cs.r.test(userAgent));
-  return cs ? cs.s : 'unknown';
 }
 
 registerBidder(spec);
