@@ -621,7 +621,7 @@ function getAnalyticsFlags(s2sConfig, response) {
   }
 }
 function getNonbidData(s2sConfig, response) {
-  return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid: undefined;
+  return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid : undefined;
 }
 
 function getAtagData(response) {
