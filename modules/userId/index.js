@@ -166,6 +166,7 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
+import {enrichFPD} from "../../src/fpd/enrichment.js";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -1085,6 +1086,7 @@ function updateSubmodules() {
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
     getGlobal().requestBids.before(requestBidsHook, 40);
+    enrichFPD.before(enrichEids);
     adapterManager.callDataDeletionRequest.before(requestDataDeletion);
     coreGetPPID.after((next) => next(getPPID()));
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
@@ -1200,25 +1202,56 @@ init(config);
 
 module('userId', attachIdSystem, { postInstallAllowed: true });
 
-export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
-  const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');
-  if (eids && Object.keys(eids).length > 0) {
-    deepSetValue(ortbRequest, 'user.ext.eids', eids.concat(ortbRequest.user?.ext?.eids || []));
-  }
-}
-registerOrtbProcessor({type: REQUEST, name: 'userExtEids', fn: setOrtbUserExtEids});
-
-
 export function enrichEids(next, fpd) {
   next(fpd.then(ortb2Fragments => {
+    const {global: globalFpd, bidder: bidderFpd} = ortb2Fragments;
     const modulesById = orderByPriority(
-      submodules,
+      initializedSubmodules,
       (submod) => getPrimaryIds(submod.submodule),
       (submod) => Object.keys(submod.idObj ?? {}),
       (submod) => submod.submodule.name
     )
-    const {global, bidder} = ortb2Fragments;
-    deepSetValue(global, 'user.ext.eids', getEids(modulesById))
+    const globalMods = {};
+    const bidderMods = {};
+    Object.entries(modulesById)
+      .forEach(([key, modules]) => {
+        let allNonGlobal = true;
+        const bidderFilters = new Set();
+        modules.map(mod => mod.config.bidders)
+          .forEach(bidders => {
+            if (Array.isArray(bidders) && bidders.length > 0) {
+              bidders.forEach(bidder => bidderFilters.add(bidder));
+            } else {
+              allNonGlobal = false;
+            }
+          })
+        if (bidderFilters.size > 0 && !allNonGlobal) {
+          logWarn(`userID modules ${modules.map(mod => mod.submodule.name).join(', ')} provide the same ID ('${key}'), but are configured for different bidders. ID will be skipped.`)
+        } else {
+          if (bidderFilters.size === 0) {
+            globalMods[key] = modules;
+          } else {
+            bidderFilters.forEach(bidder => {
+              bidderMods[bidder] = bidderMods[bidder] ?? {};
+              bidderMods[bidder][key] = modules;
+            })
+          }
+        }
+      });
+    const globalEids = getEids(globalMods);
+    if (globalEids.length > 0) {
+      deepSetValue(globalFpd, 'user.ext.eids', (globalFpd.user?.ext?.eids ?? []).concat(globalEids));
+    }
+    Object.entries(bidderMods).forEach(([bidder, moduleMap]) => {
+      const bidderEids = getEids(moduleMap);
+      if (bidderEids.length > 0) {
+        deepSetValue(
+          bidderFpd,
+          `${bidder}.user.ext.eids`,
+          (bidderFpd[bidder]?.user?.ext?.eids ?? []).concat(bidderEids)
+        );
+      }
+    })
     return ortb2Fragments;
   }));
 }

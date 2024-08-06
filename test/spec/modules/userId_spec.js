@@ -2792,6 +2792,12 @@ describe('User ID', function () {
       })
     }
 
+    function bidderEids(bidderMappings) {
+      return Object.fromEntries(
+        Object.entries(bidderMappings).map(([bidder, mapping]) => [bidder, {user: {ext: {eids: eidsFrom(mapping)}}}])
+      )
+    }
+
     it('should use lower-priority module if higher priority module cannot provide an id', () => {
       idValues.mockId3 = []
       config.setConfig({
@@ -2799,7 +2805,6 @@ describe('User ID', function () {
           idPriority: {
             mockId1: ['mockId3Module', 'mockId1Module']
           },
-          auctionDelay: 10,
           userIds: [
             { name: 'mockId1Module' },
             { name: 'mockId3Module' },
@@ -2817,14 +2822,13 @@ describe('User ID', function () {
       idValues.mockId1 = []
       config.setConfig({
         userSync: {
-          auctionDelay: 10,
           userIds: [
             { name: 'mockId1Module' },
           ]
         }
       });
       return enrich().then(({global}) => {
-        expect(global.user.ext.eids).to.eql([])
+        expect(global.user?.ext?.eids).to.not.exist;
       });
     });
 
@@ -2835,7 +2839,6 @@ describe('User ID', function () {
             mockId1: ['mockId3Module', 'mockId1Module'],
             mockId4: ['mockId4Module', 'mockId3Module']
           },
-          auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
           userIds: [
             { name: 'mockId1Module' },
             { name: 'mockId2Module' },
@@ -2853,5 +2856,109 @@ describe('User ID', function () {
         }));
       });
     });
+
+    it('should separate bidder-restricted eids', () => {
+      config.setConfig({
+        userSync: {
+          userIds: [
+            { name: 'mockId1Module', bidders: ['bidderA', 'bidderB'] },
+            { name: 'mockId4Module' },
+          ]
+        }
+      });
+      return enrich().then(({global, bidder}) => {
+        expect(global.user.ext.eids).to.eql(eidsFrom({
+          mockId4: 'mockId4Module'
+        }));
+        [bidder.bidderA, bidder.bidderB].forEach(bidderCfg => {
+          expect(bidderCfg.user.ext.eids).to.eql(eidsFrom({
+            mockId1: 'mockId1Module'
+          }))
+        })
+      });
+    })
+
+    it('should exclude bidder-unrestricted IDs that conflict for some bidders', () => {
+      config.setConfig({
+        userSync: {
+          idPriority: {
+            mockId1: ['mockId1Module', 'mockId3Module'],
+          },
+          userIds: [
+            { name: 'mockId1Module', bidders: ['bidderA'] },
+            { name: 'mockId3Module' },
+          ]
+        }
+      });
+      return enrich().then(({global, bidder}) => {
+        expect(global.user.ext.eids).to.eql(eidsFrom({
+          mockId2: 'mockId3Module',
+          mockId3: 'mockId3Module',
+          mockId4: 'mockId3Module'
+        }));
+        expect(bidder).to.eql({});
+      });
+    });
+
+    it('should provide bidder-specific IDs, even when they conflict across bidders', () => {
+      config.setConfig({
+        userSync: {
+          idPriority: {
+            mockId1: ['mockId1Module', 'mockId3Module'],
+          },
+          userIds: [
+            { name: 'mockId1Module', bidders: ['bidderA'] },
+            { name: 'mockId3Module', bidders: ['bidderB'] },
+          ]
+        }
+      });
+      return enrich().then(({global, bidder}) => {
+        expect(global.user?.ext?.eids).to.not.exist;
+        expect(bidder).to.eql(bidderEids({
+          bidderA: {
+            mockId1: 'mockId1Module'
+          },
+          bidderB: {
+            mockId1: 'mockId1Module',
+            mockId2: 'mockId3Module',
+            mockId3: 'mockId3Module',
+            mockId4: 'mockId3Module'
+          }
+        }));
+      });
+    });
+
+    it('should not override pub-provided EIDS', () => {
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [
+            { name: 'mockId1Module', bidders: ['bidderA', 'bidderB'] },
+            { name: 'mockId4Module' },
+          ]
+        }
+      });
+      const globalEids = [{pub: 'provided'}];
+      const bidderAEids = [{bidder: 'A'}]
+      const fpd = {
+        global: {user: {ext: {eids: globalEids}}},
+        bidder: {
+          bidderA: {
+            user: {ext: {eids: bidderAEids}}
+          }
+        }
+      }
+      return enrich(fpd).then(({global, bidder}) => {
+        expect(global.user.ext.eids).to.eql(globalEids.concat(eidsFrom({
+          mockId4: 'mockId4Module'
+        })));
+        expect(bidder.bidderA.user.ext.eids).to.eql(bidderAEids.concat(eidsFrom({
+          mockId1: 'mockId1Module'
+        })));
+        expect(bidder.bidderB.user.ext.eids).to.eql(eidsFrom({
+          mockId1: 'mockId1Module'
+        }));
+      });
+    })
   });
 });
