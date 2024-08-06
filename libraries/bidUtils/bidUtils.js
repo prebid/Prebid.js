@@ -1,8 +1,13 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { replaceAuctionPrice } from '../../src/utils.js';
+import { getStorageManager } from '../../src/storageManager.js';
 import { ajax } from '../../src/ajax.js';
+import { config } from '../../src/config.js';
+import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
 
-export const buildRequests = (endpoint, storage2, buyerKey) => (validBidRequests = [], bidderRequest) => {
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
+
+export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -29,7 +34,7 @@ export const buildRequests = (endpoint, storage2, buyerKey) => (validBidRequests
     }),
     user: {
       id: validBidRequests[0].userId.pubcid || '',
-      buyeruid: validBidRequests[0].buyerUid || readFromAllStorages(buyerKey, storage2),
+      buyeruid: validBidRequests[0].buyerUid || '',
       geo: {
         country: validBidRequests[0].params.region || city,
       },
@@ -52,18 +57,7 @@ export const buildRequests = (endpoint, storage2, buyerKey) => (validBidRequests
   };
 
   //  req.language.indexOf('-') != -1 && (req.language = req.language.split('-')[0])
-  if (bidderRequest) {
-    if (bidderRequest.uspConsent) {
-      req.ccpa = bidderRequest.uspConsent;
-    }
-    if (bidderRequest.gdprConsent) {
-      req.gdpr = bidderRequest.gdprConsent
-    }
-    if (bidderRequest.gppConsent) {
-      req.gpp = bidderRequest.gppConsent;
-    }
-  }
-
+  consentCheck(bidderRequest, req);
   return {
     method: 'POST',
     url: endpoint,
@@ -96,36 +90,46 @@ export function interpretResponse(serverResponse) {
   return bidsValue
 }
 
-export const getUserSyncs = (syncEndpoint) => (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  let userId = 'NA';
-  // let userId = readFromAllStorages(strId, storage);
-  let syncs = [];
-  let syncUrl = `${syncEndpoint}id=${userId}`
-
-  if (gdprConsent) {
-    syncUrl = syncUrl + `&gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`;
-  } else {
-    syncUrl = syncUrl + `&gdpr=0&gdpr_consent=`
+export const buildUserSyncs = (syncEndpoint) => (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+  let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  const isCk2trk = syncEndpoint.includes('ck.2trk.info');
+  const isSpec = syncOptions.spec;
+  if (isCk2trk) {
+    if (!Object.is(isSpec, true)) {
+      let syncId = storage.getCookie('_sharedid');
+      syncEndpoint = syncEndpoint + 'id=' + syncId;
+    } else {
+      syncEndpoint = syncEndpoint + 'id=NA';
+    }
   }
-  if (uspConsent) {
-    syncUrl = syncUrl + `&us_privacy=${uspConsent}`
-  } else {
-    syncUrl = syncUrl + `&us_privacy=`
-  }
+  // Base sync URL
+  let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;
 
-  if (syncOptions.iframeEnabled) {
-    syncs.push({
-      type: 'iframe',
-      url: syncUrl + `&t=4`
-    });
+  if (gdprConsent && gdprConsent.consentString) {
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+    } else {
+      syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+    }
   } else {
-    syncs.push({
-      type: 'image',
-      url: syncUrl + `&t=2`
-    });
+    syncUrl += isCk2trk ? `&gdpr=0&gdpr_consent=` : '';
   }
 
-  return syncs
+  if (isCk2trk) {
+    syncUrl += uspConsent ? `&us_privacy=${uspConsent}` : `&us_privacy=`;
+    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`
+  } else {
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+    const coppa = config.getConfig('coppa') ? 1 : 0;
+    syncUrl += `&coppa=${coppa}`;
+  }
+
+  return [{
+    type: syncType,
+    url: syncUrl
+  }];
 }
 
 export function onBidWon(bid) {
@@ -141,9 +145,16 @@ function macroReplace(adm, cpm) {
   return replacedadm;
 }
 
-export function readFromAllStorages(name, storage) {
-  const fromCookie = storage.getCookie(name);
-  const fromLocalStorage = storage.getDataFromLocalStorage(name);
-
-  return fromCookie || fromLocalStorage || 'NA';
+export function consentCheck(bidderRequest, req) {
+  if (bidderRequest) {
+    if (bidderRequest.uspConsent) {
+      req.ccpa = bidderRequest.uspConsent;
+    }
+    if (bidderRequest.gdprConsent) {
+      req.gdpr = bidderRequest.gdprConsent
+    }
+    if (bidderRequest.gppConsent) {
+      req.gpp = bidderRequest.gppConsent;
+    }
+  }
 }

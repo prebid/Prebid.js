@@ -3,22 +3,18 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { getUserSyncs, buildRequests, interpretResponse, onBidWon, readFromAllStorages } from '../libraries/bidUtils/bidUtils.js';
+import { buildUserSyncs, buildRequests, interpretResponse, onBidWon } from '../libraries/bidUtils/bidUtils.js';
 
 const BIDDER__CODE = 'preciso';
-const strId = '_sharedid';
-const buyerKey = '_pre|id';
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
+export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GVLID = 874;
 let precisoId = 'NA';
-let sharedId = 'NA'
+let sharedId = 'NA';
 
 const endpoint = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
-const syncEndpoint = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
-// const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=';
-
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
-export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
+let syncEndpoint = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 
 export const spec = {
   code: BIDDER__CODE,
@@ -26,11 +22,10 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-    sharedId = readFromAllStorages(strId, storage);
+    sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
     let precisoBid = true;
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
-    precisoId = readFromAllStorages(buyerKey, storage);
-
+    precisoId = storage2.getDataFromLocalStorage('_pre|id');
     if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
       if (!bid.precisoBid) {
         precisoBid = false;
@@ -40,10 +35,10 @@ export const spec = {
 
     return Boolean(bid.bidId && bid.params && bid.params.publisherId && precisoBid);
   },
-  buildRequests: buildRequests(endpoint, storage2, buyerKey),
+  buildRequests: buildRequests(endpoint),
   interpretResponse,
   onBidWon,
-  getUserSyncs: getUserSyncs(syncEndpoint)
+  getUserSyncs: buildUserSyncs(syncEndpoint),
 };
 
 registerBidder(spec);
@@ -57,12 +52,10 @@ async function getapi(url) {
     var data = await response.json();
 
     const dataMap = new Map(Object.entries(data));
-
     const uuidValue = dataMap.get('UUID');
 
     if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
       storage2.setDataInLocalStorage('_pre|id', uuidValue);
-      logInfo('DEBUG nonNull uuidValue:' + uuidValue);
     }
     return data;
   } catch (error) {

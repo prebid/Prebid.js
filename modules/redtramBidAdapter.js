@@ -7,7 +7,7 @@ import {
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import { consentCheck, buildUserSyncs } from '../libraries/bidUtils/bidUtils.js';
 
 const BIDDER_CODE = 'redtram';
 const AD_URL = 'https://prebid.redtram.com/pbjs';
@@ -65,15 +65,16 @@ export const spec = {
       page: location.pathname,
       placements: placements
     };
+    consentCheck(bidderRequest, request);
 
-    if (bidderRequest) {
-      if (bidderRequest.uspConsent) {
-        request.ccpa = bidderRequest.uspConsent;
-      }
-      if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent;
-      }
-    }
+    // if (bidderRequest) {
+    //   if (bidderRequest.uspConsent) {
+    //     request.ccpa = bidderRequest.uspConsent;
+    //   }
+    //   if (bidderRequest.gdprConsent) {
+    //     request.gdpr = bidderRequest.gdprConsent;
+    //   }
+    // }
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
@@ -119,29 +120,30 @@ export const spec = {
     }
     return response;
   },
+  getUserSyncs: buildUserSyncs(SYNC_URL),
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
+  // getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+  //   let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  //   let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
+  //   if (gdprConsent && gdprConsent.consentString) {
+  //     if (typeof gdprConsent.gdprApplies === 'boolean') {
+  //       syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+  //     } else {
+  //       syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+  //     }
+  //   }
+  //   if (uspConsent && uspConsent.consentString) {
+  //     syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+  //   }
 
-    const coppa = config.getConfig('coppa') ? 1 : 0;
-    syncUrl += `&coppa=${coppa}`;
+  //   const coppa = config.getConfig('coppa') ? 1 : 0;
+  //   syncUrl += `&coppa=${coppa}`;
 
-    return [{
-      type: syncType,
-      url: syncUrl
-    }];
-  },
+  //   return [{
+  //     type: syncType,
+  //     url: syncUrl
+  //   }];
+  // },
 
   onBidWon: (bid) => {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
