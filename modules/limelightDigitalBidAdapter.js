@@ -129,8 +129,9 @@ function buildRequest(winTop, host, adUnits, bidderRequest) {
       deviceHeight: winTop.screen.height,
       adUnits: adUnits,
       ortb2: bidderRequest?.ortb2,
-      ortb2Imp: bidderRequest?.ortb2Imp,
-      refererInfo: bidderRequest?.refererInfo
+      refererInfo: bidderRequest?.refererInfo,
+      sua: bidderRequest?.ortb2?.device?.sua,
+      page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
     }
   }
 }
@@ -165,6 +166,7 @@ function buildPlacement(bidRequest) {
         }
       }),
       type: bidRequest.params.adUnitType.toUpperCase(),
+      ortb2Imp: bidRequest.ortb2Imp,
       publisherId: bidRequest.params.publisherId,
       userIdAsEids: bidRequest.userIdAsEids,
       supplyChain: bidRequest.schain,
