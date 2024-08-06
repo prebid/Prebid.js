@@ -972,7 +972,7 @@ describe('OpenxRtbAdapter', function () {
       });
 
       context('when there are userid providers', function () {
-        const userIdAsEids = [
+        const eids = [
           {
             source: 'adserver.org',
             uids: [{
@@ -1003,13 +1003,11 @@ describe('OpenxRtbAdapter', function () {
         ];
 
         it(`should send the user id under the extended ids`, function () {
-          const bidRequestsWithUserId = [{
+          const bidRequests = [{
             bidder: 'openx',
             params: {
               unit: '11',
               delDomain: 'test-del-domain'
-            },
-            userId: {
             },
             adUnitCode: 'adunit-code',
             mediaTypes: {
@@ -1020,12 +1018,12 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            userIdAsEids: userIdAsEids
           }];
           // enrich bid request with userId key/value
 
-          const request = spec.buildRequests(bidRequestsWithUserId, mockBidderRequest);
-          expect(request[0].data.user.ext.eids).to.eql(userIdAsEids);
+          mockBidderRequest.ortb2 = {user: {ext: {eids}}}
+          const request = spec.buildRequests(bidRequests, mockBidderRequest);
+          expect(request[0].data.user.ext.eids).to.eql(eids);
         });
 
         it(`when no user ids are available, it should not send any extended ids`, function () {
