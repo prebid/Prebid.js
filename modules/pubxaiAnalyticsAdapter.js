@@ -157,14 +157,18 @@ const track = ({ eventType, args }) => {
     // handle invalid bids, and remove them from the adUnit cache
     case EVENTS.BID_TIMEOUT:
       args.map(extractBid).forEach((bid) => {
-        bid.renderStatus = 3;
+        bid.bidType = 3;
         auctionCache[bid.auctionId].bids.push(bid);
       });
       break;
     // handle valid bid responses and record them as part of an auction
     case EVENTS.BID_RESPONSE:
-      const bid = Object.assign(extractBid(args), { renderStatus: 2 });
+      const bid = Object.assign(extractBid(args), { bidType: 2 });
       auctionCache[bid.auctionId].bids.push(bid);
+      break;
+    case EVENTS.BID_REJECTED:
+      const rejectedBid = Object.assign(extractBid(args), { bidType: 1 });
+      auctionCache[rejectedBid.auctionId].bids.push(rejectedBid);
       break;
     // capture extra information from the auction, and if there were no bids
     // (and so no chance of a win) send the auction
@@ -183,7 +187,7 @@ const track = ({ eventType, args }) => {
         timestamp: args.timestamp,
       });
       if (
-        auctionCache[args.auctionId].bids.every((bid) => bid.renderStatus === 3)
+        auctionCache[args.auctionId].bids.every((bid) => bid.bidType === 3)
       ) {
         prepareSend(args.auctionId);
       }
@@ -201,7 +205,7 @@ const track = ({ eventType, args }) => {
         isFloorSkipped: floorDetail?.skipped || false,
         isWinningBid: true,
         renderedSize: args.size,
-        renderStatus: 4,
+        bidType: 4,
       });
       winningBid.adServerData = getAdServerDataForBid(winningBid);
       auctionCache[winningBid.auctionId].winningBid = winningBid;
@@ -283,6 +287,7 @@ const prepareSend = (auctionId) => {
         auctionTimestamp: auctionData.auctionDetail.timestamp,
         pubxaiAnalyticsVersion: pubxaiAnalyticsVersion,
         prebidVersion: '$prebid.version$',
+        pubxId: initOptions.pubxId,
       },
     });
     sendCache[pubxaiAnalyticsRequestUrl].push(data);

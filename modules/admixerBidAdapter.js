@@ -1,4 +1,4 @@
-import {isStr, logError} from '../src/utils.js';
+import {isStr, logError, isFn, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
@@ -71,15 +71,15 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;
       }
-      let bidFloor = getBidFloor(bidderRequest);
-      if (bidFloor) {
-        payload.bidFloor = bidFloor;
-      }
     }
     validRequest.forEach((bid) => {
       let imp = {};
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
       imp.ortb2 && delete imp.ortb2;
+      let bidFloor = getBidFloor(bid);
+      if (bidFloor) {
+        imp.bidFloor = bidFloor;
+      }
       payload.imps.push(imp);
     });
 
@@ -117,10 +117,16 @@ export const spec = {
     return pixels;
   }
 };
+
 function getEndpointUrl(code) {
   return find(ALIASES, (val) => val.code === code)?.endpoint || ENDPOINT_URL;
 }
+
 function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidFloor', 0);
+  }
+
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
@@ -132,4 +138,5 @@ function getBidFloor(bid) {
     return 0;
   }
 }
+
 registerBidder(spec);

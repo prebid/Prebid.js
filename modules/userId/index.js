@@ -1196,7 +1196,7 @@ module('userId', attachIdSystem, { postInstallAllowed: true });
 export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
   const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');
   if (eids && Object.keys(eids).length > 0) {
-    deepSetValue(ortbRequest, 'user.ext.eids', eids);
+    deepSetValue(ortbRequest, 'user.ext.eids', eids.concat(ortbRequest.user?.ext?.eids || []));
   }
 }
 registerOrtbProcessor({type: REQUEST, name: 'userExtEids', fn: setOrtbUserExtEids});

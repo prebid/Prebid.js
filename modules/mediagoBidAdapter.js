@@ -9,6 +9,7 @@ import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLin
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
+import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 
 // import { config } from '../src/config.js';
 // import { isPubcidEnabled } from './pubCommonId.js';
@@ -230,7 +231,6 @@ function getParam(validBidRequests, bidderRequest) {
 
   const timeout = bidderRequest.timeout || 2000;
   const firstPartyData = bidderRequest.ortb2;
-  const topWindow = window.top;
   const title = getPageTitle();
   const desc = getPageDescription();
   const keywords = getPageKeywords();
@@ -267,12 +267,10 @@ function getParam(validBidRequests, bidderRequest) {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,
           keywords: keywords ? keywords.slice(0, 100) : undefined,
-          hLen: topWindow.history?.length || undefined,
+          hLen: getHLen(),
         },
         device: {
           nbw: getConnectionDownLink(),
-          hc: topWindow.navigator?.hardwareConcurrency || undefined,
-          dm: topWindow.navigator?.deviceMemory || undefined,
         }
       },
       user: {
