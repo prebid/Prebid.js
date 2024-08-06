@@ -9,6 +9,8 @@ let requestUrl;
 let bidderArray;
 let impressionIds;
 let currentSiteContext;
+let currentGroupConfig;
+let groupConfigRequestUrl = null;
 
 /**
  * Init if module configuration is valid
@@ -69,6 +71,27 @@ export function getContext () {
         }
       }
       ajax(requestUrl, callbacks)
+    })
+  } else {
+    logMessage('Adding Content object from existing context data');
+    return new Promise(resolve => resolve(currentSiteContext));
+  }
+}
+
+export function getGroupConfig () {
+  if (!currentGroupConfig) {
+    logMessage('Requesting group config');
+    return new Promise((resolve, reject) => {
+      const callbacks = {
+        success(text, data) {
+          const result = data.status === 200 ? JSON.parse(data.response) : null;
+          resolve(result);
+        },
+        error(error) {
+          reject(new Error(error));
+        }
+      }
+      ajax(groupConfigRequestUrl, callbacks)
     })
   } else {
     logMessage('Adding Content object from existing context data');
@@ -146,14 +169,28 @@ export function loadScriptTag(config) {
 export function initializeModuleData(config) {
   const DEFAULT_API_URL = 'https://demand.qortex.ai';
   const {apiUrl, groupId, bidders} = config.params;
-  requestUrl = `${apiUrl || DEFAULT_API_URL}/api/v1/analyze/${groupId}/prebid`;
+  const windowUrl = window.top.location.host;
   bidderArray = bidders;
   impressionIds = new Set();
+  groupConfigRequestUrl = `${apiUrl || DEFAULT_API_URL}/api/v1/group/configs/${groupId}/${windowUrl}/prebid`
+  requestUrl = `${apiUrl || DEFAULT_API_URL}/api/v1/analyze/${groupId}/prebid`;
   currentSiteContext = null;
+  getGroupConfig()
+      .then(configData => {
+        setGroupConfigData(configData)
+        console.log("shiloh rtd", currentGroupConfig)
+      })
+      .catch((e) => {
+        logWarn(e?.message);
+      });
 }
 
 export function setContextData(value) {
   currentSiteContext = value
+}
+
+export function setGroupConfigData(value) {
+  currentGroupConfig = value
 }
 
 export const qortexSubmodule = {
