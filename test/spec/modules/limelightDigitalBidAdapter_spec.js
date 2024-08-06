@@ -718,6 +718,7 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.id).to.equal(bid.params.adUnitId);
   expect(adUnit.bidId).to.equal(bid.bidId);
   expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
+  expect(adUnit.transactionId).to.equal(bid.ortb2Imp.ext.tid);
   let bidSizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
