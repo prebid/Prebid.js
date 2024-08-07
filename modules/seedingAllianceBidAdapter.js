@@ -24,17 +24,19 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
+    // set basic page, this might be updated later by adunit param
     deepSetValue(request, 'site.page' , bidderRequest.refererInfo.page);
     deepSetValue(request, 'regs.ext.pb_ver', '$prebid.version$');
     deepSetValue(request, 'cur', [config.getConfig('currency') || DEFAULT_CUR]);
 
+    // As this is client side, we get needed info from headers
     delete request.device;
-    delete request.site.ref;
 
     return request;
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    // add tagid from params
     imp.tagid = bidRequest.params.adUnitId;
 
     return imp;
@@ -54,6 +56,7 @@ export const spec = {
     const oRtbRequest = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
     let eids = getEids(validBidRequests[0]);
 
+    // check for url in params and set in site object
     validBidRequests.forEach(bidRequest => {
       if (bidRequest.params.url) {
         deepSetValue(oRtbRequest, 'site.page', bidRequest.params.url);
