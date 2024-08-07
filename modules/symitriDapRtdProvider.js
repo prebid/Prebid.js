@@ -130,6 +130,31 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   }
 
   /**
+   * Listen for bidWon Events to record SAID receipt
+   * @param {string} authToken
+   */
+  function onBidWonListener (authToken) {
+    window.pbjs.onEvent('bidWon', function(bid) {
+      const url = 'https://ProdSymPrebidEventhub1.servicebus.windows.net/prebid-said-1/messages';
+      const bidjson = JSON.stringify(bid);
+      const cb = {
+        success: (response, request) => {
+          logInfo('DEBUG(###Winning Bid SAVED###)');
+        },
+        error: (request, error) => {
+          logInfo(error);
+          logInfo('DEBUG(###Save Winning Bid FAILED###)');
+        }
+      };
+
+      ajax(url, cb, bidjson, {
+        method: 'POST',
+        customHeaders: {'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': authToken}
+      });
+    });
+  }
+
+  /**
    * Module init
    * @param {Object} config
    * @param {Object} userConsent
@@ -140,27 +165,12 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return false;
     }
 
-    if (window.pbjs?.onEvent && config?.params?.apiAuthToken) {
-      window.pbjs.onEvent('bidWon', function(bid) {
-        logInfo('DEBUG(###onBidWon###)');
-        logInfo(bid);
-        let bidjson = JSON.stringify(bid);
-        let cb = {
-          success: (response, request) => {
-            logInfo('DEBUG(###Winning Bid SAVED###)');
-          },
-          error: (request, error) => {
-            logInfo(error);
-            logInfo('DEBUG(###Save Winning Bid FAILED###)');
-          }
-        };
-        let url = 'https://ProdSymPrebidEventhub1.servicebus.windows.net/prebid-said-1/messages';
-        ajax(url, cb, bidjson, {
-          method: 'POST',
-          customHeaders: {'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': config.params.apiAuthToken}
-        });
-      });
-    }
+    const authToken = config?.param?.apiAuthToken
+    window.console.log('AuthToken: ', authToken)
+    window.console.log('window.pbjs.onEvent: ', window.pbjs?.onEvent)
+    // if (window.pbjs?.onEvent && authToken) {
+    onBidWonListener(authToken);
+    // }
 
     return true;
   }
@@ -820,6 +830,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     addRealTimeData,
     getRealTimeData,
     generateRealTimeData,
+    onBidWonListener,
     rtdSubmodule,
     storage,
     dapUtils,
@@ -833,18 +844,21 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   };
 }
 
-export const {
-  addRealTimeData,
-  getRealTimeData,
-  generateRealTimeData,
-  rtdSubmodule: symitriDapRtdSubmodule,
-  storage,
-  dapUtils,
-  DAP_TOKEN,
-  DAP_MEMBERSHIP,
-  DAP_ENCRYPTED_MEMBERSHIP,
-  DAP_SS_ID,
-  DAP_DEFAULT_TOKEN_TTL,
-  DAP_MAX_RETRY_TOKENIZE,
-  DAP_CLIENT_ENTROPY
-} = createRtdProvider('symitriDap', 'symitridap', 'Symitri');
+// export const {
+//   addRealTimeData,
+//   getRealTimeData,
+//   generateRealTimeData,
+//   onBidWonListener,
+//   rtdSubmodule: symitriDapRtdSubmodule,
+//   storage,
+//   dapUtils,
+//   DAP_TOKEN,
+//   DAP_MEMBERSHIP,
+//   DAP_ENCRYPTED_MEMBERSHIP,
+//   DAP_SS_ID,
+//   DAP_DEFAULT_TOKEN_TTL,
+//   DAP_MAX_RETRY_TOKENIZE,
+//   DAP_CLIENT_ENTROPY
+// } = createRtdProvider('symitriDap', 'symitridap', 'Symitri');
+
+export const symitriDapRtd = createRtdProvider('symitriDap', 'symitridap', 'Symitri');

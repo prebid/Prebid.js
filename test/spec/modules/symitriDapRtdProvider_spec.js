@@ -1,5 +1,5 @@
 import {config} from 'src/config.js';
-import {
+import symitriDapRtd, {
   dapUtils,
   generateRealTimeData,
   symitriDapRtdSubmodule,
@@ -37,11 +37,12 @@ describe('symitriDapRtdProvider', function() {
   };
 
   const cmoduleConfig = {
-    'name': 'dap',
+    'name': 'symitriDap',
     'waitForIt': true,
     'params': {
       'apiHostname': 'prebid.dap.akadns.net',
       'apiVersion': 'x1',
+      'apiAuthToken': 'Token 1234',
       'domain': 'prebid.org',
       'identityType': 'dap-signature:1.0.0',
       'segtax': 503
@@ -49,7 +50,7 @@ describe('symitriDapRtdProvider', function() {
   }
 
   const emoduleConfig = {
-    'name': 'dap',
+    'name': 'symitriDap',
     'waitForIt': true,
     'params': {
       'apiHostname': 'prebid.dap.akadns.net',
@@ -595,6 +596,21 @@ describe('symitriDapRtdProvider', function() {
 
     it('USP consent present and user have not opted out', function () {
       expect(symitriDapRtdSubmodule.init(null, {'usp': '1YNY'})).to.equal(true);
+    });
+  });
+
+  describe('Test onEvent BidWon binding', function () {
+    it('Handle onBiWon when authToken is present', function () {
+      window.pbjs = {
+        onEvent: () => {}
+      }
+      sampleGdprConsentConfig.gdpr.consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
+      symitriDapRtdSubmodule.init(cmoduleConfig, sampleUspConsentConfig);
+      // const mockListener = {
+      //   'method': onBidWonListener
+      // }
+      const spyListener = sinon.spy(symitriDapRtd, 'onBidWonListener');
+      sinon.assert.calledOnce(spyListener);
     });
   });
 });
