@@ -1,13 +1,17 @@
 import {config} from 'src/config.js';
-import symitriDapRtd, {
+import {
   dapUtils,
   generateRealTimeData,
   symitriDapRtdSubmodule,
+  onBidWonListener,
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
 } from 'modules/symitriDapRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 import {hook} from '../../../src/hook.js';
+import { EVENTS } from 'src/constants.js';
 const responseHeader = {'Content-Type': 'application/json'};
+
+let events = require('src/events');
 
 describe('symitriDapRtdProvider', function() {
   const testReqBidsConfigObj = {
@@ -600,17 +604,127 @@ describe('symitriDapRtdProvider', function() {
   });
 
   describe('Test onEvent BidWon binding', function () {
-    it('Handle onBiWon when authToken is present', function () {
-      window.pbjs = {
-        onEvent: () => {}
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(window.pbjs, 'onEvent').callsFake(() => {});
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('onBidWonListener called when authToken is present', function () {
+      let listernerStub = sandbox.stub(symitriDapRtdSubmodule, 'onBidWonListener');
+      symitriDapRtdSubmodule.init(cmoduleConfig);
+      sinon.assert.callCount(listernerStub, 1);
+    });
+
+    it('onBidWonListener called authToken is NOT present', function () {
+      let listernerStub = sandbox.stub(symitriDapRtdSubmodule, 'onBidWonListener');
+      symitriDapRtdSubmodule.init();
+      sinon.assert.callCount(listernerStub, 0);
+    });
+  });
+
+  describe('Test identifier is added properly to apiParams', function() {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('passed identifier is handled', function () {
+      const test_identity = 'test@example.valid';
+      let identity = {
+        identity: test_identity
+      };
+      let apiParams = {
+        'type': identity.type,
+      };
+      apiParams = dapUtils.addIdentifier(identity, apiParams);
+      expect(apiParams.identity).is.equal(test_identity);
+    });
+
+    it('passed undefined identifier is handled', function () {
+      const test_identity = undefined;
+      let identity = {
+        identity: test_identity
       }
-      sampleGdprConsentConfig.gdpr.consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
-      symitriDapRtdSubmodule.init(cmoduleConfig, sampleUspConsentConfig);
-      // const mockListener = {
-      //   'method': onBidWonListener
-      // }
-      const spyListener = sinon.spy(symitriDapRtd, 'onBidWonListener');
-      sinon.assert.calledOnce(spyListener);
+      let apiParams = {
+        'type': identity.type,
+      };
+      apiParams = dapUtils.addIdentifier(identity, apiParams);
+      expect(apiParams.identity).is.undefined;
+    });
+
+    it('valid email is queried from selector', function () {
+      let id_selector = 'input#email';
+      const test_identity = 'test@example.valid';
+
+      let documentStub = sandbox.stub(document, 'querySelector');
+      documentStub.withArgs(id_selector).returns({
+        innerHTML: test_identity
+      });
+
+      let identity = {
+        type: 'email',
+        selector: id_selector
+      }
+
+      let apiParams = {
+        'type': identity.type,
+      };
+
+      apiParams = dapUtils.addIdentifier(identity, apiParams);
+      expect(apiParams.identity).is.equal(test_identity);
+    });
+
+    it('invalid email is queried from selector', function () {
+      let id_selector = 'input#email';
+      const test_identity = '@testexample.invalid@';
+
+      let documentStub = sandbox.stub(document, 'querySelector');
+      documentStub.withArgs(id_selector).returns({
+        innerHTML: test_identity
+      });
+
+      let identity = {
+        type: 'email',
+        selector: id_selector
+      }
+
+      let apiParams = {
+        'type': identity.type,
+      };
+
+      apiParams = dapUtils.addIdentifier(identity, apiParams);
+      expect(apiParams.identity).is.undefined;
+    });
+
+    it('email is not found from selector', function () {
+      let id_selector = 'input#email';
+
+      let documentStub = sandbox.stub(document, 'querySelector');
+      documentStub.withArgs(id_selector).returns({
+        innerHTML: ''
+      });
+
+      let identity = {
+        type: 'email',
+        selector: id_selector
+      }
+
+      let apiParams = {
+        'type': identity.type,
+      };
+
+      apiParams = dapUtils.addIdentifier(identity, apiParams);
+      expect(apiParams.identity).is.undefined;
     });
   });
 });
