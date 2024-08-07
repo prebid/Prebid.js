@@ -37,7 +37,7 @@
     "header bidding",
     "prebid"
   ],
-  "globalVarName": "pbjs",
+  "globalVarName": "pbjsDtk",
   "defineGlobal": true,
   "author": "The prebid.js contributors",
   "license": "Apache-2.0",
