@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isStr, triggerPixel} from '../src/utils.js';
+import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
