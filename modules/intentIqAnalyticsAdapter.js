@@ -137,7 +137,6 @@ function bidWon(args) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
 
   const currentBrowserLowerCase = detectBrowser();
-  logInfo('IIQ Browser', currentBrowserLowerCase);
   if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
     logError('IIQ ANALYTICS -> Browser is in blacklist!');
     return;
