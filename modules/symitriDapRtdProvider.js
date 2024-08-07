@@ -165,21 +165,19 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return false;
     }
 
-    const authToken = config?.param?.apiAuthToken
-    window.console.log('AuthToken: ', authToken)
-    window.console.log('window.pbjs.onEvent: ', window.pbjs?.onEvent)
-    // if (window.pbjs?.onEvent && authToken) {
-    onBidWonListener(authToken);
-    // }
+    if (window.pbjs && window.pbjs.onEvent && config && config.params && config.params.apiAuthToken) {
+      const { apiAuthToken } = config.params;
+      this.onBidWonListener(apiAuthToken);
+    }
 
     return true;
   }
 
-  /** @type {RtdSubmodule} */
   const rtdSubmodule = {
     name: SUBMODULE_NAME,
     getBidRequestData: getRealTimeData,
-    init: init
+    init: init,
+    onBidWonListener: onBidWonListener
   };
 
   submodule(MODULE_NAME, rtdSubmodule);
@@ -559,6 +557,28 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return [ config, false ];
     },
 
+    addIdentifier: function(identity, apiParams) {
+      if (typeof (identity.identity) != typeof (undefined)) {
+        apiParams.identity = identity.identity;
+      } else if (identity.type == 'email' && typeof (identity.selector) != typeof (undefined) && identity.selector.trim() !== '') {
+        let identityElement = document.querySelector(identity.selector);
+        let identityEmail = identityElement.innerHTML;
+        if (identityElement.tagName == 'INPUT') {
+          identityEmail = identityElement.value;
+        }
+
+        if (identityEmail) {
+          const EMAIL_VALIDATION_REGEX = /((([^<>()\[\].,;:\s@"]+(\.[^<>()\[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,}))/i;
+          const regex = new RegExp(EMAIL_VALIDATION_REGEX);
+          if (regex.test(identityEmail)) {
+            apiParams.identity = identityEmail;
+          }
+        }
+      }
+
+      return apiParams
+    },
+
     /**
      * SYNOPSIS
      *
@@ -627,23 +647,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         'type': identity.type,
       };
 
-      if (typeof (identity.identity) != typeof (undefined)) {
-        apiParams.identity = identity.identity;
-      } else if (identity.type == 'email' && typeof (identity.selector) != typeof (undefined) && identity.selector.trim() !== '') {
-        let identityElement = document.querySelector(identity.selector);
-        let identityEmail = identityElement.innerHTML;
-        if (identityElement.tagName == 'INPUT') {
-          identityEmail = identityElement.value;
-        }
-
-        if (identityEmail) {
-          const EMAIL_VALIDATION_REGEX = /((([^<>()\[\].,;:\s@"]+(\.[^<>()\[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,}))/i;
-          const regex = new RegExp(EMAIL_VALIDATION_REGEX);
-          if (regex.test(identityEmail)) {
-            apiParams.identity = identityEmail;
-          }
-        }
-      }
+      apiParams = this.addIdentifier(identity, apiParams);
 
       if (typeof (identity.attributes) != typeof (undefined)) {
         apiParams.attributes = identity.attributes;
@@ -844,21 +848,19 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   };
 }
 
-// export const {
-//   addRealTimeData,
-//   getRealTimeData,
-//   generateRealTimeData,
-//   onBidWonListener,
-//   rtdSubmodule: symitriDapRtdSubmodule,
-//   storage,
-//   dapUtils,
-//   DAP_TOKEN,
-//   DAP_MEMBERSHIP,
-//   DAP_ENCRYPTED_MEMBERSHIP,
-//   DAP_SS_ID,
-//   DAP_DEFAULT_TOKEN_TTL,
-//   DAP_MAX_RETRY_TOKENIZE,
-//   DAP_CLIENT_ENTROPY
-// } = createRtdProvider('symitriDap', 'symitridap', 'Symitri');
-
-export const symitriDapRtd = createRtdProvider('symitriDap', 'symitridap', 'Symitri');
+export const {
+  addRealTimeData,
+  getRealTimeData,
+  generateRealTimeData,
+  onBidWonListener,
+  rtdSubmodule: symitriDapRtdSubmodule,
+  storage,
+  dapUtils,
+  DAP_TOKEN,
+  DAP_MEMBERSHIP,
+  DAP_ENCRYPTED_MEMBERSHIP,
+  DAP_SS_ID,
+  DAP_DEFAULT_TOKEN_TTL,
+  DAP_MAX_RETRY_TOKENIZE,
+  DAP_CLIENT_ENTROPY
+} = createRtdProvider('symitriDap', 'symitridap', 'Symitri');
