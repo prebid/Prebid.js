@@ -58,7 +58,7 @@ describe('Richaudience adapter tests', function () {
       regs: {
         ext: {
           dsa: {
-            dsarequired: 1,
+            dsarequired: 2,
             pubrender: 1,
             datatopub: 1,
             transparency: [
@@ -949,7 +949,7 @@ describe('Richaudience adapter tests', function () {
       refererInfo: {}
     })
     const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.have.property('dsa').property('dsarequired').and.to.equal(1)
+    expect(requestContent).to.have.property('dsa').property('dsarequired').and.to.equal(2)
     expect(requestContent).to.have.property('dsa').property('pubrender').and.to.equal(1);
     expect(requestContent).to.have.property('dsa').property('datatopub').and.to.equal(1);
     expect(requestContent.dsa.transparency[0]).to.have.property('domain').and.to.equal('richaudience.com');
