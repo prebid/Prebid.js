@@ -100,7 +100,7 @@
  * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
  */
 
-import { getGlobal } from "../src/prebidGlobal.js";
+import { getGlobal } from '../src/prebidGlobal.js';
 import {
   deepAccess,
   deepClone,
@@ -114,44 +114,44 @@ import {
   isStr,
   mergeDeep,
   prefixLog,
-} from "../src/utils.js";
-import { submodule } from "../src/hook.js";
-import { ajax } from "../src/ajax.js";
-import { getStorageManager } from "../src/storageManager.js";
-import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
-import adapterManager from "../src/adapterManager.js";
-import { tryAppendQueryString } from "../libraries/urlUtils/urlUtils.js";
+} from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import adapterManager from '../src/adapterManager.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 /** @type {string} */
-const MODULE_NAME = "realTimeData";
+const MODULE_NAME = 'realTimeData';
 /** @type {string} */
-const SUBMODULE_NAME = "weborama";
+const SUBMODULE_NAME = 'weborama';
 /** @type {string} */
-const BASE_URL_CONTEXTUAL_PROFILE_API = "ctx.weborama.com";
+const BASE_URL_CONTEXTUAL_PROFILE_API = 'ctx.weborama.com';
 /** @type {string} */
-export const DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY = "webo_wam2gam_entry";
+export const DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY = 'webo_wam2gam_entry';
 /** @type {string} */
-const LOCAL_STORAGE_USER_TARGETING_SECTION = "targeting";
+const LOCAL_STORAGE_USER_TARGETING_SECTION = 'targeting';
 /** @type {string} */
-export const DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY = "_lite";
+export const DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY = '_lite';
 /** @type {string} */
-const LOCAL_STORAGE_LITE_TARGETING_SECTION = "webo";
+const LOCAL_STORAGE_LITE_TARGETING_SECTION = 'webo';
 /** @type {string} */
-const WEBO_CTX_CONF_SECTION = "weboCtxConf";
+const WEBO_CTX_CONF_SECTION = 'weboCtxConf';
 /** @type {string} */
-const WEBO_USER_DATA_CONF_SECTION = "weboUserDataConf";
+const WEBO_USER_DATA_CONF_SECTION = 'weboUserDataConf';
 /** @type {string} */
-const SFBX_LITE_DATA_CONF_SECTION = "sfbxLiteDataConf";
+const SFBX_LITE_DATA_CONF_SECTION = 'sfbxLiteDataConf';
 /** @type {string} */
-const WEBO_CTX_SOURCE_LABEL = "contextual";
+const WEBO_CTX_SOURCE_LABEL = 'contextual';
 /** @type {string} */
-const WEBO_USER_DATA_SOURCE_LABEL = "wam";
+const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
 /** @type {string} */
-const SFBX_LITE_DATA_SOURCE_LABEL = "lite";
+const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 /** @type {number} */
 const GVLID = 284;
 
-const logger = prefixLog("[WeboramaRTD]");
+const logger = prefixLog('[WeboramaRTD]');
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -219,7 +219,7 @@ class WeboramaRtdProvider {
     this.#components.WeboUserData.data = null;
     this.#components.SfbxLiteData.data = null;
 
-    const weboCtxRequiredFields = ["token"];
+    const weboCtxRequiredFields = ['token'];
 
     this.#components.WeboCtx.initialized = this.#initSubSection(
       moduleParams,
@@ -271,7 +271,7 @@ class WeboramaRtdProvider {
       weboCtxConf,
       (data) => {
         logger.logMessage(
-          "fetchContextualProfile on getBidRequestData is done"
+          'fetchContextualProfile on getBidRequestData is done'
         );
 
         this.#setWeboContextualProfile(data);
@@ -299,7 +299,7 @@ class WeboramaRtdProvider {
     const profileHandlers = this.#buildProfileHandlers(moduleParams);
 
     if (isEmpty(profileHandlers)) {
-      logger.logMessage("no data to set targeting");
+      logger.logMessage('no data to set targeting');
       return {};
     }
 
@@ -363,7 +363,7 @@ class WeboramaRtdProvider {
         isPlainObject(extra?.userConsent?.gdpr) &&
         !this.#checkTCFv2(extra.userConsent.gdpr)
       ) {
-        throw "gdpr consent not ok";
+        throw 'gdpr consent not ok';
       }
     } catch (e) {
       logger.logError(
@@ -398,8 +398,8 @@ class WeboramaRtdProvider {
     }
 
     if (
-      deepAccess(gdpr, "vendorData.vendor.consents") &&
-      deepAccess(gdpr, "vendorData.purpose.consents")
+      deepAccess(gdpr, 'vendorData.vendor.consents') &&
+      deepAccess(gdpr, 'vendorData.purpose.consents')
     ) {
       return (
         gdpr.vendorData.vendor.consents[GVLID] === true && // check weborama vendor id
@@ -439,11 +439,11 @@ class WeboramaRtdProvider {
     this.#coerceSendToBidders(submoduleParams);
 
     if (!isFn(submoduleParams.onData)) {
-      throw "onData parameter should be a callback";
+      throw 'onData parameter should be a callback';
     }
 
     if (!isValidProfile(submoduleParams.defaultProfile)) {
-      throw "defaultProfile is not valid";
+      throw 'defaultProfile is not valid';
     }
   }
 
@@ -535,7 +535,7 @@ class WeboramaRtdProvider {
     const profileHandlers = this.#buildProfileHandlers(moduleParams);
 
     if (isEmpty(profileHandlers)) {
-      logger.logMessage("no data to send to bidders");
+      logger.logMessage('no data to send to bidders');
       return;
     }
 
@@ -557,7 +557,7 @@ class WeboramaRtdProvider {
         )
       );
     } catch (e) {
-      logger.logError("unable to send data to bidders:", e);
+      logger.logError('unable to send data to bidders:', e);
     }
 
     profileHandlers.forEach((ph) => {
@@ -601,12 +601,12 @@ class WeboramaRtdProvider {
     const baseURLProfileAPI =
       weboCtxConf.baseURLProfileAPI || BASE_URL_CONTEXTUAL_PROFILE_API;
 
-    let path = "/profile";
-    let queryString = "";
-    queryString = tryAppendQueryString(queryString, "token", token);
+    let path = '/profile';
+    let queryString = '';
+    queryString = tryAppendQueryString(queryString, 'token', token);
 
     if (weboCtxConf.assetID) {
-      path = "/document-profile";
+      path = '/document-profile';
 
       let assetID = weboCtxConf.assetID;
       if (isFn(assetID)) {
@@ -614,7 +614,7 @@ class WeboramaRtdProvider {
           assetID = weboCtxConf.assetID();
         } catch (e) {
           logger.logError(
-            "unexpected error while fetching asset id from callback",
+            'unexpected error while fetching asset id from callback',
             e
           );
 
@@ -625,18 +625,18 @@ class WeboramaRtdProvider {
       }
 
       if (!assetID) {
-        logger.logError("missing asset id");
+        logger.logError('missing asset id');
 
         onDone();
 
         return;
       }
 
-      queryString = tryAppendQueryString(queryString, "assetId", assetID);
+      queryString = tryAppendQueryString(queryString, 'assetId', assetID);
     }
 
     const targetURL = weboCtxConf.targetURL || document.URL;
-    queryString = tryAppendQueryString(queryString, "url", targetURL);
+    queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
     const urlProfileAPI = `https://${baseURLProfileAPI}/api${path}?${queryString}`;
 
@@ -663,7 +663,7 @@ class WeboramaRtdProvider {
     };
 
     const options = {
-      method: "GET",
+      method: 'GET',
       withCredentials: false,
     };
 
@@ -806,7 +806,7 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = this.#getAdapterNameForAlias(bid.bidder);
 
-    if (bidder == "appnexus") {
+    if (bidder == 'appnexus') {
       this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
     }
   }
@@ -849,7 +849,7 @@ class WeboramaRtdProvider {
    */
   // eslint-disable-next-line no-dupe-class-members
   #handleAppnexusBid(reqBidsConfigObj, bid, profile) {
-    const base = "params.keywords";
+    const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
     // this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, base, profile);
   }
@@ -872,7 +872,7 @@ class WeboramaRtdProvider {
       logger.logMessage(
         `bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`
       );
-      const section = metadata.user ? "user" : "site";
+      const section = metadata.user ? 'user' : 'site';
       const path = `${section}.ext.data`;
 
       this.#setBidderOrtb2(
