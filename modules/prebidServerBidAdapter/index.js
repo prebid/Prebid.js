@@ -4,7 +4,6 @@ import {
   deepClone,
   flatten,
   generateUUID,
-  getPrebidInternal,
   insertUserSyncIframe,
   isNumber,
   isPlainObject,
@@ -16,7 +15,7 @@ import {
   triggerPixel,
   uniques,
 } from '../../src/utils.js';
-import { EVENTS, REJECTION_REASON, S2S } from '../../src/constants.js';
+import {EVENTS, REJECTION_REASON, S2S} from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';

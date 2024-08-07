@@ -1,4 +1,4 @@
-import {deepAccess, deepClone, isFn, isPlainObject, isStr} from '../../src/utils.js';
+import {deepClone, isFn, isStr} from '../../src/utils.js';
 /*
  * @typedef {import('../modules/userId/index.js').SubmoduleContainer} SubmoduleContainer
  */
@@ -54,12 +54,12 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
 }
 
 /**
- * @param {SubmodulePriorityMap} submodulePriorityMap
+ * @param {SubmodulePriorityMap} priorityMap
  */
-export function getEids(submodulePriorityMap) {
+export function getEids(priorityMap) {
   const eidConfigs = new Map();
   const idValues = {};
-  Object.entries(submodulePriorityMap).forEach(([key, submodules]) => {
+  Object.entries(priorityMap).forEach(([key, submodules]) => {
     const submodule = submodules.find(mod => mod.idObj?.[key] != null);
     if (submodule) {
       idValues[key] = submodule.idObj[key];

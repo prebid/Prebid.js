@@ -4,14 +4,13 @@ import {
   deepSetValue,
   getBidRequest,
   getDefinedParams,
-  isArray,
   logError,
   logWarn,
   mergeDeep,
   timestamp
 } from '../../src/utils.js';
 import {config} from '../../src/config.js';
-import { STATUS, S2S } from '../../src/constants.js';
+import {S2S, STATUS} from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
@@ -55,7 +54,7 @@ const PBS_CONVERTER = ortbConverter({
     if (!imps.length) {
       logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
     } else {
-      let {s2sBidRequest, requestedBidders} = context;
+      let {s2sBidRequest} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
       request.tmax = s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout);
