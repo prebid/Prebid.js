@@ -131,14 +131,37 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
   /**
    * Module init
-   * @param {Object} provider
+   * @param {Object} config
    * @param {Object} userConsent
    * @return {boolean}
    */
-  function init(provider, userConsent) {
+  function init(config, userConsent) {
     if (dapUtils.checkConsent(userConsent) === false) {
       return false;
     }
+
+    if (window.pbjs?.onEvent && config?.params?.apiAuthToken) {
+      window.pbjs.onEvent('bidWon', function(bid) {
+        logInfo('DEBUG(###onBidWon###)');
+        logInfo(bid);
+        let bidjson = JSON.stringify(bid);
+        let cb = {
+          success: (response, request) => {
+            logInfo('DEBUG(###Winning Bid SAVED###)');
+          },
+          error: (request, error) => {
+            logInfo(error);
+            logInfo('DEBUG(###Save Winning Bid FAILED###)');
+          }
+        };
+        let url = 'https://ProdSymPrebidEventhub1.servicebus.windows.net/prebid-said-1/messages';
+        ajax(url, cb, bidjson, {
+          method: 'POST',
+          customHeaders: {'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': config.params.apiAuthToken}
+        });
+      });
+    }
+
     return true;
   }
 
@@ -159,7 +182,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           api_version: rtdConfig.params.apiVersion,
           domain: rtdConfig.params.domain,
           segtax: rtdConfig.params.segtax,
-          identity: {type: rtdConfig.params.identityType}
+          identity: {type: rtdConfig.params.identityType, identity: rtdConfig.params.identityValue, selector: rtdConfig.params.identitySelector},
         };
         let refreshMembership = true;
         let token = dapUtils.dapGetTokenFromLocalStorage();
@@ -596,7 +619,22 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       if (typeof (identity.identity) != typeof (undefined)) {
         apiParams.identity = identity.identity;
+      } else if (identity.type == 'email' && typeof (identity.selector) != typeof (undefined) && identity.selector.trim() !== '') {
+        let identityElement = document.querySelector(identity.selector);
+        let identityEmail = identityElement.innerHTML;
+        if (identityElement.tagName == 'INPUT') {
+          identityEmail = identityElement.value;
+        }
+
+        if (identityEmail) {
+          const EMAIL_VALIDATION_REGEX = /((([^<>()\[\].,;:\s@"]+(\.[^<>()\[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,}))/i;
+          const regex = new RegExp(EMAIL_VALIDATION_REGEX);
+          if (regex.test(identityEmail)) {
+            apiParams.identity = identityEmail;
+          }
+        }
       }
+
       if (typeof (identity.attributes) != typeof (undefined)) {
         apiParams.attributes = identity.attributes;
       }
