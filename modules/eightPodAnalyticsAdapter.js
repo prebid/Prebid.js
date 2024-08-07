@@ -63,7 +63,9 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
       trackEvent(data, adUnitCode);
     });
 
-    setInterval(sendEvents, 10_000);
+    if (!this._interval) {
+      this._interval = setInterval(sendEvents, 10_000);
+    }
   },
   resetQueue() {
     queue = [];
@@ -181,6 +183,16 @@ eightPodAnalytics.enableAnalytics = function (config) {
   logInfo(MODULE, 'init', config);
   eightPodAnalytics.eventSubscribe();
 };
+
+eightPodAnalytics.disableAnalytics = ((orig) => {
+  return function () {
+    if (this._interval) {
+      clearInterval(this._interval);
+      this._interval = null;
+    }
+    return orig.apply(this, arguments);
+  }
+})(eightPodAnalytics.disableAnalytics)
 
 /**
  * Register Analytics Adapter
