@@ -101,6 +101,11 @@ describe('IDx ID System', () => {
 
     afterEach(() => {
       sandbox.restore();
+      config.resetConfig();
+    })
+
+    after(() => {
+      init(config);
     })
 
     it('when a stored IDx exists it is added to bids', (done) => {

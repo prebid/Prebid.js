@@ -103,6 +103,10 @@ describe('LMPID System', () => {
       config.resetConfig();
     });
 
+    after(() => {
+      init(config);
+    })
+
     it('when a stored LMPID exists it is added to bids', (done) => {
       requestBidsHook(() => {
         adUnits.forEach(unit => {

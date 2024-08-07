@@ -272,7 +272,7 @@ describe('the rubicon adapter', function () {
       }],
       criteoId: '1111',
     };
-    const eids =  [
+    const eids = [
       {
         'source': 'liveintent.com',
         'uids': [

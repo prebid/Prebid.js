@@ -177,6 +177,10 @@ describe('User ID', function () {
     config.resetConfig();
   });
 
+  after(() => {
+    init(config);
+  })
+
   describe('GVL IDs', () => {
     beforeEach(() => {
       sinon.stub(GDPR_GVLIDS, 'register');
