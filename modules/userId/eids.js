@@ -66,26 +66,3 @@ export function getEids(submodulePriorityMap) {
   })
   return createEidsArray(idValues, eidConfigs);
 }
-
-/**
- * @param {SubmoduleContainer[]} submodules
- */
-export function buildEidPermissions(submodules) {
-  let eidPermissions = [];
-  submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
-    .forEach(i => {
-      Object.keys(i.idObj).forEach(key => {
-        const eidConf = EID_CONFIG.get(key) || {};
-        if (deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
-          eidConf.source) {
-          eidPermissions.push(
-            {
-              source: eidConf.source,
-              bidders: i.config.bidders
-            }
-          );
-        }
-      });
-    });
-  return eidPermissions;
-}

@@ -37,8 +37,6 @@ const TYPE = S2S.SRC;
 let _syncCount = 0;
 let _s2sConfigs;
 
-let eidPermissions;
-
 /**
  * @typedef {Object} AdapterOptions
  * @summary s2sConfig parameter that adds arguments to resulting OpenRTB payload that goes to Prebid Server
@@ -553,7 +551,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .reduce(flatten, [])
     .filter(uniques);
 
-  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders, eidPermissions));
+  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
@@ -604,15 +602,5 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
 function shouldEmitNonbids(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
 }
-
-/**
- * Global setter that sets eids permissions for bidders
- * This setter is to be used by userId module when included
- * @param {Array} newEidPermissions
- */
-function setEidPermissions(newEidPermissions) {
-  eidPermissions = newEidPermissions;
-}
-getPrebidInternal().setEidPermissions = setEidPermissions;
 
 adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');

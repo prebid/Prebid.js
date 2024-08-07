@@ -2076,13 +2076,25 @@ describe('S2S Adapter', function () {
                 eids: [{id: 1}, {id: 2}]
               }
             }
+          },
+          bidder: {
+            appnexus: {
+              user: {
+                ext: {
+                  eids: [{id: 3}]
+                }
+              }
+            }
           }
         }
       }
       adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(typeof requestBid.user.ext.eids).is.equal('object');
-      expect(requestBid.user.ext.eids).to.eql([{id: 1}, {id: 2}]);
+      const payload = JSON.parse(server.requests[0].requestBody);
+      expect(payload.user.ext.eids).to.eql([{id: 1}, {id: 2}]);
+      expect(payload.ext.prebid.bidderconfig).to.eql([{
+        bidders: ['appnexus'],
+        config: {ortb2: {user: {ext: {eids: [{id: 3}]}}}}
+      }]);
     });
 
     it('when config \'currency.adServerCurrency\' value is a string: ORTB has property \'cur\' value set to a single item array', function () {

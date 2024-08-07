@@ -133,7 +133,7 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
-import {buildEidPermissions, createEidsArray, EID_CONFIG, getEids} from './eids.js';
+import {createEidsArray, EID_CONFIG, getEids} from './eids.js';
 import {
   getCoreStorageManager,
   getStorageManager,
@@ -144,7 +144,6 @@ import {
   deepAccess,
   deepSetValue,
   delayExecution,
-  getPrebidInternal,
   isArray,
   isEmpty,
   isFn,
@@ -325,13 +324,6 @@ export function deleteStoredValue(submodule) {
         break;
     }
   });
-}
-
-function setPrebidServerEidPermissions(initializedSubmodules) {
-  let setEidPermissions = getPrebidInternal().setEidPermissions;
-  if (typeof setEidPermissions === 'function' && isArray(initializedSubmodules)) {
-    setEidPermissions(buildEidPermissions(initializedSubmodules));
-  }
 }
 
 function getValueFromCookie(submodule, storedKey) {
@@ -918,9 +910,6 @@ function initSubmodules(dest, submodules, forceRefresh = false) {
         return carry;
       })
     }, []);
-    if (initialized.length) {
-      setPrebidServerEidPermissions(initialized);
-    }
     initialized.forEach(updateInitializedSubmodules.bind(null, dest));
     return initialized;
   })
