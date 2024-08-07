@@ -1025,7 +1025,7 @@ describe('OpenxRtbAdapter', function () {
           // enrich bid request with userId key/value
 
           const request = spec.buildRequests(bidRequestsWithUserId, mockBidderRequest);
-          expect(request[0].data.user.ext.eids).to.equal(userIdAsEids);
+          expect(request[0].data.user.ext.eids).to.eql(userIdAsEids);
         });
 
         it(`when no user ids are available, it should not send any extended ids`, function () {

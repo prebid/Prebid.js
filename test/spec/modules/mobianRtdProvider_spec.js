@@ -12,7 +12,9 @@ describe('Mobian RTD Submodule', function () {
       ortb2Fragments: {
         global: {
           site: {
-            ext: {}
+            ext: {
+              data: {}
+            }
           }
         }
       }
@@ -23,83 +25,101 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub.restore();
   });
 
-  it('should return no_risk when server responds with garm_no_risk', function () {
+  it('should set key-value pairs when server responds with garm_risk', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        garm_no_risk: true,
-        garm_low_risk: false,
-        garm_medium_risk: false,
-        garm_high_risk: false
-      });
+      callbacks.success(JSON.stringify({
+        garm_risk: 'low',
+        sentiment_positive: true,
+        emotion_joy: true
+      }));
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('no_risk');
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
+        risk: 'low',
+        contentCategories: [],
+        sentiment: 'positive',
+        emotions: ['joy']
+      });
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'low',
+        mobianContentCategories: [],
+        mobianSentiment: 'positive',
+        mobianEmotions: ['joy']
+      });
     });
   });
 
-  it('should return low_risk when server responds with garm_no_risk', function () {
+  it('should handle response with GARM content categories, sentiment, and emotions', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        garm_no_risk: false,
-        garm_low_risk: true,
-        garm_medium_risk: false,
-        garm_high_risk: false
-      });
+      callbacks.success(JSON.stringify({
+        garm_risk: 'medium',
+        garm_content_category_arms: true,
+        garm_content_category_crime: true,
+        sentiment_negative: true,
+        emotion_anger: true,
+        emotion_fear: true
+      }));
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('low_risk');
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
+        risk: 'medium',
+        contentCategories: ['arms', 'crime'],
+        sentiment: 'negative',
+        emotions: ['anger', 'fear']
+      });
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'medium',
+        mobianContentCategories: ['arms', 'crime'],
+        mobianSentiment: 'negative',
+        mobianEmotions: ['anger', 'fear']
+      });
     });
   });
 
-  it('should return medium_risk when server responds with garm_medium_risk', function () {
+  it('should return unknown risk when garm_risk is not present', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        garm_no_risk: false,
-        garm_low_risk: false,
-        garm_medium_risk: true,
-        garm_high_risk: false
-      });
+      callbacks.success(JSON.stringify({
+        sentiment_neutral: true
+      }));
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('medium_risk');
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
+        risk: 'unknown',
+        contentCategories: [],
+        sentiment: 'neutral',
+        emotions: []
+      });
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'unknown',
+        mobianContentCategories: [],
+        mobianSentiment: 'neutral',
+        mobianEmotions: []
+      });
     });
   });
 
-  it('should return high_risk when server responds with garm_high_risk', function () {
-    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success({
-        garm_no_risk: false,
-        garm_low_risk: false,
-        garm_medium_risk: false,
-        garm_high_risk: true
-      });
-    });
-
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('high_risk');
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
-    });
-  });
-
-  it('should return unknown when server response is not of the expected shape', function () {
+  it('should return empty object when server response is not valid JSON', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success('unexpected output not even of the right type');
     });
+    const originalConfig = JSON.parse(JSON.stringify(bidReqConfig));
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({});
+      // Check that bidReqConfig hasn't been modified
+      expect(bidReqConfig).to.deep.equal(originalConfig);
+    });
+  });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.have.property('mobianGarmRisk');
-      expect(risk['mobianGarmRisk']).to.equal('unknown');
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+  it('should handle error response', function () {
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.error();
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({});
     });
   });
 });

@@ -1,7 +1,7 @@
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import {
-  doRender, getBidToRender,
+  doRender, emitAdRenderSucceeded, getBidToRender,
   getRenderingData,
   handleCreativeEvent,
   handleNativeMessage,
@@ -12,6 +12,7 @@ import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {auctionManager} from '../../../src/auctionManager.js';
+import adapterManager from '../../../src/adapterManager.js';
 
 describe('adRendering', () => {
   let sandbox;
@@ -267,4 +268,29 @@ describe('adRendering', () => {
       sinon.assert.calledWith(fireTrackers, data, bid);
     })
   })
+
+  describe('onAdRenderSucceeded', () => {
+    let mockAdapterSpec, bids;
+    beforeEach(() => {
+      mockAdapterSpec = {
+        onAdRenderSucceeded: sinon.stub()
+      };
+      adapterManager.bidderRegistry['mockBidder'] = {
+        bidder: 'mockBidder',
+        getSpec: function () { return mockAdapterSpec; },
+      };
+      bids = [
+        { bidder: 'mockBidder', params: { placementId: 'id' } },
+      ];
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['mockBidder'];
+    });
+
+    it('should invoke onAddRenderSucceeded on emitAdRenderSucceeded', () => {
+      emitAdRenderSucceeded({ bid: bids[0] });
+      sinon.assert.called(mockAdapterSpec.onAdRenderSucceeded);
+    });
+  });
 });

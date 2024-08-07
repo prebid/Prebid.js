@@ -136,7 +136,7 @@ function buildRequests(bidReqs, bidderRequest) {
 }
 
 function isBidRequestValid(bid) {
-  if (bid.bidder !== BIDDER_CODE || !bid.params || !bid.params.publisherId) {
+  if (!bid.params || !bid.params.publisherId) {
     return false;
   }
 

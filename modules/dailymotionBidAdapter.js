@@ -1,6 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { deepAccess } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { userSync } from '../src/userSync.js';
 
 /**
  * Get video metadata from bid request
@@ -62,7 +64,6 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     title: videoParams.title || deepAccess(contentObj, 'title', ''),
     url: videoParams.url || deepAccess(contentObj, 'url', ''),
     topics: videoParams.topics || '',
-    xid: videoParams.xid || '',
     isCreatedForKids: typeof videoParams.isCreatedForKids === 'boolean'
       ? videoParams.isCreatedForKids
       : null,
@@ -77,6 +78,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
       autoplay: typeof videoParams.autoplay === 'boolean'
         ? videoParams.autoplay
         : null,
+      playerName: videoParams.playerName || deepAccess(contentObj, 'playerName', ''),
       playerVolume: (
         typeof videoParams.playerVolume === 'number' &&
         videoParams.playerVolume >= 0 &&
@@ -88,6 +90,22 @@ function getVideoMetadata(bidRequest, bidderRequest) {
   };
 
   return videoMetadata;
+}
+
+/**
+ * Check if user sync is enabled for Dailymotion
+ *
+ * @return boolean True if user sync is enabled
+ */
+function isUserSyncEnabled() {
+  const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled');
+
+  if (!syncEnabled) return false;
+
+  const canSyncWithIframe = userSync.canBidderRegisterSync('iframe', 'dailymotion');
+  const canSyncWithPixel = userSync.canBidderRegisterSync('image', 'dailymotion');
+
+  return !!(canSyncWithIframe || canSyncWithPixel);
 }
 
 export const spec = {
@@ -189,6 +207,7 @@ export const spec = {
             atts: deepAccess(bidderRequest, 'ortb2.device.ext.atts', 0),
           },
         } : {}),
+        userSyncEnabled: isUserSyncEnabled(),
         request: {
           adUnitCode: deepAccess(bid, 'adUnitCode', ''),
           auctionId: deepAccess(bid, 'auctionId', ''),
