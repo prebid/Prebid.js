@@ -2065,31 +2065,21 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
-      let consentConfig = { s2sConfig: CONFIG };
-      config.setConfig(consentConfig);
-
-      let userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      userIdBidRequest[0].bids[0].userId = {
-        criteoId: '44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU',
-        tdid: 'abc123',
-        pubcid: '1234',
-        parrableId: { eid: '01.1563917337.test-eid' },
-        lipb: {
-          lipbid: 'li-xyz',
-          segments: ['segA', 'segB']
-        },
-        idl_env: '0000-1111-2222-3333',
-        id5id: {
-          uid: '11111',
-          ext: {
-            linkType: 'some-link-type'
+    it('should pass user.ext.eids from FPD', function () {
+      config.setConfig({s2sConfig: CONFIG});
+      const req = {
+        ...REQUEST,
+        ortb2Fragments: {
+          global: {
+            user: {
+              ext: {
+                eids: [{id: 1}, {id: 2}]
+              }
+            }
           }
         }
-      };
-      userIdBidRequest[0].bids[0].userIdAsEids = [{id: 1}, {id: 2}];
-
-      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
+      }
+      adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
       let requestBid = JSON.parse(server.requests[0].requestBody);
       expect(typeof requestBid.user.ext.eids).is.equal('object');
       expect(requestBid.user.ext.eids).to.eql([{id: 1}, {id: 2}]);

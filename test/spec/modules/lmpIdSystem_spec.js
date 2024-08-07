@@ -100,6 +100,7 @@ describe('LMPID System', () => {
 
     afterEach(() => {
       sandbox.restore();
+      config.resetConfig();
     });
 
     it('when a stored LMPID exists it is added to bids', (done) => {

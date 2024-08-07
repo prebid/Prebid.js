@@ -1083,14 +1083,16 @@ function updateSubmodules() {
   }).filter(submodule => submodule !== null)
     .forEach((sm) => submodules.push(sm));
 
-  if (!addedUserIdHook && submodules.length) {
-    // priority value 40 will load after consentManagement with a priority of 50
-    getGlobal().requestBids.before(requestBidsHook, 40);
-    enrichFPD.before(enrichEids);
-    adapterManager.callDataDeletionRequest.before(requestDataDeletion);
-    coreGetPPID.after((next) => next(getPPID()));
+  if (submodules.length) {
+    if (!addedUserIdHook) {
+      // priority value 40 will load after consentManagement with a priority of 50
+      getGlobal().requestBids.before(requestBidsHook, 40);
+      enrichFPD.before(enrichEids);
+      adapterManager.callDataDeletionRequest.before(requestDataDeletion);
+      coreGetPPID.after((next) => next(getPPID()));
+      addedUserIdHook = true;
+    }
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
-    addedUserIdHook = true;
   }
 }
 
@@ -1162,7 +1164,6 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
-  addedUserIdHook = false;
   initializedSubmodules = [];
   initIdSystem = idSystemInitializer({delay});
   if (configListener != null) {
