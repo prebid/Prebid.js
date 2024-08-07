@@ -467,13 +467,24 @@ function getPrimaryIds(submodule) {
   return ids;
 }
 
-function orderByPriority(items, getPrimaryIdKeys, getIdKeys, getName) {
+/**
+ * Given a collection of items, where each item maps to any number of IDs (getKeys) and an ID module (getIdMod),
+ * return a map from ID key to all items that map to that ID key, in order of priority (highest priority first).
+ *
+ * @template T
+ * @param {T[]} items
+ * @param {(item: T) => string[]} getKeys
+ * @param {(item: T) => Submodule} getIdMod
+ * @returns {{[key: string]: T[]}}
+ */
+function orderByPriority(items, getKeys, getIdMod) {
   const tally = {};
   items.forEach(item => {
-    const primaryIds = getPrimaryIdKeys(item);
-    getIdKeys(item).forEach(key => {
+    const module = getIdMod(item);
+    const primaryIds = getPrimaryIds(module);
+    getKeys(item).forEach(key => {
       const keyItems = tally[key] = tally[key] ?? []
-      const keyPriority = idPriority[key]?.indexOf(getName(item)) ?? (primaryIds.includes(key) ? 0 : -1);
+      const keyPriority = idPriority[key]?.indexOf(module.name) ?? (primaryIds.includes(key) ? 0 : -1);
       const pos = keyItems.findIndex(([priority]) => priority < keyPriority);
       keyItems.splice(pos === -1 ? keyItems.length : pos, 0, [keyPriority, item])
     })
@@ -488,10 +499,9 @@ function getPrioritizedCombinedSubmoduleIds(submodules) {
   return Object.fromEntries(
     Object.entries(orderByPriority(
       submodules,
-      submod => getPrimaryIds(submod.submodule),
       submod => Object.keys(submod.idObj || {}),
-      submod => submod.submodule.name
-    )).map(([key, submodules]) => [key, submodules[0].idObj[key]])
+      (submod) => submod.submodule
+    )).map(([key, submodules]) => [key, submodules.find(submod => submod.idObj[key] != null)?.idObj?.[key]])
   )
 }
 
@@ -1037,7 +1047,11 @@ function canUseStorage(submodule) {
 function updateEIDConfig(submodules) {
   EID_CONFIG.clear();
   Object.entries(
-    orderByPriority(submodules, (mod) => getPrimaryIds(mod), (mod) => Object.keys(mod.eids || {}), (mod) => mod.name)
+    orderByPriority(
+      submodules,
+      (mod) => Object.keys(mod.eids || {}),
+      (mod) => mod
+    )
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
@@ -1196,9 +1210,8 @@ export function enrichEids(next, fpd) {
     const {global: globalFpd, bidder: bidderFpd} = ortb2Fragments;
     const modulesById = orderByPriority(
       initializedSubmodules,
-      (submod) => getPrimaryIds(submod.submodule),
       (submod) => Object.keys(submod.idObj ?? {}),
-      (submod) => submod.submodule.name
+      (submod) => submod.submodule,
     )
     const globalMods = {};
     const bidderMods = {};
