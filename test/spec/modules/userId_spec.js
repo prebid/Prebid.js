@@ -2404,7 +2404,7 @@ describe('User ID', function () {
         expect(typeof (getGlobal()).getEncryptedEidsForSource).to.equal('function');
       });
 
-      it('pbjs.getEncryptedEidsForSource should return the string without encryption if encryption is false', (done) => {
+      it('pbjs.getEncryptedEidsForSource should return the string without encryption if encryption is false', () => {
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig({
@@ -2426,43 +2426,42 @@ describe('User ID', function () {
           },
         });
         const encrypt = false;
-        (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
+        return (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
           let users = (getGlobal()).getUserIdsAsEids();
           expect(data).to.equal(users[0].uids[0].id);
-          done();
-        }).catch(done);
+        })
       });
 
       it('pbjs.getEncryptedEidsForSource should return prioritized id as non-encrypted string', (done) => {
         init(config);
+        const EIDS = {
+          uid2: {
+            source: 'uidapi.com',
+            getValue(data) {
+              return data.id
+            }
+          },
+          pubcid: {
+            source: 'pubcid.org',
+          },
+          lipb: {
+            source: 'liveintent.com',
+            getValue(data) {
+              return data.lipbid
+            }
+          },
+          merkleId: {
+            source: 'merkleinc.com',
+            getValue(data) {
+              return data.id
+            }
+          }
+        }
         setSubmoduleRegistry([
-          createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
-          createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}),
-          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}, null, {
-            uid2: {
-              source: 'uidapi.com',
-              getValue(data) {
-                return data.id
-              }
-            },
-            pubcid: {
-              source: 'pubcid.org',
-            },
-            lipb: {
-              source: 'liveintent.com',
-              getValue(data) {
-                return data.lipbid
-              }
-            }
-          }),
-          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}}, null, {
-            merkleId: {
-              source: 'merkleinc.com',
-              getValue(data) {
-                return data.id
-              }
-            }
-          })
+          createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}, null, EIDS),
+          createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}, null, EIDS),
+          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}, null, EIDS),
+          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}}, null, EIDS)
         ]);
         config.setConfig({
           userSync: {

@@ -54,15 +54,17 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
 }
 
 /**
- * @param {{[idKey]: SubmoduleContainer[]}} submodulePriorityMap
+ * @param {SubmodulePriorityMap} submodulePriorityMap
  */
 export function getEids(submodulePriorityMap) {
   const eidConfigs = new Map();
   const idValues = {};
   Object.entries(submodulePriorityMap).forEach(([key, submodules]) => {
     const submodule = submodules.find(mod => mod.idObj?.[key] != null);
-    idValues[key] = submodule.idObj[key];
-    eidConfigs.set(key, submodule.submodule.eids?.[key])
+    if (submodule) {
+      idValues[key] = submodule.idObj[key];
+      eidConfigs.set(key, submodule.submodule.eids?.[key])
+    }
   })
   return createEidsArray(idValues, eidConfigs);
 }
