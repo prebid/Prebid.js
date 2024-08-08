@@ -1104,7 +1104,6 @@ function updateSubmodules() {
     if (!addedUserIdHook) {
       // priority value 40 will load after consentManagement with a priority of 50
       getGlobal().requestBids.before(requestBidsHook, 40);
-      enrichFPD.before(enrichEids);
       adapterManager.callDataDeletionRequest.before(requestDataDeletion);
       coreGetPPID.after((next) => next(getPPID()));
       addedUserIdHook = true;
