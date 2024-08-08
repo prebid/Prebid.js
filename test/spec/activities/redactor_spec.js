@@ -294,9 +294,22 @@ describe('redactor', () => {
       ORTB_GEO_PATHS.forEach(path => {
         it(`should ${allowed ? 'NOT ' : ''} round down ${path}`, () => {
           const ortb2 = {};
-          deepSetValue(ortb2, path, 1.2345);
-          redactor.ortb2(ortb2);
-          expect(deepAccess(ortb2, path)).to.eql(allowed ? 1.2345 : 1.23);
+          switch (path) {
+            case 'device.ip':
+              deepSetValue(ortb2, path, '192.168.1.1');
+              redactor.ortb2(ortb2);
+              expect(deepAccess(ortb2, path)).to.eql(allowed ? '192.168.1.1' : '192.168.1.0');
+              break;
+            case 'device.ipv6':
+              deepSetValue(ortb2, path, '2001:0000:130F:0000:0000:09C0:876A:130B');
+              redactor.ortb2(ortb2);
+              expect(deepAccess(ortb2, path)).to.eql(allowed ? '2001:0000:130F:0000:0000:09C0:876A:130B' : '2001:0:130f:0:0:0:0:0');
+              break;
+            default:
+              deepSetValue(ortb2, path, 1.2345);
+              redactor.ortb2(ortb2);
+              expect(deepAccess(ortb2, path)).to.eql(allowed ? 1.2345 : 1.23);
+          }         
         })
       })
     });

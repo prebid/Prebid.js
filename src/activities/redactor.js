@@ -7,6 +7,7 @@ import {
   ACTIVITY_TRANSMIT_TID,
   ACTIVITY_TRANSMIT_UFPD
 } from './activities.js';
+import { scrubIP } from '../../libraries/ipUtils/ipUtils.js';
 
 export const ORTB_UFPD_PATHS = [
   'data',
@@ -20,7 +21,7 @@ export const ORTB_UFPD_PATHS = [
   'customdata'
 ].map(f => `user.${f}`).concat('device.ext.cdep');
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
-export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
+export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon', 'device.ip', 'device.ipv6'];
 
 /**
  * @typedef TransformationRuleDef
@@ -154,7 +155,13 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       paths: ORTB_GEO_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
       get(val) {
-        return Math.round((val + Number.EPSILON) * 100) / 100;
+        switch (typeof val) {
+          case 'string':
+            return scrubIP(val);
+          case 'number':
+          default:
+            return Math.round((val + Number.EPSILON) * 100) / 100;
+        }
       }
     },
     {
