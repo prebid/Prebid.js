@@ -378,6 +378,33 @@ describe('teadsBidAdapter', () => {
       expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
     });
 
+    it('should add ortb2 device data to payload', function () {
+      const ortb2DeviceBidderRequest = {
+        ...bidderRequestDefault,
+        ...{
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+              ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+            },
+          },
+        },
+      };
+      const request = spec.buildRequests(bidRequests, ortb2DeviceBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.device).to.deep.equal(ortb2DeviceBidderRequest.ortb2.device);
+    });
+
     it('should add hardwareConcurrency info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
