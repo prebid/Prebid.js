@@ -472,7 +472,7 @@ var mapVideo = (slot, videoFromBid) => {
 const mapImpression = slot => {
   const { adUnitCode, bidderRequestId, bidId, params = {}, ortb2Imp = {} } = slot;
   const { id, siteId, video } = params;
-  const { ext = {} } = ortb2Imp;
+  const { instl, ext = {} } = ortb2Imp;
 
   /*
     store bidId <-> bidderRequestId mapping for bidWon notification
@@ -500,6 +500,7 @@ const mapImpression = slot => {
     video: mapVideo(slot, video),
     tagid: adUnitCode,
     ext,
+    instl,
   };
 
   // Check floorprices for this imp
