@@ -324,7 +324,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
   if (bidderRequest && bidderRequest.refererInfo) {
     generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
     generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
-    generalParams.page_domain = deepAccess(bidderRequest, 'refererInfo.domain') || deepAccess(window, 'location.hostname');
+    generalParams.site_domain = deepAccess(bidderRequest, 'refererInfo.domain') || deepAccess(window, 'location.hostname');
   }
 
   return generalParams;

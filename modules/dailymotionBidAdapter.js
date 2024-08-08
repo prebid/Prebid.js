@@ -64,7 +64,6 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     title: videoParams.title || deepAccess(contentObj, 'title', ''),
     url: videoParams.url || deepAccess(contentObj, 'url', ''),
     topics: videoParams.topics || '',
-    xid: videoParams.xid || '',
     isCreatedForKids: typeof videoParams.isCreatedForKids === 'boolean'
       ? videoParams.isCreatedForKids
       : null,
@@ -79,6 +78,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
       autoplay: typeof videoParams.autoplay === 'boolean'
         ? videoParams.autoplay
         : null,
+      playerName: videoParams.playerName || deepAccess(contentObj, 'playerName', ''),
       playerVolume: (
         typeof videoParams.playerVolume === 'number' &&
         videoParams.playerVolume >= 0 &&

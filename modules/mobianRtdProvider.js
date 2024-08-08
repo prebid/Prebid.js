@@ -42,7 +42,7 @@ function getBidRequestData(bidReqConfig, callback, config) {
 
         let mobianRisk = response.garm_risk || 'unknown';
 
-        const categories = Object.keys(response)
+        const contentCategories = Object.keys(response)
           .filter(key => key.startsWith('garm_content_category_') && response[key])
           .map(key => key.replace('garm_content_category_', ''));
 
@@ -55,19 +55,23 @@ function getBidRequestData(bidReqConfig, callback, config) {
           .map(key => key.replace('emotion_', ''));
 
         const risk = {
-          'risk': mobianRisk,
-          'contentCategories': categories,
-          'sentiment': sentiment,
-          'emotions': emotions
+          risk: mobianRisk,
+          contentCategories: contentCategories,
+          sentiment: sentiment,
+          emotions: emotions
         };
 
+        deepSetValue(ortb2Site.ext, 'data.mobianRisk', mobianRisk);
+        deepSetValue(ortb2Site.ext, 'data.mobianContentCategories', contentCategories);
+        deepSetValue(ortb2Site.ext, 'data.mobianSentiment', sentiment);
+        deepSetValue(ortb2Site.ext, 'data.mobianEmotions', emotions);
+
         resolve(risk);
-        deepSetValue(ortb2Site.ext, 'data.mobian', risk);
-        callback()
+        callback();
       },
       error: function () {
         resolve({});
-        callback()
+        callback();
       }
     });
   });
