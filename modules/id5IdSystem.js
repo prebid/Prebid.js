@@ -237,7 +237,7 @@ export const id5IdSubmodule = {
     }
     return cacheIdObj;
   },
-  primaryIds: ['id5id'],
+  primaryIds: ['id5id', 'trueLinkId'],
   eids: {
     'id5id': {
       getValue: function (data) {
