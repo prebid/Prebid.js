@@ -284,7 +284,6 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     proxyBidRequests.push({
       ...adUnit,
       adUnitCode: adUnit.code,
-      ...getDefinedParams(actualBidRequests.values().next().value || {}, ['userId', 'userIdAsEids', 'schain']),
       pbsData: {impId, actualBidRequests, adUnit},
     });
   });
