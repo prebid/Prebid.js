@@ -32,7 +32,7 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll', 'iionads', 'apester', 'adsyield'],
+  aliases: ['pll', 'iionads', 'apester', 'adsyield', 'tgm'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
