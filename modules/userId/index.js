@@ -1122,8 +1122,7 @@ function updateSubmodules() {
 
   if (submodules.length) {
     if (!addedUserIdHook) {
-      // use higher priority than dataController / fpdModule
-      startAuction.before(startAuctionHook, 100)
+      startAuction.before(startAuctionHook, 100) // use higher priority than dataController / rtd
       adapterManager.callDataDeletionRequest.before(requestDataDeletion);
       coreGetPPID.after((next) => next(getPPID()));
       addedUserIdHook = true;
