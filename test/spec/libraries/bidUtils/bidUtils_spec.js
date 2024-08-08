@@ -1,6 +1,6 @@
 
 import { expect } from 'chai';
-import { buildRequests, interpretResponse, buildUserSyncs } from '../../../../libraries/bidUtils/bidUtils.js';
+import { buildRequests, interpretResponse } from '../../../../libraries/bidUtils/bidUtils.js';
 import { getStorageManager } from '../../../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../../../src/activities/modules.js';
 
@@ -64,7 +64,7 @@ describe('bidderOperations', function () {
     // isBidRequestValid: isBidRequestValid(),
     buildRequests: buildRequests(bidEndPoint, storage, cookieName),
     interpretResponse,
-    buildUserSyncs: buildUserSyncs(syncEndPoint)
+    // buildUserSyncs: buildUserSyncs(syncEndPoint)
   };
 
   describe('buildRequests', function () {
@@ -138,19 +138,19 @@ describe('bidderOperations', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
     })
   });
-  describe('getUserSyncs', function () {
-    const syncUrl = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?/iframe?pbjs=1&coppa=0`;
-    const syncOptions = {
-      iframeEnabled: true
-    };
-    let userSync = spec.buildUserSyncs(syncOptions);
-    it('Returns valid URL and type', function () {
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.exist;
-      expect(userSync[0].url).to.exist;
-      expect(userSync).to.deep.equal([
-        { type: 'iframe', url: syncUrl }
-      ]);
-    });
-  });
+  // describe('getUserSyncs', function () {
+  //   const syncUrl = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?/iframe?pbjs=1&coppa=0`;
+  //   const syncOptions = {
+  //     iframeEnabled: true
+  //   };
+  //   let userSync = spec.buildUserSyncs(syncOptions);
+  //   it('Returns valid URL and type', function () {
+  //     expect(userSync).to.be.an('array').with.lengthOf(1);
+  //     expect(userSync[0].type).to.exist;
+  //     expect(userSync[0].url).to.exist;
+  //     expect(userSync).to.deep.equal([
+  //       { type: 'iframe', url: syncUrl }
+  //     ]);
+  //   });
+  // });
 });

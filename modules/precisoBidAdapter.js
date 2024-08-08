@@ -3,7 +3,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { buildUserSyncs, buildRequests, interpretResponse, onBidWon } from '../libraries/bidUtils/bidUtils.js';
+import { buildRequests, interpretResponse, onBidWon } from '../libraries/bidUtils/bidUtils.js';
+import { buildUserSyncs } from '../libraries/bidUtils/bidUtilsCommon.js';
 
 const BIDDER__CODE = 'preciso';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });

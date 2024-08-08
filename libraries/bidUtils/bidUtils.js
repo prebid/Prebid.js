@@ -2,8 +2,8 @@ import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { replaceAuctionPrice } from '../../src/utils.js';
 import { getStorageManager } from '../../src/storageManager.js';
 import { ajax } from '../../src/ajax.js';
-import { config } from '../../src/config.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
+import { consentCheck } from './bidUtilsCommon.js';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 
@@ -90,48 +90,6 @@ export function interpretResponse(serverResponse) {
   return bidsValue
 }
 
-export const buildUserSyncs = (syncEndpoint) => (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-  let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-  const isCk2trk = syncEndpoint.includes('ck.2trk.info');
-  const isSpec = syncOptions.spec;
-  if (isCk2trk) {
-    if (!Object.is(isSpec, true)) {
-      let syncId = storage.getCookie('_sharedid');
-      syncEndpoint = syncEndpoint + 'id=' + syncId;
-    } else {
-      syncEndpoint = syncEndpoint + 'id=NA';
-    }
-  }
-  // Base sync URL
-  let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;
-
-  if (gdprConsent && gdprConsent.consentString) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') {
-      syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-    } else {
-      syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-    }
-  } else {
-    syncUrl += isCk2trk ? `&gdpr=0&gdpr_consent=` : '';
-  }
-
-  if (isCk2trk) {
-    syncUrl += uspConsent ? `&us_privacy=${uspConsent}` : `&us_privacy=`;
-    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`
-  } else {
-    if (uspConsent && uspConsent.consentString) {
-      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-    const coppa = config.getConfig('coppa') ? 1 : 0;
-    syncUrl += `&coppa=${coppa}`;
-  }
-
-  return [{
-    type: syncType,
-    url: syncUrl
-  }];
-}
-
 export function onBidWon(bid) {
   if (bid.nurl) {
     const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.price);
@@ -143,18 +101,4 @@ export function onBidWon(bid) {
 function macroReplace(adm, cpm) {
   let replacedadm = replaceAuctionPrice(adm, cpm);
   return replacedadm;
-}
-
-export function consentCheck(bidderRequest, req) {
-  if (bidderRequest) {
-    if (bidderRequest.uspConsent) {
-      req.ccpa = bidderRequest.uspConsent;
-    }
-    if (bidderRequest.gdprConsent) {
-      req.gdpr = bidderRequest.gdprConsent
-    }
-    if (bidderRequest.gppConsent) {
-      req.gpp = bidderRequest.gppConsent;
-    }
-  }
 }
