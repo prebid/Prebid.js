@@ -2,12 +2,18 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+
 import {
   deepAccess,
   isFn,
   logError,
   isArray,
-  formatQS
+  formatQS,
+  getWindowTop,
+  isNumber,
+  isStr,
+  deepSetValue
 } from '../src/utils.js';
 
 import {
@@ -61,6 +67,86 @@ export function validateVideo(mediaTypes) {
   return video.context !== ADPOD;
 }
 
+export function _getMinSize(sizes) {
+  if (!sizes || sizes.length === 0) return undefined;
+  return sizes.reduce((minSize, currentSize) => {
+    const minArea = minSize.w * minSize.h;
+    const currentArea = currentSize.w * currentSize.h;
+    return currentArea < minArea ? currentSize : minSize;
+  });
+}
+
+export function _isIframe() {
+  try {
+    window.top.document.querySelector('test');
+    return false;
+  } catch (e) {
+    return true;
+  }
+}
+
+export function _isViewabilityMeasurable(element) {
+  if (!element) return false;
+  return !_isIframe(element);
+}
+
+export function _getViewability(element, topWin, { w, h } = {}) {
+  return topWin.document.visibilityState === 'visible'
+    ? percentInView(element, topWin, { w, h })
+    : 0;
+}
+
+export function detectViewability(bid) {
+  const { params, adUnitCode } = bid;
+
+  const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
+
+  let element = null;
+  let bidParamSizes = null;
+  let minSize = [];
+
+  if (isStr(viewabilityContainerIdentifier)) {
+    try {
+      element = document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
+      if (element) {
+        bidParamSizes = [element.offsetWidth, element.offsetHeight];
+        minSize = _getMinSize(bidParamSizes)
+      }
+    } catch (e) {
+      logError(`Error while trying to find viewability container element: ${viewabilityContainerIdentifier}`);
+    }
+  }
+
+  if (!element) {
+    // Get the sizes from the mediaTypes object if it exists, otherwise use the sizes array from the bid object
+    bidParamSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
+    bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
+    bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
+    minSize = _getMinSize(bidParamSizes ?? [])
+    element = document.getElementById(adUnitCode);
+  }
+
+  if (_isViewabilityMeasurable(element)) {
+    const minSizeObj = {
+      w: minSize[0],
+      h: minSize[1]
+    }
+    return Math.round(_getViewability(element, getWindowTop(), minSizeObj))
+  }
+
+  return null;
+}
+
+/**
+ * Get ids from Prebid User ID Modules and add them to the payload
+ */
+function _handleEids(payload, validBidRequests) {
+  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    deepSetValue(payload, 'userIdList', bidUserIdAsEids);
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 143,
@@ -75,20 +161,18 @@ export const spec = {
     const bidId = deepAccess(bid, 'bidId');
     const mediaTypes = deepAccess(bid, 'mediaTypes', {});
     const params = deepAccess(bid, 'params', {});
-    const bidder = deepAccess(bid, 'bidder');
 
     const hasBidId = Boolean(bidId);
-    const isValidBidder = (bidder === BIDDER_CODE);
     const hasMediaTypes = Boolean(mediaTypes) && (Boolean(mediaTypes[BANNER]) || Boolean(mediaTypes[VIDEO]));
     const isValidBanner = validateBanner(mediaTypes);
     const isValidVideo = validateVideo(mediaTypes);
+    const isValidViewability = typeof params.viewabilityPercentage === 'undefined' || (isNumber(params.viewabilityPercentage) && params.viewabilityPercentage >= 0 && params.viewabilityPercentage <= 1);
     const hasRequiredBidParams = Boolean(params.placementId);
 
-    const isValid = isValidBidder && hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams;
+    const isValid = hasBidId && hasMediaTypes && isValidViewability && isValidBanner && isValidVideo && hasRequiredBidParams;
     if (!isValid) {
       logError(
-        `Invalid bid request: 
-          isValidBidder: ${isValidBidder}, 
+        `Invalid bid request:
           hasBidId: ${hasBidId}, 
           hasMediaTypes: ${hasMediaTypes}, 
           isValidBanner: ${isValidBanner}, 
@@ -112,10 +196,18 @@ export const spec = {
         params,
         sizes,
       } = bid;
+
+      let detectedViewabilityPercentage = detectViewability(bid);
+      if (isNumber(detectedViewabilityPercentage)) {
+        detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
+      }
+
       return {
         bidId,
         mediaTypes,
         sizes,
+        detectedViewabilityPercentage,
+        declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
         placementId: params.placementId,
         floor: getBidFloor(bid),
       };
@@ -129,6 +221,8 @@ export const spec = {
       refererInfo: bidderRequest.refererInfo,
       bidRequests,
     };
+
+    _handleEids(requestPayload, validBidRequests);
 
     return {
       method: 'POST',
