@@ -75,7 +75,7 @@ function attachProperties(config, useDefaultValues = true) {
 
   function setProp(name, val) {
     if (!values.hasOwnProperty(name)) {
-      Object.defineProperty(config, name, {enumerable: true, configurable: false});
+      Object.defineProperty(config, name, {enumerable: true});
     }
     values[name] = val;
   }
@@ -102,9 +102,7 @@ function attachProperties(config, useDefaultValues = true) {
         }
       }
     },
-    customPriceBucket: {
-      set() {}
-    },
+    customPriceBucket: {},
     mediaTypePriceGranularity: {
       set(val) {
         val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
