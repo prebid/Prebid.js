@@ -688,6 +688,10 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   tryCallBidderMethod(bidder, 'onBidderError', param);
 };
 
+adapterManager.callAdRenderSucceededBidder = function (bidder, bid) {
+  tryCallBidderMethod(bidder, 'onAdRenderSucceeded', bid);
+}
+
 function resolveAlias(alias) {
   const seen = new Set();
   while (_aliasRegistry.hasOwnProperty(alias) && !seen.has(alias)) {

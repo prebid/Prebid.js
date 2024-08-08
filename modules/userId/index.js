@@ -169,7 +169,7 @@ import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
 import {enrichFPD} from '../../src/fpd/enrichment.js';
-import {startAuction} from "../../src/prebid.js";
+import {startAuction} from '../../src/prebid.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;

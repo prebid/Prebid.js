@@ -12,6 +12,7 @@ const ALIASES = [
   {code: 'markapp', skipPbsAliasing: true},
   {code: 'jdpmedia', skipPbsAliasing: true},
   {code: 'tredio', skipPbsAliasing: true},
+  {code: 'felixads', skipPbsAliasing: true},
   {code: 'vimayx', skipPbsAliasing: true},
 ];
 const BASE_URLS = {
@@ -19,6 +20,7 @@ const BASE_URLS = {
   markapp: 'https://markapp-prebid.smart-hub.io/pbjs',
   jdpmedia: 'https://jdpmedia-prebid.smart-hub.io/pbjs',
   tredio: 'https://tredio-prebid.smart-hub.io/pbjs',
+  felixads: 'https://felixads-prebid.smart-hub.io/pbjs',
   vimayx: 'https://vimayx-prebid.smart-hub.io/pbjs',
 };
 
