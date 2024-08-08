@@ -5,12 +5,22 @@ import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
-let requestUrl;
 let bidderArray;
 let impressionIds;
 let currentSiteContext;
 let currentGroupConfig;
-let groupConfigRequestUrl = null;
+
+const qortexApiUrls = {
+  analyis: '',
+  context: '',
+  groupConfig: ''
+}, 
+pageAnalysisdata = {
+  requestSuccessful: null,
+  indexData: null,
+  analysisGenerated: false,
+  analysisData: null
+}
 
 /**
  * Init if module configuration is valid
@@ -70,7 +80,7 @@ export function getContext () {
           reject(new Error(error));
         }
       }
-      ajax(requestUrl, callbacks)
+      ajax(qortexApiUrls.context, callbacks)
     })
   } else {
     logMessage('Adding Content object from existing context data');
@@ -79,23 +89,46 @@ export function getContext () {
 }
 
 export function getGroupConfig () {
-  if (!currentGroupConfig) {
-    logMessage('Requesting group config');
+  logMessage('Requesting group config');
+  return new Promise((resolve, reject) => {
+    const callbacks = {
+      success(text, data) {
+        const result = data.status === 200 ? JSON.parse(data.response) : null;
+        resolve(result);
+      },
+      error(error) {
+        reject(new Error(error));
+      }
+    }
+    ajax(qortexApiUrls.groupConfig, callbacks)
+  })
+}
+
+export function requestPageAnalysis () {
+  const indexData = generateIndexData();
+  logMessage('sending page data for context analysis');
     return new Promise((resolve, reject) => {
       const callbacks = {
-        success(text, data) {
-          const result = data.status === 200 ? JSON.parse(data.response) : null;
-          resolve(result);
+        success() {
+          analysisData.requestSuccessful = true;
+          resolve();
         },
         error(error) {
+          analysisData.requestSuccessful = false;
           reject(new Error(error));
         }
       }
-      ajax(groupConfigRequestUrl, callbacks)
+      ajax(pageAnalysisUrl, callbacks, JSON.stringify(indexData), {contentType: 'application/json'})
     })
-  } else {
-    logMessage('Adding Content object from existing context data');
-    return new Promise(resolve => resolve(currentSiteContext));
+}
+
+export function generateIndexData () {
+  return {
+    url: document.location.href,
+    title: document.title,
+    text: document.body.innerText.replaceAll(/\r?\n/gi, " "),
+    meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if(attr.length > 1) {acc[curr.attributes[0].value] = curr.attributes[1].value} return acc}, {}),
+    videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => {src = curr.src; if(src != ''){acc.push(src)} return acc}, [])
   }
 }
 
@@ -170,15 +203,25 @@ export function initializeModuleData(config) {
   const DEFAULT_API_URL = 'https://demand.qortex.ai';
   const {apiUrl, groupId, bidders} = config.params;
   const windowUrl = window.top.location.host;
+  const qortexUrlBase = apiUrl || DEFAULT_API_URL;
   bidderArray = bidders;
   impressionIds = new Set();
-  groupConfigRequestUrl = `${apiUrl || DEFAULT_API_URL}/api/v1/group/configs/${groupId}/${windowUrl}/prebid`
-  requestUrl = `${apiUrl || DEFAULT_API_URL}/api/v1/analyze/${groupId}/prebid`;
   currentSiteContext = null;
+  qortexApiUrls.groupConfig = `${qortexUrlBase}/api/v1/group/configs/${groupId}/${windowUrl}/prebid`
+  qortexApiUrls.context = `${qortexUrlBase}/api/v1/analyze/${groupId}/prebid`
+  qortexApiUrls.analyis = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/index`;
+  
+  requestPageAnalysis()
+    .then(() => {
+      logMessage("successfully initiated Qortex page analysis")
+    })
+    .catch((e) => {
+      logWarn(e?.message);
+    });
   getGroupConfig()
       .then(configData => {
+        logMessage("recieved response for qortex group config")
         setGroupConfigData(configData)
-        console.log("shiloh rtd", currentGroupConfig)
       })
       .catch((e) => {
         logWarn(e?.message);
