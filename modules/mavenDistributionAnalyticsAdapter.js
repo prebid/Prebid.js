@@ -139,7 +139,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
 
   const dateNow = Date.now()
   const windowPerformanceNow = window.performance.now() | 0
-  
+
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
@@ -157,49 +157,32 @@ export function summarizeAuctionInit(args, adapterConfig) {
   return eventToSend
 }
 
-const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
+const getBidStatusAmtsAndResponseTime = (statusKey, bidRequest, args) => {
   // Config decribing the various bidStatus, bidAmount and bidResponseTime
   // values for each bid condition
   const BID_STATUS_MAP = {
     bidsRejected: (bid) => ({
-      bidStatus: `error: ${bid.rejectionReason || 'generic'}`,
+      bidStatus: (((bid.timeToRespond ?? 0) >= args.timeout) ? 'timeout:' : '') + `error: ${bid.rejectionReason || 'generic'}`,
       bidAmount: Math.round((bid.cpm || 0) * 1000),
-      bidResponseTime: bid.timeToRespond || null,
+      bidResponseTime: bid.timeToRespond ?? null,
     }),
     noBids: () => ({
       bidStatus: 'nobid',
       bidAmount: 0,
       bidResponseTime: null,
     }),
-    timeout: () => ({
-      bidStatus: 'timeout',
-      bidAmount: 0,
-      bidResponseTime: args.timeout,
-    }),
-    bid: (bid) => ({
-      bidStatus: 'bid',
+    bidsReceived: (bid) => ({
+      bidStatus: (((bid.timeToRespond ?? 0) >= args.timeout) ? 'timeout:' : '') + 'bid',
       bidAmount: Math.round((bid.cpm || 0) * 1000),
       bidResponseTime: bid.timeToRespond,
     })
   }
-  const filteredBids = (args[key] || []).filter((bid) => (
+  const filteredBids = (args[statusKey] || []).filter((bid) => (
     (bid.bidId || bid.requestId) === bidRequest.bidId
   ))
   if (filteredBids?.length > 0) {
     const bid = filteredBids[0]
-    if (key === 'bidsRejected') {
-      return BID_STATUS_MAP[key](bid)
-    }
-    if (key === 'noBids') {
-      return BID_STATUS_MAP[key]()
-    }
-    // Look in bidsRequested and compare with timeout
-    // If bid.timeToRespond > args.timeout then
-    // the bid is considered to be a timed out bid
-    if (bid.timeToRespond < args.timeout) {
-      return BID_STATUS_MAP.bid(bid)
-    }
-    return BID_STATUS_MAP.timeout()
+    return BID_STATUS_MAP[statusKey](bid)
   }
   return false
 }
@@ -235,6 +218,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   const bidAmountss = []
   const bidResponseTimess = []
   const floorss = []
+
   const flattenedBidRequests = args.bidderRequests.reduce((total, curr) => {
     return [...total, ...curr.bids]
   }, [])
@@ -266,7 +250,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     const bidAmounts = []
     const bidResponseTimes = []
     const floors = []
-    
+
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
@@ -276,11 +260,10 @@ export function summarizeAuctionEnd(args, adapterConfig) {
         // found we look into the bidsReceived and check whether the responsetime is greater
         // or less than timeout and assign it either a timeout bid or a valid valid
         // The bidsReceived array has both timeout bids and the valid bids
-        const keys = ['bidsRejected', 'noBids', 'bidsReceived']
-        let bidStatus = null; let bidAmount = null; let bidResponseTime = null;
-        for (let i = 0; i < keys.length; i += 1) {
-          const status = keys[i]
-          const data = getBidStatusAmtsAndResponseTime(status, fbr, args)
+        const statusKeys = ['bidsRejected', 'noBids', 'bidsReceived']
+        let bidStatus = 'timeout:missing', bidAmount = 0, bidResponseTime = args.timeout;
+        for (const statusKey of statusKeys) {
+          const data = getBidStatusAmtsAndResponseTime(statusKey, fbr, args)
           if (data) {
             bidStatus = data.bidStatus;
             bidAmount = data.bidAmount;
