@@ -65,7 +65,7 @@ const {
   BID_TIMEOUT,
   BID_WON,
   BILLABLE_EVENT,
-  SEAT_NON_BID,
+  PBS_ANALYTICS,
   BID_REJECTED
 } = EVENTS;
 
@@ -927,8 +927,8 @@ magniteAdapter.track = ({ eventType, args }) => {
       const bidStatus = args.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
       handleBidResponse(args, bidStatus);
       break;
-    case SEAT_NON_BID:
-      handleNonBidEvent(args);
+    case PBS_ANALYTICS:
+      handlePbsAnalytics(args);
       break;
     case BIDDER_DONE:
       const serverError = deepAccess(args, 'serverErrors.0');
@@ -1019,8 +1019,27 @@ magniteAdapter.track = ({ eventType, args }) => {
   }
 };
 
-const handleNonBidEvent = function(args) {
-  const {seatnonbid, auctionId} = args;
+const handlePbsAnalytics = function (args) {
+  const {seatnonbid, auctionId, atag} = args;
+  if (seatnonbid) {
+    handleNonBidEvent(seatnonbid, auctionId);
+  }
+  if (atag) {
+    handleAtagEvent(atag, auctionId);
+  }
+}
+
+const handleAtagEvent = function (atag, auctionId) {
+  const tags = findTimeoutOptimization(atag)
+  tags.forEach(tag => {
+    tag.activities.forEach(activity => {
+      if (activity.name === 'optimize-tmax' && activity.status === 'success') {
+        setAnalyticsTagData(activity.results[0]?.values, deepAccess(cache, `auctions.${auctionId}.auction`))
+      }
+    })
+  });
+}
+const handleNonBidEvent = function(seatnonbid, auctionId) {
   const auction = deepAccess(cache, `auctions.${auctionId}.auction`);
   // if no auction just bail
   if (!auction) {
@@ -1049,6 +1068,28 @@ const handleNonBidEvent = function(args) {
     });
   });
 };
+
+const findTimeoutOptimization = (atag) => {
+  let timeoutOpt;
+  atag.forEach(tag => {
+    if (tag.module === 'mgni-timeout-optimization') {
+      timeoutOpt = tag.analyticstags;
+    }
+  })
+  return timeoutOpt;
+}
+const setAnalyticsTagData = (values, auction) => {
+  let data = {
+    name: values.scenario,
+    rule: values.rule,
+    value: values.tmax
+  }
+
+  const experiments = deepAccess(auction, 'experiments') || [];
+  experiments.push(data);
+
+  deepSetValue(auction, 'experiments', experiments);
+}
 
 const statusMap = {
   0: {
