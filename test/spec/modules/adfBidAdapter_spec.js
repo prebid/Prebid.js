@@ -3,7 +3,8 @@
 import { assert } from 'chai';
 import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 
 describe('Adf adapter', function () {
   let bids = [];
@@ -332,12 +333,15 @@ describe('Adf adapter', function () {
     });
 
     it('should send currency if defined', function () {
-      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
       let validBidRequests = [{ params: {} }];
       let refererInfo = { page: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
-
-      assert.deepEqual(request.cur, [ 'EUR' ]);
+      const bidderRequest = { refererInfo };
+      setCurrencyConfig({ adServerCurrency: 'EUR' })
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        let request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
+        assert.deepEqual(request.cur, [ 'EUR' ]);
+        setCurrencyConfig({});
+      });
     });
 
     it('should pass supply chain object', function () {
@@ -480,12 +484,14 @@ describe('Adf adapter', function () {
         });
 
         it('should request floor price in adserver currency', function () {
-          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
+          setCurrencyConfig({ adServerCurrency: 'DKK' })
           const validBidRequests = [ getBidWithFloor() ];
-          let imp = getRequestImps(validBidRequests)[0];
-
-          assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, 'DKK');
+          return addFPDToBidderRequest(validBidRequests[0]).then(res => {
+            const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ...res }).data).imp[0];
+            assert.equal(imp.bidfloor, undefined);
+            assert.equal(imp.bidfloorcur, 'DKK');
+            setCurrencyConfig({});
+          });
         });
 
         it('should add correct floor values', function () {
@@ -505,30 +511,29 @@ describe('Adf adapter', function () {
             playerSize: [ 100, 200 ]
           } };
           const expectedFloors = [ 1, 1.3, 0.5 ];
-          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
+          setCurrencyConfig({ adServerCurrency: 'DKK' });
           let validBidRequests = expectedFloors.map(getBidWithFloorTest);
-          getRequestImps(validBidRequests);
-          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+          return addFPDToBidderRequest(validBidRequests[0]).then(res => {
+            getRequestImps(validBidRequests, res);
+            assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' })
+            mediaTypes = { banner: {
+              sizes: [ [100, 200], [300, 400] ]
+            }};
+            getRequestImps(validBidRequests, res);
 
-          mediaTypes = { banner: {
-            sizes: [ [100, 200], [300, 400] ]
-          }};
-          validBidRequests = expectedFloors.map(getBidWithFloorTest);
-          getRequestImps(validBidRequests);
+            assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
 
-          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+            mediaTypes = { native: {} };
+            getRequestImps(validBidRequests, res);
 
-          mediaTypes = { native: {} };
-          validBidRequests = expectedFloors.map(getBidWithFloorTest);
-          getRequestImps(validBidRequests);
+            assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
 
-          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+            mediaTypes = {};
+            getRequestImps(validBidRequests, res);
 
-          mediaTypes = {};
-          validBidRequests = expectedFloors.map(getBidWithFloorTest);
-          getRequestImps(validBidRequests);
-
-          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+            assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+            setCurrencyConfig({});
+          });
 
           function getBidWithFloorTest(floor) {
             return {
@@ -913,8 +918,8 @@ describe('Adf adapter', function () {
       });
     });
 
-    function getRequestImps(validBidRequests) {
-      return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+    function getRequestImps(validBidRequests, enriched = {}) {
+      return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ...enriched }).data).imp;
     }
   });
 
