@@ -3,11 +3,10 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {_map, generateUUID, deepSetValue, isArray, isEmpty, replaceAuctionPrice} from '../src/utils.js';
+import {generateUUID, deepSetValue, isEmpty, replaceAuctionPrice} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-
 
 const GVL_ID = 371;
 const BIDDER_CODE = 'seedingAlliance';
@@ -25,7 +24,7 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     // set basic page, this might be updated later by adunit param
-    deepSetValue(request, 'site.page' , bidderRequest.refererInfo.page);
+    deepSetValue(request, 'site.page', bidderRequest.refererInfo.page);
     deepSetValue(request, 'regs.ext.pb_ver', '$prebid.version$');
     deepSetValue(request, 'cur', [config.getConfig('currency') || DEFAULT_CUR]);
 
@@ -221,7 +220,7 @@ function parseNative(bid, nativeParams) {
             break;
           case 'body':
           case 'cta':
-            case 'sponsoredBy':
+          case 'sponsoredBy':
             result[nativeParam] = asset.data.value;
             break;
           case 'image':
