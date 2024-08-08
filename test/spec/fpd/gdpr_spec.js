@@ -16,8 +16,8 @@ describe('GDPR FPD enrichment', () => {
 
   function callHook(ortb2 = {}) {
     let result;
-    enrichFPDHook((res) => { result = res }, Promise.resolve({global: ortb2}));
-    return result.then(({global}) => global);
+    enrichFPDHook((res) => { result = res }, Promise.resolve(ortb2));
+    return result;
   }
 
   it('sets gdpr properties from gdprDataHandler', () => {

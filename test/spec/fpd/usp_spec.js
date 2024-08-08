@@ -17,8 +17,8 @@ describe('FPD enrichment USP', () => {
     let result;
     enrichFPDHook((res) => {
       result = res;
-    }, Promise.resolve({global: {}}));
-    return result.then(({global}) => global);
+    }, Promise.resolve({}));
+    return result;
   }
 
   it('sets regs.ext.us_privacy from uspDataHandler', () => {

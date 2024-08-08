@@ -273,8 +273,7 @@ export function setConsentConfig(config) {
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
 export function enrichFPDHook(next, fpd) {
-  return next(fpd.then(ortb2Fragments => {
-    const ortb2 = ortb2Fragments.global;
+  return next(fpd.then(ortb2 => {
     const consent = gdprDataHandler.getConsentData();
     if (consent) {
       if (typeof consent.gdprApplies === 'boolean') {
@@ -285,7 +284,7 @@ export function enrichFPDHook(next, fpd) {
     if (dsaPlatform) {
       deepSetValue(ortb2, 'regs.ext.dsa.dsarequired', 3);
     }
-    return ortb2Fragments;
+    return ortb2;
   }));
 }
 

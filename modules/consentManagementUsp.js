@@ -248,12 +248,12 @@ config.getConfig('consentManagement', config => setConsentConfig(config.consentM
 getHook('requestBids').before(requestBidsHook, 50);
 
 export function enrichFPDHook(next, fpd) {
-  return next(fpd.then(ortb2Fragments => {
+  return next(fpd.then(ortb2 => {
     const consent = uspDataHandler.getConsentData();
     if (consent) {
-      deepSetValue(ortb2Fragments.global, 'regs.ext.us_privacy', consent)
+      deepSetValue(ortb2, 'regs.ext.us_privacy', consent)
     }
-    return ortb2Fragments;
+    return ortb2;
   }))
 }
 

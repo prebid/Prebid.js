@@ -330,15 +330,15 @@ export function setConsentConfig(config) {
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
 export function enrichFPDHook(next, fpd) {
-  return next(fpd.then(ortb2Fragments => {
+  return next(fpd.then(ortb2 => {
     const consent = gppDataHandler.getConsentData();
     if (consent) {
       if (Array.isArray(consent.applicableSections)) {
-        deepSetValue(ortb2Fragments.global, 'regs.gpp_sid', consent.applicableSections);
+        deepSetValue(ortb2, 'regs.gpp_sid', consent.applicableSections);
       }
-      deepSetValue(ortb2Fragments.global, 'regs.gpp', consent.gppString);
+      deepSetValue(ortb2, 'regs.gpp', consent.gppString);
     }
-    return ortb2Fragments;
+    return ortb2;
   }));
 }
 

@@ -1819,28 +1819,17 @@ describe('Unit: Prebid Module', function () {
 
         it('enriched through enrichFPD', () => {
           function enrich(next, fpd) {
-            next.bail(fpd.then((ortb2Fragments) => {
-              const {global, bidder} = ortb2Fragments;
-              global.enrich = true;
-              bidder.mockBidder.bEnrich = true
-              return ortb2Fragments;
+            next.bail(fpd.then(ortb2 => {
+              ortb2.enrich = true;
+              return ortb2;
             }))
           }
           enrichFPD.before(enrich);
           try {
             configObj.setConfig({ortb2: globalFPD});
-            configObj.setBidderConfig({bidders: ['mockBidder'], config: {ortb2: {bidder: 'config'}}})
             $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
             sinon.assert.calledWith(startAuctionStub, sinon.match({
-              ortb2Fragments: {
-                global: {...mergedFPD, enrich: true},
-                bidder: {
-                  mockBidder: {
-                    bidder: 'config',
-                    bEnrich: true
-                  }
-                }
-              }
+              ortb2Fragments: {global: {...mergedFPD, enrich: true}}
             }));
           } finally {
             enrichFPD.getHooks({hook: enrich}).remove();

@@ -22,7 +22,7 @@ describe('FPD enrichment', () => {
   });
 
   function fpd(ortb2 = {}) {
-    return enrichFPD(Promise.resolve({global: ortb2})).then(({global}) => global);
+    return enrichFPD(Promise.resolve(ortb2));
   }
 
   function mockWindow() {

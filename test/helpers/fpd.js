@@ -35,7 +35,7 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
 export function addFPDEnrichments(ortb2 = {}, overrides) {
   const sandbox = sinon.sandbox.create();
   mockFpdEnrichments(sandbox, overrides)
-  return enrichFPD(GreedyPromise.resolve({global: deepClone(ortb2)})).finally(() => sandbox.restore());
+  return enrichFPD(GreedyPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }
 
 export const syncAddFPDEnrichments = synchronize(addFPDEnrichments);
@@ -52,7 +52,7 @@ export function addFPDToBidderRequest(bidderRequest, overrides) {
       return bidderRequest.uspConsent;
     }
   }, overrides);
-  return addFPDEnrichments(bidderRequest.ortb2 || {}, overrides).then(({global: ortb2}) => {
+  return addFPDEnrichments(bidderRequest.ortb2 || {}, overrides).then(ortb2 => {
     return {
       ...bidderRequest,
       ortb2
