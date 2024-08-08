@@ -710,15 +710,7 @@ function getUserIdsAsEids() {
  */
 
 function getUserIdsAsEidBySource(sourceName) {
-  return getEids(
-    Object.fromEntries(
-      Object.entries(initializedSubmodules.combined).filter(([key, modules]) =>
-        modules
-          .map(mod => mod.submodule.eids?.[key])
-          .find(eidConfig => eidConfig?.source === sourceName || (isFn(eidConfig?.getSource) && eidConfig.getSource() === sourceName))
-      )
-    )
-  )[0]
+  return getUserIdsAsEids().filter(eid => eid.source === sourceName)[0];
 }
 
 /**
