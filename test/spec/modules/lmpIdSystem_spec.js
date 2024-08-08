@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { find } from 'src/polyfill.js';
 import { config } from 'src/config.js';
-import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import { init, startAuctionHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, lmpIdSubmodule } from 'modules/lmpIdSystem.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import 'src/prebid.js';
@@ -108,7 +108,7 @@ describe('LMPID System', () => {
     })
 
     it('when a stored LMPID exists it is added to bids', (done) => {
-      requestBidsHook(() => {
+      startAuctionHook(() => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.lmpid');

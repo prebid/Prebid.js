@@ -7,7 +7,7 @@ import {
   getConsentHash, getValidSubmoduleConfigs,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
-  requestBidsHook,
+  startAuctionHook,
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
@@ -137,7 +137,7 @@ describe('User ID', function () {
   function runBidsHook(...args) {
     startDelay = delay();
 
-    const result = requestBidsHook(...args, {delay: startDelay});
+    const result = startAuctionHook(...args, {delay: startDelay});
     return new Promise((resolve) => setTimeout(() => resolve(result)));
   }
 
@@ -1119,7 +1119,7 @@ describe('User ID', function () {
         // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
         // as soon as ID submodules have completed init
         startInit();
-        requestBidsHook(() => {
+        startAuctionHook(() => {
           done();
         }, {adUnits: [getAdUnitMock()]}, {delay: delay()});
         getGlobal().refreshUserIds();
@@ -1131,7 +1131,7 @@ describe('User ID', function () {
 
       it('should continue the auction when init fails', (done) => {
         startInit();
-        requestBidsHook(() => {
+        startAuctionHook(() => {
           done();
         },
         {adUnits: [getAdUnitMock()]},
@@ -1639,7 +1639,7 @@ describe('User ID', function () {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.mid');
               expect(bid.userId.mid).to.equal('1234');
-              expect(bid.userIdAsEids.length).to.equal(0);// "mid" is an un-known submodule for USER_IDS_CONFIG in eids.js
+              expect(bid.userIdAsEids).to.not.exist;// "mid" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
 
@@ -1747,7 +1747,7 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubcid');
@@ -1772,7 +1772,7 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'html5']));
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubcid');
@@ -1799,7 +1799,7 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie&html5']));
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubcid');
@@ -1827,7 +1827,7 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie&html5']));
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubcid');
@@ -1853,7 +1853,7 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie&html5']));
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubcid');
@@ -1876,12 +1876,12 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(getConfigValueMock('pubCommonId', {'pubcidvalue': 'testpubcidvalue'}));
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubcidvalue');
               expect(bid.userId.pubcidvalue).to.equal('testpubcidvalue');
-              expect(bid.userIdAsEids.length).to.equal(0);// "pubcidvalue" is an un-known submodule for USER_IDS_CONFIG in eids.js
+              expect(bid.userIdAsEids).to.not.exist; // "pubcidvalue" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
           done();
@@ -1931,7 +1931,7 @@ describe('User ID', function () {
           }
         });
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubProvidedId');
@@ -2016,7 +2016,7 @@ describe('User ID', function () {
           }
         });
 
-        requestBidsHook(function () {
+        startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               // check PubCommonId id data was copied to bid
@@ -2071,7 +2071,7 @@ describe('User ID', function () {
               }))
             }
           });
-          requestBidsHook((req) => {
+          startAuctionHook((req) => {
             const activeIds = req.adUnits.flatMap(au => au.bids).flatMap(bid => Object.keys(bid.userId));
             expect(Array.from(new Set(activeIds))).to.have.members([MOCK_IDS[1]]);
             done();
@@ -2656,11 +2656,10 @@ describe('User ID', function () {
     })
 
     function enrich({global = {}, bidder = {}} = {}) {
-      let result;
-      enrichEids((res) => {
-        result = res;
-      }, getGlobal().getUserIdsAsync().then(() => ({global, bidder})));
-      return result;
+      return getGlobal().getUserIdsAsync().then(() => {
+        enrichEids({global, bidder});
+        return {global, bidder};
+      })
     }
 
     function eidsFrom(nameFromModuleMapping) {

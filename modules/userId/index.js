@@ -169,6 +169,7 @@ import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
 import {enrichFPD} from '../../src/fpd/enrichment.js';
+import {startAuction} from "../../src/prebid.js";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -532,23 +533,43 @@ function mkPriorityMaps() {
   return map;
 }
 
-/**
- * @param {AdUnit[]} adUnits
- * @param {PriorityMaps} priorityMaps
- */
-function addIdDataToAdUnitBids(adUnits, priorityMaps) {
+export function enrichEids(ortb2Fragments) {
+  const {global: globalFpd, bidder: bidderFpd} = ortb2Fragments;
+  const {global: globalMods, bidder: bidderMods} = initializedSubmodules;
+  const globalEids = getEids(globalMods);
+  if (globalEids.length > 0) {
+    deepSetValue(globalFpd, 'user.ext.eids', (globalFpd.user?.ext?.eids ?? []).concat(globalEids));
+  }
+  Object.entries(bidderMods).forEach(([bidder, moduleMap]) => {
+    const bidderEids = getEids(moduleMap);
+    if (bidderEids.length > 0) {
+      deepSetValue(
+        bidderFpd,
+        `${bidder}.user.ext.eids`,
+        (bidderFpd[bidder]?.user?.ext?.eids ?? []).concat(bidderEids)
+      );
+    }
+  })
+  return ortb2Fragments;
+}
+
+function addIdData({adUnits, ortb2Fragments}) {
+  ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
+  enrichEids(ortb2Fragments);
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
     return;
   }
-  const globalIds = getIds(priorityMaps.global);
-  const globalEids = getEids(priorityMaps.global);
+  const globalIds = getIds(initializedSubmodules.global);
+  const globalEids = ortb2Fragments.global.user?.ext?.eids || [];
   adUnits.forEach(adUnit => {
     if (adUnit.bids && isArray(adUnit.bids)) {
       adUnit.bids.forEach(bid => {
-        const bidderIds = Object.assign({}, globalIds, getIds(priorityMaps.bidder[bid.bidder] ?? {}));
-        const bidderEids = globalEids.concat(getEids(priorityMaps.bidder[bid.bidder] ?? {}));
+        const bidderIds = Object.assign({}, globalIds, getIds(initializedSubmodules.bidder[bid.bidder] ?? {}));
+        const bidderEids = globalEids.concat(ortb2Fragments.bidder[bid.bidder]?.user?.ext?.eids || []);
         if (Object.keys(bidderIds).length > 0) {
           bid.userId = bidderIds;
+        }
+        if (bidderEids.length > 0) {
           bid.userIdAsEids = bidderEids;
         }
       });
@@ -675,13 +696,12 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
+export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
   GreedyPromise.race([
     getIds().catch(() => null),
     delay(auctionDelay)
   ]).then(() => {
-    // pass available user id data to bid adapters
-    addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
+    addIdData(reqBidsConfigObj);
     uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
@@ -1102,8 +1122,8 @@ function updateSubmodules() {
 
   if (submodules.length) {
     if (!addedUserIdHook) {
-      // priority value 40 will load after consentManagement with a priority of 50
-      getGlobal().requestBids.before(requestBidsHook, 40);
+      // use higher priority than dataController / fpdModule
+      startAuction.before(startAuctionHook, 100)
       adapterManager.callDataDeletionRequest.before(requestDataDeletion);
       coreGetPPID.after((next) => next(getPPID()));
       addedUserIdHook = true;
@@ -1219,25 +1239,3 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
 init(config);
 
 module('userId', attachIdSystem, { postInstallAllowed: true });
-
-export function enrichEids(next, fpd) {
-  next(fpd.then(ortb2Fragments => {
-    const {global: globalFpd, bidder: bidderFpd} = ortb2Fragments;
-    const {global: globalMods, bidder: bidderMods} = initializedSubmodules;
-    const globalEids = getEids(globalMods);
-    if (globalEids.length > 0) {
-      deepSetValue(globalFpd, 'user.ext.eids', (globalFpd.user?.ext?.eids ?? []).concat(globalEids));
-    }
-    Object.entries(bidderMods).forEach(([bidder, moduleMap]) => {
-      const bidderEids = getEids(moduleMap);
-      if (bidderEids.length > 0) {
-        deepSetValue(
-          bidderFpd,
-          `${bidder}.user.ext.eids`,
-          (bidderFpd[bidder]?.user?.ext?.eids ?? []).concat(bidderEids)
-        );
-      }
-    })
-    return ortb2Fragments;
-  }));
-}
