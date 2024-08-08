@@ -12,7 +12,9 @@ describe('Mobian RTD Submodule', function () {
       ortb2Fragments: {
         global: {
           site: {
-            ext: {}
+            ext: {
+              data: {}
+            }
           }
         }
       }
@@ -23,7 +25,7 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub.restore();
   });
 
-  it('should return risk level when server responds with garm_risk', function () {
+  it('should set key-value pairs when server responds with garm_risk', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
         garm_risk: 'low',
@@ -32,14 +34,19 @@ describe('Mobian RTD Submodule', function () {
       }));
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
         risk: 'low',
         contentCategories: [],
         sentiment: 'positive',
         emotions: ['joy']
       });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'low',
+        mobianContentCategories: [],
+        mobianSentiment: 'positive',
+        mobianEmotions: ['joy']
+      });
     });
   });
 
@@ -55,14 +62,19 @@ describe('Mobian RTD Submodule', function () {
       }));
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
         risk: 'medium',
         contentCategories: ['arms', 'crime'],
         sentiment: 'negative',
         emotions: ['anger', 'fear']
       });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'medium',
+        mobianContentCategories: ['arms', 'crime'],
+        mobianSentiment: 'negative',
+        mobianEmotions: ['anger', 'fear']
+      });
     });
   });
 
@@ -73,14 +85,19 @@ describe('Mobian RTD Submodule', function () {
       }));
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
         risk: 'unknown',
         contentCategories: [],
         sentiment: 'neutral',
         emotions: []
       });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'unknown',
+        mobianContentCategories: [],
+        mobianSentiment: 'neutral',
+        mobianEmotions: []
+      });
     });
   });
 
@@ -89,8 +106,8 @@ describe('Mobian RTD Submodule', function () {
       callbacks.success('unexpected output not even of the right type');
     });
     const originalConfig = JSON.parse(JSON.stringify(bidReqConfig));
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({});
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({});
       // Check that bidReqConfig hasn't been modified
       expect(bidReqConfig).to.deep.equal(originalConfig);
     });
@@ -101,8 +118,8 @@ describe('Mobian RTD Submodule', function () {
       callbacks.error();
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({});
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({});
     });
   });
 });
