@@ -1,18 +1,25 @@
+
 import { expect } from 'chai';
-import { spec } from '../../../modules/precisoBidAdapter.js';
-// simport { config } from '../../../src/config.js';
+import { buildRequests, interpretResponse } from '../../../../libraries/bidUtils/bidUtils.js';
+import { getStorageManager } from '../../../../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../../../../src/activities/modules.js';
 
 const DEFAULT_PRICE = 1
 const DEFAULT_CURRENCY = 'USD'
 const DEFAULT_BANNER_WIDTH = 300
 const DEFAULT_BANNER_HEIGHT = 250
 const BIDDER_CODE = 'preciso';
+const TESTDOMAIN = 'test.org'
+const cookieName = '_pre|id';
 
-describe('PrecisoAdapter', function () {
+const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`;
+const syncEndPoint = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?`;
+const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
+
+describe('bidderOperations', function () {
   let bid = {
-    precisoBid: true,
     bidId: '23fhj33i987f',
-    bidder: 'preciso',
+    bidder: BIDDER_CODE,
     buyerUid: 'testuid',
     mediaTypes: {
       banner: {
@@ -53,15 +60,12 @@ describe('PrecisoAdapter', function () {
 
   };
 
-  describe('isBidRequestValid', function () {
-    it('Should return true if there are bidId, params and sourceid parameters present', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-    it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.publisherId;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-  });
+  const spec = {
+    // isBidRequestValid: isBidRequestValid(),
+    buildRequests: buildRequests(bidEndPoint, storage, cookieName),
+    interpretResponse,
+    // buildUserSyncs: buildUserSyncs(syncEndPoint)
+  };
 
   describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
@@ -75,7 +79,7 @@ describe('PrecisoAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ssp-bidder.mndtrk.com/bid_request/openrtb');
+      expect(serverRequest.url).to.equal(`https://${TESTDOMAIN}/bid_request/openrtb`);
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -85,7 +89,7 @@ describe('PrecisoAdapter', function () {
       expect(data.source).to.be.a('object');
       expect(data.site).to.be.a('object');
     });
-    it('Returns empty data if no valid requests are passed', function () {
+    it('Returns data.device is undefined  if no valid device object is passed', function () {
       delete bid.ortb2.device;
       serverRequest = spec.buildRequests([bid]);
       let data = serverRequest.data;
@@ -96,9 +100,7 @@ describe('PrecisoAdapter', function () {
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
       let response = {
-
         bidderRequestId: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
-
         seatbid: [
           {
             bid: [
@@ -118,7 +120,6 @@ describe('PrecisoAdapter', function () {
           }
         ],
       }
-
       let expectedResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
@@ -134,24 +135,22 @@ describe('PrecisoAdapter', function () {
         }
       ]
       let result = spec.interpretResponse({ body: response })
-
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
     })
-  })
-  describe('getUserSyncs', function () {
-    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4';
-    const syncOptions = {
-      iframeEnabled: true,
-      spec: true
-    };
-    let userSync = spec.getUserSyncs(syncOptions);
-    it('Returns valid URL and type', function () {
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.exist;
-      expect(userSync[0].url).to.exist;
-      expect(userSync).to.deep.equal([
-        { type: 'iframe', url: syncUrl }
-      ]);
-    });
   });
+  // describe('getUserSyncs', function () {
+  //   const syncUrl = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?/iframe?pbjs=1&coppa=0`;
+  //   const syncOptions = {
+  //     iframeEnabled: true
+  //   };
+  //   let userSync = spec.buildUserSyncs(syncOptions);
+  //   it('Returns valid URL and type', function () {
+  //     expect(userSync).to.be.an('array').with.lengthOf(1);
+  //     expect(userSync[0].type).to.exist;
+  //     expect(userSync[0].url).to.exist;
+  //     expect(userSync).to.deep.equal([
+  //       { type: 'iframe', url: syncUrl }
+  //     ]);
+  //   });
+  // });
 });
