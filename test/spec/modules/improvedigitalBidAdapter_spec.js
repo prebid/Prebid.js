@@ -535,7 +535,7 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add eids', function () {
-      const userIdAsEids = [
+      const eids = [
         {
           source: 'id5-sync.com',
           uids: [{
@@ -551,9 +551,10 @@ describe('Improve Digital Adapter Tests', function () {
           id: '1111'
         }]
       }]}};
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.userIdAsEids = userIdAsEids;
-      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const request = spec.buildRequests([simpleBidRequest], {
+        ...bidderRequestReferrer,
+        ortb2: {user: {ext: {eids: eids}}}
+      })[0];
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(expectedUserObject);
     });

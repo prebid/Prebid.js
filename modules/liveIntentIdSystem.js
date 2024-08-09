@@ -302,6 +302,7 @@ export const liveIntentIdSubmodule = {
 
     return { callback: result };
   },
+  primaryIds: ['libp'],
   eids: {
     ...UID1_EIDS,
     ...UID2_EIDS,

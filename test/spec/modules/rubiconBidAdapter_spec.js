@@ -272,7 +272,7 @@ describe('the rubicon adapter', function () {
       }],
       criteoId: '1111',
     };
-    bid.userIdAsEids = [
+    const eids = [
       {
         'source': 'liveintent.com',
         'uids': [
@@ -347,6 +347,7 @@ describe('the rubicon adapter', function () {
         ]
       }
     ];
+    bidderRequest.ortb2 = {user: {ext: {eids}}};
     return bidderRequest;
   }
 

@@ -1899,7 +1899,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('passes ortb2 fragments to createAuction', () => {
-      const ortb2Fragments = {};
+      const ortb2Fragments = {global: {}, bidder: {}};
       pbjsModule.startAuction({
         adUnits: [{
           code: 'au',
