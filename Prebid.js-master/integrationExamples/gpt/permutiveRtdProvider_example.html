@@ -1,0 +1,282 @@
+<html>
+
+    <head>
+        <link rel="icon" type="image/png" href="/favicon.png">
+        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+        <script src="../../build/dev/prebid.js" async></script>
+        <script>
+            window.permutive = {};
+            window.permutive.ready = () => {};
+
+            function setLocalStorageData () {
+              const data = {
+                _pdfps: ['gam1', 'gam2'],
+                _prubicons: ['rubicon1', 'rubicon2'],
+                _papns: ['appnexus1', 'appnexus2'],
+                _psegs: ['1234', '1000001', '1000002'],
+                _ppam: ['ppam1', 'ppam2'],
+                _pcrprs: ['pcrprs1', 'pcrprs2']
+              }
+
+              for (let key in data) {
+                window.localStorage[key] = JSON.stringify(data[key])
+              }
+            }
+
+            setLocalStorageData()
+
+            var div_1_sizes = [
+                [300, 250],
+                [300, 600]
+            ];
+            var div_2_sizes = [
+                [728, 90],
+                [970, 250]
+            ];
+            var PREBID_TIMEOUT = 1000;
+            var FAILSAFE_TIMEOUT = 1500;
+
+            var adUnits = [
+              {
+                code: '/19968336/header-bid-tag-0',
+                mediaTypes: {
+                  banner: {
+                    sizes: div_1_sizes
+                  }
+                },
+                bids: [
+                  {
+                    bidder: 'ix',
+                    params: {
+                      siteId: '123456',
+                    }
+                  },
+                  {
+                    bidder: 'appnexus',
+                    params: {
+                      placementId: 13144370,
+                      keywords: {
+                        test_kv: ['true']
+                      }
+                    }
+                  },
+                  {
+                    bidder: 'rubicon',
+                    params: {
+                      accountId: '9840',
+                      siteId: '123564',
+                      zoneId: '583584',
+                      inventory: {
+                        area: ['home']
+                      },
+                      visitor: {
+                        test_kv: ['true']
+                      }
+                    }
+                  },
+                  {
+                    bidder: 'ozone',
+                    params: {
+                      publisherId: 'OZONEGMG0001',
+                      siteId: '4204204209',
+                      placementId: '0420420500',
+                      customData: [
+                        {
+                          settings: {},
+                          targeting: {
+                            test_kv: ['true']
+                          }
+                        }
+                      ],
+                      ozoneData: {}
+                    }
+                  },
+                  {
+                    bidder: 'trustx',
+                    params: {
+                      uid: 45,
+                      keywords: {
+                        test_kv: ['true']
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                code: '/19968336/header-bid-tag-1',
+                mediaTypes: {
+                  banner: {
+                    sizes: div_2_sizes
+                  }
+                },
+                bids: [
+                  {
+                    bidder: 'appnexus',
+                    params: {
+                      placementId: 13144370
+                    }
+                  },
+                  {
+                    bidder: 'ozone',
+                    params: {
+                      publisherId: 'OZONEGMG0001',
+                      siteId: '4204204209',
+                      placementId: '0420420500'
+                    }
+                  }
+                ]
+              }
+            ];
+
+
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+            googletag.cmd.push(function() {
+                googletag.pubads().disableInitialLoad();
+            });
+
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            pbjs.que.push(function() {
+              pbjs.setConfig({
+                debug: true,
+                pageUrl: 'http://www.test.com/test.html',
+                realTimeData: {
+                  auctionDelay: 80, // maximum time for RTD modules to respond
+                  dataProviders: [
+                    {
+                      name: 'permutive',
+                      waitForIt: true,
+                      params: {
+                        acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
+                        maxSegs: 500,
+                        transformations: [
+                          {
+                            id: 'iab',
+                            config: {
+                              segtax: 4,
+                              iabIds: {
+                                1000001: '777777',
+                                1000002: '888888'
+                              }
+                            }
+                          }
+                        ],
+                        overwrites: {
+                          rubicon: function (bid, data, acEnabled, utils, defaultFn) {
+                            if (defaultFn){
+                              bid = defaultFn(bid, data, acEnabled)
+                            }
+                            if (data.gam && data.gam.length) {
+                              utils.deepSetValue(bid, 'params.visitor.permutive', data.gam)
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              });
+              pbjs.setBidderConfig({
+                bidders: ['appnexus', 'rubicon', 'ix'],
+                config: {
+                  ortb2: {
+                    site: {
+                      name: "example",
+                      domain: "page.example.com",
+                      cat: ["IAB2"],
+                      sectioncat: ["IAB2-2"],
+                      pagecat: ["IAB2-2"],
+                      page: "https://page.example.com/here.html",
+                      ref: "https://ref.example.com",
+                      keywords: "power tools, drills",
+                      search: "drill",
+                      content: {}
+                    },
+                    user: {
+                      yob: 1985,
+                      gender: 'm',
+                      keywords: 'a,b',
+                      data: [
+                        {
+                          name: 'permutive.com',
+                          ext: { segtax: 6 },
+                          segment: [{ id: '1' }]
+                        }
+                      ]
+                    }
+                  }
+                }
+              });
+              pbjs.addAdUnits(adUnits);
+              requestBids();
+            });
+
+            function requestBids () {
+              pbjs.que.push(function() {
+                pbjs.requestBids({
+                  bidsBackHandler: initAdserver,
+                  timeout: PREBID_TIMEOUT
+                });
+              });
+            }
+
+            function initAdserver() {
+                if (pbjs.initAdserverSet) return;
+                pbjs.initAdserverSet = true;
+                googletag.cmd.push(function() {
+                    pbjs.que.push(function() {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                });
+            }
+            // in case PBJS doesn't load
+            setTimeout(function() {
+                initAdserver();
+            }, FAILSAFE_TIMEOUT);
+
+            googletag.cmd.push(function() {
+                googletag.defineSlot('/19968336/header-bid-tag-0', div_1_sizes, 'div-1').addService(googletag.pubads());
+                googletag.pubads().enableSingleRequest();
+                googletag.enableServices();
+            });
+            googletag.cmd.push(function() {
+                googletag.defineSlot('/19968336/header-bid-tag-1', div_2_sizes, 'div-2').addService(googletag.pubads());
+                googletag.pubads().enableSingleRequest();
+                googletag.enableServices();
+            });
+
+        </script>
+
+    </head>
+
+    <body>
+        <p><button onclick="requestBids()">Refresh Ad Unit</button></p>
+        <h2>Basic Prebid.js Example</h2>
+        <h5>Div-1</h5>
+        <div id="div-1">
+            <script type="text/javascript">
+                googletag.cmd.push(function() {
+                    googletag.display("div-1");
+                });
+
+            </script>
+        </div>
+
+        <br>
+
+        <h5>Div-2</h5>
+        <div id="div-2">
+            <script type="text/javascript">
+                googletag.cmd.push(function() {
+                    googletag.display("div-2");
+                });
+
+            </script>
+        </div>
+
+    </body>
+
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Prebid Display/Video Merged Auction with Adloox Integration</title>
+
+        <script async src="http://localhost:9999/build/dev/prebid.js"></script>
+        <!-- <script async src="https://storage.googleapis.com/adloox-ads-js-test/prebid.js"></script> -->
+        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+
+        <script>
+            // set to 10s (rather than 100ms) only to assist development as 'Local Overrides' stalls for >1s :-/
+            var AUCTION_DELAY = 10000;	// recommended to be set to 100 in production
+            var PREBID_TIMEOUT = 1000;
+            var FAILSAFE_TIMEOUT = AUCTION_DELAY + (3 * PREBID_TIMEOUT);
+
+            var div_1_sizes = [ [728, 90] ];
+            var div_2_sizes = [ [300, 250] ];
+            var video_1_size = [ 640, 480 ];
+
+            var adUnits = [
+                {
+                    code: 'div-1',
+                    mediaTypes: {
+                        banner: {
+                            sizes: div_1_sizes
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'rubicon',
+                            params: {
+                                accountId: 14062,
+                                siteId: 70608,
+                                zoneId: 498816
+                            }
+                        }
+                    ]
+                },
+                {
+                    code: 'div-2',
+                    mediaTypes: {
+                        banner: {
+                            sizes: div_2_sizes
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'rubicon',
+                            params: {
+                                accountId: 14062,
+                                siteId: 70608,
+                                zoneId: 498816
+                            }
+                        }
+                    ]
+                }
+            ];
+
+            var videoAdUnit = {
+                code: 'video-1',
+                mediaTypes: {
+                    video: {
+                        context: 'instream',
+                        playerSize: [ 640, 480 ]
+                    }
+                },
+                ortb2Imp: {
+                    ext: {
+                        data: {
+                            pbadslot: '/19968336/prebid_cache_video_adunit'
+                        }
+                    }
+                },
+                bids: [
+                    {
+                        bidder: 'spotx',
+                        params: {
+                            channel_id: 85394,
+                            ad_unit: 'instream'
+                        }
+                    }
+                ]
+            };
+
+            window.googletag = window.googletag || { cmd: [] };
+            googletag.cmd.push(function() {
+                googletag
+                    .defineSlot('/19968336/header-bid-tag-0', div_1_sizes, 'div-1')
+                    .addService(googletag.pubads());
+                googletag
+                    .defineSlot('/19968336/header-bid-tag-1', div_2_sizes, 'div-2')
+                    .addService(googletag.pubads());
+                googletag.pubads().disableInitialLoad();
+                googletag.pubads().enableSingleRequest();
+                googletag.enableServices();
+            });
+
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            var tempTag = false;
+            var invokeVideoPlayer = function(url) {
+                tempTag = url;
+            };
+
+            function sendAdserverRequest(bids, timedOut, auctionId) {
+                if (pbjs.initAdserverSet) return;
+                pbjs.initAdserverSet = true;
+
+                googletag.cmd.push(function() {
+                    const adUnitCodes = adUnits.map(adUnit => adUnit.code);
+                    pbjs.setTargetingForGPTAsync(adUnitCodes);
+                    googletag.pubads().refresh();
+                });
+
+                var videoBids = bids[videoAdUnit.code];
+                if (videoBids) {
+// DEMO NOTES: your environment likely will use the commented section ////
+                    var videoUrl = videoBids.bids[0].vastUrl;
+//                    var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+//                        adUnit: videoAdUnit,
+//                        params: {
+//                            iu: '/19968336/prebid_cache_video_adunit',
+//                            cust_params: {
+//                                section: 'blog',
+//                                anotherKey: 'anotherValue'
+//                            },
+//                            output: 'vast'
+//                        }
+//                    });
+//////////////////////////////////////////////////////////////////////////
+                    var ret = pbjs.adServers.adloox.buildVideoUrl({
+                        adUnit: videoAdUnit,
+                        url: videoUrl
+                    }, invokeVideoPlayer);
+                    if (!ret) console.log('Error building Adloox video URL');
+                }
+            }
+
+            // optionally wrap with googletag to have gpt-pre-auction
+            // automatically populate Prebid Ad Slot (pbadslot)
+            // https://docs.prebid.org/dev-docs/modules/gpt-pre-auction.html
+            // alternatively remove wrapping and set AdUnit.ortb2Imp.ext.data.pbadslot
+            googletag.cmd.push(function() {
+                pbjs.que.push(function() {
+                    pbjs.setConfig({
+                        realTimeData: {
+                            auctionDelay: AUCTION_DELAY,
+                            dataProviders: [
+                                {
+                                    name: 'adloox',
+                                    params: {             // optional, defaults shown
+                                        thresholds: [ 50, 60, 70, 80, 90 ],
+                                        slotinpath: false
+                                    }
+                                }
+                            ]
+                        },
+                        instreamTracking: {
+                            enabled: true
+                        },
+                        rubicon: {
+                            singleRequest: true
+                        },
+                        // RTD module honors pageUrl for referrer detection and
+                        // the analytics module uses this for the 'pageurl' macro
+                        // N.B. set this to a non-example.com URL to see the video
+                        //pageUrl: 'https://yourdomain.com/some/path/to/content.html'
+                    });
+                    pbjs.enableAnalytics({
+                        provider: 'adloox',
+                        options: {
+                            client: 'adlooxtest',
+                            clientid: 127,
+                            platformid: 0,
+                            tagid: 0
+                        }
+                    });
+                    pbjs.addAdUnits(adUnits);
+                    pbjs.addAdUnits(videoAdUnit);
+                    pbjs.requestBids({
+                        bidsBackHandler: sendAdserverRequest,
+                        timeout: PREBID_TIMEOUT
+                    })
+                });
+            });
+
+            setTimeout(function() {
+                sendAdserverRequest();
+            }, FAILSAFE_TIMEOUT);
+        </script>
+    </head>
+    <body>
+        <h1>Prebid Display/Video Merged Auction with Adloox Integration</h1>
+
+        <h2>div-1</h2>
+        <div id="div-1">
+            <script>
+                googletag.cmd.push(function() {
+                    googletag.display('div-1');
+                });
+            </script>
+        </div>
+
+        <h2>div-2</h2>
+        <div id="div-2">
+            <script>
+                googletag.cmd.push(function() {
+                    googletag.display('div-2');
+                });
+            </script>
+        </div>
+
+        <h2>video-1</h2>
+        <div id="video-1"></div>
+        <script src="https://content.jwplatform.com/libraries/72xIKEe6.js"></script>
+        <script>
+            var playerInstance = jwplayer('video-1');
+            invokeVideoPlayer = function(url) {
+                playerInstance.setup({
+                    "playlist": "https://content.jwplatform.com/feeds/ae4tmw2D.json",
+                    "width": 640,
+                    "height": 480,
+                    "advertising": {
+                        "client": "vast",
+                        "tag": url
+                    }
+                });
+            };
+            if (tempTag) {
+                invokeVideoPlayer(tempTag);
+                tempTag = false;
+            }
+        </script>
+    </body>
+</html>

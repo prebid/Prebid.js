@@ -1,0 +1,16 @@
+<!-- This script tag should be returned by your ad server -->
+
+<script src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@latest/dist/creative.js"></script>
+<script>
+  var ucTagData = {};
+  ucTagData.adServerDomain = "";
+  ucTagData.pubUrl = "%%PATTERN:url%%";
+  ucTagData.targetingMap = "%%PATTERN:TARGETINGMAP%%";
+  ucTagData.hbPb = "%%PATTERN:hb_pb%%";
+
+  try {
+    ucTag.renderAd(document, ucTagData);
+  } catch (e) {
+    console.log(e);
+  }
+</script>

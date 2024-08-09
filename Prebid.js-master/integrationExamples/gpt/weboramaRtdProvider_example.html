@@ -1,0 +1,228 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>weborama rtd submodule example</title>
+</head>
+
+<body>
+
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script src="../../build/dev/prebid.js" async></script>
+
+    <script>
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                realTimeData: {
+                    auctionDelay: 1000,
+                    dataProviders: [{
+                        name: "weborama",
+                        waitForIt: true,
+                        params: {
+                            setPrebidTargeting: true, // optional
+                            sendToBidders: true,      // optional
+                            onData: function (data, meta) { // optional
+                                console.log('onData', data, meta);
+                            },
+                            weboCtxConf: {
+                                token: "to-be-defined", // mandatory
+                                targetURL: "https://prebid.org", // default is document.URL
+                                setPrebidTargeting: true, // override param.setPrebidTargeting or default true
+                                sendToBidders: true,      // override param.sendToBidders or default true
+                                defaultProfile: {         // optional
+                                    webo_ctx: ["Rugby_Renault_c11495", "Sport_c11893"],
+                                    webo_ds: ['bar']
+                                },
+                                // enabled: false,
+                                //, onData: function (data,...) { ...}
+                            },
+                            weboUserDataConf: {
+                                accountId: 12345,         // recommended
+                                setPrebidTargeting: true, // override param.setPrebidTargeting or default true
+                                sendToBidders: ['smartadserver'], // specify the bidder to share data
+                                defaultProfile: {         // optional
+                                    webo_cs: ['red'],
+                                    webo_audiences: ['bam']
+                                },
+                                localStorageProfileKey: 'webo_wam2gam_entry', // default
+                                // enabled: false,
+                                //, onData: function (data,...) { ...}
+                            },
+                            sfbxLiteDataConf: {
+                                enabled: true,
+                                defaultProfile: {           // optional
+                                    lite_occupation: ['gérant', 'bénévole'],
+                                    lite_hobbies: ['sport', 'cinéma'],
+                                },
+                            }
+                        }
+                    }]
+                }
+            });
+        });
+    </script>
+    <script>
+        var div_1_sizes = [
+            [300, 300]
+        ];
+        var div_2_sizes = [
+            [600, 100]
+        ];
+
+        var PREBID_TIMEOUT = 3000;
+        var FAILSAFE_TIMEOUT = 5000;
+
+        var adUnits = [
+            {
+                code: '/1056029/webo-ctx-prebid',
+                mediaTypes: {
+                    banner: {
+                        sizes: div_1_sizes
+                    }
+                },
+                bids: [{
+                    bidder: 'smartadserver',
+                    params: {
+                        siteId: 1234,
+                        pageId: 1234,
+                        formatId: 1234,
+                    }
+                }, {
+                    bidder: 'pubmatic',
+                    params: {
+                        publisherId: '32572',
+                    }
+                }, {
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 234234,
+                    }
+                }, {
+                    bidder: 'rubicon',
+                    params: {
+                        accountId: '14062',
+                        siteId: '70608',
+                        zoneId: '335918',
+                        userId: '12346',
+                    }
+                }, {
+                    bidder: 'criteo',
+                    params: {
+                        zoneId: 234234,
+                        networkId: 456456,
+                    },
+                }]
+            },
+            {
+                code: '/1056029/webo-wam-prebid',
+                mediaTypes: {
+                    banner: {
+                        sizes: div_2_sizes
+                    }
+                },
+                bids: [{
+                    bidder: 'smartadserver',
+                    params: {
+                        siteId: 1234,
+                        pageId: 1234,
+                        formatId: 1234,
+                    }
+                }, {
+                    bidder: 'pubmatic',
+                    params: {
+                        publisherId: '32572',
+                    }
+                }, {
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 234234,
+                    }
+                }, {
+                    bidder: 'rubicon',
+                    params: {
+                        accountId: '14062',
+                        siteId: '70608',
+                        zoneId: '335918',
+                        userId: '12346',
+                    }
+                }, {
+                    bidder: 'criteo',
+                    params: {
+                        zoneId: 234234,
+                        networkId: 456456,
+                    },
+                }]
+            }
+        ];
+
+        // ======== DO NOT EDIT BELOW THIS LINE =========== //
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function () {
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: initAdserver,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+            pbjs.initAdserverSet = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        // in case PBJS doesn't load
+        setTimeout(function () {
+            initAdserver();
+        }, FAILSAFE_TIMEOUT);
+
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/1056029/webo-ctx-prebid', div_1_sizes, 'div-gpt-ad-1620653642627-0').addService(googletag.pubads());
+            googletag.defineSlot('/1056029/webo-wam-prebid', div_2_sizes, 'div-gpt-ad-1645023761875-0').addService(googletag.pubads());
+            googletag.pubads().disableInitialLoad();
+            googletag.enableServices();
+        });
+
+    </script>
+
+    <article>
+        <p>
+            test webo rtd submodule with prebid.js
+        </p>
+    </article>
+    <h2>Basic Prebid.js Example</h2>
+    <h5>Div-1</h5>
+    <!-- /1056029/webo-ctx-prebid -->
+    <div id='div-gpt-ad-1620653642627-0' style='width: 300px; height: 300px;'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-gpt-ad-1620653642627-0');
+            });
+        </script>
+    </div>
+
+    <button onclick="googletag.cmd.push(function() { googletag.pubads().refresh(); });">
+        Show/Refresh Ad
+    </button>
+</body>
+
+</html>

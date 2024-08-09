@@ -1,0 +1,174 @@
+<html>
+
+<head>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+  <!-- <script async src="//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js"></script> -->
+  <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    var PREBID_TIMEOUT = 3000;
+
+    var date = new Date().getTime();
+
+    function initAdserver() {
+      if (pbjs.initAdserverSet) return;
+
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+
+      pbjs.initAdserverSet = true;
+    }
+
+    // Load GPT when timeout is reached.
+    // setTimeout(initAdserver, PREBID_TIMEOUT);
+
+    pbjs.que.push(function () {
+
+      pbjs.setConfig({
+        debug: true,
+        userSync: {
+          iframeEnabled: true
+        }
+      });
+
+      var adUnits = [{
+        code: '/19968336/prebid_native_example_1',
+        // sizes: [[1, 1]],
+        mediaTypes: {
+          native: {
+            title: {
+              required: true,
+              len: 800
+            },
+            image: {
+              required: true,
+              sizes: [989, 742],
+            },
+            sponsoredBy: {
+              required: true
+            }
+          }
+        },
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: 13232354,
+            // placementId: 14141943,
+            allowSmallerSizes: true
+          }
+
+        }]
+      }, {
+        code: '/19968336/prebid_native_example_2',
+        // sizes: [[1, 1]],
+        mediaTypes: {
+          native: {
+            title: {
+              required: true,
+              len: 800
+            },
+            body: {
+              required: true
+            },
+            image: {
+              required: true,
+              sizes: [3000, 2250]
+            },
+            sponsoredBy: {
+              required: true
+            },
+            icon: {
+              required: false,
+              sizes: [127, 83]
+            },
+          }
+        },
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: 13232354,
+            allowSmallerSizes: true
+          }
+        }]
+      }];
+
+      pbjs.addAdUnits(adUnits);
+      // pbjs.bidderSettings = {
+      //   appnexus: {
+      //     bidCpmAdjustment: function () {
+      //       return 10.00
+      //     }
+      //   }
+      // };
+      pbjs.setConfig({
+        s2sConfig: {
+          accountId: '1',
+          enabled: true, //default value set to false
+          bidders: ['appnexus'],
+          timeout: 1000, //default value is 1000
+          adapter: 'prebidServer', //if we have any other s2s adapter, default value is s2s
+          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        }
+      });
+      pbjs.requestBids({
+        bidsBackHandler: function (bidResponses) {
+          initAdserver();
+        }
+      });
+    });
+
+  </script>
+
+
+  <script>
+    // GPT setup
+    googletag.cmd.push(function () {
+      // var slot1 = googletag.defineSlot('/19968336/prebid_native_example_1', [[360, 360]], 'div-1').addService(googletag.pubads());
+      // var slot2 = googletag.defineSlot('/19968336/prebid_native_example_2', 'fluid', 'div-2').addService(googletag.pubads());
+      googletag.pubads().disableInitialLoad();
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+
+  </script>
+</head>
+
+<body>
+
+  <h2>Prebid Native</h2>
+  <div id='div-1'>
+    <p>No response</p>
+    <script type='text/javascript'>
+      googletag.cmd.push(function () {
+        googletag.display('div-1');
+      });
+
+    </script>
+  </div>
+
+  <br>
+  <br>
+
+  <div id='div-2'>
+    <p>No response</p>
+    <script type='text/javascript'>
+      googletag.cmd.push(function () {
+        googletag.display('div-2');
+      });
+
+    </script>
+  </div>
+
+</body>
+
+</html>

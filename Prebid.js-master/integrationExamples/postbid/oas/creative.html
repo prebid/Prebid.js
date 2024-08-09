@@ -1,0 +1,69 @@
+<!-- this div is wrapper for postbid creative, do not change id-->
+<div id="postbid-div-wrapper-%%POS%%"></div>
+<script type="text/javascript">
+    (function(w) {
+      //Postbid Configuration start
+      var adUnitSizes = [300,250];
+      var adUnitCode = 'adUnitCode';
+      var timeout = 800;
+
+      // Add your post-bid tag IDs here:
+      var adUnitBids = [
+        {
+          bidder: 'appnexus',
+          params: {
+            placementId: '10433394'
+          }
+        },
+        {
+          bidder: 'TO ADD',
+          params: {
+            publisherId: 'TO ADD',
+            adSlot: 'TO ADD'
+          }
+        }
+      ];
+
+      var passbackTagHtml = 'TO ADD';
+      //Postbid Configuration End
+
+      // Do no change below this line //
+      var creativeVersion = 'oas-1.0';
+      //targetId for the iframe wrapper
+      var targetId = "unique-prebid-wrapper-%%POS%%";
+      var divId = 'postbid-div-wrapper-%%POS%%';
+
+      var JavaScript = {
+        load: function(src, callback) {
+          var script = document.createElement('script');
+          var loaded;
+          script.setAttribute('src', src);
+          if (callback) {
+            script.onreadystatechange = script.onload = function() {
+              if (!loaded) {
+                callback();
+              }
+              loaded = true;
+            };
+          }
+          document.getElementsByTagName('head')[0].appendChild(script);
+        }
+      };
+
+      var conf = {};
+      conf = {
+        'adUnitCode' : adUnitCode,
+        'adUnitSizes': JSON.stringify(adUnitSizes),
+        'adUnitBids': JSON.stringify(adUnitBids),
+        'passbackTagHtml': passbackTagHtml,
+        'targetId' : targetId,
+        'divId' : divId,
+        'timeout' : timeout
+      };
+
+      JavaScript.load("//acdn.adnxs.com/prebid/templates/postbid.js", function() {
+        processQue(conf);
+      });
+
+    })(window);
+</script>

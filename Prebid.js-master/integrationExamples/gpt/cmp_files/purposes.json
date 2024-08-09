@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "purposes": [
+	{
+	  "id": 25,
+	  "name": "Custom Purpose 1",
+	  "description": "Here's a description of the first purpose"
+	},
+	{
+	  "id": 26,
+	  "name": "Custom Purpose 2",
+	  "description": "Here's a description of the second purpose"
+	},
+	{
+	  "id": 27,
+	  "name": "Custom Purpose 3",
+	  "description": "Here's a description of the third purpose"
+	},
+	{
+	  "id": 28,
+	  "name": "Custom Purpose 4",
+	  "description": "Here's a description of the fourth purpose"
+	}
+  ]
+}

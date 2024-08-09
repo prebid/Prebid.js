@@ -1,0 +1,87 @@
+<html>
+<head>
+<script>
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    (function() {
+        var pbjsEl = document.createElement("script");
+        pbjsEl.type = "text/javascript";
+        pbjsEl.async = true;
+        pbjsEl.src = '../../build/dev/prebid.js';
+        var pbjsTargetEl = document.getElementsByTagName("head")[0];
+        pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+      })();
+
+    pbjs.que.push(function() {
+        var sizes = [[300, 250]];
+        var adUnits = [{
+            code: 'postbid_iframe',
+            mediaTypes: {
+              banner: {
+                sizes: sizes
+              }
+            },
+            bids: [
+              {
+                bidder: 'appnexus',
+                params: {
+                   placementId: 13144370
+                }
+              }
+            ]
+          }];
+
+        pbjs.setConfig({
+          bidderTimeout: 1000,
+          s2sConfig : {
+            accountId : '1',
+            enabled : true, //default value set to false
+            bidders : ['appnexus'],
+            timeout : 1000, //default value is 1000
+            adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
+            endpoint : 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+          }
+        });
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.requestBids({
+            bidsBackHandler: function(bidResponses) {
+                var iframe = document.getElementById('postbid_iframe');
+                var iframeDoc = iframe.contentWindow.document;
+                var adServerTargeting = pbjs.getAdserverTargetingForAdUnitCode('postbid_iframe');
+
+                // If any bidders return any creatives
+                if (adServerTargeting && adServerTargeting['hb_adid']) {
+                    pbjs.renderAd(iframeDoc, adServerTargeting['hb_adid']);
+                } else {
+                    iframe.width = sizes[0][0];
+                    iframe.height = sizes[0][1];
+                    iframeDoc.write('<head></head><body>' + passbackTagHtml + '</body>');
+                    iframeDoc.close();
+                }
+            }
+        })
+    });
+
+    var passbackTagHtml = 'TO ADD';
+</script>
+
+</head>
+
+<body>
+    <iframe id='postbid_iframe'
+            FRAMEBORDER="0"
+            SCROLLING="no"
+            MARGINHEIGHT="0"
+            MARGINWIDTH="0"
+            TOPMARGIN="0"
+            LEFTMARGIN="0"
+            ALLOWTRANSPARENCY="true"
+            WIDTH="0"
+            HEIGHT="0">
+    </iframe>
+
+</body>
+</html>
