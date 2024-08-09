@@ -3,6 +3,12 @@ import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'consumable';
 
 const BASE_URI = 'https://e.serverbid.com/api/v2';
@@ -55,7 +61,8 @@ export const spec = {
       source: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
-      }]
+      }],
+      lang: bidderRequest.ortb2.device.language,
     }, validBidRequests[0].params);
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -63,6 +70,11 @@ export const spec = {
         consent: bidderRequest.gdprConsent.consentString,
         applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       };
+    }
+
+    if (bidderRequest && bidderRequest.gppConsent && bidderRequest.gppConsent.gppString) {
+      data.gpp = bidderRequest.gppConsent.gppString;
+      data.gpp_sid = bidderRequest.gppConsent.applicableSections;
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
@@ -180,12 +192,32 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    let syncUrl = 'https://sync.serverbid.com/ss/' + siteId + '.html';
+
     if (syncOptions.iframeEnabled) {
+      if (gdprConsent && gdprConsent.consentString) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          syncUrl = appendUrlParam(syncUrl, `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
+        } else {
+          syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
+        }
+      }
+      if (gppConsent && gppConsent.gppString) {
+        syncUrl = appendUrlParam(syncUrl, `gpp=${encodeURIComponent(gppConsent.gppString)}`);
+        if (gppConsent.applicableSections && gppConsent.applicableSections.length > 0) {
+          syncUrl = appendUrlParam(syncUrl, `gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
+        }
+      }
+
+      if (uspConsent) {
+        syncUrl = appendUrlParam(syncUrl, `us_privacy=${encodeURIComponent(uspConsent)}`);
+      }
+
       if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {
         return [{
           type: 'iframe',
-          url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
+          url: syncUrl
         }];
       }
     }
@@ -292,6 +324,10 @@ function getBidFloor(bid, sizes) {
   }
 
   return floor;
+}
+
+function appendUrlParam(url, queryString) {
+  return `${url}${url.indexOf('?') > -1 ? '&' : '?'}${queryString}`;
 }
 
 registerBidder(spec);

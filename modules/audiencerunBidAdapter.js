@@ -1,18 +1,25 @@
 import {
+  _each,
   deepAccess,
+  formatQS, getBidIdParameter,
+  getValue,
+  isArray,
   isFn,
   logError,
-  getValue,
-  getBidIdParameter,
-  _each,
-  isArray,
   triggerPixel,
-  formatQS,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { createEidsArray } from './userId/eids.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'audiencerun';
 const BASE_URL = 'https://d.audiencerun.com';
@@ -115,8 +122,9 @@ export const spec = {
         bidId: bid.bidId,
         bidderRequestId: getBidIdParameter('bidderRequestId', bid),
         adUnitCode: getBidIdParameter('adUnitCode', bid),
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: getBidIdParameter('auctionId', bid),
-        transactionId: getBidIdParameter('transactionId', bid),
+        transactionId: bid.ortb2Imp?.ext?.tid || '',
       };
     });
 
@@ -135,7 +143,7 @@ export const spec = {
 
     payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
     payload.schain = deepAccess(bidRequests, '0.schain');
-    payload.userId = deepAccess(bidRequests, '0.userId') ? createEidsArray(bidRequests[0].userId) : [];
+    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || []
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {

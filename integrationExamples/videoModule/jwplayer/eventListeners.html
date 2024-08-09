@@ -23,13 +23,20 @@
 
         // Replace this object to test a new Adapter!
         bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
           bidder: 'ix',
           params: {
             siteId: '300',
           }
         }]
       }];
-      
+
       pbjs.que.push(function () {
         pbjs.setConfig({
           video: {
@@ -37,7 +44,7 @@
               divId: 'player',
               vendorCode: 1, // vendorCode for jwplayer
               playerConfig: {
-                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                licenseKey: 'zwqnWJlovTKhXv2JIcKBj0Si//K7cVPmBDEyaILcAMw+nVKaizsJRA==',
                 params: {
                   vendorConfig: {
                     file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
@@ -87,7 +94,6 @@
 
         pbjs.onEvent('videoPlaybackRequest', (e) => {
           console.log('videos pb playbackRequest: ', e);
-          pbjs.requestBids(adUnits);
         });
 
         pbjs.onEvent('videoAutostartBlocked', (e) => {
@@ -222,6 +228,10 @@
           console.log('videos pb auction ad load attempt: ', e);
         });
 
+        pbjs.onEvent('videoAuctionAdLoadQueued', (e) => {
+          console.log('videos pb auction ad load queued: ', e);
+        });
+
         pbjs.onEvent('videoAuctionAdLoadAttempt', event => {
           console.log('The Video Module is attempting to load an ad into the player! \n', event);
         });
@@ -233,6 +243,8 @@
         pbjs.onEvent('videoBidError', event => {
           console.log('The ad error resulted from a bid! \n', event);
         });
+
+        pbjs.requestBids();
       });
     </script>
 </head>

@@ -1,4 +1,4 @@
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {ajax} from '../../src/ajax.js';
 import {logError, logMessage} from '../../src/utils.js';
 import * as events from '../../src/events.js';
@@ -9,8 +9,8 @@ export const _internal = {
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-export const DEFAULT_INCLUDE_EVENTS = Object.values(CONSTANTS.EVENTS)
-  .filter(ev => ev !== CONSTANTS.EVENTS.AUCTION_DEBUG);
+export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
+  .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
 
 let debounceDelay = 100;
 
@@ -114,7 +114,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       const trackedEvents = (() => {
         const {includeEvents = DEFAULT_INCLUDE_EVENTS, excludeEvents = []} = (config || {});
         return new Set(
-          Object.values(CONSTANTS.EVENTS)
+          Object.values(EVENTS)
             .filter(ev => includeEvents.includes(ev))
             .filter(ev => !excludeEvents.includes(ev))
         );
@@ -134,13 +134,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       handlers = Object.fromEntries(
         Array.from(trackedEvents)
           .map((ev) => {
-            const handler = ev === CONSTANTS.EVENTS.AUCTION_INIT
-              ? (args) => {
-                // TODO: remove this special case in v8
-                args.config = typeof config === 'object' ? config.options || {} : {};
-                this.enqueue({eventType: ev, args});
-              }
-              : (args) => this.enqueue({eventType: ev, args});
+            const handler = (args) => this.enqueue({eventType: ev, args});
             events.on(ev, handler);
             return [ev, handler];
           })

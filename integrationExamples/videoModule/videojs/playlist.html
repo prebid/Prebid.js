@@ -36,6 +36,13 @@
       },
 
       bids: [{
+        bidder: 'jwplayer',
+        params: {
+          publisherId: 'test-publisher-id',
+          siteId: 'test-site-id',
+          placementId: 'test-placement-id'
+        }
+      }, {
         bidder: 'ix',
         params: {
           siteId: '300',
@@ -126,15 +133,15 @@
         console.log('videos pb playlist: ', e);
       });
 
-      // request a bid when media is loaded
       pbjs.onEvent('videoContentLoaded', (e) => {
         console.log('videos pb contentLoaded: ', e);
-        pbjs.requestBids(adUnits);
       });
 
       pbjs.onEvent('videoComplete', (e) => {
         console.log('videos pb complete: ', e);
       });
+
+      pbjs.requestBids();
     });
   </script>
 

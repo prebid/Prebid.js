@@ -104,7 +104,6 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
 
 /**
  * @summary Maps a Video Provider factory to the video player's vendor code.
- * @type {vendorSubmoduleDirectory}
  */
 const videoVendorDirectory = {};
 
@@ -125,6 +124,11 @@ export function VideoCore(parentModule_) {
     try {
       parentModule.registerSubmodule(providerConfig.divId, providerConfig.vendorCode, providerConfig);
     } catch (e) {}
+  }
+
+  function initProvider(divId) {
+    const submodule = parentModule.getSubmodule(divId);
+    submodule && submodule.init && submodule.init();
   }
 
   /**
@@ -208,11 +212,15 @@ export function VideoCore(parentModule_) {
 
   return {
     registerProvider,
+    initProvider,
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
     onEvents,
-    offEvents
+    offEvents,
+    hasProviderFor(divId) {
+      return !!parentModule.getSubmodule(divId);
+    }
   };
 }
 

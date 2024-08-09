@@ -5,6 +5,11 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
 const G_URL_SYNC = 'https://sync.colossusssp.com';
@@ -87,6 +92,11 @@ export const spec = {
       logMessage(e);
     }
 
+    const firstPartyData = bidderRequest.ortb2 || {};
+    const userObj = firstPartyData.user;
+    const siteObj = firstPartyData.site;
+    const appObj = firstPartyData.app;
+
     // TODO: does the fallback to window.location make sense?
     const location = refferLocation || winLocation;
     let placements = [];
@@ -97,6 +107,9 @@ export const spec = {
       secure: location.protocol === 'https:' ? 1 : 0,
       host: location.host,
       page: location.pathname,
+      userObj,
+      siteObj,
+      appObj,
       placements: placements
     };
 
@@ -108,6 +121,15 @@ export const spec = {
         request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
         request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       }
+
+      // Add GPP consent
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent.gppString;
+        request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        request.gpp = bidderRequest.ortb2.regs.gpp;
+        request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+      }
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -117,20 +139,19 @@ export const spec = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        tid: bid.transactionId,
-        eids: [],
+        tid: bid.ortb2Imp?.ext?.tid,
+        eids: bid.userIdAsEids || [],
         floor: {}
       };
 
       if (bid.schain) {
         placement.schain = bid.schain;
       }
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         placement.gpid = gpid;
       }
       if (bid.userId) {
-        getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
         getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
@@ -151,7 +172,7 @@ export const spec = {
         placement.mimes = mediaTypes[VIDEO].mimes;
         placement.protocols = mediaTypes[VIDEO].protocols;
         placement.startdelay = mediaTypes[VIDEO].startdelay;
-        placement.placement = mediaTypes[VIDEO].placement;
+        placement.placement = mediaTypes[VIDEO].plcmt;
         placement.skip = mediaTypes[VIDEO].skip;
         placement.skipafter = mediaTypes[VIDEO].skipafter;
         placement.minbitrate = mediaTypes[VIDEO].minbitrate;
@@ -214,7 +235,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'html' : 'hms.gif';
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = G_URL_SYNC + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {

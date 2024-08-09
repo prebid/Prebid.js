@@ -5,6 +5,13 @@ import {
   getMediaWildcardPrices,
   sizeToString,
   parseFloorPriceData,
+  getPageUrlFromBidRequest,
+  hasProtocol,
+  addProtocol,
+  BidRequestDataSource,
+  RequestData,
+  UserEIDs,
+  buildRequestUrl,
 } from '../../../modules/nativoBidAdapter'
 
 describe('bidDataMap', function () {
@@ -105,7 +112,7 @@ describe('nativoBidAdapterTests', function () {
       bidRequests = [JSON.parse(bidRequestString)]
     })
 
-    it('url should contain query string parameters', function () {
+    it('Request should be POST, with JSON string payload and QS params should be added to the url', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
@@ -113,10 +120,16 @@ describe('nativoBidAdapterTests', function () {
         },
       })
 
+      expect(request.method).to.equal('POST')
+
+      expect(request.data).to.exist
+      expect(request.data).to.be.a('string')
+
       expect(request.url).to.exist
       expect(request.url).to.be.a('string')
 
       expect(request.url).to.include('?')
+      expect(request.url).to.include('ntv_pbv')
       expect(request.url).to.include('ntv_ptd')
       expect(request.url).to.include('ntv_pb_rid')
       expect(request.url).to.include('ntv_ppc')
@@ -645,5 +658,182 @@ describe('parseFloorPriceData', () => {
       '*': { '*': 1.1, '300x250': 2.2 },
       banner: { '*': 1.1, '300x250': 2.2 },
     })
+  })
+})
+
+describe('hasProtocol', () => {
+  it('https://www.testpage.com', () => {
+    expect(hasProtocol('https://www.testpage.com')).to.be.true
+  })
+  it('http://www.testpage.com', () => {
+    expect(hasProtocol('http://www.testpage.com')).to.be.true
+  })
+  it('//www.testpage.com', () => {
+    expect(hasProtocol('//www.testpage.com')).to.be.false
+  })
+  it('www.testpage.com', () => {
+    expect(hasProtocol('www.testpage.com')).to.be.false
+  })
+  it('httpsgsjhgflih', () => {
+    expect(hasProtocol('httpsgsjhgflih')).to.be.false
+  })
+})
+
+describe('addProtocol', () => {
+  it('www.testpage.com', () => {
+    expect(addProtocol('www.testpage.com')).to.be.equal('https://www.testpage.com')
+  })
+  it('//www.testpage.com', () => {
+    expect(addProtocol('//www.testpage.com')).to.be.equal('https://www.testpage.com')
+  })
+  it('http://www.testpage.com', () => {
+    expect(addProtocol('http://www.testpage.com')).to.be.equal('http://www.testpage.com')
+  })
+  it('https://www.testpage.com', () => {
+    expect(addProtocol('https://www.testpage.com')).to.be.equal('https://www.testpage.com')
+  })
+})
+
+describe('getPageUrlFromBidRequest', () => {
+  const bidRequest = {}
+
+  beforeEach(() => {
+    bidRequest.params = {}
+  })
+
+  it('Returns undefined for no url param', () => {
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).to.be.undefined
+  })
+
+  it('@testUrl', () => {
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).to.be.undefined
+  })
+
+  it('https://www.testpage.com', () => {
+    bidRequest.params.url = 'https://www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('https://www.testpage.com/test/path', () => {
+    bidRequest.params.url = 'https://www.testpage.com/test/path'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('www.testpage.com', () => {
+    bidRequest.params.url = 'www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('http://www.testpage.com', () => {
+    bidRequest.params.url = 'http://www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('//www.testpage.com', () => {
+    bidRequest.params.url = '//www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+})
+
+describe('RequestData', () => {
+  describe('addBidRequestDataSource', () => {
+    it('Adds a BidRequestDataSource', () => {
+      const requestData = new RequestData()
+      const testBidRequestDataSource = new BidRequestDataSource()
+
+      requestData.addBidRequestDataSource(testBidRequestDataSource)
+
+      expect(requestData.bidRequestDataSources.length == 1)
+    })
+
+    it("Doeasn't add a non BidRequestDataSource", () => {
+      const requestData = new RequestData()
+
+      requestData.addBidRequestDataSource({})
+      requestData.addBidRequestDataSource('test')
+      requestData.addBidRequestDataSource(1)
+      requestData.addBidRequestDataSource(true)
+
+      expect(requestData.bidRequestDataSources.length == 0)
+    })
+  })
+
+  describe('getRequestDataString', () => {
+    it("Doesn't append empty query strings", () => {
+      const requestData = new RequestData()
+      const testBidRequestDataSource = new BidRequestDataSource()
+
+      requestData.addBidRequestDataSource(testBidRequestDataSource)
+
+      let qs = requestData.getRequestDataQueryString()
+      expect(qs).to.be.empty
+
+      testBidRequestDataSource.getRequestQueryString = () => {
+        return 'ntv_test=true'
+      }
+      qs = requestData.getRequestDataQueryString()
+      expect(qs).to.be.equal('ntv_test=true')
+    })
+  })
+})
+
+describe('UserEIDs', () => {
+  const userEids = new UserEIDs()
+  const eids = [{ 'testId': 1111 }]
+
+  describe('processBidRequestData', () => {
+    it('Processes bid request without eids', () => {
+      userEids.processBidRequestData({})
+
+      expect(userEids.eids).to.be.empty
+    })
+
+    it('Processed bid request with eids', () => {
+      userEids.processBidRequestData({ userIdAsEids: eids })
+
+      expect(userEids.eids).to.not.be.empty
+    })
+  })
+
+  describe('getRequestQueryString', () => {
+    it('Correctly prints out QS param string', () => {
+      const qs = userEids.getRequestQueryString()
+      const value = qs.slice(11)
+
+      expect(qs).to.include('ntv_pb_eid=')
+      try {
+        expect(JSON.parse(value)).to.be.equal(eids)
+      } catch (err) { }
+    })
+  })
+})
+
+describe('buildRequestUrl', () => {
+  const baseUrl = 'https://www.testExchange.com'
+  it('Returns baseUrl if no QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl)
+    expect(url).to.be.equal(baseUrl)
+  })
+
+  it('Returns baseUrl if empty QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl, ['', '', ''])
+    expect(url).to.be.equal(baseUrl)
+  })
+
+  it('Returns baseUrl + QS params if QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl, ['ntv_ptd=123456&ntv_test=true', 'ntv_foo=bar'])
+    expect(url).to.be.equal(`${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`)
+  })
+
+  it('Returns baseUrl + QS params if mixed QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl, ['ntv_ptd=123456&ntv_test=true', '', '', 'ntv_foo=bar'])
+    expect(url).to.be.equal(`${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`)
   })
 })

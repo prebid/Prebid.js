@@ -1,6 +1,13 @@
-import { getValue, logError, deepAccess, getBidIdParameter, parseSizesInput, isArray } from '../src/utils.js';
+import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
+import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
@@ -12,7 +19,7 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
-export const storage = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -45,14 +52,25 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+    const topWindow = window.top;
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
+      pageTitle: getPageTitle().slice(0, 300),
+      pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
+      deviceHeight: screen.height,
+      devicePixelRatio: topWindow.devicePixelRatio,
+      screenOrientation: screen.orientation?.type,
+      historyLength: getHLen(),
+      viewportHeight: topWindow.visualViewport?.height,
+      viewportWidth: topWindow.visualViewport?.width,
+      hardwareConcurrency: getHC(),
+      deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -62,6 +80,18 @@ export const spec = {
 
     if (firstBidRequest.schain) {
       payload.schain = firstBidRequest.schain;
+    }
+
+    let gpp = bidderRequest.gppConsent;
+    if (bidderRequest && gpp) {
+      let isValidConsentString = typeof gpp.gppString === 'string';
+      let validateApplicableSections =
+        Array.isArray(gpp.applicableSections) &&
+        gpp.applicableSections.every((section) => typeof (section) === 'number')
+      payload.gpp = {
+        consentString: isValidConsentString ? gpp.gppString : '',
+        applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],
+      };
     }
 
     let gdpr = bidderRequest.gdprConsent;
@@ -87,6 +117,11 @@ export const spec = {
       payload.userAgentClientHints = userAgentClientHints;
     }
 
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      payload.dsa = dsa;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -101,11 +136,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidderRequest) {
-    const bidResponses = [];
     serverResponse = serverResponse.body;
 
-    if (serverResponse.responses) {
-      serverResponse.responses.forEach(function (bid) {
+    if (!serverResponse.responses) {
+      return [];
+    }
+
+    const autoplayEnabled = isAutoplayEnabled();
+    return serverResponse.responses
+      .filter((bid) =>
+        // ignore this bid if it requires autoplay but it is not enabled on this browser
+        !bid.needAutoplay || autoplayEnabled
+      ).map((bid) => {
         const bidResponse = {
           cpm: bid.cpm,
           width: bid.width,
@@ -124,10 +166,11 @@ export const spec = {
         if (bid.dealId) {
           bidResponse.dealId = bid.dealId
         }
-        bidResponses.push(bidResponse);
+        if (bid?.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
+        }
+        return bidResponse;
       });
-    }
-    return bidResponses;
   }
 };
 
@@ -168,6 +211,32 @@ function getReferrerInfo(bidderRequest) {
     ref = bidderRequest.refererInfo.page;
   }
   return ref;
+}
+
+function getPageTitle() {
+  try {
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+
+    return window.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+function getPageDescription() {
+  let element;
+
+  try {
+    element = window.top.document.querySelector('meta[name="description"]') ||
+      window.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
 }
 
 function getConnectionDownLink(nav) {
@@ -220,6 +289,7 @@ function buildRequestObject(bid) {
   let placementId = getValue(bid.params, 'placementId');
   let pageId = getValue(bid.params, 'pageId');
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const videoPlcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
 
   reqObj.sizes = getSizes(bid);
   reqObj.bidId = getBidIdParameter('bidId', bid);
@@ -227,9 +297,9 @@ function buildRequestObject(bid) {
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = getBidIdParameter('transactionId', bid);
+  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
   if (gpid) { reqObj.gpid = gpid; }
+  if (videoPlcmt) { reqObj.videoPlcmt = videoPlcmt; }
   return reqObj;
 }
 

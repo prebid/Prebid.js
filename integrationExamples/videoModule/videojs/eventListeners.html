@@ -35,6 +35,13 @@
       },
 
       bids: [{
+        bidder: 'jwplayer',
+        params: {
+          publisherId: 'test-publisher-id',
+          siteId: 'test-site-id',
+          placementId: 'test-placement-id'
+        }
+      }, {
         bidder: 'ix',
         params: {
           siteId: '300',
@@ -209,6 +216,10 @@
         console.log('videos pb auction ad load attempt: ', e);
       });
 
+      pbjs.onEvent('videoAuctionAdLoadQueued', (e) => {
+        console.log('videos pb auction ad load queued: ', e);
+      });
+
       pbjs.onEvent('videoAuctionAdLoadAbort', (e) => {
         console.log('videos pb auction ad load attempt: ', e);
       });
@@ -221,7 +232,7 @@
         console.log('videos pb bid Error: ', e);
       });
 
-      pbjs.requestBids(adUnits);
+      pbjs.requestBids();
     });
   </script>
 

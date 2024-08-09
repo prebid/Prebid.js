@@ -148,7 +148,12 @@
                             auctionDelay: AUCTION_DELAY,
                             dataProviders: [
                                 {
+                                    name: 'intersection',
+                                    waitForIt: true
+                                },
+                                {
                                     name: 'adloox',
+                                    waitForIt: true,
                                     params: {             // optional, defaults shown
                                         thresholds: [ 50, 60, 70, 80, 90 ],
                                         slotinpath: false

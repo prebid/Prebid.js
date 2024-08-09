@@ -1,18 +1,5 @@
 // accountId and bidders params are not included here, should be configured by end-user
 export const S2S_VENDORS = {
-  'appnexus': {
-    adapter: 'prebidServer',
-    enabled: true,
-    endpoint: {
-      p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
-      noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/openrtb2/auction'
-    },
-    syncEndpoint: {
-      p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
-      noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
-    },
-    timeout: 1000
-  },
   'appnexuspsp': {
     adapter: 'prebidServer',
     enabled: true,
@@ -20,7 +7,11 @@ export const S2S_VENDORS = {
       p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
       noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
     },
-    timeout: 1000
+    syncEndpoint: {
+      p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
+      noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
+    },
+    maxTimeout: 1000
   },
   'rubicon': {
     adapter: 'prebidServer',
@@ -33,7 +24,7 @@ export const S2S_VENDORS = {
       p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
       noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
     },
-    timeout: 500
+    maxTimeout: 500
   },
   'openx': {
     adapter: 'prebidServer',
@@ -46,6 +37,15 @@ export const S2S_VENDORS = {
       p1Consent: 'https://prebid.openx.net/cookie_sync',
       noP1Consent: 'https://prebid.openx.net/cookie_sync'
     },
-    timeout: 1000
+    maxTimeout: 1000
+  },
+  'openwrap': {
+    adapter: 'prebidServer',
+    enabled: true,
+    endpoint: {
+      p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+      noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+    },
+    maxTimeout: 500
   }
 }

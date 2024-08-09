@@ -39,22 +39,31 @@ export const spec = {
         adUnitCode: bidRequest.adUnitCode,
         auctionId: bidRequest.auctionId,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
-        device: JSON.stringify(getDeviceData()),
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
+        device: encodeURIComponent(JSON.stringify(getDeviceData())),
         sizes,
         aimXR,
         uid: '$UID',
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
-        version: 2,
+        version: 4,
         coppa: config.getConfig('coppa') == true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined
       }
 
+      if (
+        bidderRequest &&
+        bidderRequest.gppConsent &&
+        bidderRequest.gppConsent.gppString
+      ) {
+        payload.gpp = bidderRequest.gppConsent.gppString;
+        payload.gppSid = bidderRequest.gppConsent.applicableSections;
+      }
+
       return {
         method: 'GET',
-        url: getBidRequestUrl(aimXR),
+        url: getBidRequestUrl(aimXR, bidRequest.params),
         data: payload,
         options: {
           withCredentials: true
@@ -73,6 +82,7 @@ export const spec = {
 
     const bidResponse = {
       requestId: response.bidid,
+      bidId: response.bidid,
       cpm: response.bid.price,
       currency: response.cur,
       width: response.bid.w,
@@ -113,11 +123,15 @@ export const spec = {
   supportedMediaTypes: [BANNER]
 }
 
-function getBidRequestUrl(aimXR) {
-  if (!aimXR) {
-    return GET_IUD_URL + ENDPOINT_URL + '/request';
+function getBidRequestUrl(aimXR, params) {
+  let path = '/request';
+  if (params && params.dtc) {
+    path = '/dtc-request';
   }
-  return ENDPOINT_URL + '/request'
+  if (!aimXR) {
+    return GET_IUD_URL + ENDPOINT_URL + path;
+  }
+  return ENDPOINT_URL + path;
 }
 
 function getDeviceData() {

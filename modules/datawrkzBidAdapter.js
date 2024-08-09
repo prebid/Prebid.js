@@ -1,11 +1,24 @@
-import { deepAccess, getBidIdParameter, isArray, getUniqueIdentifierStr, contains } from '../src/utils.js';
+import {
+  deepAccess,
+  isArray,
+  getUniqueIdentifierStr,
+  contains,
+  isFn,
+  isPlainObject,
+  getBidIdParameter
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createBid } from '../src/bidfactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import CONSTANTS from '../src/constants.json';
+import { STATUS } from '../src/constants.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'datawrkz';
 const ALIASES = [];
@@ -84,7 +97,7 @@ export const spec = {
 
 /* Generate bid request for banner adunit */
 function buildBannerRequest(bidRequest, bidderRequest) {
-  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = getBidFloor(bidRequest);
 
   let adW = 0;
   let adH = 0;
@@ -135,7 +148,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
   let counter = 0;
   let assets = [];
 
-  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = getBidFloor(bidRequest);
 
   let title = deepAccess(bidRequest, 'mediaTypes.native.title');
   if (title && title.len) {
@@ -196,7 +209,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
 
 /* Generate bid request for video adunit */
 function buildVideoRequest(bidRequest, bidderRequest) {
-  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = getBidFloor(bidRequest);
 
   let sizeObj = getVideoAdUnitSize(bidRequest);
 
@@ -214,7 +227,6 @@ function buildVideoRequest(bidRequest, bidderRequest) {
     maxbitrate: deepAccess(bidRequest, 'mediaTypes.video.maxbitrate'),
     delivery: deepAccess(bidRequest, 'mediaTypes.video.delivery'),
     linearity: deepAccess(bidRequest, 'mediaTypes.video.linearity'),
-    placement: deepAccess(bidRequest, 'mediaTypes.video.placement'),
     skip: deepAccess(bidRequest, 'mediaTypes.video.skip'),
     skipafter: deepAccess(bidRequest, 'mediaTypes.video.skipafter')
   };
@@ -403,7 +415,7 @@ function buildBannerResponse(bidRequest, bidResponse) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
@@ -414,7 +426,6 @@ function buildBannerResponse(bidRequest, bidResponse) {
       }
       let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
       bidResponse.size = bidSizes;
@@ -445,7 +456,7 @@ function buildNativeResponse(bidRequest, response) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
@@ -455,7 +466,6 @@ function buildNativeResponse(bidRequest, response) {
         return;
       }
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -495,7 +505,7 @@ function buildVideoResponse(bidRequest, response) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
@@ -507,7 +517,6 @@ function buildVideoResponse(bidRequest, response) {
       let context = bidRequest.mediaTypes.video.context;
 
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -628,6 +637,23 @@ function getNativeAssestObj(obj, assets) {
       }
     }
   }
+}
+
+// BUILD REQUESTS: BIDFLOORS
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return (bid.params.bidfloor) ? bid.params.bidfloor : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);

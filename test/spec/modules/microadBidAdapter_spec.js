@@ -12,7 +12,11 @@ describe('microadBidAdapter', () => {
       spot: 'spot-code'
     },
     bidId: 'bid-id',
-    transactionId: 'transaction-id'
+    ortb2Imp: {
+      ext: {
+        tid: 'transaction-id'
+      }
+    }
   };
 
   describe('isBidRequestValid', () => {
@@ -224,7 +228,7 @@ describe('microadBidAdapter', () => {
       });
     });
 
-    it('should add geo parameter to response if request parameters contain geo', () => {
+    it('should not add geo parameter to response even if request parameters contain geo', () => {
       const bidRequestWithGeo = Object.assign({}, bidRequestTemplate, {
         params: {
           spot: 'spot-code',
@@ -233,7 +237,7 @@ describe('microadBidAdapter', () => {
       });
       const requests = spec.buildRequests([bidRequestWithGeo], bidderRequest);
       requests.forEach(request => {
-        expect(request.data).to.deep.equal(
+        expect(request.data).to.not.deep.equal(
           Object.assign({}, expectedResultTemplate, {
             cbt: request.data.cbt,
             geo: '35.655275,139.693771'
@@ -296,10 +300,6 @@ describe('microadBidAdapter', () => {
       'Novatiq Snowflake ID': {
         userId: {novatiq: {snowflake: 'novatiq-sample'}},
         expected: {aids: JSON.stringify([{type: 10, id: 'novatiq-sample'}])}
-      },
-      'Parrable ID': {
-        userId: {parrableId: {eid: 'parrable-sample'}},
-        expected: {aids: JSON.stringify([{type: 11, id: 'parrable-sample'}])}
       },
       'AudienceOne User ID': {
         userId: {dacId: {id: 'audience-one-sample'}},
@@ -377,6 +377,196 @@ describe('microadBidAdapter', () => {
           })
         })
       });
+    })
+
+    describe('should send gpid', () => {
+      it('from gpid', () => {
+        const bidRequest = Object.assign({}, bidRequestTemplate, {
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-id',
+              gpid: '1111/2222',
+              data: {
+                pbadslot: '3333/4444'
+              }
+            }
+          }
+        });
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        requests.forEach(request => {
+          expect(request.data).to.deep.equal(
+            Object.assign({}, expectedResultTemplate, {
+              cbt: request.data.cbt,
+              gpid: '1111/2222',
+              pbadslot: '3333/4444'
+            })
+          );
+        })
+      })
+
+      it('from pbadslot', () => {
+        const bidRequest = Object.assign({}, bidRequestTemplate, {
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-id',
+              data: {
+                pbadslot: '3333/4444'
+              }
+            }
+          }
+        });
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        requests.forEach(request => {
+          expect(request.data).to.deep.equal(
+            Object.assign({}, expectedResultTemplate, {
+              cbt: request.data.cbt,
+              gpid: '3333/4444',
+              pbadslot: '3333/4444'
+            })
+          );
+        })
+      })
+    })
+
+    const notGettingGpids = {
+      'they are not existing': bidRequestTemplate,
+      'they are blank': {
+        ortb2Imp: {
+          ext: {
+            tid: 'transaction-id',
+            gpid: '',
+            data: {
+              pbadslot: ''
+            }
+          }
+        }
+      }
+    }
+
+    Object.entries(notGettingGpids).forEach(([testTitle, param]) => {
+      it(`should not send gpid because ${testTitle}`, () => {
+        const bidRequest = Object.assign({}, bidRequestTemplate, param);
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        requests.forEach(request => {
+          expect(request.data).to.deep.equal(
+            Object.assign({}, expectedResultTemplate, {
+              cbt: request.data.cbt,
+            })
+          );
+          expect(request.data.gpid).to.be.undefined;
+          expect(request.data.pbadslot).to.be.undefined;
+        })
+      })
+    })
+
+    it('should send adservname', () => {
+      const bidRequest = Object.assign({}, bidRequestTemplate, {
+        ortb2Imp: {
+          ext: {
+            tid: 'transaction-id',
+            data: {
+              adserver: {
+                name: 'gam'
+              }
+            }
+          }
+        }
+      });
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            adservname: 'gam'
+          })
+        );
+      })
+    })
+
+    const notGettingAdservnames = {
+      'it is not existing': bidRequestTemplate,
+      'it is blank': {
+        ortb2Imp: {
+          ext: {
+            tid: 'transaction-id',
+            data: {
+              adserver: {
+                name: ''
+              }
+            }
+          }
+        }
+      }
+    }
+
+    Object.entries(notGettingAdservnames).forEach(([testTitle, param]) => {
+      it(`should not send adservname because ${testTitle}`, () => {
+        const bidRequest = Object.assign({}, bidRequestTemplate, param);
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        requests.forEach(request => {
+          expect(request.data).to.deep.equal(
+            Object.assign({}, expectedResultTemplate, {
+              cbt: request.data.cbt,
+            })
+          );
+          expect(request.data.adservname).to.be.undefined;
+        })
+      })
+    })
+
+    it('should send adservadslot', () => {
+      const bidRequest = Object.assign({}, bidRequestTemplate, {
+        ortb2Imp: {
+          ext: {
+            tid: 'transaction-id',
+            data: {
+              adserver: {
+                adslot: '/1111/home'
+              }
+            }
+          }
+        }
+      });
+      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt,
+            adservadslot: '/1111/home'
+          })
+        );
+      })
+    })
+
+    const notGettingAdservadslots = {
+      'it is not existing': bidRequestTemplate,
+      'it is blank': {
+        ortb2Imp: {
+          ext: {
+            tid: 'transaction-id',
+            data: {
+              adserver: {
+                adslot: ''
+              }
+            }
+          }
+        }
+      }
+    }
+
+    Object.entries(notGettingAdservadslots).forEach(([testTitle, param]) => {
+      it(`should not send adservadslot because ${testTitle}`, () => {
+        const bidRequest = Object.assign({}, bidRequestTemplate, param);
+        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        requests.forEach(request => {
+          expect(request.data).to.deep.equal(
+            Object.assign({}, expectedResultTemplate, {
+              cbt: request.data.cbt,
+            })
+          );
+          expect(request.data.adservadslot).to.be.undefined;
+        })
+      })
     })
   });
 

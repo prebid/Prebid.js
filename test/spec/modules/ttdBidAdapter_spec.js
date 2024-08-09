@@ -81,6 +81,18 @@ describe('ttdBidAdapter', function () {
         delete bid.mediaTypes
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
+
+      it('should return false if bidfloor is passed incorrectly', function () {
+        let bid = makeBid();
+        bid.params.bidfloor = 'invalid bidfloor';
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return true if bidfloor is passed correctly as a float', function () {
+        let bid = makeBid();
+        bid.params.bidfloor = 3.01;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
     });
 
     describe('banner', function () {
@@ -92,6 +104,10 @@ describe('ttdBidAdapter', function () {
     });
 
     describe('video', function () {
+      if (!FEATURES.VIDEO) {
+        return;
+      }
+
       function makeBid() {
         return {
           'bidder': 'ttd',
@@ -207,7 +223,11 @@ describe('ttdBidAdapter', function () {
     const baseBidderRequestReferer = detectReferer(testWindow)();
     const baseBidderRequest = {
       'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
@@ -216,11 +236,35 @@ describe('ttdBidAdapter', function () {
       'doneCbCallCount': 0
     };
 
+    const extFirstPartyDataValues = ['value', 'value2'];
+    const extFirstPartyData = {
+      data: {
+        firstPartyKey: 'firstPartyValue',
+        firstPartyKey2: extFirstPartyDataValues
+      },
+      custom: 'custom_data',
+      custom_kvp: {
+        customKey: 'customValue'
+      }
+    }
+
+    function validateExtFirstPartyData(ext) {
+      expect(ext.data.firstPartyKey).to.equal('firstPartyValue');
+      expect(ext.data.firstPartyKey2).to.eql(extFirstPartyDataValues);
+      expect(ext.custom).to.equal('custom_data');
+      expect(ext.custom_kvp.customKey).to.equal('customValue');
+    }
+
     it('sends bid request to our endpoint that makes sense', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
       expect(request.method).to.equal('POST');
       expect(request.url).to.be.not.empty;
       expect(request.data).to.be.not.null;
+    });
+
+    it('sets bidrequest.id to bidderRequestId', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.id).to.equal('18084284054531');
     });
 
     it('sets impression id to ad unit\'s bid id', function () {
@@ -231,6 +275,13 @@ describe('ttdBidAdapter', function () {
     it('sends bid requests to the correct endpoint', function () {
       const url = testBuildRequests(baseBannerBidRequests, baseBidderRequest).url;
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
+    });
+
+    it('sends bid requests to the correct custom endpoint', function () {
+      let bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
+      bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
+      const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
+      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
     });
 
     it('sends publisher id', function () {
@@ -270,10 +321,25 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].ext.gpid).to.equal(gpid);
     });
 
-    it('sends auction id in source.tid', function () {
+    it('sends rwdd in imp.rwdd if present', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const gpid = '/1111/home#header';
+      const rwdd = 1;
+      clonedBannerRequests[0].ortb2Imp = {
+        rwdd: rwdd,
+        ext: {
+          gpid: gpid
+        }
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].rwdd).to.be.not.null;
+      expect(requestBody.imp[0].rwdd).to.equal(1);
+    });
+
+    it('sends source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.ortb2.source.tid);
     });
 
     it('includes the ad size in the bid request', function () {
@@ -383,7 +449,9 @@ describe('ttdBidAdapter', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       const battr = [1, 2, 3];
       clonedBannerRequests[0].ortb2Imp = {
-        battr: battr
+        banner: {
+          battr: battr
+        }
       };
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.battr).to.equal(battr);
@@ -477,13 +545,7 @@ describe('ttdBidAdapter', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userId = {
-        tdid: TDID,
-        uid2: {
-          id: UID2
-        }
-      };
-      const expectedEids = [
+      clonedBannerRequests[0].userIdAsEids = [
         {
           source: 'adserver.org',
           uids: [
@@ -506,6 +568,7 @@ describe('ttdBidAdapter', function () {
           ]
         }
       ];
+      const expectedEids = clonedBannerRequests[0].userIdAsEids;
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
@@ -534,6 +597,126 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.page).to.equal('https://page.example.com/here.html');
       expect(requestBody.site.ref).to.equal('https://ref.example.com');
       expect(requestBody.site.keywords).to.equal('power tools, drills');
+    });
+
+    it('should fallback to floor module if no bidfloor is sent ', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const bidfloor = 5.00;
+      clonedBannerRequests[0].getFloor = () => {
+        return { currency: 'USD', floor: bidfloor };
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.imp[0].bidfloor).to.equal(bidfloor);
+    });
+
+    it('adds default value for secure if not set to request', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].secure).to.equal(1);
+    });
+
+    it('adds secure to request', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      clonedBannerRequests[0].ortb2Imp.secure = 0;
+
+      let requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(0).to.equal(requestBody.imp[0].secure);
+
+      clonedBannerRequests[0].ortb2Imp.secure = 1;
+      requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(1).to.equal(requestBody.imp[0].secure);
+    });
+
+    it('adds all of site first party data to request', function() {
+      const ortb2 = {
+        site: {
+          ext: extFirstPartyData,
+          search: 'test search'
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.site.ext)
+      expect(requestBody.site.search).to.equal('test search')
+    });
+
+    it('adds all of user first party data to request', function() {
+      const ortb2 = {
+        user: {
+          ext: extFirstPartyData,
+          yob: 1998
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.user.ext)
+      expect(requestBody.user.yob).to.equal(1998)
+    });
+
+    it('adds all of imp first party data to request', function() {
+      const metric = { type: 'viewability', value: 0.8 };
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      clonedBannerRequests[0].ortb2Imp = {
+        ext: extFirstPartyData,
+        metric: [metric],
+        clickbrowser: 1
+      };
+
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.imp[0].ext)
+      expect(requestBody.imp[0].tagid).to.equal('1gaa015');
+      expect(requestBody.imp[0].metric[0]).to.deep.equal(metric);
+      expect(requestBody.imp[0].clickbrowser).to.equal(1)
+    });
+
+    it('adds all of app first party data to request', function() {
+      const ortb2 = {
+        app: {
+          ext: extFirstPartyData,
+          ver: 'v1.0'
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.app.ext)
+      expect(requestBody.app.ver).to.equal('v1.0')
+    });
+
+    it('adds all of device first party data to request', function() {
+      const ortb2 = {
+        device: {
+          ext: extFirstPartyData,
+          os: 'iPhone'
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.device.ext)
+      expect(requestBody.device.os).to.equal('iPhone')
+    });
+
+    it('adds all of pmp first party data to request', function() {
+      const ortb2 = {
+        pmp: {
+          ext: extFirstPartyData,
+          private_auction: 1
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.pmp.ext)
+      expect(requestBody.pmp.private_auction).to.equal(1)
     });
   });
 
@@ -591,7 +774,11 @@ describe('ttdBidAdapter', function () {
 
     const baseBidderRequest = {
       'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
@@ -611,7 +798,7 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerMultipleBidRequests, baseBidderRequest).data;
       expect(requestBody.imp.length).to.equal(2);
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.ortb2.source.tid);
       expect(requestBody.imp[0].ext).to.be.not.null;
       expect(requestBody.imp[0].ext.tid).to.equal('8651474f-58b1-4368-b812-84f8c937a099');
       expect(requestBody.imp[1].ext).to.be.not.null;
@@ -650,6 +837,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('buildRequests-display-video-multiformat', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const baseMultiformatBidRequests = [{
       'bidder': 'ttd',
       'params': {
@@ -718,6 +909,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('buildRequests-video', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const baseVideoBidRequests = [{
       'bidder': 'ttd',
       'params': {
@@ -858,6 +1053,14 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.placement).to.equal(3);
+    });
+
+    it('sets plcmt correctly if sent', function () {
+      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video.plcmt).to.equal(3);
     });
   });
 
@@ -1145,6 +1348,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('interpretResponse-simple-video', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const incoming = {
       'body': {
         'cur': 'USD',
@@ -1238,8 +1445,7 @@ describe('ttdBidAdapter', function () {
       }
     };
 
-    const expectedBid =
-    {
+    const expectedBid = {
       'requestId': '2eabb87dfbcae4',
       'cpm': 13.6,
       'creativeId': 'mokivv6m',
@@ -1277,6 +1483,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('interpretResponse-display-and-video', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const incoming = {
       'body': {
         'id': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',

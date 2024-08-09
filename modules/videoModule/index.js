@@ -1,27 +1,38 @@
 import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
-import { mergeDeep } from '../../src/utils.js';
+import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {
-  videoEvents, AUCTION_AD_LOAD_ATTEMPT, AD_IMPRESSION, AD_ERROR, BID_IMPRESSION, BID_ERROR, AUCTION_AD_LOAD_ABORT
+  videoEvents,
+  AUCTION_AD_LOAD_ATTEMPT,
+  AD_IMPRESSION,
+  AD_ERROR,
+  BID_IMPRESSION,
+  BID_ERROR,
+  AUCTION_AD_LOAD_ABORT,
+  AUCTION_AD_LOAD_QUEUED
 } from '../../libraries/video/constants/events.js'
 import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
+import { videoKey } from '../../libraries/video/constants/constants.js'
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
-
-const videoKey = 'video';
+import { AdQueueCoordinator } from './adQueue.js';
+import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
+import {VIDEO} from '../../src/mediaTypes.js';
+import {auctionManager} from '../../src/auctionManager.js';
+import {doRender} from '../../src/adRendering.js';
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
-events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
+events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
 
 /**
  * This module adds User Video support to prebid.js
  * @module modules/videoModule
  */
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_) {
+export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
@@ -29,6 +40,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   const pbEvents = pbEvents_;
   const videoEvents = videoEvents_;
   const gamAdServerFactory = gamAdServerFactory_;
+  const adQueueCoordinator = adQueueCoordinator_;
   let gamSubmodule;
   let mainContentDivId;
   let contentEnrichmentEnabled = true;
@@ -40,10 +52,13 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     videoImpressionVerifier = videoImpressionVerifierFactory(!!cache);
     getConfig(videoKey, ({ video }) => {
       video.providers.forEach(provider => {
+        const divId = provider.divId;
         videoCore.registerProvider(provider);
+        adQueueCoordinator.registerProvider(divId);
+        videoCore.initProvider(divId);
         videoCore.onEvents(videoEvents, (type, payload) => {
-          pbEvents.emit(getExternalVideoEventName(type), payload);
-        }, provider.divId);
+          pbEvents.emit(getExternalVideoEventName(type), getExternalVideoEventPayload(type, payload));
+        }, divId);
 
         const adServerConfig = provider.adServer;
         if (!gamSubmodule && adServerConfig) {
@@ -56,7 +71,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     requestBids.before(beforeBidsRequested, 40);
 
-    pbEvents.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
+    pbEvents.on(EVENTS.BID_ADJUSTMENT, function (bid) {
       videoImpressionVerifier.trackBid(bid);
     });
 
@@ -87,14 +102,31 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   return { init, renderBid, getOrtbVideo, getOrtbContent };
 
   function beforeBidsRequested(nextFn, bidderRequest) {
+    logErrorForInvalidDivIds(bidderRequest);
     enrichAuction(bidderRequest);
 
     const bidsBackHandler = bidderRequest.bidsBackHandler;
     if (!bidsBackHandler || typeof bidsBackHandler !== 'function') {
-      pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
+      pbEvents.on(EVENTS.AUCTION_END, auctionEnd);
     }
 
     return nextFn.call(this, bidderRequest);
+  }
+
+  function logErrorForInvalidDivIds(bidderRequest) {
+    const adUnits = bidderRequest.adUnits || pbGlobal.adUnits || [];
+    adUnits.forEach(adUnit => {
+      const video = adUnit.video;
+      if (!video) {
+        return;
+      }
+      if (!video.divId) {
+        logError(`Missing Video player div ID for ad unit '${adUnit.code}'`);
+      }
+      if (!videoCore.hasProviderFor(video.divId)) {
+        logError(`Video player div ID '${video.divId}' for ad unit '${adUnit.code}' does not match any registered player`);
+      }
+    });
   }
 
   function enrichAuction(bidderRequest) {
@@ -127,13 +159,19 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    const video = Object.assign({}, adUnit.mediaTypes.video, ortbVideo);
+    const video = Object.assign({}, ortbVideo, adUnit.mediaTypes.video);
 
-    video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
+    if (!video.context) {
+      video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
+    }
+
+    if (!video.plcmt) {
+      logWarn('Video.plcmt has not been set. Failure to set a value may result in loss of bids');
+    }
 
     const width = ortbVideo.w;
     const height = ortbVideo.h;
-    if (width && height) {
+    if (!video.playerSize && width && height) {
       video.playerSize = [width, height];
     }
 
@@ -154,7 +192,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         renderWinningBid(adUnit);
       }
     });
-    pbEvents.off(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
+    pbEvents.off(EVENTS.AUCTION_END, auctionEnd);
   }
 
   function getAdServerConfig(adUnitVideoConfig) {
@@ -185,7 +223,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
     if (!highestCpmBids.length) {
-      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), options);
+      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, options));
       return;
     }
 
@@ -199,9 +237,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   // options: adXml, winner, adUnitCode,
   function loadAdTag(adTagUrl, divId, options) {
-    const payload = Object.assign({ adTagUrl }, options);
-    pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ATTEMPT), payload);
-    videoCore.setAdTagUrl(adTagUrl, divId, options);
+    adQueueCoordinator.queueAd(adTagUrl, divId, options);
   }
 
   function triggerVideoBidEvent(eventName, adEventPayload) {
@@ -211,7 +247,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     pbGlobal.markWinningBidAsUsed(bid);
-    pbEvents.emit(getExternalVideoEventName(eventName), { bid, adEvent: adEventPayload });
+    pbEvents.emit(getExternalVideoEventName(eventName), getExternalVideoEventPayload(eventName, { bid, adEvent: adEventPayload }));
   }
 
   function getBid(adPayload) {
@@ -228,17 +264,27 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 }
 
-export function pbVideoFactory() {
-  const videoCore = videoCoreFactory();
-  const pbGlobal = getGlobal();
-  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory);
-  pbVideo.init();
-  pbGlobal.videoModule = pbVideo;
-  return pbVideo;
+function videoRenderHook(next, args) {
+  if (args.bidResponse.mediaType === VIDEO) {
+    const adUnit = auctionManager.index.getAdUnit(args.bidResponse);
+    if (adUnit?.video) {
+      getGlobal().videoModule.renderBid(adUnit.video.divId, args.bidResponse);
+      next.bail();
+      return;
+    }
+  }
+  next(args);
 }
 
-function getExternalVideoEventName(eventName) {
-  return videoKey + eventName.replace(/^./, eventName[0].toUpperCase());
+export function pbVideoFactory() {
+  const videoCore = videoCoreFactory();
+  const adQueueCoordinator = AdQueueCoordinator(videoCore, events);
+  const pbGlobal = getGlobal();
+  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator);
+  pbVideo.init();
+  pbGlobal.videoModule = pbVideo;
+  doRender.before(videoRenderHook);
+  return pbVideo;
 }
 
 pbVideoFactory();

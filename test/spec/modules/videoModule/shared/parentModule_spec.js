@@ -62,7 +62,6 @@ describe('Submodule Builder', function () {
 
   it('should instantiate the submodule, when supported', function () {
     const submodule = submoduleBuilder.build(vendorCode2);
-    expect(initSpy.calledOnce).to.be.true;
     expect(submodule).to.be.equal(submodule2);
   });
 

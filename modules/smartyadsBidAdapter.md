@@ -10,6 +10,16 @@ Maintainer: supply@smartyads.com
 
 Module that connects to SmartyAds' demand sources
 
+# Parameters
+
+| Name          | Scope    | Description               | Example              |
+| :------------ | :------- | :------------------------ | :------------------- |
+| `sourceid`  | required (for prebid.js)     | Placement ID | "0" |
+| `host`      | required (for prebid-server) | Const value, set to "prebid" | "prebid" |
+| `accountid` | required (for prebid-server) | Partner ID | "1901" |
+| `traffic`   | optional (for prebid.js)     | Configures the mediaType that should be used. Values can be banner, native or video | "banner" |
+| `region`    | optional (for prebid.js)     | Prefix of the region to which prebid must send requests. Possible values: "US_EAST", "EU" | "US_EAST" |
+
 # Test Parameters
 ```
     var adUnits = [
@@ -26,7 +36,9 @@ Module that connects to SmartyAds' demand sources
                                 host: 'prebid',
                                 sourceid: '0',
                                 accountid: '0',
-                                traffic: 'native'
+                                traffic: 'native',
+                                region: 'US_EAST'
+
                             }
                         }
                     ]
@@ -46,7 +58,8 @@ Module that connects to SmartyAds' demand sources
                               host: 'prebid',
                                 sourceid: '0',
                                 accountid: '0',
-                                traffic: 'banner'
+                                traffic: 'banner',
+                                region: 'US_EAST'
                             }
                         }
                     ]
@@ -67,7 +80,9 @@ Module that connects to SmartyAds' demand sources
                               host: 'prebid',
                                 sourceid: '0',
                                 accountid: '0',
-                                traffic: 'video'
+                                traffic: 'video',
+                                region: 'US_EAST'
+
                             }
                         }
                     ]

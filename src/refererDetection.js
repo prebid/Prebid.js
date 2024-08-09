@@ -34,9 +34,11 @@ export function ensureProtocol(url, win = window) {
 
 /**
  * Extract the domain portion from a URL.
- * @param url
- * @param noLeadingWww: if true, remove 'www.' appearing at the beginning of the domain.
- * @param noPort: if true, do not include the ':[port]' portion
+ * @param {string} url - The URL to extract the domain from.
+ * @param {Object} options - Options for parsing the domain.
+ * @param {boolean} options.noLeadingWww - If true, remove 'www.' appearing at the beginning of the domain.
+ * @param {boolean} options.noPort - If true, do not include the ':[port]' portion.
+ * @return {string|undefined} - The extracted domain or undefined if the URL is invalid.
  */
 export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
   try {
@@ -49,6 +51,26 @@ export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
     url = url.substring(4);
   }
   return url;
+}
+
+/**
+ * This function returns canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
+ *
+ * @param {Object} doc document
+ * @returns {string|null}
+ */
+function getCanonicalUrl(doc) {
+  try {
+    const element = doc.querySelector("link[rel='canonical']");
+
+    if (element !== null) {
+      return element.href;
+    }
+  } catch (e) {
+    // Ignore error
+  }
+
+  return null;
 }
 
 /**
@@ -75,26 +97,6 @@ export function detectReferer(win) {
     }
   }
 
-  /**
-   * This function returns canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
-   *
-   * @param {Object} doc document
-   * @returns {string|null}
-   */
-  function getCanonicalUrl(doc) {
-    try {
-      const element = doc.querySelector("link[rel='canonical']");
-
-      if (element !== null) {
-        return element.href;
-      }
-    } catch (e) {
-      // Ignore error
-    }
-
-    return null;
-  }
-
   // TODO: the meaning of "reachedTop" seems to be intentionally ambiguous - best to leave them out of
   // the typedef for now. (for example, unit tests enforce that "reachedTop" should be false in some situations where we
   // happily provide a location for the top).
@@ -108,13 +110,13 @@ export function detectReferer(win) {
    * @property {string|null} ref the referrer (document.referrer) to the current page, or null if not available (due to cross-origin restrictions)
    * @property {string} topmostLocation of the top-most frame for which we could guess the location. Outside of cross-origin scenarios, this is equivalent to `location`.
    * @property {number} numIframes number of steps between window.self and window.top
-   * @property {Array[string|null]} stack our best guess at the location for each frame, in the direction top -> self.
+   * @property {Array<string|null>} stack our best guess at the location for each frame, in the direction top -> self.
    */
 
   /**
    * Walk up the windows to get the origin stack and best available referrer, canonical URL, etc.
    *
-   * @returns {refererInfo}
+   * @returns {refererInfo} An object containing referer information.
    */
   function refererInfo() {
     const stack = [];
@@ -260,7 +262,25 @@ export function detectReferer(win) {
   return refererInfo;
 }
 
+// cache result of fn (= referer info) as long as:
+// - we are the top window
+// - canonical URL tag and window location have not changed
+export function cacheWithLocation(fn, win = window) {
+  if (win.top !== win) return fn;
+  let canonical, href, value;
+  return function () {
+    const newCanonical = getCanonicalUrl(win.document);
+    const newHref = win.location.href;
+    if (canonical !== newCanonical || newHref !== href) {
+      canonical = newCanonical;
+      href = newHref;
+      value = fn();
+    }
+    return value;
+  }
+}
+
 /**
  * @type {function(): refererInfo}
  */
-export const getRefererInfo = detectReferer(window);
+export const getRefererInfo = cacheWithLocation(detectReferer(window));

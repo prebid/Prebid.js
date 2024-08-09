@@ -20,6 +20,13 @@
       },
 
       bids: [{
+        bidder: 'jwplayer',
+        params: {
+          publisherId: 'test-publisher-id',
+          siteId: 'test-site-id',
+          placementId: 'test-placement-id'
+        }
+      }, {
         bidder: 'ix',
         params: {
           siteId: '300',
@@ -38,7 +45,7 @@
             vendorCode: 1, // JW Player vendorCode
             playerConfig: {
               params: {
-                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                licenseKey: 'zwqnWJlovTKhXv2JIcKBj0Si//K7cVPmBDEyaILcAMw+nVKaizsJRA==',
                 vendorConfig: {
                   playlist: [{
                     mediaid: 'XYXYXYXY',
@@ -97,7 +104,6 @@
       // request a bid when media is loaded
       pbjs.onEvent('videoContentLoaded', (e) => {
         console.log('videos pb contentLoaded: ', e);
-        pbjs.requestBids(adUnits);
       });
 
       pbjs.onEvent('videoComplete', (e) => {
@@ -107,6 +113,8 @@
       pbjs.onEvent('videoPlaylistComplete', (e) => {
         console.log('videos pb playlistComplete: ', e);
       });
+
+      pbjs.requestBids();
     });
   </script>
 

@@ -34,19 +34,21 @@ When tracking video you have two options:
 
 To view an [example of an Adloox integration](../integrationExamples/gpt/adloox.html):
 
-    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,rtdModule,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo,adlooxRtdProvider
+    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,intersectionRtdProvider,rtdModule,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo,adlooxRtdProvider
 
 **N.B.** `categoryTranslation` is required by `dfpAdServerVideo` that otherwise causes a JavaScript console warning
+
+**N.B.** `intersectionRtdProvider` is used by `adlooxRtdProvider` to provide (above-the-fold) ATF measurement, if not enabled the `atf` segment will not be available
 
 Now point your browser at: http://localhost:9999/integrationExamples/gpt/adloox.html?pbjs_debug=true
 
 ### Public Example
 
-The example is published publically at: https://storage.googleapis.com/adloox-ads-js-test/prebid.html?pbjs_debug=true
+The example is published publicly at: https://storage.googleapis.com/adloox-ads-js-test/prebid.html?pbjs_debug=true
 
 **N.B.** this will show a [CORS error](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors) for the request `https://p.adlooxtracking.com/q?...` that is safe to ignore on the public example page; it is related to the [RTD integration](./adlooxRtdProvider.md) which requires pre-registration of your sites
 
-It is recommended you use [Google Chrome's 'Local Overrides' located in the Developer Tools panel](https://www.trysmudford.com/blog/chrome-local-overrides/) to explore the example without the inconvience of having to run your own web server.
+It is recommended you use [Google Chrome's 'Local Overrides' located in the Developer Tools panel](https://www.trysmudford.com/blog/chrome-local-overrides/) to explore the example without the inconvenience of having to run your own web server.
 
 #### Pre-built `prebid.js`
 

@@ -35,6 +35,13 @@
         },
 
         bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
           bidder: 'ix',
           params: {
             siteId: '300',
@@ -101,10 +108,6 @@
           console.log('player setup failed: ', e);
         });
 
-        pbjs.onEvent('videoContentLoaded', (e) => {
-          pbjs.requestBids(adUnits);
-        });
-
         pbjs.onEvent('videoBidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
         });
@@ -113,6 +116,7 @@
           console.log('An Ad Impression came from a Bid: ', e);
         });
 
+        pbjs.requestBids();
       });
     </script>
 </head>
