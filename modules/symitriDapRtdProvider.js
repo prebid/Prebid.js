@@ -130,23 +130,54 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   }
 
   /**
+   * Listen for bidWon Events to record SAID receipt
+   * @param {string} authToken
+   */
+  function onBidWonListener (authToken) {
+    window.pbjs.onEvent('bidWon', function(bid) {
+      const url = 'https://ProdSymPrebidEventhub1.servicebus.windows.net/prebid-said-1/messages';
+      const bidjson = JSON.stringify(bid);
+      const cb = {
+        success: (response, request) => {
+          logInfo('DEBUG(###Winning Bid SAVED###)');
+        },
+        error: (request, error) => {
+          logInfo(error);
+          logInfo('DEBUG(###Save Winning Bid FAILED###)');
+        }
+      };
+
+      ajax(url, cb, bidjson, {
+        method: 'POST',
+        customHeaders: {'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': authToken}
+      });
+    });
+  }
+
+  /**
    * Module init
-   * @param {Object} provider
+   * @param {Object} config
    * @param {Object} userConsent
    * @return {boolean}
    */
-  function init(provider, userConsent) {
+  function init(config, userConsent) {
     if (dapUtils.checkConsent(userConsent) === false) {
       return false;
     }
+
+    if (window.pbjs && window.pbjs.onEvent && config && config.params && config.params.apiAuthToken) {
+      const { apiAuthToken } = config.params;
+      this.onBidWonListener(apiAuthToken);
+    }
+
     return true;
   }
 
-  /** @type {RtdSubmodule} */
   const rtdSubmodule = {
     name: SUBMODULE_NAME,
     getBidRequestData: getRealTimeData,
-    init: init
+    init: init,
+    onBidWonListener: onBidWonListener
   };
 
   submodule(MODULE_NAME, rtdSubmodule);
@@ -159,7 +190,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           api_version: rtdConfig.params.apiVersion,
           domain: rtdConfig.params.domain,
           segtax: rtdConfig.params.segtax,
-          identity: {type: rtdConfig.params.identityType}
+          identity: {type: rtdConfig.params.identityType, identity: rtdConfig.params.identityValue, selector: rtdConfig.params.identitySelector},
         };
         let refreshMembership = true;
         let token = dapUtils.dapGetTokenFromLocalStorage();
@@ -526,6 +557,28 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return [ config, false ];
     },
 
+    addIdentifier: function(identity, apiParams) {
+      if (typeof (identity.identity) != typeof (undefined)) {
+        apiParams.identity = identity.identity;
+      } else if (identity.type == 'email' && typeof (identity.selector) != typeof (undefined) && identity.selector.trim() !== '') {
+        let identityElement = document.querySelector(identity.selector);
+        let identityEmail = identityElement.innerHTML;
+        if (identityElement.tagName == 'INPUT') {
+          identityEmail = identityElement.value;
+        }
+
+        if (identityEmail) {
+          const EMAIL_VALIDATION_REGEX = /((([^<>()\[\].,;:\s@"]+(\.[^<>()\[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,}))/i;
+          const regex = new RegExp(EMAIL_VALIDATION_REGEX);
+          if (regex.test(identityEmail)) {
+            apiParams.identity = identityEmail;
+          }
+        }
+      }
+
+      return apiParams
+    },
+
     /**
      * SYNOPSIS
      *
@@ -594,9 +647,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         'type': identity.type,
       };
 
-      if (typeof (identity.identity) != typeof (undefined)) {
-        apiParams.identity = identity.identity;
-      }
+      apiParams = this.addIdentifier(identity, apiParams);
+
       if (typeof (identity.attributes) != typeof (undefined)) {
         apiParams.attributes = identity.attributes;
       }
@@ -782,6 +834,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     addRealTimeData,
     getRealTimeData,
     generateRealTimeData,
+    onBidWonListener,
     rtdSubmodule,
     storage,
     dapUtils,
@@ -799,6 +852,7 @@ export const {
   addRealTimeData,
   getRealTimeData,
   generateRealTimeData,
+  onBidWonListener,
   rtdSubmodule: symitriDapRtdSubmodule,
   storage,
   dapUtils,
