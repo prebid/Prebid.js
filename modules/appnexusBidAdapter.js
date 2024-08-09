@@ -747,7 +747,7 @@ function bidToTag(bid) {
   // page.html?ast_override_div=divId:creativeId,divId2:creativeId2
   const overrides = getParameterByName('ast_override_div');
   if (isStr(overrides) && overrides !== '') {
-    const adUnitOverride = overrides.split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
+    const adUnitOverride = decodeURIComponent(overrides).split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
     if (adUnitOverride) {
       const forceCreativeId = adUnitOverride.split(':')[1];
       if (forceCreativeId) {
