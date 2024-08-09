@@ -169,6 +169,10 @@ export const buildRequestsBase = (config) => {
     request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
+  if (bidderRequest?.ortb2?.device) {
+    request.device = bidderRequest.ortb2.device;
+  }
+
   const len = validBidRequests.length;
   for (let i = 0; i < len; i++) {
     const bid = validBidRequests[i];
