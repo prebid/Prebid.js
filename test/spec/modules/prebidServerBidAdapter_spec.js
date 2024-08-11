@@ -1088,8 +1088,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.innerWidth,
-        h: window.innerHeight
+        w: window.screen.width,
+        h: window.screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1120,8 +1120,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.innerWidth,
-        h: window.innerHeight
+        w: window.screen.width,
+        h: window.screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1480,8 +1480,8 @@ describe('S2S Adapter', function () {
           adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
           sinon.assert.match(requestBid.device, {
-            w: window.innerWidth,
-            h: window.innerHeight
+            w: window.screen.width,
+            h: window.screen.height,
           })
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
