@@ -384,7 +384,7 @@ describe('connatixBidAdapter', function () {
         }]
       }];
       let serverRequest = spec.buildRequests(validBidRequests, {});
-      expect(serverRequest.data.identityProvider).to.deep.equal(validBidRequests[0].userIdAsEids);
+      expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
   });
 

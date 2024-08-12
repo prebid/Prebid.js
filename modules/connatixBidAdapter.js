@@ -68,7 +68,7 @@ export function validateVideo(mediaTypes) {
 function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
-    deepSetValue(payload, 'identityProvider', bidUserIdAsEids);
+    deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
 }
 
