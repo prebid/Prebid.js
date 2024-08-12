@@ -64,6 +64,7 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
     lsIdsInitialized: false,
     manualReport: false
   },
+  detectBrowser,
   track({ eventType, args }) {
     switch (eventType) {
       case BID_WON:
@@ -137,6 +138,8 @@ function bidWon(args) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
 
   const currentBrowserLowerCase = detectBrowser();
+  // eslint-disable-next-line no-console
+  console.log('TESTING', currentBrowserLowerCase, iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList);
   if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
     logError('IIQ ANALYTICS -> Browser is in blacklist!');
     return;
@@ -239,7 +242,7 @@ iiqAnalyticsAnalyticsAdapter.enableAnalytics = function (myConfig) {
  * Detects the browser using either userAgent or userAgentData
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-function detectBrowser() {
+export function detectBrowser() {
   try {
     if (navigator.userAgent) {
       return detectBrowserFromUserAgent(navigator.userAgent);

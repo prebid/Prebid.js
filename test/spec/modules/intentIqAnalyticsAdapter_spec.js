@@ -66,9 +66,11 @@ let wonRequest = {
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
+  let detectBrowserStub;
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
+    detectBrowserStub = sinon.stub(iiqAnalyticsAnalyticsAdapter, 'detectBrowser');
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
     sinon.stub(events, 'getEvents').returns([]);
     iiqAnalyticsAnalyticsAdapter.enableAnalytics({
@@ -93,6 +95,7 @@ describe('IntentIQ tests all', function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    detectBrowserStub.restore();
     config.getConfig.restore();
     events.getEvents.restore();
     iiqAnalyticsAnalyticsAdapter.disableAnalytics();
@@ -168,5 +171,69 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
+  });
+
+  it('should not send request if the browser is in blacklist (chrome)', function () {
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+
+    // Mock lsValueInitialized to avoid resetting browserBlackList
+    iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
+
+    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = 'chrome';
+    detectBrowserStub.returns('chrome');
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.equal(0);
+    expect(logErrorStub.calledOnce).to.be.true;
+    expect(logErrorStub.firstCall.args[0]).to.contain('IIQ ANALYTICS -> Browser is in blacklist!');
+  });
+
+  it('should not send request if the browser is in blacklist (firefox)', function () {
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+
+    // Mock lsValueInitialized to avoid resetting browserBlackList
+    iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
+
+    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = 'firefox';
+    detectBrowserStub.returns('firefox');
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.equal(0);
+    expect(logErrorStub.calledOnce).to.be.true;
+    expect(logErrorStub.firstCall.args[0]).to.contain('IIQ ANALYTICS -> Browser is in blacklist!');
+  });
+
+  it('should send request if the browser is not in blacklist (chrome)', function () {
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = 'firefox';
+    detectBrowserStub.returns('chrome');
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
+    expect(request.url).to.contain('&jsver=0.1&vrref=http://localhost:9876/');
+    expect(request.url).to.contain('&payload=');
+    expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+    expect(logErrorStub.called).to.be.false;
+  });
+
+  it('should send request if the browser is not in blacklist (safari)', function () {
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = 'chrome,firefox';
+    detectBrowserStub.returns('safari');
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
+    expect(request.url).to.contain('&jsver=0.1&vrref=http://localhost:9876/');
+    expect(request.url).to.contain('&payload=');
+    expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+    expect(logErrorStub.called).to.be.false;
   });
 });
