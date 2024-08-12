@@ -1,7 +1,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { bidWinReport, buildBidRequests, buildUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/bidUtils/bidUtilsCommon.js';
+import { bidWinReport, buildBidRequests, buildUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'mediabrama';
 const AD_URL = 'https://prebid.mediabrama.com/pbjs';
@@ -13,7 +13,9 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildBidRequests(AD_URL),
   interpretResponse: interpretResponse,
-  getUserSyncs: buildUserSyncs(SYNC_URL),
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_URL);
+  },
   onBidWon: bidWinReport
 };
 

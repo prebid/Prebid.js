@@ -1,8 +1,6 @@
 
 import { expect } from 'chai';
-import { buildRequests, interpretResponse } from '../../../../libraries/bidUtils/bidUtils.js';
-import { getStorageManager } from '../../../../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../../../../src/activities/modules.js';
+import { buildRequests, interpretResponse } from '../../../../libraries/precisoUtils/bidUtils.js';
 
 const DEFAULT_PRICE = 1
 const DEFAULT_CURRENCY = 'USD'
@@ -10,11 +8,7 @@ const DEFAULT_BANNER_WIDTH = 300
 const DEFAULT_BANNER_HEIGHT = 250
 const BIDDER_CODE = 'preciso';
 const TESTDOMAIN = 'test.org'
-const cookieName = '_pre|id';
-
 const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`;
-const syncEndPoint = `https://${TESTDOMAIN}/rtb/user/usersync.aspx?`;
-const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
 
 describe('bidderOperations', function () {
   let bid = {
@@ -62,7 +56,7 @@ describe('bidderOperations', function () {
 
   const spec = {
     // isBidRequestValid: isBidRequestValid(),
-    buildRequests: buildRequests(bidEndPoint, storage, cookieName),
+    buildRequests: buildRequests(bidEndPoint),
     interpretResponse,
     // buildUserSyncs: buildUserSyncs(syncEndPoint)
   };

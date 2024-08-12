@@ -2,7 +2,7 @@ import {expect} from 'chai';
 
 import { BANNER } from '../../../../src/mediaTypes.js';
 import * as utils from '../../../../src/utils.js';
-import { interpretResponse, isBidRequestValid, buildUserSyncs, buildBidRequests, bidWinReport } from '../../../../libraries/bidUtils/bidUtilsCommon.js';
+import { interpretResponse, isBidRequestValid, buildUserSyncs, buildBidRequests, bidWinReport } from '../../../../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'bidder';
 const TESTDOMAIN = 'test.org'
@@ -33,7 +33,7 @@ describe('bidUtilsCommon', function () {
     isBidRequestValid: isBidRequestValid,
     buildRequests: buildBidRequests(AD_URL),
     interpretResponse,
-    getUserSyncs: buildUserSyncs(SYNC_URL),
+    getUserSyncs: buildUserSyncs,
     onBidWon: bidWinReport
   };
 
@@ -178,7 +178,7 @@ describe('bidUtilsCommon', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true
-      }, {});
+      }, {}, SYNC_URL);
       expect(syncData).to.be.an('array').which.is.not.empty;
       expect(syncData[0]).to.be.an('object')
       expect(syncData[0].type).to.be.a('string')

@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { isArray, isNumber } from '../src/utils.js'
-import { interpretResponse } from '../libraries/bidUtils/bidUtils.js';
+import { interpretResponse } from '../libraries/precisoUtils/bidUtils.js';
 
 const BIDDER_CODE = 'idx'
 const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid'

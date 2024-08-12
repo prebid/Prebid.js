@@ -7,10 +7,6 @@ import {
   triggerPixel
 } from '../../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../../src/mediaTypes.js';
-import { getStorageManager } from '../../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -134,18 +130,10 @@ export function consentCheck(bidderRequest, req) {
   }
 }
 
-export const buildUserSyncs = (syncEndpoint) => (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint) => {
   let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
   const isCk2trk = syncEndpoint.includes('ck.2trk.info');
-  const isSpec = syncOptions.spec;
-  if (isCk2trk) {
-    if (!Object.is(isSpec, true)) {
-      let syncId = storage.getCookie('_sharedid');
-      syncEndpoint = syncEndpoint + 'id=' + syncId;
-    } else {
-      syncEndpoint = syncEndpoint + 'id=NA';
-    }
-  }
+
   // Base sync URL
   let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;
 

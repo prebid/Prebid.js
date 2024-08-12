@@ -2,7 +2,7 @@ import { getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { buildUserSyncs, interpretResponse, isBidRequestValid, getBidFloor, consentCheck } from '../libraries/bidUtils/bidUtilsCommon.js';
+import { buildUserSyncs, interpretResponse, isBidRequestValid, getBidFloor, consentCheck } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'logan';
 const AD_URL = 'https://USeast2.logan.ai/pbjs';
@@ -81,7 +81,10 @@ export const spec = {
   },
 
   interpretResponse: interpretResponse,
-  getUserSyncs: buildUserSyncs(SYNC_URL),
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_URL);
+  }
+
 };
 
 registerBidder(spec);

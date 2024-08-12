@@ -1,11 +1,7 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { replaceAuctionPrice } from '../../src/utils.js';
-import { getStorageManager } from '../../src/storageManager.js';
 import { ajax } from '../../src/ajax.js';
-import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
 import { consentCheck } from './bidUtilsCommon.js';
-
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   // convert Native ORTB definition to old-style prebid native definition

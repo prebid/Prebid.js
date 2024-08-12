@@ -3,12 +3,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { buildRequests, interpretResponse, onBidWon } from '../libraries/bidUtils/bidUtils.js';
-import { buildUserSyncs } from '../libraries/bidUtils/bidUtilsCommon.js';
+import { buildRequests, interpretResponse, onBidWon } from '../libraries/precisoUtils/bidUtils.js';
+import { buildUserSyncs } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER__CODE = 'preciso';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
-export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
+// export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
 const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GVLID = 874;
 let precisoId = 'NA';
@@ -26,7 +26,7 @@ export const spec = {
     sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
     let precisoBid = true;
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
-    precisoId = storage2.getDataFromLocalStorage('_pre|id');
+    precisoId = storage.getDataFromLocalStorage('_pre|id');
     if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
       if (!bid.precisoBid) {
         precisoBid = false;
@@ -39,7 +39,17 @@ export const spec = {
   buildRequests: buildRequests(endpoint),
   interpretResponse,
   onBidWon,
-  getUserSyncs: buildUserSyncs(syncEndpoint),
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const isSpec = syncOptions.spec;
+    if (!Object.is(isSpec, true)) {
+      let syncId = storage.getCookie('_sharedid');
+      syncEndpoint = syncEndpoint + 'id=' + syncId;
+    } else {
+      syncEndpoint = syncEndpoint + 'id=NA';
+    }
+
+    return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint);
+  }
 };
 
 registerBidder(spec);
@@ -56,7 +66,7 @@ async function getapi(url) {
     const uuidValue = dataMap.get('UUID');
 
     if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-      storage2.setDataInLocalStorage('_pre|id', uuidValue);
+      storage.setDataInLocalStorage('_pre|id', uuidValue);
     }
     return data;
   } catch (error) {
