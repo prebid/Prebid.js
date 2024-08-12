@@ -1,30 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { uBidIdModule } from 'modules/uBidIdAnalyticsAdapter.js';
+import { exchainPrebidModule } from 'modules/exchainPrebidAdapter.js';
 
-const code = 'div-uBidIdModule'
-
-var adUnit = {
-  code,
-  mediaTypes: {
-    banner: {
-      sizes: [
-        [300, 250],
-      ],
-    },
-  },
-  bids: [
-    {
-      bidder: 'uBidId',
-      params: {
-        inventoryId: '-1',
-        adUnitId: '-3',
-      },
-    },
-  ],
-};
-
-describe('uBidIdAnalyticsAdapter', function() {
+describe('Exchain Prebid Adapter', function() {
   // const analyticsAdapter = newBidder(adUnit);
   let sandbox;
 
@@ -39,20 +17,20 @@ describe('uBidIdAnalyticsAdapter', function() {
   });
 
   it('should have the correct module name', function() {
-    expect(uBidIdModule.name).to.equal('uBidId');
+    expect(exchainPrebidModule.name).to.equal('ExchainPrebid');
   });
 
   it('should generate a UUID', function() {
-    const uuid = uBidIdModule.generateUUID();
+    const uuid = exchainPrebidModule.generateUUID();
     expect(uuid).to.be.a('string');
     expect(uuid).to.match(/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/);
   });
 
   it('should add UUID to bid on onBidCatch', function() {
     const bids = [{ ortb2Imp: { ext: { data: {} } } }];
-    const generateUUIDStub = sandbox.stub(uBidIdModule, 'generateUUID').returns('test-uuid');
+    const generateUUIDStub = sandbox.stub(exchainPrebidModule, 'generateUUID').returns('test-uuid');
 
-    uBidIdModule.onBidCatch(bids);
+    exchainPrebidModule.onBidCatch(bids);
     expect(bids[0].ortb2Imp.ext.data.creativeUUID).to.equal('test-uuid');
     expect(generateUUIDStub.calledOnce).to.be.true;
   });
