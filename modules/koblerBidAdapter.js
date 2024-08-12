@@ -10,7 +10,19 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import { getAdditionalData, getCurrencyFromBidderRequest, setAdditionalData } from '../libraries/ortb2Utils/currency.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+
+const additionalData = new WeakMap();
+
+export function setAdditionalData(obj, key, value) {
+  const prevValue = additionalData.get(obj) || {};
+  additionalData.set(obj, { ...prevValue, [key]: value });
+}
+
+export function getAdditionalData(obj, key) {
+  const data = additionalData.get(obj) || {};
+  return data[key];
+}
 
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';

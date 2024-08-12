@@ -262,7 +262,7 @@ describe('AdgenerationAdapter', function () {
     const bidRequests = {
       banner: {
         bidderRequest: {
-          ortb2: { ext: { cur: ['JPY'] } }
+          ortb2: {ext: {prebid: {adServerCurrency: 'JPY'}}}
         },
         bidRequest: {
           bidder: 'adg',
@@ -279,7 +279,7 @@ describe('AdgenerationAdapter', function () {
       },
       native: {
         bidderRequest: {
-          ortb2: { ext: { cur: ['JPY'] } }
+          ortb2: {ext: {prebid: {adServerCurrency: 'JPY'}}}
         },
         bidRequest: {
           bidder: 'adg',
@@ -319,7 +319,7 @@ describe('AdgenerationAdapter', function () {
       },
       upperBillboard: {
         bidderRequest: {
-          ortb2: { ext: { cur: ['JPY'] } }
+          ortb2: {ext: {prebid: {adServerCurrency: 'JPY'}}}
         },
         bidRequest: {
           bidder: 'adg',
