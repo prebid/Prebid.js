@@ -26,8 +26,8 @@ export function isBidRequestValid(bid) {
     return false;
   }
 
-  if (!getBidIdParameter('publisherId', bid.params) || !getBidIdParameter('supplyTagId', bid.params)) {
-    logError('PublisherId or supplyTagId is not present in bidder params');
+  if (!getBidIdParameter('env', bid.params) || !getBidIdParameter('pid', bid.params)) {
+    logError('Env or pid is not present in bidder params');
     return false;
   }
 
@@ -62,15 +62,15 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
       lang: navigator.language
     };
     request.env = {
-      publisherId: req.params.publisherId,
-      supplyTagId: req.params.supplyTagId,
-      floor: getBidFloor(req)
+      env: req.params.env,
+      pid: req.params.pid
     };
     request.ortb2 = req.ortb2;
     request.ortb2Imp = req.ortb2Imp;
     request.tz = new Date().getTimezoneOffset();
     request.ext = req.params.ext;
     request.bc = req.bidRequestsCount;
+    request.floor = getBidFloor(req);
 
     if (req.userIdAsEids && req.userIdAsEids.length !== 0) {
       request.userEids = req.userIdAsEids;
