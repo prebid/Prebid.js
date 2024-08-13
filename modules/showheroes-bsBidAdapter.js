@@ -17,15 +17,18 @@ const STAGE_VL = 'https://video-library.stage.showheroes.com';
 const BIDDER_CODE = 'showheroes-bs';
 const TTL = 300;
 
+export const SYNC_URL = 'https://sync.dev.showheroes.com/cookie_sync'
+
 const converter = ortbConverter({
   context: {
-    netRevenue: false,
-    ttl: TTL
+    netRevenue: true,
+    ttl: TTL,
+    currency: 'EUR',
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     // video has higher priority, so if there is banner configured at the same time, send video only
-    if (imp?.video) {
+    if (imp?.video && imp?.banner) {
       delete imp['banner']
     }
     let mediaTypeContenxt = deepAccess(bidRequest, 'mediaTypes.video.context');
@@ -80,13 +83,13 @@ export const spec = {
   gvlid: GVLID,
   aliases: ['showheroesBs'],
   supportedMediaTypes: [VIDEO, BANNER],
-  isBidRequestValid: function (bid) {
+  isBidRequestValid: (bid) => {
     return !!bid.params.unitId;
   },
-  buildRequests: function (validBidRequests, bidderRequest) {
-    const QA = validBidRequests[0].params.qa;
+  buildRequests: (bidRequests, bidderRequest) => {
+    const QA = bidRequests[0].params.qa;
 
-    const ortbData = converter.toORTB({ validBidRequests, bidderRequest })
+    const ortbData = converter.toORTB({ bidRequests, bidderRequest })
     if (QA?.pageURL) {
       deepSetValue(ortbData, 'site.page', QA.pageURL);
       const u = new URL(QA.pageURL);
@@ -97,26 +100,21 @@ export const spec = {
     return {
       url: QA?.endpoint || VIRALIZE_ENDPOINT,
       method: 'POST',
-      options: { contentType: 'application/json', accept: 'application/json' },
       data: ortbData,
     };
   },
-  interpretResponse: function (response, request) {
+  interpretResponse: (response, request) => {
     return createBids(response.body, request.data);
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    if (hasSynced || !syncOptions.iframeEnabled) return
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+    if (hasSynced || !syncOptions.iframeEnabled) return;
 
     // data is only assigned if params are available to pass to syncEndpoint
     let params = {};
 
     if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params['gdpr'] = Number(gdprConsent.gdprApplies);
-      }
-      if (typeof gdprConsent.consentString === 'string') {
-        params['gdpr_consent'] = gdprConsent.consentString;
-      }
+      params['gdpr'] = gdprConsent.gdprApplies ? 1 : 0;
+      params['gdpr_consent'] = encodeURIComponent(gdprConsent.consentString);
     }
 
     if (uspConsent) {
@@ -125,7 +123,7 @@ export const spec = {
 
     if (gppConsent?.gppString) {
       params['gpp'] = gppConsent.gppString;
-      params['gpp_sid'] = gppConsent.applicableSections?.toString();
+      params['gpp_sid'] = gppConsent.applicableSections?.join();
     }
 
     params = Object.keys(params).length ? `?${formatQS(params)}` : '';
@@ -133,7 +131,7 @@ export const spec = {
     hasSynced = true;
     return {
       type: 'iframe',
-      url: `https://sync.dev.showheroes.com/cookie_sync` + params
+      url: SYNC_URL + params,
     };
   },
 
@@ -157,12 +155,8 @@ function createBids(bidRes, reqData) {
   }
 
   const bids = [];
-  const bidMap = {};
-  (reqData.requests || reqData.bidRequests || []).forEach((bid) => {
-    bidMap[bid.bidId] = bid;
-  });
 
-  responseBids.forEach(function (bid) {
+  responseBids.forEach((bid) => {
     const requestId = bid.requestId;
     const size = {
       width: bid.width || bid.size.width,
@@ -193,7 +187,7 @@ function createBids(bidRes, reqData) {
       bidUnit.vastUrl = bid.vastTag || bid.vastUrl;
     }
     if (bid.mediaType === BANNER) {
-      bidUnit.ad = getBannerHtml(bid, bid, reqData);
+      bidUnit.ad = getBannerHtml(bid, reqData);
     }
     bids.push(bidUnit);
   });
@@ -201,8 +195,8 @@ function createBids(bidRes, reqData) {
   return bids;
 }
 
-function getBannerHtml(bid, reqBid, reqData) {
-  const isStage = !!reqData.meta.stage;
+function getBannerHtml(bid, reqData) {
+  const isStage = !!reqData.meta?.stage;
   const urls = getEnvURLs(isStage);
   return `<html>
     <head></head>
@@ -214,7 +208,7 @@ function getBannerHtml(bid, reqBid, reqData) {
               data-player-host="${urls.vlHost}"></script>
       <div class="showheroes-spot"
             data-debug="${reqData.debug ? '1' : ''}"
-            data-player="${reqBid.playerId}"
+            data-player="${bid.playerId}"
             data-ad-vast-tag="${bid.vastTag}"></div>
     </body>
   </html>`;
