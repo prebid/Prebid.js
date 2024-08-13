@@ -176,7 +176,7 @@ export function handleGPPData(data = {}) {
  * Detects the browser using either userAgent or userAgentData
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-function detectBrowser() {
+export function detectBrowser() {
   try {
     if (navigator.userAgent) {
       return detectBrowserFromUserAgent(navigator.userAgent);
