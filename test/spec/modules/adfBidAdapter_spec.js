@@ -142,6 +142,49 @@ describe('Adf adapter', function () {
         assert.equal(request.user, undefined);
         assert.equal(request.regs, undefined);
       });
+
+      it('should transfer DSA info', function () {
+        let validBidRequests = [ { bidId: 'bidId', params: { siteId: 'siteId' } } ];
+
+        let request = JSON.parse(
+          spec.buildRequests(validBidRequests, {
+            refererInfo: { page: 'page' },
+            ortb2: {
+              regs: {
+                ext: {
+                  dsa: {
+                    dsarequired: '1',
+                    pubrender: '2',
+                    datatopub: '3',
+                    transparency: [
+                      {
+                        domain: 'test.com',
+                        dsaparams: [1, 2, 3]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }).data
+        );
+
+        assert.deepEqual(request.regs, {
+          ext: {
+            dsa: {
+              dsarequired: '1',
+              pubrender: '2',
+              datatopub: '3',
+              transparency: [
+                {
+                  domain: 'test.com',
+                  dsaparams: [1, 2, 3]
+                }
+              ]
+            }
+          }
+        });
+      });
     });
 
     it('should add test and is_debug to request, if test is set in parameters', function () {
@@ -278,17 +321,14 @@ describe('Adf adapter', function () {
       let validBidRequests = [{
         bidId: 'bidId',
         params: {},
-        userIdAsEids: createEidsArray({
-          tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-          pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
-        })
+        userIdAsEids: [
+          { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
+          { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
+        ]
       }];
 
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
-      assert.deepEqual(request.user.ext.eids, [
-        { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
-        { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
-      ]);
+      assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids);
     });
 
     it('should send currency if defined', function () {
@@ -383,6 +423,18 @@ describe('Adf adapter', function () {
         let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
+        }
+      });
+
+      it('should add first party data', function () {
+        let validBidRequests = [
+          { bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { data: { some: 'value' } } } },
+          { bidId: 'bidId2', params: { mid: 1001 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { data: { some: 'value', another: 1 } } } },
+          { bidId: 'bidId3', params: { mid: 1002 }, mediaTypes: { video: {} }, ortb2Imp: { ext: {} } }
+        ];
+        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+        for (let i = 0; i < 3; i++) {
+          assert.deepEqual(imps[i].ext.data, validBidRequests[i].ortb2Imp.ext.data);
         }
       });
 
@@ -1007,7 +1059,16 @@ describe('Adf adapter', function () {
                 adomain: [ 'demo.com' ],
                 ext: {
                   prebid: {
-                    type: 'native'
+                    type: 'native',
+                  },
+                  dsa: {
+                    behalf: 'some-behalf',
+                    paid: 'some-paid',
+                    transparency: [{
+                      domain: 'test.com',
+                      dsaparams: [1, 2, 3]
+                    }],
+                    adrender: 1
                   }
                 }
               }
@@ -1070,6 +1131,15 @@ describe('Adf adapter', function () {
       assert.deepEqual(bids[0].mediaType, 'native');
       assert.deepEqual(bids[0].meta.mediaType, 'native');
       assert.deepEqual(bids[0].meta.advertiserDomains, [ 'demo.com' ]);
+      assert.deepEqual(bids[0].meta.dsa, {
+        behalf: 'some-behalf',
+        paid: 'some-paid',
+        transparency: [{
+          domain: 'test.com',
+          dsaparams: [1, 2, 3]
+        }],
+        adrender: 1
+      });
       assert.deepEqual(bids[0].dealId, 'deal-id');
     });
     it('should set correct native params', function () {
@@ -1256,6 +1326,32 @@ describe('Adf adapter', function () {
         bids = spec.interpretResponse(serverResponse, bidRequest);
         assert.equal(bids.length, 1);
         assert.equal(bids[0].vastXml, '<vast>');
+        assert.equal(bids[0].mediaType, 'video');
+        assert.equal(bids[0].meta.mediaType, 'video');
+      });
+
+      it('should set vastUrl if nurl is present in response', function () {
+        let vastUrl = 'http://url.to/vast'
+        let serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{ impid: '1', adm: '<vast>', nurl: vastUrl, ext: { prebid: { type: 'video' } } }]
+            }]
+          }
+        };
+        let bidRequest = {
+          data: {},
+          bids: [
+            {
+              bidId: 'bidId1',
+              params: { mid: 1000 }
+            }
+          ]
+        };
+
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(bids.length, 1);
+        assert.equal(bids[0].vastUrl, vastUrl);
         assert.equal(bids[0].mediaType, 'video');
         assert.equal(bids[0].meta.mediaType, 'video');
       });

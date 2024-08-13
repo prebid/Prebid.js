@@ -1,7 +1,8 @@
-import { deepSetValue, convertTypes, tryAppendQueryString, logWarn } from '../src/utils.js';
+import { deepSetValue, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
 const ENDPOINT_URL = 'https://i.connectad.io/api/v2';
@@ -137,13 +138,6 @@ export const spec = {
     }
 
     return bidResponses;
-  },
-
-  transformBidParams: function (params, isOpenRtb) {
-    return convertTypes({
-      'siteId': 'number',
-      'networkId': 'number'
-    }, params);
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {

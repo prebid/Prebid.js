@@ -4,19 +4,18 @@
  * and make it available for any GPP supported adapters to read/pass this information to
  * their system and for various other features/modules in Prebid.js.
  */
-import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepSetValue, isEmpty, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gppDataHandler} from '../src/adapterManager.js';
-import {timedAuctionHook} from '../src/utils/perfMetrics.js';
-import { enrichFPD } from '../src/fpd/enrichment.js';
+import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {cmpClient} from '../libraries/cmp/cmpClient.js';
+import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
 import {GreedyPromise} from '../src/utils/promise.js';
 import {buildActivityParams} from '../src/activities/params.js';
+import {consentManagementHook} from '../libraries/consentManagement/cmUtils.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
-const CMP_VERSION = 1;
 
 export let userCMP;
 export let consentTimeout;
@@ -25,86 +24,157 @@ let staticConsentData;
 let consentData;
 let addedConsentHook = false;
 
-// add new CMPs here, with their dedicated lookup function
-const cmpCallMap = {
-  'iab': lookupIabConsent,
-  'static': lookupStaticConsentData
-};
-
-/**
- * This function checks the state of the IAB gppData's applicableSections field (to ensure it's populated and has a valid value).
- * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
- * @param gppData represents the IAB gppData object
- * @returns {Array}
- */
-function applicableSections(gppData) {
-  return gppData && Array.isArray(gppData.applicableSections) && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== 0
-    ? gppData.applicableSections
-    : [];
+function pipeCallbacks(fn, {onSuccess, onError}) {
+  new GreedyPromise((resolve) => resolve(fn())).then(onSuccess, (err) => {
+    if (err instanceof GPPError) {
+      onError(err.message, ...err.args);
+    } else {
+      onError(`GPP error:`, err);
+    }
+  });
 }
 
-/**
- * This function reads the consent string from the config to obtain the consent information of the user.
- * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
- */
-function lookupStaticConsentData({onSuccess, onError}) {
-  processCmpData(staticConsentData, {onSuccess, onError});
+function lookupStaticConsentData(callbacks) {
+  return pipeCallbacks(() => processCmpData(staticConsentData), callbacks);
+}
+
+class GPPError {
+  constructor(message, arg) {
+    this.message = message;
+    this.args = arg == null ? [] : [arg];
+  }
+}
+
+export class GPPClient {
+  apiVersion = '1.1';
+  static INST;
+
+  static get(mkCmp = cmpClient) {
+    if (this.INST == null) {
+      const cmp = mkCmp({
+        apiName: '__gpp',
+        apiArgs: ['command', 'callback', 'parameter'], // do not pass version - not clear what it's for (or what we should use),
+        mode: MODE_CALLBACK
+      });
+      if (cmp == null) {
+        throw new GPPError('GPP CMP not found');
+      }
+      this.INST = new this(cmp);
+    }
+    return this.INST;
+  }
+
+  #resolve;
+  #reject;
+  #pending = [];
+
+  initialized = false;
+
+  constructor(cmp) {
+    this.cmp = cmp;
+    [this.#resolve, this.#reject] = [0, 1].map(slot => (result) => {
+      while (this.#pending.length) {
+        this.#pending.pop()[slot](result);
+      }
+    });
+  }
+
+  /**
+   * initialize this client - update consent data if already available,
+   * and set up event listeners to also update on CMP changes
+   *
+   * @param pingData
+   * @returns {Promise<{}>} a promise to GPP consent data
+   */
+  init(pingData) {
+    const ready = this.updateWhenReady(pingData);
+    if (!this.initialized) {
+      if (pingData.gppVersion !== this.apiVersion) {
+        logWarn(`Unrecognized GPP CMP version: ${pingData.apiVersion}. Continuing using GPP API version ${this.apiVersion}...`);
+      }
+      this.initialized = true;
+      this.cmp({
+        command: 'addEventListener',
+        callback: (event, success) => {
+          if (success != null && !success) {
+            this.#reject(new GPPError('Received error response from CMP', event));
+          } else if (event?.pingData?.cmpStatus === 'error') {
+            this.#reject(new GPPError('CMP status is "error"; please check CMP setup', event));
+          } else if (this.isCMPReady(event?.pingData || {}) && ['sectionChange', 'signalStatus'].includes(event?.eventName)) {
+            this.#resolve(this.updateConsent(event.pingData));
+          }
+        }
+      });
+    }
+    return ready;
+  }
+
+  refresh() {
+    return this.cmp({command: 'ping'}).then(this.init.bind(this));
+  }
+
+  /**
+   * Retrieve and store GPP consent data.
+   *
+   * @param pingData
+   * @returns {Promise<{}>} a promise to GPP consent data
+   */
+  updateConsent(pingData) {
+    return new GreedyPromise(resolve => {
+      if (pingData == null || isEmpty(pingData)) {
+        throw new GPPError('Received empty response from CMP', pingData);
+      }
+      const consentData = processCmpData(pingData);
+      logInfo('Retrieved GPP consent from CMP:', consentData);
+      resolve(consentData);
+    })
+  }
+
+  /**
+   * Return a promise to GPP consent data, to be retrieved the next time the CMP signals it's ready.
+   *
+   * @returns {Promise<{}>}
+   */
+  nextUpdate() {
+    return new GreedyPromise((resolve, reject) => {
+      this.#pending.push([resolve, reject]);
+    });
+  }
+
+  /**
+   * Return a promise to GPP consent data, to be retrieved immediately if the CMP is ready according to `pingData`,
+   * or as soon as it signals that it's ready otherwise.
+   *
+   * @param pingData
+   * @returns {Promise<{}>}
+   */
+  updateWhenReady(pingData) {
+    return this.isCMPReady(pingData) ? this.updateConsent(pingData) : this.nextUpdate();
+  }
+
+  isCMPReady(pingData) {
+    return pingData.signalStatus === 'ready';
+  }
 }
 
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function({})} onSuccess acts as a success callback when CMP returns a value; pass along consentObjectfrom CMP
- * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
+ * @param {Object} options - An object containing the callbacks.
+ * @param {function(Object): void} options.onSuccess - Acts as a success callback when CMP returns a value; pass along consentObject from CMP.
+ * @param {function(string, ...Object?): void} options.onError - Acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging).
+ * @param {function(): Object} [mkCmp=cmpClient] - A function to create the CMP client. Defaults to `cmpClient`.
  */
-export function lookupIabConsent({onSuccess, onError}, mkClient = cmpClient) {
-  const cmp = mkClient({
-    apiName: '__gpp',
-    apiVersion: CMP_VERSION,
-  });
-  if (!cmp) {
-    return onError('GPP CMP not found.');
-  }
-
-  const startupMsg = (cmp.isDirect) ? 'Detected GPP CMP API is directly accessible, calling it now...'
-    : 'Detected GPP CMP is outside the current iframe where Prebid.js is located, calling it now...';
-  logInfo(startupMsg);
-
-  let versionMismatch = false;
-
-  cmp({
-    command: 'addEventListener',
-    callback: function (evt) {
-      if (evt && !versionMismatch) {
-        logInfo(`Received a ${(cmp.isDirect ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
-        const cmpVer = evt?.pingData?.gppVersion;
-        if (cmpVer != null && cmpVer !== '1.0') {
-          logWarn(`Unsupported GPP CMP version: ${cmpVer}. Continuing auction without consent`);
-          versionMismatch = true;
-          onSuccess(storeConsentData());
-          return;
-        }
-        if (evt.eventName === 'sectionChange' || evt.pingData.cmpStatus === 'loaded') {
-          cmp({command: 'getGPPData'}).then((gppData) => {
-            logInfo(`Received a ${cmp.isDirect ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
-            return GreedyPromise.all(
-              (gppData?.pingData?.supportedAPIs || [])
-                .map((name) => cmp({command: 'getSection', parameter: name})
-                  .catch(() => { logError(`Could not retrieve section data for GPP section '${name}'`) })
-                  .then((res) => [name, res]))
-            ).then((sections) => {
-              const sectionData = Object.fromEntries(sections.filter(([_, val]) => val != null));
-              processCmpData({gppData, sectionData}, {onSuccess, onError});
-            })
-          });
-        } else if (evt.pingData.cmpStatus === 'error') {
-          onError('CMP returned with a cmpStatus:error response.  Please check CMP setup.');
-        }
-      }
-    }
-  });
+export function lookupIabConsent({onSuccess, onError}, mkCmp = cmpClient) {
+  pipeCallbacks(() => GPPClient.get(mkCmp).refresh(), {onSuccess, onError});
 }
+
+// add new CMPs here, with their dedicated lookup function
+const cmpCallMap = {
+  'iab': lookupIabConsent,
+  'static': lookupStaticConsentData
+};
 
 /**
  * Look up consent data and store it in the `consentData` global as well as `adapterManager.js`' gdprDataHandler.
@@ -137,38 +207,24 @@ function loadConsentData(cb) {
     onError: function (msg, ...extraArgs) {
       done(null, true, msg, ...extraArgs);
     }
-  }
+  };
   cmpCallMap[userCMP](callbacks);
 
   if (!isDone) {
     const onTimeout = () => {
       const continueToAuction = (data) => {
         done(data, false, 'GPP CMP did not load, continuing auction...');
-      }
-      processCmpData(consentData, {
+      };
+      pipeCallbacks(() => processCmpData(consentData), {
         onSuccess: continueToAuction,
         onError: () => continueToAuction(storeConsentData())
-      })
-    }
+      });
+    };
     if (consentTimeout === 0) {
       onTimeout();
     } else {
       timer = setTimeout(onTimeout, consentTimeout);
     }
-  }
-}
-
-/**
- * Like `loadConsentData`, but cache and re-use previously loaded data.
- * @param cb
- */
-function loadIfMissing(cb) {
-  if (consentData) {
-    logInfo('User consent information already known.  Pulling internally stored information...');
-    // eslint-disable-next-line standard/no-callback-literal
-    cb(false);
-  } else {
-    loadConsentData(cb);
   }
 }
 
@@ -180,66 +236,36 @@ function loadIfMissing(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('gpp', function requestBidsHook(fn, reqBidsConfigObj) {
-  loadIfMissing(function (shouldCancelAuction, errMsg, ...extraArgs) {
-    if (errMsg) {
-      let log = logWarn;
-      if (shouldCancelAuction) {
-        log = logError;
-        errMsg = `${errMsg} Canceling auction as per consentManagement config.`;
-      }
-      log(errMsg, ...extraArgs);
-    }
+export const requestBidsHook = consentManagementHook('gpp', () => consentData, loadConsentData);
 
-    if (shouldCancelAuction) {
-      fn.stopTiming();
-      if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
-        reqBidsConfigObj.bidsBackHandler();
-      } else {
-        logError('Error executing bidsBackHandler');
-      }
-    } else {
-      fn.call(this, reqBidsConfigObj);
+function processCmpData(consentData) {
+  if (
+    (consentData?.applicableSections != null && !Array.isArray(consentData.applicableSections)) ||
+    (consentData?.gppString != null && !isStr(consentData.gppString)) ||
+    (consentData?.parsedSections != null && !isPlainObject(consentData.parsedSections))
+  ) {
+    throw new GPPError('CMP returned unexpected value during lookup process.', consentData);
+  }
+  ['usnatv1', 'uscav1'].forEach(section => {
+    if (consentData?.parsedSections?.[section]) {
+      logWarn(`Received invalid section from cmp: '${section}'. Some functionality may not work as expected`, consentData);
     }
   });
-});
-
-/**
- * This function checks the consent data provided by CMP to ensure it's in an expected state.
- * If it's bad, we call `onError`
- * If it's good, then we store the value and call `onSuccess`
- */
-function processCmpData(consentData, {onSuccess, onError}) {
-  function checkData() {
-    const gppString = consentData?.gppData?.gppString;
-    const gppSection = consentData?.gppData?.applicableSections;
-
-    return !!(
-      (!Array.isArray(gppSection)) ||
-      (Array.isArray(gppSection) && (!gppString || !isStr(gppString)))
-    );
-  }
-
-  if (checkData()) {
-    onError(`CMP returned unexpected value during lookup process.`, consentData);
-  } else {
-    onSuccess(storeConsentData(consentData));
-  }
+  return storeConsentData(consentData);
 }
 
 /**
  * Stores CMP data locally in module to make information available in adaptermanager.js for later in the auction
  * @param {{}} gppData the result of calling a CMP's `getGPPData` (or equivalent)
- * @param {{}} sectionData map from GPP section name to the result of calling a CMP's `getSection` (or equivalent)
  */
-export function storeConsentData({gppData, sectionData} = {}) {
+export function storeConsentData(gppData = {}) {
   consentData = {
-    gppString: (gppData) ? gppData.gppString : undefined,
-    gppData: (gppData) || undefined,
+    gppString: gppData?.gppString,
+    applicableSections: gppData?.applicableSections || [],
+    parsedSections: gppData?.parsedSections || {},
+    gppData: gppData
   };
-  consentData.applicableSections = applicableSections(gppData);
-  consentData.apiVersion = CMP_VERSION;
-  consentData.sectionData = sectionData;
+  gppDataHandler.setConsentData(gppData);
   return consentData;
 }
 
@@ -251,11 +277,12 @@ export function resetConsentData() {
   userCMP = undefined;
   consentTimeout = undefined;
   gppDataHandler.reset();
+  GPPClient.INST = null;
 }
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
  */
 export function setConsentConfig(config) {
   config = config && config.gpp;
@@ -280,7 +307,7 @@ export function setConsentConfig(config) {
 
   if (userCMP === 'static') {
     if (isPlainObject(config.consentData)) {
-      staticConsentData = {gppData: config.consentData, sectionData: config.sectionData};
+      staticConsentData = config.consentData;
       consentTimeout = 0;
     } else {
       logError(`consentManagement.gpp config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
@@ -299,6 +326,7 @@ export function setConsentConfig(config) {
   gppDataHandler.enable();
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
+
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
 export function enrichFPDHook(next, fpd) {

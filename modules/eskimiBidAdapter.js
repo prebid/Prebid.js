@@ -1,10 +1,14 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import {getBidIdParameter} from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'eskimi';
-// const ENDPOINT = 'https://hb.eskimi.com/bids'
 const ENDPOINT = 'https://sspback.eskimi.com/bid-request'
 
 const DEFAULT_BID_TTL = 30;
@@ -16,7 +20,7 @@ const VIDEO_ORTB_PARAMS = [
   'mimes',
   'minduration',
   'maxduration',
-  'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -65,7 +69,7 @@ const CONVERTER = ortbConverter({
     imp.secure = Number(window.location.protocol === 'https:');
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = utils.getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
     }
 
     if (bidRequest.mediaTypes[VIDEO]) {
@@ -137,7 +141,7 @@ function buildVideoImp(bidRequest, imp) {
   });
 
   if (imp.video && videoParams?.context === 'outstream') {
-    imp.video.placement = imp.video.placement || 4;
+    imp.video.plcmt = imp.video.plcmt || 4;
   }
 
   return { ...imp };

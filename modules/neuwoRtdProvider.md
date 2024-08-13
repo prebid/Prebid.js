@@ -33,6 +33,8 @@ pbjs.setConfig({realTimeData: { dataProviders: [ neuwoDataProvider ]}})
 
 # Testing
 
+`gulp test --modules=rtdModule,neuwoRtdProvider`
+
 ## Add development tools if necessary
 
 - Install node for npm

@@ -3,6 +3,10 @@ import { submodule } from '../src/hook.js';
 import { mergeDeep, logError, logMessage, deepSetValue, generateUUID } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const SUBMODULE_NAME = 'oneKey';
 const prefixLog = 'OneKey.RTD-module'
 

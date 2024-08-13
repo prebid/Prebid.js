@@ -1,119 +1,110 @@
-import {config as _config, config} from 'src/config.js';
-import { expect } from 'chai';
-import * as events from 'src/events.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
-import { geolocationSubmodule } from 'modules/geolocationRtdProvider.js';
-import * as utils from 'src/utils.js';
-import {getGlobal} from 'src/prebidGlobal.js';
+import {expect} from 'chai';
+import {geolocationSubmodule} from 'modules/geolocationRtdProvider.js';
+import * as activityRules from 'src/activities/rules.js';
 import 'src/prebid.js';
+import {GreedyPromise} from '../../../src/utils/promise.js';
+import {ACTIVITY_TRANSMIT_PRECISE_GEO} from '../../../src/activities/activities.js';
 
 describe('Geolocation RTD Provider', function () {
   let sandbox;
-  let placeholder;
-  const pbjs = getGlobal();
-  const adUnit = {
-    code: 'ad-slot-1',
-    mediaTypes: {
-      banner: {
-        sizes: [ [300, 250] ]
-      }
-    },
-    bids: [
-      {
-        bidder: 'fake'
-      }
-    ]
-  };
-  const providerConfig = {name: 'geolocation', waitForIt: true};
-  const rtdConfig = {realTimeData: {auctionDelay: 200, dataProviders: [providerConfig]}}
+
+  before(() => {
+    if (!navigator.permissions) {
+      navigator.permissions = {mock: true, query: false}
+    }
+  });
+
+  after(() => {
+    if (navigator.permissions.mock) {
+      delete navigator.permissions;
+    }
+  });
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  })
+
   describe('Geolocation not supported', function() {
-    beforeEach(function() {
-      sandbox = sinon.sandbox.create();
-    });
-    afterEach(function() {
-      sandbox.restore();
-      sandbox = undefined;
-    });
-    it('init should return false', function () {
-      if (navigator.permissions) { sandbox.stub(navigator.permissions, 'query').value(undefined); expect(geolocationSubmodule.init({})).is.false; }
+    Object.entries({
+      'permissions.query': () => sandbox.stub(navigator.permissions, 'query').value(undefined),
+      'permissions': () => sandbox.stub(navigator, 'permissions').value(undefined),
+    }).forEach(([t, setup]) => {
+      describe(`${t} not available`, () => {
+        beforeEach(setup);
+        it('init should return false', function () {
+          expect(geolocationSubmodule.init({})).is.false;
+        });
+      });
     });
   });
+
   describe('Geolocation supported', function() {
-    beforeEach(function() {
-      sandbox = sinon.sandbox.create();
-      // placeholder = createDiv();
-      // append();
-      const __config = {};
-      sandbox.stub(_config, 'getConfig').callsFake(function (path) {
-        return utils.deepAccess(__config, path);
-      });
-      sandbox.stub(_config, 'setConfig').callsFake(function (obj) {
-        utils.mergeDeep(__config, obj);
-      });
-    });
-    afterEach(function() {
-      sandbox.restore();
-      // remove();
-      sandbox = undefined;
-      placeholder = undefined;
-      pbjs.removeAdUnit();
-    });
-    it('init should return true', function () {
-      navigator.permissions && expect(geolocationSubmodule.init({})).is.true;
-    });
-    it('should set geolocation. (request all)', function(done) {
-      navigator.permissions && sandbox.stub(navigator.permissions, 'query').value(() => Promise.resolve({
-        state: 'granted',
-      }));
-      navigator.geolocation && sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
+    let clock, rtdConfig, permState, onDone;
+
+    beforeEach(() => {
+      onDone = sinon.stub();
+      permState = 'prompt';
+      rtdConfig = {params: {}};
+      clock = sandbox.useFakeTimers(11000);
+      sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
         // eslint-disable-next-line standard/no-callback-literal
-        cb({coords: {latitude: 1, longitude: 1}});
+        cb({coords: {latitude: 1, longitude: 2}, timestamp: 1000});
       });
-      pbjs.addAdUnits([utils.deepClone(adUnit)]);
-      config.setConfig(rtdConfig);
-      const onDone = sandbox.stub();
-      const requestBidObject = {};
-      geolocationSubmodule.init({});
-      geolocationSubmodule.getBidRequestData(
-        requestBidObject,
-        onDone,
-        providerConfig
-      );
-      expect(pbjs.adUnits.length).to.eq(1);
-      setTimeout(function() {
-        // expect(requestBidObject?.ortb2Fragments?.global.device.geo?.type).to.eq(1);
-        done();
-      }, 300);
+      sandbox.stub(navigator.permissions, 'query').value(() => GreedyPromise.resolve({
+        state: permState,
+      }));
+      geolocationSubmodule.init(rtdConfig);
     });
-    it('should call done due timeout', function(done) {
-      // sandbox.stub(navigator.permissions, 'query').value(() => new Promise(() => {}));
-      // sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {});
-      config.setConfig(rtdConfig);
-      // remove();
-      const onDone = sandbox.stub();
-      const requestBidObject = {adUnits: [utils.deepClone(adUnit)]};
-      geolocationSubmodule.init({});
-      geolocationSubmodule.getBidRequestData(
-        requestBidObject,
-        onDone,
-        {...providerConfig, test: 1}
-      );
-      setTimeout(function() {
-        sinon.assert.calledOnce(onDone);
-        expect(requestBidObject).to.not.have.property('ortb2Fragments.global.device.geo');
-        done();
-      }, 300);
+
+    it('init should return true', function () {
+      expect(geolocationSubmodule.init({})).is.true;
+    });
+
+    Object.entries({
+      'not necessary, requestPermission not set': [undefined, 'granted'],
+      'not necessary, requestPermission = false': [false, 'granted'],
+      'required, with requestPermission = true': [true, 'prompt']
+    }).forEach(([t, [requestPermission, navPerm]]) => {
+      describe(`when browser permission is ${t}`, () => {
+        beforeEach(() => {
+          permState = navPerm;
+          rtdConfig.params.requestPermission = requestPermission;
+        });
+
+        it(`should set geolocation`, () => {
+          const requestBidObject = {ortb2Fragments: {global: {}}};
+          geolocationSubmodule.getBidRequestData(requestBidObject, onDone, rtdConfig);
+          clock.tick(300);
+          expect(onDone.called).to.be.true;
+          expect(requestBidObject.ortb2Fragments.global.device.geo).to.eql({
+            type: 1,
+            lat: 1,
+            lon: 2,
+            lastfix: 10
+          })
+        })
+      })
+    })
+
+    Object.entries({
+      'transmitPreciseGeo is denied': () => sandbox.stub(activityRules, 'isActivityAllowed').callsFake(activity => activity !== ACTIVITY_TRANSMIT_PRECISE_GEO),
+      'permissions are required, but requestPermission is not set': () => { delete rtdConfig.params.requestPermission; permState = 'prompt' },
+      'permissions are required, but requestPermission is false': () => { rtdConfig.params.requestPermission = false; permState = 'prompt' }
+    }).forEach(([t, setup]) => {
+      describe(`when ${t}`, () => {
+        beforeEach(setup);
+
+        it(`should NOT set geo`, () => {
+          const req = {ortb2Fragments: {global: {}}};
+          geolocationSubmodule.getBidRequestData(req, onDone, rtdConfig);
+          clock.tick(300);
+          expect(req.ortb2Fragments.global.device?.geo).to.not.exist;
+        })
+      })
     });
   });
-  // function createDiv() {
-  //   const div = document.createElement('div');
-  //   div.id = adUnit.code;
-  //   return div;
-  // }
-  // function append() {
-  //   placeholder && document.body.appendChild(placeholder);
-  // }
-  // function remove() {
-  //   placeholder && placeholder.parentElement && placeholder.parentElement.removeChild(placeholder);
-  // }
 });

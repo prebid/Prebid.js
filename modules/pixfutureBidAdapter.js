@@ -3,10 +3,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {find, includes} from '../src/polyfill.js';
-import {convertCamelToUnderscore, deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
+import {deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getANKeywordParam} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
@@ -125,7 +125,7 @@ export const spec = {
         method: 'POST',
         options: {withCredentials: true},
         data: {
-          v: getGlobal().version,
+          v: 'v' + '$prebid.version$',
           pageUrl: referer,
           bidId: bidRequest.bidId,
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
@@ -276,7 +276,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }

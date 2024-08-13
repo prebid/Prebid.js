@@ -262,6 +262,11 @@ describe('ttdBidAdapter', function () {
       expect(request.data).to.be.not.null;
     });
 
+    it('sets bidrequest.id to bidderRequestId', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.id).to.equal('18084284054531');
+    });
+
     it('sets impression id to ad unit\'s bid id', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].id).to.equal('243310435309b5');
@@ -270,6 +275,13 @@ describe('ttdBidAdapter', function () {
     it('sends bid requests to the correct endpoint', function () {
       const url = testBuildRequests(baseBannerBidRequests, baseBidderRequest).url;
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
+    });
+
+    it('sends bid requests to the correct custom endpoint', function () {
+      let bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
+      bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
+      const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
+      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
     });
 
     it('sends publisher id', function () {
@@ -437,7 +449,9 @@ describe('ttdBidAdapter', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       const battr = [1, 2, 3];
       clonedBannerRequests[0].ortb2Imp = {
-        battr: battr
+        banner: {
+          battr: battr
+        }
       };
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.battr).to.equal(battr);

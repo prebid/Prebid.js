@@ -3,50 +3,53 @@
    access to a publisher page from creative payloads.
  */
 
-import * as events from './events.js';
-import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native.js';
-import constants from './constants.json';
-import {deepAccess, isApnGetTagDefined, isGptPubadsDefined, logError, logWarn, replaceAuctionPrice} from './utils.js';
-import {auctionManager} from './auctionManager.js';
+import {getAllAssetsMessage, getAssetMessage} from './native.js';
+import {BID_STATUS, MESSAGES} from './constants.js';
+import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {find, includes} from './polyfill.js';
-import {executeRenderer, isRendererRequired} from './Renderer.js';
-import {config} from './config.js';
-import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
+import {getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender, markWinningBid} from './adRendering.js';
+import {getCreativeRendererSource} from './creativeRenderers.js';
 
-const BID_WON = constants.EVENTS.BID_WON;
-const STALE_RENDER = constants.EVENTS.STALE_RENDER;
-const WON_AD_IDS = new WeakSet();
+const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
 const HANDLER_MAP = {
-  'Prebid Request': handleRenderRequest,
-  'Prebid Event': handleEventRequest,
-}
+  [REQUEST]: handleRenderRequest,
+  [EVENT]: handleEventRequest,
+};
 
 if (FEATURES.NATIVE) {
   Object.assign(HANDLER_MAP, {
-    'Prebid Native': handleNativeRequest,
-  })
+    [NATIVE]: handleNativeRequest,
+  });
 }
 
 export function listenMessagesFromCreative() {
-  window.addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', function (ev) {
+    receiveMessage(ev);
+  }, false);
 }
 
 export function getReplier(ev) {
   if (ev.origin == null && ev.ports.length === 0) {
     return function () {
-      const msg = 'Cannot post message to a frame with null origin. Please update creatives to use MessageChannel, see https://github.com/prebid/Prebid.js/issues/7870'
-      logError(msg)
+      const msg = 'Cannot post message to a frame with null origin. Please update creatives to use MessageChannel, see https://github.com/prebid/Prebid.js/issues/7870';
+      logError(msg);
       throw new Error(msg);
-    }
+    };
   } else if (ev.ports.length > 0) {
     return function (message) {
       ev.ports[0].postMessage(JSON.stringify(message));
-    }
+    };
   } else {
     return function (message) {
       ev.source.postMessage(JSON.stringify(message), ev.origin);
-    }
+    };
+  }
+}
+
+function ensureAdId(adId, reply) {
+  return function (data, ...args) {
+    return reply(Object.assign({}, data, {adId}), ...args);
   }
 }
 
@@ -59,49 +62,34 @@ export function receiveMessage(ev) {
     return;
   }
 
-  if (data && data.adId && data.message) {
-    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
-      return bid.adId === data.adId;
-    });
-    if (HANDLER_MAP.hasOwnProperty(data.message)) {
-      HANDLER_MAP[data.message](getReplier(ev), data, adObject);
-    }
+  if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
+    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST).then(adObject => {
+      HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
+    })
   }
 }
 
-function handleRenderRequest(reply, data, adObject) {
-  if (adObject == null) {
-    emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
-      message: `Cannot find ad for cross-origin render request: '${data.adId}'`,
-      id: data.adId
-    });
-    return;
+function getResizer(adId, bidResponse) {
+  // in some situations adId !== bidResponse.adId
+  // the first is the one that was requested and is tied to the element
+  // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
+  return function (width, height) {
+    resizeRemoteCreative({...bidResponse, width, height, adId});
   }
-  if (adObject.status === constants.BID_STATUS.RENDERED) {
-    logWarn(`Ad id ${adObject.adId} has been rendered before`);
-    events.emit(STALE_RENDER, adObject);
-    if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
-      return;
-    }
-  }
-
-  try {
-    _sendAdToCreative(adObject, reply);
-  } catch (e) {
-    emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.EXCEPTION,
-      message: e.message,
-      id: data.adId,
-      bid: adObject
-    });
-    return;
-  }
-
-  // save winning bids
-  auctionManager.addWinningBid(adObject);
-
-  events.emit(BID_WON, adObject);
+}
+function handleRenderRequest(reply, message, bidResponse) {
+  handleRender({
+    renderFn(adData) {
+      reply(Object.assign({
+        message: RESPONSE,
+        renderer: getCreativeRendererSource(bidResponse)
+      }, adData));
+    },
+    resizeFn: getResizer(message.adId, bidResponse),
+    options: message.options,
+    adId: message.adId,
+    bidResponse
+  });
 }
 
 function handleNativeRequest(reply, data, adObject) {
@@ -115,10 +103,8 @@ function handleNativeRequest(reply, data, adObject) {
     return;
   }
 
-  if (!WON_AD_IDS.has(adObject)) {
-    WON_AD_IDS.add(adObject);
-    auctionManager.addWinningBid(adObject);
-    events.emit(BID_WON, adObject);
+  if (adObject.status !== BID_STATUS.RENDERED) {
+    markWinningBid(adObject);
   }
 
   switch (data.action) {
@@ -128,13 +114,8 @@ function handleNativeRequest(reply, data, adObject) {
     case 'allAssetRequest':
       reply(getAllAssetsMessage(data, adObject));
       break;
-    case 'resizeNativeHeight':
-      adObject.height = data.height;
-      adObject.width = data.width;
-      resizeRemoteCreative(adObject);
-      break;
     default:
-      fireNativeTrackers(data, adObject);
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)})
   }
 }
 
@@ -143,60 +124,27 @@ function handleEventRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
-  if (adObject.status !== constants.BID_STATUS.RENDERED) {
-    logWarn(`Received x-origin event request without corresponding render request for ad '${data.adId}'`);
+  if (adObject.status !== BID_STATUS.RENDERED) {
+    logWarn(`Received x-origin event request without corresponding render request for ad '${adObject.adId}'`);
     return;
   }
-  switch (data.event) {
-    case constants.EVENTS.AD_RENDER_FAILED:
-      emitAdRenderFail({
-        bid: adObject,
-        id: data.adId,
-        reason: data.info.reason,
-        message: data.info.message
-      });
-      break;
-    case constants.EVENTS.AD_RENDER_SUCCEEDED:
-      emitAdRenderSucceeded({
-        doc: null,
-        bid: adObject,
-        id: data.adId
-      });
-      break;
-    default:
-      logError(`Received x-origin event request for unsupported event: '${data.event}' (adId: '${data.adId}')`)
-  }
+  return handleCreativeEvent(data, adObject);
 }
 
-export function _sendAdToCreative(adObject, reply) {
-  const { adId, ad, adUrl, width, height, renderer, cpm, originalCpm } = adObject;
-  // rendering for outstream safeframe
-  if (isRendererRequired(renderer)) {
-    executeRenderer(renderer, adObject);
-  } else if (adId) {
-    resizeRemoteCreative(adObject);
-    reply({
-      message: 'Prebid Response',
-      ad: replaceAuctionPrice(ad, originalCpm || cpm),
-      adUrl: replaceAuctionPrice(adUrl, originalCpm || cpm),
-      adId,
-      width,
-      height
-    });
+export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
+  function getDimension(value) {
+    return value ? value + 'px' : '100%';
   }
-}
-
-function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
     let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
-      elementStyle.width = width ? width + 'px' : '100%';
-      elementStyle.height = height + 'px';
+      elementStyle.width = getDimension(width)
+      elementStyle.height = getDimension(height);
     } else {
-      logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
+      logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
   });
 
@@ -208,9 +156,9 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      return getDfpElementId(adId)
+      return getDfpElementId(adId);
     } else if (isApnGetTagDefined()) {
-      return getAstElementId(adUnitCode)
+      return getAstElementId(adUnitCode);
     } else {
       return adUnitCode;
     }

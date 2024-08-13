@@ -1,9 +1,10 @@
 import {submodule} from '../src/hook.js';
-import {isFn, logError, deepAccess, deepSetValue, logInfo, logWarn} from '../src/utils.js';
+import {isFn, logError, deepAccess, deepSetValue, logInfo, logWarn, timestamp} from '../src/utils.js';
 import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../src/activities/activities.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { isActivityAllowed } from '../src/activities/rules.js';
 import { activityParams } from '../src/activities/activityParams.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
 let permissionsAvailable = true;
 let geolocation;
@@ -18,7 +19,6 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
     return complete()
   };
   const requestPermission = deepAccess(providerConfig, 'params.requestPermission') === true;
-  const waitForIt = providerConfig.waitForIt;
   navigator.permissions.query({
     name: 'geolocation',
   }).then(permission => {
@@ -28,7 +28,6 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
       complete();
     });
   });
-  if (!waitForIt) complete();
   function complete() {
     if (done) return;
     done = true;
@@ -36,7 +35,7 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
       deepSetValue(requestBidsObject, 'ortb2Fragments.global.device.geo', {
         lat: geolocation.coords.latitude,
         lon: geolocation.coords.longitude,
-        lastfix: geolocation.timestamp,
+        lastfix: Math.round((timestamp() - geolocation.timestamp) / 1000),
         type: 1
       });
       logInfo('geolocation was successfully received ', requestBidsObject.ortb2Fragments.global.device.geo)
@@ -56,6 +55,7 @@ function init(moduleConfig) {
 }
 export const geolocationSubmodule = {
   name: 'geolocation',
+  gvlid: VENDORLESS_GVLID,
   getBidRequestData: getGeolocationData,
   init: init,
 };

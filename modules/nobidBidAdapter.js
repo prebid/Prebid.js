@@ -3,12 +3,21 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-window.nobidVersion = '1.3.3';
+window.nobidVersion = '1.3.4';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -62,6 +71,19 @@ function nobidBuildRequests(bids, bidderRequest) {
         uspConsent = bidderRequest.uspConsent;
       }
       return uspConsent;
+    }
+    var gppConsent = function(bidderRequest) {
+      let gppConsent = null;
+      if (bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent?.applicableSections) {
+        gppConsent = {};
+        gppConsent.gpp = bidderRequest.gppConsent.gppString;
+        gppConsent.gpp_sid = Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections : [];
+      } else if (bidderRequest?.ortb2?.regs?.gpp && bidderRequest?.ortb2.regs?.gpp_sid) {
+        gppConsent = {};
+        gppConsent.gpp = bidderRequest.ortb2.regs.gpp;
+        gppConsent.gpp_sid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid : [];
+      }
+      return gppConsent;
     }
     var schain = function(bids) {
       if (bids && bids.length > 0) {
@@ -139,12 +161,16 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
     state['pjbdr'] = (bidderRequest && bidderRequest.bidderCode) ? bidderRequest.bidderCode : 'nobid';
+    state['pbver'] = '$prebid.version$';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
     const cop = coppa();
     if (cop) state['coppa'] = cop;
     const eids = getEIDs(deepAccess(bids, '0.userIdAsEids'));
     if (eids && eids.length > 0) state['eids'] = eids;
+    const gpp = gppConsent(bidderRequest);
+    if (gpp?.gpp) state['gpp'] = gpp.gpp;
+    if (gpp?.gpp_sid) state['gpp_sid'] = gpp.gpp_sid;
     if (bidderRequest && bidderRequest.ortb2) state['ortb2'] = bidderRequest.ortb2;
     return state;
   };
@@ -230,9 +256,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
     var placementId = bid.params['placementId'];
 
-    var adType = 'banner';
+    let adType = 'banner';
     const videoMediaType = deepAccess(bid, 'mediaTypes.video');
-    const context = deepAccess(bid, 'mediaTypes.video.context');
+    const context = deepAccess(bid, 'mediaTypes.video.context') || '';
     if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
@@ -246,7 +272,8 @@ function nobidBuildRequests(bids, bidderRequest) {
         placementId: placementId,
         ad_type: adType,
         params: bid.params,
-        floor: floor
+        floor: floor,
+        ctx: context
       },
       adunits);
     }
@@ -350,25 +377,27 @@ export const spec = {
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
- * Determines whether or not the given bid request is valid.
- *
- * @param {BidRequest} bid The bid params to validate.
- * @return boolean True if this is a valid bid, and false otherwise.
- */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     log('isBidRequestValid', bid);
-    return !!bid.params.siteId;
+    if (bid?.params?.siteId) return true;
+    return false;
   },
   /**
- * Make a server request from the list of BidRequests.
- *
- * @param {validBidRequests[]} - an array of bids
- * @return ServerRequest Info describing the request to the server.
- */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     function resolveEndpoint() {
       var ret = 'https://ads.servenobid.com/';
       var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
+      env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
       if (!env) ret = 'https://ads.servenobid.com/';
       else if (env == 'beta') ret = 'https://beta.servenobid.com/';
       else if (env == 'dev') ret = '//localhost:8282/';
@@ -403,11 +432,11 @@ export const spec = {
     };
   },
   /**
-     * Unpack the response from the server into a list of bids.
-     *
-     * @param {ServerResponse} serverResponse A successful response from the server.
-     * @return {Bid[]} An array of bids which were nested inside the server.
-     */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     log('interpretResponse -> serverResponse', serverResponse);
     log('interpretResponse -> bidRequest', bidRequest);
@@ -415,13 +444,13 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent) {
     if (syncOptions.iframeEnabled) {
       let params = '';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -436,6 +465,12 @@ export const spec = {
         if (params.length > 0) params += '&';
         else params += '?';
         params += 'usp_consent=' + usPrivacy;
+      }
+      if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+        if (params.length > 0) params += '&';
+        else params += '?';
+        params += 'gpp=' + encodeURIComponent(gppConsent.gppString);
+        params += 'gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(','));
       }
       return [{
         type: 'iframe',
@@ -459,9 +494,9 @@ export const spec = {
   },
 
   /**
-     * Register bidder specific code, which will execute if bidder timed out after an auction
-     * @param {data} Containing timeout specific data
-     */
+   * Register bidder specific code, which will execute if bidder timed out after an auction
+   * @param {data} Containing timeout specific data
+   */
   onTimeout: function(data) {
     window.nobid.timeoutTotal++;
     log('Timeout total: ' + window.nobid.timeoutTotal, data);

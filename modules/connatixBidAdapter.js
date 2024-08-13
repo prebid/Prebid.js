@@ -11,7 +11,9 @@ import {
 } from '../src/utils.js';
 
 import {
+  ADPOD,
   BANNER,
+  VIDEO,
 } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'connatix';
@@ -41,10 +43,28 @@ export function getBidFloor(bid) {
   }
 }
 
+export function validateBanner(mediaTypes) {
+  if (!mediaTypes[BANNER]) {
+    return true;
+  }
+
+  const banner = deepAccess(mediaTypes, BANNER, {});
+  return (Boolean(banner.sizes) && isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0);
+}
+
+export function validateVideo(mediaTypes) {
+  const video = mediaTypes[VIDEO];
+  if (!video) {
+    return true;
+  }
+
+  return video.context !== ADPOD;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 143,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /*
    * Validate the bid request.
@@ -57,17 +77,24 @@ export const spec = {
     const params = deepAccess(bid, 'params', {});
     const bidder = deepAccess(bid, 'bidder');
 
-    const banner = deepAccess(mediaTypes, BANNER, {});
-
     const hasBidId = Boolean(bidId);
     const isValidBidder = (bidder === BIDDER_CODE);
-    const isValidSize = (Boolean(banner.sizes) && isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0);
-    const hasSizes = mediaTypes[BANNER] ? isValidSize : false;
+    const hasMediaTypes = Boolean(mediaTypes) && (Boolean(mediaTypes[BANNER]) || Boolean(mediaTypes[VIDEO]));
+    const isValidBanner = validateBanner(mediaTypes);
+    const isValidVideo = validateVideo(mediaTypes);
     const hasRequiredBidParams = Boolean(params.placementId);
 
-    const isValid = isValidBidder && hasBidId && hasSizes && hasRequiredBidParams;
+    const isValid = isValidBidder && hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams;
     if (!isValid) {
-      logError(`Invalid bid request: isValidBidder: ${isValidBidder} hasBidId: ${hasBidId}, hasSizes: ${hasSizes}, hasRequiredBidParams: ${hasRequiredBidParams}`);
+      logError(
+        `Invalid bid request: 
+          isValidBidder: ${isValidBidder}, 
+          hasBidId: ${hasBidId}, 
+          hasMediaTypes: ${hasMediaTypes}, 
+          isValidBanner: ${isValidBanner}, 
+          isValidVideo: ${isValidVideo}, 
+          hasRequiredBidParams: ${hasRequiredBidParams}`
+      );
     }
     return isValid;
   },
@@ -98,6 +125,7 @@ export const spec = {
       ortb2: bidderRequest.ortb2,
       gdprConsent: bidderRequest.gdprConsent,
       uspConsent: bidderRequest.uspConsent,
+      gppConsent: bidderRequest.gppConsent,
       refererInfo: bidderRequest.refererInfo,
       bidRequests,
     };
@@ -117,25 +145,25 @@ export const spec = {
   interpretResponse: (serverResponse) => {
     const responseBody = serverResponse.body;
     const bids = responseBody.Bids;
-    const playerId = responseBody.PlayerId;
-    const customerId = responseBody.CustomerId;
 
-    if (!isArray(bids) || !playerId || !customerId) {
+    if (!isArray(bids)) {
       return [];
     }
 
+    const referrer = responseBody.Referrer;
     return bids.map(bidResponse => ({
       requestId: bidResponse.RequestId,
       cpm: bidResponse.Cpm,
       ttl: bidResponse.Ttl || DEFAULT_MAX_TTL,
       currency: 'USD',
-      mediaType: BANNER,
+      mediaType: bidResponse.VastXml ? VIDEO : BANNER,
       netRevenue: true,
       width: bidResponse.Width,
       height: bidResponse.Height,
       creativeId: bidResponse.CreativeId,
-      referrer: bidResponse.Referrer,
       ad: bidResponse.Ad,
+      vastXml: bidResponse.VastXml,
+      referrer: referrer,
     }));
   },
 

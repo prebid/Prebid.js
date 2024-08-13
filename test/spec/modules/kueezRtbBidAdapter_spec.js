@@ -2,6 +2,14 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
+  storage
+} from 'modules/kueezRtbBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {version} from 'package.json';
+import {useFakeTimers} from 'sinon';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
+import {
   hashCode,
   extractPID,
   extractCID,
@@ -10,12 +18,7 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-} from 'modules/kueezRtbBidAdapter.js';
-import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+} from '../../../libraries/vidazooUtils/bidderUtils.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -322,7 +325,12 @@ describe('KueezRtbBidAdapter', function () {
               startdelay: 0
             }
           },
-          gpid: ''
+          gpid: '',
+          cat: [],
+          contentData: [],
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: []
         }
       });
     });
@@ -384,6 +392,11 @@ describe('KueezRtbBidAdapter', function () {
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          cat: [],
+          contentData: [],
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: []
         }
       });
     });
@@ -418,7 +431,26 @@ describe('KueezRtbBidAdapter', function () {
         'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
         'type': 'image'
       }]);
-    })
+    });
+
+    it('should generate url with consent data', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent_string'
+      };
+      const uspConsent = 'usp_string';
+      const gppConsent = {
+        gppString: 'gpp_string',
+        applicableSections: [7]
+      }
+
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+
+      expect(result).to.deep.equal([{
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'type': 'image'
+      }]);
+    });
   });
 
   describe('interpret response', function () {
@@ -507,8 +539,6 @@ describe('KueezRtbBidAdapter', function () {
         switch (idSystemProvider) {
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:
@@ -561,13 +591,13 @@ describe('KueezRtbBidAdapter', function () {
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(key, 0);
+      uniqueDealId = getUniqueDealId(storage, key, 0);
     })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(key);
+        const current = getUniqueDealId(storage, key);
         expect(current).to.be.equal(uniqueDealId);
         done();
       }, 200);
@@ -575,7 +605,7 @@ describe('KueezRtbBidAdapter', function () {
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(key, 100);
+        const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
       }, 200)
@@ -599,8 +629,8 @@ describe('KueezRtbBidAdapter', function () {
         shouldAdvanceTime: true,
         now
       });
-      setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      setStorageItem(storage, 'myKey', 2020);
+      const {value, created} = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -611,7 +641,7 @@ describe('KueezRtbBidAdapter', function () {
     it('should get external stored value', function () {
       const value = 'superman'
       window.localStorage.setItem('myExternalKey', value);
-      const item = getStorageItem('myExternalKey');
+      const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 

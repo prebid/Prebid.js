@@ -5,6 +5,7 @@ import {
   spec,
   resetUserSync
 } from 'modules/underdogmediaBidAdapter.js';
+import { config } from '../../../src/config';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;
@@ -762,6 +763,20 @@ describe('UnderdogMedia adapter', function () {
 
         expect(request.data.ref).to.equal(undefined);
       });
+
+      it('should have pbTimeout to be 3001 if bidder timeout does not exists', function () {
+        config.setConfig({ bidderTimeout: '' })
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.pbTimeout).to.equal(3001)
+      })
+
+      it('should have pbTimeout to be a numerical value if bidder timeout is in a string', function () {
+        config.setConfig({ bidderTimeout: '1000' })
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.pbTimeout).to.equal(1000)
+      })
 
       it('should have pubcid if it exists', function () {
         let bidRequests = [{

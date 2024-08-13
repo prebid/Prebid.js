@@ -1,16 +1,17 @@
 'use strict';
 
-import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepSetValue, isFn, isPlainObject, logWarn, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BID_SCHEME = 'https://';
 const BID_DOMAIN = 'technoratimedia.com';
 const USER_SYNC_IFRAME_URL = 'https://ad-cdn.technoratimedia.com/html/usersync.html';
 const USER_SYNC_PIXEL_URL = 'https://sync.technoratimedia.com/services';
-const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
+const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'plcmt', 'linearity', 'mimes', 'protocols', 'api' ];
 const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
@@ -223,7 +224,6 @@ export const spec = {
     };
 
     if (!serverResponse.body || typeof serverResponse.body != 'object') {
-      logWarn('IMDS: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
     const {id, seatbid: seatbids} = serverResponse.body;
@@ -323,7 +323,7 @@ export const spec = {
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
-        type: 'pixel',
+        type: 'image',
         url: `${USER_SYNC_PIXEL_URL}?srv=cs&${queryParams.join('&')}`
       });
     }

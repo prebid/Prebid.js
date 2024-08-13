@@ -10,7 +10,11 @@ import { submodule } from '../src/hook.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { logError, generateUUID, insertElement } from '../src/utils.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 // ============================ MODULE STATE ===============================
 
@@ -39,6 +43,7 @@ let preloadStatus = 0;
  * @param {string} scriptURL The script URL to preload
  */
 function pageInitStepPreloadScript(scriptURL) {
+  // TODO: this bypasses adLoader
   const linkElement = document.createElement('link');
   linkElement.rel = 'preload';
   linkElement.as = 'script';
@@ -154,8 +159,8 @@ function readConfig(config) {
 let startBillableEvents = function() {
   // Upon clean.io submodule initialization, every winner bid is considered to be protected
   // and therefore, subjected to billing
-  events.on(CONSTANTS.EVENTS.BID_WON, winnerBidResponse => {
-    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+  events.on(EVENTS.BID_WON, winnerBidResponse => {
+    events.emit(EVENTS.BILLABLE_EVENT, {
       vendor: 'clean.io',
       billingId: generateUUID(),
       type: 'impression',

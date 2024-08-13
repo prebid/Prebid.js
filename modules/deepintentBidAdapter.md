@@ -66,7 +66,7 @@ var adVideoAdUnits = [
           protocols: [ 2, 3 ],                  // optional
           battr: [ 13, 14 ],                    // optional
           linearity: 1,                         // optional
-          placement: 2,                         // optional
+          plcmt: 2,                             // optional
           minbitrate: 10,                       // optional
           maxbitrate: 10                        // optional
         }
