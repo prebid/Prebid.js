@@ -7,7 +7,7 @@ import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
-// Since IntentIQ analytics module work based on ID module configurations, there is shared code
+// Since IntentIQ analytics module works based on ID module configurations, there is shared code between modules
 // eslint-disable-next-line prebid/validate-imports
 import { detectBrowser } from './intentIqIdSystem.js';
 
