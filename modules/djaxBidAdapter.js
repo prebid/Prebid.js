@@ -108,7 +108,6 @@ export const spec = {
     details.unshift({ 'function': 'onTimeout' });
     sendResponseToServer(details);
   }
-
 };
 
 registerBidder(spec);
