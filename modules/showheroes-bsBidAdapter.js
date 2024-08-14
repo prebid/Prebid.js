@@ -2,7 +2,6 @@ import {
   deepAccess,
   deepSetValue,
   triggerPixel,
-  formatQS,
   isFn,
   logInfo} from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -63,12 +62,6 @@ const converter = ortbConverter({
   },
 })
 
-var hasSynced = false;
-
-export function resetUserSync() {
-  hasSynced = false;
-}
-
 function getEnvURLs(isStage) {
   return {
     pubTag: isStage ? STAGE_PUBLISHER_TAG : PROD_PUBLISHER_TAG,
@@ -106,33 +99,43 @@ export const spec = {
   interpretResponse: (response, request) => {
     return createBids(response.body, request.data);
   },
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
-    if (hasSynced || !syncOptions.iframeEnabled) return;
+  getUserSyncs: (syncOptions, serverResponses) => {
+    const syncs = [];
 
-    // data is only assigned if params are available to pass to syncEndpoint
-    let params = {};
-
-    if (gdprConsent) {
-      params['gdpr'] = gdprConsent.gdprApplies ? 1 : 0;
-      params['gdpr_consent'] = encodeURIComponent(gdprConsent.consentString);
+    if (!serverResponses.length || !serverResponses[0].body.userSync) {
+      return syncs;
     }
 
-    if (uspConsent) {
-      params['usp'] = encodeURIComponent(uspConsent);
+    const userSync = serverResponses[0].body.userSync;
+
+    if (syncOptions.iframeEnabled && userSync?.iframes?.length) {
+      userSync.iframes.forEach(url => {
+        syncs.push({
+          type: 'iframe',
+          url
+        });
+        (userSync.pixels || []).forEach(url => {
+          syncs.push({
+            type: 'iframe',
+            url
+          });
+        });
+      });
+      logInfo(`found ${syncs.length} iframe urls to sync`);
+      return syncs;
     }
 
-    if (gppConsent?.gppString) {
-      params['gpp'] = gppConsent.gppString;
-      params['gpp_sid'] = gppConsent.applicableSections?.join();
+    if (syncOptions.pixelEnabled) {
+      (userSync.pixels || []).forEach(url => {
+        syncs.push({
+          type: 'image',
+          url
+        });
+      });
+
+      logInfo(`found ${syncs.length} pixel urls to sync`);
     }
-
-    params = Object.keys(params).length ? `?${formatQS(params)}` : '';
-
-    hasSynced = true;
-    return {
-      type: 'iframe',
-      url: SYNC_URL + params,
-    };
+    return syncs;
   },
 
   onBidWon(bid) {

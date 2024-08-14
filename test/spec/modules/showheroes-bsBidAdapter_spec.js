@@ -311,46 +311,38 @@ describe('shBidAdapter', () => {
     })
   });
 
-  describe('user sync', () => {
-    beforeEach(() => {
-      resetUserSync();
+  describe('getUserSyncs', function () {
+    const response = [{
+      body: {
+        userSync: {
+          iframes: ['https://sync.showheroes.com/iframe'],
+          pixels: ['https://sync.showheroes.com/pixel']
+        }
+      }
+    }]
+
+    it('empty', function () {
+      let result = spec.getUserSyncs({}, []);
+
+      expect(result).to.deep.equal([]);
     });
 
-    it('should register the ShowHeroes iframe', () => {
-      const syncs = spec.getUserSyncs({
+    it('iframe', function () {
+      let result = spec.getUserSyncs({
         iframeEnabled: true
-      });
+      }, response);
 
-      expect(syncs).to.deep.equal({ type: 'iframe', url: SYNC_URL });
-      const secondSync = spec.getUserSyncs({
-        iframeEnabled: true
-      });
-
-      expect(secondSync).to.be.undefined;
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal('https://sync.showheroes.com/iframe');
     });
 
-    it('should skip sync without iframe', () => {
-      const sync = spec.getUserSyncs({
-        iframeEnabled: false
-      });
+    it('pixel', function () {
+      let result = spec.getUserSyncs({
+        pixelEnabled: true
+      }, response);
 
-      expect(sync).to.be.undefined;
-    });
-
-    it('should include privacy parameters', () => {
-      const syncs = spec.getUserSyncs({
-        iframeEnabled: true
-      }, undefined, {
-        gdprApplies: true,
-        consentString: 'test_consent',
-      },
-      '1---', {
-        gppString: 'test_gpp',
-        applicableSections: ['1', '2'],
-      });
-
-      const expectedURL = `${SYNC_URL}?gdpr=1&gdpr_consent=test_consent&usp=1---&gpp=test_gpp&gpp_sid=1,2`;
-      expect(syncs).to.deep.equal({ type: 'iframe', url: expectedURL });
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://sync.showheroes.com/pixel');
     });
   });
 });
