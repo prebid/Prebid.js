@@ -172,7 +172,7 @@ function createBids(bidRes, reqData) {
     bidUnit.adUnitCode = bid.adUnitCode;
     bidUnit.currency = bid.currency;
     bidUnit.mediaType = bid.mediaType || VIDEO;
-    bidUnit.ttl = TTL;
+    bidUnit.ttl = bid.exp || TTL;
     bidUnit.creativeId = 'c_' + requestId;
     bidUnit.netRevenue = true;
     bidUnit.width = size.width;
