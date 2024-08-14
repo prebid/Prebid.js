@@ -102,10 +102,8 @@ describe('Djax Adapter', function() {
     it('handles nobid responses', () => {
       var request = spec.buildRequests(bidRequests);
       let response = '';
-
       let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
     });
   });
-
 });
