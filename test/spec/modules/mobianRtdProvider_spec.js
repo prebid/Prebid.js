@@ -25,12 +25,19 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub.restore();
   });
 
-  it('should set key-value pairs when server responds with garm_risk', function () {
+  it('should set key-value pairs when server responds with valid data', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
-        garm_risk: 'low',
-        sentiment_positive: true,
-        emotion_joy: true
+        meta: {
+          url: "https://example.com",
+          has_results: true
+        },
+        results: {
+          mobianRisk: "low",
+          mobianSentiment: "positive",
+          mobianContentCategories: [],
+          mobianEmotions: ["joy"]
+        }
       }));
     });
 
@@ -50,15 +57,19 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  it('should handle response with GARM content categories, sentiment, and emotions', function () {
+  it('should handle response with content categories and multiple emotions', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
-        garm_risk: 'medium',
-        garm_content_category_arms: true,
-        garm_content_category_crime: true,
-        sentiment_negative: true,
-        emotion_anger: true,
-        emotion_fear: true
+        meta: {
+          url: "https://example.com",
+          has_results: true
+        },
+        results: {
+          mobianRisk: "medium",
+          mobianSentiment: "negative",
+          mobianContentCategories: ["arms", "crime"],
+          mobianEmotions: ["anger", "fear"]
+        }
       }));
     });
 
@@ -78,26 +89,22 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  it('should return unknown risk when garm_risk is not present', function () {
+  it('should return empty object when server responds with has_results: false', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
-        sentiment_neutral: true
+        meta: {
+          url: "https://example.com",
+          has_results: false
+        },
+        results: {}
       }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
-      expect(result).to.deep.equal({
-        risk: 'unknown',
-        contentCategories: [],
-        sentiment: 'neutral',
-        emotions: []
-      });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
-        mobianRisk: 'unknown',
-        mobianContentCategories: [],
-        mobianSentiment: 'neutral',
-        mobianEmotions: []
-      });
+      expect(result).to.deep.equal({});
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.not.have.any.keys(
+        'mobianRisk', 'mobianContentCategories', 'mobianSentiment', 'mobianEmotions'
+      );
     });
   });
 
@@ -120,6 +127,36 @@ describe('Mobian RTD Submodule', function () {
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
       expect(result).to.deep.equal({});
+    });
+  });
+
+  it('should use default values when fields are missing in the response', function () {
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.success(JSON.stringify({
+        meta: {
+          url: "https://example.com",
+          has_results: true
+        },
+        results: {
+          mobianRisk: "high"
+          // Missing other fields
+        }
+      }));
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
+        risk: 'high',
+        contentCategories: [],
+        sentiment: 'unknown',
+        emotions: []
+      });
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'high',
+        mobianContentCategories: [],
+        mobianSentiment: 'unknown',
+        mobianEmotions: []
+      });
     });
   });
 });
