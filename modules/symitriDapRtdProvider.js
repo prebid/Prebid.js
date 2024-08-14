@@ -527,15 +527,32 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
     addIdentifier: function(identity, apiParams) {
       if (typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
-        let hid = this.generateHash(identity.value); //Hash the identifier passed by Publisher through config
+        let hid = this.generateHash(identity.value); // Hash the identifier passed by Publisher through config
         apiParams.identity = hid;
       }
       return apiParams;
     },
 
-    //Using custom SHA256 algorithm to synchronously generate hash for the identifier as we can't use asynchronous crypto.subtle.digest.
-    //Copyright 2022 Andrea Griffini
-    //https://github.com/6502/sha256/
+    /**
+     * SYNOPSIS
+     *
+     * generateHash(message);
+     *
+     * DESCRIPTION
+     *
+     * SHA256 algorithm to synchronously generate hash for the passed in value.
+     * Asynchronous implementation provided by crypto.subtle.digest can only be triggered from async function.
+     * This synchronous alternative is useful while generating hash from synchronous code.
+     *
+     * Copyright 2022 Andrea Griffini
+     * https://github.com/6502/sha256/
+     *
+     * PARAMETERS
+     *
+     * message: any string that needs tobe hashed. In this case it will be user identifier
+     *
+     */
+
     generateHash: function(message) {
       const data = new TextEncoder().encode(message);
       let h0 = 0x6a09e667; let h1 = 0xbb67ae85; let h2 = 0x3c6ef372; let h3 = 0xa54ff53a;
