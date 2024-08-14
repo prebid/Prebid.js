@@ -29,14 +29,14 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
         meta: {
-          url: "https://example.com",
+          url: 'https://example.com',
           has_results: true
         },
         results: {
-          mobianRisk: "low",
-          mobianSentiment: "positive",
+          mobianRisk: 'low',
+          mobianSentiment: 'positive',
           mobianContentCategories: [],
-          mobianEmotions: ["joy"]
+          mobianEmotions: ['joy']
         }
       }));
     });
@@ -61,14 +61,14 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
         meta: {
-          url: "https://example.com",
+          url: 'https://example.com',
           has_results: true
         },
         results: {
-          mobianRisk: "medium",
-          mobianSentiment: "negative",
-          mobianContentCategories: ["arms", "crime"],
-          mobianEmotions: ["anger", "fear"]
+          mobianRisk: 'medium',
+          mobianSentiment: 'negative',
+          mobianContentCategories: ['arms', 'crime'],
+          mobianEmotions: ['anger', 'fear']
         }
       }));
     });
@@ -93,7 +93,7 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
         meta: {
-          url: "https://example.com",
+          url: 'https://example.com',
           has_results: false
         },
         results: {}
@@ -134,11 +134,11 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
         meta: {
-          url: "https://example.com",
+          url: 'https://example.com',
           has_results: true
         },
         results: {
-          mobianRisk: "high"
+          mobianRisk: 'high'
           // Missing other fields
         }
       }));
