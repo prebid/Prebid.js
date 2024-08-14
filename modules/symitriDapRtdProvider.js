@@ -130,31 +130,6 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   }
 
   /**
-   * Listen for bidWon Events to record SAID receipt
-   * @param {string} authToken
-   */
-  function onBidWonListener (authToken) {
-    window.pbjs.onEvent('bidWon', function(bid) {
-      const url = 'https://ProdSymPrebidEventhub1.servicebus.windows.net/prebid-said-1/messages';
-      const bidjson = JSON.stringify(bid);
-      const cb = {
-        success: (response, request) => {
-          logInfo('DEBUG(###Winning Bid SAVED###)');
-        },
-        error: (request, error) => {
-          logInfo(error);
-          logInfo('DEBUG(###Save Winning Bid FAILED###)');
-        }
-      };
-
-      ajax(url, cb, bidjson, {
-        method: 'POST',
-        customHeaders: {'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': authToken}
-      });
-    });
-  }
-
-  /**
    * Module init
    * @param {Object} config
    * @param {Object} userConsent
@@ -164,20 +139,13 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     if (dapUtils.checkConsent(userConsent) === false) {
       return false;
     }
-
-    if (window.pbjs && window.pbjs.onEvent && config && config.params && config.params.apiAuthToken) {
-      const { apiAuthToken } = config.params;
-      this.onBidWonListener(apiAuthToken);
-    }
-
     return true;
   }
 
   const rtdSubmodule = {
     name: SUBMODULE_NAME,
     getBidRequestData: getRealTimeData,
-    init: init,
-    onBidWonListener: onBidWonListener
+    init: init
   };
 
   submodule(MODULE_NAME, rtdSubmodule);
@@ -190,7 +158,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           api_version: rtdConfig.params.apiVersion,
           domain: rtdConfig.params.domain,
           segtax: rtdConfig.params.segtax,
-          identity: {type: rtdConfig.params.identityType, identity: rtdConfig.params.identityValue, selector: rtdConfig.params.identitySelector},
+          identity: {type: rtdConfig.params.identityType, value: rtdConfig.params.identityValue},
         };
         let refreshMembership = true;
         let token = dapUtils.dapGetTokenFromLocalStorage();
@@ -558,25 +526,102 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     },
 
     addIdentifier: function(identity, apiParams) {
-      if (typeof (identity.identity) != typeof (undefined)) {
-        apiParams.identity = identity.identity;
-      } else if (identity.type == 'email' && typeof (identity.selector) != typeof (undefined) && identity.selector.trim() !== '') {
-        let identityElement = document.querySelector(identity.selector);
-        let identityEmail = identityElement.innerHTML;
-        if (identityElement.tagName == 'INPUT') {
-          identityEmail = identityElement.value;
-        }
-
-        if (identityEmail) {
-          const EMAIL_VALIDATION_REGEX = /((([^<>()\[\].,;:\s@"]+(\.[^<>()\[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,}))/i;
-          const regex = new RegExp(EMAIL_VALIDATION_REGEX);
-          if (regex.test(identityEmail)) {
-            apiParams.identity = identityEmail;
-          }
-        }
+      if (typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
+        let hid = this.generateHash(identity.value);
+        apiParams.identity = hid;
       }
+      return apiParams;
+    },
 
-      return apiParams
+    generateHash: function(message) {
+      const data = new TextEncoder().encode(message);
+      let h0 = 0x6a09e667; let h1 = 0xbb67ae85; let h2 = 0x3c6ef372; let h3 = 0xa54ff53a;
+      let h4 = 0x510e527f; let h5 = 0x9b05688c; let h6 = 0x1f83d9ab; let h7 = 0x5be0cd19;
+      let tsz = 0; let bp = 0;
+      const k = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+      const rrot = (x, n) => (x >>> n) | (x << (32 - n));
+      const w = new Uint32Array(64);
+      const buf = new Uint8Array(64);
+      const process = () => {
+        for (let j = 0, r = 0; j < 16; j++, r += 4) {
+          w[j] = (buf[r] << 24) | (buf[r + 1] << 16) | (buf[r + 2] << 8) | buf[r + 3];
+        }
+        for (let j = 16; j < 64; j++) {
+          let s0 = rrot(w[j - 15], 7) ^ rrot(w[j - 15], 18) ^ (w[j - 15] >>> 3);
+          let s1 = rrot(w[j - 2], 17) ^ rrot(w[j - 2], 19) ^ (w[j - 2] >>> 10);
+          w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
+        }
+        let a = h0; let b = h1; let c = h2; let d = h3; let e = h4; let f = h5; let g = h6; let h = h7;
+        for (let j = 0; j < 64; j++) {
+          let S1 = rrot(e, 6) ^ rrot(e, 11) ^ rrot(e, 25);
+          let ch = (e & f) ^ ((~e) & g);
+          let t1 = (h + S1 + ch + k[j] + w[j]) | 0;
+          let S0 = rrot(a, 2) ^ rrot(a, 13) ^ rrot(a, 22);
+          let maj = (a & b) ^ (a & c) ^ (b & c);
+          let t2 = (S0 + maj) | 0;
+          h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+        }
+        h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0;
+        h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
+        bp = 0;
+      };
+      const add = data => {
+        if (typeof data === 'string') {
+          data = typeof TextEncoder === 'undefined' ? Buffer.from(data) : (new TextEncoder()).encode(data);
+        }
+        for (let i = 0; i < data.length; i++) {
+          buf[bp++] = data[i];
+          if (bp === 64) process();
+        }
+        tsz += data.length;
+      };
+      const digest = () => {
+        buf[bp++] = 0x80; if (bp == 64) process();
+        if (bp + 8 > 64) {
+          while (bp < 64) buf[bp++] = 0x00;
+          process();
+        }
+        while (bp < 58) buf[bp++] = 0x00;
+        // Max number of bytes is 35,184,372,088,831
+        let L = tsz * 8;
+        buf[bp++] = (L / 1099511627776.0) & 255;
+        buf[bp++] = (L / 4294967296.0) & 255;
+        buf[bp++] = L >>> 24;
+        buf[bp++] = (L >>> 16) & 255;
+        buf[bp++] = (L >>> 8) & 255;
+        buf[bp++] = L & 255;
+        process();
+        let reply = new Uint8Array(32);
+        reply[0] = h0 >>> 24; reply[1] = (h0 >>> 16) & 255; reply[2] = (h0 >>> 8) & 255; reply[3] = h0 & 255;
+        reply[4] = h1 >>> 24; reply[5] = (h1 >>> 16) & 255; reply[6] = (h1 >>> 8) & 255; reply[7] = h1 & 255;
+        reply[8] = h2 >>> 24; reply[9] = (h2 >>> 16) & 255; reply[10] = (h2 >>> 8) & 255; reply[11] = h2 & 255;
+        reply[12] = h3 >>> 24; reply[13] = (h3 >>> 16) & 255; reply[14] = (h3 >>> 8) & 255; reply[15] = h3 & 255;
+        reply[16] = h4 >>> 24; reply[17] = (h4 >>> 16) & 255; reply[18] = (h4 >>> 8) & 255; reply[19] = h4 & 255;
+        reply[20] = h5 >>> 24; reply[21] = (h5 >>> 16) & 255; reply[22] = (h5 >>> 8) & 255; reply[23] = h5 & 255;
+        reply[24] = h6 >>> 24; reply[25] = (h6 >>> 16) & 255; reply[26] = (h6 >>> 8) & 255; reply[27] = h6 & 255;
+        reply[28] = h7 >>> 24; reply[29] = (h7 >>> 16) & 255; reply[30] = (h7 >>> 8) & 255; reply[31] = h7 & 255;
+        reply.hex = () => {
+          let res = '';
+          reply.forEach(x => res += ('0' + x.toString(16)).slice(-2));
+          return res;
+        };
+        return reply;
+      };
+      if (data === undefined) return {add, digest};
+      add(data);
+      const hashBuffer = digest();
+      // convert ArrayBuffer to Array
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      // convert bytes to hex string
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
     },
 
     /**
@@ -834,7 +879,6 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     addRealTimeData,
     getRealTimeData,
     generateRealTimeData,
-    onBidWonListener,
     rtdSubmodule,
     storage,
     dapUtils,
@@ -852,7 +896,6 @@ export const {
   addRealTimeData,
   getRealTimeData,
   generateRealTimeData,
-  onBidWonListener,
   rtdSubmodule: symitriDapRtdSubmodule,
   storage,
   dapUtils,

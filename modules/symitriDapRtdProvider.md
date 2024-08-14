@@ -45,9 +45,8 @@ pbjs.setConfig({
           apiVersion: "x1",
           apiAuthToken: '<see your Symitri account rep>',
           domain: 'your-domain.com',
-          identityType: 'email' | 'mobile' | ... | 'dap-signature:1.0.0',
-          identityValue: '<user email/mobile>'
-          identitySelector: '#user-profile-email',
+          identityType: 'hid'| ... | 'dap-signature:1.0.0',
+          identityValue: '<user hid>',
           segtax: 501,
           dapEntropyUrl: 'https://sym-dist.symitri.net/dapentropy.js',
           dapEntropyTimeout: 1500
@@ -71,9 +70,8 @@ Please reach out to your Symitri account representative(<Prebid@symitri.com>) to
 | apiVersion | String | This holds the API version | It should be "x1" always |
 | apiAuthToken | String | Symitri API AuthToken | Please reach out to your Symitri account representative(<Prebid@symitri.com>) for this value |
 | domain | String | The domain name of your webpage | |
-| identityType | String | Something like this 'email', 'mobile',  ... 'dap-signature:1.0.0' | |
-| identityValue | String | This is optional field to pass user email/mobile. Will be used only if identityType is email or mobile | |
-| identitySelector | String | This is optional field to pass javascript query selector to extract user email/mobile from DOM tree. Will be used only if identityType is email or mobile and identityValue is not set. | |
+| identityType | String | Something like this 'hid',  ... 'dap-signature:1.0.0' | |
+| identityValue | String | This is optional field to pass user hid. Will be used only if identityType is hid | |
 | segtax | Integer | The taxonomy for Symitri | The value should be 501 |
 | dapEntropyUrl | String | URL to dap entropy script | Optional if the script is directly included on the webpage. Contact your Symitri account rep for more details |
 | dapEntropyTimeout | Integer | Maximum time allotted for the entropy calculation to happen | |
