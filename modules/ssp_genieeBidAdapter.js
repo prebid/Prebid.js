@@ -200,7 +200,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
       }
     }
   }
-  const gecuparameter = bid.params.gecuparams;
+  const gecuparameter = window.gecuparams || {};
   if (isObject(gecuparameter)) {
     if (hasParamsNotBlankString(gecuparameter, GECUPARAMS_KEY.VERSION)) {
       data.gc_ver = encodeURIComponentIncludeSingleQuotation(gecuparameter[GECUPARAMS_KEY.VERSION]);
@@ -390,7 +390,7 @@ export const spec = {
 
     validBidRequests.forEach((bid) => {
       // const isNative = bid.mediaTypes?.native;
-      const geparameter = bid.params.geparams || {};
+      const geparameter = window.geparams || {};
 
       serverRequests.push({
         method: 'GET',

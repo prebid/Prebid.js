@@ -26,35 +26,45 @@ describe('ssp_genieeBidAdapter', function () {
     return newBid;
   }
 
-  function getGecuparamsDefinedBid(bid, params) {
-    const newBid = { ...bid };
-    newBid.params.gecuparams = params;
-    return newBid;
-  }
-
-  function hasParamsNotBlankStringTest(isGeparams, param, query) {
-    const defineParamsFunc = isGeparams
-      ? getGeparamsDefinedBid
-      : getGecuparamsDefinedBid;
-    const paramsName = isGeparams ? 'geparams' : 'gecuparams';
-
-    it(`should set the ${query} query to ${paramsName}.${param} when ${paramsName}.${param} is neither undefined nor null nor a blank string`, function () {
-      const params = {};
-      params[param] = undefined;
-      let request = spec.buildRequests([defineParamsFunc(BANNER_BID, params)]);
+  function hasParamsNotBlankStringTestGeparams(param, query) {
+    it(`should set the ${query} query to geparams.${param} when geparams.${param} is neither undefined nor null nor a blank string`, function () {
+      window.geparams[param] = undefined;
+      let request = spec.buildRequests([BANNER_BID]);
       expect(request[0].data).to.not.have.string(`&${query}=`);
 
-      params[param] = null;
-      request = spec.buildRequests([defineParamsFunc(BANNER_BID, params)]);
+      window.geparams[param] = null;
+      request = spec.buildRequests([BANNER_BID]);
       expect(request[0].data).to.not.have.string(`&${query}=`);
 
-      params[param] = '';
-      request = spec.buildRequests([defineParamsFunc(BANNER_BID, params)]);
+      window.geparams[param] = '';
+      request = spec.buildRequests([BANNER_BID]);
       expect(request[0].data).to.not.have.string(`&${query}=`);
 
       const value = 'hoge';
-      params[param] = value;
-      request = spec.buildRequests([defineParamsFunc(BANNER_BID, params)]);
+      window.geparams[param] = value;
+      request = spec.buildRequests([BANNER_BID]);
+      expect(request[0].data).to.have.string(`&${query}=${value}`);
+    });
+  }
+
+  function hasParamsNotBlankStringTestGecuparams(param, query) {
+    it(`should set the ${query} query to gecuparams.${param} when gecuparams.${param} is neither undefined nor null nor a blank string`, function () {
+      window.gecuparams = {};
+      window.gecuparams[param] = undefined;
+      let request = spec.buildRequests([BANNER_BID]);
+      expect(request[0].data).to.not.have.string(`&${query}=`);
+
+      window.gecuparams[param] = null;
+      request = spec.buildRequests([BANNER_BID]);
+      expect(request[0].data).to.not.have.string(`&${query}=`);
+
+      window.gecuparams[param] = '';
+      request = spec.buildRequests([BANNER_BID]);
+      expect(request[0].data).to.not.have.string(`&${query}=`);
+
+      const value = 'hoge';
+      window.gecuparams[param] = value;
+      request = spec.buildRequests([BANNER_BID]);
       expect(request[0].data).to.have.string(`&${query}=${value}`);
     });
   }
@@ -135,6 +145,10 @@ describe('ssp_genieeBidAdapter', function () {
       it('should makes the values of loc query and referer query geparams value when bidderRequest.refererInfo.referer is a falsy value', function () {
         const loc = 'https://www.google.com/';
         const referer = 'https://example.com/';
+        window.geparams = {
+          loc: 'https://www.google.com/',
+          ref: 'https://example.com/',
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { loc: loc, ref: referer }),
         ]);
@@ -148,6 +162,9 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should sets the value of the ct0 query to geparams.ct0', function () {
         const ct0 = 'hoge';
+        window.geparams = {
+          ct0: 'hoge',
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { ct0: ct0 }),
         ]);
@@ -195,6 +212,9 @@ describe('ssp_genieeBidAdapter', function () {
       });
 
       it('should sets the value of the adtk query to 0 when geparams.lat is truthy value', function () {
+        window.geparams = {
+          lat: 1,
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { lat: 1 }),
         ]);
@@ -202,6 +222,9 @@ describe('ssp_genieeBidAdapter', function () {
       });
 
       it('should sets the value of the adtk query to 1 when geparams.lat is falsy value', function () {
+        window.geparams = {
+          lat: 0,
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { lat: 0 }),
         ]);
@@ -210,6 +233,9 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should sets the value of the idfa query to geparams.idfa', function () {
         const idfa = 'hoge';
+        window.geparams = {
+          idfa: 'hoge',
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { idfa: idfa }),
         ]);
@@ -238,14 +264,22 @@ describe('ssp_genieeBidAdapter', function () {
         stub.restore();
       });
 
-      hasParamsNotBlankStringTest(true, 'zip', 'zip');
-      hasParamsNotBlankStringTest(true, 'country', 'country');
-      hasParamsNotBlankStringTest(true, 'city', 'city');
-      hasParamsNotBlankStringTest(true, 'long', 'long');
-      hasParamsNotBlankStringTest(true, 'lati', 'lati');
+      hasParamsNotBlankStringTestGeparams('zip', 'zip');
+      hasParamsNotBlankStringTestGeparams('country', 'country');
+      hasParamsNotBlankStringTestGeparams('city', 'city');
+      hasParamsNotBlankStringTestGeparams('long', 'long');
+      hasParamsNotBlankStringTestGeparams('lati', 'lati');
 
       it('should set the custom query to geparams.custom', function () {
         const params = {
+          custom: {
+            c1: undefined,
+            c2: null,
+            c3: '',
+            c4: 'hoge',
+          },
+        };
+        window.geparams = {
           custom: {
             c1: undefined,
             c2: null,
@@ -264,12 +298,15 @@ describe('ssp_genieeBidAdapter', function () {
         );
       });
 
-      hasParamsNotBlankStringTest(false, 'ver', 'gc_ver');
-      hasParamsNotBlankStringTest(false, 'minor', 'gc_minor');
-      hasParamsNotBlankStringTest(false, 'value', 'gc_value');
+      hasParamsNotBlankStringTestGecuparams('ver', 'gc_ver');
+      hasParamsNotBlankStringTestGecuparams('minor', 'gc_minor');
+      hasParamsNotBlankStringTestGecuparams('value', 'gc_value');
 
       it('should sets the value of the gfuid query to geparams.gfuid', function () {
         const gfuid = 'hoge';
+        window.geparams = {
+          gfuid: 'hoge',
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { gfuid: gfuid }),
         ]);
@@ -278,6 +315,9 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should sets the value of the adt query to geparams.adt', function () {
         const adt = 'hoge';
+        window.geparams = {
+          adt: 'hoge',
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { adt: adt }),
         ]);
@@ -293,6 +333,9 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should sets the value of the apid query to geparams.bundle when media type is banner', function () {
         const bundle = 'hoge';
+        window.geparams = {
+          bundle: 'hoge',
+        };
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { bundle: bundle }),
         ]);

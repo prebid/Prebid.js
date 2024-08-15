@@ -38,8 +38,6 @@ var adUnits = [
                 params: {
                     zoneId: 1234567,
                     currency: 'JPY',
-                    geparams: {},
-                    gecuparams: {},
                     isFillOnNoBid: true,
                     invalidImpBeacon: true,
                 }
