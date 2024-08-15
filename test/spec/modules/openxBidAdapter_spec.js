@@ -1109,7 +1109,7 @@ describe('OpenxRtbAdapter', function () {
     let bid;
 
     context('when there is an nbr response', function () {
-      let bids;
+      let response;
       beforeEach(function () {
         bidRequestConfigs = [{
           bidder: 'openx',
@@ -1131,16 +1131,16 @@ describe('OpenxRtbAdapter', function () {
         bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
 
         bidResponse = {nbr: 0}; // Unknown error
-        bids = spec.interpretResponse({body: bidResponse}, bidRequest);
+        response = spec.interpretResponse({body: bidResponse}, bidRequest);
       });
 
       it('should not return any bids', function () {
-        expect(bids.length).to.equal(0);
+        expect(response.bids.length).to.equal(0);
       });
     });
 
     context('when no seatbid in response', function () {
-      let bids;
+      let response;
       beforeEach(function () {
         bidRequestConfigs = [{
           bidder: 'openx',
@@ -1162,16 +1162,16 @@ describe('OpenxRtbAdapter', function () {
         bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
 
         bidResponse = {ext: {}, id: 'test-bid-id'};
-        bids = spec.interpretResponse({body: bidResponse}, bidRequest);
+        response = spec.interpretResponse({body: bidResponse}, bidRequest);
       });
 
       it('should not return any bids', function () {
-        expect(bids.length).to.equal(0);
+        expect(response.bids.length).to.equal(0);
       });
     });
 
     context('when there is no response', function () {
-      let bids;
+      let response;
       beforeEach(function () {
         bidRequestConfigs = [{
           bidder: 'openx',
@@ -1193,11 +1193,11 @@ describe('OpenxRtbAdapter', function () {
         bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
 
         bidResponse = ''; // Unknown error
-        bids = spec.interpretResponse({body: bidResponse}, bidRequest);
+        response = spec.interpretResponse({body: bidResponse}, bidRequest);
       });
 
       it('should not return any bids', function () {
-        expect(bids.length).to.equal(0);
+        expect(response.bids.length).to.equal(0);
       });
     });
 
@@ -1232,19 +1232,11 @@ describe('OpenxRtbAdapter', function () {
           ext: {
             dsp_id: '123',
             buyer_id: '456',
-            brand_id: '789',
-            paf: {
-              content_id: 'paf_content_id'
-            }
+            brand_id: '789'
           }
         }]
       }],
-      cur: 'AUS',
-      ext: {
-        paf: {
-          transmission: {version: '12'}
-        }
-      }
+      cur: 'AUS'
     };
 
     context('when there is a response, the common response properties', function () {
@@ -1253,7 +1245,7 @@ describe('OpenxRtbAdapter', function () {
         bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
         bidResponse = deepClone(SAMPLE_BID_RESPONSE);
 
-        bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+        bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
       });
 
       it('should return a price', function () {
@@ -1308,32 +1300,7 @@ describe('OpenxRtbAdapter', function () {
       it('should return adomain', function () {
         expect(bid.meta.advertiserDomains).to.equal(bidResponse.seatbid[0].bid[0].adomain);
       });
-
-      it('should return paf fields', function () {
-        const paf = {
-          transmission: {version: '12'},
-          content_id: 'paf_content_id'
-        }
-        expect(bid.meta.paf).to.deep.equal(paf);
-      });
     });
-
-    context('when there is more than one response', () => {
-      let bids;
-      beforeEach(function () {
-        bidRequestConfigs = deepClone(SAMPLE_BID_REQUESTS);
-        bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
-        bidResponse = deepClone(SAMPLE_BID_RESPONSE);
-        bidResponse.seatbid[0].bid.push(deepClone(bidResponse.seatbid[0].bid[0]));
-        bidResponse.seatbid[0].bid[1].ext.paf.content_id = 'second_paf'
-
-        bids = spec.interpretResponse({body: bidResponse}, bidRequest);
-      });
-
-      it('should not confuse paf content_id', () => {
-        expect(bids.map(b => b.meta.paf.content_id)).to.eql(['paf_content_id', 'second_paf']);
-      });
-    })
 
     context('when the response is a banner', function() {
       beforeEach(function () {
@@ -1371,7 +1338,7 @@ describe('OpenxRtbAdapter', function () {
           cur: 'AUS'
         };
 
-        bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+        bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
       });
 
       it('should return the proper mediaType', function () {
@@ -1420,14 +1387,14 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return the proper mediaType', function () {
-          bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+          bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
           expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
         });
 
         it('should return the proper mediaType', function () {
           const winUrl = 'https//my.win.url';
           bidResponse.seatbid[0].bid[0].nurl = winUrl
-          bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+          bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
 
           expect(bid.vastUrl).to.equal(winUrl);
         });
