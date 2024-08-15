@@ -337,7 +337,7 @@ export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
   }
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency, priority: 100});
+registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});
 
 function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
