@@ -16,8 +16,6 @@ const STAGE_VL = 'https://video-library.stage.showheroes.com';
 const BIDDER_CODE = 'showheroes-bs';
 const TTL = 300;
 
-export const SYNC_URL = 'https://sync.dev.showheroes.com/cookie_sync'
-
 const converter = ortbConverter({
   context: {
     netRevenue: true,

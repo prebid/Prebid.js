@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec, SYNC_URL, resetUserSync } from 'modules/showheroes-bsBidAdapter.js'
+import { spec } from 'modules/showheroes-bsBidAdapter.js'
 import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
