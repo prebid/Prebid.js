@@ -452,16 +452,18 @@ export const spec = {
 
       body.seatbid.forEach((seatbid) => {
         // Grab the syncs for each seatbid
-        seatbid.syncUrls?.forEach((sync) => {
-          if (types[sync.type]) {
-            if (sync.url.trim() !== '') {
-              syncs.push({
-                type: sync.type,
-                url: sync.url.replace('{GDPR_params}', params),
-              })
+        if (seatbid.syncUrls) {
+          seatbid.syncUrls.forEach((sync) => {
+            if (types[sync.type]) {
+              if (sync.url.trim() !== '') {
+                syncs.push({
+                  type: sync.type,
+                  url: sync.url.replace('{GDPR_params}', params),
+                })
+              }
             }
-          }
-        })
+          })
+        }
       })
     })
 
