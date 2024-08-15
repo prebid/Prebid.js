@@ -172,7 +172,7 @@ function createBids(bidRes, reqData) {
     bidUnit.mediaType = bid.mediaType || VIDEO;
     bidUnit.ttl = bid.exp || TTL;
     bidUnit.creativeId = 'c_' + requestId;
-    bidUnit.netRevenue = true;
+    bidUnit.netRevenue = bid.netRevenue ?? true;
     bidUnit.width = size.width;
     bidUnit.height = size.height;
     bidUnit.meta = {
@@ -189,6 +189,9 @@ function createBids(bidRes, reqData) {
     }
     if (bid.mediaType === BANNER) {
       bidUnit.ad = getBannerHtml(bid, reqData);
+    }
+    if (bid.extra) {
+      bidUnit.extra = bid.extra;
     }
     bids.push(bidUnit);
   });
