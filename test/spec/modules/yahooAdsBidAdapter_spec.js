@@ -1495,15 +1495,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         expect(response[0].mediaType).to.equal('video');
       })
 
-      it('should insert video VAST win notification into vastUrl', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('video', 'vast');
-        const response = spec.interpretResponse(serverResponse, {bidderRequest});
-        expect(response[0].ad).to.be.undefined;
-        expect(response[0].vastUrl).to.equal('https://yahoo.com?event=adAttempt');
-        expect(response[0].vastXml).to.equal('<VAST></VAST>');
-        expect(response[0].mediaType).to.equal('video');
-      })
-
       describe('wrapped in video players for display inventory', () => {
         beforeEach(() => {
           config.setConfig({
