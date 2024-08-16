@@ -10,7 +10,7 @@ import { deepSetValue, safeJSONParse } from '../src/utils.js';
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-export const MOBIAN_URL = 'https://impact-api-prod.themobian.com/brand_safety';
+export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
 
 /** @type {RtdSubmodule} */
 export const mobianBrandSafetySubmodule = {
@@ -26,7 +26,7 @@ function init() {
 function getBidRequestData(bidReqConfig, callback, config) {
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const pageUrl = encodeURIComponent(getPageUrl());
-  const requestUrl = `${MOBIAN_URL}/by_url?url=${pageUrl}`;
+  const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
 
   const ajax = ajaxBuilder();
 
@@ -34,25 +34,17 @@ function getBidRequestData(bidReqConfig, callback, config) {
     ajax(requestUrl, {
       success: function(responseData) {
         let response = safeJSONParse(responseData);
-        if (!response) {
+        if (!response || !response.meta.has_results) {
           resolve({});
           callback();
           return;
         }
 
-        let mobianRisk = response.garm_risk || 'unknown';
-
-        const contentCategories = Object.keys(response)
-          .filter(key => key.startsWith('garm_content_category_') && response[key])
-          .map(key => key.replace('garm_content_category_', ''));
-
-        const sentiment = Object.keys(response)
-          .find(key => key.startsWith('sentiment_') && response[key])
-          ?.replace('sentiment_', '') || 'unknown';
-
-        const emotions = Object.keys(response)
-          .filter(key => key.startsWith('emotion_') && response[key])
-          .map(key => key.replace('emotion_', ''));
+        const results = response.results;
+        const mobianRisk = results.mobianRisk || 'unknown';
+        const contentCategories = results.mobianContentCategories || [];
+        const sentiment = results.mobianSentiment || 'unknown';
+        const emotions = results.mobianEmotions || [];
 
         const risk = {
           risk: mobianRisk,
