@@ -12,7 +12,7 @@ const ENDPOINT = 'https://prebid.di-change.live';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['digitalmatter'],
+  aliases: ['di-change', 'digitalmatter'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) => buildRequests(validBidRequests, bidderRequest, ENDPOINT),
