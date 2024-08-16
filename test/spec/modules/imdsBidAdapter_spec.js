@@ -585,7 +585,7 @@ describe('imdsBidAdapter ', function () {
             maxduration: 45,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4'],
             protocols: [1],
             api: 1
@@ -622,7 +622,7 @@ describe('imdsBidAdapter ', function () {
             maxduration: 45,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4'],
             protocols: [1],
             api: 1
@@ -651,7 +651,7 @@ describe('imdsBidAdapter ', function () {
             playerSize: [[640, 480]],
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4']
           }
         },
@@ -680,7 +680,7 @@ describe('imdsBidAdapter ', function () {
             maxduration: 45,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4'],
             protocols: [1],
             api: 1
@@ -703,7 +703,7 @@ describe('imdsBidAdapter ', function () {
             playerSize: [[ 640, 480 ]],
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4']
           }
         },
@@ -726,7 +726,7 @@ describe('imdsBidAdapter ', function () {
             w: 640,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4']
           },
           id: 'v2624fabbb078e8-640x480',

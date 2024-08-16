@@ -1,21 +1,20 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { deepClone } from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_WON,
-    BID_RESPONSE,
-    BID_REQUESTED,
-    BID_TIMEOUT,
-  }
-} = CONSTANTS;
+  AUCTION_END,
+  BID_WON,
+  BID_RESPONSE,
+  BID_REQUESTED,
+  BID_TIMEOUT,
+} = EVENTS;
 
 let saveEvents = {}
 let allEvents = {}
@@ -127,7 +126,7 @@ function addTimeout(args) {
   let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
   argsDereferenced = stringArgs;
   argsDereferenced.forEach((attr) => {
-    argsCleaned.push(filterAttributes(JSON.parse(JSON.stringify(attr)), false));
+    argsCleaned.push(filterAttributes(deepClone(attr), false));
   });
   if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);

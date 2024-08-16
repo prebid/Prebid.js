@@ -9,12 +9,18 @@ import {
 
 describe('cross-domain creative', () => {
   const ORIGIN = 'https://example.com';
-  let win, renderAd, messages, mkIframe;
+  let win, top, renderAd, messages, mkIframe;
 
   beforeEach(() => {
     messages = [];
     mkIframe = sinon.stub();
+    top = {
+      frames: {}
+    };
+    top.top = top;
     win = {
+      top,
+      frames: {},
       document: {
         body: {
           appendChild: sinon.stub(),
@@ -30,18 +36,86 @@ describe('cross-domain creative', () => {
         })
       },
       parent: {
+        parent: top,
+        frames: {'__pb_locator__': {}},
         postMessage: sinon.stub().callsFake((payload, targetOrigin, transfer) => {
           messages.push({payload: JSON.parse(payload), targetOrigin, transfer});
         })
       }
     };
-    renderAd = renderer(win);
+    renderAd = (...args) => renderer(win)(...args);
   })
+
+  function waitFor(predicate, timeout = 1000) {
+    let timedOut = false;
+    return new Promise((resolve, reject) => {
+      let to = setTimeout(() => {
+        timedOut = true;
+        reject(new Error('timeout'))
+      }, timeout)
+      resolve = (orig => () => { clearTimeout(to); orig() })(resolve);
+      function check() {
+        if (!timedOut) {
+          setTimeout(() => {
+            if (predicate()) {
+              resolve()
+            } else check();
+          }, 50)
+        }
+      }
+      check();
+    })
+  }
 
   it('derives postMessage target origin from pubUrl ', () => {
     renderAd({pubUrl: 'https://domain.com:123/path'});
     expect(messages[0].targetOrigin).to.eql('https://domain.com:123')
   });
+
+  describe('when there are multiple ancestors', () => {
+    let target;
+    beforeEach(() => {
+      target = win.parent;
+      win.parent = {
+        top,
+        frames: {},
+        parent: {
+          ...target,
+          parent: {
+            top,
+            frames: {'__pb_locator__': {}},
+            parent: {
+              top,
+              frames: {}
+            },
+          }
+        }
+      }
+    })
+    Object.entries({
+      'throws': () => { throw new DOMException() },
+      'does not throw': () => ({})
+    }).forEach(([t, getFrames]) => {
+      describe(`when an ancestor ${t}`, () => {
+        beforeEach(() => {
+          Object.defineProperty(win.parent.parent.parent.parent, 'frames', {get: getFrames})
+        })
+        it('posts message to the first ancestor with __pb_locator__ child', () => {
+          renderAd({pubUrl: 'https://www.example.com'});
+          expect(messages.length).to.eql(1);
+        });
+      })
+    })
+    it('posts to first restricted parent, if __pb_locator__ cannot be found', () => {
+      Object.defineProperty(win.parent.parent.parent, 'frames', {
+        get() {
+          throw new DOMException();
+        }
+      });
+      renderAd({pubUrl: 'https://www.example.com'});
+      expect(messages.length).to.eql(1);
+    })
+  })
 
   it('generates request message with adId and clickUrl', () => {
     renderAd({adId: '123', clickUrl: 'https://click-url.com', pubUrl: ORIGIN});
@@ -75,11 +149,11 @@ describe('cross-domain creative', () => {
       sinon.assert.notCalled(mkIframe);
     })
 
-    it('signals AD_RENDER_FAILED on exceptions', (done) => {
+    it('signals AD_RENDER_FAILED on exceptions', () => {
       mkIframe.callsFake(() => { throw new Error('error message') });
       renderAd({adId: '123', pubUrl: ORIGIN});
       reply({message: MESSAGE_RESPONSE, adId: '123', ad: 'markup'});
-      setTimeout(() => {
+      return waitFor(() => messages[1]?.payload).then(() => {
         expect(messages[1].payload).to.eql({
           message: MESSAGE_EVENT,
           adId: '123',
@@ -89,8 +163,7 @@ describe('cross-domain creative', () => {
             message: 'error message'
           }
         })
-        done();
-      }, 100)
+      })
     });
 
     describe('renderer', () => {
@@ -99,7 +172,7 @@ describe('cross-domain creative', () => {
         win.document.body.appendChild.callsFake(document.body.appendChild.bind(document.body));
       });
 
-      it('sets up and runs renderer', (done) => {
+      it('sets up and runs renderer', () => {
         window._render = sinon.stub();
         const data = {
           message: MESSAGE_RESPONSE,
@@ -108,14 +181,11 @@ describe('cross-domain creative', () => {
         }
         renderAd({adId: '123', pubUrl: ORIGIN});
         reply(data);
-        setTimeout(() => {
-          try {
-            sinon.assert.calledWith(window._render, data, sinon.match.any, win);
-            done()
-          } finally {
-            delete window._render;
-          }
-        }, 100)
+        return waitFor(() => window._render.args.length).then(() => {
+          sinon.assert.calledWith(window._render, data, sinon.match.any, win);
+        }).finally(() => {
+          delete window._render;
+        })
       });
 
       Object.entries({
@@ -125,14 +195,14 @@ describe('cross-domain creative', () => {
         'rejects (w/error)': ['window.render = function() { return Promise.reject(new Error("msg")) }'],
         'rejects (w/reason)': ['window.render = function() { return Promise.reject({reason: "other", message: "msg"}) }', 'other'],
       }).forEach(([t, [renderer, reason = ERROR_EXCEPTION, message = 'msg']]) => {
-        it(`signals AD_RENDER_FAILED on renderer that ${t}`, (done) => {
+        it(`signals AD_RENDER_FAILED on renderer that ${t}`, () => {
           renderAd({adId: '123', pubUrl: ORIGIN});
           reply({
             message: MESSAGE_RESPONSE,
             adId: '123',
             renderer
           });
-          setTimeout(() => {
+          return waitFor(() => messages[1]?.payload).then(() => {
             sinon.assert.match(messages[1].payload, {
               adId: '123',
               message: MESSAGE_EVENT,
@@ -142,34 +212,33 @@ describe('cross-domain creative', () => {
                 message: sinon.match(val => message == null || message === val)
               }
             });
-            done();
-          }, 100)
+          })
         })
       });
 
-      it('signals AD_RENDER_SUCCEEDED when renderer resolves', (done) => {
+      it('signals AD_RENDER_SUCCEEDED when renderer resolves', () => {
         renderAd({adId: '123', pubUrl: ORIGIN});
         reply({
           message: MESSAGE_RESPONSE,
           adId: '123',
           renderer: 'window.render = function() { return new Promise((resolve) => { window.parent._resolve = resolve })}'
         });
-        setTimeout(() => {
+        return waitFor(() => window._resolve).then(() => {
           expect(messages[1]).to.not.exist;
           window._resolve();
-          setTimeout(() => {
-            sinon.assert.match(messages[1].payload, {
-              adId: '123',
-              message: MESSAGE_EVENT,
-              event: EVENT_AD_RENDER_SUCCEEDED
-            })
-            delete window._resolve;
-            done();
-          }, 100)
-        }, 100)
+          return waitFor(() => messages[1]?.payload)
+        }).then(() => {
+          sinon.assert.match(messages[1].payload, {
+            adId: '123',
+            message: MESSAGE_EVENT,
+            event: EVENT_AD_RENDER_SUCCEEDED
+          })
+        }).finally(() => {
+          delete window._resolve;
+        })
       })
 
-      it('is provided a sendMessage that accepts replies', (done) => {
+      it('is provided a sendMessage that accepts replies', () => {
         renderAd({adId: '123', pubUrl: ORIGIN});
         window._reply = sinon.stub();
         reply({
@@ -177,17 +246,14 @@ describe('cross-domain creative', () => {
           message: MESSAGE_RESPONSE,
           renderer: 'window.render = function(_, {sendMessage}) { sendMessage("test", "data", function(reply) { window.parent._reply(reply) }) }'
         });
-        setTimeout(() => {
+        return waitFor(() => messages[1]?.payload).then(() => {
           reply('response', 1);
-          setTimeout(() => {
-            try {
-              sinon.assert.calledWith(window._reply, sinon.match({data: JSON.stringify('response')}));
-              done();
-            } finally {
-              delete window._reply;
-            }
-          }, 100)
-        }, 100)
+          return waitFor(() => window._reply.args.length)
+        }).then(() => {
+          sinon.assert.calledWith(window._reply, sinon.match({data: JSON.stringify('response')}));
+        }).finally(() => {
+          delete window._reply;
+        })
       });
     });
   });

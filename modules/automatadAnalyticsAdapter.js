@@ -4,7 +4,7 @@ import {
   logMessage
 } from '../src/utils.js';
 
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { config } from '../src/config.js'
@@ -18,6 +18,8 @@ var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null
 
 const prettyLog = (level, text, isGroup = false, cb = () => {}) => {
   if (self.isLoggingEnabled === undefined) {
+    // TODO FIX THIS RULES VIOLATION
+    // eslint-disable-next-line prebid/no-global
     if (window.localStorage.getItem('__aggLoggingEnabled')) {
       self.isLoggingEnabled = true
     } else {
@@ -57,49 +59,49 @@ const processEvents = () => {
 
     try {
       switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
+        case EVENTS.AUCTION_INIT:
           if (window.atmtdAnalytics && window.atmtdAnalytics.auctionInitHandler) {
             window.atmtdAnalytics.auctionInitHandler(args);
           } else {
             shouldTryAgain = true
           }
           break;
-        case CONSTANTS.EVENTS.BID_REQUESTED:
+        case EVENTS.BID_REQUESTED:
           if (window.atmtdAnalytics && window.atmtdAnalytics.bidRequestedHandler) {
             window.atmtdAnalytics.bidRequestedHandler(args);
           }
           break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
+        case EVENTS.BID_RESPONSE:
           if (window.atmtdAnalytics && window.atmtdAnalytics.bidResponseHandler) {
             window.atmtdAnalytics.bidResponseHandler(args);
           }
           break;
-        case CONSTANTS.EVENTS.BID_REJECTED:
+        case EVENTS.BID_REJECTED:
           if (window.atmtdAnalytics && window.atmtdAnalytics.bidRejectedHandler) {
             window.atmtdAnalytics.bidRejectedHandler(args);
           }
           break;
-        case CONSTANTS.EVENTS.BIDDER_DONE:
+        case EVENTS.BIDDER_DONE:
           if (window.atmtdAnalytics && window.atmtdAnalytics.bidderDoneHandler) {
             window.atmtdAnalytics.bidderDoneHandler(args);
           }
           break;
-        case CONSTANTS.EVENTS.BID_WON:
+        case EVENTS.BID_WON:
           if (window.atmtdAnalytics && window.atmtdAnalytics.bidWonHandler) {
             window.atmtdAnalytics.bidWonHandler(args);
           }
           break;
-        case CONSTANTS.EVENTS.NO_BID:
+        case EVENTS.NO_BID:
           if (window.atmtdAnalytics && window.atmtdAnalytics.noBidHandler) {
             window.atmtdAnalytics.noBidHandler(args);
           }
           break;
-        case CONSTANTS.EVENTS.BID_TIMEOUT:
+        case EVENTS.BID_TIMEOUT:
           if (window.atmtdAnalytics && window.atmtdAnalytics.bidderTimeoutHandler) {
             window.atmtdAnalytics.bidderTimeoutHandler(args);
           }
           break;
-        case CONSTANTS.EVENTS.AUCTION_DEBUG:
+        case EVENTS.AUCTION_DEBUG:
           if (window.atmtdAnalytics && window.atmtdAnalytics.auctionDebugHandler) {
             window.atmtdAnalytics.auctionDebugHandler(args);
           }
@@ -173,7 +175,7 @@ const initializeQueue = () => {
       timer = null;
     }
 
-    if (args[0] === CONSTANTS.EVENTS.AUCTION_INIT) {
+    if (args[0] === EVENTS.AUCTION_INIT) {
       const timeout = parseInt(config.getConfig('bidderTimeout')) + 1500
       timer = setTimeout(() => {
         self.processEvents()
@@ -198,7 +200,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
   track({eventType, args}) {
     const shouldNotPushToQueue = !self.qBeingUsed
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT:
+      case EVENTS.AUCTION_INIT:
         if (window.atmtdAnalytics && window.atmtdAnalytics.auctionInitHandler && shouldNotPushToQueue) {
           self.prettyLog('status', 'Aggregator loaded, initialising auction through handlers');
           window.atmtdAnalytics.auctionInitHandler(args);
@@ -207,7 +209,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
+      case EVENTS.BID_REQUESTED:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidRequestedHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidRequestedHandler(args);
         } else {
@@ -215,7 +217,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.BID_REJECTED:
+      case EVENTS.BID_REJECTED:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidRejectedHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidRejectedHandler(args);
         } else {
@@ -223,7 +225,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
+      case EVENTS.BID_RESPONSE:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidResponseHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidResponseHandler(args);
         } else {
@@ -231,7 +233,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.BIDDER_DONE:
+      case EVENTS.BIDDER_DONE:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidderDoneHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidderDoneHandler(args);
         } else {
@@ -239,7 +241,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.BID_WON:
+      case EVENTS.BID_WON:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidWonHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidWonHandler(args);
         } else {
@@ -247,7 +249,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.NO_BID:
+      case EVENTS.NO_BID:
         if (window.atmtdAnalytics && window.atmtdAnalytics.noBidHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.noBidHandler(args);
         } else {
@@ -255,7 +257,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.AUCTION_DEBUG:
+      case EVENTS.AUCTION_DEBUG:
         if (window.atmtdAnalytics && window.atmtdAnalytics.auctionDebugHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.auctionDebugHandler(args);
         } else {
@@ -263,7 +265,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
           self.__atmtdAnalyticsQueue.push([eventType, args])
         }
         break;
-      case CONSTANTS.EVENTS.BID_TIMEOUT:
+      case EVENTS.BID_TIMEOUT:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidderTimeoutHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidderTimeoutHandler(args);
         } else {

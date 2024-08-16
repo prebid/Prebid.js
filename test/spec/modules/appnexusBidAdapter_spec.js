@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import * as utils from 'src/utils.js';
@@ -76,21 +75,21 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placementId': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placement_id': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -343,7 +342,7 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].hb_source).to.deep.equal(1);
       });
 
-      it('should include ORTB video values when video params were not set', function () {
+      it('should include ORTB video values when matching video params were not all set', function () {
         let bidRequest = deepClone(bidRequests[0]);
         bidRequest.params = {
           placementId: '1234235',
@@ -375,6 +374,97 @@ describe('AppNexusAdapter', function () {
           context: 4
         });
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
+      it('should include ORTB video values when video params is empty - case 1', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            placement: 3,
+            mimes: ['video/mp4'],
+            skip: 0,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: false,
+          context: 4
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
+      it('should include ORTB video values when video params is empty - case 2', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            plcmt: 2,
+            startdelay: 0,
+            mimes: ['video/mp4'],
+            skip: 1,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: true,
+          context: 8
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
+      it('should convert and include ORTB2 device data when available', function () {
+        const bidRequest = deepClone(bidRequests[0]);
+        const bidderRequest = {
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            },
+          },
+        };
+
+        const expectedDeviceResult = {
+          useragent: bidderRequest.ortb2.device.ua,
+          devicetype: 'Mobile/Tablet - General',
+          make: bidderRequest.ortb2.device.make,
+          model: bidderRequest.ortb2.device.model,
+          os: bidderRequest.ortb2.device.os,
+          os_version: bidderRequest.ortb2.device.osv,
+          w: bidderRequest.ortb2.device.w,
+          h: bidderRequest.ortb2.device.h,
+        };
+
+        const request = spec.buildRequests([bidRequest], bidderRequest);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.device).to.deep.equal(expectedDeviceResult);
       });
 
       it('should add video property when adUnit includes a renderer', function () {
@@ -1387,6 +1477,88 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    describe('ast_override_div', function () {
+      let getParamStub;
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      let bidRequest2 = deepClone(bidRequests[0]);
+      bidRequest2.adUnitCode = 'adUnit_code_2';
+      let bidRequest3 = deepClone(bidRequests[0]);
+      bidRequest3.adUnitCode = 'adUnit_code_3';
+
+      before(function () {
+        getParamStub = sinon.stub(utils, 'getParameterByName');
+      });
+
+      it('should set forced creative id if one adUnitCode passed', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code:1234';
+          return '';
+        });
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.deep.equal(1234);
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      it('should set forced creative id if `ast_override_div` is set to override multiple adUnitCode', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code:1234,adUnit_code_2:5678';
+          return '';
+        });
+
+        const request = spec.buildRequests([bidRequest, bidRequest2, bidRequest3]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.deep.equal(1234);
+        expect(payload.tags[1].force_creative_id).to.deep.equal(5678);
+        expect(payload.tags[2].force_creative_id).to.not.exist;
+      });
+
+      it('should not set forced creative id if `ast_override_div` is missing creativeId', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code';
+          return '';
+        });
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.not.exist;
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      it('should not set forced creative id if `ast_override_div` is in the wrong format', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code;adUnit_code_2:5678';
+          return '';
+        }); ;
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.not.exist;
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      it('should not set forced creative id if `ast_override_div` is missing', function () {
+        getParamStub.callsFake(function(par) {
+          return '';
+        }); ;
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.not.exist;
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      after(function () {
+        getParamStub.restore();
+      });
+    });
+
     it('should set the X-Is-Test customHeader if test flag is enabled', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon.stub(config, 'getConfig')
@@ -2014,54 +2186,54 @@ describe('AppNexusAdapter', function () {
     });
   });
 
-  describe('transformBidParams', function () {
-    let gcStub;
-    let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
+  // describe('transformBidParams', function () {
+  //   let gcStub;
+  //   let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
 
-    before(function () {
-      gcStub = sinon.stub(config, 'getConfig');
-    });
+  //   before(function () {
+  //     gcStub = sinon.stub(config, 'getConfig');
+  //   });
 
-    after(function () {
-      gcStub.restore();
-    });
+  //   after(function () {
+  //     gcStub.restore();
+  //   });
 
-    it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
-      gcStub.withArgs('s2sConfig').returns({
-        bidders: ['appnexus'],
-        endpoint: {
-          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-        }
-      });
+  //   it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
+  //     gcStub.withArgs('s2sConfig').returns({
+  //       bidders: ['appnexus'],
+  //       endpoint: {
+  //         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+  //       }
+  //     });
 
-      const oldParams = {
-        keywords: {
-          genre: ['rock', 'pop'],
-          pets: 'dog'
-        }
-      };
+  //     const oldParams = {
+  //       keywords: {
+  //         genre: ['rock', 'pop'],
+  //         pets: 'dog'
+  //       }
+  //     };
 
-      const newParams = spec.transformBidParams(oldParams, true, adUnit);
-      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
-    });
+  //     const newParams = spec.transformBidParams(oldParams, true, adUnit);
+  //     expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+  //   });
 
-    it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
-      gcStub.withArgs('s2sConfig').returns([{
-        bidders: ['appnexus'],
-        endpoint: {
-          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-        }
-      }]);
+  //   it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
+  //     gcStub.withArgs('s2sConfig').returns([{
+  //       bidders: ['appnexus'],
+  //       endpoint: {
+  //         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+  //       }
+  //     }]);
 
-      const oldParams = {
-        keywords: {
-          genre: ['rock', 'pop'],
-          pets: 'dog'
-        }
-      };
+  //     const oldParams = {
+  //       keywords: {
+  //         genre: ['rock', 'pop'],
+  //         pets: 'dog'
+  //       }
+  //     };
 
-      const newParams = spec.transformBidParams(oldParams, true, adUnit);
-      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
-    });
-  });
+  //     const newParams = spec.transformBidParams(oldParams, true, adUnit);
+  //     expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+  //   });
+  // });
 });

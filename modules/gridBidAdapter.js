@@ -15,6 +15,7 @@ import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -441,7 +442,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidRequest, bidResponses, RendererConst, bidderCode);
+        _addBidResponse(getBidFromResponse(respItem, LOG_ERROR_MESS), bidRequest, bidResponses, RendererConst, bidderCode);
       });
     }
     if (errorMessage) logError(errorMessage);
@@ -512,17 +513,6 @@ function _getFloor (mediaTypes, bid) {
   return floor;
 }
 
-function _getBidFromResponse(respItem) {
-  if (!respItem) {
-    logError(LOG_ERROR_MESS.emptySeatbid);
-  } else if (!respItem.bid) {
-    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
-  } else if (!respItem.bid[0]) {
-    logError(LOG_ERROR_MESS.noBid);
-  }
-  return respItem && respItem.bid && respItem.bid[0];
-}
-
 function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bidderCode) {
   if (!serverBid) return;
   let errorMessage;
@@ -554,8 +544,8 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
         bidResponse.meta.demandSource = serverBid.ext.bidder.grid.demandSource;
       }
 
-      if (serverBid.ext && serverBid.ext.dsa && serverBid.ext.dsa.adrender) {
-        bidResponse.meta.adrender = serverBid.ext.dsa.adrender;
+      if (serverBid.ext && serverBid.ext.dsa) {
+        bidResponse.meta.dsa = serverBid.ext.dsa;
       }
 
       if (serverBid.content_type === 'video') {

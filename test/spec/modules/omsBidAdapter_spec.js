@@ -107,9 +107,9 @@ describe('omsBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -245,6 +245,28 @@ describe('omsBidAdapter', function () {
       expect(data.user).to.not.be.undefined;
       expect(data.user.ext).to.not.be.undefined;
       expect(data.user.ext.ids).is.deep.equal(userId);
+    });
+
+    it('sends gpid parameters', function () {
+      bidRequests[0].ortb2Imp = {
+        'ext': {
+          'gpid': '/1111/home-left',
+          'data': {
+            'adserver': {
+              'name': 'gam',
+              'adslot': '/1111/home'
+            },
+            'pbadslot': '/1111/home-left'
+          }
+        }
+      }
+
+      const data = JSON.parse(spec.buildRequests(bidRequests).data);
+      expect(data.imp[0].ext).to.not.be.undefined;
+      expect(data.imp[0].ext.gpid).to.not.be.undefined;
+      expect(data.imp[0].ext.adserverName).to.not.be.undefined;
+      expect(data.imp[0].ext.adslot).to.not.be.undefined;
+      expect(data.imp[0].ext.pbadslot).to.not.be.undefined;
     });
 
     context('when element is fully in view', function () {

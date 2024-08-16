@@ -63,6 +63,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript'],
             api: [2],
             placement: 1,
+            plcmt: 1,
             w: 400,
             h: 300,
           },

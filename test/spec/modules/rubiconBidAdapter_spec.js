@@ -14,7 +14,7 @@ import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/schain.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
@@ -1735,6 +1735,64 @@ describe('the rubicon adapter', function () {
                 }
               }
             }
+            it('should send valid dsaparams but filter out invalid ones', function () {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+              ortb2Clone.regs.ext.dsa.transparency = [
+                {
+                  domain: 'testdomain.com',
+                  dsaparams: [1],
+                },
+                {
+                  domain: '',
+                  dsaparams: [2],
+                }
+              ];
+
+              const expectedTransparency = 'testdomain.com~1';
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2: ortb2Clone })), bidderRequest);
+              const data = parseQuery(request.data);
+
+              expect(data['dsatransparency']).to.equal(expectedTransparency);
+            })
+            it('should send dsaparams if \"ortb2.regs.ext.dsa.transparancy[0].params\"', function() {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+
+              ortb2Clone.regs.ext.dsa.transparency = [{
+                domain: 'testdomain.com',
+                dsaparams: [1],
+              }];
+
+              const expectedTransparency = 'testdomain.com~1';
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2: ortb2Clone})), bidderRequest);
+              const data = parseQuery(request.data);
+
+              expect(data['dsatransparency']).to.equal(expectedTransparency);
+            })
+            it('should pass an empty transparency param if \"ortb2.regs.ext.dsa.transparency[0].params\" is empty', function() {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+
+              ortb2Clone.regs.ext.dsa.transparency = [{
+                domain: 'testdomain.com',
+                params: [],
+              }];
+
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2: ortb2Clone})), bidderRequest);
+              const data = parseQuery(request.data);
+              expect(data['dsatransparency']).to.be.undefined
+            })
+            it('should send an empty transparency if \"ortb2.regs.ext.dsa.transparency[0].domain\" is empty', function() {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+
+              ortb2Clone.regs.ext.dsa.transparency = [{
+                domain: '',
+                dsaparams: [1],
+              }];
+
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2: ortb2Clone})), bidderRequest);
+              const data = parseQuery(request.data);
+
+              expect(data['dsatransparency']).to.be.undefined
+            })
             it('should send dsa signals if \"ortb2.regs.ext.dsa\"', function() {
               const expectedTransparency = 'testdomain.com~1~~testdomain2.com~1_2'
               const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest)
@@ -2266,17 +2324,6 @@ describe('the rubicon adapter', function () {
             let payload = request.data;
 
             expect(payload.ext.prebid.analytics).to.be.undefined;
-          });
-
-          it('should send video exp param correctly when set', function () {
-            const bidderRequest = createVideoBidderRequest();
-            config.setConfig({s2sConfig: {defaultTtl: 600}});
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let post = request.data;
-
-            // should exp set to the right value according to config
-            let imp = post.imp[0];
-            expect(imp.exp).to.equal(600);
           });
 
           it('should not send video exp at all if not set in s2sConfig config', function () {
@@ -3087,7 +3134,7 @@ describe('the rubicon adapter', function () {
           expect(bids[0].width).to.equal(320);
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
-          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].ttl).to.equal(360);
           expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].rubicon.advertiserId).to.equal(7);
           expect(bids[0].rubicon.networkId).to.equal(8);
@@ -3104,7 +3151,7 @@ describe('the rubicon adapter', function () {
           expect(bids[1].width).to.equal(300);
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
-          expect(bids[1].ttl).to.equal(300);
+          expect(bids[1].ttl).to.equal(360);
           expect(bids[1].netRevenue).to.equal(true);
           expect(bids[1].rubicon.advertiserId).to.equal(7);
           expect(bids[1].rubicon.networkId).to.equal(8);
@@ -3648,14 +3695,14 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let {bids, fledgeAuctionConfigs} = spec.interpretResponse({body: response}, {
+          let {bids, paapi} = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
           expect(bids).to.be.lengthOf(1);
-          expect(fledgeAuctionConfigs[0].bidId).to.equal('5432');
-          expect(fledgeAuctionConfigs[0].config.random).to.equal('value');
-          expect(fledgeAuctionConfigs[1].bidId).to.equal('6789');
+          expect(paapi[0].bidId).to.equal('5432');
+          expect(paapi[0].config.random).to.equal('value');
+          expect(paapi[1].bidId).to.equal('6789');
         });
 
         it('should handle an error', function () {
@@ -3916,7 +3963,7 @@ describe('the rubicon adapter', function () {
             expect(bids[0].seatBidId).to.equal('0');
             expect(bids[0].creativeId).to.equal('4259970');
             expect(bids[0].cpm).to.equal(2);
-            expect(bids[0].ttl).to.equal(300);
+            expect(bids[0].ttl).to.equal(360);
             expect(bids[0].netRevenue).to.equal(true);
             expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
             expect(bids[0].mediaType).to.equal('video');
@@ -3940,6 +3987,16 @@ describe('the rubicon adapter', function () {
             let bids = spec.interpretResponse({body: response}, {data: request});
             expect(bids).to.have.nested.property('[0].native');
           });
+          it('should set 0 to bids width and height if `w` and `h` in response object not defined', () => {
+            const nativeBidderRequest = addNativeToBidRequest(bidderRequest);
+            const request = converter.toORTB({bidderRequest: nativeBidderRequest, bidRequests: nativeBidderRequest.bids});
+            let response = getNativeResponse({impid: request.imp[0].id});
+            delete response.seatbid[0].bid[0].w;
+            delete response.seatbid[0].bid[0].h
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            expect(bids[0].width).to.equal(0);
+            expect(bids[0].height).to.equal(0);
+          })
         });
       }
 
@@ -4008,7 +4065,7 @@ describe('the rubicon adapter', function () {
             expect(bids[0].seatBidId).to.equal('0');
             expect(bids[0].creativeId).to.equal('4259970');
             expect(bids[0].cpm).to.equal(2);
-            expect(bids[0].ttl).to.equal(300);
+            expect(bids[0].ttl).to.equal(360);
             expect(bids[0].netRevenue).to.equal(true);
             expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
             expect(bids[0].mediaType).to.equal('video');

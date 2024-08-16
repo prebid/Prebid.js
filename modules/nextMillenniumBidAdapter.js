@@ -1,6 +1,5 @@
 import {
   _each,
-  createTrackPixelHtml,
   deepAccess,
   deepSetValue,
   getBidIdParameter,
@@ -12,9 +11,10 @@ import {
   parseUrl,
   triggerPixel,
 } from '../src/utils.js';
+import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import {getGlobal} from '../src/prebidGlobal.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
@@ -33,6 +33,8 @@ const DEFAULT_CURRENCY = 'USD';
 
 const VIDEO_PARAMS_DEFAULT = {
   api: undefined,
+  context: undefined,
+  delivery: undefined,
   linearity: undefined,
   maxduration: undefined,
   mimes: [
@@ -43,8 +45,14 @@ const VIDEO_PARAMS_DEFAULT = {
 
   minduration: undefined,
   placement: undefined,
+  plcmt: undefined,
+  playbackend: undefined,
   playbackmethod: undefined,
+  pos: undefined,
   protocols: undefined,
+  skip: undefined,
+  skipafter: undefined,
+  skipmin: undefined,
   startdelay: undefined,
 };
 
@@ -131,7 +139,7 @@ export const spec = {
         auctionId,
       });
 
-      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_REQUESTED, bid);
+      this.getUrlPixelMetric(EVENTS.BID_REQUESTED, bid);
     });
 
     return requests;
@@ -175,7 +183,7 @@ export const spec = {
 
         bidResponses.push(bidResponse);
 
-        this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_RESPONSE, bid);
+        this.getUrlPixelMetric(EVENTS.BID_RESPONSE, bid);
       });
     });
 
@@ -255,7 +263,7 @@ export const spec = {
 
   onTimeout(bids) {
     for (const bid of bids) {
-      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_TIMEOUT, bid);
+      this.getUrlPixelMetric(EVENTS.BID_TIMEOUT, bid);
     };
   },
 };
@@ -445,32 +453,6 @@ function getTopWindow(curWindow, nesting = 0) {
   } catch (err) {
     return curWindow;
   };
-}
-
-function getAd(bid) {
-  let ad, adUrl, vastXml, vastUrl;
-
-  switch (deepAccess(bid, 'ext.prebid.type')) {
-    case VIDEO:
-      if (bid.adm.substr(0, 4) === 'http') {
-        vastUrl = bid.adm;
-      } else {
-        vastXml = bid.adm;
-      };
-
-      break;
-    default:
-      if (bid.adm && bid.nurl) {
-        ad = bid.adm;
-        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
-      } else if (bid.adm) {
-        ad = bid.adm;
-      } else if (bid.nurl) {
-        adUrl = bid.nurl;
-      };
-  };
-
-  return {ad, adUrl, vastXml, vastUrl};
 }
 
 function getSiteObj() {
