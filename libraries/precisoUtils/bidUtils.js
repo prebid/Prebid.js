@@ -33,6 +33,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
       buyeruid: validBidRequests[0].buyerUid || '',
       geo: {
         country: validBidRequests[0].params.region || city,
+        region: validBidRequests[0].params.region || city,
       },
 
     },
@@ -45,7 +46,9 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
   };
   if (req.device && req.device != 'undefined') {
     req.device.geo = {
-      country: req.user.geo.country
+      country: req.user.geo.country,
+      region: req.user.geo.region,
+
     };
   };
   req.site.publisher = {
