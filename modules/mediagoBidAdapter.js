@@ -9,7 +9,7 @@ import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLin
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
-import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
+import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 
 // import { config } from '../src/config.js';
 // import { isPubcidEnabled } from './pubCommonId.js';
@@ -271,8 +271,6 @@ function getParam(validBidRequests, bidderRequest) {
         },
         device: {
           nbw: getConnectionDownLink(),
-          hc: getHC(),
-          dm: getDM()
         }
       },
       user: {
