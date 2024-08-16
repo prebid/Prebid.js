@@ -1,8 +1,9 @@
 import {UID1_EIDS} from '../uid1Eids/uid1Eids.js';
 import {UID2_EIDS} from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
+import { coppaDataHandler } from '../../src/adapterManager.js';
 
-const GVLID = 148;
+export const GVLID = 148;
 export const DEFAULT_AJAX_TIMEOUT = 5000
 export const MODULE_NAME = 'liveIntentId';
 export const LI_PROVIDER_DOMAIN = 'liveintent.com';
@@ -193,10 +194,10 @@ export const eids = {
     }
   },
   'fpid': {
-      source: 'fpid.liveintent.com',
-      atype: 1,
-      getValue: function(data) {
-        return data.id;
-      }
+    source: 'fpid.liveintent.com',
+    atype: 1,
+    getValue: function(data) {
+      return data.id;
     }
+  }
 }

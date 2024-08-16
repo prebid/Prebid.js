@@ -135,7 +135,7 @@ export const liveIntentIdHubSubmodule = {
    * @function
    */
   decode(value, config) {
-    const configParams = config != null ? config.params : {};
+    const configParams = config?.params ?? {};
 
     // ensure client is initialized and we fired at least one collect request
     initializeClient(configParams)
@@ -148,7 +148,7 @@ export const liveIntentIdHubSubmodule = {
    * @function
    */
   getId(config) {
-    const configParams = config != null ? config.params : {};
+    const configParams = config?.params ?? {};
 
     const clientRef = initializeClient(configParams)
 

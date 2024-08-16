@@ -1,5 +1,5 @@
 import { liveIntentIdHubSubmodule, resetSubmodule } from 'libraries/liveIntentIdSystem/liveIntentIdHubSystem.js';
-import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler } from '../../../src/adapterManager.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 const DEFAULT_AJAX_TIMEOUT = 5000
 const PUBLISHER_ID = '89899';
@@ -9,12 +9,14 @@ describe('LiveIntentIdHub', function() {
   let uspConsentDataStub;
   let gdprConsentDataStub;
   let gppConsentDataStub;
+  let coppaConsentDataStub;
   let refererInfoStub;
 
   beforeEach(function() {
     uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
     gdprConsentDataStub = sinon.stub(gdprDataHandler, 'getConsentData');
     gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
+    coppaConsentDataStub = sinon.stub(coppaDataHandler, 'getCoppa');
     refererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
   });
 
@@ -22,6 +24,7 @@ describe('LiveIntentIdHub', function() {
     uspConsentDataStub.restore();
     gdprConsentDataStub.restore();
     gppConsentDataStub.restore();
+    coppaConsentDataStub.restore();
     refererInfoStub.restore();
     window.liQHub = []; // reset
     resetSubmodule();
@@ -357,6 +360,58 @@ describe('LiveIntentIdHub', function() {
       clientRef: {},
       onSuccess: [{ type: 'callback' }],
       requestedAttributes: [ 'uid2' ],
+      type: 'resolve'
+    })
+  });
+
+  it('should decode a idCookie as fpid if it exists and coppa is false', function() {
+    coppaConsentDataStub.returns(false)
+    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'fpid': 'bar'}, 'fpid': {'id': 'bar'}});
+  });
+
+  it('should not decode a idCookie as fpid if it exists and coppa is true', function() {
+    coppaConsentDataStub.returns(true)
+    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo'}})
+  });
+
+  it('should resolve fpid from cookie', function() {
+    const cookieName = 'testcookie'
+    liveIntentIdHubSubmodule.getId({ params: {
+      ...defaultConfigParams.params,
+      fpid: { 'strategy': 'cookie', 'name': cookieName },
+      requestedAttributesOverrides: { 'fpid': true } }
+    }).callback(() => {});
+
+    expect(window.liQHub).to.have.length(3)
+    expect(window.liQHub[0]).to.eql({
+      clientDetails: { name: 'prebid', version: '$prebid.version$' },
+      clientRef: {},
+      collectSettings: { timeout: DEFAULT_AJAX_TIMEOUT },
+      consent: {},
+      integration: { distributorId: defaultConfigParams.distributorId, publisherId: PUBLISHER_ID, type: 'custom' },
+      partnerCookies: new Set(),
+      resolveSettings: { identityPartner: 'prebid', timeout: DEFAULT_AJAX_TIMEOUT },
+      type: 'register_client'
+    })
+
+    expect(window.liQHub[1]).to.eql({
+      clientRef: {},
+      delay: defaultConfigParams.params.fireEventDelay,
+      type: 'schedule_default_collect'
+    })
+
+    const resolveCommand = window.liQHub[2]
+
+    // functions cannot be reasonably compared, remove them
+    delete resolveCommand.onSuccess[0].callback
+    delete resolveCommand.onFailure
+
+    expect(resolveCommand).to.eql({
+      clientRef: {},
+      onSuccess: [{ type: 'callback' }],
+      requestedAttributes: [ 'nonId', 'idCookie' ],
       type: 'resolve'
     })
   });

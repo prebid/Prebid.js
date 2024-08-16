@@ -6,22 +6,22 @@
  */
 import { triggerPixel, logError } from '../../src/utils.js';
 import { ajaxBuilder } from '../../src/ajax.js';
-import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
-import {getStorageManager} from '../../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 import { submodule } from '../../src/hook.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, DEFAULT_DELAY, GVLID } from './liveIntentIdSystemShared.js'
+import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
+import { getStorageManager } from '../../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, DEFAULT_DELAY, GVLID, parseRequestedAttributes } from './liveIntentIdSystemShared.js'
 
 /**
- * @typedef {import('../../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const EVENTS_TOPIC = 'pre_lips'
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+const EVENTS_TOPIC = 'pre_lips';
 
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
     ajaxBuilder(timeout)(
@@ -48,10 +48,10 @@ let liveConnect = null;
  */
 export function reset() {
   if (window && window.liQ_instances) {
-    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag))
+    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag));
     window.liQ_instances = [];
   }
-  liveIntentIdSubmodule.setModuleMode(null)
+  liveIntentIdSubmodule.setModuleMode(null);
   eventFired = false;
   liveConnect = null;
 }
@@ -65,7 +65,7 @@ export function setEventFiredFlag() {
 
 function parseLiveIntentCollectorConfig(collectConfig) {
   const config = {};
-  collectConfig = collectConfig || {}
+  collectConfig = collectConfig || {};
   collectConfig.appId && (config.appId = collectConfig.appId);
   collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
   collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
@@ -95,8 +95,8 @@ function initializeLiveConnect(configParams) {
     requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
   };
   if (configParams.url) {
-    identityResolutionConfig.url = configParams.url
-  }
+    identityResolutionConfig.url = configParams.url;
+  };
 
   identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
@@ -106,7 +106,7 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.distributorId = configParams.distributorId;
     identityResolutionConfig.source = configParams.distributorId;
   } else {
-    identityResolutionConfig.source = configParams.partner || 'prebid'
+    identityResolutionConfig.source = configParams.partner || 'prebid';
   }
 
   liveConnectConfig.wrapperName = 'prebid';
@@ -114,14 +114,16 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
+
   liveConnectConfig.idCookie = {};
   liveConnectConfig.idCookie.name = fpidConfig.name;
   liveConnectConfig.idCookie.strategy = fpidConfig.strategy == 'html5' ? 'localStorage' : fpidConfig.strategy;
+
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
   }
-  const gdprConsent = gdprDataHandler.getConsentData()
+  const gdprConsent = gdprDataHandler.getConsentData();
   if (gdprConsent) {
     liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
@@ -135,21 +137,21 @@ function initializeLiveConnect(configParams) {
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
   if (configParams.emailHash) {
-    liveConnect.push({ hash: configParams.emailHash })
+    liveConnect.push({ hash: configParams.emailHash });
   }
   return liveConnect;
 }
 
 function tryFireEvent() {
   if (!eventFired && liveConnect) {
-    const eventDelay = liveConnect.config.fireEventDelay ?? DEFAULT_DELAY
+    const eventDelay = liveConnect.config.fireEventDelay || DEFAULT_DELAY;
     setTimeout(() => {
-      const instances = window.liQ_instances
-      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
+      const instances = window.liQ_instances;
+      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag));
       if (!eventFired && liveConnect) {
         liveConnect.fire();
       }
-    }, eventDelay)
+    }, eventDelay);
   }
 }
 
@@ -162,12 +164,11 @@ export const liveIntentIdSubmodule = {
    */
   name: MODULE_NAME,
   gvlid: GVLID,
-
   setModuleMode(mode) {
-    this.moduleMode = mode
+    this.moduleMode = mode;
   },
   getInitializer() {
-    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
+    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode);
   },
 
   /**
@@ -214,11 +215,10 @@ export const liveIntentIdSubmodule = {
         }
       )
     }
+
     return { callback: result };
   },
-  eids: {
-    eids
-  }
+  eids
 };
 
 submodule('userId', liveIntentIdSubmodule);
