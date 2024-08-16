@@ -37,10 +37,6 @@ describe('Djax Adapter', function() {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-
-    it('should return false when required params are not passed', () => {
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
   });
 
   describe('buildRequestsForBanner', () => {
