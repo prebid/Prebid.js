@@ -745,8 +745,9 @@ function getLargestSize(sizes, method = area) {
  * Build the final request url
  */
 export function buildRequestUrl(baseUrl, qsParamStringArray = []) {
-  if (qsParamStringArray.length === 0 || !Array.isArray(qsParamStringArray))
+  if (qsParamStringArray.length === 0 || !Array.isArray(qsParamStringArray)) {
     return baseUrl
+  }
 
   const nonEmptyQSParamStrings = qsParamStringArray.filter(
     (qsParamString) => qsParamString.trim() !== ''
