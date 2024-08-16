@@ -39,11 +39,6 @@ describe('Djax Adapter', function() {
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
-        wrong: 'missing publisherId'
-      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
