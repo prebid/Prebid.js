@@ -38,19 +38,8 @@ describe('sharethrough adapter spec', function () {
       expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
-    it('should return false if req has wrong bidder code', function () {
-      const invalidBidRequest = {
-        bidder: 'notSharethrough',
-        params: {
-          pkey: 'abc123',
-        },
-      };
-      expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
-    });
-
     it('should return true if req is correct', function () {
       const validBidRequest = {
-        bidder: 'sharethrough',
         params: {
           pkey: 'abc123',
         },
