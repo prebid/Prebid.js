@@ -41,7 +41,7 @@ import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {insertLocatorFrame, renderAdDirect} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults} from './video.js';
+import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -134,6 +134,7 @@ function validateVideoMediaType(adUnit) {
       delete validatedAdUnit.mediaTypes.video.playerSize;
     }
   }
+  validateOrtbVideoFields(validatedAdUnit);
   return validatedAdUnit;
 }
 
@@ -502,6 +503,9 @@ pbjsInstance.requestBids = (function() {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
+      adUnitCodes = [adUnitCodes];
+    }
     if (adUnitCodes && adUnitCodes.length) {
       // if specific adUnitCodes supplied filter adUnits for those codes
       adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
@@ -509,6 +513,7 @@ pbjsInstance.requestBids = (function() {
       // otherwise derive adUnitCodes from adUnits
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
     }
+    adUnitCodes = adUnitCodes.filter(uniques);
     const ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))

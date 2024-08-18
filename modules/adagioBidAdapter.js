@@ -8,9 +8,7 @@ import {
   getDNT,
   getWindowSelf,
   isArray,
-  isArrayOfNums,
   isFn,
-  isInteger,
   isNumber,
   isStr,
   logError,
@@ -18,7 +16,7 @@ import {
   logWarn,
 } from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
-import { OUTSTREAM } from '../src/video.js';
+import { OUTSTREAM, validateOrtbVideoFields } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { config } from '../src/config.js';
@@ -39,39 +37,6 @@ const BB_RENDERER_DEFAULT = 'renderer';
 export const BB_RENDERER_URL = `https://${BB_PUBLICATION}.bbvms.com/r/$RENDERER.js`;
 
 const CURRENCY = 'USD';
-
-// This provide a whitelist and a basic validation of OpenRTB 2.5 options used by the Adagio SSP.
-// Accept all options but 'protocol', 'companionad', 'companiontype', 'ext'
-// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
-export const ORTB_VIDEO_PARAMS = {
-  'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  'minduration': (value) => isInteger(value),
-  'maxduration': (value) => isInteger(value),
-  'protocols': (value) => isArrayOfNums(value),
-  'w': (value) => isInteger(value),
-  'h': (value) => isInteger(value),
-  'startdelay': (value) => isInteger(value),
-  'placement': (value) => {
-    logWarn(LOG_PREFIX, 'The OpenRTB video param `placement` is deprecated and should not be used anymore.');
-    return isInteger(value)
-  },
-  'plcmt': (value) => isInteger(value),
-  'linearity': (value) => isInteger(value),
-  'skip': (value) => [1, 0].includes(value),
-  'skipmin': (value) => isInteger(value),
-  'skipafter': (value) => isInteger(value),
-  'sequence': (value) => isInteger(value),
-  'battr': (value) => isArrayOfNums(value),
-  'maxextended': (value) => isInteger(value),
-  'minbitrate': (value) => isInteger(value),
-  'maxbitrate': (value) => isInteger(value),
-  'boxingallowed': (value) => isInteger(value),
-  'playbackmethod': (value) => isArrayOfNums(value),
-  'playbackend': (value) => isInteger(value),
-  'delivery': (value) => isArrayOfNums(value),
-  'pos': (value) => isInteger(value),
-  'api': (value) => isArrayOfNums(value)
-};
 
 /**
  * Returns the window.ADAGIO global object used to store Adagio data.
@@ -186,6 +151,12 @@ function _getEids(bidRequest) {
   }
 }
 
+/**
+ * Merge and compute video params set at mediaTypes and bidder params level
+ *
+ * @param {object} bidRequest - copy of the original bidRequest object.
+ * @returns {void}
+ */
 function _buildVideoBidRequest(bidRequest) {
   const videoAdUnitParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
@@ -206,22 +177,11 @@ function _buildVideoBidRequest(bidRequest) {
   };
 
   if (videoParams.context && videoParams.context === OUTSTREAM) {
-    bidRequest.mediaTypes.video.playerName = getPlayerName(bidRequest);
+    videoParams.playerName = getPlayerName(bidRequest);
   }
 
-  // Only whitelisted OpenRTB options need to be validated.
-  // Other options will still remain in the `mediaTypes.video` object
-  // sent in the ad-request, but will be ignored by the SSP.
-  Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
-    if (videoParams.hasOwnProperty(paramName)) {
-      if (ORTB_VIDEO_PARAMS[paramName](videoParams[paramName])) {
-        bidRequest.mediaTypes.video[paramName] = videoParams[paramName];
-      } else {
-        delete bidRequest.mediaTypes.video[paramName];
-        logWarn(`${LOG_PREFIX} The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
-      }
-    }
-  });
+  bidRequest.mediaTypes.video = videoParams;
+  validateOrtbVideoFields(bidRequest);
 }
 
 function _parseNativeBidResponse(bid) {

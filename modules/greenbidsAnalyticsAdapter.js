@@ -6,7 +6,7 @@ import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName}
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.3.0';
+export const ANALYTICS_VERSION = '2.3.1';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -197,9 +197,12 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
-    this.sendEventMessage('/',
-      this.createBidMessage(auctionEndArgs, cachedAuction)
-    );
+    const isFilteringForced = getParameterByName('greenbids_force_filtering');
+    if (!isFilteringForced) {
+      this.sendEventMessage('/',
+        this.createBidMessage(auctionEndArgs, cachedAuction)
+      )
+    };
   },
   handleBidTimeout(timeoutBids) {
     timeoutBids.forEach((bid) => {
