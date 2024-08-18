@@ -10,6 +10,7 @@ import {
   isPlainObject,
   getBidIdParameter,
   getUniqueIdentifierStr,
+  formatQS,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -18,7 +19,8 @@ import {percentInView} from '../libraries/percentInView/percentInView.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
-const TRACK_EVENT_URL = 'https://rt.marphezis.com/prebid'
+const TRACK_EVENT_URL = 'https://rt.marphezis.com/prebid';
+const USER_SYNC_URL_IFRAME = 'https://rt.marphezis.com/sync?dpid=0';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -179,9 +181,39 @@ function interpretResponse(serverResponse) {
   return response;
 }
 
-// Don't do user sync for now
-function getUserSyncs(syncOptions, responses, gdprConsent) {
-  return [];
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  const syncs = [];
+
+  if (syncOptions.iframeEnabled) {
+    let params = {};
+
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params['gdpr'] = Number(gdprConsent.gdprApplies);
+      }
+      if (typeof gdprConsent.consentString === 'string') {
+        params['gdpr_consent'] = gdprConsent.consentString;
+      }
+    }
+
+    if (uspConsent) {
+      params['us_privacy'] = encodeURIComponent(uspConsent);
+    }
+
+    if (gppConsent?.gppString) {
+      params['gpp'] = gppConsent.gppString;
+      params['gpp_sid'] = gppConsent.applicableSections?.toString();
+    }
+
+    params = Object.keys(params).length ? `&${formatQS(params)}` : '';
+
+    syncs.push({
+      type: 'iframe',
+      url: USER_SYNC_URL_IFRAME + params,
+    });
+  }
+
+  return syncs;
 }
 
 function onBidderError(errorData) {
