@@ -76,8 +76,8 @@ export const auctionCache = new Proxy(
           consentDetail: {
             consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
           },
-          pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
-          extraData: JSON.parse(storage.getDataFromLocalStorage('pubx:extraData')) || {},
+          pmacDetail: JSON.parse(storage.getDataFromSessionStorage('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
+          extraData: JSON.parse(storage.getDataFromSessionStorage('pubx:extraData')) || {},
           initOptions: {
             ...initOptions,
             auctionId: name, // back-compat
