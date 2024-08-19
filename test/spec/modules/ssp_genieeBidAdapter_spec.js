@@ -1,7 +1,9 @@
 import { expect, assert } from 'chai';
+import { get } from 'lodash';
 import {
   spec,
   BANNER_ENDPOINT,
+  setUserAgent,
 } from 'modules/ssp_genieeBidAdapter.js';
 
 describe('ssp_genieeBidAdapter', function () {
@@ -30,20 +32,20 @@ describe('ssp_genieeBidAdapter', function () {
     it(`should set the ${query} query to geparams.${param} when geparams.${param} is neither undefined nor null nor a blank string`, function () {
       window.geparams[param] = undefined;
       let request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.not.have.string(`&${query}=`);
+      expect(request[0].data).to.not.have.property(`"${query}:`);
 
       window.geparams[param] = null;
       request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.not.have.string(`&${query}=`);
+      expect(request[0].data).to.not.have.property(`"${query}:`);
 
       window.geparams[param] = '';
       request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.not.have.string(`&${query}=`);
+      expect(request[0].data).to.not.have.property(`"${query}:`);
 
       const value = 'hoge';
       window.geparams[param] = value;
       request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.have.string(`&${query}=${value}`);
+      expect(JSON.stringify(request[0].data)).to.have.string(`"${query}":"${value}"`);
     });
   }
 
@@ -52,20 +54,20 @@ describe('ssp_genieeBidAdapter', function () {
       window.gecuparams = {};
       window.gecuparams[param] = undefined;
       let request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.not.have.string(`&${query}=`);
+      expect(request[0].data).to.not.have.property(`"${query}:`);
 
       window.gecuparams[param] = null;
       request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.not.have.string(`&${query}=`);
+      expect(request[0].data).to.not.have.property(`"${query}:`);
 
       window.gecuparams[param] = '';
       request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.not.have.string(`&${query}=`);
+      expect(request[0].data).to.not.have.property(`"${query}:`);
 
       const value = 'hoge';
       window.gecuparams[param] = value;
       request = spec.buildRequests([BANNER_BID]);
-      expect(request[0].data).to.have.string(`&${query}=${value}`);
+      expect(JSON.stringify(request[0].data)).to.have.string(`"${query}":"${value}"`);
     });
   }
 
@@ -124,8 +126,8 @@ describe('ssp_genieeBidAdapter', function () {
     describe('QueryStringParameters', function () {
       it('should sets the value of the zoneid query to bid.params.zoneId', function () {
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.have.string(
-          `zoneid=${BANNER_BID.params.zoneId}`
+        expect(String(request[0].data.zoneid)).to.have.string(
+          `${BANNER_BID.params.zoneId}`
         );
       });
 
@@ -134,11 +136,11 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([BANNER_BID], {
           refererInfo: { legacy: { referer: referer }, ref: referer },
         });
-        expect(request[0].data).to.have.string(
-          `&loc=${encodeURIComponent(referer)}`
+        expect(String(request[0].data.loc)).to.have.string(
+          `${referer}`
         );
-        expect(request[0].data).to.have.string(
-          `&referer=${encodeURIComponent(referer)}`
+        expect(String(request[0].data.referer)).to.have.string(
+          `${referer}`
         );
       });
 
@@ -152,11 +154,11 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { loc: loc, ref: referer }),
         ]);
-        expect(request[0].data).to.have.string(
-          `&loc=${encodeURIComponent(encodeURIComponent(loc))}`
+        expect(String(request[0].data.loc)).to.have.string(
+          `${encodeURIComponent(loc)}`
         );
-        expect(request[0].data).to.have.string(
-          `&referer=${encodeURIComponent(encodeURIComponent(referer))}`
+        expect(String(request[0].data.referer)).to.have.string(
+          `${encodeURIComponent(referer)}`
         );
       });
 
@@ -168,12 +170,12 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { ct0: ct0 }),
         ]);
-        expect(request[0].data).to.have.string(`&ct0=${ct0}`);
+        expect(String(request[0].data.ct0)).to.have.string(`${ct0}`);
       });
 
       it('should replaces currency with JPY if there is no currency provided', function () {
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.have.string('&cur=JPY&');
+        expect(String(request[0].data.cur)).to.have.string('JPY');
       });
 
       it('should makes currency the value of params.currency when params.currency exists', function () {
@@ -187,8 +189,8 @@ describe('ssp_genieeBidAdapter', function () {
             params: { ...BANNER_BID.params, currency: 'USD' },
           },
         ]);
-        expect(request[0].data).to.have.string('&cur=JPY&');
-        expect(request[1].data).to.have.string('&cur=USD&');
+        expect(String(request[0].data.cur)).to.have.string('JPY');
+        expect(String(request[1].data.cur)).to.have.string('USD');
       });
 
       it('should makes invalidImpBeacon the value of params.invalidImpBeacon when params.invalidImpBeacon exists', function () {
@@ -202,13 +204,13 @@ describe('ssp_genieeBidAdapter', function () {
             params: { ...BANNER_BID.params, invalidImpBeacon: false },
           },
         ]);
-        expect(request[0].data).to.have.string('&ib=0&');
-        expect(request[1].data).to.have.string('&ib=0&');
+        expect(String(request[0].data.ib)).to.have.string('0');
+        expect(String(request[1].data.ib)).to.have.string('');
       });
 
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.not.have.string('&adtk=');
+        expect(request[0].data).to.not.have.property('adtk');
       });
 
       it('should sets the value of the adtk query to 0 when geparams.lat is truthy value', function () {
@@ -218,7 +220,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { lat: 1 }),
         ]);
-        expect(request[0].data).to.have.string('&adtk=0&');
+        expect(String(request[0].data.adtk)).to.have.string('0');
       });
 
       it('should sets the value of the adtk query to 1 when geparams.lat is falsy value', function () {
@@ -228,7 +230,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { lat: 0 }),
         ]);
-        expect(request[0].data).to.have.string('&adtk=1&');
+        expect(String(request[0].data.adtk)).to.have.string('1');
       });
 
       it('should sets the value of the idfa query to geparams.idfa', function () {
@@ -239,7 +241,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { idfa: idfa }),
         ]);
-        expect(request[0].data).to.have.string(`&idfa=${idfa}`);
+        expect(String(request[0].data.idfa)).to.have.string(`${idfa}`);
       });
 
       it('should set the sw query to screen.height and the sh query to screen.width when screen.width is greater than screen.height', function () {
@@ -249,7 +251,8 @@ describe('ssp_genieeBidAdapter', function () {
           return { width: width, height: height };
         });
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.have.string(`&sw=${height}&sh=${width}`);
+        expect(String(request[0].data.sw)).to.have.string(`${height}`);
+        expect(String(request[0].data.sh)).to.have.string(`${width}`);
         stub.restore();
       });
 
@@ -260,7 +263,8 @@ describe('ssp_genieeBidAdapter', function () {
           return { width: width, height: height };
         });
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.have.string(`&sw=${width}&sh=${height}`);
+        expect(String(request[0].data.sw)).to.have.string(`${width}`);
+        expect(String(request[0].data.sh)).to.have.string(`${height}`);
         stub.restore();
       });
 
@@ -290,11 +294,11 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, params),
         ]);
-        expect(request[0].data).to.not.have.string('&custom_c1=');
-        expect(request[0].data).to.not.have.string('&custom_c2=');
-        expect(request[0].data).to.not.have.string('&custom_c3=');
-        expect(request[0].data).to.have.string(
-          `&custom_c4=${params.custom.c4}`
+        expect(request[0].data).to.not.have.property('custom_c1');
+        expect(request[0].data).to.not.have.property('custom_c2');
+        expect(request[0].data).to.not.have.property('custom_c3');
+        expect(request[0].data.custom_c4).to.have.string(
+          `${params.custom.c4}`
         );
       });
 
@@ -310,7 +314,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { gfuid: gfuid }),
         ]);
-        expect(request[0].data).to.not.have.string(`&gfuid=`);
+        expect(request[0].data).to.not.have.property('gfuid');
       });
 
       it('should sets the value of the adt query to geparams.adt', function () {
@@ -321,14 +325,18 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { adt: adt }),
         ]);
-        expect(request[0].data).to.not.have.string(`&adt=`);
+        expect(request[0].data).to.not.have.property('adt');
       });
 
       it('should adds a query for naive ads and no query for banner ads', function () {
         // const query = '&tkf=1&ad_track=1&apiv=1.1.0';
-        const query = '&apiv=1.1.0&tkf=1&ad_track=1';
+        const query_apiv = '1.1.0';
+        const query_tkf = '1';
+        const query_ad_track = '1';
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.not.have.string(query);
+        expect(String(request[0].data.apiv)).to.not.have.string(query_apiv);
+        expect(String(request[0].data.tkf)).to.not.have.string(query_tkf);
+        expect(String(request[0].data.ad_track)).to.not.have.string(query_ad_track);
       });
 
       it('should sets the value of the apid query to geparams.bundle when media type is banner', function () {
@@ -339,7 +347,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { bundle: bundle }),
         ]);
-        expect(request[0].data).to.have.string(`&apid=${bundle}`);
+        expect(String(request[0].data.apid)).to.have.string(`${bundle}`);
       });
 
       it('should not include the extuid query when it does not contain the imuid cookie', function () {
@@ -347,7 +355,7 @@ describe('ssp_genieeBidAdapter', function () {
           return '';
         });
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.not.have.string('&extuid=');
+        expect(request[0].data).to.not.have.property('extuid');
         stub.restore();
       });
 
@@ -357,8 +365,8 @@ describe('ssp_genieeBidAdapter', function () {
           return `_im_uid.3929=${imuid}`;
         });
         const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.have.string(
-          `&extuid=${encodeURIComponent(`im:${imuid}`)}`
+        expect(String(request[0].data.extuid)).to.have.string(
+          `${`im:${imuid}`}`
         );
         stub.restore();
       });
@@ -383,8 +391,8 @@ describe('ssp_genieeBidAdapter', function () {
       netRevenue: true,
       currency: 'JPY',
       ttl: 700,
-      width: response[ZONE_ID].width + 'px',
-      height: response[ZONE_ID].height + 'px',
+      width: response[ZONE_ID].width,
+      height: response[ZONE_ID].height,
     };
 
     it('should sets the response correctly when it comes to banner ads', function () {

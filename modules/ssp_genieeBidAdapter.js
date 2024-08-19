@@ -1,9 +1,11 @@
 /* eslint-disable camelcase */
 import * as utils from '../src/utils.js';
+import { isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js'
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import { highEntropySUAAccessor } from '../src/fpd/sua.js';
 
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
@@ -117,15 +119,6 @@ function hasParamsNotBlankString(params, key) {
 }
 
 /**
- * Checking argument is object or not
- * @param {any} value
- * @returns {boolean}
- */
-function isObject(value) {
-  return !!(typeof value !== 'undefined' && typeof value == 'object' && value);
-}
-
-/**
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
@@ -190,7 +183,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
       geparameter[GEPARAMS_KEY.LATITUDE]
     );
   }
-  if (GEPARAMS_KEY.CUSTOM in geparameter && isObject(geparameter[GEPARAMS_KEY.CUSTOM])) {
+  if (GEPARAMS_KEY.CUSTOM in geparameter && isPlainObject(geparameter[GEPARAMS_KEY.CUSTOM])) {
     for (const c in geparameter[GEPARAMS_KEY.CUSTOM]) {
       if (hasParamsNotBlankString(geparameter[GEPARAMS_KEY.CUSTOM], c)) {
         data[encodeURIComponentIncludeSingleQuotation('custom_' + c)] =
@@ -201,7 +194,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     }
   }
   const gecuparameter = window.gecuparams || {};
-  if (isObject(gecuparameter)) {
+  if (isPlainObject(gecuparameter)) {
     if (hasParamsNotBlankString(gecuparameter, GECUPARAMS_KEY.VERSION)) {
       data.gc_ver = encodeURIComponentIncludeSingleQuotation(gecuparameter[GECUPARAMS_KEY.VERSION]);
     }
@@ -264,8 +257,8 @@ function makeCommonBidResponse(bid, width, height) {
     currency: bid.cur,
     netRevenue: NET_REVENUE,
     ttl: 700,
-    width: width + 'px', // width of the ad iframe
-    height: height + 'px', // height of the ad iframe
+    width: width, // width of the ad iframe
+    height: height, // height of the ad iframe
   };
 }
 
@@ -327,34 +320,6 @@ function getImuidAsQueryParameter() {
   return imuid ? 'im:' + imuid : ''; // To avoid double encoding, not using encodeURIComponent here
 }
 
-/**
- * add actions for uach
- * @returns
- */
-function setUserAgent() {
-  // userAgentData is undefined if the browser is not Chrome
-  if (
-    !navigator.userAgentData ||
-    !navigator.userAgentData.getHighEntropyValues
-  ) {
-    return;
-  }
-
-  return navigator.userAgentData
-    .getHighEntropyValues([
-      'architecture',
-      'model',
-      'mobile',
-      'platform',
-      'bitness',
-      'platformVersion',
-      'fullVersionList',
-    ])
-    .then((ua) => {
-      storage.setDataInLocalStorage('ua', JSON.stringify(ua));
-    });
-}
-
 function getUserAgent() {
   return storage.getDataFromLocalStorage('key') || null;
 }
@@ -386,7 +351,25 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const serverRequests = [];
 
-    setUserAgent();
+    const HIGH_ENTROPY_HINTS = [
+      'architecture',
+      'model',
+      'mobile',
+      'platform',
+      'bitness',
+      'platformVersion',
+      'fullVersionList',
+    ];
+
+    const uaData = window.navigator?.userAgentData;
+    if (uaData && uaData.getHighEntropyValues) {
+      const getHighEntropySUA = highEntropySUAAccessor(uaData);
+      getHighEntropySUA(HIGH_ENTROPY_HINTS).then((ua) => {
+        if (ua) {
+          storage.setDataInLocalStorage('ua', JSON.stringify(ua));
+        }
+      });
+    }
 
     validBidRequests.forEach((bid) => {
       // const isNative = bid.mediaTypes?.native;
@@ -395,7 +378,7 @@ export const spec = {
       serverRequests.push({
         method: 'GET',
         url: BANNER_ENDPOINT,
-        data: utils.parseQueryStringParameters(makeBannerRequestData(bid, geparameter, bidderRequest?.refererInfo)),
+        data: makeBannerRequestData(bid, geparameter, bidderRequest?.refererInfo),
         bid: bid,
       });
     });
