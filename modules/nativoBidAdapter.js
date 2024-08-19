@@ -134,8 +134,7 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     // We don't need any specific parameters to make a bid request
-    // If not parameters are supplied just verify it's the correct bidder code
-    if (!bid.params) return bid.bidder === BIDDER_CODE
+    if (!bid.params) return true
 
     // Check if any supplied parameters are invalid
     const hasInvalidParameters = Object.keys(bid.params).some((key) => {
