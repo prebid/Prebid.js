@@ -30,7 +30,7 @@ describe('LiveIntentIdHub', function() {
     resetSubmodule();
   });
 
-  it('should fire an event and resolve when getId and include the pricacy settings the resolution request', function () {
+  it('should fire an event and resolve when getId and include the privacy settings into the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
       gdprApplies: true,
