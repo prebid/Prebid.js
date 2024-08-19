@@ -18,7 +18,7 @@ let initOptions;
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const adapterCode = 'pubxai';
-const pubxaiAnalyticsVersion = 'v2.0.0';
+const pubxaiAnalyticsVersion = 'v2.1.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
