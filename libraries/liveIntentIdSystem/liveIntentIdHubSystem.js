@@ -169,9 +169,8 @@ export const liveIntentIdHubSubmodule = {
 
     return { callback: function(cb) { resolve(configParams, clientRef, cb); } };
   },
-  eids: {
-    eids
-  }
+
+  eids
 };
 
 submodule('userId', liveIntentIdHubSubmodule);
