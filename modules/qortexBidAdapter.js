@@ -1,6 +1,7 @@
 import {
-  isArray, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize, getDNT
+  isArray, parseGPTSingleSizeArrayToRtbSize, getDNT
 } from '../src/utils.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -90,10 +91,11 @@ registerBidder(spec);
  * @returns {String}
  */
 function buildMonetizeRequest(imps, bidderRequest, qxData, groupId) {
-  let {gdprConsent, auctionId, timeout, uspConsent, ortb2} = bidderRequest;
+  const {gdprConsent, auctionId, timeout, uspConsent, ortb2} = bidderRequest;
   let coppa = config.getConfig('coppa');
+  console.log("shiloh request", bidderRequest.auctionId, bidderRequest.ortb2);
   let req = {
-    id: auctionId,
+    id: ortb2.source.tid,
     imp: imps,
     tmax: timeout,
     coppa: 0,
