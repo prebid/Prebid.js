@@ -52,6 +52,20 @@ function initializeClient(configParams) {
     timeout: configParams.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT
   }
 
+  let idCookieSettings
+  if (configParams.fpid != null) {
+    const fpidConfig = configParams.fpid
+    let fpidStrategy
+    if (fpidConfig.strategy === 'html5') {
+      fpidStrategy = 'localStorage'
+    } else {
+      fpidStrategy = fpidConfig.strategy
+    }
+    idCookieSettings = { idCookieSettings: { type: 'provided', name: fpidConfig.name, fpidStrategy } };
+  } else {
+    idCookieSettings = {}
+  }
+
   function loadConsent() {
     const consent = {}
     const usPrivacyString = uspDataHandler.getConsentData();
@@ -79,6 +93,7 @@ function initializeClient(configParams) {
     consent,
     partnerCookies,
     collectSettings,
+    ...idCookieSettings,
     resolveSettings
   })
 

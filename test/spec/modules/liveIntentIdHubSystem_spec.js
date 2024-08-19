@@ -393,6 +393,7 @@ describe('LiveIntentIdHub', function() {
       integration: { distributorId: defaultConfigParams.distributorId, publisherId: PUBLISHER_ID, type: 'custom' },
       partnerCookies: new Set(),
       resolveSettings: { identityPartner: 'prebid', timeout: DEFAULT_AJAX_TIMEOUT },
+      idCookieSettings: { type: 'provided', name: 'testcookie', fpidStrategy: 'cookie' },
       type: 'register_client'
     })
 
