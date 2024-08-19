@@ -1,10 +1,10 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {spec} from 'modules/iqxBidAdapter.js';
+import {spec} from 'modules/digitalMatterBidAdapter.js';
 import {deepClone} from 'src/utils';
 import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
 
-const ENDPOINT = 'https://pbjs.iqzonertb.live';
+const ENDPOINT = 'https://prebid.di-change.live';
 
 const defaultRequest = {
   adUnitCode: 'test',
@@ -28,9 +28,9 @@ const defaultRequest = {
       ]
     }
   },
-  bidder: 'iqx',
+  bidder: 'digitalmatter',
   params: {
-    env: 'iqx',
+    env: 'digitalmatter',
     pid: '40',
     ext: {}
   },
@@ -45,7 +45,18 @@ defaultRequestVideo.mediaTypes = {
     skipppable: true
   }
 };
-describe('iqxBidAdapter', () => {
+
+const videoBidderRequest = {
+  bidderCode: 'digitalmatter',
+  bids: [{mediaTypes: {video: {}}, bidId: 'qwerty'}]
+};
+
+const displayBidderRequest = {
+  bidderCode: 'digitalmatter',
+  bids: [{bidId: 'qwerty'}]
+};
+
+describe('digitalmatterBidAdapter', () => {
   describe('isBidRequestValid', function () {
     it('should return false when request params is missing', function () {
       const invalidRequest = deepClone(defaultRequest);
@@ -105,7 +116,7 @@ describe('iqxBidAdapter', () => {
       expect(request).to.have.property('sizes').and.to.deep.equal(['300x250', '300x200']);
       expect(request).to.have.property('ext').and.to.deep.equal({});
       expect(request).to.have.property('env').and.to.deep.equal({
-        env: 'iqx',
+        env: 'digitalmatter',
         pid: '40'
       });
       expect(request).to.have.property('device').and.to.deep.equal({
@@ -258,7 +269,7 @@ describe('iqxBidAdapter', () => {
             height: 250,
             ttl: 600,
             meta: {
-              advertiserDomains: ['iqx']
+              advertiserDomains: ['digitalmatter']
             },
             ext: {
               pixels: [
@@ -270,7 +281,7 @@ describe('iqxBidAdapter', () => {
         }
       };
 
-      const validResponse = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequest});
+      const validResponse = spec.interpretResponse(serverResponse, {bidderRequest: displayBidderRequest});
       const bid = validResponse[0];
       expect(validResponse).to.be.an('array').that.is.not.empty;
       expect(bid.requestId).to.equal('qwerty');
@@ -279,7 +290,7 @@ describe('iqxBidAdapter', () => {
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
       expect(bid.ttl).to.equal(600);
-      expect(bid.meta).to.deep.equal({advertiserDomains: ['iqx']});
+      expect(bid.meta).to.deep.equal({advertiserDomains: ['digitalmatter']});
     });
 
     it('should interpret valid banner response', function () {
@@ -293,18 +304,18 @@ describe('iqxBidAdapter', () => {
             height: 250,
             ttl: 600,
             mediaType: 'banner',
-            creativeId: 'xe-demo-banner',
+            creativeId: 'demo-banner',
             ad: 'ad',
             meta: {}
           }]
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequest});
+      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: displayBidderRequest});
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('banner');
-      expect(bid.creativeId).to.equal('xe-demo-banner');
+      expect(bid.creativeId).to.equal('demo-banner');
       expect(bid.ad).to.equal('ad');
     });
 
@@ -319,18 +330,18 @@ describe('iqxBidAdapter', () => {
             height: 480,
             ttl: 600,
             mediaType: 'video',
-            creativeId: 'xe-demo-video',
+            creativeId: 'demo-video',
             ad: 'vast-xml',
             meta: {}
           }]
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequestVideo});
+      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: videoBidderRequest});
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('video');
-      expect(bid.creativeId).to.equal('xe-demo-video');
+      expect(bid.creativeId).to.equal('demo-video');
       expect(bid.ad).to.equal('vast-xml');
     });
   });
