@@ -217,7 +217,16 @@ function constructFullUrl(data) {
 }
 
 export function getReferrer() {
-  return document.referrer;
+  try {
+    if (window.self === window.top) {
+      return window.location.href;
+    } else {
+      return window.top.location.href;
+    }
+  } catch (error) {
+    logError(`Error accessing location: ${error}`);
+    return '';
+  }
 }
 
 iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapter.enableAnalytics;
