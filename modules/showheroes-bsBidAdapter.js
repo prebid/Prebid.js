@@ -35,6 +35,12 @@ const converter = ortbConverter({
     deepSetValue(imp, 'ext.mediaType', mediaTypeContenxt);
     imp.ext.params = bidRequest.params;
     imp.ext.adUnitCode = bidRequest.adUnitCode;
+
+    if (!imp.displaymanager) {
+      imp.displaymanager = 'Prebid.js';
+      imp.displaymanagerver = '$prebid.version$'; // prebid version
+    }
+
     if (!isFn(bidRequest.getFloor)) {
       return imp
     }

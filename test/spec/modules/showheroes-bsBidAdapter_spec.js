@@ -133,6 +133,7 @@ describe('shBidAdapter', () => {
     expect(payload.test).to.eql(0);
     expect(payload.imp[0].bidfloor).eql(3);
     expect(payload.imp[0].bidfloorcur).eql('EUR');
+    expect(payload.imp[0].displaymanager).eql('Prebid.js');
     expect(payload.site.page).to.eql('https://example.com/home');
     expect(payload.device.ua).to.undefined;
     expect(payload.device.sua).to.undefined;
