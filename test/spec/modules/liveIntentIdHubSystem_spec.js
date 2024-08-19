@@ -30,6 +30,35 @@ describe('LiveIntentIdHub', function() {
     resetSubmodule();
   });
 
+  it('should use appId in integration when both appId and distributorId are provided', function() {
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        distributorId: 'did-1111',
+        liCollectConfig: {
+          appId: 'a-0001'
+        },
+        emailHash: '123'
+      }
+    }
+    liveIntentIdHubSubmodule.decode({}, configParams);
+    expect(window.liQHub).to.eql([{
+      clientDetails: { name: 'prebid', version: '$prebid.version$' },
+      clientRef: {},
+      collectSettings: { timeout: DEFAULT_AJAX_TIMEOUT },
+      consent: {},
+      integration: { appId: 'a-0001', publisherId: '89899', type: 'application' },
+      partnerCookies: new Set(),
+      resolveSettings: { identityPartner: 'prebid', timeout: DEFAULT_AJAX_TIMEOUT },
+      type: 'register_client'
+    },
+    {
+      clientRef: {},
+      sourceEvent: { hash: '123' },
+      type: 'collect'
+    }])
+  });
+
   it('should fire an event and resolve when getId and include the privacy settings into the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
@@ -115,13 +144,18 @@ describe('LiveIntentIdHub', function() {
   });
 
   it('should have the same data after call decode when appId, disrtributorId and sourceEvent is absent', function() {
-    liveIntentIdHubSubmodule.decode({}, defaultConfigParams);
+    liveIntentIdHubSubmodule.decode({}, {
+      params: {
+        ...defaultConfigParams.params,
+        distributorId: undefined
+      }
+    });
     expect(window.liQHub).to.eql([{
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
       collectSettings: { timeout: DEFAULT_AJAX_TIMEOUT },
       consent: {},
-      integration: { distributorId: defaultConfigParams.distributorId, publisherId: '89899', type: 'custom' },
+      integration: { distributorId: undefined, publisherId: '89899', type: 'custom' },
       partnerCookies: new Set(),
       resolveSettings: { identityPartner: 'prebid', timeout: DEFAULT_AJAX_TIMEOUT },
       type: 'register_client'
@@ -175,7 +209,7 @@ describe('LiveIntentIdHub', function() {
       clientRef: {},
       collectSettings: { timeout: DEFAULT_AJAX_TIMEOUT },
       consent: {},
-      integration: { distributorId: 'did-1111', type: 'distributor' },
+      integration: { distributorId: 'did-1111', publisherId: defaultConfigParams.params.publisherId, type: 'custom' },
       partnerCookies: new Set(),
       resolveSettings: { identityPartner: 'did-1111', timeout: DEFAULT_AJAX_TIMEOUT },
       type: 'register_client'

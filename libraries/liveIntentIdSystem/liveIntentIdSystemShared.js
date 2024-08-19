@@ -7,9 +7,8 @@ export const GVLID = 148;
 export const DEFAULT_AJAX_TIMEOUT = 5000
 export const MODULE_NAME = 'liveIntentId';
 export const LI_PROVIDER_DOMAIN = 'liveintent.com';
-export const DEFAULT_REQUESTED_ATTRIBUTES = {'nonId': true}
+export const DEFAULT_REQUESTED_ATTRIBUTES = { 'nonId': true }
 export const DEFAULT_DELAY = 500
-const defaultRequestedAttributes = {'nonId': true}
 
 export function parseRequestedAttributes(overrides) {
   function renameAttribute(attribute) {
@@ -23,9 +22,9 @@ export function parseRequestedAttributes(overrides) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [renameAttribute(k)] : []);
   }
   if (typeof overrides === 'object') {
-    return createParameterArray({...defaultRequestedAttributes, ...overrides});
+    return createParameterArray({...DEFAULT_REQUESTED_ATTRIBUTES, ...overrides});
   } else {
-    return createParameterArray(defaultRequestedAttributes);
+    return createParameterArray(DEFAULT_REQUESTED_ATTRIBUTES);
   }
 }
 

@@ -28,7 +28,7 @@ function initializeClient(configParams) {
   let integration
   if (collectConfig.appId != null) {
     integration = { type: 'application', appId: collectConfig.appId, publisherId: configParams.publisherId }
-  } else if (configParams.distributorId != null) {
+  } else if (configParams.distributorId != null && configParams.publisherId == null) {
     integration = { type: 'distributor', distributorId: configParams.distributorId }
   } else {
     integration = { type: 'custom', publisherId: configParams.publisherId, distributorId: configParams.distributorId }
@@ -39,7 +39,7 @@ function initializeClient(configParams) {
   const collectSettings = { timeout: collectConfig.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT }
 
   let identityPartner
-  if (configParams.appId == null && configParams.distributorId != null) {
+  if (collectConfig.appId == null && configParams.distributorId != null) {
     identityPartner = configParams.distributorId
   } else if (configParams.partner != null) {
     identityPartner = configParams.partner
