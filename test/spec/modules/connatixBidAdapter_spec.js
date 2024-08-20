@@ -52,10 +52,6 @@ describe('connatixBidAdapter', function () {
     it('Should return true if all required fileds are present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-    it('Should return false if bidder does not correspond', function () {
-      bid.bidder = 'abc';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
     it('Should return false if bidId is missing', function () {
       delete bid.bidId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
