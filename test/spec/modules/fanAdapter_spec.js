@@ -167,7 +167,7 @@ describe('Freedom Ad Network Bid Adapter', function () {
 
         expect(req.originalBidRequest).to.equal(bidRequest);
 
-        expect(req.data).to.equal('{"id":"'+ bidRequest.bidId +'","tmax":3000,"placements":["'+ bidRequest.params.placementId +'"],"test":0,"device":{"w":800,"h":600,"ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/125.0.6422.141 Safari/537.36","language":"en","dnt":0},"at":2,"user":{"coppa":0,"id":"1d00c41fbf6bcf02b760c7f9e6266202","gdpr":1,"consent":"IwuyYwpjmnsauyYasIUWwe","usp":"Oush3@jmUw82has"}}');
+        expect(req.data).to.equal('{"id":"' + bidRequest.bidId + '","tmax":3000,"placements":["' + bidRequest.params.placementId + '"],"test":0,"device":{"w":800,"h":600,"ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/125.0.6422.141 Safari/537.36","language":"en","dnt":0},"at":2,"user":{"coppa":0,"id":"1d00c41fbf6bcf02b760c7f9e6266202","gdpr":1,"consent":"IwuyYwpjmnsauyYasIUWwe","usp":"Oush3@jmUw82has"}}');
       }
     });
 
