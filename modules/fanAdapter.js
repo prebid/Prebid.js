@@ -4,6 +4,14 @@ import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'freedomadnetwork';
 const BASE_URL = 'https://srv.freedomadnetwork.com';
 
@@ -49,7 +57,7 @@ function getDevice() {
 /**
  * Build OpenRTB request from bidRequest and bidderRequest
  *
- * @param {BidRequest} bidRequest
+ * @param {BidRequest} bid
  * @param {BidderRequest} bidderRequest
  * @returns {Request}
  */
