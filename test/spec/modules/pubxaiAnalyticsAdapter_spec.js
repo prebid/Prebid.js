@@ -599,6 +599,7 @@ describe('pubxai analytics adapter', () => {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
       pmacDetail: {},
+      extraData: {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
@@ -693,6 +694,7 @@ describe('pubxai analytics adapter', () => {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
       pmacDetail: {},
+      extraData: {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
@@ -763,7 +765,7 @@ describe('pubxai analytics adapter', () => {
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
-          pubxaiAnalyticsVersion: 'v2.0.0',
+          pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
           pubxId: pubxId,
         });
@@ -807,7 +809,7 @@ describe('pubxai analytics adapter', () => {
       // Step 8: check that the meta information in the call is correct
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
         auctionTimestamp: '1616654312804',
-        pubxaiAnalyticsVersion: 'v2.0.0',
+        pubxaiAnalyticsVersion: 'v2.1.0',
         prebidVersion: '$prebid.version$',
         pubxId: pubxId,
       });
@@ -933,7 +935,7 @@ describe('pubxai analytics adapter', () => {
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
-          pubxaiAnalyticsVersion: 'v2.0.0',
+          pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
           pubxId: pubxId,
         });
@@ -1050,7 +1052,7 @@ describe('pubxai analytics adapter', () => {
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
-          pubxaiAnalyticsVersion: 'v2.0.0',
+          pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
           pubxId: pubxId,
         });
