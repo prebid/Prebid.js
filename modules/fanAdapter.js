@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import MD5 from 'crypto-js/md5.js';
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
@@ -23,17 +22,6 @@ const BASE_URL = 'https://srv.freedomadnetwork.com';
  */
 function getUserId(bidRequest) {
   return generateUserId();
-}
-
-/**
- * Get browser language
- *
- * @returns {String} language
- */
-function getLanguage() {
-  const lang = (navigator.languages && navigator.languages[0]) ||
-    navigator.language || navigator.userLanguage;
-  return lang ? lang.split('-')[0] : 'en';
 }
 
 /**
