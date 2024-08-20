@@ -32,10 +32,6 @@ function getAudience(validBidRequests, bidderRequest) {
     domain: deepAccess(bidderRequest, 'refererInfo.page')
   };
 
-  if (config.getConfig('coppa') === true) {
-    params.coppa = 1;
-  }
-
   if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
     params.gdpr = 1;
     params.gdprConsent = deepAccess(bidderRequest, 'gdprConsent.consentString');
