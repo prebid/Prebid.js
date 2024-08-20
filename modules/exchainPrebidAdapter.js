@@ -6,7 +6,7 @@ import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
-const MODULE_NAME = 'ExchainPrebid';
+const MODULE_NAME = 'ExchainPrebidAdapter';
 const EXCHAIN_PREBID_GVL_ID = 6969
 
 export const storage = getStorageManager({
