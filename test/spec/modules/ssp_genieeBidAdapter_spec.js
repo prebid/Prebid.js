@@ -1,10 +1,9 @@
-import { expect, assert } from 'chai';
-import { get } from 'lodash';
+import { expect } from 'chai';
 import {
   spec,
   BANNER_ENDPOINT,
-  setUserAgent,
 } from 'modules/ssp_genieeBidAdapter.js';
+import { config } from '../../../src/config.js';
 
 describe('ssp_genieeBidAdapter', function () {
   const ZONE_ID = 1234567;
@@ -84,16 +83,18 @@ describe('ssp_genieeBidAdapter', function () {
     });
 
     it('should return true when params.zoneId and params.currency exist and params.currency is JPY or USD', function () {
+      config.setConfig({ currency: { adServerCurrency: 'JPY' } });
       expect(
         spec.isBidRequestValid({
           ...BANNER_BID,
-          params: { ...BANNER_BID.params, currency: 'JPY' },
+          params: { ...BANNER_BID.params },
         })
       ).to.be.true;
+      config.setConfig({ currency: { adServerCurrency: 'USD' } });
       expect(
         spec.isBidRequestValid({
           ...BANNER_BID,
-          params: { ...BANNER_BID.params, currency: 'USD' },
+          params: { ...BANNER_BID.params },
         })
       ).to.be.true;
     });
@@ -103,10 +104,11 @@ describe('ssp_genieeBidAdapter', function () {
     });
 
     it('should return false when params.zoneId and params.currency exist and params.currency is neither JPY nor USD', function () {
+      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
       expect(
         spec.isBidRequestValid({
           ...BANNER_BID,
-          params: { ...BANNER_BID.params, currency: 'EUR' },
+          params: { ...BANNER_BID.params },
         })
       ).to.be.false;
     });
@@ -193,7 +195,7 @@ describe('ssp_genieeBidAdapter', function () {
         expect(String(request[1].data.cur)).to.have.string('USD');
       });
 
-      it('should makes invalidImpBeacon the value of params.invalidImpBeacon when params.invalidImpBeacon exists', function () {
+      it('should makes invalidImpBeacon the value of params.invalidImpBeacon when params.invalidImpBeacon exists (in current version, this parameter is not necessary and ib is always `0`)', function () {
         const request = spec.buildRequests([
           {
             ...BANNER_BID,
@@ -203,9 +205,14 @@ describe('ssp_genieeBidAdapter', function () {
             ...BANNER_BID,
             params: { ...BANNER_BID.params, invalidImpBeacon: false },
           },
+          {
+            ...BANNER_BID,
+            params: { ...BANNER_BID.params },
+          },
         ]);
         expect(String(request[0].data.ib)).to.have.string('0');
-        expect(String(request[1].data.ib)).to.have.string('');
+        expect(String(request[1].data.ib)).to.have.string('0');
+        expect(String(request[2].data.ib)).to.have.string('0');
       });
 
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
