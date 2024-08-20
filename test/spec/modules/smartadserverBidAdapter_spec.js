@@ -462,6 +462,7 @@ describe('Smart bid adapter tests', function () {
     const requests = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL);
     expect(requests[0]).to.have.property('options').and.to.deep.equal({
       browsingTopics: false
+    });
   });
 
   it('Verify metadata', function () {
