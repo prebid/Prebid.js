@@ -3,6 +3,9 @@ import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepClone} from '../../../src/utils';
+import 'modules/consentManagementTcf.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/schain.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -484,22 +487,33 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify common id parameters', function () {
     const bidRequests = deepClone(slotConfigs);
-    bidRequests[0].userIdAsEids = [{
-      source: 'pubcid.org',
-      uids: [{
-        id: 'userid_pubcid'
-      }]
-    }, {
-      source: 'adserver.org',
-      uids: [{
-        id: 'userid_ttd',
-        ext: {
-          rtiPartner: 'TDID'
-        }
-      }]
-    }
+    const eids = [
+      {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'userid_pubcid'
+        }]
+      }, {
+        source: 'adserver.org',
+        uids: [{
+          id: 'userid_ttd',
+          ext: {
+            rtiPartner: 'TDID'
+          }
+        }]
+      }
     ];
-    const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+    const br = {
+      ...bidderRequest,
+      ortb2: {
+        user: {
+          ext: {
+            eids
+          }
+        }
+      }
+    }
+    const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(br));
     expect(request).to.be.not.null;
     expect(request.data).to.be.not.null;
     const ortbRequest = request.data;
@@ -507,7 +521,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user).to.not.be.undefined;
     expect(ortbRequest.user.ext).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
+    expect(ortbRequest.user.ext.eids).to.deep.equal(eids);
   });
 
   it('Verify user level first party data', function () {
