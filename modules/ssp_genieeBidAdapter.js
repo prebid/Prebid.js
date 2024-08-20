@@ -342,9 +342,6 @@ export const spec = {
     }
     return true;
   },
-  confirmAdServerCurrency: function () {
-    return config.getConfig('currency.adServerCurrency');
-  },
   /**
    * Make a server request from the list of BidRequests.
    *
