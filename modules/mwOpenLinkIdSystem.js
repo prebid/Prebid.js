@@ -8,8 +8,9 @@
 import { timestamp, logError, deepClone, generateUUID, isPlainObject } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { gdprDataHandler, uspDataHandler } from '../src/consentHandler.js'; // Import GDPR and CCPA handlers
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -90,19 +91,25 @@ function writeCookie(mwOlId) {
 
 function register(configParams, olid) {
   const { accountId, partnerId, uid } = configParams;
+  const consentData = {
+    gdpr: gdprDataHandler.getConsentData(),
+    usp: uspDataHandler.getConsentData()
+  };
   const url = 'https://ol.mediawallahscript.com/?account_id=' + accountId +
             '&partner_id=' + partnerId +
             '&uid=' + uid +
             '&olid=' + olid +
-            '&cb=' + Math.random()
-            ;
+            '&cb=' + Math.random() +
+            '&gdpr=' + (consentData.gdpr ? consentData.gdpr.gdprApplies : '') +
+            '&gdpr_consent=' + (consentData.gdpr ? consentData.gdpr.consentString : '') +
+            '&ccpa_consent=' + (consentData.usp || '');
   ajax(url);
 }
 
 function setID(configParams) {
   if (!isValidConfig(configParams)) return undefined;
   const mwOlId = readCookie();
-  const newMwOlId = mwOlId ? deepClone(mwOlId) : {eid: generateUUID()};
+  const newMwOlId = mwOlId ? deepClone(mwOlId) : { eid: generateUUID() };
   writeCookie(newMwOlId);
   register(configParams, newMwOlId.eid);
   return {
