@@ -65,7 +65,6 @@ function buildBidRequest(bid, bidderRequest) {
     at: 2,
     user: {
       coppa: config.getConfig('coppa') ? 1 : 0,
-      id: userId,
     }
   }
 
@@ -150,6 +149,10 @@ export const spec = {
     const serverBody = serverResponse.body;
     let bidResponses = [];
 
+    if (!serverBody) {
+      return bidResponses;
+    }
+
     serverBody.forEach((response) => {
       const bidResponse = {
         requestId: response.id,
@@ -213,7 +216,10 @@ export const spec = {
   onBidderError: function(error) {
     utils.logError(`${BIDDER_CODE} bidder error`, error);
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = [];
+    return syncs;
+  },
   onTimeout: function(timeoutData) {},
   supportedMediaTypes: [BANNER, NATIVE]
 }
