@@ -16,7 +16,10 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
-const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
+
+const DEFAULT_STORAGE_PAID_ID_KEYS = {
+  liveramp: '_lr_pairId'
+};
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
@@ -36,11 +39,6 @@ export const pairIdSubmodule = {
    */
   name: MODULE_NAME,
   /**
-   * used to specify vendor id
-   * @type {number}
-   */
-  gvlid: 755,
-  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param { string | undefined } value
@@ -59,6 +57,7 @@ export const pairIdSubmodule = {
   getId(config) {
     const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY)
     let ids = []
+
     if (pairIdsString && typeof pairIdsString == 'string') {
       try {
         ids = ids.concat(JSON.parse(atob(pairIdsString)))
@@ -68,13 +67,19 @@ export const pairIdSubmodule = {
     }
 
     const configParams = (config && config.params) || {};
-    if (configParams && configParams.liveramp) {
-      let LRStorageLocation = configParams.liveramp.storageKey || DEFAULT_LIVERAMP_PAIR_ID_KEY;
-      const liverampValue = pairIdFromLocalStorage(LRStorageLocation) || pairIdFromCookie(LRStorageLocation);
+    const cleanRooms = Object.keys(configParams);
 
-      if (liverampValue) {
+    for (let i = 0; i < cleanRooms.length; i++) {
+      const cleanRoom = cleanRooms[i];
+      const cleanRoomParams = cleanRoom[i];
+
+      const cleanRoomStorageLocation = cleanRoomParams.storageKey || DEFAULT_STORAGE_PAID_ID_KEYS[cleanRoom];
+      const cleanRoomValue = pairIdFromLocalStorage(cleanRoomStorageLocation) || pairIdFromCookie(cleanRoomStorageLocation);
+
+      if (cleanRoomValue) {
         try {
-          const parsedValue = atob(liverampValue);
+          const parsedValue = atob(cleanRoomValue);
+
           if (parsedValue) {
             const obj = JSON.parse(parsedValue);
 
@@ -90,7 +95,7 @@ export const pairIdSubmodule = {
           logInfo('Pairid: Error parsing JSON: ', error);
         }
       } else {
-        logInfo('Pairid: liverampValue for pairId from storage is empty or null');
+        logInfo('Pairid: data clean room value for pairId from storage is empty or null');
       }
     }
 
@@ -98,11 +103,12 @@ export const pairIdSubmodule = {
       logInfo('PairId not found.')
       return undefined;
     }
+
     return {'id': ids};
   },
   eids: {
     'pairId': {
-      source: 'google.com',
+      source: 'iabtechlab.com',
       atype: 571187
     },
   }
