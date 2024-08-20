@@ -37,24 +37,6 @@ function getLanguage() {
 }
 
 /**
- * Get device info
- *
- * @returns {Object}
- */
-function getDevice() {
-  const device = config.getConfig('device') || {};
-
-  device.w = device.w || window.screen.width;
-  device.h = device.h || window.screen.height;
-  device.ua = device.ua || navigator.userAgent;
-  device.language = device.language || getLanguage();
-  device.dnt = typeof device.dnt === 'number'
-    ? device.dnt : (utils.getDNT() ? 1 : 0);
-
-  return device;
-}
-
-/**
  * Build OpenRTB request from bidRequest and bidderRequest
  *
  * @param {BidRequest} bid
@@ -68,12 +50,8 @@ function buildBidRequest(bid, bidderRequest) {
     id: bid.bidId,
     tmax: bidderRequest.timeout,
     placements: [bid.params.placementId],
-    test: config.getConfig('debug') ? 1 : 0,
-    device: getDevice(),
-    at: 2,
-    user: {
-      coppa: config.getConfig('coppa') ? 1 : 0,
-    }
+    at: 1,
+    user: {}
   }
 
   const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent');
