@@ -560,16 +560,10 @@ describe('Conversant adapter tests', function() {
       // clone bidRequests
       let requests = utils.deepClone(bidRequests);
 
-      const uid = {pubcid: '112233', idl_env: '334455'};
       const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
 
-      // add pubcid to every entry
-      requests.forEach((unit) => {
-        Object.assign(unit, {userId: uid});
-        Object.assign(unit, {userIdAsEids: eidArray});
-      });
       //  construct http post payload
-      const payload = spec.buildRequests(requests, {}).data;
+      const payload = spec.buildRequests(requests, {ortb2: {user: {ext: {eids: eidArray}}}}).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
         {source: 'pubcid.org', uids: [{id: '112233', atype: 1}]},
         {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
