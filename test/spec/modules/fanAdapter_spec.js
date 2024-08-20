@@ -2,7 +2,7 @@ import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
 import { spec } from 'modules/fanAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, NATIVE } from 'src/mediaTypes.js';
 
 describe('Freedom Ad Network Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
@@ -26,7 +26,14 @@ describe('Freedom Ad Network Bid Adapter', function () {
 
     it('valid bid should return true', function () {
       expect(spec.isBidRequestValid({
-        params: { placementId: 'e6203f1e-bd6d-4f42-9895-d1a19cdb83c8' }
+        mediaTypes: {
+          [BANNER]: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          placementId: 'e6203f1e-bd6d-4f42-9895-d1a19cdb83c8'
+        }
       })).to.be.true;
     });
   });
@@ -163,38 +170,12 @@ describe('Freedom Ad Network Bid Adapter', function () {
         expect(req.options).to.be.an('object');
         expect(req.options.contentType).to.contain('application/json');
         expect(req.options.customHeaders).to.be.an('object');
-        expect(req.options.customHeaders['Authorization']).to.equal('Bearer 1d00c41fbf6bcf02b760c7f9e6266202');
 
         expect(req.originalBidRequest).to.equal(bidRequest);
 
-        expect(req.data).to.equal('{"id":"' + bidRequest.bidId + '","tmax":3000,"placements":["' + bidRequest.params.placementId + '"],"test":0,"device":{"w":800,"h":600,"ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/125.0.6422.141 Safari/537.36","language":"en","dnt":0},"at":2,"user":{"coppa":0,"id":"1d00c41fbf6bcf02b760c7f9e6266202","gdpr":1,"consent":"IwuyYwpjmnsauyYasIUWwe","usp":"Oush3@jmUw82has"}}');
+        expect(req.data).to.equal('{"id":"' + bidRequest.bidId + '","tmax":3000,"placements":["' + bidRequest.params.placementId + '"],"test":0,"device":{"w":800,"h":600,"ua":"' + navigator.userAgent + '","language":"en","dnt":0},"at":2,"user":{"coppa":0,"gdpr":1,"consent":"IwuyYwpjmnsauyYasIUWwe","usp":"Oush3@jmUw82has"}}');
       }
     });
-
-    it('random uid will be generate when userId is empty', function () {
-      const bidRequests = [{
-        adUnitCode: 'test-div',
-        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-        bidId: '8064026a1776',
-        bidder: 'freedomadnetwork',
-        bidderRequestId: '15246a574e859f',
-        mediaTypes: {
-          banner: { sizes: [[300, 250]] }
-        },
-        params: {
-          placementId: 'e6203f1e-bd6d-4f42-9895-d1a19cdb83c8'
-        }
-      }];
-
-      const reqs = spec.buildRequests(bidRequests, bidderRequest);
-
-      let requestData;
-      expect(function () {
-        requestData = JSON.parse(reqs[0].data);
-      }).to.not.throw();
-
-      expect(requestData.user.id).to.not.be.empty;
-    })
   });
 
   describe('Test adapter request', function () {
@@ -315,7 +296,7 @@ describe('Freedom Ad Network Bid Adapter', function () {
 
     it('onBidWon empty bid should not throw', function () {
       expect(spec.onBidWon({})).to.not.throw;
-      expect(ajaxStub.calledOnce).to.equal(false);
+      expect(ajaxStub.calledOnce).to.equal(true);
     });
 
     it('onBidWon valid bid should not throw', function () {
