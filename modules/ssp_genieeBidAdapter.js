@@ -6,6 +6,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { highEntropySUAAccessor } from '../src/fpd/sua.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
@@ -334,13 +335,15 @@ export const spec = {
    */
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params.zoneId) return false;
-    if (bidRequest.params.hasOwnProperty('currency')) {
-      if (ALLOWED_CURRENCIES.indexOf(bidRequest.params.currency) === -1) {
-        utils.logError('Invalid currency type, we support only JPY and USD!');
-        return false;
-      }
+    const currencyType = config.getConfig('currency.adServerCurrency');
+    if (typeof currencyType === 'string' && ALLOWED_CURRENCIES.indexOf(currencyType) === -1) {
+      utils.logError('Invalid currency type, we support only JPY and USD!');
+      return false;
     }
     return true;
+  },
+  confirmAdServerCurrency: function () {
+    return config.getConfig('currency.adServerCurrency');
   },
   /**
    * Make a server request from the list of BidRequests.
