@@ -16,6 +16,14 @@ const UNICORN_PB_VERSION = '1.1';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
+ * Scroll Notification for Interscroller Ads 
+ */ 
+const sn = document.createElement('script');
+sn.src = 'https://as.uncn.jp/js/ext/scroll_notify.1.0.0.js';
+sn.async = true;
+document.head.appendChild(sn);
+
+/**
  * Placement ID and Account ID are required.
  * @param {BidRequest} bidRequest
  * @returns {boolean}
