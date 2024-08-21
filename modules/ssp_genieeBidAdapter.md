@@ -33,13 +33,7 @@ var adUnits = [
             }
         },
         bids: [
-            {
-                bidder: 'geniee',
-                params: {
-                    zoneId: 1234567,
-                    currency: 'JPY',
-                }
-            }
+            {}
         ]
     },
 ];
