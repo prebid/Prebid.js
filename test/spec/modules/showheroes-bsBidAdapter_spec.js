@@ -157,28 +157,28 @@ describe('shBidAdapter', () => {
     expect(request.data.test).to.eql(1);
   });
 
-  // it('handle banner and video', () => {
-  //   const bidRequest = Object.assign({}, bidRequestVideoAndBanner)
-  //   const fullRequest = {
-  //     bids: [bidRequest],
-  //   };
-  //   const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(fullRequest));
-  //   const payload = request.data;
+  it('handle banner and video', () => {
+    const bidRequest = Object.assign({}, bidRequestVideoAndBanner)
+    const fullRequest = {
+      bids: [bidRequest],
+    };
+    const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(fullRequest));
+    const payload = request.data;
 
-  //   expect(payload.imp[0].video).to.be.a('object');
-  //   expect(payload.imp[0].ext.mediaType).eql('instream')
-  //   expect(payload.imp[0].banner).to.be.undefined;
-  //   const requestBanner = Object.assign({}, bidRequestBanner)
-  //   const fullRequestBanner = {
-  //     bids: [requestBanner],
-  //   };
-  //   const bannerORTB = spec.buildRequests([requestBanner], syncAddFPDToBidderRequest(fullRequestBanner));
-  //   const payloadBanner = bannerORTB.data;
+    expect(payload.imp[0].video).to.be.a('object');
+    expect(payload.imp[0].ext.mediaType).eql('instream')
+    expect(payload.imp[0].banner).to.be.undefined;
+    const requestBanner = Object.assign({}, bidRequestBanner)
+    const fullRequestBanner = {
+      bids: [requestBanner],
+    };
+    const bannerORTB = spec.buildRequests([requestBanner], syncAddFPDToBidderRequest(fullRequestBanner));
+    const payloadBanner = bannerORTB.data;
 
-  //   expect(payloadBanner.imp[0].banner).to.be.a('object');
-  //   expect(payloadBanner.imp[0].ext.mediaType).eql('banner')
-  //   expect(payloadBanner.imp[0].video).to.be.undefined;
-  // });
+    expect(payloadBanner.imp[0].banner).to.be.a('object');
+    expect(payloadBanner.imp[0].ext.mediaType).eql('banner')
+    expect(payloadBanner.imp[0].video).to.be.undefined;
+  });
 
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
