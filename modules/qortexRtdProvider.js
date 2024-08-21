@@ -107,10 +107,10 @@ export function getGroupConfig () {
 }
 
 /**
- * Requests page analysis from Qortex
+ * Initiates page analysis from Qortex
  * @returns {Promise}
  */
-export function requestPageAnalysis () {
+export function initiatePageAnalysis () {
   const indexData = generateIndexData();
   logMessage('Sending page data for context analysis');
     return new Promise((resolve, reject) => {
@@ -279,7 +279,7 @@ export function initializeModuleData(config) {
       .catch((e) => {
         logWarn(e?.message);
       });
-  requestPageAnalysis()
+  initiatePageAnalysis()
     .then(successMessage => {
       logMessage(successMessage)
     })
