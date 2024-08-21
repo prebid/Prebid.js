@@ -53,6 +53,10 @@ function buildBidRequest(bid, bidderRequest) {
     payload.user.usp = uspConsent;
   }
 
+  if (userId) {
+    payload.user.id = userId;
+  }
+
   return {
     method: 'POST',
     url: BASE_URL + '/pb/req',
@@ -62,7 +66,6 @@ function buildBidRequest(bid, bidderRequest) {
       withCredentials: false,
       customHeaders: {
         'Accept-Language': 'en;q=10',
-        'Authorization': 'Bearer ' + userId
       },
     },
     originalBidRequest: bid
@@ -168,13 +171,13 @@ export const spec = {
       id: bid.bidid,
       impid: bid.impid,
       t: bid.cpm,
+      u: bid.userId,
     }
 
     ajax(BASE_URL + '/pb/imp', null, JSON.stringify(payload), {
       method: 'POST',
       customHeaders: {
         'Accept-Language': 'en;q=10',
-        'Authorization': 'Bearer ' + bid.userId
       },
     });
 
