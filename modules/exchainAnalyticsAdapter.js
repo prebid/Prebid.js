@@ -1,6 +1,6 @@
 /**
  * This module adds UUID to bid
- * @module modules/exchainPrebidAdapter
+ * @module modules/exchainAnalyticsAdapter
  */
 
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -8,7 +8,7 @@ import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
-export const MODULE_NAME = 'ExchainPrebidAdapter';
+export const MODULE_NAME = 'ExchainAnalyticsAdapter';
 const EXCHAIN_PREBID_GVL_ID = 6969
 
 export const storage = getStorageManager({

@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { exchainPrebidModule } from 'modules/exchainPrebidAdapter';
+import { exchainPrebidModule } from 'modules/exchainAnalyticsAdapter';
 import * as prebidGlobal from 'src/prebidGlobal';
 
-describe('ExchainPrebidAdapter', function() {
+describe('ExchainAnalyticsAdapter', function() {
   let sandbox;
   let mockPbjs;
   let eventListeners;
@@ -33,7 +33,7 @@ describe('ExchainPrebidAdapter', function() {
 
   describe('Module name', function() {
     it('should be correctly set', function() {
-      expect(exchainPrebidModule.name).to.equal('ExchainPrebidAdapter');
+      expect(exchainPrebidModule.name).to.equal('ExchainAnalyticsAdapter');
     });
   });
 
