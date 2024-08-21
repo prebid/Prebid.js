@@ -74,6 +74,7 @@ describe('sharethrough adapter spec', function () {
           mediaTypes: {
             banner: {
               pos: 1,
+              battr: [6, 7],
             },
           },
           ortb2Imp: {
@@ -227,6 +228,7 @@ describe('sharethrough adapter spec', function () {
               skipmin: 10,
               skipafter: 20,
               delivery: 1,
+              battr: [13, 14],
               companiontype: 'companion type',
               companionad: 'companion ad',
               context: 'instream',
@@ -548,8 +550,31 @@ describe('sharethrough adapter spec', function () {
           ]);
         });
 
+        it('should correctly harvest battr values for banner if present', () => {
+          // assemble
+          const EXPECTED_BATTR_VALUES = [6, 7];
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+
+          // assert
+          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
+        });
+
+        it('should not include battr values for banner if not present', () => {
+          // assemble
+          delete bidRequests[0].mediaTypes.banner.battr;
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+
+          // assert
+          expect(builtRequest.data.imp[0].banner.battr).to.be.undefined;
+        });
+
         it('should default to pos 0 if not provided', () => {
-          delete bidRequests[0].mediaTypes;
+          delete bidRequests[0].mediaTypes.banner.pos;
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
 
           const bannerImp = builtRequest.data.imp[0].banner;
@@ -579,6 +604,7 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.skipafter).to.equal(20);
           expect(videoImp.placement).to.equal(1);
           expect(videoImp.delivery).to.equal(1);
+          expect(videoImp.battr).to.deep.equal([13, 14]);
           expect(videoImp.companiontype).to.equal('companion type');
           expect(videoImp.companionad).to.equal('companion ad');
         });
@@ -599,6 +625,7 @@ describe('sharethrough adapter spec', function () {
           delete bidRequests[1].mediaTypes.video.skipafter;
           delete bidRequests[1].mediaTypes.video.placement;
           delete bidRequests[1].mediaTypes.video.delivery;
+          delete bidRequests[1].mediaTypes.video.battr;
           delete bidRequests[1].mediaTypes.video.companiontype;
           delete bidRequests[1].mediaTypes.video.companionad;
 
@@ -621,6 +648,7 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.skipafter).to.equal(0);
           expect(videoImp.placement).to.equal(1);
           expect(videoImp.delivery).to.be.undefined;
+          expect(videoImp.battr).to.be.undefined;
           expect(videoImp.companiontype).to.be.undefined;
           expect(videoImp.companionad).to.be.undefined;
         });

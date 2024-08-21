@@ -157,6 +157,7 @@ export const sharethroughAdapterSpec = {
             plcmt: videoRequest.plcmt ? videoRequest.plcmt : null,
           };
 
+          if (videoRequest.battr) impression.video.battr = videoRequest.battr;
           if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
           if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
           if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
@@ -166,6 +167,7 @@ export const sharethroughAdapterSpec = {
             topframe: inIframe() ? 0 : 1,
             format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
           };
+          if (bidReq.mediaTypes.banner.battr) impression.banner.battr = bidReq.mediaTypes.banner.battr;
         }
 
         return {
