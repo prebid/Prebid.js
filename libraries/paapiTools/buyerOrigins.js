@@ -9,8 +9,8 @@
    bid adapters attempting to define interestGroupBuyers
    in advance of network traffic.
 
-   Bidders should consider updating the list with server communication
-   for auctions initiated after the first bid response.
+   Bidders should consider updating their interstGroupBuyer list
+   with server communication for auctions initiated after the first bid response.
 */
 
 export const BO1 = 'https://csr.onet.pl';
