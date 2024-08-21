@@ -28,7 +28,7 @@ export function buildVideoUrl(options) {
     mute: '[vpmute]',
     page_url: '[page_url]',
     cachebuster: '[timestamp]',
-    consent: '[consent]',
+    gdpr_consent: '[consent]',
   }
 
   const adUnit = options.adUnit;
