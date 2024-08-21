@@ -1,5 +1,4 @@
 import * as utils from '../src/utils.js';
-import MD5 from 'crypto-js/md5.js';
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -15,16 +14,6 @@ const BIDDER_CODE = 'freedomadnetwork';
 const BASE_URL = 'https://srv.freedomadnetwork.com';
 
 /**
- * Get user id from bid request. if no user id module used, return a new uuid.
- *
- * @param {BidRequest} bidRequest
- * @returns {String} userId
- */
-function getUserId(bidRequest) {
-  return generateUserId();
-}
-
-/**
  * Build OpenRTB request from bidRequest and bidderRequest
  *
  * @param {BidRequest} bid
@@ -32,8 +21,6 @@ function getUserId(bidRequest) {
  * @returns {Request}
  */
 function buildBidRequest(bid, bidderRequest) {
-  const userId = getUserId(bid);
-
   const payload = {
     id: bid.bidId,
     tmax: bidderRequest.timeout,
@@ -53,10 +40,6 @@ function buildBidRequest(bid, bidderRequest) {
     payload.user.usp = uspConsent;
   }
 
-  if (userId) {
-    payload.user.id = userId;
-  }
-
   return {
     method: 'POST',
     url: BASE_URL + '/pb/req',
@@ -70,17 +53,6 @@ function buildBidRequest(bid, bidderRequest) {
     },
     originalBidRequest: bid
   }
-}
-
-/**
- * Generate stable user id
- *
- * @returns {String} userId
- */
-function generateUserId() {
-  var hash = MD5(navigator.userAgent).toString();
-
-  return hash;
 }
 
 export const spec = {
