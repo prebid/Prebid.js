@@ -8,6 +8,9 @@
    The goal is to reduce expression of common constants over many
    bid adapters attempting to define interestGroupBuyers
    in advance of network traffic.
+
+   Bidders should consider updating the list with server communication
+   for auctions initiated after the first bid response.
 */
 
 export const BO1 = 'https://csr.onet.pl';
