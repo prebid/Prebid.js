@@ -13,21 +13,21 @@
    with server communication for auctions initiated after the first bid response.
 */
 
-export const BO1 = 'https://csr.onet.pl';
-export const BO2 = 'https://googleads.g.doubleclick.net';
-export const BO3 = 'https://td.doubleclick.net';
-export const BO4 = 'https://f.creativecdn.com';
-export const BO5 = 'https://fledge.us.criteo.com';
-export const BO6 = 'https://fledge.eu.criteo.com';
-export const BO7 = 'https://fledge.as.criteo.com';
-export const BO8 = 'https://fledge-buyer-testing-1.uc.r.appspot.com';
-export const BO9 = 'https://grid-mercury.criteo.com';
-export const BO10 = 'https://ads.optable.co';
-export const BO11 = 'https://x.adroll.com';
-export const BO12 = 'https://a2.adform.net';
-export const BO13 = 'https://cookieless-campaign.prd-00.retargetly.com';
-export const BO14 = 'https://proton.ad.gt';
-export const BO15 = 'https://tradr.bsw-sb.criteo.com';
-export const BO16 = 'https://dsp-paapi-sandbox.bsw-ig.criteo.com';
-export const BO17 = 'https://pa.ybp.yahoo.com';
-export const BO18 = 'https://usadmm.dotomi.com';
+export const BO_CSR_ONET = 'https://csr.onet.pl';
+export const BO_DOUBLECLICK_GOOGLEADS = 'https://googleads.g.doubleclick.net';
+export const BO_DOUBLECLICK_TD = 'https://td.doubleclick.net';
+export const BO_RTBHOUSE = 'https://f.creativecdn.com';
+export const BO_CRITEO_US = 'https://fledge.us.criteo.com';
+export const BO_CRITEO_EU = 'https://fledge.eu.criteo.com';
+export const BO_CRITEO_AS = 'https://fledge.as.criteo.com';
+export const BO_CRITEO_BUYER_TESTING = 'https://fledge-buyer-testing-1.uc.r.appspot.com';
+export const BO_CRITEO_GRID_MERCURY = 'https://grid-mercury.criteo.com';
+export const BO_CRITEO_BIDSWITCH_TRADR = 'https://tradr.bsw-sb.criteo.com';
+export const BO_CRITEO_BIDSWITCH_SANDBOX = 'https://dsp-paapi-sandbox.bsw-ig.criteo.com';
+export const BO_OPTABLE = 'https://ads.optable.co';
+export const BO_ADROLL = 'https://x.adroll.com';
+export const BO_ADFORM = 'https://a2.adform.net';
+export const BO_RETARGETLY = 'https://cookieless-campaign.prd-00.retargetly.com';
+export const BO_AUDIGENT = 'https://proton.ad.gt';
+export const BO_YAHOO = 'https://pa.ybp.yahoo.com';
+export const BO_DOTOMI = 'https://usadmm.dotomi.com';
