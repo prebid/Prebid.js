@@ -1,3 +1,11 @@
+/*
+   This list is several known buyer origins for PAAPI auctions.
+   Bidders should add anyone they like to it.
+   It is not intended to be comphensive nor maintained by the Core team.
+   Rather, Bid adapters should simply append additional constants whenever
+   the need arises in their adapter
+*/
+
 export const BO1 = 'https://csr.onet.pl';
 export const BO2 = 'https://googleads.g.doubleclick.net';
 export const BO3 = 'https://td.doubleclick.net';
