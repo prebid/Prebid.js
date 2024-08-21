@@ -397,7 +397,7 @@ export const spec = {
    * @param {BidRequest} bidderRequest A matched bid request for this response.
    * @return Array<BidResponse> An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, request) {
+  interpretResponse: function (serverResponse, bidderRequest) {
     const bidResponses = [];
 
     if (!serverResponse || !serverResponse.body) {
@@ -406,13 +406,13 @@ export const spec = {
 
     appendImuidScript();
 
-    const zoneId = request.bid.params.zoneId;
+    const zoneId = bidderRequest.bid.params.zoneId;
     let successBid;
     successBid = serverResponse.body || {};
 
     if (successBid.hasOwnProperty(zoneId)) {
       const bid = successBid[zoneId];
-      bidResponses.push(makeBannerBidResponse(bid, request));
+      bidResponses.push(makeBannerBidResponse(bid, bidderRequest));
     }
     return bidResponses;
   },
