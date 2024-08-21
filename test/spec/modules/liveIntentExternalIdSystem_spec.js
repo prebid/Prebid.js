@@ -1,11 +1,11 @@
-import { liveIntentIdHubSubmodule, resetSubmodule } from 'libraries/liveIntentIdSystem/liveIntentIdHubSystem.js';
+import { liveIntentExternalIdSubmodule, resetSubmodule } from 'libraries/liveIntentIdSystem/liveIntentExternalIdSystem.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler } from '../../../src/adapterManager.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 const DEFAULT_AJAX_TIMEOUT = 5000
 const PUBLISHER_ID = '89899';
 const defaultConfigParams = { params: {publisherId: PUBLISHER_ID, fireEventDelay: 1} };
 
-describe('LiveIntentIdHub', function() {
+describe('LiveIntentExternalId', function() {
   let uspConsentDataStub;
   let gdprConsentDataStub;
   let gppConsentDataStub;
@@ -41,7 +41,7 @@ describe('LiveIntentIdHub', function() {
         emailHash: '123'
       }
     }
-    liveIntentIdHubSubmodule.decode({}, configParams);
+    liveIntentExternalIdSubmodule.decode({}, configParams);
     expect(window.liQHub).to.eql([{
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
@@ -69,7 +69,7 @@ describe('LiveIntentIdHub', function() {
       gppString: 'gppConsentDataString',
       applicableSections: [1, 2]
     })
-    liveIntentIdHubSubmodule.getId(defaultConfigParams).callback(() => {});
+    liveIntentExternalIdSubmodule.getId(defaultConfigParams).callback(() => {});
 
     const expectedConsent = { gdpr: { consentString: 'consentDataString', gdprApplies: true }, gpp: { applicableSections: [1, 2], consentString: 'gppConsentDataString' }, usPrivacy: { consentString: '1YNY' } }
 
@@ -100,7 +100,7 @@ describe('LiveIntentIdHub', function() {
   });
 
   it('should fire an event when getId and a hash is provided', function() {
-    liveIntentIdHubSubmodule.getId({ params: {
+    liveIntentExternalIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
       emailHash: '58131bc547fb87af94cebdaf3102321f'
     }}).callback(() => {});
@@ -138,7 +138,7 @@ describe('LiveIntentIdHub', function() {
   });
 
   it('should have the same data after call decode when appId, disrtributorId and sourceEvent is absent', function() {
-    liveIntentIdHubSubmodule.decode({}, {
+    liveIntentExternalIdSubmodule.decode({}, {
       params: {
         ...defaultConfigParams.params,
         distributorId: undefined
@@ -166,7 +166,7 @@ describe('LiveIntentIdHub', function() {
         emailHash: '123'
       }
     }
-    liveIntentIdHubSubmodule.decode({}, configParams);
+    liveIntentExternalIdSubmodule.decode({}, configParams);
     expect(window.liQHub).to.eql([{
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
@@ -192,7 +192,7 @@ describe('LiveIntentIdHub', function() {
         emailHash: '123'
       }
     }
-    liveIntentIdHubSubmodule.decode({}, configParams);
+    liveIntentExternalIdSubmodule.decode({}, configParams);
     expect(window.liQHub).to.eql([{
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
@@ -220,7 +220,7 @@ describe('LiveIntentIdHub', function() {
       gppString: 'gppConsentDataString',
       applicableSections: [1]
     })
-    liveIntentIdHubSubmodule.decode({}, defaultConfigParams);
+    liveIntentExternalIdSubmodule.decode({}, defaultConfigParams);
     expect(window.liQHub).to.eql([{
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
@@ -234,29 +234,29 @@ describe('LiveIntentIdHub', function() {
   });
 
   it('should not fire event again when it is already fired', function() {
-    liveIntentIdHubSubmodule.decode({}, defaultConfigParams);
-    liveIntentIdHubSubmodule.decode({}, defaultConfigParams);
+    liveIntentExternalIdSubmodule.decode({}, defaultConfigParams);
+    liveIntentExternalIdSubmodule.decode({}, defaultConfigParams);
 
     expect(window.liQHub).to.have.length(1) // instead of 2
   });
 
   it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
-    const result = liveIntentIdHubSubmodule.decode({ fireEventDelay: 1, additionalData: 'data' });
+    const result = liveIntentExternalIdSubmodule.decode({ fireEventDelay: 1, additionalData: 'data' });
     expect(result).to.be.eql({});
   });
 
   it('should decode a unifiedId to lipbId and remove it', function() {
-    const result = liveIntentIdHubSubmodule.decode({ unifiedId: 'data' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ unifiedId: 'data' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'data'}});
   });
 
   it('should decode a nonId to lipbId', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'data' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'data' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'data', 'nonId': 'data'}});
   });
 
   it('should resolve extra attributes', function() {
-    liveIntentIdHubSubmodule.getId({ params: {
+    liveIntentExternalIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
       ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
     } }).callback(() => {});
@@ -288,59 +288,59 @@ describe('LiveIntentIdHub', function() {
   });
 
   it('should decode a uid2 to a separate object when present', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', uid2: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode values with uid2 but no nonId', function() {
-    const result = liveIntentIdHubSubmodule.decode({ uid2: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ uid2: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a bidswitch id to a separate object when present', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', bidswitch: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', bidswitch: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'bidswitch': 'bar'}, 'bidswitch': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a medianet id to a separate object when present', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', medianet: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', medianet: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'medianet': 'bar'}, 'medianet': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a sovrn id to a separate object when present', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', sovrn: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', sovrn: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sovrn': 'bar'}, 'sovrn': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a magnite id to a separate object when present', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', magnite: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', magnite: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'magnite': 'bar'}, 'magnite': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode an index id to a separate object when present', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', index: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', index: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'index': 'bar'}, 'index': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode an openx id to a separate object when present', function () {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', openx: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', openx: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'openx': 'bar'}, 'openx': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode an pubmatic id to a separate object when present', function() {
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', pubmatic: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', pubmatic: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubmatic': 'bar'}, 'pubmatic': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a thetradedesk id to a separate object when present', function() {
     const provider = 'liveintent.com'
     refererInfoStub.returns({domain: provider})
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', thetradedesk: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', thetradedesk: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'tdid': 'bar'}, 'tdid': {'id': 'bar', 'ext': {'rtiPartner': 'TDID', 'provider': provider}}});
   });
 
   it('should allow disabling nonId resolution', function() {
-    liveIntentIdHubSubmodule.getId({ params: {
+    liveIntentExternalIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
       ...{ requestedAttributesOverrides: { 'nonId': false, 'uid2': true } }
     } }).callback(() => {});
@@ -372,19 +372,19 @@ describe('LiveIntentIdHub', function() {
 
   it('should decode a idCookie as fpid if it exists and coppa is false', function() {
     coppaConsentDataStub.returns(false)
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'fpid': 'bar'}, 'fpid': {'id': 'bar'}});
   });
 
   it('should not decode a idCookie as fpid if it exists and coppa is true', function() {
     coppaConsentDataStub.returns(true)
-    const result = liveIntentIdHubSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', idCookie: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo'}})
   });
 
   it('should resolve fpid from cookie', function() {
     const cookieName = 'testcookie'
-    liveIntentIdHubSubmodule.getId({ params: {
+    liveIntentExternalIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
       fpid: { 'strategy': 'cookie', 'name': cookieName },
       requestedAttributesOverrides: { 'fpid': true } }

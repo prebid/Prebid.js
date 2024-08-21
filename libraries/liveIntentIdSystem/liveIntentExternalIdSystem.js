@@ -97,7 +97,6 @@ function initializeClient(configParams) {
     resolveSettings
   })
 
-  // only collect call if there is email hash
   if (configParams.emailHash != null) {
     window.liQHub.push({ type: 'collect', clientRef, sourceEvent: { hash: configParams.emailHash } })
   }
@@ -135,7 +134,7 @@ function resolve(configParams, clientRef, callback) {
  */
 
 /** @type {Submodule} */
-export const liveIntentIdHubSubmodule = {
+export const liveIntentExternalIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -171,4 +170,4 @@ export const liveIntentIdHubSubmodule = {
   eids
 };
 
-submodule('userId', liveIntentIdHubSubmodule);
+submodule('userId', liveIntentExternalIdSubmodule);
