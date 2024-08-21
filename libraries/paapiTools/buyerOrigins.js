@@ -3,7 +3,11 @@
    Bidders should add anyone they like to it.
    It is not intended to be comphensive nor maintained by the Core team.
    Rather, Bid adapters should simply append additional constants whenever
-   the need arises in their adapter
+   the need arises in their adapter.
+
+   The goal is to reduce expression of common constants over many
+   bid adapters attempting to define interestGroupBuyers
+   in advance of network traffic.
 */
 
 export const BO1 = 'https://csr.onet.pl';
