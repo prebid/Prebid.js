@@ -2,11 +2,13 @@
  * This module adds UUID to bid
  * @module modules/exchainPrebidAdapter
  */
+
+import { getGlobal } from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
-const MODULE_NAME = 'ExchainPrebidAdapter';
+export const MODULE_NAME = 'ExchainPrebidAdapter';
 const EXCHAIN_PREBID_GVL_ID = 6969
 
 export const storage = getStorageManager({
@@ -14,12 +16,9 @@ export const storage = getStorageManager({
   moduleName: MODULE_NAME,
 });
 
-const pbjs = window.pbjs || {
-  que: [],
-  onEvent: function() { }
-}
+const pbjs = getGlobal();
 
-export var exchainPrebidModule = {
+export const exchainPrebidModule = {
   /**
    * Used to link submodule with config
    * @type {string}
@@ -38,7 +37,7 @@ export var exchainPrebidModule = {
    */
   onBidCatch: function(bids) {
     bids.forEach(bid => {
-      bid.ortb2Imp.ext.data.creativeUUID = this.generateUUID();
+      bid.ortb2Imp.ext.tid = this.generateUUID();
     });
   },
 
