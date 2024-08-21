@@ -7,7 +7,8 @@ import {
   isFn,
   logError,
   isArray,
-  formatQS
+  formatQS,
+  deepSetValue
 } from '../src/utils.js';
 
 import {
@@ -59,6 +60,16 @@ export function validateVideo(mediaTypes) {
   }
 
   return video.context !== ADPOD;
+}
+
+/**
+ * Get ids from Prebid User ID Modules and add them to the payload
+ */
+function _handleEids(payload, validBidRequests) {
+  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    deepSetValue(payload, 'userIdList', bidUserIdAsEids);
+  }
 }
 
 export const spec = {
@@ -126,6 +137,8 @@ export const spec = {
       refererInfo: bidderRequest.refererInfo,
       bidRequests,
     };
+
+    _handleEids(requestPayload, validBidRequests);
 
     return {
       method: 'POST',

@@ -352,6 +352,38 @@ describe('connatixBidAdapter', function () {
     });
   });
 
+  describe('userIdAsEids', function() {
+    let validBidRequests;
+
+    this.beforeEach(function () {
+      bid = mockBidRequest();
+      validBidRequests = [bid];
+    })
+
+    it('Connatix adapter reads EIDs from Prebid user models and adds it to Request', function() {
+      validBidRequests[0].userIdAsEids = [{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID_FROM_USER_ID_MODULE',
+          'atype': 1,
+          'ext': {
+            'stype': 'ppuid',
+            'rtiPartner': 'TDID'
+          }
+        }]
+      },
+      {
+        'source': 'pubserver.org',
+        'uids': [{
+          'id': 'TDID_FROM_USER_ID_MODULE',
+          'atype': 1
+        }]
+      }];
+      let serverRequest = spec.buildRequests(validBidRequests, {});
+      expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
+    });
+  });
+
   describe('getBidFloor', function () {
     this.beforeEach(function () {
       bid = mockBidRequest();
