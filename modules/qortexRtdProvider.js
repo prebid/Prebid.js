@@ -5,29 +5,10 @@ import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
-let bidderArray;
-let impressionIds;
-let currentSiteContext;
-let currentGroupConfig;
 
 const DEFAULT_API_URL = 'https://demand.qortex.ai';
 
-const qortexSessionInfo = {
-  sessionId: '',
-  groupId: ''
-}
-const qortexApiUrls = {
-  analyis: '',
-  context: '',
-  groupConfig: '',
-  analytics: ''
-}, 
-pageAnalysisdata = {
-  requestSuccessful: null,
-  indexData: null,
-  analysisGenerated: false,
-  analysisData: null
-}
+const qortexSessionInfo = {}
 
 /**
  * Init if module configuration is valid
@@ -70,9 +51,13 @@ function getBidRequestData (reqBidsConfig, callback) {
   }
 }
 
+/**
+ * Processess auction end events for Qortex reporting
+ * @param {Object} data Auction end object
+ */
 function onAuctionEndEvent (data, config, t) {
-  sendAnalyticsEvent("AUCTION_END", data)
-    .then(() => logMessage("analtyics successfully sent"))
+  sendAnalyticsEvent("AUCTION", "AUCTION_END", data)
+    .then(result => logMessage(result))
     .catch(e => logWarn(e?.message))
 }
 
@@ -81,7 +66,7 @@ function onAuctionEndEvent (data, config, t) {
  * @returns {Promise} ortb Content object
  */
 export function getContext () {
-  if (!currentSiteContext) {
+  if (!qortexSessionInfo.currentSiteContext) {
     logMessage('Requesting new context data');
     return new Promise((resolve, reject) => {
       const callbacks = {
@@ -93,14 +78,18 @@ export function getContext () {
           reject(new Error(error));
         }
       }
-      ajax(qortexApiUrls.context, callbacks)
+      ajax(qortexSessionInfo.contextUrl, callbacks)
     })
   } else {
     logMessage('Adding Content object from existing context data');
-    return new Promise(resolve => resolve(currentSiteContext));
+    return new Promise(resolve => resolve(qortexSessionInfo.currentSiteContext));
   }
 }
 
+/**
+ * Requests Qortex group configuration using group id
+ * @returns {Promise} Qortex group configuration
+ */
 export function getGroupConfig () {
   logMessage('Requesting group config');
   return new Promise((resolve, reject) => {
@@ -113,60 +102,76 @@ export function getGroupConfig () {
         reject(new Error(error));
       }
     }
-    ajax(qortexApiUrls.groupConfig, callbacks)
+    ajax(qortexSessionInfo.groupConfigUrl, callbacks)
   })
 }
 
+/**
+ * Requests page analysis from Qortex
+ * @returns {Promise}
+ */
 export function requestPageAnalysis () {
   const indexData = generateIndexData();
-  logMessage('sending page data for context analysis');
+  logMessage('Sending page data for context analysis');
     return new Promise((resolve, reject) => {
       const callbacks = {
         success() {
-          analysisData.requestSuccessful = true;
-          resolve();
+          qortexSessionInfo.pageAnalysisdata.requestSuccessful = true;
+          resolve("Successfully initiated Qortex page analysis");
         },
         error(error) {
-          analysisData.requestSuccessful = false;
+          qortexSessionInfo.pageAnalysisdata.requestSuccessful = false;
           reject(new Error(error));
         }
       }
-      ajax(qortexApiUrls.analyis, callbacks, JSON.stringify(indexData), {contentType: 'application/json'})
+      ajax(qortexSessionInfo.pageAnalyisUrl, callbacks, JSON.stringify(indexData), {contentType: 'application/json'})
     })
 }
 
-export function sendAnalyticsEvent(subType, data) {
-  if(qortexApiUrls.analytics !== null) {
+/**
+ * Sends analytics events to Qortex
+ * @returns {Promise}
+ */
+export function sendAnalyticsEvent(eventType, subType, data) {
+  if(qortexSessionInfo.analyticsUrl !== null) {
     const analtyicsEventObject = generateAnaltyicsEventObject(subType, data)
-    logMessage('sending qortex analytics event');
+    logMessage('Sending qortex analytics event');
       return new Promise((resolve, reject) => {
         const callbacks = {
           success() {
-            resolve();
+            resolve([`Qortex analytics event \n eventType: ${eventType} \n subType: ${subType}`, data]);
           },
           error(error) {
             reject(new Error(error));
           }
         }
-        ajax(qortexApiUrls.analytics, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
+        ajax(qortexSessionInfo.analyticsUrl, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
       })
   } else {
-    return new Promise((resolve, reject) => reject(new Error("analytics host not initialized")));
+    return new Promise((resolve, reject) => reject(new Error("Analytics host not initialized")));
 
   }
 }
 
-export function generateAnaltyicsEventObject(subType, data) {
+/**
+ * Creates analytics object for Qortex
+ * @returns {Object} analytics object
+ */
+export function generateAnaltyicsEventObject(eventType, subType, data) {
   return {
     sessionId: qortexSessionInfo.sessionId,
     groupId: qortexSessionInfo.groupId,
-    eventType: "RTD",
+    eventType: eventType,
     subType: subType,
-    eventOriginSource: "PREBID",
+    eventOriginSource: "RTD",
     data: data
   }
 }
 
+/**
+ * Creates page index data for Qortex analysis
+ * @returns {Object} page index object
+ */
 export function generateIndexData () {
   return {
     url: document.location.href,
@@ -177,7 +182,12 @@ export function generateIndexData () {
   }
 }
 
-export function setAnalyticsHost(qortexUrlBase) {
+/**
+ * Creates page index data for Qortex analysis
+ * @param qortexUrlBase api url from config or default
+ * @returns {string} Qortex analytics host url
+ */
+export function generateAnalyticsHostUrl(qortexUrlBase) {
   if (qortexUrlBase === DEFAULT_API_URL) {
     return "https://events.qortex.ai/api/v1/player-event";
   } else if (qortexUrlBase.includes("stg-demand")) {
@@ -193,13 +203,13 @@ export function setAnalyticsHost(qortexUrlBase) {
  * @param {string[]} bidders Bidders specified in module's configuration
  */
 export function addContextToRequests (reqBidsConfig) {
-  if (currentSiteContext === null) {
+  if (qortexSessionInfo.currentSiteContext === null) {
     logWarn('No context data recieved at this time');
   } else {
-    const fragment = { site: {content: currentSiteContext} }
-    if (bidderArray?.length > 0) {
-      bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}))
-    } else if (!bidderArray) {
+    const fragment = { site: {content: qortexSessionInfo.currentSiteContext} }
+    if (qortexSessionInfo.bidderArray?.length > 0) {
+      qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}))
+    } else if (!qortexSessionInfo.bidderArray) {
       mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment);
     } else {
       logWarn('Config contains an empty bidders array, unable to determine which bids to enrich');
@@ -232,18 +242,18 @@ export function loadScriptTag(config) {
     switch (e?.detail?.type) {
       case 'qx-impression':
         const {uid} = e.detail;
-        if (!uid || impressionIds.has(uid)) {
-          logWarn(`recieved invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
+        if (!uid || qortexSessionInfo.impressionIds.has(uid)) {
+          logWarn(`Recieved invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
           return;
         } else {
-          logMessage('recieved billable event: qx-impression')
-          impressionIds.add(uid)
+          logMessage('Recieved billable event: qx-impression')
+          qortexSessionInfo.impressionIds.add(uid)
           billableEvent.transactionId = e.detail.uid;
           events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, billableEvent);
           break;
         }
       default:
-        logWarn(`recieved invalid billable event: ${e.detail?.type}`)
+        logWarn(`Recieved invalid billable event: ${e.detail?.type}`)
     }
   })
 
@@ -255,49 +265,68 @@ export function loadScriptTag(config) {
  * @param {Object} config module config obtained during init
  */
 export function initializeModuleData(config) {
-  const {apiUrl, groupId, bidders} = config.params;
-  const windowUrl = window.top.location.host;
-  const qortexUrlBase = apiUrl || DEFAULT_API_URL;
-  console.log("shiloh", qortexUrlBase, config)
-  bidderArray = bidders;
-  impressionIds = new Set();
-  currentSiteContext = null;
-  qortexSessionInfo.sessionId = generateSessionId();
-  qortexSessionInfo.groupId = groupId;
-  qortexApiUrls.groupConfig = `${qortexUrlBase}/api/v1/prebid/group/configs/${groupId}/${windowUrl}`
-  qortexApiUrls.context = `${qortexUrlBase}/api/v1/analyze/${groupId}/prebid`
-  qortexApiUrls.analyis = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/index`;
-  qortexApiUrls.analytics = setAnalyticsHost(qortexUrlBase);
+  initializeQortexSessionData(config);
   getGroupConfig()
-      .then(configData => {
-        logMessage("recieved response for qortex group config")
-        setGroupConfigData(configData)
-        if (configData.active === false) return false
+      .then(groupConfig => {
+        logMessage(["Recieved response for qortex group config", groupConfig])
+        if (!groupConfig?.active || !groupConfig?.prebidBidEnrichment){
+          logMessage("Group config is not configured for qortex RTD module")
+          return false
+        } else {
+          setGroupConfigData(groupConfig)
+        }
       })
       .catch((e) => {
         logWarn(e?.message);
       });
   requestPageAnalysis()
-    .then(() => {
-      logMessage("successfully initiated Qortex page analysis")
+    .then(successMessage => {
+      logMessage(successMessage)
     })
     .catch((e) => {
       logWarn(e?.message);
     });
 }
 
+/**
+ * Populates Qortex session data objet
+ */
+export function initializeQortexSessionData(config) {
+  const {apiUrl, groupId, bidders} = config.params;
+  const qortexUrlBase = apiUrl || DEFAULT_API_URL;
+  const windowUrl = window.top.location.host;
+  qortexSessionInfo.bidderArray = bidders;
+  qortexSessionInfo.impressionIds = new Set();
+  qortexSessionInfo.currentSiteContext = null;
+  qortexSessionInfo.pageAnalysisdata = {
+    requestSuccessful: null,
+    analysisGenerated: false,
+    analysisData: null
+  };
+  qortexSessionInfo.sessionId = generateSessionId();
+  qortexSessionInfo.groupId = groupId;
+  qortexSessionInfo.groupConfigUrl = `${qortexUrlBase}/api/v1/prebid/group/configs/${groupId}/${windowUrl}`
+  qortexSessionInfo.contextUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/lookup`
+  qortexSessionInfo.pageAnalyisUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/index`;
+  qortexSessionInfo.analyticsUrl = generateAnalyticsHostUrl(qortexUrlBase);
+}
+
+/**
+ * Creates unique session id for Qortex
+ * @returns {string} session id string
+ */
+export function generateSessionId() {
+  const randomInt = Math.floor(Math.random() * 2147483647);
+  const currentDateTime = Math.floor(Date.now() / 1000);
+  return "QX" + randomInt.toString() + "X" + currentDateTime.toString()
+}
+
 export function setContextData(value) {
-  currentSiteContext = value
+  qortexSessionInfo.currentSiteContext = value
 }
 
 export function setGroupConfigData(value) {
-  currentGroupConfig = value
-}
-
-export function generateSessionId() {
-  const randomInt = Math.floor(Math.random() * 2147483647);
-  const currentDateTime = Date.now() / 1000;
-  return "QX" + randomInt.toString() + "X" + currentDateTime.toString()
+  qortexSessionInfo.groupConfig = value
 }
 
 export const qortexSubmodule = {
