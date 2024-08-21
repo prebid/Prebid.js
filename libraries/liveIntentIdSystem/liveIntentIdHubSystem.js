@@ -1,7 +1,7 @@
 import { logError } from '../../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
 import { submodule } from '../../src/hook.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, DEFAULT_DELAY, GVLID } from './liveIntentIdSystemShared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID } from './liveIntentIdSystemShared.js'
 
 // reference to the client for the liQHub
 let cachedClientRef
@@ -97,11 +97,9 @@ function initializeClient(configParams) {
     resolveSettings
   })
 
-  // fire default collect request
+  // only collect call if there is email hash
   if (configParams.emailHash != null) {
     window.liQHub.push({ type: 'collect', clientRef, sourceEvent: { hash: configParams.emailHash } })
-  } else {
-    window.liQHub.push({ type: 'schedule_default_collect', clientRef, delay: configParams.fireEventDelay ?? DEFAULT_DELAY })
   }
 
   cachedClientRef = clientRef

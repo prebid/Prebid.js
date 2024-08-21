@@ -73,7 +73,7 @@ describe('LiveIntentIdHub', function() {
 
     const expectedConsent = { gdpr: { consentString: 'consentDataString', gdprApplies: true }, gpp: { applicableSections: [1, 2], consentString: 'gppConsentDataString' }, usPrivacy: { consentString: '1YNY' } }
 
-    expect(window.liQHub).to.have.length(3)
+    expect(window.liQHub).to.have.length(2)
 
     expect(window.liQHub[0]).to.eql({
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
@@ -86,13 +86,7 @@ describe('LiveIntentIdHub', function() {
       type: 'register_client'
     })
 
-    expect(window.liQHub[1]).to.eql({
-      clientRef: {},
-      delay: defaultConfigParams.params.fireEventDelay,
-      type: 'schedule_default_collect'
-    })
-
-    const resolveCommand = window.liQHub[2]
+    const resolveCommand = window.liQHub[1]
     // functions cannot be reasonably compared, remove them
     delete resolveCommand.onSuccess[0].callback
     delete resolveCommand.onFailure
@@ -159,11 +153,6 @@ describe('LiveIntentIdHub', function() {
       partnerCookies: new Set(),
       resolveSettings: { identityPartner: 'prebid', timeout: DEFAULT_AJAX_TIMEOUT },
       type: 'register_client'
-    },
-    {
-      clientRef: {},
-      delay: defaultConfigParams.params.fireEventDelay,
-      type: 'schedule_default_collect'
     }])
   });
 
@@ -241,11 +230,6 @@ describe('LiveIntentIdHub', function() {
       partnerCookies: new Set(),
       resolveSettings: { identityPartner: 'prebid', timeout: DEFAULT_AJAX_TIMEOUT },
       type: 'register_client'
-    },
-    {
-      clientRef: {},
-      delay: defaultConfigParams.params.fireEventDelay,
-      type: 'schedule_default_collect'
     }])
   });
 
@@ -253,7 +237,7 @@ describe('LiveIntentIdHub', function() {
     liveIntentIdHubSubmodule.decode({}, defaultConfigParams);
     liveIntentIdHubSubmodule.decode({}, defaultConfigParams);
 
-    expect(window.liQHub).to.have.length(2) // instead of 4
+    expect(window.liQHub).to.have.length(1) // instead of 2
   });
 
   it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
@@ -277,7 +261,7 @@ describe('LiveIntentIdHub', function() {
       ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
     } }).callback(() => {});
 
-    expect(window.liQHub).to.have.length(3)
+    expect(window.liQHub).to.have.length(2)
     expect(window.liQHub[0]).to.eql({
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
@@ -289,13 +273,7 @@ describe('LiveIntentIdHub', function() {
       type: 'register_client'
     })
 
-    expect(window.liQHub[1]).to.eql({
-      clientRef: {},
-      delay: defaultConfigParams.params.fireEventDelay,
-      type: 'schedule_default_collect'
-    })
-
-    const resolveCommand = window.liQHub[2]
+    const resolveCommand = window.liQHub[1]
 
     // functions cannot be reasonably compared, remove them
     delete resolveCommand.onSuccess[0].callback
@@ -367,7 +345,7 @@ describe('LiveIntentIdHub', function() {
       ...{ requestedAttributesOverrides: { 'nonId': false, 'uid2': true } }
     } }).callback(() => {});
 
-    expect(window.liQHub).to.have.length(3)
+    expect(window.liQHub).to.have.length(2)
     expect(window.liQHub[0]).to.eql({
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
@@ -379,13 +357,7 @@ describe('LiveIntentIdHub', function() {
       type: 'register_client'
     })
 
-    expect(window.liQHub[1]).to.eql({
-      clientRef: {},
-      delay: defaultConfigParams.params.fireEventDelay,
-      type: 'schedule_default_collect'
-    })
-
-    const resolveCommand = window.liQHub[2]
+    const resolveCommand = window.liQHub[1]
     // functions cannot be reasonably compared, remove them
     delete resolveCommand.onSuccess[0].callback
     delete resolveCommand.onFailure
@@ -418,7 +390,7 @@ describe('LiveIntentIdHub', function() {
       requestedAttributesOverrides: { 'fpid': true } }
     }).callback(() => {});
 
-    expect(window.liQHub).to.have.length(3)
+    expect(window.liQHub).to.have.length(2)
     expect(window.liQHub[0]).to.eql({
       clientDetails: { name: 'prebid', version: '$prebid.version$' },
       clientRef: {},
@@ -431,13 +403,7 @@ describe('LiveIntentIdHub', function() {
       type: 'register_client'
     })
 
-    expect(window.liQHub[1]).to.eql({
-      clientRef: {},
-      delay: defaultConfigParams.params.fireEventDelay,
-      type: 'schedule_default_collect'
-    })
-
-    const resolveCommand = window.liQHub[2]
+    const resolveCommand = window.liQHub[1]
 
     // functions cannot be reasonably compared, remove them
     delete resolveCommand.onSuccess[0].callback

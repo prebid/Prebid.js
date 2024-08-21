@@ -8,7 +8,6 @@ export const DEFAULT_AJAX_TIMEOUT = 5000
 export const MODULE_NAME = 'liveIntentId';
 export const LI_PROVIDER_DOMAIN = 'liveintent.com';
 export const DEFAULT_REQUESTED_ATTRIBUTES = { 'nonId': true }
-export const DEFAULT_DELAY = 500
 
 export function parseRequestedAttributes(overrides) {
   function renameAttribute(attribute) {
