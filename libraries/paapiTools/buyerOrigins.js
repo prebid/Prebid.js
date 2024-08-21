@@ -1,1 +1,18 @@
-
+export const bo1 = 'https://csr.onet.pl';
+export const bo2 = 'https://googleads.g.doubleclick.net';
+export const bo3 = 'https://td.doubleclick.net';
+export const bo4 = 'https://f.creativecdn.com';
+export const bo5 = 'https://fledge.us.criteo.com';
+export const bo6 = 'https://fledge.eu.criteo.com';
+export const bo7 = 'https://fledge.as.criteo.com';
+export const bo8 = 'https://fledge-buyer-testing-1.uc.r.appspot.com';
+export const bo9 = 'https://grid-mercury.criteo.com';
+export const bo10 = 'https://ads.optable.co';
+export const bo11 = 'https://x.adroll.com';
+export const bo12 = 'https://a2.adform.net';
+export const bo13 = 'https://cookieless-campaign.prd-00.retargetly.com';
+export const bo14 = 'https://proton.ad.gt';
+export const bo15 = 'https://tradr.bsw-sb.criteo.com';
+export const bo16 = 'https://dsp-paapi-sandbox.bsw-ig.criteo.com';
+export const bo17 = 'https://pa.ybp.yahoo.com';
+export const bo18 = 'https://usadmm.dotomi.com';
