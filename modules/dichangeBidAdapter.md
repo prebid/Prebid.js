@@ -1,8 +1,8 @@
 # Overview
 
 ```
-Module Name: Digital Matter Bidder Adapter
-Module Type: Digital Matter Bidder Adapter
+Module Name: Dichange Bidder Adapter
+Module Type: Dichange Bidder Adapter
 Maintainer: di-change@digitalmatter.ai
 ```
 
@@ -18,9 +18,9 @@ var adUnits = [
         },
         bids: [
             {
-                bidder: 'digitalmatter',
+                bidder: 'dichange',
                 params: {
-                    env: 'digitalmatter',
+                    env: 'dichange',
                     pid: '40',
                     ext: {}
                 }
@@ -38,9 +38,9 @@ var adUnits = [
             }
         },
         bids: [{
-            bidder: 'digitalmatter',
+            bidder: 'dichange',
             params: {
-                env: 'digitalmatter',
+                env: 'dichange',
                 pid: '40',
                 ext: {}
             }

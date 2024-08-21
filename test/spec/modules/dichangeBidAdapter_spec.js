@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {spec} from 'modules/digitalMatterBidAdapter.js';
+import {spec} from 'modules/dichangeBidAdapter.js';
 import {deepClone} from 'src/utils';
 import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
 
@@ -28,9 +28,9 @@ const defaultRequest = {
       ]
     }
   },
-  bidder: 'digitalmatter',
+  bidder: 'dichange',
   params: {
-    env: 'digitalmatter',
+    env: 'dichange',
     pid: '40',
     ext: {}
   },
@@ -47,16 +47,16 @@ defaultRequestVideo.mediaTypes = {
 };
 
 const videoBidderRequest = {
-  bidderCode: 'digitalmatter',
+  bidderCode: 'dichange',
   bids: [{mediaTypes: {video: {}}, bidId: 'qwerty'}]
 };
 
 const displayBidderRequest = {
-  bidderCode: 'digitalmatter',
+  bidderCode: 'dichange',
   bids: [{bidId: 'qwerty'}]
 };
 
-describe('digitalmatterBidAdapter', () => {
+describe('dichangeBidAdapter', () => {
   describe('isBidRequestValid', function () {
     it('should return false when request params is missing', function () {
       const invalidRequest = deepClone(defaultRequest);
@@ -116,7 +116,7 @@ describe('digitalmatterBidAdapter', () => {
       expect(request).to.have.property('sizes').and.to.deep.equal(['300x250', '300x200']);
       expect(request).to.have.property('ext').and.to.deep.equal({});
       expect(request).to.have.property('env').and.to.deep.equal({
-        env: 'digitalmatter',
+        env: 'dichange',
         pid: '40'
       });
       expect(request).to.have.property('device').and.to.deep.equal({
@@ -269,7 +269,7 @@ describe('digitalmatterBidAdapter', () => {
             height: 250,
             ttl: 600,
             meta: {
-              advertiserDomains: ['digitalmatter']
+              advertiserDomains: ['dichange']
             },
             ext: {
               pixels: [
@@ -290,7 +290,7 @@ describe('digitalmatterBidAdapter', () => {
       expect(bid.width).to.equal(300);
       expect(bid.height).to.equal(250);
       expect(bid.ttl).to.equal(600);
-      expect(bid.meta).to.deep.equal({advertiserDomains: ['digitalmatter']});
+      expect(bid.meta).to.deep.equal({advertiserDomains: ['dichange']});
     });
 
     it('should interpret valid banner response', function () {

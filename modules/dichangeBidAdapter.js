@@ -7,12 +7,12 @@ import {
   isBidRequestValid
 } from '../libraries/xeUtils/bidderUtils.js';
 
-const BIDDER_CODE = 'digitalmatter';
+const BIDDER_CODE = 'dichange';
 const ENDPOINT = 'https://prebid.di-change.live';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['dichange', 'digitalmatter'],
+  aliases: ['dichange'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) => buildRequests(validBidRequests, bidderRequest, ENDPOINT),
