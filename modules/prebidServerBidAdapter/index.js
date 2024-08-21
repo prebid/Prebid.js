@@ -460,8 +460,9 @@ export function PrebidServer() {
 
     if (Array.isArray(_s2sConfigs)) {
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
+        const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
         let syncBidders = s2sBidRequest.s2sConfig.bidders
-          .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
+          .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
         queueSync(syncBidders, gdprConsent, uspConsent, gppConsent, s2sBidRequest.s2sConfig);
