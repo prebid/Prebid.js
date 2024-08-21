@@ -8,6 +8,11 @@ import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { highEntropySUAAccessor } from '../src/fpd/sua.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
 // export const ENDPOINT_USERSYNC = '';
@@ -392,7 +397,7 @@ export const spec = {
    * @param {BidRequest} bidderRequest A matched bid request for this response.
    * @return Array<BidResponse> An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, request) {
+  interpretResponse: function (serverResponse, bidderRequest) {
     const bidResponses = [];
 
     if (!serverResponse || !serverResponse.body) {
@@ -401,13 +406,13 @@ export const spec = {
 
     appendImuidScript();
 
-    const zoneId = request.bid.params.zoneId;
+    const zoneId = bidderRequest.bid.params.zoneId;
     let successBid;
     successBid = serverResponse.body || {};
 
     if (successBid.hasOwnProperty(zoneId)) {
       const bid = successBid[zoneId];
-      bidResponses.push(makeBannerBidResponse(bid, request));
+      bidResponses.push(makeBannerBidResponse(bid, bidderRequest));
     }
     return bidResponses;
   },
