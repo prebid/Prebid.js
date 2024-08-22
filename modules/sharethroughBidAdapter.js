@@ -167,7 +167,8 @@ export const sharethroughAdapterSpec = {
             topframe: inIframe() ? 0 : 1,
             format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
           };
-          if (bidReq.mediaTypes.banner.battr) impression.banner.battr = bidReq.mediaTypes.banner.battr;
+          const battr = deepAccess(bidReq, 'mediaTypes.banner.battr', null) || deepAccess(bidReq, 'ortb2Imp.banner.battr')
+          if (battr) impression.banner.battr = battr
         }
 
         return {

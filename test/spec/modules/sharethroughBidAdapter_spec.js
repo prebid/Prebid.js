@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
+import { deepSetValue } from '../../../src/utils';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 
@@ -550,7 +551,7 @@ describe('sharethrough adapter spec', function () {
           ]);
         });
 
-        it('should correctly harvest battr values for banner if present', () => {
+        it('should correctly harvest battr values for banner if present in mediaTypes.banner of impression and battr is not defined in ortb2Imp.banner', () => {
           // assemble
           const EXPECTED_BATTR_VALUES = [6, 7];
 
@@ -562,7 +563,7 @@ describe('sharethrough adapter spec', function () {
           expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
         });
 
-        it('should not include battr values for banner if not present', () => {
+        it('should not include battr values for banner if NOT present in mediaTypes.banner of impression and battr is not defined in ortb2Imp.banner', () => {
           // assemble
           delete bidRequests[0].mediaTypes.banner.battr;
 
@@ -571,6 +572,33 @@ describe('sharethrough adapter spec', function () {
 
           // assert
           expect(builtRequest.data.imp[0].banner.battr).to.be.undefined;
+        });
+
+        it('should prefer battr values from mediaTypes.banner over ortb2Imp.banner', () => {
+          // assemble
+          deepSetValue(bidRequests[0], 'ortb2Imp.banner.battr', [1, 2, 3]);
+          const EXPECTED_BATTR_VALUES = [6, 7]; // values from mediaTypes.banner
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+
+          // assert
+          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
+        });
+
+        it('should use battr values from ortb2Imp.banner if mediaTypes.banner.battr is not present', () => {
+          // assemble
+          delete bidRequests[0].mediaTypes.banner.battr;
+          const EXPECTED_BATTR_VALUES = [1, 2, 3];
+          deepSetValue(bidRequests[0], 'ortb2Imp.banner.battr', EXPECTED_BATTR_VALUES);
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+
+          // assert
+          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
         });
 
         it('should default to pos 0 if not provided', () => {
