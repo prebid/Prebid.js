@@ -169,7 +169,7 @@ export const spec = {
     const isValidViewability = typeof params.viewabilityPercentage === 'undefined' || (isNumber(params.viewabilityPercentage) && params.viewabilityPercentage >= 0 && params.viewabilityPercentage <= 1);
     const hasRequiredBidParams = Boolean(params.placementId);
 
-    const isValid = hasBidId && hasMediaTypes && isValidViewability && isValidBanner && isValidVideo && hasRequiredBidParams;
+    const isValid = hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams && isValidViewability;
     if (!isValid) {
       logError(
         `Invalid bid request:
