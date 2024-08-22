@@ -1,7 +1,9 @@
 # Overview
 
 Module Name: Exchain Impression Opportunity Identifier Module (Exchain IOID Module)
+
 Module Type: Analytics Adapter
+
 Maintainer: slonofanya@gmail.com
 
 # Description
