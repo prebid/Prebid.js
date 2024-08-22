@@ -1,4 +1,4 @@
-import { liveIntentExternalIdSubmodule, resetSubmodule } from 'libraries/liveIntentIdSystem/liveIntentExternalIdSystem.js';
+import { liveIntentExternalIdSubmodule, resetSubmodule } from 'libraries/liveIntentId/externalIdSystem.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler } from '../../../src/adapterManager.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 const DEFAULT_AJAX_TIMEOUT = 5000

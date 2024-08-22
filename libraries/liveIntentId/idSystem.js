@@ -1,7 +1,7 @@
 /**
  * This module adds LiveIntentId to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/liveIntentIdSystem
+ * @module modules/idSystem
  * @requires module:modules/userId
  */
 import { triggerPixel, logError } from '../../src/utils.js';
@@ -11,7 +11,7 @@ import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, DEFAULT_DELAY, GVLID, parseRequestedAttributes } from './liveIntentIdSystemShared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, DEFAULT_DELAY, GVLID, parseRequestedAttributes } from './shared.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
