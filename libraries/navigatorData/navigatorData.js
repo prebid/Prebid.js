@@ -26,4 +26,4 @@ export function getDM(win = window) {
     dm = undefined;
   }
   return dm;
-};
+}

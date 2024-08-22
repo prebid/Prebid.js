@@ -123,7 +123,7 @@ export function generateBidParameters(bid, bidderRequest) {
     sizes: sizesArray,
     floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
-    loop: getBidIdParameter('bidderRequestsCount', bid),
+    loop: bid.bidderRequestsCount || 0,
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
     coppa: 0,
@@ -324,6 +324,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
   if (bidderRequest && bidderRequest.refererInfo) {
     generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
     generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
+    generalParams.site_domain = deepAccess(bidderRequest, 'refererInfo.domain') || deepAccess(window, 'location.hostname');
   }
 
   return generalParams;

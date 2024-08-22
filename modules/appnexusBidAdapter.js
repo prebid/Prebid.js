@@ -566,7 +566,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
-    currency: rtbBid.publisher_currency_codename || 'USD',
+    currency: 'USD',
     netRevenue: true,
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,
@@ -747,7 +747,7 @@ function bidToTag(bid) {
   // page.html?ast_override_div=divId:creativeId,divId2:creativeId2
   const overrides = getParameterByName('ast_override_div');
   if (isStr(overrides) && overrides !== '') {
-    const adUnitOverride = overrides.split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
+    const adUnitOverride = decodeURIComponent(overrides).split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
     if (adUnitOverride) {
       const forceCreativeId = adUnitOverride.split(':')[1];
       if (forceCreativeId) {

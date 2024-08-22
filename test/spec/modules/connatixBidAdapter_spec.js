@@ -52,10 +52,6 @@ describe('connatixBidAdapter', function () {
     it('Should return true if all required fileds are present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-    it('Should return false if bidder does not correspond', function () {
-      bid.bidder = 'abc';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
     it('Should return false if bidId is missing', function () {
       delete bid.bidId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
@@ -353,6 +349,38 @@ describe('connatixBidAdapter', function () {
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+    });
+  });
+
+  describe('userIdAsEids', function() {
+    let validBidRequests;
+
+    this.beforeEach(function () {
+      bid = mockBidRequest();
+      validBidRequests = [bid];
+    })
+
+    it('Connatix adapter reads EIDs from Prebid user models and adds it to Request', function() {
+      validBidRequests[0].userIdAsEids = [{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID_FROM_USER_ID_MODULE',
+          'atype': 1,
+          'ext': {
+            'stype': 'ppuid',
+            'rtiPartner': 'TDID'
+          }
+        }]
+      },
+      {
+        'source': 'pubserver.org',
+        'uids': [{
+          'id': 'TDID_FROM_USER_ID_MODULE',
+          'atype': 1
+        }]
+      }];
+      let serverRequest = spec.buildRequests(validBidRequests, {});
+      expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
   });
 

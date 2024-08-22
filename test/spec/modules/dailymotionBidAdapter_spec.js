@@ -116,11 +116,11 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           livestream: 1,
           isCreatedForKids: true,
           videoViewsInSession: 2,
           autoplay: true,
+          playerName: 'dailymotion',
           playerVolume: 8,
         },
       },
@@ -158,6 +158,18 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          all: {
+            bidders: '*',
+            filter: 'include'
+          }
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -169,6 +181,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -191,7 +204,6 @@ describe('dailymotionBidAdapterTests', () => {
       title: bidRequestData[0].params.video.title,
       url: bidRequestData[0].params.video.url,
       topics: bidRequestData[0].params.video.topics,
-      xid: bidRequestData[0].params.video.xid,
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
@@ -199,6 +211,7 @@ describe('dailymotionBidAdapterTests', () => {
         siteOrAppCat: [],
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
+        playerName: bidRequestData[0].params.video.playerName,
         playerVolume: bidRequestData[0].params.video.playerVolume,
       },
     });
@@ -241,11 +254,11 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           livestream: 1,
           isCreatedForKids: true,
           videoViewsInSession: 2,
           autoplay: true,
+          playerName: 'dailymotion',
           playerVolume: 8,
         },
       },
@@ -331,11 +344,11 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           livestream: 1,
           isCreatedForKids: true,
           videoViewsInSession: 2,
           autoplay: true,
+          playerName: 'dailymotion',
           playerVolume: 8,
         },
       },
@@ -418,11 +431,11 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           livestream: 1,
           isCreatedForKids: true,
           videoViewsInSession: 2,
           autoplay: true,
+          playerName: 'dailymotion',
           playerVolume: 8,
         },
       },
@@ -524,11 +537,11 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           livestream: 1,
           isCreatedForKids: true,
           videoViewsInSession: 2,
           autoplay: true,
+          playerName: 'dailymotion',
           playerVolume: 8,
         },
       },
@@ -632,11 +645,11 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           livestream: 1,
           isCreatedForKids: true,
           videoViewsInSession: 2,
           autoplay: true,
+          playerName: 'dailymotion',
           playerVolume: 8,
         },
       },
@@ -732,12 +745,12 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           livestream: 1,
           // Test invalid values
           isCreatedForKids: 'false',
           videoViewsInSession: -1,
           autoplay: 'true',
+          playerName: 'dailymotion',
           playerVolume: 12,
         },
       },
@@ -790,6 +803,18 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          iframe: {
+            bidders: ['dailymotion'],
+            filter: 'include'
+          }
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -800,6 +825,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -829,7 +855,6 @@ describe('dailymotionBidAdapterTests', () => {
       title: bidRequestData[0].params.video.title,
       url: bidRequestData[0].params.video.url,
       topics: bidRequestData[0].params.video.topics,
-      xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
       duration: bidderRequestData.ortb2.app.content.len,
       livestream: !!bidRequestData[0].params.video.livestream,
@@ -838,6 +863,7 @@ describe('dailymotionBidAdapterTests', () => {
         siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
+        playerName: 'dailymotion',
         playerVolume: null,
       },
     });
@@ -863,10 +889,10 @@ describe('dailymotionBidAdapterTests', () => {
           private: false,
           title: 'test video',
           topics: 'topic_1, topic_2',
-          xid: 'x123456',
           isCreatedForKids: false,
           videoViewsInSession: 10,
           autoplay: false,
+          playerName: 'dailymotion',
           playerVolume: 0,
         },
       },
@@ -942,6 +968,22 @@ describe('dailymotionBidAdapterTests', () => {
       },
     };
 
+    config.setConfig({
+      userSync: {
+        syncEnabled: true,
+        filterSettings: {
+          image: {
+            bidders: ['dailymotion'],
+            filter: 'include'
+          },
+          iframe: {
+            bidders: ['dailymotion'],
+            filter: 'exclude',
+          },
+        }
+      }
+    });
+
     const [request] = config.runWithBidder(
       'dailymotion',
       () => spec.buildRequests(bidRequestData, bidderRequestData),
@@ -952,6 +994,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -992,7 +1035,6 @@ describe('dailymotionBidAdapterTests', () => {
       title: bidderRequestData.ortb2.site.content.title,
       url: bidderRequestData.ortb2.site.content.url,
       topics: bidRequestData[0].params.video.topics,
-      xid: bidRequestData[0].params.video.xid,
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidderRequestData.ortb2.site.content.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
@@ -1000,6 +1042,7 @@ describe('dailymotionBidAdapterTests', () => {
         siteOrAppCat: bidderRequestData.ortb2.site.content.cat,
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
+        playerName: bidRequestData[0].params.video.playerName,
         playerVolume: bidRequestData[0].params.video.playerVolume,
       },
     });
@@ -1011,6 +1054,12 @@ describe('dailymotionBidAdapterTests', () => {
         apiKey: 'test_api_key',
       },
     }];
+
+    config.setConfig({
+      userSync: {
+        syncEnabled: false,
+      }
+    });
 
     const [request] = config.runWithBidder(
       'dailymotion',
@@ -1025,6 +1074,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.false;
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.userSyncEnabled).to.be.false;
     expect(reqData.bidder_request).to.eql({
       gdprConsent: {
         apiVersion: 1,
@@ -1077,13 +1127,13 @@ describe('dailymotionBidAdapterTests', () => {
       title: '',
       url: '',
       topics: '',
-      xid: '',
       livestream: false,
       isCreatedForKids: null,
       context: {
         siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
+        playerName: '',
         playerVolume: null,
       },
     });

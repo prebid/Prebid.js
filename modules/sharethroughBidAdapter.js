@@ -18,7 +18,7 @@ export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
   gvlid: 80,
-  isBidRequestValid: (bid) => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
+  isBidRequestValid: (bid) => !!bid.params.pkey,
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = bidderRequest.timeout;
@@ -66,6 +66,11 @@ export const sharethroughAdapterSpec = {
 
     if (bidderRequest.ortb2?.device?.ext?.cdep) {
       req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
+    }
+
+    // if present, merge device object from ortb2 into `req.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(req.device, bidderRequest.ortb2.device);
     }
 
     req.user = nullish(firstPartyData.user, {});
