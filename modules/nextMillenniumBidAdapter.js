@@ -21,7 +21,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '3.1.0';
+const NM_VERSION = '4.0.0';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
@@ -81,65 +81,56 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
+    const site = getSiteObj();
+    const device = getDeviceObj();
 
-    _each(validBidRequests, (bid) => {
+    const postBody = {
+      id: bidderRequest?.bidderRequestId,
+      ext: {
+        nextMillennium: {
+          nm_version: NM_VERSION,
+          pbjs_version: getGlobal()?.version || undefined,
+
+          // Example: refresh_counts: {'imp_id_1': 0, 'imp_id_1': 3},
+          refresh_counts: {},
+
+          // Example: elemOffsets: {'imp_id_1': {"x":105.5,"y":50,"width":440,"height":240,"top":50,"right":545.5,"bottom":290,"left":105.5}, ... },
+          elemOffsets: {},
+
+          scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+        },
+      },
+
+      device,
+      site,
+      imp: [],
+    };
+
+    setConsentStrings(postBody, bidderRequest);
+    setOrtb2Parameters(postBody, bidderRequest?.ortb2);
+
+    const urlParameters = parseUrl(getWindowTop().location.href).search;
+    const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
+    setEids(postBody, validBidRequests);
+
+    _each(validBidRequests, (bid, i) => {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getPlacementId(bid);
-      const auctionId = bid.auctionId;
-      const bidId = bid.bidId;
-
-      const site = getSiteObj();
-      const device = getDeviceObj();
       const {cur, mediaTypes} = getCurrency(bid);
+      if (i === 0) postBody.cur = cur;
+      postBody.imp.push(getImp(bid, id, mediaTypes, postBody));
+    });
 
-      const postBody = {
-        id: bidderRequest?.bidderRequestId,
-        cur,
-        ext: {
-          prebid: {
-            storedrequest: {
-              id,
-            },
-          },
+    this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
 
-          nextMillennium: {
-            nm_version: NM_VERSION,
-            pbjs_version: getGlobal()?.version || undefined,
-            refresh_count: window.nmmRefreshCounts[bid.adUnitCode]++,
-            elOffsets: getBoundingClient(bid),
-            scrollTop: window.pageYOffset || document.documentElement.scrollTop,
-          },
-        },
-
-        device,
-        site,
-        imp: [],
-      };
-
-      postBody.imp.push(getImp(bid, id, mediaTypes));
-      setConsentStrings(postBody, bidderRequest);
-      setOrtb2Parameters(postBody, bidderRequest?.ortb2);
-      setEids(postBody, bid);
-
-      const urlParameters = parseUrl(getWindowTop().location.href).search;
-      const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
-      const params = bid.params;
-
-      requests.push({
-        method: 'POST',
-        url: isTest ? TEST_ENDPOINT : ENDPOINT,
-        data: JSON.stringify(postBody),
-        options: {
-          contentType: 'text/plain',
-          withCredentials: true,
-        },
-
-        bidId,
-        params,
-        auctionId,
-      });
-
-      this.getUrlPixelMetric(EVENTS.BID_REQUESTED, bid);
+    requests.push({
+      method: 'POST',
+      url: isTest ? TEST_ENDPOINT : ENDPOINT,
+      data: JSON.stringify(postBody),
+      options: {
+        contentType: 'text/plain',
+        withCredentials: true,
+      },
     });
 
     return requests;
@@ -149,16 +140,15 @@ export const spec = {
     const response = serverResponse.body;
     const bidResponses = [];
 
+    const bids = [];
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
         const requestId = bidRequest.bidId;
-        const params = bidRequest.params;
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
         const bidResponse = {
           requestId,
-          params,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,
@@ -182,10 +172,12 @@ export const spec = {
         };
 
         bidResponses.push(bidResponse);
-
-        this.getUrlPixelMetric(EVENTS.BID_RESPONSE, bid);
       });
+
+      bids.push(resp.bid);
     });
+
+    this.getUrlPixelMetric(EVENTS.BID_RESPONSE, bids.flat());
 
     return bidResponses;
   },
@@ -226,22 +218,26 @@ export const spec = {
     triggerPixel(url);
   },
 
-  _getUrlPixelMetric(eventName, bid) {
-    const bidder = bid.bidder || bid.bidderCode;
+  _getUrlPixelMetric(eventName, bids) {
+    if (!Array.isArray(bids)) bids = [bids];
+
+    const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
     if (bidder != BIDDER_CODE) return;
 
-    let params;
-    if (bid.params) {
-      params = Array.isArray(bid.params) ? bid.params : [bid.params];
-    } else {
-      if (Array.isArray(bid.bids)) params = bid.bids.map(bidI => bidI.params);
-    };
+    let params = [];
+    _each(bids, bid => {
+      if (bid.params) {
+        params.push(bid.params);
+      } else {
+        if (Array.isArray(bid.bids)) params.push(bid.bids.map(bidI => bidI.params));
+      };
+    });
 
     if (!params.length) return;
 
     const placementIdsArray = [];
     const groupIdsArray = [];
-    params.forEach(paramsI => {
+    params.flat().forEach(paramsI => {
       if (paramsI.group_id) {
         groupIdsArray.push(paramsI.group_id);
       } else {
@@ -268,8 +264,14 @@ export const spec = {
   },
 };
 
-export function getImp(bid, id, mediaTypes) {
+export function getImp(bid, id, mediaTypes, postBody) {
   const {banner, video} = mediaTypes;
+  if (!postBody.ext.nextMillennium.refresh_counts[bid.adUnitCode]) {
+    postBody.ext.nextMillennium.refresh_counts[bid.adUnitCode] = window?.nmmRefreshCounts[bid.adUnitCode] || 0;
+  };
+
+  ++postBody.ext.nextMillennium.refresh_counts[bid.adUnitCode];
+  postBody.ext.nextMillennium.elemOffsets[bid.adUnitCode] = getBoundingClient(bid);
   const imp = {
     id: bid.adUnitCode,
     ext: {
@@ -362,10 +364,16 @@ export function setOrtb2Parameters(postBody, ortb2 = {}) {
   }
 }
 
-export function setEids(postBody, bid) {
-  if (!isArray(bid.userIdAsEids) || !bid.userIdAsEids.length) return;
+export function setEids(postBody = {}, bids = []) {
+  let isFind = false;
+  _each(bids, bid => {
+    if (isFind || !isArray(bid.userIdAsEids) || !bid.userIdAsEids.length) return;
 
-  deepSetValue(postBody, 'user.eids', bid.userIdAsEids);
+    if (bid.userIdAsEids.length) {
+      deepSetValue(postBody, 'user.eids', bid.userIdAsEids);
+      isFind = true;
+    };
+  });
 }
 
 export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gppConsent = {}, type = '') {
@@ -425,7 +433,7 @@ function getBoundingClient(bid) {
   return el.getBoundingClientRect();
 }
 
-function getPlacementId(bid) {
+export function getPlacementId(bid) {
   const groupId = getBidIdParameter('group_id', bid.params);
   const placementId = getBidIdParameter('placement_id', bid.params);
   if (!groupId) return placementId;
@@ -434,7 +442,7 @@ function getPlacementId(bid) {
   let sizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.banner) sizes = bid.mediaTypes.banner.sizes;
-    if (bid.mediaTypes.video) sizes = [bid.mediaTypes.video.playerSize];
+    if (bid.mediaTypes.video) sizes.push([bid.mediaTypes.video.playerSize]);
   };
 
   const host = (windowTop && windowTop.location && windowTop.location.host) || '';
