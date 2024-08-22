@@ -191,7 +191,7 @@ pbjs.setConfig({
     iframeEnabled: true,
     filterSettings: {
       iframe: {
-        bidders: '*',      // '*' represents all bidders
+        bidders: '*',    // '*' represents all bidders
         filter: 'include'
       }
     },
