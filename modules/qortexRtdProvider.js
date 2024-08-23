@@ -5,7 +5,6 @@ import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
-
 const DEFAULT_API_URL = 'https://demand.qortex.ai';
 
 const qortexSessionInfo = {}
@@ -56,7 +55,7 @@ function getBidRequestData (reqBidsConfig, callback) {
  * @param {Object} data Auction end object
  */
 function onAuctionEndEvent (data, config, t) {
-  sendAnalyticsEvent("AUCTION", "AUCTION_END", data)
+  sendAnalyticsEvent('AUCTION', 'AUCTION_END', data)
     .then(result => logMessage(result))
     .catch(e => logWarn(e?.message))
 }
@@ -113,19 +112,19 @@ export function getGroupConfig () {
 export function initiatePageAnalysis () {
   const indexData = generateIndexData();
   logMessage('Sending page data for context analysis');
-    return new Promise((resolve, reject) => {
-      const callbacks = {
-        success() {
-          qortexSessionInfo.pageAnalysisdata.requestSuccessful = true;
-          resolve("Successfully initiated Qortex page analysis");
-        },
-        error(error) {
-          qortexSessionInfo.pageAnalysisdata.requestSuccessful = false;
-          reject(new Error(error));
-        }
+  return new Promise((resolve, reject) => {
+    const callbacks = {
+      success() {
+        qortexSessionInfo.pageAnalysisdata.requestSuccessful = true;
+        resolve('Successfully initiated Qortex page analysis');
+      },
+      error(error) {
+        qortexSessionInfo.pageAnalysisdata.requestSuccessful = false;
+        reject(new Error(error));
       }
-      ajax(qortexSessionInfo.pageAnalyisUrl, callbacks, JSON.stringify(indexData), {contentType: 'application/json'})
-    })
+    }
+    ajax(qortexSessionInfo.pageAnalyisUrl, callbacks, JSON.stringify(indexData), {contentType: 'application/json'})
+  })
 }
 
 /**
@@ -133,9 +132,10 @@ export function initiatePageAnalysis () {
  * @returns {Promise}
  */
 export function sendAnalyticsEvent(eventType, subType, data) {
-  if(qortexSessionInfo.analyticsUrl !== null) {
-    const analtyicsEventObject = generateAnaltyicsEventObject(subType, data)
-    logMessage('Sending qortex analytics event');
+  if (qortexSessionInfo.analyticsUrl !== null) {
+    if (shouldSendAnalytics()) {
+      const analtyicsEventObject = generateAnaltyicsEventObject(subType, data)
+      logMessage('Sending qortex analytics event');
       return new Promise((resolve, reject) => {
         const callbacks = {
           success() {
@@ -147,9 +147,11 @@ export function sendAnalyticsEvent(eventType, subType, data) {
         }
         ajax(qortexSessionInfo.analyticsUrl, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
       })
+    } else {
+      return new Promise((resolve, reject) => reject(new Error('Current request did not meet analytics percentage threshold, cancelling sending event')));
+    }
   } else {
-    return new Promise((resolve, reject) => reject(new Error("Analytics host not initialized")));
-
+    return new Promise((resolve, reject) => reject(new Error('Analytics host not initialized')));
   }
 }
 
@@ -163,7 +165,7 @@ export function generateAnaltyicsEventObject(eventType, subType, data) {
     groupId: qortexSessionInfo.groupId,
     eventType: eventType,
     subType: subType,
-    eventOriginSource: "RTD",
+    eventOriginSource: 'RTD',
     data: data
   }
 }
@@ -176,9 +178,9 @@ export function generateIndexData () {
   return {
     url: document.location.href,
     title: document.title,
-    text: document.body.innerText.replaceAll(/\r?\n/gi, " "),
-    meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if(attr.length > 1) {acc[curr.attributes[0].value] = curr.attributes[1].value} return acc}, {}),
-    videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => {src = curr.src; if(src != ''){acc.push(src)} return acc}, [])
+    text: document.body.innerText.replaceAll(/\r?\n/gi, ' '),
+    meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if (attr.length > 1) { acc[curr.attributes[0].value] = curr.attributes[1].value } return acc }, {}),
+    videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => { const src = curr?.src; if (src != '') { acc.push(src) } return acc }, [])
   }
 }
 
@@ -189,12 +191,12 @@ export function generateIndexData () {
  */
 export function generateAnalyticsHostUrl(qortexUrlBase) {
   if (qortexUrlBase === DEFAULT_API_URL) {
-    return "https://events.qortex.ai/api/v1/player-event";
-  } else if (qortexUrlBase.includes("stg-demand")) {
-    return "https://stg-events.qortex.ai/api/v1/player-event";
+    return 'https://events.qortex.ai/api/v1/player-event';
+  } else if (qortexUrlBase.includes('stg-demand')) {
+    return 'https://stg-events.qortex.ai/api/v1/player-event';
   } else {
-    return "https://dev-events.qortex.ai/api/v1/player-event";
-  } 
+    return 'https://dev-events.qortex.ai/api/v1/player-event';
+  }
 }
 
 /**
@@ -267,18 +269,18 @@ export function loadScriptTag(config) {
 export function initializeModuleData(config) {
   initializeQortexSessionData(config);
   getGroupConfig()
-      .then(groupConfig => {
-        logMessage(["Recieved response for qortex group config", groupConfig])
-        if (!groupConfig?.active || !groupConfig?.prebidBidEnrichment){
-          logMessage("Group config is not configured for qortex RTD module")
-          return false
-        } else {
-          setGroupConfigData(groupConfig)
-        }
-      })
-      .catch((e) => {
-        logWarn(e?.message);
-      });
+    .then(groupConfig => {
+      logMessage(['Recieved response for qortex group config', groupConfig])
+      if (groupConfig?.active && groupConfig?.prebidBidEnrichment) {
+        setGroupConfigData(groupConfig)
+      } else {
+        logMessage('Group config is not configured for qortex RTD module')
+        return false
+      }
+    })
+    .catch((e) => {
+      logWarn(e?.message);
+    });
   initiatePageAnalysis()
     .then(successMessage => {
       logMessage(successMessage)
@@ -311,6 +313,12 @@ export function initializeQortexSessionData(config) {
   qortexSessionInfo.analyticsUrl = generateAnalyticsHostUrl(qortexUrlBase);
 }
 
+export function shouldSendAnalytics() {
+  const analyticsPercentage = qortexSessionInfo.groupConfig?.prebidReportingPercentage ?? 0;
+  const randomInt = Math.random().toFixed(5) * 100;
+  return analyticsPercentage > randomInt;
+}
+
 /**
  * Creates unique session id for Qortex
  * @returns {string} session id string
@@ -318,7 +326,7 @@ export function initializeQortexSessionData(config) {
 export function generateSessionId() {
   const randomInt = Math.floor(Math.random() * 2147483647);
   const currentDateTime = Math.floor(Date.now() / 1000);
-  return "QX" + randomInt.toString() + "X" + currentDateTime.toString()
+  return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString()
 }
 
 export function setContextData(value) {
@@ -334,6 +342,24 @@ export const qortexSubmodule = {
   init,
   getBidRequestData,
   onAuctionEndEvent
+}
+
+export const qortexLogic = {
+  getContext,
+  getGroupConfig,
+  initiatePageAnalysis,
+  sendAnalyticsEvent,
+  generateAnaltyicsEventObject,
+  generateIndexData,
+  generateAnalyticsHostUrl,
+  addContextToRequests,
+  setContextData,
+  loadScriptTag,
+  initializeModuleData,
+  initializeQortexSessionData,
+  shouldSendAnalytics,
+  generateSessionId,
+  setGroupConfigData
 }
 
 submodule('realTimeData', qortexSubmodule);

@@ -6,16 +6,27 @@ import {loadExternalScript} from 'src/adloader.js';
 import {
   qortexSubmodule as module,
   getContext,
+  getGroupConfig,
+  initiatePageAnalysis,
+  sendAnalyticsEvent,
+  generateAnaltyicsEventObject,
+  generateIndexData,
+  generateAnalyticsHostUrl,
   addContextToRequests,
   setContextData,
+  loadScriptTag,
   initializeModuleData,
-  loadScriptTag
+  initializeQortexSessionData,
+  shouldSendAnalytics,
+  generateSessionId,
+  setGroupConfigData
 } from '../../../modules/qortexRtdProvider';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
 
 describe('qortexRtdProvider', () => {
   let logWarnSpy;
+  let logMessageSpy;
   let ortb2Stub;
 
   const defaultApiHost = 'https://demand.qortex.ai';
@@ -65,18 +76,33 @@ describe('qortexRtdProvider', () => {
     'access-control-allow-origin': '*'
   };
 
-  const responseObj = {
-    content: {
-      id: '123456',
-      episode: 15,
-      title: 'test episode',
-      series: 'test show',
-      season: '1',
-      url: 'https://example.com/file.mp4'
-    }
-  };
+  const contextResponseObj = {
+      content: {
+        id: '123456',
+        episode: 15,
+        title: 'test episode',
+        series: 'test show',
+        season: '1',
+        url: 'https://example.com/file.mp4'
+      }
+    },
+    contextResponse = JSON.stringify(contextResponseObj);
 
-  const apiResponse = JSON.stringify(responseObj);
+  const validGroupConfigResponseObj = {
+      groupId: defaultGroupId,
+      active: true,
+      prebidBidEnrichment: true,
+      prebidReportingPercentage: 100
+    },
+    validGroupConfigResponse = JSON.stringify(validGroupConfigResponseObj);
+
+  const inactiveGroupConfigResponseObj = {
+      groupId: defaultGroupId,
+      active: false,
+      PrebidBidEnrichment: true,
+      PrebidReportingPercentage: 100
+    },
+    inactiveGroupConfigResponse = JSON.stringify(inactiveGroupConfigResponseObj);
 
   const reqBidsConfig = {
     adUnits: [{
@@ -93,10 +119,12 @@ describe('qortexRtdProvider', () => {
   beforeEach(() => {
     ortb2Stub = sinon.stub(reqBidsConfig, 'ortb2Fragments').value({bidder: {}, global: {}})
     logWarnSpy = sinon.spy(utils, 'logWarn');
+    logMessageSpy = sinon.spy(utils, 'logMessage');
   })
 
   afterEach(() => {
     logWarnSpy.restore();
+    logMessageSpy.restore();
     ortb2Stub.restore();
     setContextData(null);
   })
@@ -132,7 +160,7 @@ describe('qortexRtdProvider', () => {
     })
 
     beforeEach(() => {
-      initializeModuleData(config);
+      initializeQortexSessionData(config);
       addEventListenerSpy = sinon.spy(window, 'addEventListener');
     })
 
@@ -168,21 +196,21 @@ describe('qortexRtdProvider', () => {
       dispatchEvent(new CustomEvent('qortex-rtd', validImpressionEvent));
       dispatchEvent(new CustomEvent('qortex-rtd', validImpressionEvent));
       expect(billableEvents.length).to.be.equal(1);
-      expect(logWarnSpy.calledWith('recieved invalid billable event due to duplicate uid: qx-impression')).to.be.ok;
+      expect(logWarnSpy.calledWith('Recieved invalid billable event due to duplicate uid: qx-impression')).to.be.ok;
     })
 
     it('will not allow events with missing uid', () => {
       loadScriptTag(config);
       dispatchEvent(new CustomEvent('qortex-rtd', missingIdImpressionEvent));
       expect(billableEvents.length).to.be.equal(0);
-      expect(logWarnSpy.calledWith('recieved invalid billable event due to missing uid: qx-impression')).to.be.ok;
+      expect(logWarnSpy.calledWith('Recieved invalid billable event due to missing uid: qx-impression')).to.be.ok;
     })
 
     it('will not allow events with unavailable type', () => {
       loadScriptTag(config);
       dispatchEvent(new CustomEvent('qortex-rtd', invalidTypeQortexEvent));
       expect(billableEvents.length).to.be.equal(0);
-      expect(logWarnSpy.calledWith('recieved invalid billable event: invalid-type')).to.be.ok;
+      expect(logWarnSpy.calledWith('Recieved invalid billable event: invalid-type')).to.be.ok;
     })
   })
 
@@ -190,12 +218,12 @@ describe('qortexRtdProvider', () => {
     let callbackSpy;
 
     beforeEach(() => {
-      initializeModuleData(validModuleConfig);
+      initializeQortexSessionData(validModuleConfig);
       callbackSpy = sinon.spy();
     })
 
     afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
+      initializeQortexSessionData(emptyModuleConfig);
       callbackSpy.resetHistory();
     })
 
@@ -212,7 +240,7 @@ describe('qortexRtdProvider', () => {
         done();
       }
       module.getBidRequestData(reqBidsConfig, cb);
-      server.requests[0].respond(200, responseHeaders, apiResponse);
+      server.requests[0].respond(200, responseHeaders, contextResponse);
     })
 
     it('will catch and log error and fire callback', (done) => {
@@ -228,11 +256,11 @@ describe('qortexRtdProvider', () => {
 
   describe('getContext', () => {
     beforeEach(() => {
-      initializeModuleData(validModuleConfig);
+      initializeQortexSessionData(validModuleConfig);
     })
 
     afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
+      initializeQortexSessionData(emptyModuleConfig);
     })
 
     it('returns a promise', (done) => {
@@ -242,92 +270,106 @@ describe('qortexRtdProvider', () => {
     })
 
     it('uses request url generated from initialize function in config and resolves to content object data', (done) => {
-      let requestUrl = `${validModuleConfig.params.apiUrl}/api/v1/analyze/${validModuleConfig.params.groupId}/prebid`;
+      let requestUrl = `${validModuleConfig.params.apiUrl}/api/v1/prebid/${validModuleConfig.params.groupId}/page/lookup`;
       const ctx = getContext()
       expect(server.requests.length).to.be.eql(1);
       expect(server.requests[0].url).to.be.eql(requestUrl);
-      server.requests[0].respond(200, responseHeaders, apiResponse);
+      server.requests[0].respond(200, responseHeaders, contextResponse);
       ctx.then(response => {
-        expect(response).to.be.eql(responseObj.content);
+        expect(response).to.be.eql(contextResponseObj.content);
         done();
       });
+
+      it('will return existing context data instead of ajax call if the source was not updated', (done) => {
+        setContextData(contextResponseObj.content);
+        const ctx = getContext();
+        expect(ctx).to.be.a('promise');
+        expect(server.requests.length).to.be.eql(0);
+        ctx.then(response => {
+          expect(response).to.be.eql(contextResponseObj.content);
+          expect(logMessageSpy.to.be.calledWith('Adding Content object from existing context data'))
+          done();
+        });
+      })
+
+      it('returns null for non erroring api responses other than 200', (done) => {
+        const nullContentResponse = { content: null }
+        const ctx = getContext()
+        server.requests[0].respond(200, responseHeaders, JSON.stringify(nullContentResponse))
+        ctx.then(response => {
+          expect(response).to.be.null;
+          expect(server.requests.length).to.be.eql(1);
+          expect(logWarnSpy.called).to.be.false;
+          done();
+        });
+      })
     })
 
-    it('will return existing context data instead of ajax call if the source was not updated', (done) => {
-      setContextData(responseObj.content);
-      const ctx = getContext();
-      expect(server.requests.length).to.be.eql(0);
-      ctx.then(response => {
-        expect(response).to.be.eql(responseObj.content);
-        done();
-      });
+    describe('sendAnalyticsEvent', () => {
+      beforeEach(() => {
+        initializeQortexSessionData(validModuleConfig);
+      })
+  
+      afterEach(() => {
+        initializeQortexSessionData(emptyModuleConfig);
+      })
+
+      
     })
 
-    it('returns null for non erroring api responses other than 200', (done) => {
-      const nullContentResponse = { content: null }
-      const ctx = getContext()
-      server.requests[0].respond(200, responseHeaders, JSON.stringify(nullContentResponse))
-      ctx.then(response => {
-        expect(response).to.be.null;
-        expect(server.requests.length).to.be.eql(1);
-        expect(logWarnSpy.called).to.be.false;
-        done();
-      });
-    })
-  })
+    describe('addContextToRequests', () => {
+      it('logs error if no data was retrieved from get context call', () => {
+        initializeModuleData(validModuleConfig);
+        addContextToRequests(reqBidsConfig);
+        expect(logWarnSpy.calledOnce).to.be.true;
+        expect(logWarnSpy.calledWith('No context data recieved at this time')).to.be.ok;
+        expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
+        expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
+      })
 
-  describe(' addContextToRequests', () => {
-    it('logs error if no data was retrieved from get context call', () => {
-      initializeModuleData(validModuleConfig);
-      addContextToRequests(reqBidsConfig);
-      expect(logWarnSpy.calledOnce).to.be.true;
-      expect(logWarnSpy.calledWith('No context data recieved at this time')).to.be.ok;
-      expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
-      expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
-    })
+      it('adds site.content only to global ortb2 when bidders array is omitted', () => {
+        const omittedBidderArrayConfig = cloneDeep(validModuleConfig);
+        delete omittedBidderArrayConfig.params.bidders;
+        initializeModuleData(omittedBidderArrayConfig);
+        setContextData(contextResponseObj.content);
+        addContextToRequests(reqBidsConfig);
+        expect(reqBidsConfig.ortb2Fragments.global).to.have.property('site');
+        expect(reqBidsConfig.ortb2Fragments.global.site).to.have.property('content');
+        expect(reqBidsConfig.ortb2Fragments.global.site.content).to.be.eql(contextResponseObj.content);
+        expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
+      })
 
-    it('adds site.content only to global ortb2 when bidders array is omitted', () => {
-      const omittedBidderArrayConfig = cloneDeep(validModuleConfig);
-      delete omittedBidderArrayConfig.params.bidders;
-      initializeModuleData(omittedBidderArrayConfig);
-      setContextData(responseObj.content);
-      addContextToRequests(reqBidsConfig);
-      expect(reqBidsConfig.ortb2Fragments.global).to.have.property('site');
-      expect(reqBidsConfig.ortb2Fragments.global.site).to.have.property('content');
-      expect(reqBidsConfig.ortb2Fragments.global.site.content).to.be.eql(responseObj.content);
-      expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
-    })
+      it('adds site.content only to bidder ortb2 when bidders array is included', () => {
+        initializeModuleData(validModuleConfig);
+        setContextData(contextResponseObj.content);
+        addContextToRequests(reqBidsConfig);
 
-    it('adds site.content only to bidder ortb2 when bidders array is included', () => {
-      initializeModuleData(validModuleConfig);
-      setContextData(responseObj.content);
-      addContextToRequests(reqBidsConfig);
+        const qortexOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['qortex']
+        expect(qortexOrtb2Fragment).to.not.be.null;
+        expect(qortexOrtb2Fragment).to.have.property('site');
+        expect(qortexOrtb2Fragment.site).to.have.property('content');
+        expect(qortexOrtb2Fragment.site.content).to.be.eql(contextResponseObj.content);
 
-      const qortexOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['qortex']
-      expect(qortexOrtb2Fragment).to.not.be.null;
-      expect(qortexOrtb2Fragment).to.have.property('site');
-      expect(qortexOrtb2Fragment.site).to.have.property('content');
-      expect(qortexOrtb2Fragment.site.content).to.be.eql(responseObj.content);
+        const testOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['test']
+        expect(testOrtb2Fragment).to.not.be.null;
+        expect(testOrtb2Fragment).to.have.property('site');
+        expect(testOrtb2Fragment.site).to.have.property('content');
+        expect(testOrtb2Fragment.site.content).to.be.eql(contextResponseObj.content);
 
-      const testOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['test']
-      expect(testOrtb2Fragment).to.not.be.null;
-      expect(testOrtb2Fragment).to.have.property('site');
-      expect(testOrtb2Fragment.site).to.have.property('content');
-      expect(testOrtb2Fragment.site.content).to.be.eql(responseObj.content);
+        expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
+      })
 
-      expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
-    })
+      it('logs error if there is an empty bidder array', () => {
+        const invalidBidderArrayConfig = cloneDeep(validModuleConfig);
+        invalidBidderArrayConfig.params.bidders = [];
+        initializeModuleData(invalidBidderArrayConfig);
+        setContextData(contextResponseObj.content)
+        addContextToRequests(reqBidsConfig);
 
-    it('logs error if there is an empty bidder array', () => {
-      const invalidBidderArrayConfig = cloneDeep(validModuleConfig);
-      invalidBidderArrayConfig.params.bidders = [];
-      initializeModuleData(invalidBidderArrayConfig);
-      setContextData(responseObj.content)
-      addContextToRequests(reqBidsConfig);
-
-      expect(logWarnSpy.calledWith('Config contains an empty bidders array, unable to determine which bids to enrich')).to.be.ok;
-      expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
-      expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
+        expect(logWarnSpy.calledWith('Config contains an empty bidders array, unable to determine which bids to enrich')).to.be.ok;
+        expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
+        expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
+      })
     })
   })
 })

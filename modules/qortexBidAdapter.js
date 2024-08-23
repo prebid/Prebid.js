@@ -91,9 +91,9 @@ registerBidder(spec);
  * @returns {String}
  */
 function buildMonetizeRequest(imps, bidderRequest, qxData, groupId) {
-  const {gdprConsent, auctionId, timeout, uspConsent, ortb2} = bidderRequest;
+  // const {gdprConsent, auctionId, timeout, uspConsent, ortb2} = bidderRequest;
+  const {gdprConsent, timeout, uspConsent, ortb2} = bidderRequest;
   let coppa = config.getConfig('coppa');
-  console.log("shiloh request", bidderRequest.auctionId, bidderRequest.ortb2);
   let req = {
     id: ortb2.source.tid,
     imp: imps,
