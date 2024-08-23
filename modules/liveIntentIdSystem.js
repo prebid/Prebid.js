@@ -10,5 +10,3 @@ function loadModule() {
     return require('../libraries/liveIntentId/idSystem.js')
   }
 }
-
-export const liveIntentIdSubmodule = loadModule()
