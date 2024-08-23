@@ -178,7 +178,7 @@ export const spec = {
       window.pbjs.onEvent('auctionEnd', (auctionEndData) => {
         const bidsReceived = auctionEndData.bidsReceived;
 
-        const hasConnatixBid = bidsReceived.some(bid => bid.bidder === BIDDER_CODE);
+        const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
         const connatixBid = bidsReceived.filter(bid => bid.bidderCode === BIDDER_CODE);
 
         let bestBidPrice = 0;

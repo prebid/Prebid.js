@@ -521,53 +521,6 @@ function formatRequest(payload, bidderRequest) {
     };
   }
 
-  if (window.pbjs) {
-    window.pbjs.onEvent('auctionTimeout', (timeoutData) => {
-      const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
-      if (isConnatixTimeout) {
-        const timeout = timeoutData.timeout;
-
-        // eslint-disable-next-line no-console
-        console.log(timeout);
-
-        // ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({timeout}), {
-        //   method: 'POST',
-        //   withCredentials: false
-        // });
-      }
-
-      // eslint-disable-next-line no-console
-      console.log('AppNexus auction timeout', timeoutData);
-    });
-
-    window.pbjs.onEvent('auctionEnd', (auctionEndData) => {
-      const bidsReceived = auctionEndData.bidsReceived;
-
-      const hasConnatixBid = bidsReceived.some(bid => bid.bidder === BIDDER_CODE);
-      const connatixBid = bidsReceived.filter(bid => bid.bidderCode === BIDDER_CODE);
-
-      let bestBidPrice = 0;
-      bidsReceived.forEach(bid => {
-        if (bid.cpm > bestBidPrice) {
-          bestBidPrice = bid.cpm;
-        }
-      });
-
-      // Only if connatix compete in the auction
-      if (hasConnatixBid) {
-        if (bestBidPrice !== connatixBid.cpm) {
-          // ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({connatixBidPrice: connatixBid.cpm, bestBidPrice}), {
-          //   method: 'POST',
-          //   withCredentials: false
-          // });
-        }
-      }
-
-      // eslint-disable-next-line no-console
-      console.log('AppNexus auction end', auctionEndData);
-    });
-  }
-
   return request;
 }
 
