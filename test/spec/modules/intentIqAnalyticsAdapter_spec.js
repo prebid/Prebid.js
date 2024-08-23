@@ -12,6 +12,7 @@ import { REPORTER_ID, getReferrer, preparePayload } from '../../../modules/inten
 
 const partner = 10;
 const defaultData = '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344", "group": "A"}';
+const version = 0.2;
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
@@ -111,7 +112,7 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain('&jsver=0.1&vrref=http://localhost:9876/');
+    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
@@ -128,23 +129,25 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain('&jsver=0.1&vrref=http://localhost:9876/');
+    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
     expect(request.url).to.contain('iiqid=testpcid');
   });
 
   it('should handle BID_WON event with default group configuration', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    const defaultDataObj = JSON.parse(defaultData)
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
-    const data = preparePayload(wonRequest);
-    const base64String = btoa(JSON.stringify(data));
+    const dataToSend = preparePayload(wonRequest);
+    const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
     expect(request.url).to.equal(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344&agid=${REPORTER_ID}&jsver=0.1&vrref=${getReferrer()}&source=pbjs&payload=${payload}`
+      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}`
     );
+    expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
 
   it('should not send request if manualReport is true', function () {
