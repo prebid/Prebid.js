@@ -37,7 +37,6 @@ import {
 import {convertCamelToUnderscore, fill, appnexusAliases} from '../libraries/appnexusUtils/anUtils.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
-import { ajax } from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -524,38 +523,43 @@ function formatRequest(payload, bidderRequest) {
 
   if (window.pbjs) {
     window.pbjs.onEvent('auctionTimeout', (timeoutData) => {
-      // eslint-disable-next-line no-console
-      console.log('AppNexus auction timeout', timeoutData, timeoutData);
-
-      const timeout = timeoutData.timeout;
       const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
       if (isConnatixTimeout) {
+        const timeout = timeoutData.timeout;
+
         // eslint-disable-next-line no-console
         console.log(timeout);
 
-        ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({timeout}), {
-          method: 'POST',
-          withCredentials: false
-        });
+        // ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({timeout}), {
+        //   method: 'POST',
+        //   withCredentials: false
+        // });
       }
+
+      // eslint-disable-next-line no-console
+      console.log('AppNexus auction timeout', timeoutData);
     });
+
     window.pbjs.onEvent('auctionEnd', (auctionEndData) => {
       const bidsReceived = auctionEndData.bidsReceived;
-      const noBids = auctionEndData.noBids;
 
+      const hasConnatixBid = bidsReceived.some(bid => bid.bidder === BIDDER_CODE);
       const connatixBid = bidsReceived.filter(bid => bid.bidderCode === BIDDER_CODE);
-      const hasConnatixNoBid = noBids.some(bid => bid.bidder === BIDDER_CODE);
 
-      const bestBidPrice = connatixBid.reduce((acc, bid) => acc.cpm > bid.cpm ? acc : bid, connatixBid[0]);
+      let bestBidPrice = 0;
+      bidsReceived.forEach(bid => {
+        if (bid.cpm > bestBidPrice) {
+          bestBidPrice = bid.cpm;
+        }
+      });
 
       // Only if connatix compete in the auction
-      if (hasConnatixNoBid || connatixBid) {
-        const connatixBidPrice = connatixBid.cpm;
-        if (bestBidPrice !== connatixBidPrice) {
-          ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({connatixBidPrice, bestBidPrice}), {
-            method: 'POST',
-            withCredentials: false
-          });
+      if (hasConnatixBid) {
+        if (bestBidPrice !== connatixBid.cpm) {
+          // ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({connatixBidPrice: connatixBid.cpm, bestBidPrice}), {
+          //   method: 'POST',
+          //   withCredentials: false
+          // });
         }
       }
 
