@@ -16,6 +16,9 @@ import {
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
+
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'connatix';
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
@@ -70,6 +73,20 @@ function _handleEids(payload, validBidRequests) {
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
+}
+
+/**
+ * Inserts an image pixel with the specified `url` for cookie sync
+ * @param {string} url URL string of the image pixel to load
+ * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
+ */
+export function triggerPixel(url, done, timeout) {
+  const img = new Image();
+  if (done && utils.internal.isFn(done)) {
+    utils.waitForElementToLoad(img, timeout).then(done);
+  }
+  img.src = url;
 }
 
 export const spec = {
@@ -139,6 +156,48 @@ export const spec = {
     };
 
     _handleEids(requestPayload, validBidRequests);
+
+    if (window.pbjs) {
+      window.pbjs.onEvent('auctionTimeout', (timeoutData) => {
+        // eslint-disable-next-line no-console
+        console.log('Connatix auction timeout', timeoutData);
+
+        const timeout = timeoutData.timeout;
+        const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
+        if (isConnatixTimeout) {
+          // eslint-disable-next-line no-console
+          console.log(timeout);
+
+          ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({timeout}), {
+            method: 'POST',
+            withCredentials: false
+          });
+        }
+      });
+      window.pbjs.onEvent('auctionEnd', (auctionEndData) => {
+        const bidsReceived = auctionEndData.bidsReceived;
+        const noBids = auctionEndData.noBids;
+
+        const connatixBid = bidsReceived.filter(bid => bid.bidderCode === BIDDER_CODE);
+        const hasConnatixNoBid = noBids.some(bid => bid.bidder === BIDDER_CODE);
+
+        const bestBidPrice = connatixBid.reduce((acc, bid) => acc.cpm > bid.cpm ? acc : bid, connatixBid[0]);
+
+        // Only if connatix compete in the auction
+        if (hasConnatixNoBid || connatixBid) {
+          const connatixBidPrice = connatixBid.cpm;
+          if (bestBidPrice !== connatixBidPrice) {
+            ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({connatixBidPrice, bestBidPrice}), {
+              method: 'POST',
+              withCredentials: false
+            });
+          }
+        }
+
+        // eslint-disable-next-line no-console
+        console.log('Connatix auction end', auctionEndData);
+      });
+    }
 
     return {
       method: 'POST',
