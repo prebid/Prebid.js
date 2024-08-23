@@ -1,4 +1,9 @@
-import { adagioRtdSubmodule, _internal, storage } from 'modules/adagioRtdProvider.js';
+import {
+  PLACEMENT_SOURCES,
+  _internal,
+  adagioRtdSubmodule,
+  storage,
+} from 'modules/adagioRtdProvider.js';
 import * as utils from 'src/utils.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 import { expect } from 'chai';
@@ -113,6 +118,7 @@ describe('Adagio Rtd Provider', function () {
     describe('store session data in localStorage', function () {
       const session = {
         lastActivityTime: 1714116520700,
+        id: 'uid-1234',
         rnd: 0.5697,
         vwSmplg: 0.1,
         vwSmplgNxt: 0.1
@@ -123,6 +129,7 @@ describe('Adagio Rtd Provider', function () {
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Date, 'now').returns(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -131,6 +138,7 @@ describe('Adagio Rtd Provider', function () {
         const expected = {
           session: {
             new: true,
+            id: utils.generateUUID(),
             rnd: Math.random()
           }
         }
@@ -171,6 +179,7 @@ describe('Adagio Rtd Provider', function () {
         sandbox.stub(Date, 'now').returns(1715679344351);
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-5678');
 
         const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
 
@@ -180,9 +189,77 @@ describe('Adagio Rtd Provider', function () {
           session: {
             ...session,
             new: true,
+            id: utils.generateUUID(),
             rnd: Math.random(),
           }
         }
+
+        expect(spy.withArgs({
+          action: 'session',
+          ts: Date.now(),
+          data: expected,
+        }).calledOnce).to.be.true;
+      });
+    });
+
+    describe('store session data in localStorage when used with external AB Test snippet', function () {
+      const sessionWithABTest = {
+        lastActivityTime: 1714116520700,
+        id: 'uid-1234',
+        rnd: 0.5697,
+        vwSmplg: 0.1,
+        vwSmplgNxt: 0.1,
+        testName: 'adg-test',
+        testVersion: 'srv',
+        initiator: 'snippet'
+      };
+
+      it('store new session data instancied by the AB Test snippet for further usage', function () {
+        const sessionWithNewFlag = { ...sessionWithABTest, new: true };
+        const storageValue = JSON.stringify({session: sessionWithNewFlag});
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        sandbox.stub(Date, 'now').returns(1714116520710);
+        sandbox.stub(Math, 'random').returns(0.8);
+
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+
+        adagioRtdSubmodule.init(config);
+
+        const expected = {
+          session: {
+            ...sessionWithNewFlag
+          }
+        }
+
+        expect(spy.withArgs({
+          action: 'session',
+          ts: Date.now(),
+          data: expected,
+        }).calledOnce).to.be.true;
+      });
+
+      it('store new session data after removing AB Test props when initiator is not the snippet', function () {
+        const sessionWithNewFlag = { ...sessionWithABTest, new: false, initiator: 'adgjs' };
+        const storageValue = JSON.stringify({session: sessionWithNewFlag});
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        sandbox.stub(Date, 'now').returns(1714116520710);
+        sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-5678');
+
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+
+        adagioRtdSubmodule.init(config);
+
+        const expected = {
+          session: {
+            ...sessionWithNewFlag,
+            new: true,
+            id: utils.generateUUID(),
+            rnd: Math.random(),
+          }
+        }
+        delete expected.session.testName;
+        delete expected.session.testVersion;
 
         expect(spy.withArgs({
           action: 'session',
@@ -375,6 +452,74 @@ describe('Adagio Rtd Provider', function () {
 
       const ortb2ImpExt = bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd;
       expect(ortb2ImpExt.adunit_position).equal('');
+    });
+
+    describe('update the ortb2Imp.ext.data.placement if not present', function() {
+      const config = {
+        name: SUBMODULE_NAME,
+        params: {
+          organizationId: '1000',
+          site: 'mysite'
+        }
+      };
+
+      it('update the placement value with the adUnit.code value', function() {
+        const configCopy = utils.deepClone(config);
+        configCopy.params.placementSource = PLACEMENT_SOURCES.ADUNITCODE;
+
+        const bidRequest = utils.deepClone(bidReqConfig);
+
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
+        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal('div-gpt-ad-1460505748561-0');
+      });
+
+      it('update the placement value with the gpid value', function() {
+        const configCopy = utils.deepClone(config);
+        configCopy.params.placementSource = PLACEMENT_SOURCES.GPID;
+
+        const bidRequest = utils.deepClone(bidReqConfig);
+        const gpid = '/19968336/header-bid-tag-0'
+        utils.deepSetValue(bidRequest.adUnits[0], 'ortb2Imp.ext.gpid', gpid)
+
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
+        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal(gpid);
+      });
+
+      it('update the placement value the legacy adUnit[].bids adagio.params.placement value', function() {
+        const placement = 'placement-value';
+
+        const configCopy = utils.deepClone(config);
+
+        const bidRequest = utils.deepClone(bidReqConfig);
+        bidRequest.adUnits[0].bids[0].params.placement = placement;
+
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
+        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal(placement);
+      });
+
+      it('it does not populate `ortb2Imp.ext.data.placement` if no fallback', function() {
+        const configCopy = utils.deepClone(config);
+        const bidRequest = utils.deepClone(bidReqConfig);
+
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
+        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.not.exist;
+      });
+
+      it('ensure we create the `ortb2Imp` object if it does not exist', function() {
+        const configCopy = utils.deepClone(config);
+        configCopy.params.placementSource = PLACEMENT_SOURCES.ADUNITCODE;
+
+        const bidRequest = utils.deepClone(bidReqConfig);
+        delete bidRequest.adUnits[0].ortb2Imp;
+
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
+        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal('div-gpt-ad-1460505748561-0');
+      });
     });
   });
 

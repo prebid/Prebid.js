@@ -15,7 +15,8 @@ import {
   logError,
   logInfo,
   logMessage,
-  logWarn
+  logWarn,
+  mergeDeep
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -25,16 +26,15 @@ import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
 import {
   convertKeywordStringToANMap,
   getANKewyordParamFromMaps,
-  getANKeywordParam,
-  transformBidderParamKeywords
+  getANKeywordParam
 } from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
+import {convertCamelToUnderscore, fill, appnexusAliases} from '../libraries/appnexusUtils/anUtils.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
@@ -104,25 +104,33 @@ const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.co
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
+// ORTB2 device types according to the OpenRTB specification
+const ORTB2_DEVICE_TYPE = {
+  MOBILE_TABLET: 1,
+  PERSONAL_COMPUTER: 2,
+  CONNECTED_TV: 3,
+  PHONE: 4,
+  TABLET: 5,
+  CONNECTED_DEVICE: 6,
+  SET_TOP_BOX: 7,
+  OOH_DEVICE: 8
+};
+// Map of ORTB2 device types to AppNexus device types
+const ORTB2_DEVICE_TYPE_MAP = new Map([
+  [ORTB2_DEVICE_TYPE.MOBILE_TABLET, 'Mobile/Tablet - General'],
+  [ORTB2_DEVICE_TYPE.PERSONAL_COMPUTER, 'Personal Computer'],
+  [ORTB2_DEVICE_TYPE.CONNECTED_TV, 'Connected TV'],
+  [ORTB2_DEVICE_TYPE.PHONE, 'Phone'],
+  [ORTB2_DEVICE_TYPE.TABLET, 'Tablet'],
+  [ORTB2_DEVICE_TYPE.CONNECTED_DEVICE, 'Connected Device'],
+  [ORTB2_DEVICE_TYPE.SET_TOP_BOX, 'Set Top Box'],
+  [ORTB2_DEVICE_TYPE.OOH_DEVICE, 'OOH Device'],
+]);
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [
-    { code: 'appnexusAst', gvlid: 32 },
-    { code: 'emxdigital', gvlid: 183 },
-    { code: 'emetriq', gvlid: 213 },
-    { code: 'pagescience', gvlid: 32 },
-    { code: 'gourmetads', gvlid: 32 },
-    { code: 'matomy', gvlid: 32 },
-    { code: 'featureforward', gvlid: 32 },
-    { code: 'oftmedia', gvlid: 32 },
-    { code: 'adasta', gvlid: 32 },
-    { code: 'beintoo', gvlid: 618 },
-    { code: 'projectagora', gvlid: 1032 },
-    { code: 'uol', gvlid: 32 },
-    { code: 'adzymic', gvlid: 723 },
-  ],
+  aliases: appnexusAliases,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -260,6 +268,12 @@ export const spec = {
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
+    }
+
+    // if present, convert and merge device object from ortb2 into `payload.device`
+    if (bidderRequest?.ortb2?.device) {
+      payload.device = payload.device || {};
+      mergeDeep(payload.device, convertORTB2DeviceDataToAppNexusDeviceObject(bidderRequest.ortb2.device));
     }
 
     // grab the ortb2 keyword data (if it exists) and convert from the comma list string format to object format
@@ -449,51 +463,6 @@ export const spec = {
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       }];
     }
-  },
-
-  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
-    let conversionFn = transformBidderParamKeywords;
-    if (isOpenRtb === true) {
-      let s2sEndpointUrl = null;
-      let s2sConfig = config.getConfig('s2sConfig');
-
-      if (isPlainObject(s2sConfig)) {
-        s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
-      } else if (isArray(s2sConfig)) {
-        s2sConfig.forEach(s2sCfg => {
-          if (includes(s2sCfg.bidders, adUnit.bids[0].bidder)) {
-            s2sEndpointUrl = deepAccess(s2sCfg, 'endpoint.p1Consent');
-          }
-        });
-      }
-
-      if (s2sEndpointUrl && s2sEndpointUrl.match('/openrtb2/prebid')) {
-        conversionFn = convertKeywordsToString;
-      }
-    }
-
-    params = convertTypes({
-      'member': 'string',
-      'invCode': 'string',
-      'placementId': 'number',
-      'keywords': conversionFn,
-      'publisherId': 'number'
-    }, params);
-
-    if (isOpenRtb) {
-      Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-
-      params.use_pmt_rule = (typeof params.use_payment_rule === 'boolean') ? params.use_payment_rule : false;
-      if (params.use_payment_rule) { delete params.use_payment_rule; }
-    }
-
-    return params;
   }
 };
 
@@ -597,7 +566,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
-    currency: rtbBid.publisher_currency_codename || 'USD',
+    currency: 'USD',
     netRevenue: true,
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,
@@ -778,7 +747,7 @@ function bidToTag(bid) {
   // page.html?ast_override_div=divId:creativeId,divId2:creativeId2
   const overrides = getParameterByName('ast_override_div');
   if (isStr(overrides) && overrides !== '') {
-    const adUnitOverride = overrides.split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
+    const adUnitOverride = decodeURIComponent(overrides).split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
     if (adUnitOverride) {
       const forceCreativeId = adUnitOverride.split(':')[1];
       if (forceCreativeId) {
@@ -1256,31 +1225,29 @@ function getBidFloor(bid) {
   return null;
 }
 
-// keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
-function convertKeywordsToString(keywords) {
-  let result = '';
-  Object.keys(keywords).forEach(key => {
-    // if 'text' or ''
-    if (isStr(keywords[key])) {
-      if (keywords[key] !== '') {
-        result += `${key}=${keywords[key]},`
-      } else {
-        result += `${key},`;
-      }
-    } else if (isArray(keywords[key])) {
-      if (keywords[key][0] === '') {
-        result += `${key},`
-      } else {
-        keywords[key].forEach(val => {
-          result += `${key}=${val},`
-        });
-      }
-    }
-  });
+// Convert device data to a format that AppNexus expects
+function convertORTB2DeviceDataToAppNexusDeviceObject(ortb2DeviceData) {
+  const _device = {
+    useragent: ortb2DeviceData.ua,
+    devicetype: ORTB2_DEVICE_TYPE_MAP.get(ortb2DeviceData.devicetype),
+    make: ortb2DeviceData.make,
+    model: ortb2DeviceData.model,
+    os: ortb2DeviceData.os,
+    os_version: ortb2DeviceData.osv,
+    w: ortb2DeviceData.w,
+    h: ortb2DeviceData.h,
+    ppi: ortb2DeviceData.ppi,
+    pxratio: ortb2DeviceData.pxratio,
+  };
 
-  // remove last trailing comma
-  result = result.substring(0, result.length - 1);
-  return result;
+  // filter out any empty values and return the object
+  return Object.keys(_device)
+    .reduce((r, key) => {
+      if (_device[key]) {
+        r[key] = _device[key];
+      }
+      return r;
+    }, {});
 }
 
 registerBidder(spec);

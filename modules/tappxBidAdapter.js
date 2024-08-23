@@ -6,7 +6,6 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseDomain } from '../src/refererDetection.js';
-import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -494,7 +493,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = (getGlobal().version !== null) ? encodeURIComponent(getGlobal().version) : -1;
+  let pbjsv = 'v' + '$prebid.version$';
 
   return {
     method: 'POST',

@@ -3,6 +3,8 @@ import {coppaDataHandler} from 'src/adapterManager';
 
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
 
 let expect = require('chai').expect;
 
@@ -91,4 +93,20 @@ describe('SharedId System', function () {
       expect(result).to.be.undefined;
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(sharedIdSystemSubmodule);
+    });
+    it('pubCommonId', function() {
+      const userId = {
+        pubcid: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'pubcid.org',
+        uids: [{id: 'some-random-id-value', atype: 1}]
+      });
+    });
+  })
 });

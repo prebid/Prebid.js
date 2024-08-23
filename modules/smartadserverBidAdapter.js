@@ -1,4 +1,14 @@
-import { deepAccess, deepClone, isArrayOfNums, isFn, isInteger, isPlainObject, logError } from '../src/utils.js';
+import {
+  deepAccess,
+  deepClone,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isFn,
+  isInteger,
+  isPlainObject,
+  logError
+} from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -156,6 +166,9 @@ export const spec = {
       method: 'POST',
       url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
       data: JSON.stringify(payload),
+      options: {
+        browsingTopics: false
+      }
     };
   },
 
@@ -199,6 +212,11 @@ export const spec = {
       const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         payload.gpid = gpid;
+      }
+
+      const dsa = deepAccess(bid, 'ortb2.regs.ext.dsa');
+      if (dsa) {
+        payload.dsa = dsa;
       }
 
       if (bidderRequest) {
@@ -282,7 +300,10 @@ export const spec = {
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
           dspPixels: response.dspPixels,
-          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
+          meta: {
+            ...isArray(response.adomain) && !isEmpty(response.adomain) ? { advertiserDomains: response.adomain } : {},
+            ...!isEmpty(response.dsa) ? { dsa: response.dsa } : {}
+          }
         };
 
         if (bidRequest.mediaType === VIDEO) {

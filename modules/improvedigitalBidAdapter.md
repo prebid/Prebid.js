@@ -17,6 +17,7 @@ Module that connects to Improve Digital's demand sources
                     {
                         bidder: 'improvedigital',
                         params: {
+                            publisherId: 123,
                             placementId:1053688
                         }
                     }
@@ -27,6 +28,7 @@ Module that connects to Improve Digital's demand sources
                 bids: [{
                     bidder: 'improvedigital',
                     params: {
+                        publisherId: 123,
                         placementId:1053689,
                         keyValues: {
                             testKey: ["testValue"]
@@ -39,6 +41,7 @@ Module that connects to Improve Digital's demand sources
                 bids: [{
                     bidder: 'improvedigital',
                     params: {
+                        publisherId: 123,
                         placementId:1053687,
                         size: {
                             w:300,

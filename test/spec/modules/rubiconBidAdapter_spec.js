@@ -14,7 +14,7 @@ import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/schain.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
@@ -272,7 +272,7 @@ describe('the rubicon adapter', function () {
       }],
       criteoId: '1111',
     };
-    bid.userIdAsEids = [
+    const eids = [
       {
         'source': 'liveintent.com',
         'uids': [
@@ -347,6 +347,7 @@ describe('the rubicon adapter', function () {
         ]
       }
     ];
+    bidderRequest.ortb2 = {user: {ext: {eids}}};
     return bidderRequest;
   }
 
@@ -3695,14 +3696,14 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let {bids, fledgeAuctionConfigs} = spec.interpretResponse({body: response}, {
+          let {bids, paapi} = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
           expect(bids).to.be.lengthOf(1);
-          expect(fledgeAuctionConfigs[0].bidId).to.equal('5432');
-          expect(fledgeAuctionConfigs[0].config.random).to.equal('value');
-          expect(fledgeAuctionConfigs[1].bidId).to.equal('6789');
+          expect(paapi[0].bidId).to.equal('5432');
+          expect(paapi[0].config.random).to.equal('value');
+          expect(paapi[1].bidId).to.equal('6789');
         });
 
         it('should handle an error', function () {
@@ -3987,6 +3988,16 @@ describe('the rubicon adapter', function () {
             let bids = spec.interpretResponse({body: response}, {data: request});
             expect(bids).to.have.nested.property('[0].native');
           });
+          it('should set 0 to bids width and height if `w` and `h` in response object not defined', () => {
+            const nativeBidderRequest = addNativeToBidRequest(bidderRequest);
+            const request = converter.toORTB({bidderRequest: nativeBidderRequest, bidRequests: nativeBidderRequest.bids});
+            let response = getNativeResponse({impid: request.imp[0].id});
+            delete response.seatbid[0].bid[0].w;
+            delete response.seatbid[0].bid[0].h
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            expect(bids[0].width).to.equal(0);
+            expect(bids[0].height).to.equal(0);
+          })
         });
       }
 

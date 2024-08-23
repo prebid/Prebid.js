@@ -20,7 +20,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
-
+const GVLID = 148;
 const DEFAULT_AJAX_TIMEOUT = 5000;
 const EVENTS_TOPIC = 'pre_lips';
 const MODULE_NAME = 'liveIntentId';
@@ -185,7 +185,7 @@ export const liveIntentIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
-
+  gvlid: GVLID,
   setModuleMode(mode) {
     this.moduleMode = mode;
   },
@@ -302,6 +302,7 @@ export const liveIntentIdSubmodule = {
 
     return { callback: result };
   },
+  primaryIds: ['libp'],
   eids: {
     ...UID1_EIDS,
     ...UID2_EIDS,
