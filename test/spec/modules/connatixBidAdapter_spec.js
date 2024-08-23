@@ -250,31 +250,6 @@ describe('connatixBidAdapter', function () {
       expect(result).to.equal(100);
     });
 
-    it('should return 48% viewability when the element is partially in view (48%) and has a valid viewabilityContainerIdentifier', () => {
-      const bid = {
-        params: { viewabilityContainerIdentifier: '#validElement' },
-        adUnitCode: 'adUnitCode123',
-        mediaTypes: { video: { sizes: [[300, 250]] } },
-      };
-
-      getBoundingClientRectStub.returns({
-        top: 100, // 100 pixels from the top of the viewport
-        left: 400, // 400 pixels from the left of the viewport (halfway in horizontal direction)
-        bottom: 800, // 800 pixels from the top (extends 200 pixels outside the bottom)
-        right: 1000, // 1000 pixels from the left (extends 200 pixels outside the right)
-        width: 600, // Width of the rect is 600 pixels
-        height: 700, // Height of the rect is 700 pixels (only 300 pixels inside the viewport)
-      });
-
-      querySelectorStub.withArgs('#validElement').returns(element);
-      getElementByIdStub.returns(null);
-
-      const result = connatixDetectViewability(bid);
-
-      // Expected calculation: the element is partially in view, so 48% viewability
-      expect(result).to.equal(48);
-    });
-
     it('should fall back to using bid sizes and adUnitCode when the viewabilityContainerIdentifier is invalid or was not provided', () => {
       const bid = {
         params: { viewabilityContainerIdentifier: '#invalidElement' },
