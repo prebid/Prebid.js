@@ -19,6 +19,7 @@ import {
 import { ajax } from '../src/ajax.js';
 
 import * as utils from '../src/utils.js';
+import { EVENTS } from '../src/constants.js';
 
 const BIDDER_CODE = 'connatix';
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
@@ -158,7 +159,7 @@ export const spec = {
     _handleEids(requestPayload, validBidRequests);
 
     if (window.pbjs) {
-      window.pbjs.onEvent('auctionTimeout', (timeoutData) => {
+      window.pbjs.onEvent(EVENTS.AUCTION_TIMEOUT, (timeoutData) => {
         const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
 
         if (isConnatixTimeout) {
@@ -175,7 +176,7 @@ export const spec = {
         // eslint-disable-next-line no-console
         console.log('Connatix auction timeout', timeoutData);
       });
-      window.pbjs.onEvent('auctionEnd', (auctionEndData) => {
+      window.pbjs.onEvent(EVENTS.AUCTION_END, (auctionEndData) => {
         const bidsReceived = auctionEndData.bidsReceived;
 
         const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
