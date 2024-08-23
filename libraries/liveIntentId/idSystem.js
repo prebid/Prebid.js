@@ -1,6 +1,6 @@
 /**
- * This module adds LiveIntentId to the User ID module
- * The {@link module:modules/userId} module is required
+ * This module adds LiveIntentId to the User ID module.
+ * The {@link module:modules/userId} module is required.
  * @module modules/idSystem
  * @requires module:modules/userId
  */
@@ -11,7 +11,7 @@ import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, DEFAULT_DELAY, GVLID, parseRequestedAttributes } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, DEFAULT_DELAY, GVLID, PRIMARY_IDS, parseRequestedAttributes } from './shared.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -44,7 +44,7 @@ let eventFired = false;
 let liveConnect = null;
 
 /**
- * This function is used in tests
+ * This function is used in tests.
  */
 export function reset() {
   if (window && window.liQ_instances) {
@@ -57,7 +57,7 @@ export function reset() {
 }
 
 /**
- * This function is also used in tests
+ * This function is used in tests.
  */
 export function setEventFiredFlag() {
   eventFired = true;
@@ -75,7 +75,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
 }
 
 /**
- * Create requestedAttributes array to pass to liveconnect
+ * Create requestedAttributes array to pass to LiveConnect.
  * @function
  * @param {Object} overrides - object with boolean values that will override defaults { 'foo': true, 'bar': false }
  * @returns {Array}
@@ -133,8 +133,8 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gppString = gppConsent.gppString;
     liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
   }
-  // The second param is the storage object, LS & Cookie manipulation uses PBJS
-  // The third param is the ajax and pixel object, the ajax and pixel use PBJS
+  // The second param is the storage object, LS & Cookie manipulation uses PBJS.
+  // The third param is the ajax and pixel object, the AJAX and pixel use PBJS.
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
   if (configParams.emailHash) {
     liveConnect.push({ hash: configParams.emailHash });
@@ -159,7 +159,7 @@ function tryFireEvent() {
 export const liveIntentIdSubmodule = {
   moduleMode: '$$LIVE_INTENT_MODULE_MODE$$',
   /**
-   * used to link submodule with config
+   * Used to link submodule with config.
    * @type {string}
    */
   name: MODULE_NAME,
@@ -172,9 +172,11 @@ export const liveIntentIdSubmodule = {
   },
 
   /**
-   * decode the stored id value for passing to bid requests. Note that lipb object is a wrapper for everything, and
-   * internally it could contain more data other than `lipbid`(e.g. `segments`) depending on the `partner` and
-   * `publisherId` params.
+   * Decode the stored id value for passing to bid requests. 
+   * Note that lipb object is a wrapper for everything, and
+   * internally it could contain more data other than `lipbid`
+   * (e.g. `segments`) depending on the `partner` and `publisherId` 
+   * params.
    * @function
    * @param {{unifiedId:string}} value
    * @param {SubmoduleConfig|undefined} config
@@ -192,7 +194,7 @@ export const liveIntentIdSubmodule = {
   },
 
   /**
-   * performs action to obtain id and return a value in the callback's response argument
+   * Performs action to obtain id and return a value in the callback's response argument.
    * @function
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
@@ -218,6 +220,7 @@ export const liveIntentIdSubmodule = {
 
     return { callback: result };
   },
+  primaryIds: PRIMARY_IDS,
   eids
 };
 

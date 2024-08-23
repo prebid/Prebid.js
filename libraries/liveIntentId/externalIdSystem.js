@@ -1,13 +1,13 @@
 import { logError } from '../../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
 import { submodule } from '../../src/hook.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID, PRIMARY_IDS} from './shared.js'
 
-// reference to the client for the liQHub
+// Reference to the client for the liQHub.
 let cachedClientRef
 
 /**
- * This function is used in tests
+ * This function is used in tests.
  */
 export function resetSubmodule() {
   cachedClientRef = undefined
@@ -16,7 +16,7 @@ export function resetSubmodule() {
 window.liQHub = window.liQHub ?? []
 
 function initializeClient(configParams) {
-  // only initialize once
+  // Only initialize once.
   if (cachedClientRef != null) return cachedClientRef
 
   const clientRef = {}
@@ -106,7 +106,7 @@ function initializeClient(configParams) {
 }
 
 /**
- * Create requestedAttributes array to pass to liveconnect
+ * Create requestedAttributes array to pass to LiveConnect.
  * @function
  * @param {Object} overrides - object with boolean values that will override defaults { 'foo': true, 'bar': false }
  * @returns {Array}
@@ -136,27 +136,27 @@ function resolve(configParams, clientRef, callback) {
 /** @type {Submodule} */
 export const liveIntentExternalIdSubmodule = {
   /**
-   * used to link submodule with config
+   * Used to link submodule with config.
    * @type {string}
    */
   name: MODULE_NAME,
   gvlid: GVLID,
 
   /**
-   * decode the stored id value for passing to bid requests
+   * Decode the stored id value for passing to bid requests.
    * @function
    */
   decode(value, config) {
     const configParams = config?.params ?? {};
 
-    // ensure client is initialized and we fired at least one collect request
+    // Ensure client is initialized and we fired at least one collect request.
     initializeClient(configParams)
 
     return composeIdObject(value);
   },
 
   /**
-   * performs action to obtain id and return a value in the callback's response argument
+   * Performs action to obtain id and return a value in the callback's response argument.
    * @function
    */
   getId(config) {
@@ -166,7 +166,7 @@ export const liveIntentExternalIdSubmodule = {
 
     return { callback: function(cb) { resolve(configParams, clientRef, cb); } };
   },
-
+  primaryIds: PRIMARY_IDS,
   eids
 };
 

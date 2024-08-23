@@ -3,11 +3,12 @@ import {UID2_EIDS} from '../uid2Eids/uid2Eids.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { coppaDataHandler } from '../../src/adapterManager.js';
 
+export const PRIMARY_IDS = ['libp'];
 export const GVLID = 148;
-export const DEFAULT_AJAX_TIMEOUT = 5000
+export const DEFAULT_AJAX_TIMEOUT = 5000;
 export const MODULE_NAME = 'liveIntentId';
 export const LI_PROVIDER_DOMAIN = 'liveintent.com';
-export const DEFAULT_REQUESTED_ATTRIBUTES = { 'nonId': true }
+export const DEFAULT_REQUESTED_ATTRIBUTES = { 'nonId': true };
 
 export function parseRequestedAttributes(overrides) {
   function renameAttribute(attribute) {
