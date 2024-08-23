@@ -13,7 +13,6 @@ import {
 } from '../src/utils.js';
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
-import {getGlobal} from '../src/prebidGlobal.js';
 import { EVENTS } from '../src/constants.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -22,6 +21,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
 const NM_VERSION = '4.0.0';
+const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
@@ -260,7 +260,7 @@ function getExtNextMilImp(bid) {
     impId: bid.adUnitCode,
     nextMillennium: {
       nm_version: NM_VERSION,
-      pbjs_version: getGlobal()?.version || undefined,
+      pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
       scrollTop: window.pageYOffset || document.documentElement.scrollTop,
     },
