@@ -87,18 +87,7 @@ export const spec = {
     const postBody = {
       id: bidderRequest?.bidderRequestId,
       ext: {
-        nextMillennium: {
-          nm_version: NM_VERSION,
-          pbjs_version: getGlobal()?.version || undefined,
-
-          // Example: refresh_counts: {'imp_id_1': 0, 'imp_id_1': 3},
-          refresh_counts: {},
-
-          // Example: elemOffsets: {'imp_id_1': {"x":105.5,"y":50,"width":440,"height":240,"top":50,"right":545.5,"bottom":290,"left":105.5}, ... },
-          elemOffsets: {},
-
-          scrollTop: window.pageYOffset || document.documentElement.scrollTop,
-        },
+        next_mil_imps: [],
       },
 
       device,
@@ -118,7 +107,8 @@ export const spec = {
       const id = getPlacementId(bid);
       const {cur, mediaTypes} = getCurrency(bid);
       if (i === 0) postBody.cur = cur;
-      postBody.imp.push(getImp(bid, id, mediaTypes, postBody));
+      postBody.imp.push(getImp(bid, id, mediaTypes));
+      postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -264,14 +254,23 @@ export const spec = {
   },
 };
 
-export function getImp(bid, id, mediaTypes, postBody) {
-  const {banner, video} = mediaTypes;
-  if (!postBody.ext.nextMillennium.refresh_counts[bid.adUnitCode]) {
-    postBody.ext.nextMillennium.refresh_counts[bid.adUnitCode] = window?.nmmRefreshCounts[bid.adUnitCode] || 0;
+function getExtNextMilImp(bid) {
+  if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
+  const nextMilImp = {
+    impId: bid.adUnitCode,
+    nextMillennium: {
+      nm_version: NM_VERSION,
+      pbjs_version: getGlobal()?.version || undefined,
+      refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
+      scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+    },
   };
 
-  ++postBody.ext.nextMillennium.refresh_counts[bid.adUnitCode];
-  postBody.ext.nextMillennium.elemOffsets[bid.adUnitCode] = getBoundingClient(bid);
+  return nextMilImp;
+}
+
+export function getImp(bid, id, mediaTypes) {
+  const {banner, video} = mediaTypes;
   const imp = {
     id: bid.adUnitCode,
     ext: {
@@ -417,20 +416,6 @@ function getCurrency(bid = {}) {
   if (!cur.length) cur.push(DEFAULT_CURRENCY);
 
   return {cur, mediaTypes};
-}
-
-function getAdEl(bid) {
-  // best way I could think of to get El, is by matching adUnitCode to google slots...
-  const slot = window.googletag && window.googletag.pubads && window.googletag.pubads().getSlots().find(slot => slot.getAdUnitPath() === bid.adUnitCode);
-  const slotElementId = slot && slot.getSlotElementId();
-  if (!slotElementId) return null;
-  return document.querySelector('#' + slotElementId);
-}
-
-function getBoundingClient(bid) {
-  const el = getAdEl(bid);
-  if (!el) return {};
-  return el.getBoundingClientRect();
 }
 
 export function getPlacementId(bid) {

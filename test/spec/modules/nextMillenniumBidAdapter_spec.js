@@ -104,8 +104,6 @@ describe('nextMillenniumBidAdapterTests', () => {
         const {bid, id, mediaTypes, postBody} = data;
         const imp = getImp(bid, id, mediaTypes, postBody);
         expect(imp).to.deep.equal(expected);
-        expect(postBody.ext.nextMillennium.refresh_counts[bid.adUnitCode]).to.deep.equal(1);
-        expect(postBody.ext.nextMillennium.elemOffsets[bid.adUnitCode]).to.deep.equal({});
       });
     }
   });
@@ -626,66 +624,69 @@ describe('nextMillenniumBidAdapterTests', () => {
     }
   };
 
-  const bidRequestDataGI = [
-    {
-      adUnitCode: 'test-banner-gi',
-      bidId: 'bid1234',
-      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-      bidder: 'nextMillennium',
-      params: { group_id: '1234' },
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250]]
+  const bidRequestDataGI = getBidRequestDataGI();
+  function getBidRequestDataGI(adUnitCodes = ['test-banner-gi', 'test-banner-gi', 'test-video-gi']) {
+    return [
+      {
+        adUnitCode: adUnitCodes[0],
+        bidId: 'bid1234',
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidder: 'nextMillennium',
+        params: { group_id: '1234' },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+
+        sizes: [[300, 250]],
+        uspConsent: '1---',
+        gdprConsent: {
+          consentString: 'kjfdniwjnifwenrif3',
+          gdprApplies: true
         }
       },
 
-      sizes: [[300, 250]],
-      uspConsent: '1---',
-      gdprConsent: {
-        consentString: 'kjfdniwjnifwenrif3',
-        gdprApplies: true
-      }
-    },
+      {
+        adUnitCode: adUnitCodes[1],
+        bidId: 'bid1234',
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidder: 'nextMillennium',
+        params: { group_id: '1234' },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 300]]
+          }
+        },
 
-    {
-      adUnitCode: 'test-banner-gi',
-      bidId: 'bid1234',
-      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-      bidder: 'nextMillennium',
-      params: { group_id: '1234' },
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 300]]
+        sizes: [[300, 250], [300, 300]],
+        uspConsent: '1---',
+        gdprConsent: {
+          consentString: 'kjfdniwjnifwenrif3',
+          gdprApplies: true
         }
       },
 
-      sizes: [[300, 250], [300, 300]],
-      uspConsent: '1---',
-      gdprConsent: {
-        consentString: 'kjfdniwjnifwenrif3',
-        gdprApplies: true
-      }
-    },
+      {
+        adUnitCode: adUnitCodes[2],
+        bidId: 'bid1234',
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidder: 'nextMillennium',
+        params: { group_id: '1234' },
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480],
+          }
+        },
 
-    {
-      adUnitCode: 'test-video-gi',
-      bidId: 'bid1234',
-      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-      bidder: 'nextMillennium',
-      params: { group_id: '1234' },
-      mediaTypes: {
-        video: {
-          playerSize: [640, 480],
+        uspConsent: '1---',
+        gdprConsent: {
+          consentString: 'kjfdniwjnifwenrif3',
+          gdprApplies: true
         }
       },
-
-      uspConsent: '1---',
-      gdprConsent: {
-        consentString: 'kjfdniwjnifwenrif3',
-        gdprApplies: true
-      }
-    },
-  ];
+    ];
+  }
 
   it('validate_generated_params', function() {
     const request = spec.buildRequests(bidRequestData, {bidderRequestId: 'mock-uuid'});
@@ -719,29 +720,41 @@ describe('nextMillenniumBidAdapterTests', () => {
     };
   });
 
-  it('Check if refresh_counts param is incremented', function() {
-    const expectedRefreshCounts = {
-      'test-banner-gi': 2,
-      'test-video-gi': 1,
-    };
+  describe('Check ext.next_mil_imps', function() {
+    const expectedNextMilImps = [
+      {
+        impId: 'nmi-test-0',
+        nextMillennium: {refresh_count: 1},
+      },
 
-    const request = spec.buildRequests(bidRequestDataGI);
-    expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_counts).to.deep.equal(expectedRefreshCounts);
+      {
+        impId: 'nmi-test-1',
+        nextMillennium: {refresh_count: 1},
+      },
+
+      {
+        impId: 'nmi-test-2',
+        nextMillennium: {refresh_count: 1},
+      },
+    ];
+
+    const dataForRequest = getBidRequestDataGI(expectedNextMilImps.map(el => el.impId));
+    for (let j = 0; j < 2; j++) {
+      const request = spec.buildRequests(dataForRequest);
+      const bidRequest = JSON.parse(request[0].data);
+      for (let i = 0; i < bidRequest.ext.next_mil_imps.length; i++) {
+        it(`test - ${j * i + 1}`, () => {
+          const nextMilImp = bidRequest.ext.next_mil_imps[i];
+          expect(nextMilImp.impId).to.deep.equal(expectedNextMilImps[i].impId);
+          expect(nextMilImp.nextMillennium.refresh_count).to.deep.equal(expectedNextMilImps[i].nextMillennium.refresh_count + j);
+        })
+      };
+    };
   });
 
   it('Check if domain was added', function() {
     const request = spec.buildRequests(bidRequestData);
     expect(JSON.parse(request[0].data).site.domain).to.exist;
-  });
-
-  it('Check if elemOffsets was added', function() {
-    const expectedElemOffsets = {
-      'test-banner-gi': {},
-      'test-video-gi': {},
-    };
-
-    const request = spec.buildRequests(bidRequestDataGI);
-    expect(JSON.parse(request[0].data).ext.nextMillennium.elemOffsets).to.deep.equal(expectedElemOffsets);
   });
 
   it('Check if imp object was added', function() {
