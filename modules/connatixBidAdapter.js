@@ -22,9 +22,12 @@ import * as utils from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
 
 const BIDDER_CODE = 'connatix';
+
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
+
+const EVENTS_BASE_URL = 'https://capi.connatix.com/event';
 
 /*
  * Get the bid floor value from the bid object, either using the getFloor function or by accessing the 'params.bidfloor' property.
@@ -74,6 +77,71 @@ function _handleEids(payload, validBidRequests) {
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
+}
+
+/**
+ * Handle prebid events to send to Connatix
+ */
+function _handleEvents() {
+  const prebidJs = window.pbjs;
+
+  if (!prebidJs) {
+    ajax(`${EVENTS_BASE_URL}/nt`, null, {}, {
+      method: 'POST',
+      withCredentials: false
+    });
+    return;
+  }
+
+  prebidJs.onEvent(EVENTS.AUCTION_TIMEOUT, (timeoutData) => {
+    // eslint-disable-next-line no-console
+    console.log('Connatix auction timeout', timeoutData);
+
+    const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
+
+    // Log only it is a timeout for Connatix
+    // Otherwise it is not relevant for us
+    if (!isConnatixTimeout) {
+      return;
+    }
+
+    const timeout = timeoutData.timeout;
+    ajax(`${EVENTS_BASE_URL}/to`, null, JSON.stringify({timeout}), {
+      method: 'POST',
+      withCredentials: false
+    });
+  });
+
+  prebidJs.onEvent(EVENTS.AUCTION_END, (auctionEndData) => {
+    // eslint-disable-next-line no-console
+    console.log('Connatix auction end', auctionEndData);
+
+    const bidsReceived = auctionEndData.bidsReceived;
+    const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
+
+    // Log only if connatix compete in the auction and have a bid.
+    // Otherwise it is not relevant for us
+    if (!hasConnatixBid) {
+      return;
+    }
+
+    let bestBidPrice = 0;
+    bidsReceived.forEach(bid => {
+      if (bid.cpm > bestBidPrice) {
+        bestBidPrice = bid.cpm;
+      }
+    });
+
+    const connatixBid = bidsReceived.filter(bid => bid.bidderCode === BIDDER_CODE);
+    const connatixBidPrice = connatixBid.cpm;
+
+    if (bestBidPrice > connatixBidPrice) {
+      ajax(`${EVENTS_BASE_URL}/ae`, null, JSON.stringify({connatixBidPrice, bestBidPrice}), {
+        method: 'POST',
+        withCredentials: false
+      });
+    }
+  });
 }
 
 /**
@@ -131,6 +199,8 @@ export const spec = {
    * Return an object containing the request method, url, and the constructed payload.
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
+    _handleEvents()
+
     const bidRequests = validBidRequests.map(bid => {
       const {
         bidId,
@@ -157,52 +227,6 @@ export const spec = {
     };
 
     _handleEids(requestPayload, validBidRequests);
-
-    if (window.pbjs) {
-      window.pbjs.onEvent(EVENTS.AUCTION_TIMEOUT, (timeoutData) => {
-        const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
-
-        if (isConnatixTimeout) {
-          const timeout = timeoutData.timeout;
-          // eslint-disable-next-line no-console
-          console.log(timeout);
-
-          ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({timeout}), {
-            method: 'POST',
-            withCredentials: false
-          });
-        }
-
-        // eslint-disable-next-line no-console
-        console.log('Connatix auction timeout', timeoutData);
-      });
-      window.pbjs.onEvent(EVENTS.AUCTION_END, (auctionEndData) => {
-        const bidsReceived = auctionEndData.bidsReceived;
-
-        const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
-        const connatixBid = bidsReceived.filter(bid => bid.bidderCode === BIDDER_CODE);
-
-        let bestBidPrice = 0;
-        bidsReceived.forEach(bid => {
-          if (bid.cpm > bestBidPrice) {
-            bestBidPrice = bid.cpm;
-          }
-        });
-
-        // Only if connatix compete in the auction
-        if (hasConnatixBid) {
-          if (bestBidPrice !== connatixBid.cpm) {
-            ajax('ENDPOINT_BASR_URL' + '/timeout-route-name', null, JSON.stringify({connatixBidPrice: connatixBid.cpm, bestBidPrice}), {
-              method: 'POST',
-              withCredentials: false
-            });
-          }
-        }
-
-        // eslint-disable-next-line no-console
-        console.log('Connatix auction end', auctionEndData);
-      });
-    }
 
     return {
       method: 'POST',
