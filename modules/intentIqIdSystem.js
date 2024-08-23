@@ -223,6 +223,10 @@ export function detectBrowserFromUserAgent(userAgent) {
 
   return 'unknown';
 }
+/**
+ * @typedef {Object} NavigatorUAData
+ * @property {Array<{brand: string, version: string}>} brands - The list of brands associated with the user agent.
+ */
 
 /**
  * Detects the browser from the NavigatorUAData object
