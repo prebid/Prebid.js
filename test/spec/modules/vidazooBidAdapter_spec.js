@@ -115,6 +115,7 @@ const BIDDER_REQUEST = {
       'cat': ['IAB2'],
       'pagecat': ['IAB2-2'],
       'content': {
+        'language': 'en',
         'data': [{
           'name': 'example.com',
           'ext': {
@@ -342,6 +343,7 @@ describe('VidazooBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          contentLang: 'en',
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -450,6 +452,7 @@ describe('VidazooBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          contentLang: 'en',
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -541,6 +544,7 @@ describe('VidazooBidAdapter', function () {
         gpid: '1234567890',
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
+        contentLang: 'en',
         contentData: [{
           'name': 'example.com',
           'ext': {
