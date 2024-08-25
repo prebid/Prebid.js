@@ -16,6 +16,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
+import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -185,26 +186,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   const syncs = [];
 
   if (syncOptions.iframeEnabled) {
-    let params = {};
-
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params['gdpr'] = Number(gdprConsent.gdprApplies);
-      }
-      if (typeof gdprConsent.consentString === 'string') {
-        params['gdpr_consent'] = gdprConsent.consentString;
-      }
-    }
-
-    if (uspConsent) {
-      params['us_privacy'] = encodeURIComponent(uspConsent);
-    }
-
-    if (gppConsent?.gppString) {
-      params['gpp'] = gppConsent.gppString;
-      params['gpp_sid'] = gppConsent.applicableSections?.toString();
-    }
-
+    let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
     params = Object.keys(params).length ? `&${formatQS(params)}` : '';
 
     syncs.push({
