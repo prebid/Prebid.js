@@ -10,16 +10,14 @@ import {
   formatQS,
   deepSetValue
 } from '../src/utils.js';
+import { EVENTS } from '../src/constants.js';
+import { ajax } from '../src/ajax.js';
 
 import {
   ADPOD,
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
-
-import * as utils from '../src/utils.js';
-import { EVENTS } from '../src/constants.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -28,6 +26,8 @@ const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
 
 const EVENTS_BASE_URL = 'https://capi.connatix.com/event';
+const TIMOUT_EVENT_ENDPOINT = 'to';
+const AUCTION_END_EVENT_ENDPOINT = 'ae';
 
 /*
  * Get the bid floor value from the bid object, either using the getFloor function or by accessing the 'params.bidfloor' property.
@@ -86,17 +86,15 @@ function _handleEvents() {
   const prebidJs = window.pbjs;
 
   if (!prebidJs) {
-    ajax(`${EVENTS_BASE_URL}/nt`, null, {}, {
-      method: 'POST',
-      withCredentials: false
-    });
+    // TODO: Do we need to log this case where prebid is not available?
+    // ajax(`${EVENTS_BASE_URL}/nt`, null, {}, {
+    //   method: 'POST',
+    //   withCredentials: false
+    // });
     return;
   }
 
   prebidJs.onEvent(EVENTS.AUCTION_TIMEOUT, (timeoutData) => {
-    // eslint-disable-next-line no-console
-    console.log('Connatix auction timeout', timeoutData);
-
     const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
 
     // Log only it is a timeout for Connatix
@@ -105,17 +103,17 @@ function _handleEvents() {
       return;
     }
 
+    // TODO: Add context here similar for auction_start and bid in auction - logged by hba
+    const context = {};
+
     const timeout = timeoutData.timeout;
-    ajax(`${EVENTS_BASE_URL}/to`, null, JSON.stringify({timeout}), {
+    ajax(`${EVENTS_BASE_URL}/${TIMOUT_EVENT_ENDPOINT}`, null, JSON.stringify({timeout, context}), {
       method: 'POST',
       withCredentials: false
     });
   });
 
   prebidJs.onEvent(EVENTS.AUCTION_END, (auctionEndData) => {
-    // eslint-disable-next-line no-console
-    console.log('Connatix auction end', auctionEndData);
-
     const bidsReceived = auctionEndData.bidsReceived;
     const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
 
@@ -134,29 +132,17 @@ function _handleEvents() {
     }, { bestBidPrice: 0, bestBidBidder: '' });
 
     const connatixBid = bidsReceived.find(bid => bid.bidderCode === BIDDER_CODE);
-    const connatixBidPrice = connatixBid.cpm;
+    const connatixBidPrice = connatixBid?.cpm ?? 0;
 
     if (bestBidPrice > connatixBidPrice) {
-      ajax(`${EVENTS_BASE_URL}/ae`, null, JSON.stringify({bestBidBidder, bestBidPrice, connatixBidPrice}), {
+      // TODO: Add context here similar for auction_start and bid in auction - logged by hba
+      const context = {};
+      ajax(`${EVENTS_BASE_URL}/${AUCTION_END_EVENT_ENDPOINT}`, null, JSON.stringify({bestBidBidder, bestBidPrice, connatixBidPrice, context}), {
         method: 'POST',
         withCredentials: false
       });
     }
   });
-}
-
-/**
- * Inserts an image pixel with the specified `url` for cookie sync
- * @param {string} url URL string of the image pixel to load
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
- */
-export function triggerPixel(url, done, timeout) {
-  const img = new Image();
-  if (done && utils.internal.isFn(done)) {
-    utils.waitForElementToLoad(img, timeout).then(done);
-  }
-  img.src = url;
 }
 
 export const spec = {
