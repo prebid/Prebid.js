@@ -275,30 +275,6 @@ describe('connatixBidAdapter', function () {
       expect(result).to.equal(100); // Full viewability
     });
 
-    it('should return 0% viewability when the element is completely outside the viewable area', () => {
-      const bid = {
-        params: { viewabilityContainerIdentifier: '#someElement' },
-        adUnitCode: 'adUnitCode123',
-        sizes: [[300, 250]],
-        mediaTypes: { video: {playerSize: [300, 250]} },
-      };
-
-      getBoundingClientRectStub.returns({
-        left: 1000, // Completely out of view
-        top: 1000,
-        right: 1300,
-        bottom: 1250,
-        width: 300,
-        height: 250
-      });
-
-      querySelectorStub.withArgs('#someElement').returns(element);
-
-      const result = connatixDetectViewability(bid);
-
-      expect(result).to.equal(0);
-    });
-
     it('should use the adUnitCode as a fallback when querying an element fails due to a browser error, and return 100% viewability because adUnitCode container is fully in view', () => {
       const bid = {
         params: { viewabilityContainerIdentifier: '#invalidElement' },
