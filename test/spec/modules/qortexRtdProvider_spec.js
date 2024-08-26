@@ -7,17 +7,12 @@ import {
   qortexSubmodule as module,
   getContext,
   getGroupConfig,
-  initiatePageAnalysis,
-  sendAnalyticsEvent,
   generateAnalyticsEventObject,
-  generateIndexData,
   generateAnalyticsHostUrl,
   addContextToRequests,
   setContextData,
   loadScriptTag,
   initializeModuleData,
-  shouldSendAnalytics,
-  generateSessionId,
   setGroupConfigData
 } from '../../../modules/qortexRtdProvider';
 import {server} from '../../mocks/xhr.js';
