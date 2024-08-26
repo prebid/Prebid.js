@@ -9,14 +9,13 @@ import {
   getGroupConfig,
   initiatePageAnalysis,
   sendAnalyticsEvent,
-  generateAnaltyicsEventObject,
+  generateAnalyticsEventObject,
   generateIndexData,
   generateAnalyticsHostUrl,
   addContextToRequests,
   setContextData,
   loadScriptTag,
   initializeModuleData,
-  initializeQortexSessionData,
   shouldSendAnalytics,
   generateSessionId,
   setGroupConfigData
@@ -28,6 +27,7 @@ describe('qortexRtdProvider', () => {
   let logWarnSpy;
   let logMessageSpy;
   let ortb2Stub;
+  // let server;
 
   const defaultApiHost = 'https://demand.qortex.ai';
   const defaultGroupId = 'test';
@@ -130,8 +130,17 @@ describe('qortexRtdProvider', () => {
   })
 
   describe('init', () => {
-    it('returns true for valid config object', () => {
-      expect(module.init(validModuleConfig)).to.be.true;
+    it('returns true for valid config object', (done) => {
+      const result = module.init(validModuleConfig);
+      expect(server.requests.length).to.be.eql(2)
+      const groupConfigReq = server.requests[0];
+      const pageAnalysisReq = server.requests[1];
+      groupConfigReq.respond(200, responseHeaders, validGroupConfigResponse);
+      pageAnalysisReq.respond(200, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(result).to.be.true;
+        done()
+      }, 500)
     })
 
     it('returns false and logs error for missing groupId', () => {
@@ -160,7 +169,7 @@ describe('qortexRtdProvider', () => {
     })
 
     beforeEach(() => {
-      initializeQortexSessionData(config);
+      initializeModuleData(config);
       addEventListenerSpy = sinon.spy(window, 'addEventListener');
     })
 
@@ -218,12 +227,12 @@ describe('qortexRtdProvider', () => {
     let callbackSpy;
 
     beforeEach(() => {
-      initializeQortexSessionData(validModuleConfig);
+      initializeModuleData(validModuleConfig);
       callbackSpy = sinon.spy();
     })
 
     afterEach(() => {
-      initializeQortexSessionData(emptyModuleConfig);
+      initializeModuleData(emptyModuleConfig);
       callbackSpy.resetHistory();
     })
 
@@ -234,7 +243,7 @@ describe('qortexRtdProvider', () => {
       expect(logWarnSpy.calledWith('No adunits found on request bids configuration: ' + JSON.stringify(reqBidsConfigNoBids))).to.be.ok;
     })
 
-    it('will call callback if getContext does not throw', () => {
+    it('will call callback if getContext does not throw', (done) => {
       const cb = function () {
         expect(logWarnSpy.calledOnce).to.be.false;
         done();
@@ -254,13 +263,50 @@ describe('qortexRtdProvider', () => {
     })
   })
 
-  describe('getContext', () => {
+  describe('onAuctionEndEvent', () => {
     beforeEach(() => {
-      initializeQortexSessionData(validModuleConfig);
+      initializeModuleData(validModuleConfig);
+      setGroupConfigData(validGroupConfigResponseObj);
     })
 
     afterEach(() => {
-      initializeQortexSessionData(emptyModuleConfig);
+      initializeModuleData(emptyModuleConfig);
+      setGroupConfigData(null);
+    })
+
+    it('Properly sends analytics event with valid config', (done) => {
+      const testData = {data: 'data'};
+      module.onAuctionEndEvent(testData);
+      const request = server.requests[0];
+      expect(request.url).to.be.eql('https://events.qortex.ai/api/v1/player-event');
+      server.requests[0].respond(200, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(logMessageSpy.calledWith('Qortex anyalitics event sent')).to.be.true
+        done();
+      }, 200)
+    })
+
+    it('Logs warning for rejected analytics request', (done) => {
+      const invalidPercentageConfig = cloneDeep(validGroupConfigResponseObj);
+      invalidPercentageConfig.prebidReportingPercentage = -1;
+      setGroupConfigData(invalidPercentageConfig);
+      const testData = {data: 'data'};
+      module.onAuctionEndEvent(testData);
+      expect(server.requests.length).to.be.eql(0);
+      setTimeout(() => {
+        expect(logWarnSpy.calledWith('Current request did not meet analytics percentage threshold, cancelling sending event')).to.be.true
+        done();
+      }, 200)
+    })
+  })
+
+  describe('getContext', () => {
+    beforeEach(() => {
+      initializeModuleData(validModuleConfig);
+    })
+
+    afterEach(() => {
+      initializeModuleData(emptyModuleConfig);
     })
 
     it('returns a promise', (done) => {
@@ -272,10 +318,11 @@ describe('qortexRtdProvider', () => {
     it('uses request url generated from initialize function in config and resolves to content object data', (done) => {
       let requestUrl = `${validModuleConfig.params.apiUrl}/api/v1/prebid/${validModuleConfig.params.groupId}/page/lookup`;
       const ctx = getContext()
-      expect(server.requests.length).to.be.eql(1);
-      expect(server.requests[0].url).to.be.eql(requestUrl);
-      server.requests[0].respond(200, responseHeaders, contextResponse);
+      const request = server.requests[0]
+      request.respond(200, responseHeaders, contextResponse);
       ctx.then(response => {
+        expect(server.requests.length).to.be.eql(1);
+        expect(request.url).to.be.eql(requestUrl);
         expect(response).to.be.eql(contextResponseObj.content);
         done();
       });
@@ -290,9 +337,9 @@ describe('qortexRtdProvider', () => {
           expect(logMessageSpy.to.be.calledWith('Adding Content object from existing context data'))
           done();
         });
-      })
+      });
 
-      it('returns null for non erroring api responses other than 200', (done) => {
+      it('returns null when necessary', (done) => {
         const nullContentResponse = { content: null }
         const ctx = getContext()
         server.requests[0].respond(200, responseHeaders, JSON.stringify(nullContentResponse))
@@ -303,18 +350,6 @@ describe('qortexRtdProvider', () => {
           done();
         });
       })
-    })
-
-    describe('sendAnalyticsEvent', () => {
-      beforeEach(() => {
-        initializeQortexSessionData(validModuleConfig);
-      })
-  
-      afterEach(() => {
-        initializeQortexSessionData(emptyModuleConfig);
-      })
-
-      
     })
 
     describe('addContextToRequests', () => {
@@ -369,6 +404,82 @@ describe('qortexRtdProvider', () => {
         expect(logWarnSpy.calledWith('Config contains an empty bidders array, unable to determine which bids to enrich')).to.be.ok;
         expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
         expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
+      })
+    })
+  })
+
+  describe('generateAnalyticsEventObject', () => {
+    let qortexSessionInfo;
+    beforeEach(() => {
+      qortexSessionInfo = initializeModuleData(validModuleConfig);
+      setGroupConfigData(validGroupConfigResponseObj);
+    })
+
+    afterEach(() => {
+      initializeModuleData(emptyModuleConfig);
+      setGroupConfigData(null);
+    })
+
+    it('returns expected object', () => {
+      const testEventType = 'TEST';
+      const testSubType = 'TEST_SUBTYPE';
+      const testData = {data: 'data'};
+
+      const result = generateAnalyticsEventObject(testEventType, testSubType, testData);
+
+      expect(result.sessionId).to.be.eql(qortexSessionInfo.sessionId);
+      expect(result.groupId).to.be.eql(qortexSessionInfo.groupId);
+      expect(result.eventType).to.be.eql(testEventType);
+      expect(result.subType).to.be.eql(testSubType);
+      expect(result.eventOriginSource).to.be.eql('RTD');
+      expect(result.data).to.be.eql(testData);
+    })
+  })
+
+  describe('generateAnalyticsHostUrl', () => {
+    it('will use qortex analytics host when appropriate', () => {
+      const hostUrl = generateAnalyticsHostUrl(defaultApiHost);
+      expect(hostUrl).to.be.eql('https://events.qortex.ai/api/v1/player-event');
+    })
+
+    it('will use qortex stage analytics host when appropriate', () => {
+      const hostUrl = generateAnalyticsHostUrl('https://stg-demand.qortex.ai');
+      expect(hostUrl).to.be.eql('https://stg-events.qortex.ai/api/v1/player-event');
+    })
+
+    it('will default to dev analytics host when appropriate', () => {
+      const hostUrl = generateAnalyticsHostUrl('https://dev-demand.qortex.ai');
+      expect(hostUrl).to.be.eql('https://dev-events.qortex.ai/api/v1/player-event');
+    })
+  })
+
+  describe('getGroupConfig', () => {
+    let sessionInfo;
+
+    beforeEach(() => {
+      sessionInfo = initializeModuleData(validModuleConfig);
+    })
+
+    afterEach(() => {
+      initializeModuleData(emptyModuleConfig);
+    })
+
+    it('returns a promise', () => {
+      const result = getGroupConfig();
+      expect(result).to.be.a('promise');
+    })
+
+    it('processes group config response in valid conditions', (done) => {
+      const result = getGroupConfig();
+      const request = server.requests[0]
+      request.respond(200, responseHeaders, validGroupConfigResponse);
+      result.then(response => {
+        expect(request.url).to.be.eql(sessionInfo.groupConfigUrl);
+        expect(response.groupId).to.be.eql(validGroupConfigResponseObj.groupId);
+        expect(response.active).to.be.eql(validGroupConfigResponseObj.active);
+        expect(response.prebidBidEnrichment).to.be.eql(validGroupConfigResponseObj.prebidBidEnrichment);
+        expect(response.prebidReportingPercentage).to.be.eql(validGroupConfigResponseObj.prebidReportingPercentage);
+        done();
       })
     })
   })

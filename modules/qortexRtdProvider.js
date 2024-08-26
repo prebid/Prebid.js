@@ -20,6 +20,28 @@ function init (config) {
     return false;
   } else {
     initializeModuleData(config);
+    getGroupConfig()
+      .then(groupConfig => {
+        logMessage(['Recieved response for qortex group config', groupConfig])
+        if (groupConfig?.active === true && groupConfig?.prebidBidEnrichment === true) {
+          setGroupConfigData(groupConfig)
+        } else {
+          logMessage('Group config is not configured for qortex RTD module')
+          return false
+        }
+      })
+      .catch((e) => {
+        logWarn(e?.message);
+        return false;
+      });
+
+    initiatePageAnalysis()
+      .then(successMessage => {
+        logMessage(successMessage)
+      })
+      .catch((e) => {
+        logWarn(e?.message);
+      });
   }
   if (config?.params?.tagConfig) {
     loadScriptTag(config)
@@ -56,7 +78,9 @@ function getBidRequestData (reqBidsConfig, callback) {
  */
 function onAuctionEndEvent (data, config, t) {
   sendAnalyticsEvent('AUCTION', 'AUCTION_END', data)
-    .then(result => logMessage(result))
+    .then(result => {
+      logMessage('Qortex anyalitics event sent')
+    })
     .catch(e => logWarn(e?.message))
 }
 
@@ -65,7 +89,7 @@ function onAuctionEndEvent (data, config, t) {
  * @returns {Promise} ortb Content object
  */
 export function getContext () {
-  if (!qortexSessionInfo.currentSiteContext) {
+  if (qortexSessionInfo.currentSiteContext === null) {
     logMessage('Requesting new context data');
     return new Promise((resolve, reject) => {
       const callbacks = {
@@ -134,12 +158,12 @@ export function initiatePageAnalysis () {
 export function sendAnalyticsEvent(eventType, subType, data) {
   if (qortexSessionInfo.analyticsUrl !== null) {
     if (shouldSendAnalytics()) {
-      const analtyicsEventObject = generateAnaltyicsEventObject(subType, data)
+      const analtyicsEventObject = generateAnalyticsEventObject(eventType, subType, data)
       logMessage('Sending qortex analytics event');
       return new Promise((resolve, reject) => {
         const callbacks = {
           success() {
-            resolve([`Qortex analytics event \n eventType: ${eventType} \n subType: ${subType}`, data]);
+            resolve();
           },
           error(error) {
             reject(new Error(error));
@@ -159,7 +183,7 @@ export function sendAnalyticsEvent(eventType, subType, data) {
  * Creates analytics object for Qortex
  * @returns {Object} analytics object
  */
-export function generateAnaltyicsEventObject(eventType, subType, data) {
+export function generateAnalyticsEventObject(eventType, subType, data) {
   return {
     sessionId: qortexSessionInfo.sessionId,
     groupId: qortexSessionInfo.groupId,
@@ -267,33 +291,6 @@ export function loadScriptTag(config) {
  * @param {Object} config module config obtained during init
  */
 export function initializeModuleData(config) {
-  initializeQortexSessionData(config);
-  getGroupConfig()
-    .then(groupConfig => {
-      logMessage(['Recieved response for qortex group config', groupConfig])
-      if (groupConfig?.active && groupConfig?.prebidBidEnrichment) {
-        setGroupConfigData(groupConfig)
-      } else {
-        logMessage('Group config is not configured for qortex RTD module')
-        return false
-      }
-    })
-    .catch((e) => {
-      logWarn(e?.message);
-    });
-  initiatePageAnalysis()
-    .then(successMessage => {
-      logMessage(successMessage)
-    })
-    .catch((e) => {
-      logWarn(e?.message);
-    });
-}
-
-/**
- * Populates Qortex session data objet
- */
-export function initializeQortexSessionData(config) {
   const {apiUrl, groupId, bidders} = config.params;
   const qortexUrlBase = apiUrl || DEFAULT_API_URL;
   const windowUrl = window.top.location.host;
@@ -311,6 +308,7 @@ export function initializeQortexSessionData(config) {
   qortexSessionInfo.contextUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/lookup`
   qortexSessionInfo.pageAnalyisUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/index`;
   qortexSessionInfo.analyticsUrl = generateAnalyticsHostUrl(qortexUrlBase);
+  return qortexSessionInfo;
 }
 
 export function shouldSendAnalytics() {
@@ -342,24 +340,6 @@ export const qortexSubmodule = {
   init,
   getBidRequestData,
   onAuctionEndEvent
-}
-
-export const qortexLogic = {
-  getContext,
-  getGroupConfig,
-  initiatePageAnalysis,
-  sendAnalyticsEvent,
-  generateAnaltyicsEventObject,
-  generateIndexData,
-  generateAnalyticsHostUrl,
-  addContextToRequests,
-  setContextData,
-  loadScriptTag,
-  initializeModuleData,
-  initializeQortexSessionData,
-  shouldSendAnalytics,
-  generateSessionId,
-  setGroupConfigData
 }
 
 submodule('realTimeData', qortexSubmodule);
