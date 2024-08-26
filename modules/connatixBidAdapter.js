@@ -13,9 +13,7 @@ import {
   getWindowTop,
   isNumber,
   isStr,
-  deepSetValue,
-  isSafariBrowser,
-  getWindowSelf
+  deepSetValue
 } from '../src/utils.js';
 
 import {
@@ -80,10 +78,6 @@ export function _getMinSize(sizes) {
 
 export function _isIframe() {
   try {
-    if (isSafariBrowser()) {
-      return getWindowSelf() !== getWindowTop();
-    }
-
     window.top.document.querySelector('test');
     return false;
   } catch (e) {
