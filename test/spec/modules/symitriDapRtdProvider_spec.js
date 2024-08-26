@@ -614,7 +614,7 @@ describe('symitriDapRtdProvider', function() {
       sandbox.restore();
     });
 
-    it('passed identifier is handled', function () {
+    it('passed identifier is handled', async function () {
       const test_identity = 'test_identity_1234';
       let identity = {
         value: test_identity
@@ -622,11 +622,16 @@ describe('symitriDapRtdProvider', function() {
       let apiParams = {
         'type': identity.type,
       };
-      apiParams = dapUtils.addIdentifier(identity, apiParams);
-      expect(apiParams.identity).is.equal(dapUtils.generateHash(test_identity));
+
+      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      let hid = await dapUtils.addIdentifier(identity, apiParams);
+      expect(hid['identity']).is.equal(hashHex);
     });
 
-    it('passed undefined identifier is handled', function () {
+    it('passed undefined identifier is handled', async function () {
       const test_identity = undefined;
       let identity = {
         identity: test_identity
@@ -634,8 +639,9 @@ describe('symitriDapRtdProvider', function() {
       let apiParams = {
         'type': identity.type,
       };
-      apiParams = dapUtils.addIdentifier(identity, apiParams);
-      expect(apiParams.identity).is.undefined;
+
+      let hid = await dapUtils.addIdentifier(identity, apiParams);
+      expect(hid.identity).is.undefined;
     });
   });
 });

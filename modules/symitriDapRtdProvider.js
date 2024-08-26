@@ -74,7 +74,6 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     // Attempt to load entroy script if no entropy object exist and entropy config settings are present.
     // Else
     if (!entropyDict && rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapEntropyUrl)) {
-      
       let loadScriptPromise = new Promise((resolve, reject) => {
         if (rtdConfig && rtdConfig.params && rtdConfig.params.dapEntropyTimeout && Number.isInteger(rtdConfig.params.dapEntropyTimeout)) {
           setTimeout(reject, rtdConfig.params.dapEntropyTimeout, Error('DapEntropy script could not be loaded'));
@@ -537,13 +536,12 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
     addIdentifier: async function(identity, apiParams) {
       if (typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
-        const hid = await window.crypto.subtle.digest(
-          'SHA-256',
-          new TextEncoder().encode(identity.value)
-        );
-        apiParams.identity = hid;
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        apiParams.identity = hashHex;
       }
-      return apiParams;
+      return apiParams
     },
 
     /**
