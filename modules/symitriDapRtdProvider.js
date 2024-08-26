@@ -612,8 +612,16 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         'type': identity.type,
       };
 
-      apiParams = this.addIdentifier(identity, apiParams);
+      if (identity.type === 'hid') {
+        this.addIdentifier(identity, apiParams).then((apiParams) => {
+          this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+        });
+      } else {
+        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+      }
+    },
 
+    callTokenize(config, identity, apiParams, onDone, onSuccess, onError) {
       if (typeof (identity.attributes) != typeof (undefined)) {
         apiParams.attributes = identity.attributes;
       }
@@ -638,7 +646,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           return;
       }
 
-      let customHeaders = {'Content-Type': 'application/json'};
+      let customHeaders = { 'Content-Type': 'application/json' };
       let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
       if (dapSSID) {
         customHeaders[headerPrefix + '-DAP-SS-ID'] = dapSSID;

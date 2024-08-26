@@ -623,8 +623,12 @@ describe('symitriDapRtdProvider', function() {
         'type': identity.type,
       };
 
-      let hid = await dapUtils.addIdentifier(identity, apiParams);
-      expect(hid['identity']).is.equal('843BE0FB20AAE699F27E5BC88C554B716F3DD366F58C1BDE0ACFB7EA0DD90CE7');
+      if (window.crypto && window.crypto.subtle) {
+        let hid = await dapUtils.addIdentifier(identity, apiParams).then();
+        expect(hid['identity']).is.equal('843BE0FB20AAE699F27E5BC88C554B716F3DD366F58C1BDE0ACFB7EA0DD90CE7');
+      } else {
+        expect(window.crypto.subtle).is.undefined
+      }
     });
 
     it('passed undefined identifier is handled', async function () {
