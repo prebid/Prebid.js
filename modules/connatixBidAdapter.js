@@ -125,18 +125,19 @@ function _handleEvents() {
       return;
     }
 
-    let bestBidPrice = 0;
-    bidsReceived.forEach(bid => {
-      if (bid.cpm > bestBidPrice) {
-        bestBidPrice = bid.cpm;
+    const { bestBidPrice, bestBidBidder } = bidsReceived.reduce((acc, bid) => {
+      if (bid.cpm > acc.bestBidPrice) {
+        acc.bestBidPrice = bid.cpm;
+        acc.bestBidBidder = bid.bidderCode;
       }
-    });
+      return acc;
+    }, { bestBidPrice: 0, bestBidBidder: '' });
 
-    const connatixBid = bidsReceived.filter(bid => bid.bidderCode === BIDDER_CODE);
+    const connatixBid = bidsReceived.find(bid => bid.bidderCode === BIDDER_CODE);
     const connatixBidPrice = connatixBid.cpm;
 
     if (bestBidPrice > connatixBidPrice) {
-      ajax(`${EVENTS_BASE_URL}/ae`, null, JSON.stringify({connatixBidPrice, bestBidPrice}), {
+      ajax(`${EVENTS_BASE_URL}/ae`, null, JSON.stringify({bestBidBidder, bestBidPrice, connatixBidPrice}), {
         method: 'POST',
         withCredentials: false
       });
