@@ -200,6 +200,7 @@ export const spec = {
         mediaTypes,
         sizes,
         placementId: params.placementId,
+        viewabilityContainerId: params.viewabilityContainerIdentifier,
         floor: getBidFloor(bid),
       };
     });
