@@ -118,15 +118,7 @@ export const spec = {
           type: 'iframe',
           url
         });
-        (userSync.pixels || []).forEach(url => {
-          syncs.push({
-            type: 'iframe',
-            url
-          });
-        });
       });
-      logInfo(`found ${syncs.length} iframe urls to sync`);
-      return syncs;
     }
 
     if (syncOptions.pixelEnabled) {
@@ -136,9 +128,8 @@ export const spec = {
           url
         });
       });
-
-      logInfo(`found ${syncs.length} pixel urls to sync`);
     }
+    logInfo(`found urls to sync:`, syncs);
     return syncs;
   },
 
