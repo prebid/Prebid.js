@@ -535,11 +535,11 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     },
 
     addIdentifier: async function(identity, apiParams) {
-      if (typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
-        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
+      if (window.crypto && window.crypto.subtle && typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        apiParams.identity = hashHex;
+        apiParams.identity = hashHex.toUpperCase();
       }
       return apiParams
     },

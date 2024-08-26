@@ -623,12 +623,8 @@ describe('symitriDapRtdProvider', function() {
         'type': identity.type,
       };
 
-      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
       let hid = await dapUtils.addIdentifier(identity, apiParams);
-      expect(hid['identity']).is.equal(hashHex);
+      expect(hid['identity']).is.equal('843BE0FB20AAE699F27E5BC88C554B716F3DD366F58C1BDE0ACFB7EA0DD90CE7');
     });
 
     it('passed undefined identifier is handled', async function () {
