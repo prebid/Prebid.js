@@ -238,9 +238,7 @@ export const spec = {
     const placementIds = (placementIdsArray.length && `&placements=${placementIdsArray.join(';')}`) || '';
     const groupIds = (groupIdsArray.length && `&groups=${groupIdsArray.join(';')}`) || '';
 
-    if (!(groupIds || placementIds)) {
-      return;
-    };
+    if (!(groupIds || placementIds)) return;
 
     const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&source=pbjs${groupIds}${placementIds}`;
 
