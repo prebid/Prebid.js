@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import { config } from 'src/config.js';
-import {spec, resetInvibes, stubDomainOptions, readGdprConsent} from 'modules/invibesBidAdapter.js';
+import {spec, resetInvibes, stubDomainOptions, readGdprConsent, storage} from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -32,6 +32,78 @@ describe('invibesBidAdapter:', function () {
       bidderRequestId: 'r2',
       params: {
         placementId: 'abcde',
+        disableUserSyncs: false
+      },
+      adUnitCode: 'test-div2',
+      auctionId: 'a2',
+      sizes: [
+        [300, 250],
+        [400, 300]
+      ],
+      transactionId: 't2'
+    }
+  ];
+
+  let bidRequestsWithDuplicatedplacementId = [
+    {
+      bidId: 'b1',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r1',
+      params: {
+        placementId: PLACEMENT_ID,
+        disableUserSyncs: false
+
+      },
+      adUnitCode: 'test-div1',
+      auctionId: 'a1',
+      sizes: [
+        [300, 250],
+        [400, 300],
+        [125, 125]
+      ],
+      transactionId: 't1'
+    }, {
+      bidId: 'b2',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r2',
+      params: {
+        placementId: PLACEMENT_ID,
+        disableUserSyncs: false
+      },
+      adUnitCode: 'test-div2',
+      auctionId: 'a2',
+      sizes: [
+        [300, 250],
+        [400, 300]
+      ],
+      transactionId: 't2'
+    }
+  ];
+
+  let bidRequestsWithUniquePlacementId = [
+    {
+      bidId: 'b1',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r1',
+      params: {
+        placementId: 'PLACEMENT_ID_1',
+        disableUserSyncs: false
+
+      },
+      adUnitCode: 'test-div1',
+      auctionId: 'a1',
+      sizes: [
+        [300, 250],
+        [400, 300],
+        [125, 125]
+      ],
+      transactionId: 't1'
+    }, {
+      bidId: 'b2',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r2',
+      params: {
+        placementId: 'PLACEMENT_ID_2',
         disableUserSyncs: false
       },
       adUnitCode: 'test-div2',
@@ -115,6 +187,8 @@ describe('invibesBidAdapter:', function () {
     };
   }
 
+  let sandbox;
+
   beforeEach(function () {
     resetInvibes();
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -124,11 +198,13 @@ describe('invibesBidAdapter:', function () {
     };
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     this.cStub1.restore();
+    sandbox.restore();
   });
 
   describe('isBidRequestValid:', function () {
@@ -185,15 +261,42 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.preventPageViewEvent).to.be.false;
     });
 
+    it('sends isPlacementRefresh as false when the placement ids are used for the first time', function () {
+      let request = spec.buildRequests(bidRequestsWithUniquePlacementId, bidderRequestWithPageInfo);
+      expect(request.data.isPlacementRefresh).to.be.false;
+    });
+
     it('sends preventPageViewEvent as true on 2nd call', function () {
       let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.preventPageViewEvent).to.be.true;
+    });
+
+    it('sends isPlacementRefresh as true on multi requests on the same placement id', function () {
+      let request = spec.buildRequests(bidRequestsWithDuplicatedplacementId, bidderRequestWithPageInfo);
+      expect(request.data.isPlacementRefresh).to.be.true;
+    });
+
+    it('sends isInfiniteScrollPage as false initially', function () {
+      let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(request.data.isInfiniteScrollPage).to.be.false;
+    });
+
+    it('sends isPlacementRefresh as true on multi requests multiple calls with the same placement id from second call', function () {
+      let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(request.data.isInfiniteScrollPage).to.be.false;
+      let duplicatedRequest = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(duplicatedRequest.data.isPlacementRefresh).to.be.true;
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET');
+    });
+
+    it('generates a visitId of length 32', function () {
+      spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(top.window.invibes.visitId.length).to.equal(32);
     });
 
     it('sends bid request to custom endpoint via GET', function () {
@@ -429,6 +532,8 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends undefined lid when no cookie', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      sandbox.stub(storage, 'getCookie').returns(null);
       let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.lId).to.be.undefined;
     });
@@ -459,6 +564,50 @@ describe('invibesBidAdapter:', function () {
 
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.lId).to.exist;
+    });
+
+    it('does not send handIid when it doesnt exist in cookie', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      sandbox.stub(storage, 'getCookie').returns(null)
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              436: true
+            }
+          }
+        },
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      };
+      SetBidderAccess();
+
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.handIid).to.not.exist;
+    });
+
+    it('sends handIid when comes on cookie', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      global.document.cookie = 'handIid=abcdefghijkk';
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              436: true
+            }
+          }
+        },
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      };
+      SetBidderAccess();
+
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.handIid).to.equal('abcdefghijkk');
     });
 
     it('should send purpose 1', function () {

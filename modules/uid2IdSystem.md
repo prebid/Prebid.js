@@ -1,135 +1,102 @@
-## UID2 User ID Submodule
+# UID2 User ID Submodule
 
-UID2 requires initial tokens to be generated server-side. The UID2 module handles storing, providing, and optionally refreshing them. The module can operate in one of two different modes: *Client Refresh* mode or *Server Only* mode.
+## Overview
 
-*Server Only* mode was originally referred to as *legacy mode*, but it is a popular mode for new integrations where publishers prefer to handle token refresh server-side.
+UID2 provides a Prebid.js module that supports the following:
 
-**Important information:** UID2 is not designed to be used where GDPR applies. The module checks the passed-in consent data and will not operate if the `gdprApplies` flag is true.
+- [Generating the UID2 token](https://unifiedid.com/docs/guides/integration-prebid#generating-the-uid2-token)
+- [Refreshing the UID2 token](https://unifiedid.com/docs/guides/integration-prebid#refreshing-the-uid2-token)
+- [Storing the UID2 token in the browser](https://unifiedid.com/docs/guides/integration-prebid#storing-the-uid2-token-in-the-browser)
+- [Passing the UID2 token to the bid stream](https://unifiedid.com/docs/guides/integration-prebid#passing-the-uid2-token-to-the-bid-stream)
 
-## Client Refresh mode
+For details, see [UID2 Integration Overview for Prebid.js](https://unifiedid.com/docs/guides/integration-prebid).
 
-This is the recommended mode for most scenarios. In this mode, the full response body from the UID2 Token Generate or Token Refresh endpoint must be provided to the module. As long as the refresh token remains valid, the module will refresh the advertising token as needed.
+**Important information:** UID2 is not designed to be used where GDPR applies. The module checks the passed-in consent data and does not operate if the `gdprApplies` flag is true.
 
-To configure the module to use this mode, you must **either**:
-1. Set `params.uid2Cookie` to the name of the cookie which contains the response body as a JSON string, **or**
-2. Set `params.uid2Token` to the response body as a JavaScript object.
+Depending on access to [directly identifying information](https://unifiedid.com/docs/ref-info/glossary-uid#d) (DII), there are two methods to generate UID2 tokens for use with Prebid.js, as shown in the following table.
 
-The `uid2Cookie` param was originally `uid2ServerCookie`. The old name can still be used, however the inclusion of the word 'server' was causing some confusion. If both values are provided, `uid2ServerCookie` will be ignored.
+Determine which method is best for you, and then follow the applicable integration guide.
 
-### Client refresh cookie example
-
-In this example, the cookie is called `uid2_pub_cookie`.
-
-Cookie:
-```
-uid2_pub_cookie={"advertising_token":"...advertising token...","refresh_token":"...refresh token...","identity_expires":1684741472161,"refresh_from":1684741425653,"refresh_expires":1684784643668,"refresh_response_key":"...response key..."}
-```
-
-Configuration:
-```
-pbjs.setConfig({
-    userSync: {
-        userIds: [{
-            name: 'uid2',
-            params: {
-                uid2Cookie: 'uid2_pub_cookie'
-            }
-        }]
-    }
-});
-```
-
-### Client refresh uid2Token example
-
-Configuration:
-```
-pbjs.setConfig({
-    userSync: {
-        userIds: [{
-            name: 'uid2',
-            params: {
-                uid2Token: {
-                    'advertising_token': '...advertising token...',
-                    'refresh_token': '...refresh token...',
-                    // etc. - see the Sample Token below for contents of this object
-                }
-            }
-        }]
-    }
-});
-```
-
-## Server-Only Mode
-
-In this mode, only the advertising token is provided to the module. The module will not be able to refresh the token. The publisher is responsible for implementing some other way to refresh the token.
-
-To configure the module to use this mode, you must **either**:
-1. Set a cookie named `__uid2_advertising_token` to the advertising token, **or**
-2. Set `value` to an ID block containing the advertising token (see "Server only value" example below).
-
-### Server only cookie example
-
-Cookie:
-```
-__uid2_advertising_token=...advertising token...
-```
-
-Configuration:
-```
-pbjs.setConfig({
-    userSync: {
-        userIds: [{
-            name: 'uid2'
-        }]
-    }
-});
-```
-
-### Server only value example
-
-Configuration:
-```
-pbjs.setConfig({
-    userSync: {
-        userIds: [{
-            name: 'uid2'
-            value: {
-                'uid2': {
-                    'id': '...advertising token...'
-                }
-            }
-        }]
-    }
-});
-```
+| Scenario | Integration Guide |
+| :--- | :--- |
+| You have access to DII on the client side and want to do front-end development only. | [UID2 Client-Side Integration Guide for Prebid.js](https://unifiedid.com/docs/guides/integration-prebid-client-side). |
+| You have access to DII on the server side and can do server-side development. | [UID2 Server-Side Integration Guide for Prebid.js](https://unifiedid.com/docs/guides/integration-prebid-server-side). |
 
 ## Storage
 
 The module stores a number of internal values. By default, all values are stored in HTML5 local storage. You can switch to cookie storage by setting `params.storage` to `cookie`. The cookie size can be significant and this is not recommended, but is provided as an option if local storage is not an option.
 
-## Sample token
-
-`{`<br />&nbsp;&nbsp;`"advertising_token": "...",`<br />&nbsp;&nbsp;`"refresh_token": "...",`<br />&nbsp;&nbsp;`"identity_expires": 1633643601000,`<br />&nbsp;&nbsp;`"refresh_from": 1633643001000,`<br />&nbsp;&nbsp;`"refresh_expires": 1636322000000,`<br />&nbsp;&nbsp;`"refresh_response_key": "wR5t6HKMfJ2r4J7fEGX9Gw=="`<br />`}`
-
-### Notes
-
-If you are trying to limit the size of cookies, provide the token in configuration and use the default option of local storage.
-
-If you provide an expired identity and the module has a valid identity which was refreshed from the identity you provide, it will use the refreshed identity. The module stores the original token used for refreshing the token, and it will use the refreshed tokens as long as the original token matches the one supplied.
-
-If a new token is supplied which does not match the original token used to generate any refreshed tokens, all stored tokens will be discarded and the new token used instead (refreshed if necessary).
-
-You can set `params.uid2ApiBase` to `"https://operator-integ.uidapi.com"` during integration testing. Be aware that you must use the same environment (production or integration) here as you use for generating tokens.
-
 ## Parameter Descriptions for the `usersync` Configuration Section
 
-The below parameters apply only to the UID2 User ID Module integration.
+The following parameters apply only to the UID2 User ID Module integration.
 
 | Param under userSync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| name | Required | String | ID value for the UID2 module - `"uid2"` | `"uid2"` |
-| value | Optional, Server only | Object | An object containing the value for the advertising token. | See the example above. |
-| params.uid2Token | Optional, Client refresh | Object | The initial UID2 token. This should be `body` element of the decrypted response from a call to the `/token/generate` or `/token/refresh` endpoint. | See the sample token above. |
-| params.uid2Cookie | Optional, Client refresh | String | The name of a cookie which holds the initial UID2 token, set by the server. The cookie should contain JSON in the same format as the uid2Token param. **If uid2Token is supplied, this param is ignored.** | See the sample token above. |
-| params.uid2ApiBase | Optional, Client refresh | String | Overrides the default UID2 API endpoint. | `"https://prod.uidapi.com"` _(default)_|
-| params.storage | Optional, Client refresh | String | Specify whether to use `cookie` or `localStorage` for module-internal storage. It is recommended to not provide this and allow the module to use the default. | `localStorage` _(default)_ |
+| name | Required | String | ID value for the UID2 module. Must be `"uid2"`. | `"uid2"` |
+| params.uid2ApiBase | Optional | String | Overrides the default UID2 API endpoint. | `"https://prod.uidapi.com"` _(default)_|
+| params.storage | Optional | String | Specify whether to use `cookie` or `localStorage` for module-internal storage. It is recommended to not provide this and allow the module to use the default. | `"localStorage"` _(default)_ |
+
+### Client-Side Integration
+
+The following parameters apply to the UID2 User ID Module if you are following the [client-side integration guide](https://unifiedid.com/docs/guides/integration-prebid-client-side). Exactly one of `params.email`, `params.emailHash`, `params.phone`, and `params.phoneHash` must be provided. For information on how to normalize and hash these parameters, refer to [Normalization and Encoding](https://unifiedid.com/docs/getting-started/gs-normalization-encoding).
+
+| Param under userSync.userIds[] | Scope | Type | Description | Example |
+| --- | --- | --- | --- | --- |
+| params.serverPublicKey | Required for client-side integration | String | See [Subscription ID and Public Key](https://unifiedid.com/docs/getting-started/gs-credentials#subscription-id-and-public-key). | - |
+| params.subscriptionId | Required for client-side integration | String | See [Subscription ID and Public Key](https://unifiedid.com/docs/getting-started/gs-credentials#subscription-id-and-public-key). | - |
+| params.email | Optional | String | The user's email address. Provide this parameter if using email as the DII. | `"test@example.com"` |
+| params.emailHash | Optional | String | A [hashed, normalized](https://unifiedid.com/docs/getting-started/gs-normalization-encoding) representation of the user's email. Provide this parameter if using emailHash as the DII. | `"tMmiiTI7IaAcPpQPFQ65uMVCWH8av9jw4cwf/F5HVRQ="` |
+| params.phone | Optional | String | A [normalized](https://unifiedid.com/docs/getting-started/gs-normalization-encoding) representation of the user's phone number. Provide this parameter if using phone as the DII. | `"+15555555555"` |
+| params.phoneHash | Optional | String | A [hashed, normalized](https://unifiedid.com/docs/getting-started/gs-normalization-encoding) representation of the user's phone number. Provide this parameter if using phoneHash as the DII. | `"tMmiiTI7IaAcPpQPFQ65uMVCWH8av9jw4cwf/F5HVRQ="` |
+
+### Server-Side Integration
+
+#### Server-Only Mode
+
+The following parameters apply to the UID2 User ID Module if you are following the [server-side integration guide](https://unifiedid.com/docs/guides/integration-prebid-server-side) with [server-only mode](https://unifiedid.com/docs/guides/integration-prebid-server-side#server-only-mode).
+
+| Param under userSync.userIds[] | Scope | Type | Description | Example |
+| --- | --- | --- | --- | --- |
+| value | Required for server-only mode | Object | An object containing the value for the advertising token. | <pre>{<br>  uid2: {<br>    id: '...advertising token...'<br>  }<br>}</pre> |
+
+#### Client Refresh Mode
+
+The following parameters apply to the UID2 User ID Module if you are following the [server-side integration guide](https://unifiedid.com/docs/guides/integration-prebid-server-side) with [client refresh mode](https://unifiedid.com/docs/guides/integration-prebid-server-side#client-refresh-mode). Either `params.uid2Token` or `params.uid2Cookie` must be provided.
+
+| Param under userSync.userIds[] | Scope | Type | Description | Example |
+| --- | --- | --- | --- | --- |
+| params.uid2Token | Optional | Object | The initial UID2 token. This should be the `body` element of the decrypted response from a call to the `/token/generate` or `/token/refresh` endpoint. | See [Sample Token](#sample-token). |
+| params.uid2Cookie | Optional | String | The name of a cookie that holds the initial UID2 token, set by the server. The cookie should contain JSON in the same format as the uid2Token param. **If uid2Token is supplied, this param is ignored.** | `"uid2_pub_cookie"` |
+
+## Sample Token
+
+```
+{
+  "advertising_token": "...",
+  "refresh_token": "...",
+  "identity_expires": 1633643601000,
+  "refresh_from": 1633643001000,
+  "refresh_expires": 1636322000000,
+  "refresh_response_key": "wR5t6HKMfJ2r4J7fEGX9Gw=="
+}
+```
+
+## Normalization and Encoding
+
+It's important that, in working with UID2, normalizing and encoding are performed correctly. By doing so, you can ensure that the UID2 value you create can be securely and anonymously matched up with other instances of online behavior by the same user.
+
+For more information, refer to [Normalization and Encoding](https://unifiedid.com/docs/getting-started/gs-normalization-encoding).
+
+## Notes
+
+- If you provide an expired identity, and the module has a valid update from refreshing the same identity, the module uses the refreshed identity in place of the expired one you provided.
+
+- If you provide a new token that doesn't match the original token used to generate any refreshed tokens, the module discards all stored tokens and uses the new token instead, and keeps it refreshed.
+
+- During integration testing, set `params.uid2ApiBase` to `"https://operator-integ.uidapi.com"`. You must set this value to the same environment (production or integration) that you use for generating tokens.
+
+- If you are building Prebid.js and following the server-side integration guide, you can create a smaller Prebid.js build by disabling client-side integration functionality. To do this, pass the `--disable UID2_CSTG` flag:
+
+```
+    $ gulp build --modules=uid2IdSystem --disable UID2_CSTG
+```

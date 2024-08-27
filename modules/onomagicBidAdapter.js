@@ -1,7 +1,6 @@
 import {
   _each,
-  createTrackPixelHtml,
-  getBidIdParameter,
+  createTrackPixelHtml, getBidIdParameter,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,

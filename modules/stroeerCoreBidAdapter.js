@@ -1,4 +1,4 @@
-import { buildUrl, deepAccess, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
@@ -52,7 +52,6 @@ export const spec = {
     const basePayload = {
       id: generateUUID(),
       ref: refererInfo.ref,
-      ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
@@ -75,6 +74,14 @@ export const spec = {
         applies: gdprConsent.gdprApplies
       };
     }
+
+    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep'];
+    ORTB2_KEYS.forEach(key => {
+      const value = deepAccess(bidderRequest.ortb2, key);
+      if (value !== undefined) {
+        deepSetValue(basePayload, `ortb2.${key}`, value);
+      }
+    });
 
     const bannerBids = validBidRequests
       .filter(hasBanner)
@@ -108,7 +115,8 @@ export const spec = {
           netRevenue: true,
           creativeId: '',
           meta: {
-            advertiserDomains: bidResponse.adomain
+            advertiserDomains: bidResponse.adomain,
+            dsa: bidResponse.dsa
           },
           mediaType,
         };
@@ -137,8 +145,6 @@ export const spec = {
     return [];
   }
 };
-
-const isSecureWindow = () => getWindowSelf().location.protocol === 'https:';
 
 const isMainPageAccessible = () => {
   try {

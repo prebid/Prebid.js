@@ -1,5 +1,6 @@
 import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {deepClone} from '../../../src/utils';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -48,12 +49,17 @@ describe('Zeta Ssp Bid Adapter', function () {
     },
     tags: {
       someTag: 444,
+      emptyTag: {},
+      nullTag: null,
+      complexEmptyTag: {
+        empty: {},
+        nullValue: null
+      }
     },
     sid: 'publisherId',
-    shortname: 'test_shortname',
     tagid: 'test_tag_id',
     site: {
-      page: 'testPage'
+      page: 'http://www.zetaglobal.com/page?param=value'
     },
     app: {
       bundle: 'testBundle'
@@ -124,7 +130,47 @@ describe('Zeta Ssp Bid Adapter', function () {
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,
-    timeout: 500
+    timeout: 500,
+    ortb2: {
+      site: {
+        inventorypartnerdomain: 'disqus.com'
+      },
+      device: {
+        sua: {
+          mobile: 1,
+          architecture: 'arm',
+          platform: {
+            brand: 'Chrome',
+            version: ['102']
+          }
+        }
+      },
+      user: {
+        data: [
+          {
+            ext: {
+              segtax: 600,
+              segclass: 'classifier_v1'
+            },
+            segment: [
+              { id: '3' },
+              { id: '44' },
+              { id: '59' }
+            ]
+          }
+        ],
+        geo: {
+          lat: 40.0,
+          lon: -80.0,
+          type: 2,
+          country: 'USA',
+          region: 'NY',
+          metro: '501',
+          city: 'New York',
+          zip: '10001',
+        }
+      }
+    }
   }];
 
   const bannerWithFewSizesRequest = [{
@@ -176,6 +222,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '12345',
       seatbid: [
         {
+          seat: '1',
           bid: [
             {
               id: 'auctionId',
@@ -201,7 +248,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -229,7 +276,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -253,11 +300,13 @@ describe('Zeta Ssp Bid Adapter', function () {
   };
 
   it('Test the bid validation function', function () {
-    const validBid = spec.isBidRequestValid(bannerRequest[0]);
-    const invalidBid = spec.isBidRequestValid(null);
+    const invalidBid = deepClone(bannerRequest[0]);
+    invalidBid.params = {};
+    const isValidBid = spec.isBidRequestValid(bannerRequest[0]);
+    const isInvalidBid = spec.isBidRequestValid(null);
 
-    expect(validBid).to.be.true;
-    expect(invalidBid).to.be.false;
+    expect(isValidBid).to.be.true;
+    expect(isInvalidBid).to.be.false;
   });
 
   it('Test provide eids', function () {
@@ -276,7 +325,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test page and domain in site', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
+    expect(payload.site.page).to.eql('zetaglobal.com/page');
     expect(payload.site.domain).to.eql('zetaglobal.com');
   });
 
@@ -453,7 +502,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test required params in banner request', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?sid=publisherId');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
     expect(payload.ext.tags.shortname).to.be.undefined;
@@ -462,7 +511,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test required params in video request', function () {
     const request = spec.buildRequests(videoRequest, videoRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?sid=publisherId');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
     expect(payload.ext.tags.shortname).to.be.undefined;
@@ -471,7 +520,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test multi imp', function () {
     const request = spec.buildRequests(multiImpRequest, multiImpRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?sid=publisherId');
 
     expect(payload.imp.length).to.eql(2);
 
@@ -504,11 +553,6 @@ describe('Zeta Ssp Bid Adapter', function () {
     const payload = JSON.parse(request.data);
 
     expect(payload.imp[0].bidfloor).to.eql(params.bidfloor);
-  });
-
-  it('Timeout should exists and be a function', function () {
-    expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    expect(spec.onTimeout({ timeout: 1000 })).to.be.undefined;
   });
 
   it('Test schain provided', function () {
@@ -566,6 +610,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(BANNER);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
   });
 
   it('Test the response default mediaType:video', function () {
@@ -575,6 +620,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
   });
 
   it('Test the response mediaType:video from ext param', function () {
@@ -589,6 +635,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
   });
 
   it('Test the response mediaType:banner from ext param', function () {
@@ -603,5 +650,74 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(BANNER);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
+  });
+
+  it('Test provide segments into the request', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.user.data[0].segment.length).to.eql(3);
+    expect(payload.user.data[0].segment[0].id).to.eql('3');
+    expect(payload.user.data[0].segment[1].id).to.eql('44');
+    expect(payload.user.data[0].segment[2].id).to.eql('59');
+  });
+
+  it('Test provide device params', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.device.sua.mobile).to.eql(1);
+    expect(payload.device.sua.architecture).to.eql('arm');
+    expect(payload.device.sua.platform.brand).to.eql('Chrome');
+    expect(payload.device.sua.platform.version[0]).to.eql('102');
+
+    // expecting the same values for user.geo and device.geo
+    expect(payload.device.geo.type).to.eql(2);
+    expect(payload.device.geo.lat).to.eql(40.0);
+    expect(payload.device.geo.lon).to.eql(-80.0);
+    expect(payload.device.geo.country).to.eql('USA');
+    expect(payload.device.geo.region).to.eql('NY');
+    expect(payload.device.geo.metro).to.eql('501');
+    expect(payload.device.geo.city).to.eql('New York');
+    expect(payload.device.geo.zip).to.eql('10001');
+
+    expect(payload.device.ua).to.not.be.undefined;
+    expect(payload.device.language).to.not.be.undefined;
+    expect(payload.device.w).to.not.be.undefined;
+    expect(payload.device.h).to.not.be.undefined;
+  });
+
+  it('Test provide user params', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    // expecting the same values for user.geo and device.geo
+    expect(payload.user.geo.type).to.eql(2);
+    expect(payload.user.geo.lat).to.eql(40.0);
+    expect(payload.user.geo.lon).to.eql(-80.0);
+    expect(payload.user.geo.country).to.eql('USA');
+    expect(payload.user.geo.region).to.eql('NY');
+    expect(payload.user.geo.metro).to.eql('501');
+    expect(payload.user.geo.city).to.eql('New York');
+    expect(payload.user.geo.zip).to.eql('10001');
+  });
+
+  it('Test that all empties are removed', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.ext.tags.someTag).to.eql(444);
+
+    expect(payload.ext.tags.emptyTag).to.be.undefined;
+    expect(payload.ext.tags.nullTag).to.be.undefined;
+    expect(payload.ext.tags.complexEmptyTag).to.be.undefined;
+  });
+
+  it('Test that site payload param are merged from ortb2 and params', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.site.page).to.eql('zetaglobal.com/page');
+    expect(payload.site.inventorypartnerdomain).to.eql('disqus.com');
   });
 });

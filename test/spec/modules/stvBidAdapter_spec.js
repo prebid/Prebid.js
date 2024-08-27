@@ -30,12 +30,12 @@ describe('stvAdapter', function() {
     });
 
     it('should return false when required params are not passed', function() {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'someIncorrectParam': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -71,6 +71,24 @@ describe('stvAdapter', function() {
               'hp': 1
             }
           ]
+        },
+        'userId': {
+          'id5id': {
+            'uid': '1234',
+            'ext': {
+              'linkType': 'abc'
+            }
+          },
+          'netId': '2345',
+          'uid2': {
+            'id': '3456',
+          },
+          'sharedid': {
+            'id': '4567',
+          },
+          'idl_env': '5678',
+          'criteoId': '6789',
+          'utiq': '7890',
         }
       },
       {
@@ -84,7 +102,27 @@ describe('stvAdapter', function() {
         ],
         'bidId': '30b31c1838de1e2',
         'bidderRequestId': '22edbae2733bf62',
-        'auctionId': '1d1a030790a476'
+        'auctionId': '1d1a030790a476',
+        'userId': { // with other utiq variant
+          'id5id': {
+            'uid': '1234',
+            'ext': {
+              'linkType': 'abc'
+            }
+          },
+          'netId': '2345',
+          'uid2': {
+            'id': '3456',
+          },
+          'sharedid': {
+            'id': '4567',
+          },
+          'idl_env': '5678',
+          'criteoId': '6789',
+          'utiq': {
+            'id': '7890'
+          },
+        }
       }, {
         'bidder': 'stv',
         'params': {
@@ -181,7 +219,7 @@ describe('stvAdapter', function() {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
       let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&schain=1.0,0!reseller.com,aaaaa,1,BidRequest4,,,&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&schain=1.0,0!reseller.com,aaaaa,1,BidRequest4,,&uids=id5%3A1234,id5_linktype%3Aabc,netid%3A2345,uid2%3A3456,sharedid%3A4567,liverampid%3A5678,criteoid%3A6789,utiq%3A7890&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
@@ -189,7 +227,7 @@ describe('stvAdapter', function() {
       expect(request2.method).to.equal('GET');
       expect(request2.url).to.equal(ENDPOINT_URL);
       let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pbver=test&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&prebidDevMode=1&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pbver=test&uids=id5%3A1234,id5_linktype%3Aabc,netid%3A2345,uid2%3A3456,sharedid%3A4567,liverampid%3A5678,criteoid%3A6789,utiq%3A7890&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&prebidDevMode=1&media_types%5Bbanner%5D=300x250');
     });
 
     // Without gdprConsent

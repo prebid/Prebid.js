@@ -1,7 +1,6 @@
 import {
   _each,
-  deepAccess,
-  getBidIdParameter,
+  deepAccess, getBidIdParameter,
   isArray,
   isFn,
   isPlainObject,
@@ -277,18 +276,19 @@ export const spec = {
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
-        tid: bid.transactionId,
+        tid: bid.ortb2Imp?.ext?.tid,
         tagid,
         secure
       };
 
       // adding gpid support
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
-      if (!gpid) {
-        gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
-      }
+      let gpid =
+        deepAccess(bid, 'ortb2Imp.ext.gpid') ||
+        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
+        deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+
       if (gpid) {
-        data.ext = {gpid: gpid.toString()};
+        data.ext = { gpid: gpid.toString() };
       }
       let typeSpecifics = isVideo ? { video: cadentAdapter.buildVideo(bid) } : { banner: cadentAdapter.buildBanner(bid) };
       let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
@@ -297,7 +297,7 @@ export const spec = {
     });
 
     let cadentData = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.auctionId ?? bidderRequest.bidderRequestId,
       imp: cadentImps,
       device,
       site,

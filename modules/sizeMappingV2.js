@@ -63,7 +63,7 @@ export function isUsingNewSizeMapping(adUnits) {
   does not recognize.
   @params {Array<AdUnits>} adUnits
   @returns {Array<AdUnits>} validateAdUnits - Unrecognized properties are deleted.
-*/
+ */
 export function checkAdUnitSetupHook(adUnits) {
   const validateSizeConfig = function (mediaType, sizeConfig, adUnitCode) {
     let isValid = true;

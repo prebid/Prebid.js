@@ -2,6 +2,11 @@ import {logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
   BID_ENDPOINT: '.videostep.com/Bid/VideoAdContent',
@@ -9,7 +14,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 10,
+  PREBID_VERSION: 12,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
@@ -17,7 +22,7 @@ const CONSTANTS = {
   DISABLE_USER_SYNC: true
 };
 
-const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -35,7 +40,7 @@ export const spec = {
   buildRequests: buildRequest,
   /**
    * @param {*} responseObj
-   * @param {requestParams} bidRequests
+   * @param {*} requestParams
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function (responseObj, requestParams) {
@@ -49,13 +54,35 @@ registerBidder(spec);
 // some state info is required: cookie info, unique user visit id
 const topWin = getTopMostWindow();
 let invibes = topWin.invibes = topWin.invibes || {};
-invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false];
-invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false];
+invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false, false];
+invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false, false];
 invibes.placementBids = invibes.placementBids || [];
 invibes.pushedCids = invibes.pushedCids || {};
 let preventPageViewEvent = false;
+let isInfiniteScrollPage = false;
+let isPlacementRefresh = false;
 let _customUserSync;
 let _disableUserSyncs;
+
+function updateInfiniteScrollFlag() {
+  const { scrollHeight } = document.documentElement;
+
+  if (invibes.originalURL === undefined) {
+    invibes.originalURL = window.location.href;
+    return;
+  }
+
+  if (invibes.originalScrollHeight === undefined) {
+    invibes.originalScrollHeight = scrollHeight;
+    return;
+  }
+
+  const currentURL = window.location.href;
+
+  if (scrollHeight > invibes.originalScrollHeight && invibes.originalURL !== currentURL) {
+    isInfiniteScrollPage = true;
+  }
+}
 
 function isBidRequestValid(bid) {
   if (typeof bid.params !== 'object') {
@@ -87,10 +114,23 @@ function buildRequest(bidRequests, bidderRequest) {
   const _placementIds = [];
   const _adUnitCodes = [];
   let _customEndpoint, _userId, _domainId;
-  let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
+  let _ivAuctionStart = Date.now();
+  window.invibes = window.invibes || {};
+  window.invibes.placementIds = window.invibes.placementIds || [];
+
+  if (isInfiniteScrollPage == false) {
+    updateInfiniteScrollFlag();
+  }
 
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
+
+    if (window.invibes.placementIds.includes(bidRequest.params.placementId)) {
+      isPlacementRefresh = true;
+    }
+
+    window.invibes.placementIds.push(bidRequest.params.placementId);
+
     _placementIds.push(bidRequest.params.placementId);
     _adUnitCodes.push(bidRequest.adUnitCode);
     _domainId = _domainId || bidRequest.params.domainId;
@@ -138,7 +178,18 @@ function buildRequest(bidRequests, bidderRequest) {
     tc: invibes.gdpr_consent,
     isLocalStorageEnabled: storage.hasLocalStorage(),
     preventPageViewEvent: preventPageViewEvent,
+    isPlacementRefresh: isPlacementRefresh,
+    isInfiniteScrollPage: isInfiniteScrollPage
   };
+
+  if (bidderRequest.refererInfo && bidderRequest.refererInfo.ref) {
+    data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300);
+  }
+
+  let hid = invibes.getCookie('handIid');
+  if (hid) {
+    data.handIid = hid;
+  }
 
   let lid = readFromLocalStorage('ivbsdid');
   if (!lid) {
@@ -368,7 +419,9 @@ function addMeta(bidModelMeta) {
 }
 
 function generateRandomId() {
-  return (Math.round(Math.random() * 1e12)).toString(36).substring(0, 10);
+  return '10000000100040008000100000000000'.replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
 }
 
 function getDocumentLocation(bidderRequest) {
@@ -568,7 +621,7 @@ function readGdprConsent(gdprConsent) {
     }
 
     let legitimateInterests = getLegitimateInterests(gdprConsent.vendorData);
-    tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, 10);
+    tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, purposesLength);
 
     let invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
     let vendorConsents = getVendorConsents(gdprConsent.vendorData);
@@ -621,6 +674,10 @@ function tryCopyValueToArray(value, target, length) {
 
 function getPurposeConsentsCounter(vendorData) {
   if (vendorData.purpose && vendorData.purpose.consents) {
+    if (vendorData.tcfPolicyVersion >= 4) {
+      return 11;
+    }
+
     return 10;
   }
 

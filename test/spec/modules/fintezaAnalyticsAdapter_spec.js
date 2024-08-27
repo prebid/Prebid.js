@@ -3,10 +3,10 @@ import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 function setCookie(name, value, expires) {
   document.cookie = name + '=' + value +
@@ -74,7 +74,7 @@ describe('finteza analytics adapter', function () {
         };
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+        events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
         expect(server.requests.length).to.equal(1);
 
@@ -117,7 +117,7 @@ describe('finteza analytics adapter', function () {
         };
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+        events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
@@ -171,7 +171,7 @@ describe('finteza analytics adapter', function () {
         }
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_WON, bidWon);
+        events.emit(EVENTS.BID_WON, bidWon);
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
@@ -211,7 +211,7 @@ describe('finteza analytics adapter', function () {
         ];
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
+        events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);

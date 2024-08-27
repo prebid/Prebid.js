@@ -1,6 +1,7 @@
 /**
  * This module adds Real time data support to prebid.js
  * @module modules/realTimeData
+ * @typedef {import('../../modules/rtdModule/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
 /**
@@ -30,7 +31,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary return real time data
  * @name RtdSubmodule#getTargetingData
  * @param {string[]} adUnitsCodes
@@ -40,7 +41,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary modify bid request data
  * @name RtdSubmodule#getBidRequestData
  * @param {Object} reqBidsConfigObj
@@ -73,7 +74,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on auction init event
  * @name RtdSubmodule#onAuctionInitEvent
  * @param {Object} data
@@ -82,7 +83,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on auction end event
  * @name RtdSubmodule#onAuctionEndEvent
  * @param {Object} data
@@ -91,7 +92,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on bid response event
  * @name RtdSubmodule#onBidResponseEvent
  * @param {Object} data
@@ -100,7 +101,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on bid requested event
  * @name RtdSubmodule#onBidRequestEvent
  * @param {Object} data
@@ -109,7 +110,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on data deletion request
  * @name RtdSubmodule#onDataDeletionRequest
  * @param {SubmoduleConfig} config
@@ -162,7 +163,7 @@ import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
@@ -187,10 +188,12 @@ let _dataProviders = [];
 let _userConsent;
 
 /**
- * Register a RTD submodule.
+ * Register a Real-Time Data (RTD) submodule.
  *
- * @param {RtdSubmodule} submodule
- * @returns {function()} a de-registration function that will unregister the module when called.
+ * @param {Object} submodule The RTD submodule to register.
+ * @param {string} submodule.name The name of the RTD submodule.
+ * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
+ * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
@@ -212,10 +215,11 @@ const setEventsListeners = (function () {
   return function setEventsListeners() {
     if (!registered) {
       Object.entries({
-        [CONSTANTS.EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
-        [CONSTANTS.EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
-        [CONSTANTS.EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
-        [CONSTANTS.EVENTS.BID_REQUESTED]: ['onBidRequestEvent']
+        [EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
+        [EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
+        [EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
+        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent'],
+        [EVENTS.BID_ACCEPTED]: ['onBidAcceptedEvent']
       }).forEach(([ev, [handler, preprocess]]) => {
         events.on(ev, (args) => {
           preprocess && preprocess(args);
@@ -378,14 +382,14 @@ export function getAdUnitTargeting(auction) {
       return
     }
     logInfo('RTD set ad unit targeting of', kv, 'for', adUnit);
-    adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
+    adUnit[JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
   });
   return auction.adUnits;
 }
 
 /**
  * deep merge array of objects
- * @param {array} arr - objects array
+ * @param {Array} arr - objects array
  * @return {Object} merged object
  */
 export function deepMerge(arr) {
