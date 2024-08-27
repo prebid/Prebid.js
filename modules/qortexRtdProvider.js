@@ -24,15 +24,14 @@ function init (config) {
       .then(groupConfig => {
         logMessage(['Recieved response for qortex group config', groupConfig])
         if (groupConfig?.active === true && groupConfig?.prebidBidEnrichment === true) {
-          setGroupConfigData(groupConfig)
+          setGroupConfigData(groupConfig);
         } else {
-          logMessage('Group config is not configured for qortex RTD module')
-          return false
+          logWarn('Group config is not configured for qortex RTD module, module functions will be paused')
+          setGroupConfigData(groupConfig);
         }
       })
       .catch((e) => {
-        logWarn(e?.message);
-        return false;
+        logWarn(e);
       });
 
     initiatePageAnalysis()
@@ -55,7 +54,7 @@ function init (config) {
  * @param {Function} callback Called on completion
  */
 function getBidRequestData (reqBidsConfig, callback) {
-  if (reqBidsConfig?.adUnits?.length > 0) {
+  if (reqBidsConfig?.adUnits?.length > 0 && qortexSessionInfo.groupConfig?.prebidBidEnrichment === true) {
     getContext()
       .then(contextData => {
         setContextData(contextData)
@@ -67,7 +66,7 @@ function getBidRequestData (reqBidsConfig, callback) {
         callback();
       });
   } else {
-    logWarn('No adunits found on request bids configuration: ' + JSON.stringify(reqBidsConfig))
+    logWarn('Module function is paused due to configuration \n Module Config: ' + JSON.stringify(reqBidsConfig) + `\n Group Config: ${JSON.stringify(qortexSessionInfo.groupConfig) ?? 'NO GROUP CONFIG'}`)
     callback();
   }
 }
@@ -77,11 +76,13 @@ function getBidRequestData (reqBidsConfig, callback) {
  * @param {Object} data Auction end object
  */
 function onAuctionEndEvent (data, config, t) {
-  sendAnalyticsEvent('AUCTION', 'AUCTION_END', data)
-    .then(result => {
-      logMessage('Qortex anyalitics event sent')
-    })
-    .catch(e => logWarn(e?.message))
+  if (qortexSessionInfo?.groupConfig?.prebidBidEnrichment === true) {
+    sendAnalyticsEvent('AUCTION', 'AUCTION_END', attachContextAnalytics(data))
+      .then(result => {
+        logMessage('Qortex anyalitics event sent')
+      })
+      .catch(e => logWarn(e?.message))
+  }
 }
 
 /**
@@ -90,6 +91,7 @@ function onAuctionEndEvent (data, config, t) {
  */
 export function getContext () {
   if (qortexSessionInfo.currentSiteContext === null) {
+    const pageUrlObject = { pageUrl: qortexSessionInfo.indexData?.pageUrl ?? '' }
     logMessage('Requesting new context data');
     return new Promise((resolve, reject) => {
       const callbacks = {
@@ -101,11 +103,11 @@ export function getContext () {
           reject(new Error(error));
         }
       }
-      ajax(qortexSessionInfo.contextUrl, callbacks)
+      ajax(qortexSessionInfo.contextUrl, callbacks, JSON.stringify(pageUrlObject), {contentType: 'application/json'})
     })
   } else {
     logMessage('Adding Content object from existing context data');
-    return new Promise(resolve => resolve(qortexSessionInfo.currentSiteContext));
+    return new Promise((resolve, reject) => resolve(qortexSessionInfo.currentSiteContext));
   }
 }
 
@@ -134,7 +136,7 @@ export function getGroupConfig () {
  * @returns {Promise}
  */
 export function initiatePageAnalysis () {
-  const indexData = generateIndexData();
+  qortexSessionInfo.indexData = generateIndexData();
   logMessage('Sending page data for context analysis');
   return new Promise((resolve, reject) => {
     const callbacks = {
@@ -147,7 +149,7 @@ export function initiatePageAnalysis () {
         reject(new Error(error));
       }
     }
-    ajax(qortexSessionInfo.pageAnalyisUrl, callbacks, JSON.stringify(indexData), {contentType: 'application/json'})
+    ajax(qortexSessionInfo.pageAnalyisUrl, callbacks, JSON.stringify(qortexSessionInfo.indexData), {contentType: 'application/json'})
   })
 }
 
@@ -196,20 +198,6 @@ export function generateAnalyticsEventObject(eventType, subType, data) {
 
 /**
  * Creates page index data for Qortex analysis
- * @returns {Object} page index object
- */
-export function generateIndexData () {
-  return {
-    url: document.location.href,
-    title: document.title,
-    text: document.body.innerText.replaceAll(/\r?\n/gi, ' '),
-    meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if (attr.length > 1) { acc[curr.attributes[0].value] = curr.attributes[1].value } return acc }, {}),
-    videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => { const src = curr?.src; if (src != '') { acc.push(src) } return acc }, [])
-  }
-}
-
-/**
- * Creates page index data for Qortex analysis
  * @param qortexUrlBase api url from config or default
  * @returns {string} Qortex analytics host url
  */
@@ -235,8 +223,10 @@ export function addContextToRequests (reqBidsConfig) {
     const fragment = { site: {content: qortexSessionInfo.currentSiteContext} }
     if (qortexSessionInfo.bidderArray?.length > 0) {
       qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}))
+      saveContextAdded(reqBidsConfig, qortexSessionInfo.bidderArray);
     } else if (!qortexSessionInfo.bidderArray) {
       mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment);
+      saveContextAdded(reqBidsConfig);
     } else {
       logWarn('Config contains an empty bidders array, unable to determine which bids to enrich');
     }
@@ -300,7 +290,7 @@ export function initializeModuleData(config) {
   qortexSessionInfo.pageAnalysisdata = {
     requestSuccessful: null,
     analysisGenerated: false,
-    analysisData: null
+    contextAdded: {}
   };
   qortexSessionInfo.sessionId = generateSessionId();
   qortexSessionInfo.groupId = groupId;
@@ -311,20 +301,10 @@ export function initializeModuleData(config) {
   return qortexSessionInfo;
 }
 
-export function shouldSendAnalytics() {
-  const analyticsPercentage = qortexSessionInfo.groupConfig?.prebidReportingPercentage ?? 0;
-  const randomInt = Math.random().toFixed(5) * 100;
-  return analyticsPercentage > randomInt;
-}
-
-/**
- * Creates unique session id for Qortex
- * @returns {string} session id string
- */
-export function generateSessionId() {
-  const randomInt = Math.floor(Math.random() * 2147483647);
-  const currentDateTime = Math.floor(Date.now() / 1000);
-  return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString()
+export function saveContextAdded(reqBids, bidders = null) {
+  const id = reqBids.auctionId;
+  const contextBidders = bidders ?? Array.from(new Set(reqBids.adUnits.flatMap(adunit => adunit.bids.map(bid => bid.bidder))))
+  qortexSessionInfo.pageAnalysisdata.contextAdded[id] = contextBidders;
 }
 
 export function setContextData(value) {
@@ -333,6 +313,44 @@ export function setContextData(value) {
 
 export function setGroupConfigData(value) {
   qortexSessionInfo.groupConfig = value
+}
+
+/**
+ * Creates page index data for Qortex analysis
+ * @returns {Object} page index object
+ */
+function generateIndexData () {
+  return {
+    pageUrl: document.location.href,
+    title: document.title,
+    text: document.body.innerText.replaceAll(/\r?\n/gi, ' '),
+    meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if (attr.length > 1) { acc[curr.attributes[0].value] = curr.attributes[1].value } return acc }, {}),
+    videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => { const src = curr?.src; if (src != '') { acc.push(src) } return acc }, [])
+  }
+}
+
+function generateSessionId() {
+  const randomInt = Math.floor(Math.random() * 2147483647);
+  const currentDateTime = Math.floor(Date.now() / 1000);
+  return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString()
+}
+
+function attachContextAnalytics (data) {
+  let qxData = {};
+  let qxDataAdded = false;
+  if (qortexSessionInfo?.pageAnalysisdata?.contextAdded[data.auctionId]) {
+    qxData = qortexSessionInfo.currentSiteContext;
+    qxDataAdded = true;
+  }
+  data.qortexData = qxData;
+  data.qortexDataAdded = qxDataAdded;
+  return data;
+}
+
+function shouldSendAnalytics() {
+  const analyticsPercentage = qortexSessionInfo.groupConfig?.prebidReportingPercentage ?? 0;
+  const randomInt = Math.random().toFixed(5) * 100;
+  return analyticsPercentage > randomInt;
 }
 
 export const qortexSubmodule = {
