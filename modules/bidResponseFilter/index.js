@@ -1,3 +1,4 @@
+import { auctionManager } from '../../src/auctionManager.js';
 import { config } from '../../src/config.js';
 import { getHook } from '../../src/hook.js';
 
@@ -10,8 +11,9 @@ function init() {
   getHook('addBidResponse').before(addBidResponseHook);
 };
 
-export function addBidResponseHook(next, adUnitCode, bid, reject) {
-  const { bcat = [], badv = [], battr = [] } = config.getAnyConfig('ortb2') || {};
+export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
+  const {bcat = [], badv = []} = index.getOrtb2(bid) || {};
+  const battr = index.getBidRequest(bid)?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
   const moduleConfig = config.getConfig(MODULE_NAME);
 
   const catConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {})};

@@ -2,12 +2,22 @@ import { BID_ADV_DOMAINS_REJECTION_REASON, BID_ATTR_REJECTION_REASON, BID_CATEGO
 import { config } from '../../../src/config';
 
 describe('bidResponseFilter', () => {
-  afterEach(() => {
+  let mockAuctionIndex
+  beforeEach(() => {
     config.resetConfig();
+    mockAuctionIndex = {
+      getBidRequest: () => {},
+      getAdUnit: () => {}
+    };
   });
 
   it('should pass the bid after successful ortb2 rules validation', () => {
     const call = sinon.stub();
+
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: [], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+    });
+
     const bid = {
       meta: {
         advertiserDomains: ['domain1.com', 'domain2.com'],
@@ -15,11 +25,8 @@ describe('bidResponseFilter', () => {
         attr: 'attr'
       }
     };
-    config.setConfig({ortb2: {
-      badv: [], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
-    }});
 
-    addBidResponseHook(call, 'adcode', bid, () => {});
+    addBidResponseHook(call, 'adcode', bid, () => {}, mockAuctionIndex);
     sinon.assert.calledOnce(call);
   });
 
@@ -33,11 +40,11 @@ describe('bidResponseFilter', () => {
         attr: 'attr'
       }
     };
-    config.setConfig({ortb2: {
-      badv: [], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
-    }});
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: [], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+    });
 
-    addBidResponseHook(call, 'adcode', bid, reject);
+    addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
     sinon.assert.calledWith(reject, BID_CATEGORY_REJECTION_REASON);
   });
 
@@ -51,11 +58,11 @@ describe('bidResponseFilter', () => {
         attr: 'attr'
       }
     };
-    config.setConfig({ortb2: {
-      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
-    }});
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+    });
 
-    addBidResponseHook(call, 'adcode', bid, rejection);
+    addBidResponseHook(call, 'adcode', bid, rejection, mockAuctionIndex);
     sinon.assert.calledWith(rejection, BID_ADV_DOMAINS_REJECTION_REASON);
   });
 
@@ -67,13 +74,22 @@ describe('bidResponseFilter', () => {
         advertiserDomains: ['validdomain1.com', 'validdomain2.com'],
         primaryCatId: 'VALID_CAT',
         attr: 'BANNED_ATTR'
-      }
+      },
+      mediaType: 'video'
     };
-    config.setConfig({ortb2: {
-      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
-    }});
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+    });
 
-    addBidResponseHook(call, 'adcode', bid, reject);
+    mockAuctionIndex.getBidRequest = () => ({
+      ortb2Imp: {
+        video: {
+          battr: 'BANNED_ATTR'
+        }
+      }
+    })
+
+    addBidResponseHook(call, 'adcode', bid, reject, mockAuctionIndex);
     sinon.assert.calledWith(reject, BID_ATTR_REJECTION_REASON);
   });
 
@@ -86,13 +102,14 @@ describe('bidResponseFilter', () => {
         attr: 'valid_attr'
       }
     };
-    config.setConfig({ortb2: {
-      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
-    }});
+
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+    });
 
     config.setConfig({[MODULE_NAME]: {cat: {enforce: false}}});
 
-    addBidResponseHook(call, 'adcode', bid, () => {});
+    addBidResponseHook(call, 'adcode', bid, () => {}, mockAuctionIndex);
     sinon.assert.calledOnce(call);
   });
 
@@ -105,9 +122,10 @@ describe('bidResponseFilter', () => {
         attr: 'valid_attr'
       }
     };
-    config.setConfig({ortb2: {
-      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
-    }});
+
+    mockAuctionIndex.getOrtb2 = () => ({
+      badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2']
+    });
 
     config.setConfig({[MODULE_NAME]: {cat: {blockUnknown: false}}});
 
