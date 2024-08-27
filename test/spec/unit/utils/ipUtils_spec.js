@@ -11,22 +11,22 @@ describe('ipUtils', () => {
       expect(output).to.deep.equal('192.168.255.0');
     });
 
-    it('should convert null to blank string', () => {
+    it('should return null for null input', () => {
       let input = null;
       let output = scrubIPv4(input);
-      expect(output).to.deep.equal('');
+      expect(output).to.deep.equal(null);
     });
 
-    it('should convert invalid format to blank string', () => {
+    it('should convert invalid format to null', () => {
       let invalidIp = '192.130.2';
       let output = scrubIPv4(invalidIp);
-      expect(output).to.deep.equal('');
+      expect(output).to.deep.equal(null);
     });
 
-    it('should convert invalid format to blank string', () => {
+    it('should convert invalid format to null', () => {
       let invalidIp = '2001:db8:3333:4444:CCCC:DDDD:EEEE:FFFF';
       let output = scrubIPv4(invalidIp);
-      expect(output).to.deep.equal('');
+      expect(output).to.deep.equal(null);
     });
   });
 
@@ -37,22 +37,22 @@ describe('ipUtils', () => {
       expect(output).to.deep.equal('2001:db8:3333:4444:0:0:0:0');
     });
 
-    it('should convert null to blank string', () => {
+    it('should return null for null input', () => {
       let input = null;
       let output = scrubIPv6(input);
-      expect(output).to.deep.equal('');
+      expect(output).to.deep.equal(null);
     });
 
-    it('should convert invalid format to blank string', () => {
+    it('should convert invalid format to null', () => {
       let invalidIp = '2001:db8:3333:4444:CCCC:DDDD:EEEE';
       let output = scrubIPv4(invalidIp);
-      expect(output).to.deep.equal('');
+      expect(output).to.deep.equal(null);
     });
 
-    it('should convert invalid format to blank string', () => {
+    it('should convert invalid format to null', () => {
       let invalidIp = 'invalid';
       let output = scrubIPv4(invalidIp);
-      expect(output).to.deep.equal('');
+      expect(output).to.deep.equal(null);
     });
   });
 })
