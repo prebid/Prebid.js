@@ -90,7 +90,7 @@ describe('bidResponseFilter', () => {
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
     }});
 
-    config.setConfig({ [MODULE_NAME]: { cat: { enforce: false }} });
+    config.setConfig({[MODULE_NAME]: {cat: {enforce: false}}});
 
     addBidResponseHook(call, 'adcode', bid, () => {});
     sinon.assert.calledOnce(call);
@@ -109,7 +109,7 @@ describe('bidResponseFilter', () => {
       badv: ['domain2.com'], bcat: ['BANNED_CAT1', 'BANNED_CAT2'], battr: 'BANNED_ATTR'
     }});
 
-    config.setConfig({ [MODULE_NAME]: { cat: { block_unknown_cat: false }} });
+    config.setConfig({[MODULE_NAME]: {cat: {blockUnknown: false}}});
 
     addBidResponseHook(call, 'adcode', bid, () => {});
     sinon.assert.calledOnce(call);

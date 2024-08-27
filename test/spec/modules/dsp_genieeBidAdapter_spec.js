@@ -121,7 +121,9 @@ describe('Geniee adapter tests', () => {
         currency: 'JPY',
         mediaType: 'banner',
         meta: {
-          advertiserDomains: ['geniee.co.jp']
+          advertiserDomains: ['geniee.co.jp'],
+          primaryCatId: 'IAB1',
+          secondaryCatIds: ['IAB1']
         },
         netRevenue: true,
         requestId: 'bid-id',
