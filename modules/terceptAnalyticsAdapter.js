@@ -2,8 +2,7 @@ import { parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { EVENTS } from '../src/constants.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -24,23 +23,23 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
   }), {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
-      if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
+      if (eventType === EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
-      } else if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+      } else if (eventType === EVENTS.AUCTION_INIT) {
         events.auctionInit = args;
         auctionTimestamp = args.timestamp;
-      } else if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
+      } else if (eventType === EVENTS.BID_REQUESTED) {
         mapBidRequests(args).forEach(item => { events.bids.push(item) });
-      } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
+      } else if (eventType === EVENTS.BID_RESPONSE) {
         mapBidResponse(args, 'response');
-      } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
+      } else if (eventType === EVENTS.BID_WON) {
         send({
           bidWon: mapBidResponse(args, 'win')
         }, 'won');
       }
     }
 
-    if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+    if (eventType === EVENTS.AUCTION_END) {
       send(events, 'auctionEnd');
     }
   }
@@ -124,7 +123,7 @@ function send(data, status) {
     search: {
       auctionTimestamp: auctionTimestamp,
       terceptAnalyticsVersion: terceptAnalyticsVersion,
-      prebidVersion: getGlobal().version
+      prebidVersion: 'v' + '$prebid.version$'
     }
   });
 

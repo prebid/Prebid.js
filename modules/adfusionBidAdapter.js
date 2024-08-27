@@ -5,6 +5,7 @@ import * as utils from '../src/utils.js';
 
 const adpterVersion = '1.0';
 export const REQUEST_URL = 'https://spicyrtb.com/auction/prebid';
+export const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: 'adfusion',
@@ -23,6 +24,17 @@ const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 300,
+    currency: DEFAULT_CURRENCY,
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    const floor = getBidFloor(bidRequest);
+    if (floor) {
+      imp.bidfloor = floor;
+      imp.bidfloorcur = DEFAULT_CURRENCY;
+    }
+
+    return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
@@ -87,4 +99,22 @@ function isBannerBid(bid) {
 
 function interpretResponse(resp, req) {
   return converter.fromORTB({ request: req.data, response: resp.body });
+}
+
+function getBidFloor(bid) {
+  if (utils.isFn(bid.getFloor)) {
+    let floor = bid.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: '*',
+      size: '*',
+    });
+    if (
+      utils.isPlainObject(floor) &&
+      !isNaN(floor.floor) &&
+      floor.currency === DEFAULT_CURRENCY
+    ) {
+      return floor.floor;
+    }
+  }
+  return null;
 }

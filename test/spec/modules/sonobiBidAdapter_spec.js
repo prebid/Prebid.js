@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {_getPlatform, spec} from 'modules/sonobiBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {userSync} from '../../../src/userSync.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { _getPlatform, spec } from 'modules/sonobiBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { userSync } from '../../../src/userSync.js';
+import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('SonobiBidAdapter', function () {
@@ -303,6 +303,29 @@ describe('SonobiBidAdapter', function () {
       }
     },
     {
+
+      'bidder': 'sonobi',
+      'params': {
+        'keywords': 'sports,news,some_other_keyword',
+        'placement_id': '1a2b3c4d5e6f1a2b3c4d',
+        'sizes': [[300, 250], [300, 600]],
+        'floor': '1.25',
+      },
+      'adUnitCode': 'adunit-code-42',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1g',
+      ortb2Imp: {
+        ext: {
+          gpid: '/123123/gpt_publisher/adunit-code-42'
+        }
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      }
+    },
+    {
       'bidder': 'sonobi',
       'params': {
         'placement_id': '1a2b3c4d5e6f1a2b3c4e',
@@ -343,6 +366,7 @@ describe('SonobiBidAdapter', function () {
 
     let keyMakerData = {
       '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|640x480|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,pm=1:2:3,p=2,pl=3,',
+      '30b31c1838de1g': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25,gpid=/123123/gpt_publisher/adunit-code-42,c=d,',
       '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42,gpid=/123123/gpt_publisher/adunit-code-3,c=d,',
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB,c=d,',
     };
@@ -359,7 +383,9 @@ describe('SonobiBidAdapter', function () {
         'page': 'https://example.com',
         'stack': ['https://example.com']
       },
-      uspConsent: 'someCCPAString'
+      uspConsent: 'someCCPAString',
+      ortb2: {}
+
     };
 
     it('should set fpd if there is any data in ortb2', function () {
@@ -492,6 +518,12 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
+
+    it('should return a properly formatted request with experianRtidData and exexperianRtidKeypKey omitted from fpd', function () {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.fpd.indexOf('experianRtidData')).to.equal(-1);
+      expect(bidRequests.data.fpd.indexOf('exexperianRtidKeypKey')).to.equal(-1);
+    });
 
     it('should return null if there is nothing to bid on', function () {
       const bidRequests = spec.buildRequests([{ params: {} }], bidderRequests)

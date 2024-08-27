@@ -1,10 +1,11 @@
-import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {deepAccess, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
@@ -15,6 +16,7 @@ const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
 const ADAPTER_SYNC_PATH = '/push_sync';
 const TRACK_TIMEOUT_PATH = '/track/bid_timeout';
+const RUNTIME_STATUS_RESPONSE_TIME = 999000;
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -31,8 +33,9 @@ const LOG_ERROR_MESS = {
   onlyVideoInstream: `Only video ${VIDEO_INSTREAM} supported`,
   videoMissing: 'Bid request videoType property is missing - '
 };
-const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
+const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN', 'CHF', 'SEK'];
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const _bidResponseTimeLogged = [];
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -57,11 +60,17 @@ export const spec = {
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
 
+    let request;
     let reqId;
     let payloadSchain;
     let payloadUserId;
     let payloadUserEids;
     let timeout;
+    let payloadDevice;
+    let payloadSite;
+    let payloadRegs;
+    let payloadContent;
+    let payloadUser;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -78,9 +87,7 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
-
       const { params: { uid }, schain, userId, userIdAsEids } = bid;
-
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }
@@ -91,6 +98,7 @@ export const spec = {
       if (!payloadUserId && userId) {
         payloadUserId = userId;
       }
+
       auids.push(uid);
     });
 
@@ -98,10 +106,7 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-        // TODO: is 'page' the right value here?
-        payload.u = bidderRequest.refererInfo.page;
-      }
+
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -110,10 +115,45 @@ export const spec = {
             (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
               ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
       }
+
+      const { ortb2 } = bidderRequest;
+      const { device, site, regs, content } = ortb2;
+      const userOrtb2 = ortb2.user;
+      let user;
+      let userReq;
+      const vads = _getUserId();
+      if (payloadUserEids || payload.gdpr_consent || vads) {
+        user = {
+          ext: {
+            ...(payloadUserEids && { eids: payloadUserEids }),
+            ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
+            ...(vads && { vads })
+          }
+        };
+      }
+      if (user) {
+        userReq = mergeDeep(user, userOrtb2);
+      } else {
+        userReq = userOrtb2;
+      }
+      if (device) {
+        payloadDevice = device;
+      }
+      if (site) {
+        payloadSite = site;
+      }
+      if (regs) {
+        payloadRegs = regs;
+      }
+      if (content) {
+        payloadContent = content;
+      }
+      if (userReq) {
+        payloadUser = userReq;
+      }
     }
 
-    const bidderTimeout = Number(config.getConfig('bidderTimeout')) || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
+    const tmax = timeout;
     const source = {
       ext: {
         wrapperType: 'Prebid_js',
@@ -122,29 +162,25 @@ export const spec = {
       }
     };
 
-    const vads = _getUserId();
-    const user = {
-      ext: {
-        ...(payloadUserEids && { eids: payloadUserEids }),
-        ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
-        ...(vads && { vads })
-      }
-    };
-    const regs = ('gdpr_applies' in payload) && {
-      ext: {
-        gdpr: payload.gdpr_applies
-      }
-    };
+    if (payloadRegs === undefined) {
+      payloadRegs = ('gdpr_applies' in payload) && {
+        ext: {
+          gdpr: payload.gdpr_applies
+        }
+      };
+    }
 
-    const request = {
+    request = {
       id: reqId,
       imp,
       tmax,
       cur: [currency],
       source,
-      site: { page: payload.u },
-      ...(Object.keys(user.ext).length && { user }),
-      ...(regs && { regs })
+      ...(payloadUser && { user: payloadUser }),
+      ...(payloadRegs && {regs: payloadRegs}),
+      ...(payloadDevice && { device: payloadDevice }),
+      ...(payloadSite && { site: payloadSite }),
+      ...(payloadContent && { content: payloadContent }),
     };
 
     return {
@@ -169,7 +205,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses);
+        _addBidResponse(getBidFromResponse(respItem, LOG_ERROR_MESS), bidsMap, currency, bidResponses);
       });
     }
     if (errorMessage) logError(errorMessage);
@@ -208,6 +244,12 @@ export const spec = {
     if (bid.ext && bid.ext.events && bid.ext.events.win) {
       triggerPixel(bid.ext.events.win);
     }
+    // Call 'track/runtime' with the corresponding bid.requestId - only once per auction
+    if (bid.ext && bid.ext.events && bid.ext.events.runtime && !_bidResponseTimeLogged.includes(bid.auctionId)) {
+      _bidResponseTimeLogged.push(bid.auctionId);
+      const _roundedTime = _roundResponseTime(bid.timeToRespond, 50);
+      triggerPixel(bid.ext.events.runtime.replace('{STATUS_CODE}', RUNTIME_STATUS_RESPONSE_TIME + _roundedTime));
+    }
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
@@ -233,13 +275,7 @@ function makeBanner(bannerParams) {
   if (bannerSizes) {
     const sizes = parseSizesInput(bannerSizes);
     if (sizes.length) {
-      const format = sizes.map(size => {
-        const [ width, height ] = size.split('x');
-        const w = parseInt(width, 10);
-        const h = parseInt(height, 10);
-        return { w, h };
-      });
-
+      const format = sizesToSizeTuples(bannerSizes).map(sizeTupleToRtbSize);
       return { format };
     }
   }
@@ -279,17 +315,6 @@ function buildImpObject(bid) {
   }
 }
 
-function _getBidFromResponse(respItem) {
-  if (!respItem) {
-    logError(LOG_ERROR_MESS.emptySeatbid);
-  } else if (!respItem.bid) {
-    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
-  } else if (!respItem.bid[0]) {
-    logError(LOG_ERROR_MESS.noBid);
-  }
-  return respItem && respItem.bid && respItem.bid[0];
-}
-
 function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
@@ -321,6 +346,10 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
 
         if (serverBid.ext && serverBid.ext.prebid) {
           bidResponse.ext = serverBid.ext.prebid;
+          if (serverBid.ext.visx && serverBid.ext.visx.events) {
+            const prebidExtEvents = bidResponse.ext.events || {};
+            bidResponse.ext.events = Object.assign(prebidExtEvents, serverBid.ext.visx.events);
+          }
         }
 
         const visxTargeting = deepAccess(serverBid, 'ext.prebid.targeting');
@@ -432,6 +461,17 @@ function _getUserId() {
   }
 
   return null;
+}
+
+function _roundResponseTime(time, timeRange) {
+  if (time <= 0) {
+    return 0; // Special code for scriptLoadTime of 0 ms or less
+  } else if (time > 5000) {
+    return 100; // Constant code for scriptLoadTime greater than 5000 ms
+  } else {
+    const roundedValue = Math.floor((time - 1) / timeRange) + 1;
+    return roundedValue;
+  }
 }
 
 registerBidder(spec);

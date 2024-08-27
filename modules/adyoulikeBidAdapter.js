@@ -5,6 +5,12 @@ import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
 const DEFAULT_DC = 'hb-api';
@@ -57,7 +63,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {bidRequests} - bidRequests.bids[] is an array of AdUnits and bids
+   * @param {BidRequest} bidRequests is an array of AdUnits and bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
@@ -152,6 +159,10 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const bidResponses = [];
     var bidRequests = {};
+
+    if (!serverResponse || !serverResponse.body) {
+      return bidResponses;
+    }
 
     try {
       bidRequests = JSON.parse(request.data).Bids;

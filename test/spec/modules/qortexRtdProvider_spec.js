@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import * as ajax from 'src/ajax.js';
 import * as events from 'src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import {loadExternalScript} from 'src/adloader.js';
 import {
   qortexSubmodule as module,
@@ -161,7 +161,7 @@ describe('qortexRtdProvider', () => {
     let config = cloneDeep(validModuleConfig);
     config.params.tagConfig = validTagConfig;
 
-    events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, (e) => {
+    events.on(EVENTS.BILLABLE_EVENT, (e) => {
       billableEvents.push(e);
     })
 
@@ -343,7 +343,7 @@ describe('qortexRtdProvider', () => {
       initializeModuleData(validModuleConfig);
       addContextToRequests(reqBidsConfig);
       expect(logWarnSpy.calledOnce).to.be.true;
-      expect(logWarnSpy.calledWith('No context data recieved at this time')).to.be.ok;
+      expect(logWarnSpy.calledWith('No context data received at this time')).to.be.ok;
       expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
     })

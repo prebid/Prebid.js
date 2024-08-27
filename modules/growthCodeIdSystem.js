@@ -5,81 +5,20 @@
  * @requires module:modules/userId
  */
 
-import {logError, logInfo, pick} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'growthCodeId';
-const GC_DATA_KEY = '_gc_data';
 const GCID_KEY = 'gcid';
-const ENDPOINT_URL = 'https://p2.gcprivacy.com/v1/pb?'
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
-
-/**
- * Read GrowthCode data from cookie or local storage
- * @param key
- * @return {string}
- */
-export function readData(key) {
-  try {
-    let payload
-    if (storage.cookiesAreEnabled(null)) {
-      payload = tryParse(storage.getCookie(key, null))
-    }
-    if (storage.hasLocalStorage()) {
-      payload = tryParse(storage.getDataFromLocalStorage(key, null))
-    }
-    if (payload !== undefined) {
-      if (payload.expire_at > (Date.now() / 1000)) {
-        return payload
-      }
-    }
-  } catch (error) {
-    logError(error);
-  }
-}
-
-/**
- * Store GrowthCode data in either cookie or local storage
- * expiration date: 45 days
- * @param key
- * @param {string} value
- */
-function storeData(key, value) {
-  try {
-    logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
-
-    if (value) {
-      if (storage.hasLocalStorage(null)) {
-        storage.setDataInLocalStorage(key, value, null);
-      }
-    }
-  } catch (error) {
-    logError(error);
-  }
-}
-
-/**
- * Parse json if possible, else return null
- * @param data
- * @param {object|null}
- */
-function tryParse(data) {
-  let payload;
-  try {
-    payload = JSON.parse(data);
-    if (payload == null) {
-      return undefined
-    }
-    return payload
-  } catch (err) {
-    return undefined;
-  }
-}
 
 /** @type {Submodule} */
 export const growthCodeIdSubmodule = {
@@ -97,96 +36,40 @@ export const growthCodeIdSubmodule = {
   decode(value) {
     return value && value !== '' ? { 'growthCodeId': value } : undefined;
   },
+
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId(config) {
     const configParams = (config && config.params) || {};
-    if (!configParams || typeof configParams.pid !== 'string') {
-      logError('User ID - GrowthCodeID submodule requires a valid Partner ID to be defined');
-      return;
-    }
 
-    const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    const consentString = gdpr ? consentData.consentString : '';
-    if (gdpr && !consentString) {
-      logInfo('Consent string is required to call GrowthCode id.');
-      return;
-    }
+    let ids = [];
+    let gcid = storage.getDataFromLocalStorage(GCID_KEY, null)
 
-    let publisherId = configParams.publisher_id ? configParams.publisher_id : '_sharedID';
-
-    let sharedId;
-    if (configParams.publisher_id_storage === 'html5') {
-      sharedId = storage.getDataFromLocalStorage(publisherId, null) ? (storage.getDataFromLocalStorage(publisherId, null)) : null;
-    } else {
-      sharedId = storage.getCookie(publisherId, null) ? (storage.getCookie(publisherId, null)) : null;
-    }
-    if (!sharedId) {
-      logError('User ID - Publisher ID is not correctly setup.');
-    }
-
-    const resp = function(callback) {
-      let gcData = readData(GC_DATA_KEY);
-      if (gcData) {
-        callback(gcData);
-      } else {
-        let segment = window.location.pathname.substr(1).replace(/\/+$/, '');
-        if (segment === '') {
-          segment = 'home';
-        }
-
-        let url = configParams.url ? configParams.url : ENDPOINT_URL;
-        url = tryAppendQueryString(url, 'pid', configParams.pid);
-        url = tryAppendQueryString(url, 'uid', sharedId);
-        url = tryAppendQueryString(url, 'u', window.location.href);
-        url = tryAppendQueryString(url, 'h', window.location.hostname);
-        url = tryAppendQueryString(url, 's', segment);
-        url = tryAppendQueryString(url, 'r', document.referrer);
-
-        ajax(url, {
-          success: response => {
-            let respJson = tryParse(response);
-            // If response is a valid json and should save is true
-            if (respJson) {
-              storeData(GC_DATA_KEY, JSON.stringify(respJson))
-              storeData(GCID_KEY, respJson.gc_id);
-              callback(respJson);
-            } else {
-              callback();
-            }
-          },
-          error: error => {
-            logError(MODULE_NAME + ': ID fetch encountered an error', error);
-            callback();
-          }
-        }, undefined, {method: 'GET', withCredentials: true})
+    if (gcid !== null) {
+      const gcEid = {
+        source: 'growthcode.io',
+        uids: [{
+          id: gcid,
+          atype: 3,
+        }]
       }
-    };
-    return { callback: resp };
+
+      ids = ids.concat(gcEid)
+    }
+
+    let additionalEids = storage.getDataFromLocalStorage(configParams.customerEids, null)
+    if (additionalEids !== null) {
+      let data = JSON.parse(additionalEids)
+      ids = ids.concat(data)
+    }
+
+    return {id: ids}
   },
-  eids: {
-    'growthCodeId': {
-      getValue: function(data) {
-        return data.gc_id
-      },
-      source: 'growthcode.io',
-      atype: 1,
-      getUidExt: function(data) {
-        const extendedData = pick(data, [
-          'h1',
-          'h2',
-          'h3',
-        ]);
-        if (Object.keys(extendedData).length) {
-          return extendedData;
-        }
-      }
-    },
-  }
+
 };
 
 submodule('userId', growthCodeIdSubmodule);

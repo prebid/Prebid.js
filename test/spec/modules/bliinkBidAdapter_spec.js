@@ -7,8 +7,14 @@ import {
   BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME,
   getEffectiveConnectionType,
   getUserIds,
-  getDomLoadingDuration,
+  GVL_ID,
 } from 'modules/bliinkBidAdapter.js';
+import {
+  canAccessWindowTop,
+  getDomLoadingDuration,
+  getWindowSelf,
+  getWindowTop
+} from 'src/utils.js';
 import { config } from 'src/config.js';
 
 /**
@@ -31,8 +37,9 @@ import { config } from 'src/config.js';
  * ortb2Imp: {ext: {data: {pbadslot: string}}}}}
  */
 
+const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
 const connectionType = getEffectiveConnectionType();
-const domLoadingDuration = getDomLoadingDuration().toString();
+const domLoadingDuration = getDomLoadingDuration(w).toString();
 const getConfigBid = (placement) => {
   return {
     adUnitCode: '/19968336/test',
@@ -1167,4 +1174,8 @@ describe('getEffectiveConnectionType', () => {
       expect(result).to.equal('unsupported');
     });
   }
+});
+
+it('should expose gvlid', function () {
+  expect(spec.gvlid).to.equal(GVL_ID);
 });
