@@ -1,4 +1,4 @@
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
 import * as events from 'src/events.js';
 import { EVENTS } from '../../../src/constants.js';
@@ -23,7 +23,6 @@ describe('qortexRtdProvider', () => {
   let logWarnSpy;
   let logMessageSpy;
   let ortb2Stub;
-  // let server;
 
   const defaultApiHost = 'https://demand.qortex.ai';
   const defaultGroupId = 'test';

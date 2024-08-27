@@ -218,7 +218,7 @@ export function generateAnalyticsHostUrl(qortexUrlBase) {
  */
 export function addContextToRequests (reqBidsConfig) {
   if (qortexSessionInfo.currentSiteContext === null) {
-    logWarn('No context data recieved at this time');
+    logWarn('No context data received at this time');
   } else {
     const fragment = { site: {content: qortexSessionInfo.currentSiteContext} }
     if (qortexSessionInfo.bidderArray?.length > 0) {
