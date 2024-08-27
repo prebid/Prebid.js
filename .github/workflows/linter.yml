@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Get the diff
-        run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge > __changed_files.txt
+        run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge | grep '^\(modules\|src\|libraries\|creative\)/.*\.js$' > __changed_files.txt || true
 
       - name: Run linter on base branch
         run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __base.json || true

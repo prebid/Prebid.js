@@ -413,6 +413,53 @@ describe('secureCreatives', () => {
           stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
         });
       });
+
+      describe('resizing', () => {
+        let container, slot;
+        before(() => {
+          const [gtag, atag] = [window.googletag, window.apntag];
+          delete window.googletag;
+          delete window.apntag;
+          after(() => {
+            window.googletag = gtag;
+            window.apntag = atag;
+          })
+        })
+        beforeEach(() => {
+          pushBidResponseToAuction({
+            adUnitCode: 'mock-au'
+          });
+          container = document.createElement('div');
+          container.id = 'mock-au';
+          slot = document.createElement('div');
+          container.appendChild(slot);
+          document.body.appendChild(container)
+        });
+        afterEach(() => {
+          if (container) {
+            document.body.removeChild(container);
+          }
+        })
+        it('should handle resize request', () => {
+          const ev = makeEvent({
+            data: JSON.stringify({
+              adId: bidId,
+              message: 'Prebid Native',
+              action: 'resizeNativeHeight',
+              width: 123,
+              height: 321
+            }),
+            source: {
+              postMessage: sinon.stub()
+            },
+            origin: 'any origin'
+          });
+          return receive(ev).then(() => {
+            expect(slot.style.width).to.eql('123px');
+            expect(slot.style.height).to.eql('321px');
+          });
+        })
+      })
     });
 
     describe('Prebid Event', () => {

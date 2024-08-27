@@ -102,7 +102,7 @@ const checkIfObjectHasKey = (keys, obj, mode = 'some') => {
     const val = obj[key];
 
     if (mode === 'some' && val) return true;
-    if (!val) return false;
+    if (mode === 'every' && !val) return false;
   }
 
   return mode === 'every';
@@ -188,20 +188,24 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
   return buildRequestsBase({ adUrl, validBidRequests, bidderRequest, placementProcessingFunction });
 };
 
-export const interpretResponse = (serverResponse) => {
-  let response = [];
-  for (let i = 0; i < serverResponse.body.length; i++) {
-    let resItem = serverResponse.body[i];
-    if (isBidResponseValid(resItem)) {
-      const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
-      resItem.meta = { ...resItem.meta, advertiserDomains };
+export function interpretResponseBuilder({addtlBidValidation = (bid) => true} = {}) {
+  return function (serverResponse) {
+    let response = [];
+    for (let i = 0; i < serverResponse.body.length; i++) {
+      let resItem = serverResponse.body[i];
+      if (isBidResponseValid(resItem) && addtlBidValidation(resItem)) {
+        const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
+        resItem.meta = { ...resItem.meta, advertiserDomains };
 
-      response.push(resItem);
+        response.push(resItem);
+      }
     }
-  }
 
-  return response;
-};
+    return response;
+  }
+}
+
+export const interpretResponse = interpretResponseBuilder();
 
 export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
   const type = syncOptions.iframeEnabled ? 'iframe' : 'image';

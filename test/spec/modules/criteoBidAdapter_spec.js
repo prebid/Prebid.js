@@ -758,19 +758,28 @@ describe('The Criteo bidding adapter', function () {
               sizes: [[728, 90]]
             }
           },
-          userIdAsEids: [
-            {
-              source: 'criteo.com',
-              uids: [{
-                id: 'abc',
-                atype: 1
-              }]
-            }
-          ],
           params: {}
         },
       ];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const br = {
+        ...bidderRequest,
+        ortb2: {
+          user: {
+            ext: {
+              eids: [
+                {
+                  source: 'criteo.com',
+                  uids: [{
+                    id: 'abc',
+                    atype: 1
+                  }]
+                }
+              ]
+            }
+          }
+        }
+      }
+      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(br));
       const ortbRequest = request.data;
       expect(ortbRequest.user.ext.eids).to.deep.equal([
         {
