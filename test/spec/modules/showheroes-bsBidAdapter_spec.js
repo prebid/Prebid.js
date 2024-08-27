@@ -230,6 +230,7 @@ describe('shBidAdapter', () => {
         ...basicResponseV2,
         context: 'instream',
         vastUrl: vastUrl,
+        extra: 'test',
       }],
     };
 
@@ -239,6 +240,13 @@ describe('shBidAdapter', () => {
         context: 'outstream',
         ad: '<script id="testScript" data-wid="auto" type="text/javascript" src="https://test.tv/display/?zid=AACBTwsZVANd9NlB&u=https%3A%2F%2Fexample.org%2F%3Ffoo%3Dbar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ececb3b4c19270d6a77ccf75433001&width=300&height=200&prebidmode=1"></script>',
         vastUrl: vastUrl,
+        rendererConfig: {
+          rendererUrl: 'https://test.com/render.js',
+          renderFunc: 'myRenderer.renderAd',
+          renderOptions: {
+            key: 'my renderer custom value',
+          }
+        },
       }],
     };
 
@@ -264,6 +272,7 @@ describe('shBidAdapter', () => {
           adResponse: {
             content: vastXml,
           },
+          extra: 'test',
         }
       ]
 
@@ -281,11 +290,13 @@ describe('shBidAdapter', () => {
     })
 
     it('should get correct bid response when type is outstream (slot V2)', function () {
+      window.myRenderer = {
+        renderAd: function() {
+          return null;
+        }
+      }
       const bidRequestV2 = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
       const slotId = 'testSlot2'
-      bidRequestV2.params.outstreamOptions = {
-        slot: slotId
-      }
 
       const container = document.createElement('div')
       container.setAttribute('id', slotId)
@@ -296,6 +307,16 @@ describe('shBidAdapter', () => {
       const result = spec.interpretResponse({ 'body': responseVideoOutstreamV2 }, request)
       const bid = result[0]
       expect(bid).to.have.property('mediaType', VIDEO);
+      expect(typeof bid.renderer).to.be.eql('object');
+      expect(bid.renderer.url).to.eql('https://test.com/render.js');
+
+      sinon.spy(window.myRenderer, 'renderAd');
+      bid.renderer.render(bid);
+
+      const renderCall = window.myRenderer.renderAd.getCall(0);
+      const renderPayload = renderCall.args[0];
+      expect(renderPayload.adResponse.content).to.eql(vastXml);
+      expect(renderPayload.key).to.eql('my renderer custom value');
     })
 
     it('should get correct bid response when type is outstream (customRender)', function () {

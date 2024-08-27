@@ -4,6 +4,7 @@ import {
   triggerPixel,
   isFn,
   logInfo} from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -170,6 +171,7 @@ function createBids(bidRes, reqData) {
     bidUnit.ttl = bid.exp || TTL;
     bidUnit.creativeId = 'c_' + requestId;
     bidUnit.netRevenue = bid.netRevenue ?? true;
+    bidUnit.extra = bid.extra;
     bidUnit.width = size.width;
     bidUnit.height = size.height;
     bidUnit.meta = {
@@ -187,13 +189,44 @@ function createBids(bidRes, reqData) {
     if (bid.mediaType === BANNER) {
       bidUnit.ad = getBannerHtml(bid, reqData);
     }
-    if (bid.extra) {
-      bidUnit.extra = bid.extra;
-    }
+    else if (bid.context === 'outstream') {
+      const renderConfig = {
+        rendererUrl: bid.rendererConfig?.rendererUrl,
+        renderFunc: bid.rendererConfig?.renderFunc,
+        renderOptions: bid.rendererConfig?.renderOptions,
+      };
+      if (renderConfig.renderFunc && renderConfig.rendererUrl) {
+        bidUnit.renderer = createRenderer(bidUnit, renderConfig);
+      }
+    };
     bids.push(bidUnit);
   });
 
   return bids;
+}
+
+function outstreamRender(response, renderConfig) {
+  response.renderer.push(() => {
+    const func = deepAccess(window, renderConfig.renderFunc);
+    if (!isFn(func)) {
+      return;
+    }
+    const renderPayload = {...response, ...renderConfig.renderOptions};
+    func(renderPayload);
+  });
+}
+
+function createRenderer(bid, renderConfig) {
+  const renderer = Renderer.install({
+    id: bid.id,
+    url: renderConfig.rendererUrl,
+    loaded: false,
+    adUnitCode: bid.adUnitCode,
+  });
+  renderer.setRender((render) => {
+    return outstreamRender(render, renderConfig);
+  });
+  return renderer;
 }
 
 function getBannerHtml(bid, reqData) {
