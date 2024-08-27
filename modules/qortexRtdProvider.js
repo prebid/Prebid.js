@@ -330,7 +330,7 @@ function generateIndexData () {
 }
 
 function generateSessionId() {
-  const randomInt = Math.floor(Math.random() * 2147483647);
+  const randomInt = window.crypto.getRandomValues(new Uint32Array(1));
   const currentDateTime = Math.floor(Date.now() / 1000);
   return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString()
 }
