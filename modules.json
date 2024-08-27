@@ -13,7 +13,6 @@
   "permutiveRtdProvider",
   "prebidServerBidAdapter",
   "pubmaticBidAdapter",
-  "smartadserverBidAdapter",
   "sonobiBidAdapter",
   "tripleliftBidAdapter",
   "kargoBidAdapter",
