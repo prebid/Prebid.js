@@ -323,7 +323,7 @@ function generateIndexData () {
   return {
     pageUrl: document.location.href,
     title: document.title,
-    text: document.body.innerText.replaceAll(/\r?\n/gi, ' '),
+    text: document.body.textContent.replaceAll(/\r?\n/gi, ' '),
     meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if (attr.length > 1) { acc[curr.attributes[0].value] = curr.attributes[1].value } return acc }, {}),
     videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => { const src = curr?.src; if (src != '') { acc.push(src) } return acc }, [])
   }
