@@ -221,6 +221,7 @@ function handlerAuctionInit(event) {
       return request ? request.bids[0].src : null
     }
     const biddersSrc = sortedBidderCodes.map(bidSrcMapper).join(',');
+    const biddersCode = sortedBidderCodes.map(bidder => adapterManager.resolveAlias(bidder)).join(',');
 
     // if adagio was involved in the auction we identified it with rtdUid, if not use the prebid auctionId
     const auctionId = rtdUid || prebidAuctionId;
@@ -246,6 +247,7 @@ function handlerAuctionInit(event) {
       s_id: adgRtdSession.id || null,
       s_new: adgRtdSession.new || null,
       bdrs_src: biddersSrc,
+      bdrs_code: biddersCodes,
     };
 
     if (adagioBidRequest && adagioBidRequest.bids) {
