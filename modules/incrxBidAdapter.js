@@ -93,12 +93,12 @@ export const spec = {
     }
     const responseBid = {
       requestId: response.slotBidId,
-      cpm: response.cpm,
+      cpm: response.cpm > 0 ? response.cpm : 0,
       currency: response.currency || DEFAULT_CURRENCY,
       adType: response.adType || '1',
       settings: response.settings,
-      width: response.adWidth,
-      height: response.adHeight,
+      width: response.adWidth || 300,
+      height: response.adHeight || 250,
       ttl: CREATIVE_TTL,
       creativeId: response.creativeId || 0,
       netRevenue: response.netRevenue || false,
@@ -110,7 +110,7 @@ export const spec = {
 
     };
     if (response.mediaType === BANNER) {
-      responseBid.ad = response.ad;
+      responseBid.ad = response.ad || '';
     } else if (response.mediaType === VIDEO) {
       let context, adUnitCode;
       for (let i = 0; i < decodedBidderRequestData.bids.length; i++) {
@@ -122,7 +122,7 @@ export const spec = {
         }
       }
       if (context === OUTSTREAM) {
-        responseBid.vastXml = response.ad;
+        responseBid.vastXml = response.ad || '';
         if (response.rUrl) {
           responseBid.renderer = createRenderer({ ...response, adUnitCode });
         }
