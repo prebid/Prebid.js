@@ -203,8 +203,8 @@ describe('IntentIQ tests all', function () {
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
-    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain('&jsver=0.1&vrref=http://localhost:9876/');
+    expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
+    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
     expect(logErrorStub.called).to.be.false;
