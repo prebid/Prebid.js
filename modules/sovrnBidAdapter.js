@@ -6,7 +6,10 @@ import {
   logError,
   deepAccess,
   isInteger,
-  logWarn, getBidIdParameter, isEmptyStr
+  logWarn,
+  getBidIdParameter,
+  isEmptyStr,
+  mergeDeep
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
@@ -196,6 +199,12 @@ export const spec = {
       if (bidderRequest.gppConsent) {
         deepSetValue(sovrnBidReq, 'regs.gpp', bidderRequest.gppConsent.gppString);
         deepSetValue(sovrnBidReq, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+      }
+
+      // if present, merge device object from ortb2 into `sovrnBidReq.device`
+      if (bidderRequest?.ortb2?.device) {
+        sovrnBidReq.device = sovrnBidReq.device || {};
+        mergeDeep(sovrnBidReq.device, bidderRequest.ortb2.device);
       }
 
       if (eids) {
