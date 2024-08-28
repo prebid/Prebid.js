@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
+import { deepSetValue } from '../../../src/utils';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 
@@ -38,19 +39,8 @@ describe('sharethrough adapter spec', function () {
       expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
-    it('should return false if req has wrong bidder code', function () {
-      const invalidBidRequest = {
-        bidder: 'notSharethrough',
-        params: {
-          pkey: 'abc123',
-        },
-      };
-      expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
-    });
-
     it('should return true if req is correct', function () {
       const validBidRequest = {
-        bidder: 'sharethrough',
         params: {
           pkey: 'abc123',
         },
@@ -85,6 +75,7 @@ describe('sharethrough adapter spec', function () {
           mediaTypes: {
             banner: {
               pos: 1,
+              battr: [6, 7],
             },
           },
           ortb2Imp: {
@@ -238,6 +229,7 @@ describe('sharethrough adapter spec', function () {
               skipmin: 10,
               skipafter: 20,
               delivery: 1,
+              battr: [13, 14],
               companiontype: 'companion type',
               companionad: 'companion ad',
               context: 'instream',
@@ -559,8 +551,58 @@ describe('sharethrough adapter spec', function () {
           ]);
         });
 
+        it('should correctly harvest battr values for banner if present in mediaTypes.banner of impression and battr is not defined in ortb2Imp.banner', () => {
+          // assemble
+          const EXPECTED_BATTR_VALUES = [6, 7];
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+
+          // assert
+          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
+        });
+
+        it('should not include battr values for banner if NOT present in mediaTypes.banner of impression and battr is not defined in ortb2Imp.banner', () => {
+          // assemble
+          delete bidRequests[0].mediaTypes.banner.battr;
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+
+          // assert
+          expect(builtRequest.data.imp[0].banner.battr).to.be.undefined;
+        });
+
+        it('should prefer battr values from mediaTypes.banner over ortb2Imp.banner', () => {
+          // assemble
+          deepSetValue(bidRequests[0], 'ortb2Imp.banner.battr', [1, 2, 3]);
+          const EXPECTED_BATTR_VALUES = [6, 7]; // values from mediaTypes.banner
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+
+          // assert
+          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
+        });
+
+        it('should use battr values from ortb2Imp.banner if mediaTypes.banner.battr is not present', () => {
+          // assemble
+          delete bidRequests[0].mediaTypes.banner.battr;
+          const EXPECTED_BATTR_VALUES = [1, 2, 3];
+          deepSetValue(bidRequests[0], 'ortb2Imp.banner.battr', EXPECTED_BATTR_VALUES);
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
+
+          // assert
+          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
+        });
+
         it('should default to pos 0 if not provided', () => {
-          delete bidRequests[0].mediaTypes;
+          delete bidRequests[0].mediaTypes.banner.pos;
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
 
           const bannerImp = builtRequest.data.imp[0].banner;
@@ -590,6 +632,7 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.skipafter).to.equal(20);
           expect(videoImp.placement).to.equal(1);
           expect(videoImp.delivery).to.equal(1);
+          expect(videoImp.battr).to.deep.equal([13, 14]);
           expect(videoImp.companiontype).to.equal('companion type');
           expect(videoImp.companionad).to.equal('companion ad');
         });
@@ -610,6 +653,7 @@ describe('sharethrough adapter spec', function () {
           delete bidRequests[1].mediaTypes.video.skipafter;
           delete bidRequests[1].mediaTypes.video.placement;
           delete bidRequests[1].mediaTypes.video.delivery;
+          delete bidRequests[1].mediaTypes.video.battr;
           delete bidRequests[1].mediaTypes.video.companiontype;
           delete bidRequests[1].mediaTypes.video.companionad;
 
@@ -632,6 +676,7 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.skipafter).to.equal(0);
           expect(videoImp.placement).to.equal(1);
           expect(videoImp.delivery).to.be.undefined;
+          expect(videoImp.battr).to.be.undefined;
           expect(videoImp.companiontype).to.be.undefined;
           expect(videoImp.companionad).to.be.undefined;
         });
