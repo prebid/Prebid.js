@@ -95,6 +95,8 @@ const bidHandler = (eventType, bid) => {
           cpm: bidObj.cpm,
           auctionId: bidObj.auctionId
         };
+
+        bidToSend.smartyParams = smartyParams[bid.requestId];
       } else continue;
     }
 
