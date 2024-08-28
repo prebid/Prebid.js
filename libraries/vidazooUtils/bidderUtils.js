@@ -246,6 +246,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
   const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
 
+  const contentLang = deepAccess(bidderRequest, 'ortb2.site.content.language') || document.documentElement.lang;
+
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
@@ -278,6 +280,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     gpid: gpid,
     cat: cat,
     contentData,
+    contentLang,
     userData: userData,
     pagecat: pagecat,
     transactionId: ortb2Imp?.ext?.tid,
