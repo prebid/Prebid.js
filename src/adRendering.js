@@ -18,6 +18,7 @@ import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
 import {fireNativeTrackers} from './native.js';
 import {GreedyPromise} from './utils/promise.js';
+import adapterManager from './adapterManager.js';
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -67,6 +68,8 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   const data = { doc };
   if (bid) data.bid = bid;
   if (id) data.adId = id;
+
+  adapterManager.callAdRenderSucceededBidder(bid.adapterCode || bid.bidder, bid);
 
   events.emit(AD_RENDER_SUCCEEDED, data);
 }

@@ -428,6 +428,16 @@ describe('adapterManager tests', function () {
         sinon.assert.notCalled(criteoSpec.onBidViewable);
       })
     });
+
+    describe('onAdRenderSucceeded', function () {
+      beforeEach(() => {
+        criteoSpec.onAdRenderSucceeded = sinon.stub()
+      });
+      it('should call spec\'s onAdRenderSucceeded callback', function () {
+        adapterManager.callAdRenderSucceededBidder(bids[0].bidder, bids[0]);
+        sinon.assert.called(criteoSpec.onAdRenderSucceeded);
+      });
+    });
   })
   describe('onBidderError', function () {
     const bidder = 'appnexus';

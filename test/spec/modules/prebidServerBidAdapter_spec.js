@@ -1088,8 +1088,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.innerWidth,
-        h: window.innerHeight
+        w: window.screen.width,
+        h: window.screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1120,8 +1120,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.innerWidth,
-        h: window.innerHeight
+        w: window.screen.width,
+        h: window.screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1480,8 +1480,8 @@ describe('S2S Adapter', function () {
           adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
           sinon.assert.match(requestBid.device, {
-            w: window.innerWidth,
-            h: window.innerHeight
+            w: window.screen.width,
+            h: window.screen.height,
           })
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
@@ -2065,34 +2065,36 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
-      let consentConfig = { s2sConfig: CONFIG };
-      config.setConfig(consentConfig);
-
-      let userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      userIdBidRequest[0].bids[0].userId = {
-        criteoId: '44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU',
-        tdid: 'abc123',
-        pubcid: '1234',
-        parrableId: { eid: '01.1563917337.test-eid' },
-        lipb: {
-          lipbid: 'li-xyz',
-          segments: ['segA', 'segB']
-        },
-        idl_env: '0000-1111-2222-3333',
-        id5id: {
-          uid: '11111',
-          ext: {
-            linkType: 'some-link-type'
+    it('should pass user.ext.eids from FPD', function () {
+      config.setConfig({s2sConfig: CONFIG});
+      const req = {
+        ...REQUEST,
+        ortb2Fragments: {
+          global: {
+            user: {
+              ext: {
+                eids: [{id: 1}, {id: 2}]
+              }
+            }
+          },
+          bidder: {
+            appnexus: {
+              user: {
+                ext: {
+                  eids: [{id: 3}]
+                }
+              }
+            }
           }
         }
-      };
-      userIdBidRequest[0].bids[0].userIdAsEids = [{id: 1}, {id: 2}];
-
-      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(typeof requestBid.user.ext.eids).is.equal('object');
-      expect(requestBid.user.ext.eids).to.eql([{id: 1}, {id: 2}]);
+      }
+      adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+      const payload = JSON.parse(server.requests[0].requestBody);
+      expect(payload.user.ext.eids).to.eql([{id: 1}, {id: 2}]);
+      expect(payload.ext.prebid.bidderconfig).to.eql([{
+        bidders: ['appnexus'],
+        config: {ortb2: {user: {ext: {eids: [{id: 3}]}}}}
+      }]);
     });
 
     it('when config \'currency.adServerCurrency\' value is a string: ORTB has property \'cur\' value set to a single item array', function () {
@@ -3923,77 +3925,94 @@ describe('S2S Adapter', function () {
       expect(typeof config.getConfig('s2sConfig').syncUrlModifier.appnexus).to.equal('function')
     });
 
-    it('should set correct bidder names to bidders property when using an alias for that bidder', function () {
-      const s2sConfig = utils.deepClone(CONFIG);
-
-      // Add syncEndpoint so that the request goes to the User Sync endpoint
-      // Modify the bidders property to include an alias for Rubicon adapter
-      s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
-      s2sConfig.bidders = ['appnexus', 'rubicon-alias'];
-
-      const s2sBidRequest = utils.deepClone(REQUEST);
-      s2sBidRequest.s2sConfig = s2sConfig;
-
-      // Add another bidder, `rubicon-alias`
-      s2sBidRequest.ad_units[0].bids.push({
-        bidder: 'rubicon-alias',
-        params: {
-          accoundId: 14062,
-          siteId: 70608,
-          zoneId: 498816
+    Object.entries({
+      'an alias'() {
+        adapterManager.aliasBidAdapter('rubicon', 'rubicon-alias');
+      },
+      'a server side alias'(s2sConfig) {
+        s2sConfig.extPrebid = {
+          aliases: {
+            'rubicon-alias': 'rubicon'
+          }
         }
-      });
+      }
+    }).forEach(([t, setupAlias]) => {
+      describe(`when using ${t}`, () => {
+        afterEach(() => {
+          delete adapterManager.aliasRegistry['rubicon-alias'];
+        });
+        it(`should set correct bidder names to bidders property`, function () {
+          const s2sConfig = utils.deepClone(CONFIG);
 
-      // create an alias for the Rubicon Bid Adapter
-      adapterManager.aliasBidAdapter('rubicon', 'rubicon-alias');
+          // Add syncEndpoint so that the request goes to the User Sync endpoint
+          // Modify the bidders property to include an alias for Rubicon adapter
+          s2sConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+          s2sConfig.bidders = ['appnexus', 'rubicon-alias'];
 
-      const bidRequest = utils.deepClone(BID_REQUESTS);
-      bidRequest.push({
-        'bidderCode': 'rubicon-alias',
-        'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4',
-        'bidderRequestId': '4b1a4f9c3e4546',
-        'tid': 'd7fa8342-ae22-4ca1-b237-331169350f84',
-        'bids': [
-          {
-            'bidder': 'rubicon-alias',
-            'params': {
-              'accountId': 14062,
-              'siteId': 70608,
-              'zoneId': 498816
-            },
-            'bid_id': '2a9523915411c3',
-            'mediaTypes': {
-              'banner': {
+          setupAlias(s2sConfig);
+
+          const s2sBidRequest = utils.deepClone(REQUEST);
+          s2sBidRequest.s2sConfig = s2sConfig;
+
+          // Add another bidder, `rubicon-alias`
+          s2sBidRequest.ad_units[0].bids.push({
+            bidder: 'rubicon-alias',
+            params: {
+              accoundId: 14062,
+              siteId: 70608,
+              zoneId: 498816
+            }
+          });
+
+          const bidRequest = utils.deepClone(BID_REQUESTS);
+          bidRequest.push({
+            'bidderCode': 'rubicon-alias',
+            'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4',
+            'bidderRequestId': '4b1a4f9c3e4546',
+            'tid': 'd7fa8342-ae22-4ca1-b237-331169350f84',
+            'bids': [
+              {
+                'bidder': 'rubicon-alias',
+                'params': {
+                  'accountId': 14062,
+                  'siteId': 70608,
+                  'zoneId': 498816
+                },
+                'bid_id': '2a9523915411c3',
+                'mediaTypes': {
+                  'banner': {
+                    'sizes': [
+                      [
+                        300,
+                        250
+                      ]
+                    ]
+                  }
+                },
+                'adUnitCode': 'div-gpt-ad-1460505748561-0',
+                'transactionId': '78ddc106-b7d8-45d1-bd29-86993098e53d',
                 'sizes': [
                   [
                     300,
                     250
                   ]
-                ]
+                ],
+                'bidId': '2a9523915411c3',
+                'bidderRequestId': '4b1a4f9c3e4546',
+                'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4'
               }
-            },
-            'adUnitCode': 'div-gpt-ad-1460505748561-0',
-            'transactionId': '78ddc106-b7d8-45d1-bd29-86993098e53d',
-            'sizes': [
-              [
-                300,
-                250
-              ]
             ],
-            'bidId': '2a9523915411c3',
-            'bidderRequestId': '4b1a4f9c3e4546',
-            'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4'
-          }
-        ],
-        'auctionStart': 1569234122602,
-        'timeout': 1000,
-        'src': 's2s'
+            'auctionStart': 1569234122602,
+            'timeout': 1000,
+            'src': 's2s'
+          });
+
+          adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+
+          const requestBid = JSON.parse(server.requests[0].requestBody);
+          expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
+        });
       });
-
-      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
-
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
     });
 
     it('should add cooperative sync flag to cookie_sync request if property is present', function () {
