@@ -186,7 +186,7 @@ function handlerAuctionInit(event) {
   // Check if Adagio is on the bid requests.
   const adagioBidRequest = event.bidderRequests.find(bidRequest => isAdagio(bidRequest.bidderCode));
 
-  const rtdUid = deepAccess(adagioBidRequest, 'ortb2.site.ext.data.adg_rtd.uid');
+  const rtdUid = deepAccess(event.bidderRequests[0], 'ortb2.site.ext.data.adg_rtd.uid');
   cache.addPrebidAuctionIdRef(prebidAuctionId, rtdUid);
 
   cache.auctions[prebidAuctionId] = {};
