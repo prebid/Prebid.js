@@ -25,6 +25,7 @@ const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
 
+// TODO: Agree with BE team on the base URL and endpoint names
 const EVENTS_BASE_URL = 'https://capi.connatix.com/event';
 const TIMOUT_EVENT_ENDPOINT = 'to';
 const AUCTION_END_EVENT_ENDPOINT = 'ae';
@@ -82,17 +83,23 @@ function _handleEids(payload, validBidRequests) {
 /**
  * Handle prebid events to send to Connatix
  */
-function _handleEvents() {
+function _handleEvents(validBidRequests, bidderRequest) {
   const prebidJs = window.pbjs;
 
   if (!prebidJs) {
-    // TODO: Do we need to log this case where prebid is not available?
-    // ajax(`${EVENTS_BASE_URL}/nt`, null, {}, {
-    //   method: 'POST',
-    //   withCredentials: false
-    // });
     return;
   }
+
+  // TODO: Define context with BE team
+  const placementIdList = validBidRequests.map(bid => bid.params.placementId);
+  const context = {
+    refererInfo: bidderRequest.refererInfo,
+    uspConsent: bidderRequest.uspConsent,
+    gppConsent: bidderRequest.gppConsent,
+    gdprConsent: bidderRequest.gdprConsent,
+    ortb2: bidderRequest.ortb2,
+    placementIdList,
+  };
 
   prebidJs.onEvent(EVENTS.AUCTION_TIMEOUT, (timeoutData) => {
     const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
@@ -102,9 +109,6 @@ function _handleEvents() {
     if (!isConnatixTimeout) {
       return;
     }
-
-    // TODO: Add context here similar for auction_start and bid in auction - logged by hba
-    const context = {};
 
     const timeout = timeoutData.timeout;
     ajax(`${EVENTS_BASE_URL}/${TIMOUT_EVENT_ENDPOINT}`, null, JSON.stringify({timeout, context}), {
@@ -135,8 +139,6 @@ function _handleEvents() {
     const connatixBidPrice = connatixBid?.cpm ?? 0;
 
     if (bestBidPrice > connatixBidPrice) {
-      // TODO: Add context here similar for auction_start and bid in auction - logged by hba
-      const context = {};
       ajax(`${EVENTS_BASE_URL}/${AUCTION_END_EVENT_ENDPOINT}`, null, JSON.stringify({bestBidBidder, bestBidPrice, connatixBidPrice, context}), {
         method: 'POST',
         withCredentials: false
@@ -186,7 +188,7 @@ export const spec = {
    * Return an object containing the request method, url, and the constructed payload.
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
-    _handleEvents()
+    _handleEvents(validBidRequests, bidderRequest)
 
     const bidRequests = validBidRequests.map(bid => {
       const {
