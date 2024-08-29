@@ -116,7 +116,8 @@ const BIDDER_REQUEST = {
     },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -341,7 +342,8 @@ describe('ShinezRtbBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
-          userData: []
+          userData: [],
+          coppa: 0
         }
       });
     });
@@ -408,7 +410,8 @@ describe('ShinezRtbBidAdapter', function () {
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
-          userData: []
+          userData: [],
+          coppa: 0
         }
       });
     });
