@@ -3,7 +3,7 @@ import {
   spec,
   getBidFloor as connatixGetBidFloor
 } from '../../../modules/connatixBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -24,6 +24,26 @@ describe('connatixBidAdapter', function () {
     };
   };
 
+  function addVideoToBidMock(bid) {
+    const mediaTypes = {
+      video: {
+        context: 'instream',
+        w: 1280,
+        h: 720,
+        playerSize: [1280, 720],
+        placement: 1,
+        plcmt: 1,
+        api: [1, 2],
+        mimes: ['video/mp4', 'application/javascript'],
+        minduration: 30,
+        maxduration: 60,
+        startdelay: 0,
+      }
+    }
+
+    bid.mediaTypes = mediaTypes;
+  }
+
   describe('isBidRequestValid', function () {
     this.beforeEach(function () {
       bid = mockBidRequest();
@@ -31,10 +51,6 @@ describe('connatixBidAdapter', function () {
 
     it('Should return true if all required fileds are present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-    it('Should return false if bidder does not correspond', function () {
-      bid.bidder = 'abc';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return false if bidId is missing', function () {
       delete bid.bidId;
@@ -52,7 +68,7 @@ describe('connatixBidAdapter', function () {
       delete bid.mediaTypes;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
-    it('Should return false if banner is missing from mediaTypes ', function () {
+    it('Should return false if both banner and video are missing from mediaTypes', function () {
       delete bid.mediaTypes.banner;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
@@ -66,6 +82,15 @@ describe('connatixBidAdapter', function () {
     });
     it('Should return false if sizes is an empty array', function () {
       bid.mediaTypes.banner.sizes = [];
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+    it('Should return true if video is set correctly', function () {
+      addVideoToBidMock(bid);
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+    it('Should return false if context is set to adpod on video media type', function() {
+      addVideoToBidMock(bid);
+      bid.mediaTypes.video.context = ADPOD;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return true if add an extra field was added to the bidRequest', function () {
@@ -197,6 +222,30 @@ describe('connatixBidAdapter', function () {
       expect(bidResponses[0].cpm).to.equal(firstBidCpm);
       expect(bidResponses[1].cpm).to.equal(secondBidCpm);
     });
+
+    it('Should contain specific values for banner bids', function () {
+      const adHtml = 'ad html'
+      serverResponse.body.Bids = [ { ...Bid, Ad: adHtml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.vastXml).to.be.undefined;
+      expect(bidResponse.ad).to.equal(adHtml);
+      expect(bidResponse.mediaType).to.equal(BANNER);
+    });
+
+    it('Should contain specific values for video bids', function () {
+      const adVastXml = 'ad vast xml'
+      serverResponse.body.Bids = [ { ...Bid, VastXml: adVastXml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.ad).to.be.undefined;
+      expect(bidResponse.vastXml).to.equal(adVastXml);
+      expect(bidResponse.mediaType).to.equal(VIDEO);
+    });
   });
 
   describe('getUserSyncs', function() {
@@ -300,6 +349,38 @@ describe('connatixBidAdapter', function () {
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+    });
+  });
+
+  describe('userIdAsEids', function() {
+    let validBidRequests;
+
+    this.beforeEach(function () {
+      bid = mockBidRequest();
+      validBidRequests = [bid];
+    })
+
+    it('Connatix adapter reads EIDs from Prebid user models and adds it to Request', function() {
+      validBidRequests[0].userIdAsEids = [{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID_FROM_USER_ID_MODULE',
+          'atype': 1,
+          'ext': {
+            'stype': 'ppuid',
+            'rtiPartner': 'TDID'
+          }
+        }]
+      },
+      {
+        'source': 'pubserver.org',
+        'uids': [{
+          'id': 'TDID_FROM_USER_ID_MODULE',
+          'atype': 1
+        }]
+      }];
+      let serverRequest = spec.buildRequests(validBidRequests, {});
+      expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
   });
 

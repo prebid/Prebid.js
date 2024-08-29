@@ -4,7 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const WL_BIDDER_CODE = 'admixerwl'
+const RTB_BIDDER_CODE = 'rtbstack'
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
@@ -37,11 +37,10 @@ describe('AdmixerAdapter', function () {
       auctionId: '1d1a030790a475',
     };
 
-    let wlBid = {
-      bidder: WL_BIDDER_CODE,
+    let rtbBid = {
+      bidder: RTB_BIDDER_CODE,
       params: {
-        clientId: CLIENT_ID,
-        endpointId: ENDPOINT_ID,
+        tagId: ENDPOINT_ID,
       },
       adUnitCode: 'adunit-code',
       sizes: [
@@ -56,25 +55,25 @@ describe('AdmixerAdapter', function () {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-    it('should return true when params required by WL found', function () {
-      expect(spec.isBidRequestValid(wlBid)).to.equal(true);
+    it('should return true when params required by RTB found', function () {
+      expect(spec.isBidRequestValid(rtbBid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         placementId: 0,
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
-    it('should return false when params required by WL are not passed', function () {
-      let wlBid = Object.assign({}, wlBid);
-      delete wlBid.params;
-      wlBid.params = {
+    it('should return false when params required by RTB are not passed', function () {
+      let invalidBid = Object.assign({}, rtbBid);
+      delete invalidBid.params;
+      invalidBid.params = {
         clientId: 0,
       };
-      expect(spec.isBidRequestValid(wlBid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -118,7 +117,7 @@ describe('AdmixerAdapter', function () {
     it('sends bid request to CUSTOM_ENDPOINT via GET', function () {
       config.setBidderConfig({
         bidders: [BIDDER_CODE], // one or more bidders
-        config: { [BIDDER_CODE]: { endpoint_url: ENDPOINT_URL_CUSTOM } },
+        config: { bidderURL: ENDPOINT_URL_CUSTOM },
       });
       const request = config.runWithBidder(BIDDER_CODE, () =>
         spec.buildRequests(validRequest, bidderRequest)
@@ -133,9 +132,8 @@ describe('AdmixerAdapter', function () {
       validRequest: [
         {
           bidder: bidder,
-          params: bidder === 'admixerwl' ? {
-            clientId: CLIENT_ID,
-            endpointId: ENDPOINT_ID
+          params: bidder === 'rtbstack' ? {
+            tagId: ENDPOINT_ID
           } : {
             zone: ZONE_ID,
           },
@@ -193,10 +191,16 @@ describe('AdmixerAdapter', function () {
       expect(request.url).to.equal('https://inv-nets.admixer.net/adxprebid.1.2.aspx');
       expect(request.method).to.equal('POST');
     });
-    it('build request for admixerwl', function () {
-      const requestParams = requestParamsFor('admixerwl');
-      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
-      expect(request.url).to.equal(`https://inv-nets-adxwl.admixer.com/adxwlprebid.aspx?client=${CLIENT_ID}`);
+    it('build request for rtbstack', function () {
+      const requestParams = requestParamsFor('rtbstack');
+      config.setBidderConfig({
+        bidders: ['rtbstack'],
+        config: { bidderURL: ENDPOINT_URL_CUSTOM },
+      });
+      const request = config.runWithBidder(BIDDER_CODE, () =>
+        spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest)
+      );
+      expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);
       expect(request.method).to.equal('POST');
     });
   });
@@ -222,12 +226,12 @@ describe('AdmixerAdapter', function () {
       },
     };
     it('gets floor', function () {
-      bidderRequest.getFloor = () => {
+      validRequest[0].getFloor = () => {
         return { floor: 0.6 };
       };
       const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = request.data;
-      expect(payload.bidFloor).to.deep.equal(0.6);
+      expect(payload.imps[0].bidFloor).to.deep.equal(0.6);
     });
   });
 

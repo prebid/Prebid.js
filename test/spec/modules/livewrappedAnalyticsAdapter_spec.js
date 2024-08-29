@@ -341,7 +341,6 @@ describe('Livewrapped analytics adapter', function () {
     });
 
     it('should build a batched message from prebid events', function () {
-      sandbox.stub(utils, 'getWindowTop').returns({});
       performStandardAuction();
 
       clock.tick(BID_WON_TIMEOUT + 1000);
@@ -401,20 +400,6 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.timeouts.length).to.equal(1);
       expect(message.timeouts[0].bidder).to.equal('livewrapped');
       expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
-    });
-
-    it('should detect adblocker recovered request', function () {
-      sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
-      performStandardAuction();
-
-      clock.tick(BID_WON_TIMEOUT + 1000);
-
-      expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
-
-      let message = JSON.parse(request.requestBody);
-
-      expect(message.rcv).to.equal(true);
     });
 
     it('should forward GDPR data', function () {
@@ -621,6 +606,42 @@ describe('Livewrapped analytics adapter', function () {
       let request = server.requests[0];
 
       expect(request.url).to.equal('https://whitelabeled.com/analytics/10');
+    });
+  });
+
+  describe('when given extended options', function () {
+    adapterManager.registerAnalyticsAdapter({
+      code: 'livewrapped',
+      adapter: livewrappedAnalyticsAdapter
+    });
+
+    beforeEach(function () {
+      adapterManager.enableAnalytics({
+        provider: 'livewrapped',
+        options: {
+          publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
+          ext: {
+            testparam: 123
+          }
+        }
+      });
+    });
+
+    afterEach(function () {
+      livewrappedAnalyticsAdapter.disableAnalytics();
+    });
+
+    it('should forward the extended options', function () {
+      performStandardAuction();
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.ext).to.not.equal(null);
+      expect(message.ext.testparam).to.equal(123);
     });
   });
 });

@@ -10,14 +10,6 @@ import {config} from './config.js';
  */
 export const VENDORLESS_GVLID = Object.freeze({});
 
-/**
- * Placeholder gvlid for when device.ext.cdep is present (Privacy Sandbox cookie deprecation label). When this value is used as gvlid, the gdpr
- * enforcement module will look to see that publisher consent was given.
- *
- * see https://github.com/prebid/Prebid.js/issues/10516
- */
-export const FIRST_PARTY_GVLID = Object.freeze({});
-
 export class ConsentHandler {
   #enabled;
   #data;
@@ -108,7 +100,6 @@ class UspConsentHandler extends ConsentHandler {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
       return {
-        usp: consentData,
         generatedAt: this.generatedTime
       };
     }
@@ -164,13 +155,18 @@ export function gvlidRegistry() {
       }
     },
     /**
+     * @typedef {Object} GvlIdResult
+     * @property {Object.<string, number>} modules - A map from module type to that module's GVL ID.
+     * @property {number} [gvlid] - The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
+     */
+
+    /**
      * Get a module's GVL ID(s).
      *
-     * @param {string} moduleName
-     * @return {{modules: {[moduleType]: number}, gvlid?: number}} an object where:
+     * @param {string} moduleName - The name of the module.
+     * @return {GvlIdResult} An object where:
      *   `modules` is a map from module type to that module's GVL ID;
-     *   `gvlid` is the single GVL ID for this family of modules (only defined
-     *   if all modules with this name declared the same ID).
+     *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
     get(moduleName) {
       const result = {modules: registry[moduleName] || {}};

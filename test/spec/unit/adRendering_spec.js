@@ -1,7 +1,7 @@
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import {
-  doRender,
+  doRender, emitAdRenderSucceeded, getBidToRender,
   getRenderingData,
   handleCreativeEvent,
   handleNativeMessage,
@@ -12,6 +12,7 @@ import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {auctionManager} from '../../../src/auctionManager.js';
+import adapterManager from '../../../src/adapterManager.js';
 
 describe('adRendering', () => {
   let sandbox;
@@ -24,6 +25,28 @@ describe('adRendering', () => {
     sandbox.restore();
   })
 
+  describe('getBidToRender', () => {
+    beforeEach(() => {
+      sandbox.stub(auctionManager, 'findBidByAdId').callsFake(() => 'auction-bid')
+    });
+    it('should default to bid from auctionManager', () => {
+      return getBidToRender('adId', true, Promise.resolve(null)).then((res) => {
+        expect(res).to.eql('auction-bid');
+        sinon.assert.calledWith(auctionManager.findBidByAdId, 'adId');
+      });
+    });
+    it('should give precedence to override promise', () => {
+      return getBidToRender('adId', true, Promise.resolve('override')).then((res) => {
+        expect(res).to.eql('override');
+        sinon.assert.notCalled(auctionManager.findBidByAdId);
+      })
+    });
+    it('should return undef when override rejects', () => {
+      return getBidToRender('adId', true, Promise.reject(new Error('any reason'))).then(res => {
+        expect(res).to.not.exist;
+      })
+    })
+  })
   describe('getRenderingData', () => {
     let bidResponse;
     beforeEach(() => {
@@ -245,4 +268,29 @@ describe('adRendering', () => {
       sinon.assert.calledWith(fireTrackers, data, bid);
     })
   })
+
+  describe('onAdRenderSucceeded', () => {
+    let mockAdapterSpec, bids;
+    beforeEach(() => {
+      mockAdapterSpec = {
+        onAdRenderSucceeded: sinon.stub()
+      };
+      adapterManager.bidderRegistry['mockBidder'] = {
+        bidder: 'mockBidder',
+        getSpec: function () { return mockAdapterSpec; },
+      };
+      bids = [
+        { bidder: 'mockBidder', params: { placementId: 'id' } },
+      ];
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['mockBidder'];
+    });
+
+    it('should invoke onAddRenderSucceeded on emitAdRenderSucceeded', () => {
+      emitAdRenderSucceeded({ bid: bids[0] });
+      sinon.assert.called(mockAdapterSpec.onAdRenderSucceeded);
+    });
+  });
 });
