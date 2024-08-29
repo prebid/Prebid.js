@@ -25,7 +25,7 @@ const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
 
-const EVENTS_BASE_URL = 'https://capi.connatix.com/tr/am';
+const EVENTS_URL = 'https://capi.connatix.com/tr/am';
 
 /*
  * Get the bid floor value from the bid object, either using the getFloor function or by accessing the 'params.bidfloor' property.
@@ -106,7 +106,7 @@ function _onAuctionTimeout(timeoutData, context) {
   }
 
   const timeout = timeoutData.timeout;
-  ajax(`${EVENTS_BASE_URL}`, null, JSON.stringify({type: 'timeout', timeout, context}), {
+  ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'timeout', timeout, context}), {
     method: 'POST',
     withCredentials: false
   });
@@ -134,7 +134,7 @@ function _onAuctionEnd(auctionEndData, context) {
   const connatixBidPrice = connatixBid?.cpm ?? 0;
 
   if (bestBidPrice > connatixBidPrice) {
-    ajax(`${EVENTS_BASE_URL}`, null, JSON.stringify({type: 'auction_end', bestBidBidder, bestBidPrice, connatixBidPrice, context}), {
+    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'auction_end', bestBidBidder, bestBidPrice, connatixBidPrice, context}), {
       method: 'POST',
       withCredentials: false
     });
