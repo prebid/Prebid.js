@@ -134,8 +134,10 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       isTimeout: (status === BIDDER_STATUS.TIMEOUT),
       hasBid: (status === BIDDER_STATUS.BID),
       params: (bid.params && Object.keys(bid.params).length > 0) ? bid.params : {},
-      cpm: (status === BIDDER_STATUS.BID ? bid.cpm : null),
-      currency: (status === BIDDER_STATUS.BID ? bid.currency : null)
+      ...(status === BIDDER_STATUS.BID ? {
+        cpm: bid.cpm,
+        currency: bid.currency
+      } : {}),
     };
   },
   /**
