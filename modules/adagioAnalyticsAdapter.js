@@ -214,13 +214,16 @@ function handlerAuctionInit(event) {
       bannerSize => bannerSize
     ).sort();
 
-    const sortedBidderCodes = bidders.sort()
+    const sortedBidderNames = bidders.sort();
 
     const bidSrcMapper = (bidder) => {
+      // bidderCode in the context of the bidderRequest is the name given to the bidder in the adunit.
+      // It is not always the "true" bidder code, it can also be its alias
       const request = event.bidderRequests.find(br => br.bidderCode === bidder)
       return request ? request.bids[0].src : null
     }
-    const biddersSrc = sortedBidderCodes.map(bidSrcMapper).join(',');
+    const biddersSrc = sortedBidderNames.map(bidSrcMapper).join(',');
+    const biddersCode = sortedBidderNames.map(bidder => adapterManager.resolveAlias(bidder)).join(',');
 
     // if adagio was involved in the auction we identified it with rtdUid, if not use the prebid auctionId
     const auctionId = rtdUid || prebidAuctionId;
@@ -238,7 +241,7 @@ function handlerAuctionInit(event) {
       url_dmn: w.location.hostname,
       mts: mediaTypesKeys.join(','),
       ban_szs: bannerSizes.join(','),
-      bdrs: sortedBidderCodes.join(','),
+      bdrs: sortedBidderNames.join(','),
       pgtyp: deepAccess(event.bidderRequests[0], 'ortb2.site.ext.data.pagetype', null),
       plcmt: deepAccess(adUnits[0], 'ortb2Imp.ext.data.placement', null),
       t_n: adgRtdSession.testName || null,
@@ -246,6 +249,7 @@ function handlerAuctionInit(event) {
       s_id: adgRtdSession.id || null,
       s_new: adgRtdSession.new || null,
       bdrs_src: biddersSrc,
+      bdrs_code: biddersCode,
     };
 
     if (adagioBidRequest && adagioBidRequest.bids) {
