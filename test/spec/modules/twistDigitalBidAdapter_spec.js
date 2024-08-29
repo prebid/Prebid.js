@@ -126,7 +126,8 @@ const BIDDER_REQUEST = {
     },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -339,6 +340,7 @@ describe('TwistDigitalBidAdapter', function () {
             'architecture': ''
           },
           contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -441,6 +443,7 @@ describe('TwistDigitalBidAdapter', function () {
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
           contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -528,6 +531,7 @@ describe('TwistDigitalBidAdapter', function () {
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
         contentLang: 'en',
+        coppa: 0,
         contentData: [{
           'name': 'example.com',
           'ext': {
