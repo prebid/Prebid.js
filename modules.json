@@ -29,6 +29,7 @@
     "ixBidAdapter",
     "justpremiumBidAdapter",
     "kargoBidAdapter",
+    "linkedInAdsIdSystem",
     "liveIntentIdSystem",
     "medianetBidAdapter",
     "openxBidAdapter",
