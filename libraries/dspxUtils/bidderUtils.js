@@ -1,7 +1,10 @@
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import {deepAccess, isArray, isEmptyStr, isFn, logError} from '../../src/utils.js';
 /**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 /**
  * Adds userIds to payload
