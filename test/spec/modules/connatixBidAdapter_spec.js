@@ -6,7 +6,7 @@ import {
   getBidFloor as connatixGetBidFloor,
   _getMinSize as connatixGetMinSize,
   _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
-  _isIframe as connatixIsIframe,
+  _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
   _getViewability as connatixGetViewability,
 } from '../../../modules/connatixBidAdapter.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
@@ -85,14 +85,14 @@ describe('connatixBidAdapter', function () {
       querySelectorStub.restore();
     });
 
-    it('should return false when window.top.document.querySelector does not throw an error', () => {
+    it('should return true when window.top.document.querySelector does not throw an error', () => {
       querySelectorStub.returns({});
-      expect(connatixIsIframe()).to.be.false;
+      expect(connatixCanSelectViewabilityContainer()).to.be.true;
     });
 
-    it('should return true when window.top.document.querySelector throws an error', () => {
+    it('should return false when window.top.document.querySelector throws an error', () => {
       querySelectorStub.throws(new Error('test error'));
-      expect(connatixIsIframe()).to.be.true;
+      expect(connatixCanSelectViewabilityContainer()).to.be.false;
     });
   });
 

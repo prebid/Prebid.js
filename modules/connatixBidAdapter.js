@@ -76,18 +76,18 @@ export function _getMinSize(sizes) {
   });
 }
 
-export function _isIframe() {
+export function _canSelectViewabilityContainer() {
   try {
-    window.top.document.querySelector('test');
-    return false;
-  } catch (e) {
+    window.top.document.querySelector('#viewability-container');
     return true;
+  } catch (e) {
+    return false;
   }
 }
 
 export function _isViewabilityMeasurable(element) {
   if (!element) return false;
-  return !_isIframe(element);
+  return _canSelectViewabilityContainer(element);
 }
 
 export function _getViewability(element, topWin, { w, h } = {}) {
