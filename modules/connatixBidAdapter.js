@@ -2,6 +2,8 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
+import { config } from '../src/config.js';
+
 import {
   deepAccess,
   isFn,
@@ -10,7 +12,6 @@ import {
   formatQS,
   deepSetValue
 } from '../src/utils.js';
-import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 
 import {
@@ -26,6 +27,8 @@ const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+
+let context = {};
 
 /*
  * Get the bid floor value from the bid object, either using the getFloor function or by accessing the 'params.bidfloor' property.
@@ -67,7 +70,7 @@ export function validateVideo(mediaTypes) {
   return video.context !== ADPOD;
 }
 
-function _getBidRequests(validBidRequests) {
+export function _getBidRequests(validBidRequests) {
   return validBidRequests.map(bid => {
     const {
       bidId,
@@ -104,71 +107,41 @@ function _onAuctionTimeout(timeoutData, context) {
   if (!isConnatixTimeout) {
     return;
   }
-
-  const timeout = timeoutData.timeout;
+  const timeout = timeoutData.timeout || config.getConfig('bidderTimeout')
   ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'timeout', timeout, context}), {
     method: 'POST',
     withCredentials: false
   });
 }
 
-function _onAuctionEnd(auctionEndData, context) {
-  const bidsReceived = auctionEndData.bidsReceived;
-  const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
+// function _onAuctionEnd(auctionEndData, context) {
+//   const bidsReceived = auctionEndData.bidsReceived;
+//   const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
 
-  // Log only if connatix compete in the auction and have a bid.
-  // Otherwise it is not relevant for us
-  if (!hasConnatixBid) {
-    return;
-  }
+//   // Log only if connatix compete in the auction and have a bid.
+//   // Otherwise it is not relevant for us
+//   if (!hasConnatixBid) {
+//     return;
+//   }
 
-  const { bestBidPrice, bestBidBidder } = bidsReceived.reduce((acc, bid) => {
-    if (bid.cpm > acc.bestBidPrice) {
-      acc.bestBidPrice = bid.cpm;
-      acc.bestBidBidder = bid.bidderCode;
-    }
-    return acc;
-  }, { bestBidPrice: 0, bestBidBidder: '' });
+//   const { bestBidPrice, bestBidBidder } = bidsReceived.reduce((acc, bid) => {
+//     if (bid.cpm > acc.bestBidPrice) {
+//       acc.bestBidPrice = bid.cpm;
+//       acc.bestBidBidder = bid.bidderCode;
+//     }
+//     return acc;
+//   }, { bestBidPrice: 0, bestBidBidder: '' });
 
-  const connatixBid = bidsReceived.find(bid => bid.bidderCode === BIDDER_CODE);
-  const connatixBidPrice = connatixBid?.cpm ?? 0;
+//   const connatixBid = bidsReceived.find(bid => bid.bidderCode === BIDDER_CODE);
+//   const connatixBidPrice = connatixBid?.cpm ?? 0;
 
-  if (bestBidPrice > connatixBidPrice) {
-    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'auction_end', bestBidBidder, bestBidPrice, connatixBidPrice, context}), {
-      method: 'POST',
-      withCredentials: false
-    });
-  }
-}
-
-/**
- * Handle prebid events to send to Connatix
- */
-function subscribeToEvents(validBidRequests, bidderRequest) {
-  const prebidJs = window.pbjs;
-
-  if (!prebidJs) {
-    return;
-  }
-
-  const bidRequests = _getBidRequests(validBidRequests);
-  const context = {
-    refererInfo: bidderRequest.refererInfo,
-    uspConsent: bidderRequest.uspConsent,
-    gppConsent: bidderRequest.gppConsent,
-    gdprConsent: bidderRequest.gdprConsent,
-    ortb2: bidderRequest.ortb2,
-    bidRequests,
-  };
-
-  prebidJs.onEvent(EVENTS.AUCTION_TIMEOUT, (timeoutData) => {
-    _onAuctionTimeout(timeoutData, context);
-  });
-
-  prebidJs.onEvent(EVENTS.AUCTION_END, (auctionEndData) => {
-    _onAuctionEnd(auctionEndData, context);
-  });
-}
+//   if (bestBidPrice > connatixBidPrice) {
+//     ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'auction_end', bestBidBidder, bestBidPrice, connatixBidPrice, context}), {
+//       method: 'POST',
+//       withCredentials: false
+//     });
+//   }
+// }
 
 export const spec = {
   code: BIDDER_CODE,
@@ -211,8 +184,6 @@ export const spec = {
    * Return an object containing the request method, url, and the constructed payload.
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
-    subscribeToEvents(validBidRequests, bidderRequest)
-
     const bidRequests = _getBidRequests(validBidRequests);
 
     const requestPayload = {
@@ -226,10 +197,12 @@ export const spec = {
 
     _handleEids(requestPayload, validBidRequests);
 
+    context = requestPayload;
+
     return {
       method: 'POST',
       url: AD_URL,
-      data: requestPayload
+      data: context
     };
   },
 
@@ -303,7 +276,27 @@ export const spec = {
       type: 'iframe',
       url
     }];
-  }
+  },
+
+  /**
+   * @param {TimedOutBid} timeoutData
+   */
+  onTimeout: (timeoutData) => {
+    _onAuctionTimeout(timeoutData, context);
+  },
+
+  onBidWon(bidWinData) {
+    if (bidWinData == null) {
+      return;
+    }
+
+    const {bidder, cpm} = bidWinData;
+
+    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'auction_end', bestBidBidder: bidder, bestBidPrice: cpm, context}), {
+      method: 'POST',
+      withCredentials: false
+    });
+  },
 };
 
 registerBidder(spec);
