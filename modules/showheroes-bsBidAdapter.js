@@ -3,7 +3,8 @@ import {
   deepSetValue,
   triggerPixel,
   isFn,
-  logInfo} from '../src/utils.js';
+  logInfo
+} from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -188,8 +189,7 @@ function createBids(bidRes, reqData) {
     }
     if (bid.mediaType === BANNER) {
       bidUnit.ad = getBannerHtml(bid, reqData);
-    }
-    else if (bid.context === 'outstream') {
+    } else if (bid.context === 'outstream') {
       const renderConfig = {
         rendererUrl: bid.rendererConfig?.rendererUrl,
         renderFunc: bid.rendererConfig?.renderFunc,
@@ -211,7 +211,7 @@ function outstreamRender(response, renderConfig) {
     if (!isFn(func)) {
       return;
     }
-    const renderPayload = {...response, ...renderConfig.renderOptions};
+    const renderPayload = { ...response, ...renderConfig.renderOptions };
     func(renderPayload);
   });
 }
