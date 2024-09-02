@@ -10,7 +10,8 @@ import {
   logError,
   isArray,
   formatQS,
-  deepSetValue
+  deepSetValue,
+  isNumber
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
@@ -78,12 +79,13 @@ export function _getBidRequests(validBidRequests) {
       params,
       sizes,
     } = bid;
+    const { placementId, viewabilityContainerIdentifier } = params;
     return {
       bidId,
       mediaTypes,
       sizes,
-      placementId: params.placementId,
-      hasViewabilityContainerId: Boolean(params.viewabilityContainerIdentifier),
+      placementId,
+      hasViewabilityContainerId: Boolean(viewabilityContainerIdentifier),
       floor: getBidFloor(bid),
     };
   });
@@ -98,50 +100,6 @@ function _handleEids(payload, validBidRequests) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
 }
-
-function _onAuctionTimeout(timeoutData, context) {
-  const isConnatixTimeout = timeoutData.bidderRequests.some(bidderRequest => bidderRequest.bidderCode === BIDDER_CODE);
-
-  // Log only it is a timeout for Connatix
-  // Otherwise it is not relevant for us
-  if (!isConnatixTimeout) {
-    return;
-  }
-  const timeout = timeoutData.timeout || config.getConfig('bidderTimeout')
-  ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'timeout', timeout, context}), {
-    method: 'POST',
-    withCredentials: false
-  });
-}
-
-// function _onAuctionEnd(auctionEndData, context) {
-//   const bidsReceived = auctionEndData.bidsReceived;
-//   const hasConnatixBid = bidsReceived.some(bid => bid.bidderCode === BIDDER_CODE);
-
-//   // Log only if connatix compete in the auction and have a bid.
-//   // Otherwise it is not relevant for us
-//   if (!hasConnatixBid) {
-//     return;
-//   }
-
-//   const { bestBidPrice, bestBidBidder } = bidsReceived.reduce((acc, bid) => {
-//     if (bid.cpm > acc.bestBidPrice) {
-//       acc.bestBidPrice = bid.cpm;
-//       acc.bestBidBidder = bid.bidderCode;
-//     }
-//     return acc;
-//   }, { bestBidPrice: 0, bestBidBidder: '' });
-
-//   const connatixBid = bidsReceived.find(bid => bid.bidderCode === BIDDER_CODE);
-//   const connatixBidPrice = connatixBid?.cpm ?? 0;
-
-//   if (bestBidPrice > connatixBidPrice) {
-//     ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'auction_end', bestBidBidder, bestBidPrice, connatixBidPrice, context}), {
-//       method: 'POST',
-//       withCredentials: false
-//     });
-//   }
-// }
 
 export const spec = {
   code: BIDDER_CODE,
@@ -279,12 +237,29 @@ export const spec = {
   },
 
   /**
+   * Register bidder specific code, which will execute if the server response time is greater than auction timeout
    * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
-    _onAuctionTimeout(timeoutData, context);
+    const connatixBidRequestTimeout = timeoutData.find(bidderRequest => bidderRequest.bidder === BIDDER_CODE);
+
+    // Log only it is a timeout for Connatix
+    // Otherwise it is not relevant for us
+    if (!connatixBidRequestTimeout) {
+      return;
+    }
+    const requestTimeout = connatixBidRequestTimeout.timeout;
+    const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
+    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'timeout', timeout, context}), {
+      method: 'POST',
+      withCredentials: false
+    });
   },
 
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * @param {Bid} bid The bid that won the auction
+   */
   onBidWon(bidWinData) {
     if (bidWinData == null) {
       return;
@@ -292,7 +267,7 @@ export const spec = {
 
     const {bidder, cpm} = bidWinData;
 
-    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'auction_end', bestBidBidder: bidder, bestBidPrice: cpm, context}), {
+    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'bid_won', bestBidBidder: bidder, bestBidPrice: cpm, context}), {
       method: 'POST',
       withCredentials: false
     });
