@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -10,6 +10,7 @@ const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
 const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 
+const GVLID = 1218
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
 
@@ -59,7 +60,7 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
     deepSetValue(request, 'at', 1);
     setPrebidRequestEnvironment(request);
-    deepSetValue(request, 'regs', getRegs());
+    deepSetValue(request, 'regs', getRegs(bidderRequest));
     deepSetValue(request, 'site.publisher.id', bidderRequest.bids[0].params.publisherId);
     deepSetValue(request, 'site.id', bidderRequest.bids[0].params.siteId);
     return request;
@@ -106,22 +107,22 @@ function recur(obj) {
   return result;
 }
 
-function getRegs() {
+function getRegs(bidderRequest) {
   let regs = {};
-  const consentManagement = config.getConfig('consentManagement');
+  const euConsentManagement = bidderRequest.gdprConsent;
+  const usConsentManagement = bidderRequest.uspConsent;
   const coppa = config.getConfig('coppa');
-  if (consentManagement && !!(consentManagement.gdpr)) {
-    deepSetValue(regs, 'gdpr_applies', !!consentManagement.gdpr);
+  if (euConsentManagement && euConsentManagement.consentString) {
+    deepSetValue(regs, 'gdpr_applies', !!euConsentManagement.consentString);
   } else {
     deepSetValue(regs, 'gdpr_applies', false);
   }
-  if (consentManagement && deepAccess(consentManagement, 'usp.cmpApi') === 'static') {
-    deepSetValue(regs, 'usp_applies', !!deepAccess(consentManagement, 'usp'));
-    deepSetValue(regs, 'us_privacy', deepAccess(consentManagement, 'usp.consentData.getUSPData.uspString'));
+  if (usConsentManagement) {
+    deepSetValue(regs, 'usp_applies', true);
+    deepSetValue(regs, 'us_privacy', bidderRequest.uspConsent);
   } else {
     deepSetValue(regs, 'usp_applies', false);
   }
-
   if (isBoolean(coppa)) {
     deepSetValue(regs, 'coppa_applies', !!coppa);
   } else {
@@ -132,7 +133,7 @@ function getRegs() {
 }
 
 function setPrebidRequestEnvironment(payload) {
-  const __navigator = JSON.parse(JSON.stringify(recur(navigator)));
+  const __navigator = deepClone(recur(navigator));
   delete __navigator.plugins;
   deepSetValue(payload, 'environment.ri', getRefererInfo());
   deepSetValue(payload, 'environment.hl', window.history.length);
@@ -232,6 +233,7 @@ function hasValidParameters(bidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function(bidRequest) {
     logInfo('bid: ', bidRequest);

@@ -21,12 +21,12 @@ describe('luponmediaBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'siteId': 12345
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -383,51 +383,6 @@ describe('luponmediaBidAdapter', function () {
 
       const checkSchain = hasValidSupplyChainParams(schain);
       expect(checkSchain).to.equal(false);
-    });
-  });
-
-  describe('onBidWon', function () {
-    const bidWonEvent = {
-      'bidderCode': 'luponmedia',
-      'width': 300,
-      'height': 250,
-      'statusMessage': 'Bid available',
-      'adId': '105bbf8c54453ff',
-      'requestId': '934b8752185955',
-      'mediaType': 'banner',
-      'source': 'client',
-      'cpm': 0.364,
-      'creativeId': '443801010',
-      'currency': 'USD',
-      'netRevenue': false,
-      'ttl': 300,
-      'referrer': '',
-      'ad': '',
-      'auctionId': '926a8ea3-3dd4-4bf2-95ab-c85c2ce7e99b',
-      'responseTimestamp': 1598527728026,
-      'requestTimestamp': 1598527727629,
-      'bidder': 'luponmedia',
-      'adUnitCode': 'div-gpt-ad-1533155193780-5',
-      'timeToRespond': 397,
-      'size': '300x250',
-      'status': 'rendered'
-    };
-
-    let ajaxStub;
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'sendWinningsToServer')
-    })
-
-    afterEach(() => {
-      ajaxStub.restore()
-    })
-
-    it('calls luponmedia\'s callback endpoint', () => {
-      const result = spec.onBidWon(bidWonEvent);
-      expect(result).to.equal(undefined);
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.deep.equal(JSON.stringify(bidWonEvent));
     });
   });
 });

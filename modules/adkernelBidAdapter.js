@@ -20,6 +20,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -94,7 +95,10 @@ export const spec = {
     {code: 'adpluto'},
     {code: 'headbidder'},
     {code: 'digiad'},
-    {code: 'monetix'}
+    {code: 'monetix'},
+    {code: 'hyperbrainz'},
+    {code: 'voisetech'},
+    {code: 'global_sun'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -243,18 +247,6 @@ function groupImpressionsByHostZone(bidRequests, refererInfo) {
         return acc;
       }, {})
   );
-}
-
-function getBidFloor(bid, mediaType, sizes) {
-  var floor;
-  var size = sizes.length === 1 ? sizes[0] : '*';
-  if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
 }
 
 /**

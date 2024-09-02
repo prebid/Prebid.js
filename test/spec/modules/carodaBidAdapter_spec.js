@@ -197,17 +197,14 @@ describe('Caroda adapter', function () {
       let validBidRequests = [{
         bid_id: 'bidId',
         params: {},
-        userIdAsEids: createEidsArray({
-          tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-          pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
-        })
+        userIdAsEids: [
+          { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
+          { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
+        ]
       }];
 
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
-      assert.deepEqual(request.user.eids, [
-        { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
-        { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
-      ]);
+      assert.deepEqual(request.user.eids, validBidRequests[0].userIdAsEids);
     });
 
     describe('user privacy', function () {

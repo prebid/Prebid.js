@@ -22,7 +22,7 @@ const CONSTANTS = {
   DISABLE_USER_SYNC: true
 };
 
-const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
