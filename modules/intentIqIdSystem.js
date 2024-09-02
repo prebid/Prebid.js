@@ -32,7 +32,7 @@ export const OPT_OUT = 'O';
 export const BLACK_LIST = 'L';
 export const CLIENT_HINTS_KEY = '_iiq_ch';
 export const EMPTY = 'EMPTY'
-export const VERSION = 0.1
+export const VERSION = 0.2
 
 const encoderCH = {
   brands: 0,
@@ -223,6 +223,10 @@ export function detectBrowserFromUserAgent(userAgent) {
 
   return 'unknown';
 }
+/**
+ * @typedef {Object} NavigatorUAData
+ * @property {Array<{brand: string, version: string}>} brands - The list of brands associated with the user agent.
+ */
 
 /**
  * Detects the browser from the NavigatorUAData object

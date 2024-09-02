@@ -16,7 +16,7 @@ export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
 const FIRST_PARTY_KEY = '_iiq_fdata';
 const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-const JSVERSION = 0.1
+const JSVERSION = 0.2
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
@@ -50,7 +50,8 @@ const PARAMS_NAMES = {
   referrer: 'vrref',
   isInBrowserBlacklist: 'inbbl',
   prebidVersion: 'pbjsver',
-  partnerId: 'partnerId'
+  partnerId: 'partnerId',
+  firstPartyId: 'pcid'
 };
 
 let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
@@ -157,6 +158,7 @@ export function preparePayload(data) {
   result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup == 'A';
 
   result[PARAMS_NAMES.agentId] = REPORTER_ID;
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid?.pcid) result[PARAMS_NAMES.firstPartyId] = encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid)
 
   fillPrebidEventData(data, result);
 

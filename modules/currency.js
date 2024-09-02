@@ -62,13 +62,13 @@ export let responseReady = defer();
 export function setConfig(config) {
   ratesURL = DEFAULT_CURRENCY_RATE_URL;
 
-  if (typeof config.rates === 'object') {
+  if (config.rates !== null && typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
     needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
-  if (typeof config.defaultRates === 'object') {
+  if (config.defaultRates !== null && typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
 
     // set up the default rates to be used if the rate file doesn't get loaded in time
