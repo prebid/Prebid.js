@@ -470,7 +470,7 @@ describe('RTBHouseAdapter', () => {
         delete bidRequest[0].params.test;
 
         config.setConfig({ fledgeConfig: false });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: { enabled: true }});
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         const data = JSON.parse(request.data);
         expect(data.ext).to.exist.and.to.be.a('object');
         expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
@@ -490,7 +490,7 @@ describe('RTBHouseAdapter', () => {
             decisionLogicUrl: 'https://sellers.domain/decision.url'
           }
         });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: { enabled: true }});
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         const data = JSON.parse(request.data);
         expect(data.ext).to.exist.and.to.be.a('object');
         expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
@@ -510,7 +510,7 @@ describe('RTBHouseAdapter', () => {
             decisionLogicUrl: 'https://sellers.domain/decision.url'
           }
         });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: { enabled: true }});
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         const data = JSON.parse(request.data);
         expect(data.ext).to.exist.and.to.be.a('object');
         expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
@@ -534,7 +534,7 @@ describe('RTBHouseAdapter', () => {
             decisionLogicUrl: 'https://fledgeconfig.sellers.domain/decision.url'
           }
         });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: { enabled: true }});
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         const data = JSON.parse(request.data);
         expect(data.ext).to.exist.and.to.be.a('object');
         expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
@@ -549,7 +549,7 @@ describe('RTBHouseAdapter', () => {
         bidRequest[0].ortb2Imp = {
           ext: { ae: 2 }
         };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: { enabled: false }});
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: false} });
         let data = JSON.parse(request.data);
         if (data.imp[0].ext) {
           expect(data.imp[0].ext).to.not.have.property('ae');
@@ -562,7 +562,7 @@ describe('RTBHouseAdapter', () => {
         bidRequest[0].ortb2Imp = {
           ext: { ae: 2 }
         };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true }});
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         let data = JSON.parse(request.data);
         expect(data.imp[0].ext.ae).to.equal(2);
       });
@@ -833,14 +833,14 @@ describe('RTBHouseAdapter', () => {
 
     context('when the response contains FLEDGE auction config and bid request has additional signals in paapiConfig', function () {
       let bidderRequest;
-      config.setConfig({ 
+      config.setConfig({
         paapiConfig: {
           interestGroupBuyers: ['https://buyer1.com'],
           perBuyerSignals: {
             'https://buyer1.com': { signal: 1 }
           },
           customSignal: 1
-        } 
+        }
       });
       let response = spec.interpretResponse({body: fledgeResponse}, {bidderRequest});
 
