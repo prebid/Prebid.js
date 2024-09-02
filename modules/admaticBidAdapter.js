@@ -11,7 +11,7 @@ import { Renderer } from '../src/Renderer.js';
  */
 
 export const OPENRTB = {
-  NATIVE: {
+  N: {
     IMAGE_TYPE: {
       ICON: 1,
       MAIN: 3,
@@ -434,30 +434,30 @@ function interpretNativeAd(adm) {
   };
   native.assets.forEach(asset => {
     switch (asset.id) {
-      case OPENRTB.NATIVE.ASSET_ID.TITLE:
+      case OPENRTB.N.ASSET_ID.TITLE:
         result.title = asset.title.text;
         break;
-      case OPENRTB.NATIVE.ASSET_ID.IMAGE:
+      case OPENRTB.N.ASSET_ID.IMAGE:
         result.image = {
           url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
-      case OPENRTB.NATIVE.ASSET_ID.ICON:
+      case OPENRTB.N.ASSET_ID.ICON:
         result.icon = {
           url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
-      case OPENRTB.NATIVE.ASSET_ID.BODY:
+      case OPENRTB.N.ASSET_ID.BODY:
         result.body = asset.data.value;
         break;
-      case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
+      case OPENRTB.N.ASSET_ID.SPONSORED:
         result.sponsoredBy = asset.data.value;
         break;
-      case OPENRTB.NATIVE.ASSET_ID.CTA:
+      case OPENRTB.N.ASSET_ID.CTA:
         result.cta = asset.data.value;
         break;
     }
