@@ -67,7 +67,6 @@ let wonRequest = {
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
-  let userAgentStub;
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
@@ -95,7 +94,6 @@ describe('IntentIQ tests all', function () {
 
   afterEach(function () {
     logErrorStub.restore();
-    if (userAgentStub) userAgentStub.restore();
     config.getConfig.restore();
     events.getEvents.restore();
     iiqAnalyticsAnalyticsAdapter.disableAnalytics();
@@ -181,6 +179,9 @@ describe('IntentIQ tests all', function () {
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
 
+    // Stub userAgent to simulate Chrome
+    sinon.stub(navigator, 'userAgent').value('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3');
+
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     events.emit(EVENTS.BID_WON, wonRequest);
 
@@ -197,7 +198,7 @@ describe('IntentIQ tests all', function () {
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     // Stub userAgent to simulate Safari
-    userAgentStub = sinon.stub(navigator, 'userAgent').value('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15');
+    sinon.stub(navigator, 'userAgent').value('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15');
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
