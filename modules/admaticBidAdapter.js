@@ -73,7 +73,6 @@ export const spec = {
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
-    const currency = config.getConfig('currency.adServerCurrency') || 'TRY';
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -88,7 +87,6 @@ export const spec = {
       },
       imp: bids,
       ext: {
-        cur: currency,
         bidder: bidderName
       },
       schain: {},
@@ -102,6 +100,10 @@ export const spec = {
       at: 1,
       tmax: parseInt(tmax)
     };
+
+    if (config.getConfig('currency.adServerCurrency')) {
+      payload.ext.cur = config.getConfig('currency.adServerCurrency');
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -207,7 +209,7 @@ export const spec = {
             cpm: bid.price,
             width: bid.width,
             height: bid.height,
-            currency: body.cur || 'TRY',
+            currency: body.cur,
             netRevenue: true,
             creativeId: bid.creative_id,
             meta: {
