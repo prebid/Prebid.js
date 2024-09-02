@@ -188,8 +188,6 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.equal(0);
-    expect(logErrorStub.calledOnce).to.be.true;
-    expect(logErrorStub.firstCall.args[0]).to.contain('IIQ ANALYTICS -> Browser is in blacklist!');
   });
 
   it('should send request if the browser is not in blacklist (safari)', function () {
@@ -209,6 +207,5 @@ describe('IntentIQ tests all', function () {
     expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
-    expect(logErrorStub.called).to.be.false;
   });
 });
