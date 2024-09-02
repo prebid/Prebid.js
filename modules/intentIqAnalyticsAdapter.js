@@ -1,4 +1,4 @@
-import { logInfo, logError } from '../src/utils.js';
+import { logInfo, logError, getWindowSelf, getWindowTop, getWindowLocation } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
@@ -218,10 +218,10 @@ function constructFullUrl(data) {
 
 export function getReferrer() {
   try {
-    if (window.self === window.top) {
-      return window.location.href;
+    if (getWindowSelf() === getWindowTop()) {
+      return getWindowLocation().href;
     } else {
-      return window.top.location.href;
+      return getWindowTop().location.href;
     }
   } catch (error) {
     logError(`Error accessing location: ${error}`);
