@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
+import * as detectBrowserUtils from '../../../libraries/detectBrowserUtils/detectBrowserUtils';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { EVENTS } from 'src/constants.js';
@@ -67,6 +68,7 @@ let wonRequest = {
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
+  let detectBrowserStub;
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
@@ -94,6 +96,7 @@ describe('IntentIQ tests all', function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    if (detectBrowserStub) detectBrowserStub.restore();
     config.getConfig.restore();
     events.getEvents.restore();
     iiqAnalyticsAnalyticsAdapter.disableAnalytics();
@@ -176,11 +179,10 @@ describe('IntentIQ tests all', function () {
   it('should not send request if the browser is in blacklist (chrome)', function () {
     const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
     USERID_CONFIG_BROWSER[0].params.browserBlackList = 'ChrOmE';
+
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
-
-    // Stub userAgent to simulate Chrome
-    sinon.stub(navigator, 'userAgent').value('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3');
+    detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('chrome');
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
     events.emit(EVENTS.BID_WON, wonRequest);
@@ -193,13 +195,12 @@ describe('IntentIQ tests all', function () {
   it('should send request if the browser is not in blacklist (safari)', function () {
     const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
     USERID_CONFIG_BROWSER[0].params.browserBlackList = 'chrome,firefox';
+
     config.getConfig.restore();
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
+    detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('safari');
 
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    // Stub userAgent to simulate Safari
-    sinon.stub(navigator, 'userAgent').value('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15');
-
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
