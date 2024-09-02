@@ -1,0 +1,256 @@
+<html>
+
+<head>
+    <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
+    <style>
+        .sponsored-post {
+            width: 600px;
+            /* Fixed width */
+            height: 600px;
+            /* Fixed height */
+            background-color: #fffdeb;
+            font-family: sans-serif;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            /* Hide overflow content */
+            position: relative;
+            display: flex;
+            /* Use flexbox to stack elements */
+            flex-direction: column;
+            /* Stack children vertically */
+        }
+
+  
+        .thumbnail {
+            flex: 1;
+            /* Allow image to take up remaining space */
+            background-size: cover;
+            /* Scale image to cover the container */
+            background-position: center;
+            /* Center the image */
+            background-repeat: no-repeat;
+            /* Prevent image repetition */
+        }
+
+        .backgroundimage {
+            height: auto;
+            left: 0;
+            margin: 0;
+            min-height: 100%;
+            min-width: 674px;
+            padding: 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: -1;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        a {
+            color: #0086b3;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .attribution {
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            display: inline-block;
+            letter-spacing: 2px;
+            background-color: #ffd724;
+            border-radius: 2px;
+            padding: 245px;
+        }
+    </style>
+
+    <script>
+        var PREBID_TIMEOUT = 2000;
+
+        var adUnits = [
+            {
+                code: 'test-div',
+                mediaTypes: {
+                    native: {
+                        adTemplate: `
+    <div class="sponsored-post">
+        <div class="thumbnail" style="background-image: url('${encodeURI('##hb_native_asset_id_3##')}'); width: 300px;
+            height: 250px;">
+        <div class="content">
+            <h1>
+                <a href="${encodeURI("https://" + '##hb_native_linkurl##')}" target="_blank" class="pb-click" >
+                    ${encodeURI('##hb_native_body##')}
+                </a>
+            </h1>
+            <p>${encodeURI('##hb_native_asset_id_4##')}</p>
+            <div class="attribution">${encodeURI('##hb_native_asset_id_1##')}</div>
+            </div>
+        </div>
+    </div>
+`,
+                        ortb: {
+                            assets: [
+                                {
+                                    id: 3,
+                                    required: 1,
+                                    img: {
+                                        type: 3,
+                                        w: 300,
+                                        h: 250
+                                    }
+                                },
+                                {
+                                    id: 1,
+                                    required: 1,
+                                    title: {
+                                        len: 800
+                                    }
+                                },
+                                {
+                                    id: 4,
+                                    required: 0,
+                                    data: {
+                                        type: 1
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+
+                bids: [
+                    {
+                        bidder: 'precisonat',
+                        params: {
+                            publisherId: 'PRECISO_TEST00001',
+                            traffic: 'native',
+                            bidFloor: 0.12,
+                            currency: ['USD']
+                        }
+                    }
+                ]
+            }
+        ];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+    </script>
+
+
+
+    <script>
+        pbjs.que.push(function () {
+            pbjs.setConfig({ enableSendAllBids: true });
+            pbjs.addAdUnits(adUnits);
+            pbjs.setConfig({
+                userSync: {
+                    userIds: [{
+                        name: 'sharedId',
+                        storage: {
+                            name: '_sharedid',
+                            type: 'cookie',
+                            expires: 365
+                        }
+                    }],
+                    filterSettings: {
+                        iframe: {
+                            bidders: ['precisonat'],
+                            filter: 'include'
+                        },
+                        image: {
+                            bidders: ['preciso'],
+                            filter: 'include'
+                        }
+                    }
+                },
+                floors: {
+                    floorMin: 0.32,
+                    currency: ['USD']
+                },
+                ortb2: {
+                    bcat: ['IAB1-1'],
+                    badv: ['example.com'],
+                    wlang: ['fr', 'en']
+                },
+                enableTIDs: true,
+                debug: true
+            });
+        });
+
+        function renderEverything() {
+            var winners = pbjs.getHighestCpmBids();
+            for (var i = 0; i < winners.length; i++) {
+                renderOne(winners[i]);
+            }
+        }
+
+        function renderOne(winningBid) {
+            if (winningBid && winningBid.adId) {
+                let options = winningBid.adm
+                console.log("Here 123");
+                var div = document.getElementById(winningBid.adUnitCode);
+                if (div) {
+                    let iframe = document.createElement('iframe');
+                    iframe.frameBorder = '0';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    div.appendChild(iframe);
+                    console.log("Here 1234");
+                    if (winningBid.mediaType == "banner") {
+                        console.log("Here 1234 banner");
+                        var iframeDoc = iframe.contentWindow.document;
+                        pbjs.renderAd(iframeDoc, winningBid.adId);
+                    } else if (winningBid.mediaType == "native") {
+                        console.log("Here 1234 native");
+                        var domdoc = iframe.contentWindow.document;
+                        console.log("Here 12345 native");
+                        pbjs.renderAd(domdoc, winningBid.adId);
+                        console.log("Here 123456 native");
+                    }
+                }
+            }
+        }
+
+    </script>
+    <script>
+        pbjs.que.push(function () {
+            pbjs.requestBids({
+                timeout: 2000,
+                bidsBackHandler: renderEverything
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <h2>Ad Serverless Test Page</h2>
+    <p>
+        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's
+        standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make
+        a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting,
+        remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing
+        Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions
+        of Lorem Ipsum
+    </p>
+    <div id="test-div"></div>
+    <p>
+        Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin
+        literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney
+        College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and
+        going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum
+        comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by
+        Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance.
+        The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
+    </p>
+</body>
+
+</html>
