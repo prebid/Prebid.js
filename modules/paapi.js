@@ -83,8 +83,8 @@ function attachHandlers() {
   getHook('addPaapiConfig').before(addPaapiConfigHook);
   getHook('makeBidRequests').before(addPaapiData);
   getHook('makeBidRequests').after(markForFledge);
-//getHook('processBidderRequests').before(parallelPaapiProcessing);
-//events.on(EVENTS.AUCTION_INIT, onAuctionInit);
+  getHook('processBidderRequests').before(parallelPaapiProcessing);
+  events.on(EVENTS.AUCTION_INIT, onAuctionInit);
   events.on(EVENTS.AUCTION_END, onAuctionEnd);
 }
 
@@ -92,9 +92,9 @@ function detachHandlers() {
   getHook('addPaapiConfig').getHooks({hook: addPaapiConfigHook}).remove();
   getHook('makeBidRequests').getHooks({hook: addPaapiData}).remove();
   getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
-  //getHook('processBidderRequests').before({hook: parallelPaapiProcessing}).remove();
+  getHook('processBidderRequests').getHooks({hook: parallelPaapiProcessing}).remove();
+  events.off(EVENTS.AUCTION_INIT, onAuctionInit);
   events.off(EVENTS.AUCTION_END, onAuctionEnd);
-  //events.off(EVENTS.AUCTION_INIT, onAuctionInit);
 }
 
 function getStaticSignals(adUnit = {}) {
