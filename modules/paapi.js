@@ -127,19 +127,25 @@ export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config 
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adUnits}) {
   const adUnitsByCode = Object.fromEntries(adUnits?.map(au => [au.code, au]) || []);
   const allReqs = bidderRequests?.flatMap(br => br.bids);
-  const newConfigs = {};
+  const paapiConfigs = configsForAuction(auctionId);
   (adUnitCodes || []).forEach(au => {
-    newConfigs[au] = null;
+    if (!paapiConfigs.hasOwnProperty(au)) {
+      paapiConfigs[au] = null;
+    }
     !latestAuctionForAdUnit.hasOwnProperty(au) && (latestAuctionForAdUnit[au] = null);
   });
+
   const pendingConfigs = pendingConfigsForAuction(auctionId);
   const pendingBuyers = pendingBuyersForAuction(auctionId);
+
   if (pendingConfigs && pendingBuyers) {
     Object.entries(pendingBuyers).forEach(([adUnitCode, igbRequests]) => {
       buyersToAuctionConfigs(igbRequests).forEach(auctionConfig => append(pendingConfigs, adUnitCode, {config: auctionConfig}))
     })
   }
+
   const deferredConfigs = deferredConfigsForAuction(auctionId);
+
   const adUnitsWithConfigs = Array.from(new Set(Object.keys(pendingConfigs).concat(Object.keys(deferredConfigs))));
   const signals = Object.fromEntries(
     adUnitsWithConfigs.map(adUnitCode => {
@@ -154,7 +160,10 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
 
   const configsById = {};
   Object.entries(pendingConfigs || {}).forEach(([adUnitCode, auctionConfigs]) => {
-    auctionConfigs.forEach(({id, config}) => append(configsById, id, {adUnitCode, config: mergeDeep({}, signals[adUnitCode], config)}));
+    auctionConfigs.forEach(({id, config}) => append(configsById, id, {
+      adUnitCode,
+      config: mergeDeep({}, signals[adUnitCode], config)
+    }));
   });
 
   function resolveSignals(signals, deferrals) {
@@ -168,28 +177,33 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
     Object.entries(components).forEach(([configId, deferrals]) => {
       const matchingConfigs = configsById.hasOwnProperty(configId) ? configsById[configId] : [];
       if (matchingConfigs.length > 1) {
-        logWarn(`Received multiple PAAPI configs for the same bidder and seller (${configId}), pending PAAPI auctions will only see the first`);
+        logWarn(`Received multiple PAAPI configs for the same bidder and seller (${configId}), active PAAPI auctions will only see the first`);
       }
       const {config} = matchingConfigs.shift() ?? {config: {...signals[adUnitCode]}}
       resolveSignals(config, deferrals);
     })
   });
 
-  Object.entries(pendingConfigs || {}).forEach(([adUnitCode, auctionConfigs]) => {
-    const configsById = {};
-    auctionConfigs.forEach(({id, config}) => append(configsById, id, config));
-    newConfigs[adUnitCode] = {
-      ...signals[adUnitCode],
-      componentAuctions: auctionConfigs.map(({config}) => mergeDeep({}, signals[adUnitCode], config))
+  const newConfigs = Object.values(configsById).flatMap(configs => configs);
+  const hasDeferredConfigs = Object.keys(deferredConfigs).length > 0;
+
+  if (moduleConfig.parallel && hasDeferredConfigs && newConfigs.length > 0) {
+    logWarn(`Received PAAPI configs after PAAPI auctions were already started in parallel with their contextual auction`, newConfigs)
+  }
+
+  newConfigs.forEach(({adUnitCode, config}) => {
+    if (paapiConfigs[adUnitCode] == null) {
+      paapiConfigs[adUnitCode] = {
+        ...signals[adUnitCode],
+        componentAuctions: []
+      }
     }
+    paapiConfigs[adUnitCode].componentAuctions.push(mergeDeep({}, signals[adUnitCode], config));
   });
 
-  configsForAuction(auctionId, newConfigs);
-  submodules.forEach(submod => submod.onAuctionConfig?.(
-    auctionId,
-    newConfigs,
-    (adUnitCode) => newConfigs[adUnitCode] != null && USED.add(newConfigs[adUnitCode]))
-  );
+  if (!moduleConfig.parallel || !hasDeferredConfigs) {
+    submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, paapiConfigs));
+  }
 }
 
 function append(target, key, value) {
@@ -448,7 +462,33 @@ export function markForFledge(next, bidderRequests) {
 }
 
 export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'deprecatedRenderURLReplacements', 'directFromSellerSignals'];
-const REQUIRED_SYNC_SIGNALS = [['seller'], ['decisionLogicURL', 'decisionLogicUrl']];
+
+
+const validatePartialConfig = (() => {
+  const REQUIRED_SYNC_SIGNALS = [
+    {
+      props: ['seller'],
+      validate: (val) => typeof val === 'string'
+    },
+    {
+      props: ['interestGroupBuyers'],
+      validate: (val) => Array.isArray(val) && val.length > 0
+    },
+    {
+      props: ['decisionLogicURL', 'decisionLogicUrl'],
+      validate: (val) => typeof val === 'string'
+    }
+  ];
+
+  return function (config) {
+    const invalid = REQUIRED_SYNC_SIGNALS.find(({props, validate}) => props.every(prop => !config.hasOwnProperty(prop) || !config[prop] || !validate(config[prop])));
+    if (invalid) {
+      logError(`Partial PAAPI config has missing or invalid property "${invalid.props[0]}"`, config)
+      return false;
+    }
+    return true;
+  }
+})()
 
 export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
   function makeDeferrals(defaults = {}) {
@@ -484,41 +524,36 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
       const bidRequest = requestsById.hasOwnProperty(bidId) && requestsById[bidId];
       if (!bidRequest) {
         logWarn(`Received partial PAAPI config for unknown bidId, config will be ignored`, {bidId, config});
-      } else {
-        const missing = REQUIRED_SYNC_SIGNALS.find(signals => signals.every(signal => !config.hasOwnProperty(signal) || !config[signal] || typeof config[signal] !== 'string'));
-        if (missing) {
-          logError(`Partial PAAPI config is missing required property "${missing[0]}"`, partialConfigs)
+      } else if (validatePartialConfig(config)) {
+        const adUnitCode = bidRequest.adUnitCode;
+        latestAuctionForAdUnit[adUnitCode] = auctionId;
+        const deferredConfigs = deferredConfigsForAuction(auctionId);
+        if (!deferredConfigs.hasOwnProperty(adUnitCode)) {
+          const [deferrals, promises] = makeDeferrals();
+          deferredConfigs[adUnitCode] = {
+            top: deferrals,
+            components: {}
+          }
+          auctionConfigs[adUnitCode] = {
+            ...getStaticSignals(auctionManager.index.getAdUnit(bidRequest)),
+            ...promises,
+            componentAuctions: []
+          }
+        }
+        const configId = getConfigId(bidRequest.bidder, config.seller);
+        if (deferredConfigs[adUnitCode].components.hasOwnProperty(configId)) {
+          logWarn(`Received multiple PAAPI configs for the same bidder and seller; config will be ignored`, {
+            config,
+            bidder: bidRequest.bidder
+          })
         } else {
-          const adUnitCode = bidRequest.adUnitCode;
-          latestAuctionForAdUnit[adUnitCode] = auctionId;
-          const deferredConfigs = deferredConfigsForAuction(auctionId);
-          if (!deferredConfigs.hasOwnProperty(adUnitCode)) {
-            const [deferrals, promises] = makeDeferrals();
-            deferredConfigs[adUnitCode] = {
-              top: deferrals,
-              components: {}
-            }
-            auctionConfigs[adUnitCode] = {
-              ...getStaticSignals(auctionManager.index.getAdUnit(bidRequest)),
-              ...promises,
-              componentAuctions: []
-            }
-          }
-          const configId = getConfigId(bidRequest.bidder, config.seller);
-          if (deferredConfigs[adUnitCode].components.hasOwnProperty(configId)) {
-            logWarn(`Received multiple PAAPI configs for the same bidder and seller; config will be ignored`, {
-              config,
-              bidder: bidRequest.bidder
-            })
-          } else {
-            const [deferrals, promises] = makeDeferrals(config);
-            deferredConfigs[adUnitCode].components[configId] = deferrals;
-            auctionConfigs[adUnitCode].componentAuctions.push({
-              ...getStaticSignals(bidRequest),
-              ...config,
-              ...promises
-            })
-          }
+          const [deferrals, promises] = makeDeferrals(config);
+          deferredConfigs[adUnitCode].components[configId] = deferrals;
+          auctionConfigs[adUnitCode].componentAuctions.push({
+            ...getStaticSignals(bidRequest),
+            ...config,
+            ...promises
+          })
         }
       }
     })

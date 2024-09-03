@@ -7,12 +7,15 @@ import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
 import {
-  addPaapiConfigHook, addPaapiData, ASYNC_SIGNALS,
+  addPaapiConfigHook,
+  addPaapiData,
+  ASYNC_SIGNALS,
   buyersToAuctionConfigs,
   getPAAPIConfig,
   getPAAPISize,
   IGB_TO_CONFIG,
-  mergeBuyers, parallelPaapiProcessing,
+  mergeBuyers,
+  parallelPaapiProcessing,
   parseExtIgi,
   parseExtPrebidFledge,
   partitionBuyers,
@@ -225,7 +228,6 @@ describe('paapi module', () => {
         it('should drop auction configs after end of auction', () => {
           events.emit(EVENTS.AUCTION_END, {auctionId});
           addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, paapiConfig);
-          events.emit(EVENTS.AUCTION_END, {auctionId});
           expect(getPAAPIConfig({auctionId})).to.eql({});
         });
 
@@ -314,19 +316,6 @@ describe('paapi module', () => {
                   au3: null
                 });
               });
-            });
-            it('removes configs from getPAAPIConfig if the module calls markAsUsed', () => {
-              submods[0].onAuctionConfig.callsFake((auctionId, configs, markAsUsed) => {
-                markAsUsed('au1');
-              });
-              addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, paapiConfig);
-              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
-              expect(getPAAPIConfig()).to.eql({});
-            });
-            it('keeps them available if they do not', () => {
-              addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, paapiConfig);
-              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
-              expect(getPAAPIConfig()).to.not.be.empty;
             });
           });
         });
@@ -1153,7 +1142,8 @@ describe('paapi module', () => {
         restOfTheArgs = [{more: 'args'}];
         mockConfig = {
           seller: 'mock.seller',
-          decisionLogicURL: 'mock.seller/decisionLogic'
+          decisionLogicURL: 'mock.seller/decisionLogic',
+          interestGroupBuyers: ['mock.buyer']
         }
         mockAuction = {};
         sandbox.stub(auctionManager.index, 'getAuction').callsFake(() => mockAuction);
@@ -1348,13 +1338,61 @@ describe('paapi module', () => {
                 });
               });
             });
-            it('should make extra configs available', () => {
+
+            it('should make extra configs available', async () => {
               startParallel();
-              expect(true).to.be.false;
+              returnRemainder();
+              configRemainder = {...configRemainder, seller: 'other.seller'};
+              returnRemainder();
+              endAuction();
+              let configs = getPAAPIConfig().au.componentAuctions;
+              configs = [await resolveConfig(configs[0]), configs[1]];
+              expect(configs.map(cfg => cfg.seller)).to.eql(['mock.seller', 'other.seller']);
             });
-            it('should pass only new configs to submodules\' onAuctionConfig', () => {
-              startParallel();
-              expect(true).to.be.false;
+
+            describe('submodule\'s onAuctionConfig', () => {
+              let onAuctionConfig;
+              beforeEach(() => {
+                onAuctionConfig = sinon.stub();
+                registerSubmodule({onAuctionConfig})
+              });
+
+              Object.entries({
+                'parallel=true, some configs deferred': {
+                  setup() {
+                    config.mergeConfig({paapi: {parallel: true}})
+                  },
+                  shouldInvoke: false,
+                },
+                'parallel=true, no deferred configs': {
+                  setup() {
+                    config.mergeConfig({paapi: {parallel: true}});
+                    spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []);
+                  },
+                  shouldInvoke: true
+                },
+                'parallel=false, some configs deferred': {
+                  setup() {
+                    config.mergeConfig({paapi: {parallel: false}})
+                  },
+                  shouldInvoke: true
+                }
+              }).forEach(([t, {setup, shouldInvoke}]) => {
+                describe(`when ${t}`, () => {
+                  beforeEach(setup);
+
+                  it(`should ${shouldInvoke ? '' : 'NOT '} invoke onAuctionConfig`, () => {
+                    startParallel();
+                    returnRemainder();
+                    endAuction();
+                    if (shouldInvoke) {
+                      sinon.assert.calledWith(onAuctionConfig, 'aid', sinon.match(arg => arg.au.componentAuctions[0].seller === 'mock.seller'));
+                    } else {
+                      sinon.assert.notCalled(onAuctionConfig);
+                    }
+                  })
+                })
+              })
             })
           });
         });
