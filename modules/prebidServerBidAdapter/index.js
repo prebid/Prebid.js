@@ -617,10 +617,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
 function getAnalyticsFlags(s2sConfig, response) {
   return {
     atagData: getAtagData(response),
-    seatNonBidData: getNonbidData(s2sConfig, response)
+    seatNonBidData: getNonBidData(s2sConfig, response)
   }
 }
-function getNonbidData(s2sConfig, response) {
+function getNonBidData(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid : undefined;
 }
 
