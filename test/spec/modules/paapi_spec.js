@@ -14,7 +14,7 @@ import {
   getPAAPIConfig,
   getPAAPISize,
   IGB_TO_CONFIG,
-  mergeBuyers,
+  mergeBuyers, onAuctionInit,
   parallelPaapiProcessing,
   parseExtIgi,
   parseExtPrebidFledge,
@@ -1157,7 +1157,8 @@ describe('paapi module', () => {
       });
 
       function startParallel() {
-        return parallelPaapiProcessing(next, spec, bids, bidderRequest, ...restOfTheArgs);
+        parallelPaapiProcessing(next, spec, bids, bidderRequest, ...restOfTheArgs);
+        onAuctionInit({auctionId: 'aid'})
       }
 
       describe('should have no effect when', () => {
@@ -1362,34 +1363,44 @@ describe('paapi module', () => {
                   setup() {
                     config.mergeConfig({paapi: {parallel: true}})
                   },
-                  shouldInvoke: false,
+                  delayed: false,
                 },
                 'parallel=true, no deferred configs': {
                   setup() {
                     config.mergeConfig({paapi: {parallel: true}});
                     spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []);
                   },
-                  shouldInvoke: true
+                  delayed: true
                 },
                 'parallel=false, some configs deferred': {
                   setup() {
                     config.mergeConfig({paapi: {parallel: false}})
                   },
-                  shouldInvoke: true
+                  delayed: true
                 }
-              }).forEach(([t, {setup, shouldInvoke}]) => {
+              }).forEach(([t, {setup, delayed}]) => {
                 describe(`when ${t}`, () => {
-                  beforeEach(setup);
+                  beforeEach(() => {
+                    mockAuction.requestsDone = Promise.resolve();
+                    setup();
+                  });
 
-                  it(`should ${shouldInvoke ? '' : 'NOT '} invoke onAuctionConfig`, () => {
-                    startParallel();
-                    returnRemainder();
-                    endAuction();
-                    if (shouldInvoke) {
+                  function expectInvoked(shouldBeInvoked) {
+                    if (shouldBeInvoked) {
                       sinon.assert.calledWith(onAuctionConfig, 'aid', sinon.match(arg => arg.au.componentAuctions[0].seller === 'mock.seller'));
                     } else {
                       sinon.assert.notCalled(onAuctionConfig);
                     }
+                  }
+
+                  it(`should invoke onAuctionConfig when ${delayed ? 'auction ends' : 'auction requests have started'}`, async () => {
+                    startParallel();
+                    await mockAuction.requestsDone;
+                    expectInvoked(!delayed);
+                    onAuctionConfig.reset();
+                    returnRemainder();
+                    endAuction();
+                    expectInvoked(delayed);
                   })
                 })
               })

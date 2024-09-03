@@ -65,18 +65,37 @@ export function reset() {
 
 export function init(cfg) {
   if (cfg && cfg.enabled === true) {
+    if (!moduleConfig.enabled) {
+      attachHandlers();
+    }
     moduleConfig = cfg;
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} runAdAuction)`, cfg);
   } else {
+    if (moduleConfig.enabled) {
+      detachHandlers();
+    }
     moduleConfig = {};
     logInfo(`${MODULE} disabled`, cfg);
   }
 }
 
-getHook('addPaapiConfig').before(addPaapiConfigHook);
-getHook('makeBidRequests').before(addPaapiData);
-getHook('makeBidRequests').after(markForFledge);
-events.on(EVENTS.AUCTION_END, onAuctionEnd);
+function attachHandlers() {
+  getHook('addPaapiConfig').before(addPaapiConfigHook);
+  getHook('makeBidRequests').before(addPaapiData);
+  getHook('makeBidRequests').after(markForFledge);
+//getHook('processBidderRequests').before(parallelPaapiProcessing);
+//events.on(EVENTS.AUCTION_INIT, onAuctionInit);
+  events.on(EVENTS.AUCTION_END, onAuctionEnd);
+}
+
+function detachHandlers() {
+  getHook('addPaapiConfig').getHooks({hook: addPaapiConfigHook}).remove();
+  getHook('makeBidRequests').getHooks({hook: addPaapiData}).remove();
+  getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
+  //getHook('processBidderRequests').before({hook: parallelPaapiProcessing}).remove();
+  events.off(EVENTS.AUCTION_END, onAuctionEnd);
+  //events.off(EVENTS.AUCTION_INIT, onAuctionInit);
+}
 
 function getStaticSignals(adUnit = {}) {
   const cfg = {};
@@ -463,7 +482,6 @@ export function markForFledge(next, bidderRequests) {
 
 export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'deprecatedRenderURLReplacements', 'directFromSellerSignals'];
 
-
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [
     {
@@ -559,6 +577,16 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
     })
   }
   return next.call(this, spec, bids, bidderRequest, ...args);
+}
+
+export function onAuctionInit({auctionId}) {
+  if (moduleConfig.parallel) {
+    auctionManager.index.getAuction({auctionId}).requestsDone.then(() => {
+      if (Object.keys(deferredConfigsForAuction(auctionId)).length > 0) {
+        submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, configsForAuction(auctionId)));
+      }
+    })
+  }
 }
 
 export function setImpExtAe(imp, bidRequest, context) {
