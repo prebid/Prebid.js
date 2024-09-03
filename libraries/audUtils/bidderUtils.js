@@ -112,8 +112,9 @@ const getFloorPrice = (bidReq) => {
 }
 // Function to get site object
 const getSiteDetails = (bidderRequest) => {
+  let page = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : '';
   let name = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.domain ? bidderRequest.refererInfo.domain : '';
-  return {name};
+  return {page: page, name: name};
 }
 // Function to build the user object
 const getUserDetails = (bidReq) => {
