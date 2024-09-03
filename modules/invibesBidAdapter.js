@@ -637,10 +637,10 @@ function readGdprConsent(gdprConsent, usConsent) {
       setAllPurposesAndLegitimateInterests(true);
       return 2;
     }
-
-    setAllPurposesAndLegitimateInterests(false);
-    return 0;
   }
+
+  setAllPurposesAndLegitimateInterests(false);
+  return 0;
 }
 
 function setAllPurposesAndLegitimateInterests(value) {
