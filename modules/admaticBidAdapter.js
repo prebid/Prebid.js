@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
+import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -159,26 +160,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      let params = {};
-
-      if (gdprConsent) {
-        if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params['gdpr'] = Number(gdprConsent.gdprApplies);
-        }
-        if (typeof gdprConsent.consentString === 'string') {
-          params['gdpr_consent'] = gdprConsent.consentString;
-        }
-      }
-
-      if (uspConsent) {
-        params['us_privacy'] = encodeURIComponent(uspConsent);
-      }
-
-      if (gppConsent?.gppString) {
-        params['gpp'] = gppConsent.gppString;
-        params['gpp_sid'] = gppConsent.applicableSections?.toString();
-      }
-
+      let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       hasSynced = true;
