@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import {deepClone} from "../src/utils.js";
 const converter = ortbConverter({
   context: { netRevenue: true, ttl: 300 },
   imp(buildImp, bidRequest, context) {
@@ -30,9 +31,17 @@ export const spec = {
   },
   interpretResponse: function(response, request) {
     const bids = converter.fromORTB({ response: response.body, request: request.data }).bids
-    const auctionConfigs = (response.body.ext?.optable?.fledge?.auctionconfigs ?? []).map((cfg) => {
+    const auctionConfigs = (response.body.ext?.optable?.fledge?.auctionconfigs ?? []).flatMap((cfg) => {
       const { impid, ...config } = cfg;
-      return { bidId: impid, config }
+      const asnc = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'deprecatedRenderURLReplacements', 'directFromSellerSignals']
+      const config2 = deepClone(config);
+      Object.keys(config)
+        .filter(key => asnc.includes(key))
+        .forEach(key => {
+          config[key] = ((val) => new Promise((resolve) => setTimeout(() => resolve(val), 2000)))(config[key]);
+          config2[key] = ((val) => new Promise((resolve, reject) => setTimeout(() => resolve({}), 2000)))(config[key]);
+        });
+      return [{ bidId: impid, config }, {bidId: impid, config: config2}]
     })
 
     return { bids, paapi: auctionConfigs }

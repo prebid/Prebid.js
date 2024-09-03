@@ -609,6 +609,6 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   return true;
 }
 
-function adapterMetrics(bidderRequest) {
+export function adapterMetrics(bidderRequest) {
   return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`])
 }
