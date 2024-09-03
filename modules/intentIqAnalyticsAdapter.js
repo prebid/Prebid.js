@@ -6,6 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -113,6 +114,8 @@ function initLsValues() {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
+
+    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
   }
 }
 
@@ -134,6 +137,13 @@ function initReadLsIds() {
 
 function bidWon(args) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
+
+  const currentBrowserLowerCase = detectBrowser();
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
+    logError('IIQ ANALYTICS -> Browser is in blacklist!');
+    return;
+  }
+
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
     ajax(constructFullUrl(preparePayload(args, true)), undefined, null, { method: 'GET' });
@@ -227,7 +237,6 @@ iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapte
 iiqAnalyticsAnalyticsAdapter.enableAnalytics = function (myConfig) {
   iiqAnalyticsAnalyticsAdapter.originEnableAnalytics(myConfig); // call the base class function
 };
-
 adapterManager.registerAnalyticsAdapter({
   adapter: iiqAnalyticsAnalyticsAdapter,
   code: MODULE_NAME

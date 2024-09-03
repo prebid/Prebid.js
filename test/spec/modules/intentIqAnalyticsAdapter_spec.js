@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
+import * as detectBrowserUtils from '../../../libraries/detectBrowserUtils/detectBrowserUtils';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { EVENTS } from 'src/constants.js';
@@ -67,6 +68,7 @@ let wonRequest = {
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
+  let detectBrowserStub;
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
@@ -94,6 +96,7 @@ describe('IntentIQ tests all', function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    if (detectBrowserStub) detectBrowserStub.restore();
     config.getConfig.restore();
     events.getEvents.restore();
     iiqAnalyticsAnalyticsAdapter.disableAnalytics();
@@ -171,5 +174,38 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
+  });
+
+  it('should not send request if the browser is in blacklist (chrome)', function () {
+    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    USERID_CONFIG_BROWSER[0].params.browserBlackList = 'ChrOmE';
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
+    detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('chrome');
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.equal(0);
+  });
+
+  it('should send request if the browser is not in blacklist (safari)', function () {
+    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    USERID_CONFIG_BROWSER[0].params.browserBlackList = 'chrome,firefox';
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
+    detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('safari');
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
+    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
+    expect(request.url).to.contain('&payload=');
+    expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
 });
