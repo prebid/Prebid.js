@@ -594,6 +594,8 @@ function buildSyncUrl() {
 }
 
 function readGdprConsent(gdprConsent, usConsent) {
+  invibes.GdprModuleInstalled = false;
+  invibes.UspModuleInstalled = false;
   if (gdprConsent && gdprConsent.vendorData) {
     invibes.GdprModuleInstalled = true;
     invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData);
@@ -629,16 +631,14 @@ function readGdprConsent(gdprConsent, usConsent) {
     }
 
     return 2;
-  } else {
-    invibes.GdprModuleInstalled = false;
-    invibes.UspModuleInstalled = !!usConsent;
-    if (usConsent?.length && usConsent.length > 2 && usConsent[2] == 'N') {
+  } else if (usConsent && usConsent.length > 2) {
+    invibes.UspModuleInstalled = true;
+    if (usConsent[2] == 'N') {
       setAllPurposesAndLegitimateInterests(true);
       return 2;
     }
 
     setAllPurposesAndLegitimateInterests(false);
-    invibes.GdprModuleInstalled = false;
     return 0;
   }
 }
