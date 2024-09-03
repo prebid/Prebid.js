@@ -29,13 +29,14 @@ let invalidRequestIds = {};
 let pageViewId = null;
 
 // TODO: potential 0 values for browserParams sent to ad server
-function _getBrowserParams(topWindowUrl) {
+function _getBrowserParams(topWindowUrl, mosttopLocation) {
   const paramRegex = paramName => new RegExp(`[?#&](${paramName}=(.*?))($|&)`, 'i');
 
   let browserParams = {};
   let topWindow;
   let topScreen;
   let topUrl;
+  let mosttopURL
   let ggad;
   let ggdeal;
   let ns;
@@ -74,6 +75,7 @@ function _getBrowserParams(topWindowUrl) {
     topWindow = global.top;
     topScreen = topWindow.screen;
     topUrl = topWindowUrl || '';
+    mosttopURL = mosttopLocation || '';
   } catch (error) {
     logError(error);
     return browserParams;
@@ -85,6 +87,7 @@ function _getBrowserParams(topWindowUrl) {
     sw: topScreen.width,
     sh: topScreen.height,
     pu: stripGGParams(topUrl),
+    tpl: mosttopURL,
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
     jcsi: JSON.stringify(JCSI),
@@ -304,6 +307,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const timeout = bidderRequest && bidderRequest.timeout
   const coppa = config.getConfig('coppa') === true ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
+  const mosttopLocation = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.topmostLocation
   _each(validBidRequests, bidRequest => {
     const {
       bidId,
@@ -443,7 +447,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl, mosttopLocation))
     });
   });
   return bids;

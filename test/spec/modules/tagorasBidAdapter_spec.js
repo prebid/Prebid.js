@@ -107,9 +107,15 @@ const BIDDER_REQUEST = {
     'ref': 'https://www.somereferrer.com'
   },
   'ortb2': {
+    'site': {
+      'content': {
+        'language': 'en'
+      }
+    },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -329,10 +335,12 @@ describe('TagorasBidAdapter', function () {
           },
           gpid: '',
           cat: [],
+          contentLang: 'en',
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
-          userData: []
+          userData: [],
+          coppa: 0
         }
       });
     });
@@ -394,10 +402,12 @@ describe('TagorasBidAdapter', function () {
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
           cat: [],
+          contentLang: 'en',
           contentData: [],
           isStorageAllowed: true,
           pagecat: [],
-          userData: []
+          userData: [],
+          coppa: 0
         }
       });
     });
