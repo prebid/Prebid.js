@@ -113,7 +113,6 @@
     "morgan": "^1.10.0",
     "node-html-parser": "^6.1.5",
     "opn": "^5.4.0",
-    "querystring": "^0.2.1",
     "resolve-from": "^5.0.0",
     "sinon": "^4.5.0",
     "through2": "^4.0.2",
