@@ -577,8 +577,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
         latestAuctionForAdUnit[adUnitCode] = auctionId;
         const deferredConfigs = deferredConfigsForAuction(auctionId);
 
-        // eslint-disable-next-line no-inner-declarations
-        function getDeferredConfig() {
+        const getDeferredConfig = () => {
           if (!deferredConfigs.hasOwnProperty(adUnitCode)) {
             const [deferrals, promises] = makeDeferrals();
             auctionConfigs[adUnitCode] = {
