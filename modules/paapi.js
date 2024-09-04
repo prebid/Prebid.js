@@ -20,7 +20,7 @@ import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
-import {adapterMetrics} from '../src/adapters/bidderFactory.js';
+import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
 import {defer} from '../src/utils/promise.js';
 import {auctionManager} from '../src/auctionManager.js';
 
@@ -480,7 +480,10 @@ export function markForFledge(next, bidderRequests) {
   next(bidderRequests);
 }
 
-export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'deprecatedRenderURLReplacements', 'directFromSellerSignals'];
+// NOTE: according to https://github.com/WICG/turtledove/blob/main/FLEDGE.md#211-providing-signals-asynchronously,
+// `directFromSellerSignals` can also be async, but unlike the others there doesn't seem to be a "safe" default
+// to use when the adapter fails to provide a value
+export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'deprecatedRenderURLReplacements'];
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [
@@ -524,7 +527,9 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
   const auctionConfigs = configsForAuction(auctionId);
   bids.map(bid => bid.adUnitCode).forEach(adUnitCode => {
     latestAuctionForAdUnit[adUnitCode] = auctionId;
-    auctionConfigs[adUnitCode] = null;
+    if (!auctionConfigs.hasOwnProperty(adUnitCode)) {
+      auctionConfigs[adUnitCode] = null;
+    }
   });
 
   if (enabled && spec.buildPAAPIConfigs) {
@@ -532,7 +537,8 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
     let partialConfigs;
     metrics.measureTime('buildPAAPIConfigs', () => {
       try {
-        partialConfigs = spec.buildPAAPIConfigs(bids, bidderRequest)
+        const tidGuard = guardTids(bidderRequest);
+        partialConfigs = spec.buildPAAPIConfigs(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))
       } catch (e) {
         logError(`Error invoking "buildPAAPIConfigs":`, e);
       }
