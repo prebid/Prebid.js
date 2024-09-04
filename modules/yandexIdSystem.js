@@ -64,10 +64,12 @@ export const yandexIdSubmodule = {
       source: BIDDER_EID_KEY,
       atype: 1,
       getUidExt() {
-        return YANDEX_EXT_COOKIE_NAMES.reduce((acc, cookieName) => ({
-          ...acc,
-          [cookieName]: PREBID_STORAGE.getCookie(cookieName),
-        }), {});
+        if (PREBID_STORAGE.cookiesAreEnabled()) {
+          return YANDEX_EXT_COOKIE_NAMES.reduce((acc, cookieName) => ({
+            ...acc,
+            [cookieName]: PREBID_STORAGE.getCookie(cookieName),
+          }), {});
+        }
       }
     },
   },
