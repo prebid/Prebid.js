@@ -1,9 +1,10 @@
 import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import {getBidIdParameter, deepSetValue, prefixLog} from '../src/utils.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { getBidIdParameter, deepSetValue, prefixLog } from '../src/utils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 const adgLogger = prefixLog('Adgeneration: ');
 
 /**
@@ -59,27 +60,33 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const pbOrtb2 = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
-    adgLogger.logInfo('pbOrtb2', pbOrtb2);
-    const {imp, ...otherParams} = pbOrtb2
-    const requests = imp.map((singleImp) => {
-      // TODO: parameterから取得する
-      const customParams = singleImp?.ext?.params;
-      const url = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL
-      const id = getBidIdParameter('id', singleImp?.ext?.params);
+    const ortbObj = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+    adgLogger.logInfo('ortbObj', ortbObj);
+    const {imp, ...otherParams} = ortbObj
+    const requests = imp.map((impObj) => {
+      const customParams = impObj?.ext?.params;
+      const id = getBidIdParameter('id', customParams);
+
+      let urlParams = ``;
+      urlParams = tryAppendQueryString(urlParams, 'id', id);
+      urlParams = tryAppendQueryString(urlParams, 'posall', 'SSPLOC');// not reaquired
+
+      // remove the trailing "&"
+      if (urlParams.lastIndexOf('&') === urlParams.length - 1) {
+        urlParams = urlParams.substring(0, urlParams.length - 1);
+      }
+
+      const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL
+      const url = `${urlBase}?${urlParams}`;
+
       const data = {
-        'locationId': id,
-        'posall': 'SSPLOC',
-        'sdktype': '0',
-        'hb': 'true',
-        't': 'json',
-        'currency': getCurrencyType(bidderRequest),
-        'pbver': '$prebid.version$', // replaced with the actual value by Prebid.js
-        'sdkname': 'prebidjs',
-        'adapterver': ADGENE_PREBID_VERSION,
-        'imark': '1',
-        'pb_ortb2': {
-          imp: [singleImp],
+        currency: getCurrencyType(bidderRequest),
+        pbver: '$prebid.version$',
+        sdkname: 'prebidjs',
+        adapterver: ADGENE_PREBID_VERSION,
+        imark: 1,
+        ortb: {
+          imp: [impObj],
           ...otherParams
         }
       }
