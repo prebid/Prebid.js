@@ -517,9 +517,24 @@ const validatePartialConfig = (() => {
 })()
 
 /*
- * Adapters can provide a `spec.buildPAAPIConfigs` to be included in PAAPI auctions
+ * Adapters can provide a `spec.buildPAAPIConfigs(validBidRequests, bidderRequest)` to be included in PAAPI auctions
  * that can be started in parallel to contextual auctions.
  *
+ * If PAAPI is enabled, and an adapter provides `buildPAAPIConfigs`, it is invoked just before `buildRequests`, and takes
+ * the same arguments. It should return an array of PAAPI configuration objects withe same format as in `interpretResponse`,
+ * {bidId, config?, igb?}.
+ *
+ * Everything returned by `buildPAAPIConfigs` is treated in the same way as if it was returned by `interpetResponse` -
+ * except for signals that can be provided asynchronously (cfr. `ASYNC_SIGNALS`), which are tentatively replaced by promises.
+ *
+ * When the (contextual) auction ends, the promises are resolved.
+ * If during the auction the adapter's `interpretResponse` returned matching configurations (same `bidId`, and a `config` with the same `seller`,
+ * or an `igb` with the same `origin`), the promises resolve to their contents. Otherwise, they resolve to the values
+ * provided by `buildPAAPIConfigs`, or an empty object if no value was provided.
+ *
+ * Promisified auction configs are available from `getPAAPIConfig` immediately after a contextual auction is started.
+ * If the `paapi.parallel` config flag is set, PAAPI submodules are also triggered at the same time (instead of
+ * when the auction ends).
  */
 export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
   function makeDeferrals(defaults = {}) {
