@@ -1562,7 +1562,6 @@ describe('paapi module', () => {
             startParallel();
           }
 
-
           describe('when using separateAuctions=false', () => {
             beforeEach(() => {
               config.mergeConfig({
@@ -1603,7 +1602,6 @@ describe('paapi module', () => {
               })
             })
           })
-
         })
       })
     });

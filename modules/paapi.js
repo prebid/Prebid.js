@@ -11,8 +11,7 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
-  sizesToSizeTuples,
-  deepClone
+  sizesToSizeTuples
 } from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
