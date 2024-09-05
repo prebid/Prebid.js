@@ -6,6 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -16,7 +17,7 @@ export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
 const FIRST_PARTY_KEY = '_iiq_fdata';
 const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-const JSVERSION = 0.1
+const JSVERSION = 0.2
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
@@ -50,7 +51,8 @@ const PARAMS_NAMES = {
   referrer: 'vrref',
   isInBrowserBlacklist: 'inbbl',
   prebidVersion: 'pbjsver',
-  partnerId: 'partnerId'
+  partnerId: 'partnerId',
+  firstPartyId: 'pcid'
 };
 
 let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
@@ -112,6 +114,8 @@ function initLsValues() {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
+
+    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
   }
 }
 
@@ -133,6 +137,13 @@ function initReadLsIds() {
 
 function bidWon(args) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
+
+  const currentBrowserLowerCase = detectBrowser();
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
+    logError('IIQ ANALYTICS -> Browser is in blacklist!');
+    return;
+  }
+
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
     ajax(constructFullUrl(preparePayload(args, true)), undefined, null, { method: 'GET' });
@@ -157,6 +168,7 @@ export function preparePayload(data) {
   result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup == 'A';
 
   result[PARAMS_NAMES.agentId] = REPORTER_ID;
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid?.pcid) result[PARAMS_NAMES.firstPartyId] = encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid)
 
   fillPrebidEventData(data, result);
 
@@ -225,7 +237,6 @@ iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapte
 iiqAnalyticsAnalyticsAdapter.enableAnalytics = function (myConfig) {
   iiqAnalyticsAnalyticsAdapter.originEnableAnalytics(myConfig); // call the base class function
 };
-
 adapterManager.registerAnalyticsAdapter({
   adapter: iiqAnalyticsAnalyticsAdapter,
   code: MODULE_NAME

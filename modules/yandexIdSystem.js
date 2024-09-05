@@ -6,6 +6,11 @@
 
 // @ts-check
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
+
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -26,11 +31,8 @@ export const PREBID_STORAGE = getStorageManager({
   bidderCode: undefined
 });
 
+/** @type {Submodule} */
 export const yandexIdSubmodule = {
-  /**
-   * Used to link submodule with config.
-   * @type {string}
-   */
   name: BIDDER_CODE,
   /**
    * Decodes the stored id value for passing to bid requests.
@@ -41,11 +43,6 @@ export const yandexIdSubmodule = {
 
     return { [YANDEX_ID_KEY]: value };
   },
-  /**
-   * @param {import('./userId/index.js').SubmoduleConfig} submoduleConfig
-   * @param {unknown} [_consentData]
-   * @param {string} [storedId] Id that was saved by the core previously.
-   */
   getId(submoduleConfig, _consentData, storedId) {
     if (checkConfigHasErrorsAndReport(submoduleConfig)) {
       return;
@@ -70,7 +67,7 @@ export const yandexIdSubmodule = {
 };
 
 /**
- * @param {import('./userId/index.js').SubmoduleConfig} submoduleConfig
+ * @param {SubmoduleConfig} submoduleConfig
  * @returns {boolean} `true` - when there are errors, `false` - otherwise.
  */
 function checkConfigHasErrorsAndReport(submoduleConfig) {

@@ -7,7 +7,8 @@ import {
   isFn,
   logError,
   isArray,
-  formatQS
+  formatQS,
+  deepSetValue
 } from '../src/utils.js';
 
 import {
@@ -61,6 +62,16 @@ export function validateVideo(mediaTypes) {
   return video.context !== ADPOD;
 }
 
+/**
+ * Get ids from Prebid User ID Modules and add them to the payload
+ */
+function _handleEids(payload, validBidRequests) {
+  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    deepSetValue(payload, 'userIdList', bidUserIdAsEids);
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 143,
@@ -75,20 +86,17 @@ export const spec = {
     const bidId = deepAccess(bid, 'bidId');
     const mediaTypes = deepAccess(bid, 'mediaTypes', {});
     const params = deepAccess(bid, 'params', {});
-    const bidder = deepAccess(bid, 'bidder');
 
     const hasBidId = Boolean(bidId);
-    const isValidBidder = (bidder === BIDDER_CODE);
     const hasMediaTypes = Boolean(mediaTypes) && (Boolean(mediaTypes[BANNER]) || Boolean(mediaTypes[VIDEO]));
     const isValidBanner = validateBanner(mediaTypes);
     const isValidVideo = validateVideo(mediaTypes);
     const hasRequiredBidParams = Boolean(params.placementId);
 
-    const isValid = isValidBidder && hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams;
+    const isValid = hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams;
     if (!isValid) {
       logError(
-        `Invalid bid request: 
-          isValidBidder: ${isValidBidder}, 
+        `Invalid bid request:
           hasBidId: ${hasBidId}, 
           hasMediaTypes: ${hasMediaTypes}, 
           isValidBanner: ${isValidBanner}, 
@@ -129,6 +137,8 @@ export const spec = {
       refererInfo: bidderRequest.refererInfo,
       bidRequests,
     };
+
+    _handleEids(requestPayload, validBidRequests);
 
     return {
       method: 'POST',
