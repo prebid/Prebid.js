@@ -1,9 +1,13 @@
 import { expect } from 'chai';
 import {
+  _getBidRequests,
+  getBidFloor as connatixGetBidFloor,
   spec,
-  getBidFloor as connatixGetBidFloor
 } from '../../../modules/connatixBidAdapter.js';
+import { config } from '../../../src/config.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+
+const sinon = require('sinon');
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -43,6 +47,149 @@ describe('connatixBidAdapter', function () {
 
     bid.mediaTypes = mediaTypes;
   }
+
+  describe('_getBidRequests', function () {
+    let bid;
+
+    // Mock a bid request similar to the one already used in connatixBidAdapter tests
+    function mockBidRequest() {
+      const mediaTypes = {
+        banner: {
+          sizes: [16, 9],
+        }
+      };
+      return {
+        bidId: 'testing',
+        bidder: 'connatix',
+        params: {
+          placementId: '30e91414-545c-4f45-a950-0bec9308ff22',
+          viewabilityContainerIdentifier: 'viewabilityId',
+        },
+        mediaTypes,
+        sizes: [300, 250]
+      };
+    }
+
+    it('should map valid bid requests and include the expected fields', function () {
+      bid = mockBidRequest();
+
+      const result = _getBidRequests([bid]);
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.have.property('bidId', bid.bidId);
+      expect(result[0]).to.have.property('mediaTypes', bid.mediaTypes);
+      expect(result[0]).to.have.property('sizes', bid.sizes);
+      expect(result[0]).to.have.property('placementId', bid.params.placementId);
+      expect(result[0]).to.have.property('hasViewabilityContainerId', true);
+    });
+
+    it('should set hasViewabilityContainerId to false when viewabilityContainerIdentifier is absent', function () {
+      bid = mockBidRequest();
+      delete bid.params.viewabilityContainerIdentifier;
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.have.property('hasViewabilityContainerId', false);
+    });
+
+    it('should call getBidFloor for each bid and return the correct floor value', function () {
+      bid = mockBidRequest();
+      const floorValue = 5;
+
+      // Mock getFloor method on bid
+      bid.getFloor = function() {
+        return { floor: floorValue };
+      };
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.have.property('floor', floorValue);
+    });
+
+    it('should return floor as 0 if getBidFloor throws an error', function () {
+      bid = mockBidRequest();
+
+      // Mock getFloor method to throw an error
+      bid.getFloor = function() {
+        throw new Error('error');
+      };
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.have.property('floor', 0);
+    });
+  });
+
+  describe('spec onTimeout', function () {
+    let sandbox;
+    let configStub;
+
+    const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+
+    const timeoutData = [
+      { bidder: 'connatix', timeout: 300 },
+      { bidder: 'otherBidder', timeout: 200 }
+    ];
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+
+      // Replace the following with the correct way to access 'ajax'
+      sandbox.stub(window, 'ajax'); // or sandbox.stub(ajax, 'call');
+      configStub = sandbox.stub(config, 'getConfig'); // Stub config to mock bidderTimeout
+    });
+
+    afterEach(function () {
+      sandbox.restore(); // Restore all stubs
+    });
+
+    it('Should not log timeout if no Connatix bid timeout is found', function () {
+      const nonConnatixTimeoutData = [{ bidder: 'otherBidder', timeout: 200 }];
+
+      spec.onTimeout(nonConnatixTimeoutData);
+
+      expect(window.ajax.called).to.be.false; // Adjust according to how you access 'ajax'
+    });
+
+    it('Should log Connatix timeout with specific timeout value', function () {
+      const specificTimeoutData = [{ bidder: 'connatix', timeout: 200 }];
+
+      spec.onTimeout(specificTimeoutData);
+
+      expect(window.ajax.calledOnce).to.be.true; // Adjust according to how you access 'ajax'
+      const [url, callback, requestBody, options] = window.ajax.firstCall.args;
+
+      expect(url).to.equal(EVENTS_URL);
+      expect(options.method).to.equal('POST');
+      expect(JSON.parse(requestBody)).to.include({ type: 'timeout', timeout: 200 });
+    });
+
+    it('Should log with default bidderTimeout if requestTimeout is not a number', function () {
+      configStub.withArgs('bidderTimeout').returns(500); // Mock config value
+
+      const invalidTimeoutData = [{ bidder: 'connatix', timeout: null }];
+      spec.onTimeout(invalidTimeoutData);
+
+      expect(window.ajax.calledOnce).to.be.true; // Adjust according to how you access 'ajax'
+      const [url, callback, requestBody] = window.ajax.firstCall.args;
+
+      expect(url).to.equal(EVENTS_URL);
+      expect(requestBody).to.contain('"timeout":500');
+    });
+
+    it('Should send a POST request with JSON data', function () {
+      spec.onTimeout(timeoutData);
+
+      expect(window.ajax.calledOnce).to.be.true; // Adjust according to how you access 'ajax'
+      const [url, callback, requestBody, options] = window.ajax.firstCall.args;
+
+      expect(url).to.equal(EVENTS_URL);
+      expect(options.method).to.equal('POST');
+      expect(options.withCredentials).to.be.false;
+      expect(requestBody).to.be.a('string');
+      expect(JSON.parse(requestBody)).to.have.property('type', 'timeout');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     this.beforeEach(function () {
@@ -431,6 +578,41 @@ describe('connatixBidAdapter', function () {
       };
       const floor = connatixGetBidFloor(bid);
       expect(floor).to.equal(0);
+    });
+  });
+
+  describe('onBidWon', () => {
+    it('should send a POST request with bid win data', () => {
+      const bidWinData = {
+        bidder: 'connatix',
+        cpm: 1.5,
+        requestId: '12345',
+        adUnitCode: 'adunit1',
+        timeToRespond: 300,
+        auctionId: 'auction1',
+      };
+
+      spec.onBidWon(bidWinData);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      const expectedData = {
+        type: 'bid_won',
+        bestBidBidder: 'connatix',
+        bestBidPrice: 1.5,
+        requestId: '12345',
+        adUnitCode: 'adunit1',
+        timeToRespond: 300,
+        auctionId: 'auction1',
+        context: undefined, // Add context if needed
+      };
+      expect(ajaxStub.args[0][2]).to.deep.equal(JSON.stringify(expectedData));
+      expect(ajaxStub.args[0][3].method).to.equal('POST');
+      expect(ajaxStub.args[0][3].withCredentials).to.be.false;
+    });
+
+    it('should not send a request if bidWinData is null', () => {
+      spec.onBidWon(null);
+      expect(ajaxStub.notCalled).to.be.true;
     });
   });
 });

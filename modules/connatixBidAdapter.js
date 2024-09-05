@@ -264,10 +264,9 @@ export const spec = {
     if (bidWinData == null) {
       return;
     }
+    const {bidder, cpm, requestId, adUnitCode, timeToRespond, auctionId} = bidWinData;
 
-    const {bidder, cpm} = bidWinData;
-
-    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'bid_won', bestBidBidder: bidder, bestBidPrice: cpm, context}), {
+    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'bid_won', bestBidBidder: bidder, bestBidPrice: cpm, requestId, adUnitCode, timeToRespond, auctionId, context}), {
       method: 'POST',
       withCredentials: false
     });
