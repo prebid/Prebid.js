@@ -4,6 +4,7 @@ import {
   getBidFloor as connatixGetBidFloor,
   spec,
 } from '../../../modules/connatixBidAdapter.js';
+import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('connatixBidAdapter', function () {
@@ -191,6 +192,30 @@ describe('connatixBidAdapter', function () {
     it('does not call triggerEvent if bidWinData is undefined', () => {
       spec.onBidWon(undefined);
       expect(ajaxStub.notCalled).to.equal(true);
+    });
+  });
+
+  describe('triggerEvent', function () {
+    let ajaxStub;
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(ajax, 'ajax');
+    });
+
+    afterEach(() => {
+      ajaxStub.restore();
+    });
+
+    it('should call ajax with the correct parameters', () => {
+      const data = { type: 'BidWon', bestBidBidder: 'bidder1', bestBidPrice: 1.5, requestId: 'req123', adUnitCode: 'ad123', timeToRespond: 250, auctionId: 'auc123', context: {} };
+      spec.triggerEvent(data);
+
+      expect(ajaxStub.calledOnce).to.equal(true);
+      const [url, _, payload, options] = ajaxStub.firstCall.args;
+      expect(url).to.equal('https://capi.connatix.com/tr/am');
+      expect(payload).to.equal(JSON.stringify(data));
+      expect(options.method).to.equal('POST');
+      expect(options.withCredentials).to.equal(false);
     });
   });
 
