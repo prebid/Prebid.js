@@ -362,25 +362,7 @@ pbjs.setConfig({
 });
 ```
 #### The **detectMissingSizes** feature
-By default, the IX bidding adapter bids on all banner sizes available in the ad unit when configured to at least one banner size. If you want the IX bidding adapter to only bid on the banner size it’s configured to, switch off this feature using `detectMissingSizes`.
-```
-pbjs.setConfig({
-    ix: {
-        detectMissingSizes: false
-    }
-});
-```
-OR
-```
-pbjs.setBidderConfig({
-    bidders: ["ix"],
-    config: {
-        ix: {
-            detectMissingSizes: false
-        }
-    }
-});
-```
+`detectMissingSize` config is now deprecated and IX bidding adapter bids on all banner sizes available in the ad unit when configured to at least one banner size.
 
 **Native**
 
@@ -486,6 +468,11 @@ pbjs.setConfig({
 ```
 
 The timeout value must be a positive whole number in milliseconds.
+
+Protected Audience API (FLEDGE)
+===========================
+
+In order to enable receiving [Protected Audience API](https://developer.chrome.com/en/docs/privacy-sandbox/fledge/) traffic, follow Prebid's documentation on [paapiForGpt](https://docs.prebid.org/dev-docs/modules/paapiForGpt.html) module to build and enable Fledge.
 
 Additional Information
 ======================

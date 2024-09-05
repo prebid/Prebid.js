@@ -1,7 +1,9 @@
-import { submodule } from '../src/hook.js';
+import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {ajax} from '../src/ajax.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -38,7 +40,7 @@ const IAS_KEY_MAPPINGS = {
 
 /**
  * Module init
- * @param {Object} provider
+ * @param {Object} config
  * @param {Object} userConsent
  * @return {boolean}
  */
@@ -71,14 +73,28 @@ function stringifySlotSizes(sizes) {
   return result;
 }
 
-function stringifySlot(bidRequest) {
-  const sizes = utils.getAdUnitSizes(bidRequest);
+function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
+  let p = bidRequest.code;
+  if (!utils.isEmpty(adSlot)) {
+    p = adSlot.gptSlot;
+  } else {
+    if (!utils.isEmpty(adUnitPath) && adUnitPath.hasOwnProperty(bidRequest.code)) {
+      if (utils.isStr(adUnitPath[bidRequest.code]) && !utils.isEmpty(adUnitPath[bidRequest.code])) {
+        p = adUnitPath[bidRequest.code];
+      }
+    }
+  }
+  return p;
+}
+
+function stringifySlot(bidRequest, adUnitPath) {
+  const sizes = getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
-  const adSlot = utils.getGptSlotInfoForAdUnitCode(bidRequest.code);
-  const p = utils.isEmpty(adSlot) ? bidRequest.code : adSlot.gptSlot;
+  const adSlot = getGptSlotInfoForAdUnitCode(bidRequest.code);
+  const p = getAdUnitPath(adSlot, bidRequest, adUnitPath);
   const slot = { id, ss, p };
-  const keyValues = utils.getKeys(slot).map(function (key) {
+  const keyValues = Object.keys(slot).map(function (key) {
     return [key, slot[key]].join(':');
   });
   return '{' + keyValues.join(',') + '}';
@@ -119,18 +135,18 @@ function formatTargetingData(adUnit) {
   return renameKeyValues(result);
 }
 
-function constructQueryString(anId, adUnits) {
+function constructQueryString(anId, adUnits, pageUrl, adUnitPath) {
   let queries = [];
   queries.push(['anId', anId]);
 
   queries = queries.concat(adUnits.reduce(function (acc, request) {
-    acc.push(['slot', stringifySlot(request)]);
+    acc.push(['slot', stringifySlot(request, adUnitPath)]);
     return acc;
   }, []));
 
   queries.push(['wr', stringifyWindowSize()]);
   queries.push(['sr', stringifyScreenSize()]);
-  queries.push(['url', encodeURIComponent(window.location.href)]);
+  queries.push(['url', encodeURIComponent(pageUrl)]);
 
   return encodeURI(queries.map(qs => qs.join('=')).join('&'));
 }
@@ -160,6 +176,16 @@ function getTargetingData(adUnits, config, userConsent) {
   return targeting;
 }
 
+function isValidHttpUrl(string) {
+  let url;
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+  return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
 export function getApiCallback() {
   return {
     success: function (response, req) {
@@ -180,7 +206,12 @@ export function getApiCallback() {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const { pubId } = config.params;
-  const queryString = constructQueryString(pubId, adUnits);
+  let { pageUrl } = config.params;
+  const { adUnitPath } = config.params;
+  if (!isValidHttpUrl(pageUrl)) {
+    pageUrl = document.location.href;
+  }
+  const queryString = constructQueryString(pubId, adUnits, pageUrl, adUnitPath);
   ajax(
     `${IAS_HOST}?${queryString}`,
     getApiCallback(),

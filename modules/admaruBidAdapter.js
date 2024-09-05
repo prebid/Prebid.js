@@ -5,6 +5,7 @@ const ADMARU_ENDPOINT = 'https://p1.admaru.net/AdCall';
 const BIDDER_CODE = 'admaru';
 
 const DEFAULT_BID_TTL = 360;
+const SYNC_URL = 'https://p2.admaru.net/UserSync/sync'
 
 function parseBid(rawBid, currency) {
   const bid = {};
@@ -75,7 +76,24 @@ export const spec = {
     }
 
     return bidResponses;
-  }
+  },
+
+  getUserSyncs: function (syncOptions, responses) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: SYNC_URL
+      }];
+    }
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: SYNC_URL
+      }];
+    }
+
+    return [];
+  },
 }
 
 registerBidder(spec);

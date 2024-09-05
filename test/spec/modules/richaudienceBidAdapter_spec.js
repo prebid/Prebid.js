@@ -4,6 +4,8 @@ import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import sinon from 'sinon';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{
@@ -25,9 +27,115 @@ describe('Richaudience adapter tests', function () {
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
     bidderRequestId: '1858b7382993ca',
+    ortb2Imp: {
+      ext: {
+        tid: '29df2112-348b-4961-8863-1b33684d95e6',
+      }
+    },
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_NEW_DSA = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250], [300, 600], [728, 90], [970, 250]]
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site',
+      keywords: 'key1=value1;key2=value2'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    ortb2: {
+      regs: {
+        ext: {
+          dsa: {
+            dsarequired: 2,
+            pubrender: 1,
+            datatopub: 1,
+            transparency: [
+              {
+                domain: 'richaudience.com',
+                dsaparams: [1, 3, 6]
+              },
+              {
+                domain: 'adpone.com',
+                dsaparams: [8, 10, 12]
+              },
+              {
+                domain: 'sunmedia.com',
+                dsaparams: [14, 16, 18]
+              }
+            ]
+          }
+        }
+      }
+    },
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_NEW_SIZES_GPID = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    ortb2Imp: {
+      ext: {
+        gpid: '/19968336/header-bid-tag-1#example-2',
+        data: {
+          pbadslot: '/19968336/header-bid-tag-1#example-2'
+        }
+      }
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250], [300, 600], [728, 90], [970, 250]]
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site',
+      keywords: 'key1=value1;key2=value2'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
     user: {}
   }];
+
+  var DEFAULT_PARAMS_VIDEO_TIMEOUT = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4']
+      }
+    },
+    bidder: 'richaudience',
+    params: [{
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site'
+    }],
+    timeout: 3000,
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }]
 
   var DEFAULT_PARAMS_VIDEO_IN = [{
     adUnitCode: 'test-div',
@@ -232,10 +340,11 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.sizes[3]).to.have.property('w').and.to.equal(970);
     expect(requestContent.sizes[3]).to.have.property('h').and.to.equal(250);
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
-    expect(requestContent).to.have.property('timeout').and.to.equal(3000);
+    expect(requestContent).to.have.property('timeout').and.to.equal(600);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
     expect(typeof requestContent.scr_rsl === 'string')
     expect(typeof requestContent.cpuc === 'number')
+    expect(typeof requestContent.gpid === 'string')
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
   })
 
@@ -831,7 +940,59 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('schain').to.deep.equal(schain);
   })
 
+  it('should pass DSA', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_DSA, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {}
+    })
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('dsa').property('dsarequired').and.to.equal(2)
+    expect(requestContent).to.have.property('dsa').property('pubrender').and.to.equal(1);
+    expect(requestContent).to.have.property('dsa').property('datatopub').and.to.equal(1);
+    expect(requestContent.dsa.transparency[0]).to.have.property('domain').and.to.equal('richaudience.com');
+  })
+
+  it('should pass gpid', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES_GPID, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {}
+    })
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('gpid').and.to.equal('/19968336/header-bid-tag-1#example-2');
+  })
+
+  describe('onTimeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('onTimeout exist as a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should send timeouts', function () {
+      spec.onTimeout(DEFAULT_PARAMS_VIDEO_TIMEOUT);
+      expect(utils.triggerPixel.called).to.equal(true);
+      expect(utils.triggerPixel.firstCall.args[0]).to.equal('https://s.richaudience.com/err/?ec=6&ev=3000&pla=ADb1f40rmi&int=PREBID&pltfm=&node=&dm=localhost:9876');
+    });
+  });
+
   describe('userSync', function () {
+    let sandbox;
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('Verifies user syncs iframe include', function () {
       config.setConfig({
         'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
@@ -1168,6 +1329,38 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: false
       }, [], {consentString: '', gdprApplies: true});
       expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Verifies user syncs iframe/image include with GPP', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
+        gppString: 'DBABL~BVVqAAEABgA.QA',
+        applicableSections: [7]},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+
+      config.setConfig({
+        'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
+        gppString: 'DBABL~BVVqAAEABgA.QA',
+        applicableSections: [7, 5]},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+    });
+
+    it('Verifies user syncs URL image include with GPP', function () {
+      const gppConsent = { gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA', applicableSections: [0] };
+      const result = spec.getUserSyncs({pixelEnabled: true}, undefined, undefined, undefined, gppConsent);
+      expect(result).to.deep.equal([{
+        type: 'image', url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
+      }]);
     });
   })
 });

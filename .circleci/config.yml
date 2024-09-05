@@ -7,7 +7,7 @@ aliases:
   - &environment
       docker:
         # specify the version you desire here
-        - image: circleci/node:12.16.1-browsers
+        - image: cimg/node:20.14.0-browsers
       resource_class: xlarge
         # Specify service dependencies here if necessary
         # CircleCI maintains a library of pre-built images
@@ -18,8 +18,6 @@ aliases:
   - &restore_dep_cache
       keys:
         - v1-dependencies-{{ checksum "package.json" }}
-        # fallback to using the latest cache if no exact match is found
-        - v1-dependencies-
 
   - &save_dep_cache
       paths:
@@ -38,28 +36,12 @@ aliases:
       name: BrowserStack End to end testing
       command: gulp e2e-test
 
-  # Download and run BrowserStack local
-  - &download_browserstack
-      name : Download BrowserStackLocal binary
-      command : |
-        # Download the browserstack binary file
-        wget "https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip"
-        # Unzip it
-        unzip BrowserStackLocal-linux-x64.zip
-
-  - &start_browserstack
-    name: Start BrowserStackLocal
-    command: ./BrowserStackLocal --key ${BROWSERSTACK_ACCESS_KEY} --automate-only --local-identifier ${CIRCLE_WORKFLOW_JOB_ID}
-    background: true
-
   - &unit_test_steps
     - checkout
     - restore_cache: *restore_dep_cache
     - run: npm ci
     - save_cache: *save_dep_cache
     - run: *install
-    - run: *download_browserstack
-    - run: *start_browserstack
     - run: *run_unit_test
 
   - &endtoend_test_steps
@@ -68,8 +50,6 @@ aliases:
     - run: npm install
     - save_cache: *save_dep_cache
     - run: *install
-    - run: *download_browserstack
-    - run: *start_browserstack
     - run: *run_endtoend_test
 
 version: 2
@@ -87,6 +67,9 @@ workflows:
   commit:
     jobs:
       - build
+      - e2etest:
+          requires:
+            - build
 
 experimental:
   pipelines: true

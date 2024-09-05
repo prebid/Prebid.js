@@ -16,7 +16,7 @@ Weborama provides a Real-Time Data Submodule for `Prebid.js`, allowing to easy i
 
 * LiTE by SFBX® (Local inApp Trust Engine) provides “Zero Party Data” given by users, stored and calculated only on the user’s device. Through a unique cohorting system, it enables better monetization in a consent/consentless and identity-less mode.
 
-Contact prebid-support@weborama.com for more information.
+Contact [prebid-support@weborama.com] for more information.
 
 ### Publisher Usage
 
@@ -67,7 +67,7 @@ pbjs.setConfig({
                     enabled: true,
                 },
                 sfbxLiteDataConf: { // sfbx-lite site-centric configuration, *omit if not needed*
-                    enabled: true, 
+                    enabled: true,
                 },
             }
         },
@@ -79,7 +79,7 @@ pbjs.setConfig({
 
 Each module can perform two actions:
 
-* set targeting on [GPT](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForGPTAsync.html) / [AST](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForAst.html]) via `prebid.js`
+* set targeting on [GPT](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForGPTAsync.html) / [AST](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForAst.html) via `prebid.js`
 
 * send data to other `prebid.js` bidder modules (check the complete list at the end of this page)
 
@@ -109,6 +109,7 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | :------------ | :------------ | :------------ |:------------ |
 | token | String | Security Token provided by Weborama, unique per client | Mandatory |
 | targetURL | String | Url to be profiled in the contextual api | Optional. Defaults to `document.URL` |
+| assetID | Function or String | if provided, we will call the document-profile api using this asset id. |Optional|
 | setPrebidTargeting|Various|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or `true`.|
 | sendToBidders|Various|If true, will send the contextual profile to all bidders. If an array, will specify the bidders to send data| Optional. Default is `params.sendToBidders` (if any) or `true`.|
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
@@ -116,9 +117,9 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 | baseURLProfileAPI | String| if present, update the domain of the contextual api| Optional. Default is `ctx.weborama.com` |
 
-#### WAM User-Centric Configuration
+#### User-Centric Configuration
 
-To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you lust include the `wamfactory` script in your pages with `wam2gam` feature activated.
+To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you must include the `wamfactory` script in your pages with `wam2gam` feature activated.
 Please contact weborama if you don't have it.
 
 On this section we will explain the `params.weboUserDataConf` subconfiguration:
@@ -132,6 +133,15 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
+
+##### User Consent
+
+The WAM User-Centric configuration will check for user consent if gdpr applies. It will check for consent:
+
+* Vendor ID 284 (Weborama)
+* Purpose IDs: 1, 3, 4, 5 and 6
+
+If the user consent does not match such conditions, this module will not load, means we will not check for any data in local storage and the default profile will be ignored.
 
 #### Sfbx LiTE Site-Centric Configuration
 
@@ -205,7 +215,7 @@ A better look on the `Object` type
 ```javascript
 sendToBidders: {
     appnexus: true,           // send profile to appnexus on all ad units
-    pubmatic: ['adUnitCode1'],// send profile to pubmatic on this ad units 
+    pubmatic: ['adUnitCode1'],// send profile to pubmatic on this ad units
 }
 ```
 
@@ -243,7 +253,7 @@ To be possible customize the way we send data to bidders via this callback:
 sendToBidders: function(bid, adUnitCode, data, metadata){
     if (bid.bidder == 'other'){
         /* use bid object to store data based on this specific logic, like in the example below */
-       
+
         bid.params = bid.params || {};
         bid.params['some_specific_key'] = data;
 
@@ -364,7 +374,7 @@ pbjs.que.push(function () {
                         sendToBidders: true,      // override param.sendToBidders. default is true
                         defaultProfile: {            // optional, used if nothing is found
                             webo_cs: [...],        // wam custom segments
-                            webo_audiences: [...], // wam audiences 
+                            webo_audiences: [...], // wam audiences
                         },
                         enabled: true,
                     },
@@ -379,6 +389,37 @@ pbjs.que.push(function () {
                 }
             }]
         }
+    });
+});
+```
+
+An alternative version, using asset id instead of target url on contextual, can be found here:
+
+```javascript
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function () {
+    pbjs.setConfig({
+        debug: true,
+        realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [{
+                name: "weborama",
+                waitForIt: true,
+                params: {
+                    weboCtxConf: {
+                        token: "<<to-be-defined>>", // mandatory
+                        assetID: "datasource:docId", // can be a callback to be executed in runtime and returns the identifier
+                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
+                        sendToBidders: true,      // override param.sendToBidders. default is true
+                        defaultProfile: {         // optional, used if nothing is found
+                            webo_ctx: [ ... ],    // contextual segments
+                            webo_ds: [ ...],      // data science segments
+                        },
+                        enabled: true,
+                    },
+                    ...
     });
 });
 ```
@@ -444,18 +485,18 @@ pbjs.que.push(function () {
                 params: {
                     weboCtxConf: {
                         token: "to-be-defined", // mandatory
-                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits
                         sendToBidders: ['appnexus',...], // overide, send to only some bidders
                         enabled: true,
                     },
                     weboUserDataConf: {
                         accountId: 12345,           // recommended
-                        setPrebidTargeting: ['adUnitCode2',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode2',...], // set target only on certain adunits
                         sendToBidders: ['rubicon',...], // overide, send to only some bidders
                         enabled: true,
                     },
                     sfbxLiteDataConf: {
-                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits
                         sendToBidders: ['smartadserver',...], // overide, send to only some bidders
                         enabled: true,
                     }
@@ -505,15 +546,15 @@ pbjs.que.push(function () {
                     },
                     weboUserDataConf: {
                         accountId: 12345,           // recommended
-                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
+                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits
                         sendToBidders: { // send to only some bidders and adunits
-                            'appnexus': true,               // all adunits for appnexus 
+                            'appnexus': true,               // all adunits for appnexus
                             'pubmatic': ['adUnitCode1',...] // some adunits for pubmatic
                             // other bidders will be ignored
                         },
                         defaultProfile: {           // optional
-                            webo_cs: ['Red'],
-                            webo_audiences: ['bam']
+                            webo_cs: ['Red'],       // using label
+                            webo_audiences: [12345] // using id
                         },
                         localStorageProfileKey: 'webo_wam2gam_entry', // default
                         enabled: true,
@@ -543,12 +584,9 @@ pbjs.que.push(function () {
 
 ### Supported Bidders
 
-We currently support the following bidder adapters:
+We currently support the following bidder adapters with dedicated code:
 
-* SmartADServer SSP
-* PubMatic SSP
 * AppNexus SSP
-* Rubicon SSP
 
 We also set the bidder (and global, if no specific bidders are set on `sendToBidders`) ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data). The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from [here](https://docs.prebid.org/dev-docs/bidders).
 
@@ -573,8 +611,11 @@ We also set the bidder (and global, if no specific bidders are set on `sendToBid
 * Opt Out Advertising
 * Ozone Project
 * Proxistore
+* PubMatic SSP
 * Rise
+* Rubicon SSP
 * Smaato
+* Smart ADServer SSP
 * Sonobi
 * TheMediaGrid
 * TripleLift

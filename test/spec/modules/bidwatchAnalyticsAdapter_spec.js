@@ -1,9 +1,11 @@
 import bidwatchAnalytics from 'modules/bidwatchAnalyticsAdapter.js';
+import {dereferenceWithoutRenderer} from 'modules/bidwatchAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
+
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('BidWatch Analytics', function () {
   let timestamp = new Date() - 256;
@@ -155,7 +157,7 @@ describe('BidWatch Analytics', function () {
         'requestId': '34a63e5d5378a3',
         'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b40',
         'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b',
-        'mediaType': 'banner',
+        'mediaType': 'video',
         'source': 'client',
         'cpm': 27.4276,
         'creativeId': '158534630',
@@ -168,6 +170,7 @@ describe('BidWatch Analytics', function () {
             'example.com'
           ]
         },
+        'renderer': 'something',
         'originalCpm': 25.02521,
         'originalCurrency': 'EUR',
         'responseTimestamp': 1647424261559,
@@ -221,6 +224,7 @@ describe('BidWatch Analytics', function () {
         'example.com'
       ]
     },
+    'renderer': 'something',
     'originalCpm': 25.02521,
     'originalCurrency': 'EUR',
     'responseTimestamp': 1647424261558,
@@ -260,15 +264,14 @@ describe('BidWatch Analytics', function () {
   describe('main test flow', function () {
     beforeEach(function () {
       sinon.stub(events, 'getEvents').returns([]);
+      sinon.spy(bidwatchAnalytics, 'track');
     });
-
     afterEach(function () {
       events.getEvents.restore();
+      bidwatchAnalytics.disableAnalytics();
+      bidwatchAnalytics.track.restore();
     });
-
-    it('should catch events of interest', function () {
-      sinon.spy(bidwatchAnalytics, 'track');
-
+    it('test dereferenceWithoutRenderer', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'bidwatch',
         adapter: bidwatchAnalytics
@@ -280,25 +283,61 @@ describe('BidWatch Analytics', function () {
           domain: 'test'
         }
       });
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
+      let resultBidWon = JSON.parse(dereferenceWithoutRenderer(bidWon));
+      expect(resultBidWon).not.to.have.property('renderer');
+      let resultBid = JSON.parse(dereferenceWithoutRenderer(auctionEnd));
+      expect(resultBid).to.have.property('bidsReceived').and.to.have.lengthOf(1);
+      expect(resultBid.bidsReceived[0]).not.to.have.property('renderer');
+    });
+    it('test auctionEnd', function () {
+      adapterManager.registerAnalyticsAdapter({
+        code: 'bidwatch',
+        adapter: bidwatchAnalytics
+      });
+
+      adapterManager.enableAnalytics({
+        provider: 'bidwatch',
+        options: {
+          domain: 'test'
+        }
+      });
+
+      events.emit(EVENTS.BID_REQUESTED, auctionEnd['bidderRequests'][0]);
+      events.emit(EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
       expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('auctionEnd').exist;
       expect(message.auctionEnd).to.have.lengthOf(1);
       expect(message.auctionEnd[0]).to.have.property('bidsReceived').and.to.have.lengthOf(1);
-      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('ad');
-      expect(message.auctionEnd[0].bidsReceived[0].ad).to.equal('emptied');
+      expect(message.auctionEnd[0].bidsReceived[0]).not.to.have.property('ad');
+      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('meta');
+      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('advertiserDomains');
+      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('adId');
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
-      expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).to.have.property('vendorData');
-      expect(message.auctionEnd[0].bidderRequests[0].gdprConsent.vendorData).to.equal('emptied');
-      events.emit(constants.EVENTS.BID_WON, bidWon);
-      expect(server.requests.length).to.equal(2);
-      message = JSON.parse(server.requests[1].requestBody);
-      expect(message).to.have.property('ad').and.to.equal('emptied');
+      expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
+    });
+
+    it('test bidWon', function() {
+      adapterManager.registerAnalyticsAdapter({
+        code: 'bidwatch',
+        adapter: bidwatchAnalytics
+      });
+
+      adapterManager.enableAnalytics({
+        provider: 'bidwatch',
+        options: {
+          domain: 'test'
+        }
+      });
+      events.emit(EVENTS.BID_WON, bidWon);
+      expect(server.requests.length).to.equal(1);
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message).not.to.have.property('ad');
+      expect(message).to.have.property('adId')
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
-      sinon.assert.callCount(bidwatchAnalytics.track, 3);
     });
   });
 });

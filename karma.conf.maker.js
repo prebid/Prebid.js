@@ -15,8 +15,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     mode: 'development',
     devtool: 'inline-source-map',
   });
-
-  delete webpackConfig.entry;
+  ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
 
   webpackConfig.module.rules
     .flatMap((r) => r.use)
@@ -81,9 +80,7 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString(),
-      startTunnel: false,
-      localIdentifier: process.env.CIRCLE_WORKFLOW_JOB_ID
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
@@ -111,13 +108,11 @@ function setBrowsers(karmaConf, browserstack) {
 module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
   var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
-
-  var files = file ? ['test/test_deps.js', file] : ['test/test_index.js'];
-  // This file opens the /debug.html tab automatically.
-  // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
-  if (watchMode) {
-    files.push('test/helpers/karma-init.js');
+  if (file) {
+    file = Array.isArray(file) ? ['test/pipeline_setup.js', ...file] : [file]
   }
+
+  var files = file ? ['test/test_deps.js', ...file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
 
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -130,15 +125,15 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon'],
+    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon', 'webpack'],
 
-    files: files,
+    // test files should not be watched or they'll run twice after an update
+    // (they are still, in fact, watched through autoWatch: true)
+    files: files.map(fn => ({pattern: fn, watched: false, served: true, included: true})),
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {
-      'test/test_index.js': ['webpack', 'sourcemap']
-    },
+    preprocessors: Object.fromEntries(files.map(f => [f, ['webpack', 'sourcemap']])),
 
     // web server port
     port: 9876,
@@ -151,7 +146,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     logLevel: karmaConstants.LOG_INFO,
 
     // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: true,
+    autoWatch: watchMode,
 
     reporters: ['mocha'],
 
@@ -173,19 +168,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     browserNoActivityTimeout: 3e5, // default 10000
     captureTimeout: 3e5, // default 60000,
     browserDisconnectTolerance: 3,
-    concurrency: 6,
+    concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins
   };
-
-  // To ensure that, we are able to run single spec file
-  // here we are adding preprocessors, when file is passed
-  if (file) {
-    config.files.forEach((file) => {
-      config.preprocessors[file] = ['webpack', 'sourcemap'];
-    });
-    delete config.preprocessors['test/test_index.js'];
-  }
 
   setReporters(config, codeCoverage, browserstack);
   setBrowsers(config, browserstack);

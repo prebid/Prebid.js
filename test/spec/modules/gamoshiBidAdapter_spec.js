@@ -46,7 +46,11 @@ describe('GamoshiAdapter', () => {
         'supplyPartnerId': supplyPartnerId
       },
       'sizes': [[300, 250], [300, 600]],
-      'transactionId': 'a123456789',
+      ortb2Imp: {
+        ext: {
+          tid: 'a123456789',
+        }
+      },
       refererInfo: {referer: 'http://examplereferer.com'},
       gdprConsent: {
         consentString: 'some string',
@@ -310,7 +314,6 @@ describe('GamoshiAdapter', () => {
       response = spec.buildRequests([bidRequest], bidRequest)[0];
       expect(response.method).to.equal('POST');
       expect(response.url).to.match(new RegExp(`^https://rtb\\.gamoshi\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
-      expect(response.data.id).to.equal(bidRequest.auctionId);
       const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://rtb2.gamoshi.io/a12';
       response = spec.buildRequests([bidRequestWithEndpoint], bidRequest)[0];
@@ -376,7 +379,7 @@ describe('GamoshiAdapter', () => {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
 
       bidRequestWithVideo.params.video = {
-        placement: 1,
+        plcmt: 1,
         minduration: 1,
       }
 
@@ -395,7 +398,7 @@ describe('GamoshiAdapter', () => {
 
       expect(response.data.imp[0].video.mimes).to.equal(bidRequestWithVideo.mediaTypes.video.mimes);
       expect(response.data.imp[0].video.skip).to.not.exist;
-      expect(response.data.imp[0].video.placement).to.equal(1);
+      expect(response.data.imp[0].video.plcmt).to.equal(1);
       expect(response.data.imp[0].video.minduration).to.equal(1);
       expect(response.data.imp[0].video.playbackmethod).to.equal(1);
       expect(response.data.imp[0].video.startdelay).to.equal(1);
@@ -405,7 +408,7 @@ describe('GamoshiAdapter', () => {
           playerSize: [302, 252],
           mimes: ['video/mpeg'],
           skip: 1,
-          placement: 1,
+          plcmt: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -428,7 +431,7 @@ describe('GamoshiAdapter', () => {
           context: 'instream',
           mimes: ['video/mpeg'],
           skip: 1,
-          placement: 1,
+          plcmt: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -436,6 +439,7 @@ describe('GamoshiAdapter', () => {
       };
       let response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
       expect(response.data.imp[0].video.ext.context).to.equal('instream');
+      bidRequestWithVideo.mediaTypes.video.context = 'outstream';
       bidRequestWithVideo.mediaTypes.video.context = 'outstream';
 
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
@@ -457,7 +461,7 @@ describe('GamoshiAdapter', () => {
         context: 'instream',
         mimes: ['video/mpeg'],
         skip: 1,
-        placement: 1,
+        plcmt: 1,
         minduration: 1,
         playbackmethod: 1,
         startdelay: 1,

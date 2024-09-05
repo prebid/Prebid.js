@@ -3,9 +3,9 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
-const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
+const COOKIE_BASE_URL = 'https://api.proxistore.com/v3/rtb/prebid/multi';
 const COOKIE_LESS_URL =
-  'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
+  'https://api.cookieless-proxistore.com/v3/rtb/prebid/multi';
 
 function _createServerRequest(bidRequests, bidderRequest) {
   var sizeIds = [];
@@ -24,8 +24,9 @@ function _createServerRequest(bidRequests, bidderRequest) {
     sizeIds.push(sizeId);
   });
   var payload = {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bidRequests[0].auctionId,
-    transactionId: bidRequests[0].auctionId,
+    transactionId: bidRequests[0].ortb2Imp?.ext?.tid,
     bids: sizeIds,
     website: bidRequests[0].params.website,
     language: bidRequests[0].params.language,
@@ -88,23 +89,20 @@ function _createServerRequest(bidRequests, bidderRequest) {
 }
 
 function _assignSegments(bid) {
-  if (
-    bid.ortb2 &&
-    bid.ortb2.user &&
-    bid.ortb2.user.ext &&
-    bid.ortb2.user.ext.data
-  ) {
-    return (
-      bid.ortb2.user.ext.data || {
-        segments: [],
-        contextual_categories: {},
-      }
-    );
+  var segs = (bid.ortb2 && bid.ortb2.user && bid.ortb2.user.ext && bid.ortb2.user.ext.data && bid.ortb2.user.ext.data.sd_rtd && bid.ortb2.user.ext.data.sd_rtd.segments ? bid.ortb2.user.ext.data.sd_rtd.segments : []);
+  var cats = {};
+  if (bid.ortb2 && bid.ortb2.site && bid.ortb2.site.ext && bid.ortb2.site.ext.data && bid.ortb2.site.ext.data.sd_rtd) {
+    if (bid.ortb2.site.ext.data.sd_rtd.categories) {
+      segs = segs.concat(bid.ortb2.site.ext.data.sd_rtd.categories);
+    }
+    if (bid.ortb2.site.ext.data.sd_rtd.categories_score) {
+      cats = bid.ortb2.site.ext.data.sd_rtd.categories_score;
+    }
   }
 
   return {
-    segments: [],
-    contextual_categories: {},
+    segments: segs,
+    contextual_categories: cats
   };
 }
 

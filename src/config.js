@@ -12,23 +12,33 @@
  * @property {(string|Object)} [video-outstream]
  */
 
-import { isValidPriceConfig } from './cpmBucketManager.js';
-import {find, includes, arrayFrom as from} from './polyfill.js';
+import {isValidPriceConfig} from './cpmBucketManager.js';
+import {arrayFrom as from, find, includes} from './polyfill.js';
 import {
-  mergeDeep, deepClone, getParameterByName, isPlainObject, logMessage, logWarn, logError,
-  isArray, isStr, isBoolean, deepAccess, bind
+  deepAccess,
+  deepClone,
+  getParameterByName,
+  isArray,
+  isBoolean,
+  isPlainObject,
+  isStr,
+  logError,
+  logMessage,
+  logWarn,
+  mergeDeep
 } from './utils.js';
-import CONSTANTS from './constants.json';
+import {DEBUG_MODE} from './constants.js';
 
-const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
+const DEFAULT_MAXBID_VALUE = 5000
 
-const DEFAULT_TIMEOUTBUFFER = 400;
+const DEFAULT_IFRAMES_CONFIG = {};
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';
@@ -50,13 +60,6 @@ const GRANULARITY_OPTIONS = {
 
 const ALL_TOPICS = '*';
 
-/**
- * @typedef {object} PrebidConfig
- *
- * @property {string} cache.url Set a url if we should use prebid-cache to store video bids before adding
- *   bids to the auction. **NOTE** This must be set if you want to use the dfpAdServerVideo module.
- */
-
 export function newConfig() {
   let listeners = [];
   let defaults;
@@ -66,157 +69,112 @@ export function newConfig() {
 
   function resetConfig() {
     defaults = {};
-    let newConfig = {
-      // `debug` is equivalent to legacy `pbjs.logging` property
-      _debug: DEFAULT_DEBUG,
-      get debug() {
-        return this._debug;
-      },
-      set debug(val) {
-        this._debug = val;
-      },
 
-      // default timeout for all bids
-      _bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
-      get bidderTimeout() {
-        return this._bidderTimeout;
-      },
-      set bidderTimeout(val) {
-        this._bidderTimeout = val;
-      },
+    function getProp(name) {
+      return props[name].val;
+    }
 
-      _publisherDomain: null,
-      get publisherDomain() {
-        return this._publisherDomain;
-      },
-      set publisherDomain(val) {
-        logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
-        this._publisherDomain = val;
-      },
+    function setProp(name, val) {
+      props[name].val = val;
+    }
 
-      // calls existing function which may be moved after deprecation
-      _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
-      set priceGranularity(val) {
-        if (validatePriceGranularity(val)) {
-          if (typeof val === 'string') {
-            this._priceGranularity = (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM;
-          } else if (isPlainObject(val)) {
-            this._customPriceBucket = val;
-            this._priceGranularity = GRANULARITY_OPTIONS.CUSTOM;
-            logMessage('Using custom price granularity');
+    const props = {
+      publisherDomain: {
+        set(val) {
+          if (val != null) {
+            logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
+          }
+          setProp('publisherDomain', val);
+        }
+      },
+      priceGranularity: {
+        val: GRANULARITY_OPTIONS.MEDIUM,
+        set(val) {
+          if (validatePriceGranularity(val)) {
+            if (typeof val === 'string') {
+              setProp('priceGranularity', (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM);
+            } else if (isPlainObject(val)) {
+              setProp('customPriceBucket', val);
+              setProp('priceGranularity', GRANULARITY_OPTIONS.CUSTOM)
+              logMessage('Using custom price granularity');
+            }
           }
         }
       },
-      get priceGranularity() {
-        return this._priceGranularity;
+      customPriceBucket: {
+        val: {},
+        set() {}
       },
-
-      _customPriceBucket: {},
-      get customPriceBucket() {
-        return this._customPriceBucket;
-      },
-
-      /**
-       * mediaTypePriceGranularity
-       * @type {MediaTypePriceGranularity}
-       */
-      _mediaTypePriceGranularity: {},
-
-      get mediaTypePriceGranularity() {
-        return this._mediaTypePriceGranularity;
-      },
-      set mediaTypePriceGranularity(val) {
-        this._mediaTypePriceGranularity = Object.keys(val).reduce((aggregate, item) => {
-          if (validatePriceGranularity(val[item])) {
-            if (typeof val === 'string') {
-              aggregate[item] = (hasGranularity(val[item])) ? val[item] : this._priceGranularity;
-            } else if (isPlainObject(val)) {
-              aggregate[item] = val[item];
-              logMessage(`Using custom price granularity for ${item}`);
+      mediaTypePriceGranularity: {
+        val: {},
+        set(val) {
+          val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
+            if (validatePriceGranularity(val[item])) {
+              if (typeof val === 'string') {
+                aggregate[item] = (hasGranularity(val[item])) ? val[item] : getProp('priceGranularity');
+              } else if (isPlainObject(val)) {
+                aggregate[item] = val[item];
+                logMessage(`Using custom price granularity for ${item}`);
+              }
+            } else {
+              logWarn(`Invalid price granularity for media type: ${item}`);
             }
+            return aggregate;
+          }, {}));
+        }
+      },
+      bidderSequence: {
+        val: DEFAULT_BIDDER_SEQUENCE,
+        set(val) {
+          if (VALID_ORDERS[val]) {
+            setProp('bidderSequence', val);
           } else {
-            logWarn(`Invalid price granularity for media type: ${item}`);
+            logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
           }
-          return aggregate;
-        }, {});
+        }
       },
-
-      _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
-      get enableSendAllBids() {
-        return this._sendAllBids;
-      },
-      set enableSendAllBids(val) {
-        this._sendAllBids = val;
-      },
-
-      _useBidCache: DEFAULT_BID_CACHE,
-      get useBidCache() {
-        return this._useBidCache;
-      },
-      set useBidCache(val) {
-        this._useBidCache = val;
-      },
+      auctionOptions: {
+        val: {},
+        set(val) {
+          if (validateauctionOptions(val)) {
+            setProp('auctionOptions', val);
+          }
+        }
+      }
+    }
+    let newConfig = {
+      // `debug` is equivalent to legacy `pbjs.logging` property
+      debug: DEFAULT_DEBUG,
+      bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
+      enableSendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
+      useBidCache: DEFAULT_BID_CACHE,
 
       /**
        * deviceAccess set to false will disable setCookie, getCookie, hasLocalStorage
        * @type {boolean}
        */
-      _deviceAccess: DEFAULT_DEVICE_ACCESS,
-      get deviceAccess() {
-        return this._deviceAccess;
-      },
-      set deviceAccess(val) {
-        this._deviceAccess = val;
-      },
+      deviceAccess: DEFAULT_DEVICE_ACCESS,
 
-      _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
-      get bidderSequence() {
-        return this._bidderSequence;
-      },
-      set bidderSequence(val) {
-        if (VALID_ORDERS[val]) {
-          this._bidderSequence = val;
-        } else {
-          logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
-        }
-      },
-
-      // timeout buffer to adjust for bidder CDN latency
-      _timeoutBuffer: DEFAULT_TIMEOUTBUFFER,
-      get timeoutBuffer() {
-        return this._timeoutBuffer;
-      },
-      set timeoutBuffer(val) {
-        this._timeoutBuffer = val;
-      },
-
-      _disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
-      get disableAjaxTimeout() {
-        return this._disableAjaxTimeout;
-      },
-      set disableAjaxTimeout(val) {
-        this._disableAjaxTimeout = val;
-      },
+      disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
 
       // default max nested iframes for referer detection
-      _maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
-      get maxNestedIframes() {
-        return this._maxNestedIframes;
-      },
-      set maxNestedIframes(val) {
-        this._maxNestedIframes = val;
-      },
+      maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
 
-      _auctionOptions: {},
-      get auctionOptions() {
-        return this._auctionOptions;
-      },
-      set auctionOptions(val) {
-        if (validateauctionOptions(val)) {
-          this._auctionOptions = val;
-        }
-      },
+      // default max bid
+      maxBid: DEFAULT_MAXBID_VALUE,
+      userSync: {
+        topics: DEFAULT_IFRAMES_CONFIG
+      }
     };
+
+    Object.defineProperties(newConfig,
+      Object.fromEntries(Object.entries(props)
+        .map(([k, def]) => [k, Object.assign({
+          get: getProp.bind(null, k),
+          set: setProp.bind(null, k),
+          enumerable: true,
+        }, def)]))
+    );
 
     if (config) {
       callSubscribers(
@@ -554,7 +512,7 @@ export function newConfig() {
     return function(cb) {
       return function(...args) {
         if (typeof cb === 'function') {
-          return runWithBidder(bidder, bind.call(cb, this, ...args))
+          return runWithBidder(bidder, cb.bind(this, ...args))
         } else {
           logWarn('config.callbackWithBidder callback is not a function');
         }
@@ -591,4 +549,8 @@ export function newConfig() {
   };
 }
 
+/**
+ * Set a `cache.url` if we should use prebid-cache to store video bids before adding bids to the auction.
+ * This must be set if you want to use the dfpAdServerVideo module.
+ */
 export const config = newConfig();

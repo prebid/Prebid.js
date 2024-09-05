@@ -2,7 +2,7 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl} from '../src/utils.js';
+import {deepAccess, parseUrl, extractDomainFromHost} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -24,24 +24,6 @@ function getBidFloor(bidRequest, mediaType) {
   });
 
   return (floor && floor.currency === 'USD' && floor.floor) || 0;
-}
-
-function extractDomainFromHost(pageHost) {
-  let domain = null;
-  try {
-    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
-    if (domains != null && domains.length > 0) {
-      domain = domains[0];
-      for (let i = 1; i < domains.length; i++) {
-        if (domains[i].length > domain.length) {
-          domain = domains[i];
-        }
-      }
-    }
-  } catch (e) {
-    domain = null;
-  }
-  return domain;
 }
 
 function getGdprQueryParams(gdprConsent) {
@@ -76,6 +58,7 @@ function getBannerCoords(id) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
@@ -123,6 +106,12 @@ export const spec = {
       reqUrl += `&ccpa=${bidderRequest.uspConsent}`;
     }
 
+    if (bidderRequest.gppConsent) {
+      const gppString = bidderRequest.gppConsent.gppString ?? '';
+      const ggpSid = bidderRequest.gppConsent.applicableSections ?? '';
+      reqUrl += `&gpp=${gppString}&gpp_sid=${ggpSid}`;
+    }
+
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
@@ -132,6 +121,7 @@ export const spec = {
         domain: domain,
         placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
         publisherId: bidReq.params.publisherId,
+        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot', '')),
         sizes: bidReq.sizes,
         params: bidReq.params
       };
@@ -145,7 +135,9 @@ export const spec = {
           streamType: deepAccess(bidReq, 'mediaTypes.video.context') || null,
           playbackMethod: deepAccess(bidReq, 'params.video.playbackMethod') || null,
           maxDuration: deepAccess(bidReq, 'params.video.maxDuration') || null,
-          skippable: deepAccess(bidReq, 'params.video.skippable') || null
+          skippable: deepAccess(bidReq, 'params.video.skippable') || null,
+          placement: deepAccess(bidReq, 'mediaTypes.video.placement') || null,
+          plcmt: deepAccess(bidReq, 'mediaTypes.video.plcmt') || null
         };
       }
       payload['x-ut-hb-params'].push(bid);

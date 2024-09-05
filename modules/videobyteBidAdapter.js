@@ -2,6 +2,14 @@ import { logMessage, logError, deepAccess, isFn, isPlainObject, isStr, isNumber,
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'videobyte';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -11,6 +19,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -90,7 +99,6 @@ export const spec = {
       if (bid.adm && bid.price) {
         let bidResponse = {
           requestId: response.id,
-          bidderCode: spec.code,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,
@@ -183,16 +191,6 @@ function buildRequestData(bidRequest, bidderRequest) {
       video[param] = videoParams[param];
     }
   });
-
-  // Placement Inference Rules:
-  // - If no placement is defined then default to 1 (In Stream)
-  video.placement = video.placement || 2;
-
-  // - If product is instream (for instream context) then override placement to 1
-  if (params.context === 'instream') {
-    video.startdelay = video.startdelay || 0;
-    video.placement = 1;
-  }
 
   // bid floor
   const bidFloorRequest = {

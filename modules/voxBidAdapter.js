@@ -2,21 +2,40 @@ import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
-import {auctionManager} from '../src/auctionManager.js';
 import {Renderer} from '../src/Renderer.js';
+import {config} from '../src/config.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
+const { getConfig } = config;
 
 const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';
 const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const TTL = 60;
+const GVLID = 206;
 
 function buildBidRequests(validBidRequests) {
-  return _map(validBidRequests, function(validBidRequest) {
-    const params = validBidRequest.params;
+  return _map(validBidRequests, function(bid) {
+    const currency = getConfig('currency.adServerCurrency');
+    const floorInfo = bid.getFloor ? bid.getFloor({
+      currency: currency || 'USD'
+    }) : {};
+
+    const params = bid.params;
     const bidRequest = {
-      bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
-      sizes: validBidRequest.sizes,
+      floorInfo,
+      schain: bid.schain,
+      userId: bid.userId,
+      bidId: bid.bidId,
+      // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+      transactionId: bid.transactionId,
+      sizes: bid.sizes,
       placement: params.placement,
       placeId: params.placementId,
       imageUrl: params.imageUrl
@@ -79,16 +98,13 @@ function buildBid(bidData) {
   if (bidData.placement === 'video') {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
+    const video = bidData.mediaTypes?.video;
 
-    let adUnit = find(auctionManager.getAdUnits(), function (unit) {
-      return unit.transactionId === bidData.transactionId;
-    });
+    if (video) {
+      bid.width = video.playerSize[0][0];
+      bid.height = video.playerSize[0][1];
 
-    if (adUnit) {
-      bid.width = adUnit.mediaTypes.video.playerSize[0][0];
-      bid.height = adUnit.mediaTypes.video.playerSize[0][1];
-
-      if (adUnit.mediaTypes.video.context === 'outstream') {
+      if (video.context === 'outstream') {
         bid.renderer = createRenderer(bid);
       }
     }
@@ -170,6 +186,7 @@ function wrapBanner(bid, bidData) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

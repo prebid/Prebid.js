@@ -9,9 +9,11 @@ import {
   logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
 } from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
+import {PBS, registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
+import {timedBidResponseHook} from '../../src/utils/perfMetrics.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -43,10 +45,10 @@ config.getConfig(MODULE_NAME, conf => {
 });
 
 /**
-   * @summary validates multibid configuration entries
-   * @param {Object[]} multibid - example [{bidder: 'bidderA', maxbids: 2, prefix: 'bidA'}, {bidder: 'bidderB', maxbids: 2}]
-   * @return {Boolean}
-*/
+ * @summary validates multibid configuration entries
+ * @param {Object[]} multibid - example [{bidder: 'bidderA', maxbids: 2, prefix: 'bidA'}, {bidder: 'bidderB', maxbids: 2}]
+ * @return {Boolean}
+ */
 export function validateMultibid(conf) {
   let check = true;
   let duplicate = conf.filter(entry => {
@@ -75,10 +77,10 @@ export function validateMultibid(conf) {
 }
 
 /**
-   * @summary addBidderRequests before hook
-   * @param {Function} fn reference to original function (used by hook logic)
-   * @param {Object[]} array containing copy of each bidderRequest object
-*/
+ * @summary addBidderRequests before hook
+ * @param {Function} fn reference to original function (used by hook logic)
+ * @param {Object[]} array containing copy of each bidderRequest object
+ */
 export function adjustBidderRequestsHook(fn, bidderRequests) {
   bidderRequests.map(bidRequest => {
     // Loop through bidderRequests and check if bidderCode exists in multiconfig
@@ -93,12 +95,12 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
 }
 
 /**
-   * @summary addBidResponse before hook
-   * @param {Function} fn reference to original function (used by hook logic)
-   * @param {String} ad unit code for bid
-   * @param {Object} bid object
-*/
-export function addBidResponseHook(fn, adUnitCode, bid) {
+ * @summary addBidResponse before hook
+ * @param {Function} fn reference to original function (used by hook logic)
+ * @param {String} ad unit code for bid
+ * @param {Object} bid object
+ */
+export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   let floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
@@ -106,7 +108,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   // Else checks if multiconfig exists and bid bidderCode exists within config
   // Else continue with no modifications
   if (hasMultibid && multiConfig[bid.bidderCode] && deepAccess(bid, 'video.context') === 'adpod') {
-    fn.call(this, adUnitCode, bid);
+    fn.call(this, adUnitCode, bid, reject);
   } else if (hasMultibid && multiConfig[bid.bidderCode]) {
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
@@ -126,7 +128,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
         if (multiConfig[bid.bidderCode].prefix) bid.targetingBidder = multiConfig[bid.bidderCode].prefix + length;
         if (length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
-        fn.call(this, adUnitCode, bid);
+        fn.call(this, adUnitCode, bid, reject);
       } else {
         logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
@@ -136,17 +138,17 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
       deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {ads: [bid]});
       if (multibidUnits[adUnitCode][bid.bidderCode].ads.length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
-      fn.call(this, adUnitCode, bid);
+      fn.call(this, adUnitCode, bid, reject);
     }
   } else {
-    fn.call(this, adUnitCode, bid);
+    fn.call(this, adUnitCode, bid, reject);
   }
-}
+});
 
 /**
-* A descending sort function that will sort the list of objects based on the following:
-*  - bids without dynamic aliases are sorted before bids with dynamic aliases
-*/
+ * A descending sort function that will sort the list of objects based on the following:
+ *  - bids without dynamic aliases are sorted before bids with dynamic aliases
+ */
 export function sortByMultibid(a, b) {
   if (a.bidder !== a.bidderCode && b.bidder === b.bidderCode) {
     return 1;
@@ -160,13 +162,13 @@ export function sortByMultibid(a, b) {
 }
 
 /**
-   * @summary getHighestCpmBidsFromBidPool before hook
-   * @param {Function} fn reference to original function (used by hook logic)
-   * @param {Object[]} array of objects containing all bids from bid pool
-   * @param {Function} function to reduce to only highest cpm value for each bidderCode
-   * @param {Number} adUnit bidder targeting limit, default set to 0
-   * @param {Boolean} default set to false, this hook modifies targeting and sets to true
-*/
+ * @summary getHighestCpmBidsFromBidPool before hook
+ * @param {Function} fn reference to original function (used by hook logic)
+ * @param {Object[]} array of objects containing all bids from bid pool
+ * @param {Function} function to reduce to only highest cpm value for each bidderCode
+ * @param {Number} adUnit bidder targeting limit, default set to 0
+ * @param {Boolean} default set to false, this hook modifies targeting and sets to true
+ */
 export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
   if (!config.getConfig('multibid')) resetMultiConfig();
   if (hasMultibid) {
@@ -214,23 +216,35 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
 }
 
 /**
-* Resets globally stored multibid configuration
-*/
+ * Resets globally stored multibid configuration
+ */
 export const resetMultiConfig = () => { hasMultibid = false; multiConfig = {}; };
 
 /**
-* Resets globally stored multibid ad unit bids
-*/
+ * Resets globally stored multibid ad unit bids
+ */
 export const resetMultibidUnits = () => multibidUnits = {};
 
 /**
-* Set up hooks on init
-*/
+ * Set up hooks on init
+ */
 function init() {
-  events.on(CONSTANTS.EVENTS.AUCTION_INIT, resetMultibidUnits);
+  // TODO: does this reset logic make sense - what about simultaneous auctions?
+  events.on(EVENTS.AUCTION_INIT, resetMultibidUnits);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
   getHook('addBidResponse').before(addBidResponseHook, 3);
   setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, targetBidPoolHook);
 }
 
 init();
+
+export function setOrtbExtPrebidMultibid(ortbRequest) {
+  const multibid = config.getConfig('multibid');
+  if (multibid) {
+    deepSetValue(ortbRequest, 'ext.prebid.multibid', multibid.map(o =>
+      Object.fromEntries(Object.entries(o).map(([k, v]) => [k.toLowerCase(), v])))
+    )
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'extPrebidMultibid', fn: setOrtbExtPrebidMultibid, dialects: [PBS]});

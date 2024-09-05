@@ -6,19 +6,26 @@
  */
 
 import * as utils from '../src/utils.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { uspDataHandler } from '../src/adapterManager.js';
-import { loadExternalScript } from '../src/adloader.js';
+import {submodule} from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {uspDataHandler} from '../src/adapterManager.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
 const LOCAL_STORAGE_EXP_DAYS = 30;
-const VENDOR_ID = null;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
+const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 let consentInfo = {
   gdpr: {
@@ -48,20 +55,39 @@ export const ftrackIdSubmodule = {
    *   similar to the module name and ending in id or Id
    */
   decode (value, config) {
-    if (!value) { return }
-    const ext = {}
+    if (!value) {
+      return;
+    };
 
-    for (var key in value) {
-      /** unpack the strings from the arrays */
-      ext[key] = value[key][0]
-    }
-
-    return {
+    const DECODE_RESPONSE = {
       ftrackId: {
-        uid: value.DeviceID && value.DeviceID[0],
-        ext
+        uid: '',
+        ext: {}
       }
     }
+
+    // Loop over the value's properties:
+    // -- if string, assign value as is.
+    // -- if array, convert to string then assign value.
+    // -- If neither type, assign value as empty string
+    for (var key in value) {
+      let keyValue = value[key];
+      if (Array.isArray(keyValue)) {
+        keyValue = keyValue.join('|');
+      } else if (typeof value[key] !== 'string') {
+        // Unexpected value type, should be string or array
+        keyValue = '';
+      }
+
+      DECODE_RESPONSE.ftrackId.ext[key] = keyValue;
+    }
+
+    // If we have DeviceId value, assign it to the uid property
+    if (DECODE_RESPONSE.ftrackId.ext.hasOwnProperty('DeviceID')) {
+      DECODE_RESPONSE.ftrackId.uid = DECODE_RESPONSE.ftrackId.ext.DeviceID;
+    }
+
+    return DECODE_RESPONSE;
   },
 
   /**
@@ -202,6 +228,22 @@ export const ftrackIdSubmodule = {
     if (usPrivacyVersion == 1 && usPrivacyOptOutSale === 'Y') consentValue = false;
 
     return consentValue;
+  },
+  eids: {
+    'ftrackId': {
+      source: 'flashtalking.com',
+      atype: 1,
+      getValue: function(data) {
+        let value = '';
+        if (data && data.ext && data.ext.DeviceID) {
+          value = data.ext.DeviceID;
+        }
+        return value;
+      },
+      getUidExt: function(data) {
+        return data && data.ext;
+      }
+    },
   }
 };
 

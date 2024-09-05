@@ -31,6 +31,7 @@ export function disableDebugging({hook, logger}) {
   }
 }
 
+// eslint-disable-next-line prebid/no-global
 function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorage, DEBUG_KEY} = {}) {
   if (!debugConfig.enabled) {
     try {
@@ -49,9 +50,18 @@ function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorag
   }
 }
 
-export function getConfig(debugging, {sessionStorage = window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
+// eslint-disable-next-line prebid/no-global
+export function getConfig(debugging, {getStorage = () => window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
   if (debugging == null) return;
-  saveDebuggingConfig(debugging, {sessionStorage, DEBUG_KEY});
+  let sessionStorage;
+  try {
+    sessionStorage = getStorage();
+  } catch (e) {
+    logger.logError(`sessionStorage is not available: debugging configuration will not persist on page reload`, e);
+  }
+  if (sessionStorage != null) {
+    saveDebuggingConfig(debugging, {sessionStorage, DEBUG_KEY});
+  }
   if (!debugging.enabled) {
     disableDebugging({hook, logger});
   } else {
@@ -62,6 +72,7 @@ export function getConfig(debugging, {sessionStorage = window.sessionStorage, DE
 export function sessionLoader({DEBUG_KEY, storage, config, hook, logger}) {
   let overrides;
   try {
+    // eslint-disable-next-line prebid/no-global
     storage = storage || window.sessionStorage;
     overrides = JSON.parse(storage.getItem(DEBUG_KEY));
   } catch (e) {
@@ -91,8 +102,16 @@ function registerBidInterceptor(getHookFn, interceptor) {
 
 export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, cbs) {
   const done = delayExecution(cbs.onCompletion, 2);
-  ({bids, bidRequest} = interceptBids({bids, bidRequest, addBid: cbs.onBid, done}));
+  ({bids, bidRequest} = interceptBids({
+    bids,
+    bidRequest,
+    addBid: wrapCallback(cbs.onBid),
+    addPaapiConfig: wrapCallback((config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, ...config})),
+    done
+  }));
   if (bids.length === 0) {
+    // eslint-disable-next-line no-unused-expressions
+    cbs.onResponse?.({}); // trigger onResponse so that the bidder may be marked as "timely" if necessary
     done();
   } else {
     next(spec, bids, bidRequest, ajax, wrapCallback, {...cbs, onCompletion: done});

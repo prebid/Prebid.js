@@ -19,12 +19,7 @@ This provider fetches segments and populates the [First Party Data](https://docs
  * AdUnit segments are placed into `AdUnit.ortb2Imp.ext.data.adloox_rtd`:
      * **`{dis,vid,aud}`:** an list of integers describing the likelihood the AdUnit will be visible
      * **`atf`:** an list of integers describing the percentage of pixels visible at auction
-         * measured only once at pre-auction
-         * usable when the publisher uses the strategy of collapsing ad slots on no-fill
-             * using the reverse strategy, growing ad slots on fill, invalidates the measurement the position of all content (including the slots) changes post-auction
-             * works best when your page loads your ad slots have their actual size rendered (ie. not zero height)
-         * uses the smallest ad unit (above a threshold area of 20x20) supplied by the [publisher to Prebid.js](https://docs.prebid.org/dev-docs/examples/basic-example.html) and measures viewability as if that size to be used
-         * when used in cross-origin (unfriendly) IFRAME environments the ad slot is directly measured as is (ignoring publisher provided sizes) due to limitations in using [IntersectionObserver](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver)
+         * measured at pre-auction time using the [Intersection Module](https://docs.prebid.org/dev-docs/modules/intersectionRtdProvider.html); if not enabled then this measurement is not available
 
 **N.B.** this provider does not offer or utilise any user orientated data
 
@@ -58,7 +53,12 @@ To use this, you *must* also integrate the [Adloox Analytics Adapter](./adlooxAn
         auctionDelay: 100,             // see below for guidance
         dataProviders: [
           {
+            name: 'intersection',
+            waitForIt: true
+          },
+          {
             name: 'adloox',
+            waitForIt: true,
             params: {                  // optional, defaults shown
               thresholds: [ 50, 60, 70, 80, 90 ],
               slotinpath: false

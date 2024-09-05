@@ -131,7 +131,11 @@ describe('mediakeysBidAdapter', function () {
 
   const bidderRequest = {
     bidderCode: 'mediakeys',
-    auctionId: '84212956-c377-40e8-b000-9885a06dc692',
+    ortb2: {
+      source: {
+        tid: '84212956-c377-40e8-b000-9885a06dc692',
+      }
+    },
     bidderRequestId: '1c1b642f803242',
     bids: [
       bid
@@ -208,7 +212,7 @@ describe('mediakeysBidAdapter', function () {
       // openRTB 2.5
       expect(data.at).to.equal(1);
       expect(data.cur[0]).to.equal('USD'); // default currency
-      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid);
 
       expect(data.imp.length).to.equal(1);
       expect(data.imp[0].id).to.equal(bidRequests[0].bidId);
@@ -601,33 +605,29 @@ describe('mediakeysBidAdapter', function () {
     });
 
     describe('should support userId modules', function() {
-      const userId = {
-        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-        unsuported: '666'
-      };
+      const userIdAsEids = [{
+        source: 'pubcid.org',
+        uids: [
+          {
+            atype: 1,
+            id: '01EAJWWNEPN3CYMM5N8M5VXY22'
+          }
+        ]
+      }];
 
       it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
         const bidCopy = utils.deepClone(bid);
-        bidCopy.userId = userId;
+        bidCopy.userIdAsEids = userIdAsEids;
 
         const bidderRequestCopy = utils.deepClone(bidderRequest);
-        bidderRequestCopy.bids[0].userId = userId;
+        bidderRequestCopy.bids[0].userIdAsEids = userIdAsEids;
 
         const bidRequests = [utils.deepClone(bidCopy)];
         const request = spec.buildRequests(bidRequests, bidderRequestCopy);
         const data = request.data;
 
-        const expected = [{
-          source: 'pubcid.org',
-          uids: [
-            {
-              atype: 1,
-              id: '01EAJWWNEPN3CYMM5N8M5VXY22'
-            }
-          ]
-        }];
+        const expected = userIdAsEids;
         expect(data.user.ext).to.exist;
-        expect(data.user.ext.eids).to.have.lengthOf(1);
         expect(data.user.ext.eids).to.deep.equal(expected);
       });
     });
@@ -808,8 +808,8 @@ describe('mediakeysBidAdapter', function () {
             ]
           },
           eventtrackers: [
-            { event: 1, method: 1, url: 'https://click.me' },
-            { event: 1, method: 2, url: 'https://click-script.me' }
+            { event: 1, method: 1, url: 'https://eventrack.me/impression' },
+            { event: 1, method: 2, url: 'https://eventrack-js.me/impression-1' }
           ]
         };
 
@@ -845,9 +845,11 @@ describe('mediakeysBidAdapter', function () {
         expect(response[0].native.clickUrl).to.exist;
         expect(response[0].native.clickTrackers).to.exist;
         expect(response[0].native.clickTrackers.length).to.equal(1);
-        expect(response[0].native.javascriptTrackers).to.equal('<script src="https://click-script.me"></script>');
         expect(response[0].native.impressionTrackers).to.exist;
         expect(response[0].native.impressionTrackers.length).to.equal(1);
+        expect(response[0].native.impressionTrackers[0]).to.equal('https://eventrack.me/impression');
+        expect(response[0].native.javascriptTrackers).to.exist;
+        expect(response[0].native.javascriptTrackers).to.equal('<script async src="https://eventrack-js.me/impression-1"></script>');
       });
 
       it('should ignore eventtrackers with a unsupported type', function() {
@@ -859,6 +861,21 @@ describe('mediakeysBidAdapter', function () {
         expect(response[0].native.impressionTrackers).to.exist;
         expect(response[0].native.impressionTrackers.length).to.equal(0);
       })
+
+      it('Should handle multiple javascriptTrackers in one single string', () => {
+        const rawServerResponseNativeCopy = utils.deepClone(rawServerResponseNative);
+        const nativeObjectCopy = utils.deepClone(nativeObject);
+        nativeObjectCopy.eventtrackers.push(
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack-js.me/impression-2'
+          },)
+        rawServerResponseNativeCopy.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObjectCopy);
+        const response = spec.interpretResponse(rawServerResponseNativeCopy, request);
+        const expected = '<script async src=\"https://eventrack-js.me/impression-1\"></script>\n<script async src=\"https://eventrack-js.me/impression-2\"></script>';
+        expect(response[0].native.javascriptTrackers).to.equal(expected);
+      });
     });
   });
 

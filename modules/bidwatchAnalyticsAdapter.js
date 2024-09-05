@@ -1,112 +1,199 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { deepClone } from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_WON,
-    BID_RESPONSE,
-    BID_REQUESTED,
-  }
-} = CONSTANTS;
+  AUCTION_END,
+  BID_WON,
+  BID_RESPONSE,
+  BID_REQUESTED,
+  BID_TIMEOUT,
+} = EVENTS;
 
 let saveEvents = {}
 let allEvents = {}
 let auctionEnd = {}
 let initOptions = {}
 let endpoint = 'https://default'
-let objectToSearchForBidderCode = ['bidderRequests', 'bidsReceived', 'noBids']
+let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
-function cleanArgObject(arg, removead) {
-  if (typeof arg['bidderCode'] == 'string') { arg['originalBidder'] = getAdapterNameForAlias(arg['bidderCode']); }
-  if (typeof arg['creativeId'] == 'number') {
-    arg['creativeId'] = arg['creativeId'].toString();
+function filterAttributes(arg, removead) {
+  let response = {};
+  if (typeof arg == 'object') {
+    if (typeof arg['bidderCode'] == 'string') {
+      response['originalBidder'] = getAdapterNameForAlias(arg['bidderCode']);
+    } else if (typeof arg['bidder'] == 'string') {
+      response['originalBidder'] = getAdapterNameForAlias(arg['bidder']);
+    }
+    if (!removead && typeof arg['ad'] != 'undefined') {
+      response['ad'] = arg['ad'];
+    }
+    if (typeof arg['gdprConsent'] != 'undefined') {
+      response['gdprConsent'] = {};
+      if (typeof arg['gdprConsent']['consentString'] != 'undefined') { response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString']; }
+    }
+    if (typeof arg['meta'] == 'object' && typeof arg['meta']['advertiserDomains'] != 'undefined') {
+      response['meta'] = {'advertiserDomains': arg['meta']['advertiserDomains']};
+    }
+    requestsAttributes.forEach((attr) => {
+      if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
+    });
+    if (typeof response['creativeId'] == 'number') { response['creativeId'] = response['creativeId'].toString(); }
   }
-  if (removead && typeof arg['ad'] != 'undefined') {
-    arg['ad'] = 'emptied';
-  }
-  if (typeof arg['gdprConsent'] != 'undefined' && typeof arg['gdprConsent']['vendorData'] != 'undefined') {
-    arg['gdprConsent']['vendorData'] = 'emptied';
-  }
+  return response;
+}
+
+function cleanAuctionEnd(args) {
+  let response = {};
+  let filteredObj;
+  let objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
+  objects.forEach((attr) => {
+    if (Array.isArray(args[attr])) {
+      response[attr] = [];
+      args[attr].forEach((obj) => {
+        filteredObj = filterAttributes(obj, true);
+        if (typeof obj['bids'] == 'object') {
+          filteredObj['bids'] = [];
+          obj['bids'].forEach((bid) => {
+            filteredObj['bids'].push(filterAttributes(bid, true));
+          });
+        }
+        response[attr].push(filteredObj);
+      });
+    }
+  });
+  return response;
+}
+
+function cleanCreatives(args) {
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  return filterAttributes(stringArgs, false);
+}
+
+function enhanceMediaType(arg) {
+  saveEvents['bidRequested'].forEach((bidRequested) => {
+    if (bidRequested['auctionId'] == arg['auctionId'] && Array.isArray(bidRequested['bids'])) {
+      bidRequested['bids'].forEach((bid) => {
+        if (bid['transactionId'] == arg['transactionId'] && bid['bidId'] == arg['requestId']) { arg['mediaTypes'] = bid['mediaTypes']; }
+      });
+    }
+  });
   return arg;
 }
 
-function cleanArgs(arg, removead) {
-  Object.keys(arg).forEach(key => {
-    arg[key] = cleanArgObject(arg[key], removead);
+function addBidResponse(args) {
+  let eventType = BID_RESPONSE;
+  let argsCleaned = cleanCreatives(args); ;
+  if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
+  allEvents[eventType].push(argsCleaned);
+}
+
+function addBidRequested(args) {
+  let eventType = BID_REQUESTED;
+  let argsCleaned = filterAttributes(args, true);
+  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  saveEvents[eventType].push(argsCleaned);
+}
+
+function addTimeout(args) {
+  let eventType = BID_TIMEOUT;
+  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  saveEvents[eventType].push(args);
+  let argsCleaned = [];
+  let argsDereferenced = {}
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  argsDereferenced = stringArgs;
+  argsDereferenced.forEach((attr) => {
+    argsCleaned.push(filterAttributes(deepClone(attr), false));
   });
-  return arg
+  if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
+  auctionEnd[eventType].push(argsCleaned);
 }
 
-function checkBidderCode(args, removead) {
-  if (typeof args == 'object') {
-    for (let i = 0; i < objectToSearchForBidderCode.length; i++) {
-      if (typeof args[objectToSearchForBidderCode[i]] == 'object') { args[objectToSearchForBidderCode[i]] = cleanArgs(args[objectToSearchForBidderCode[i]], removead) }
-    }
+export const dereferenceWithoutRenderer = function(args) {
+  if (args.renderer) {
+    let tmp = args.renderer;
+    delete args.renderer;
+    let stringified = JSON.stringify(args);
+    args['renderer'] = tmp;
+    return stringified;
   }
-  if (typeof args['bidderCode'] == 'string') { args['originalBidder'] = getAdapterNameForAlias(args['bidderCode']); } else if (typeof args['bidder'] == 'string') { args['originalBidder'] = getAdapterNameForAlias(args['bidder']); }
-  if (typeof args['creativeId'] == 'number') { args['creativeId'] = args['creativeId'].toString(); }
-
-  return args
+  if (args.bidsReceived) {
+    let tmp = {}
+    for (let key in args.bidsReceived) {
+      if (args.bidsReceived[key].renderer) {
+        tmp[key] = args.bidsReceived[key].renderer;
+        delete args.bidsReceived[key].renderer;
+      }
+    }
+    let stringified = JSON.stringify(args);
+    for (let key in tmp) {
+      args.bidsReceived[key].renderer = tmp[key];
+    }
+    return stringified;
+  }
+  return JSON.stringify(args);
 }
 
-function addEvent(eventType, args) {
-  let argsCleaned;
-  if (eventType && args) {
-    if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
-    if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
-    argsCleaned = checkBidderCode(JSON.parse(JSON.stringify(args)), false);
-    allEvents[eventType].push(argsCleaned);
-    saveEvents[eventType].push(argsCleaned);
-    argsCleaned = checkBidderCode(JSON.parse(JSON.stringify(args)), true);
-    if (['auctionend', 'bidtimeout'].includes(eventType.toLowerCase())) {
-      if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
-      auctionEnd[eventType].push(argsCleaned);
-    }
-  }
+function addAuctionEnd(args) {
+  let eventType = AUCTION_END;
+  if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
+  saveEvents[eventType].push(args);
+  let argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
+  if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
+  auctionEnd[eventType].push(argsCleaned);
 }
 
 function handleBidWon(args) {
-  args = cleanArgObject(JSON.parse(JSON.stringify(args)), true);
+  args = enhanceMediaType(filterAttributes(JSON.parse(dereferenceWithoutRenderer(args)), true));
   let increment = args['cpm'];
   if (typeof saveEvents['auctionEnd'] == 'object') {
-    for (let i = 0; i < saveEvents['auctionEnd'].length; i++) {
-      let tmpAuction = saveEvents['auctionEnd'][i];
-      if (tmpAuction['auctionId'] == args['auctionId'] && typeof tmpAuction['bidsReceived'] == 'object') {
-        for (let j = 0; j < tmpAuction['bidsReceived'].length; j++) {
-          let tmpBid = tmpAuction['bidsReceived'][j];
-          if (tmpBid['transactionId'] == args['transactionId'] && tmpBid['adId'] != args['adId']) {
-            if (args['cpm'] < tmpBid['cpm']) {
+    saveEvents['auctionEnd'].forEach((auction) => {
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidsReceived'] == 'object') {
+        auction['bidsReceived'].forEach((bid) => {
+          if (bid['transactionId'] == args['transactionId'] && bid['adId'] != args['adId']) {
+            if (args['cpm'] < bid['cpm']) {
               increment = 0;
-            } else if (increment > args['cpm'] - tmpBid['cpm']) {
-              increment = args['cpm'] - tmpBid['cpm'];
+            } else if (increment > args['cpm'] - bid['cpm']) {
+              increment = args['cpm'] - bid['cpm'];
             }
           }
-        }
+        });
       }
-    }
+    });
   }
   args['cpmIncrement'] = increment;
+  args['referer'] = encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation);
   if (typeof saveEvents.bidRequested == 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
   ajax(endpoint + '.bidwatch.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
 }
 
 function handleAuctionEnd() {
-  ajax(endpoint + '.bidwatch.io/analytics/auctions', null, JSON.stringify(auctionEnd), {method: 'POST', withCredentials: true});
-  auctionEnd = {}
-  if (typeof allEvents['bidResponse'] != 'undefined') {
-    for (let i = 0; i < allEvents['bidResponse'].length; i++) { ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(allEvents['bidResponse'][i]), {method: 'POST', withCredentials: true}); }
-  }
-  allEvents = {}
+  ajax(endpoint + '.bidwatch.io/analytics/auctions', function (data) {
+    let list = JSON.parse(data);
+    if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
+      let alreadyCalled = [];
+      allEvents['bidResponse'].forEach((bidResponse) => {
+        let tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
+        if (list.includes(tmpId) && !alreadyCalled.includes(tmpId)) {
+          alreadyCalled.push(tmpId);
+          ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
+        }
+      });
+    }
+    allEvents = {};
+  }, JSON.stringify(auctionEnd), {method: 'POST', withCredentials: true});
+  auctionEnd = {};
 }
 
 let bidwatchAnalytics = Object.assign(adapter({url, analyticsType}), {
@@ -116,17 +203,20 @@ let bidwatchAnalytics = Object.assign(adapter({url, analyticsType}), {
   }) {
     switch (eventType) {
       case AUCTION_END:
-        addEvent(eventType, args);
+        addAuctionEnd(args);
         handleAuctionEnd();
         break;
       case BID_WON:
         handleBidWon(args);
         break;
       case BID_RESPONSE:
-        addEvent(eventType, args);
+        addBidResponse(args);
         break;
       case BID_REQUESTED:
-        addEvent(eventType, args);
+        addBidRequested(args);
+        break;
+      case BID_TIMEOUT:
+        addTimeout(args);
         break;
     }
   }});
