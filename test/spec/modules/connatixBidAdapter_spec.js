@@ -582,7 +582,7 @@ describe('connatixBidAdapter', function () {
   });
 
   describe('onBidWon', () => {
-    it('should send a POST request with bid win data', () => {
+    it('should send a POST requests with bid win data', () => {
       const bidWinData = {
         bidder: 'connatix',
         cpm: 1.5,
