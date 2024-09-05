@@ -1,5 +1,7 @@
 import * as utils from 'src/utils.js';
 import * as adLoader from 'test/mocks/adloaderStub.js';
+import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities';
+import { registerActivityControl } from '../../src/activities/rules';
 
 describe('adLoader', function () {
   let utilsinsertElementStub;
@@ -92,4 +94,11 @@ describe('adLoader', function () {
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);
   });
+
+  it('should disable loading external script for activity rule set', function () {
+    const unregisterRule = registerActivityControl(LOAD_EXTERNAL_SCRIPT, 'loadExternalScript config', () => ({allow: false}));
+    adLoader.loadExternalScript('someURL2', 'debugging');
+    expect(utilsLogErrorStub.called).to.be.true;
+    unregisterRule();
+  })
 });
