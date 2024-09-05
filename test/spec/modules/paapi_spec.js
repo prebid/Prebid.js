@@ -14,7 +14,8 @@ import {
   getPAAPIConfig,
   getPAAPISize,
   IGB_TO_CONFIG,
-  mergeBuyers, onAuctionInit,
+  mergeBuyers,
+  onAuctionInit,
   parallelPaapiProcessing,
   parseExtIgi,
   parseExtPrebidFledge,
@@ -1335,7 +1336,7 @@ describe('paapi module', () => {
             sinon.assert.match(config, expectedSignals);
           });
 
-          describe('should default to values returned from buildPAAPIConfigs when interpretResponse', () => {
+          describe('should default to values returned from buildPAAPIConfigs when interpretResponse does not return', () => {
             beforeEach(() => {
               ASYNC_SIGNALS.forEach(signal => mockConfig[signal] = {default: signal})
             });
@@ -1357,6 +1358,45 @@ describe('paapi module', () => {
               });
             });
           });
+
+          it('should resolve to undefined when no value is available', async () => {
+            startParallel();
+            let config = getPAAPIConfig().au.componentAuctions[0];
+            delete configRemainder.sellerSignals;
+            returnRemainder();
+            endAuction();
+            config = await resolveConfig(config);
+            expect(config.sellerSignals).to.be.undefined;
+          });
+
+          [
+            {
+              start: {t: 'scalar', value: 'str'},
+              end: {t: 'array', value: ['abc']},
+              should: {t: 'array', value: ['abc']}
+            },
+            {
+              start: {t: 'object', value: {a: 'b'}},
+              end: {t: 'scalar', value: 'abc'},
+              should: {t: 'scalar', value: 'abc'}
+            },
+            {
+              start: {t: 'object', value: {outer: {inner: 'val'}}},
+              end: {t: 'object', value: {outer: {other: 'val'}}},
+              should: {t: 'merge', value: {outer: {inner: 'val', other: 'val'}}}
+            }
+          ].forEach(({start, end, should}) => {
+            it(`when buildPAAPIConfigs returns ${start.t}, interpretResponse return ${end.t}, promise should resolve to ${should.t}`, async () => {
+              mockConfig.sellerSignals = start.value
+              startParallel();
+              let config = getPAAPIConfig().au.componentAuctions[0];
+              configRemainder.sellerSignals = end.value;
+              returnRemainder();
+              endAuction();
+              config = await resolveConfig(config);
+              expect(config.sellerSignals).to.eql(should.value);
+            })
+          })
 
           it('should make extra configs available', async () => {
             startParallel();

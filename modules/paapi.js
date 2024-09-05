@@ -187,7 +187,15 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
 
   function resolveSignals(signals, deferrals) {
     Object.entries(deferrals).forEach(([signal, {resolve, default: defaultValue}]) => {
-      resolve(Object.assign({}, defaultValue, signals.hasOwnProperty(signal) ? signals[signal] : {}))
+      let value = signals.hasOwnProperty(signal) ? signals[signal] : null;
+      if (value == null && defaultValue == null) {
+        value = undefined;
+      } else if (typeof defaultValue === 'object' && typeof value === 'object') {
+        value = mergeDeep({}, defaultValue, value);
+      } else {
+        value = value ?? defaultValue
+      }
+      resolve(value);
     })
   }
 
@@ -484,10 +492,7 @@ export function markForFledge(next, bidderRequests) {
   next(bidderRequests);
 }
 
-// NOTE: according to https://github.com/WICG/turtledove/blob/main/FLEDGE.md#211-providing-signals-asynchronously,
-// `directFromSellerSignals` can also be async, but unlike the others there doesn't seem to be a "safe" default
-// to use when the adapter fails to provide a value
-export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'deprecatedRenderURLReplacements'];
+export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'deprecatedRenderURLReplacements', 'directFromSellerSignals'];
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [
@@ -540,7 +545,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
     let promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
       const def = defer({promiseFactory: (resolver) => new Promise(resolver)});
-      def.default = defaults.hasOwnProperty(signal) ? defaults[signal] : {};
+      def.default = defaults.hasOwnProperty(signal) ? defaults[signal] : null;
       promises[signal] = def.promise;
       return [signal, def]
     }))
