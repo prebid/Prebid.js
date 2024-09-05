@@ -151,13 +151,30 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     return true;
   }
 
+  function onBidResponse(bidResponse, config, userConsent) {
+    if(bidResponse.dealId && typeof (bidResponse.dealId) != typeof (undefined)){
+      membership = dapUtils.dapGetMembershipFromLocalStorage(); //Get Membership details from Local Storage
+      deals = membership.deals; //Get list of Deals the user is mapped to
+      deals.forEach((deal) => {
+        deal = JSON.parse(deal);
+        if(bidResponse.dealId == deal.id){ //Check if the bid response deal Id matches to the deals mapped to the user
+          let token = dapUtils.dapGetTokenFromLocalStorage();
+          let url = "https://" + config.params.apiHostname + '/data-activation/' +  config.params.apiVersion + '/token/' + token + '/impression?deal_id=' + bidResponse.dealId;
+          bidResponse.ad = `${bidResponse.ad}<script src="${url}"/>`;
+        }
+      });
+    }
+  }
+
   const rtdSubmodule = {
     name: SUBMODULE_NAME,
     getBidRequestData: getRealTimeData,
+    onBidResponseEvent: onBidResponse,
     init: init
   };
 
   submodule(MODULE_NAME, rtdSubmodule);
+
   const dapUtils = {
 
     callDapAPIs: function(bidConfig, onDone, rtdConfig, userConsent) {
@@ -254,6 +271,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           membership = {
             said: item.said,
             cohorts: item.cohorts,
+            deals: item.deals,
             attributes: null
           };
         }
@@ -274,6 +292,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           }
           item.said = membership.said;
           item.cohorts = membership.cohorts;
+          item.deals = membership.deals ? membership.deals : [];
           storage.setDataInLocalStorage(DAP_MEMBERSHIP, JSON.stringify(item));
           dapUtils.dapLog('Successfully updated and stored membership:');
           dapUtils.dapLog(item);
