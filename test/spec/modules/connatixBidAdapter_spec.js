@@ -4,10 +4,7 @@ import {
   getBidFloor as connatixGetBidFloor,
   spec,
 } from '../../../modules/connatixBidAdapter.js';
-import { config } from '../../../src/config.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
-
-const sinon = require('sinon');
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -120,74 +117,80 @@ describe('connatixBidAdapter', function () {
     });
   });
 
-  describe('spec onTimeout', function () {
-    let sandbox;
-    let configStub;
+  describe('onTimeout', function () {
+    let ajaxStub;
 
-    const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+    beforeEach(() => {
+      ajaxStub = sinon.stub(spec, 'triggerEvent')
+    })
 
-    const timeoutData = [
-      { bidder: 'connatix', timeout: 300 },
-      { bidder: 'otherBidder', timeout: 200 }
-    ];
-
-    beforeEach(function () {
-      sandbox = sinon.createSandbox();
-
-      // Replace the following with the correct way to access 'ajax'
-      sandbox.stub(window, 'ajax'); // or sandbox.stub(ajax, 'call');
-      configStub = sandbox.stub(config, 'getConfig'); // Stub config to mock bidderTimeout
+    afterEach(() => {
+      ajaxStub.restore()
     });
 
-    afterEach(function () {
-      sandbox.restore(); // Restore all stubs
+    it('call event if bidder is connatix', () => {
+      const result = spec.onTimeout([{
+        bidder: 'connatix',
+        timeout: 500,
+      }]);
+      expect(ajaxStub.calledOnce).to.equal(true);
+
+      const data = ajaxStub.firstCall.args[0];
+      expect(data.type).to.equal('Timeout');
+      expect(data.timeout).to.equal(500);
     });
 
-    it('Should not log timeout if no Connatix bid timeout is found', function () {
-      const nonConnatixTimeoutData = [{ bidder: 'otherBidder', timeout: 200 }];
+    it('timeout event is not triggered if bidder is not connatix', () => {
+      const result = spec.onTimeout([{
+        bidder: 'otherBidder',
+        timeout: 500,
+      }]);
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
+  });
 
-      spec.onTimeout(nonConnatixTimeoutData);
+  describe('onBidWon', function () {
+    let ajaxStub;
 
-      expect(window.ajax.called).to.be.false; // Adjust according to how you access 'ajax'
+    beforeEach(() => {
+      ajaxStub = sinon.stub(spec, 'triggerEvent');
     });
 
-    it('Should log Connatix timeout with specific timeout value', function () {
-      const specificTimeoutData = [{ bidder: 'connatix', timeout: 200 }];
-
-      spec.onTimeout(specificTimeoutData);
-
-      expect(window.ajax.calledOnce).to.be.true; // Adjust according to how you access 'ajax'
-      const [url, callback, requestBody, options] = window.ajax.firstCall.args;
-
-      expect(url).to.equal(EVENTS_URL);
-      expect(options.method).to.equal('POST');
-      expect(JSON.parse(requestBody)).to.include({ type: 'timeout', timeout: 200 });
+    afterEach(() => {
+      ajaxStub.restore();
     });
 
-    it('Should log with default bidderTimeout if requestTimeout is not a number', function () {
-      configStub.withArgs('bidderTimeout').returns(500); // Mock config value
+    it('calls triggerEvent with correct data when bidWinData is provided', () => {
+      const bidWinData = {
+        bidder: 'connatix',
+        cpm: 2.5,
+        requestId: 'abc123',
+        adUnitCode: 'adunit_1',
+        timeToRespond: 300,
+        auctionId: 'auction_456',
+      };
 
-      const invalidTimeoutData = [{ bidder: 'connatix', timeout: null }];
-      spec.onTimeout(invalidTimeoutData);
+      spec.onBidWon(bidWinData);
+      expect(ajaxStub.calledOnce).to.equal(true);
 
-      expect(window.ajax.calledOnce).to.be.true; // Adjust according to how you access 'ajax'
-      const [url, callback, requestBody] = window.ajax.firstCall.args;
-
-      expect(url).to.equal(EVENTS_URL);
-      expect(requestBody).to.contain('"timeout":500');
+      const eventData = ajaxStub.firstCall.args[0];
+      expect(eventData.type).to.equal('BidWon');
+      expect(eventData.bestBidBidder).to.equal('connatix');
+      expect(eventData.bestBidPrice).to.equal(2.5);
+      expect(eventData.requestId).to.equal('abc123');
+      expect(eventData.adUnitCode).to.equal('adunit_1');
+      expect(eventData.timeToRespond).to.equal(300);
+      expect(eventData.auctionId).to.equal('auction_456');
     });
 
-    it('Should send a POST request with JSON data', function () {
-      spec.onTimeout(timeoutData);
+    it('does not call triggerEvent if bidWinData is null', () => {
+      spec.onBidWon(null);
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
 
-      expect(window.ajax.calledOnce).to.be.true; // Adjust according to how you access 'ajax'
-      const [url, callback, requestBody, options] = window.ajax.firstCall.args;
-
-      expect(url).to.equal(EVENTS_URL);
-      expect(options.method).to.equal('POST');
-      expect(options.withCredentials).to.be.false;
-      expect(requestBody).to.be.a('string');
-      expect(JSON.parse(requestBody)).to.have.property('type', 'timeout');
+    it('does not call triggerEvent if bidWinData is undefined', () => {
+      spec.onBidWon(undefined);
+      expect(ajaxStub.notCalled).to.equal(true);
     });
   });
 
@@ -578,41 +581,6 @@ describe('connatixBidAdapter', function () {
       };
       const floor = connatixGetBidFloor(bid);
       expect(floor).to.equal(0);
-    });
-  });
-
-  describe('onBidWon', () => {
-    it('should send a POST requests with bid win data', () => {
-      const bidWinData = {
-        bidder: 'connatix',
-        cpm: 1.5,
-        requestId: '12345',
-        adUnitCode: 'adunit1',
-        timeToRespond: 300,
-        auctionId: 'auction1',
-      };
-
-      spec.onBidWon(bidWinData);
-
-      expect(ajaxStub.calledOnce).to.be.true;
-      const expectedData = {
-        type: 'bid_won',
-        bestBidBidder: 'connatix',
-        bestBidPrice: 1.5,
-        requestId: '12345',
-        adUnitCode: 'adunit1',
-        timeToRespond: 300,
-        auctionId: 'auction1',
-        context: undefined, // Add context if needed
-      };
-      expect(ajaxStub.args[0][2]).to.deep.equal(JSON.stringify(expectedData));
-      expect(ajaxStub.args[0][3].method).to.equal('POST');
-      expect(ajaxStub.args[0][3].withCredentials).to.be.false;
-    });
-
-    it('should not send a request if bidWinData is null', () => {
-      spec.onBidWon(null);
-      expect(ajaxStub.notCalled).to.be.true;
     });
   });
 });

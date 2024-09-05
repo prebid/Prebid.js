@@ -4,16 +4,16 @@ import {
 
 import { config } from '../src/config.js';
 
+import { ajax } from '../src/ajax.js';
 import {
   deepAccess,
-  isFn,
-  logError,
-  isArray,
-  formatQS,
   deepSetValue,
-  isNumber
+  formatQS,
+  isArray,
+  isFn,
+  isNumber,
+  logError
 } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
 
 import {
   ADPOD,
@@ -238,7 +238,6 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if the server response time is greater than auction timeout
-   * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
     const connatixBidRequestTimeout = timeoutData.find(bidderRequest => bidderRequest.bidder === BIDDER_CODE);
@@ -250,15 +249,11 @@ export const spec = {
     }
     const requestTimeout = connatixBidRequestTimeout.timeout;
     const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
-    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'timeout', timeout, context}), {
-      method: 'POST',
-      withCredentials: false
-    });
+    spec.triggerEvent({type: 'Timeout', timeout, context});
   },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} bid The bid that won the auction
    */
   onBidWon(bidWinData) {
     if (bidWinData == null) {
@@ -266,7 +261,11 @@ export const spec = {
     }
     const {bidder, cpm, requestId, adUnitCode, timeToRespond, auctionId} = bidWinData;
 
-    ajax(`${EVENTS_URL}`, null, JSON.stringify({type: 'bid_won', bestBidBidder: bidder, bestBidPrice: cpm, requestId, adUnitCode, timeToRespond, auctionId, context}), {
+    spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, adUnitCode, timeToRespond, auctionId, context});
+  },
+
+  triggerEvent(data) {
+    ajax(EVENTS_URL, null, JSON.stringify(data), {
       method: 'POST',
       withCredentials: false
     });
