@@ -2,77 +2,7 @@
 
 <head>
     <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
-    <style>
-        .sponsored-post {
-            width: 600px;
-            /* Fixed width */
-            height: 600px;
-            /* Fixed height */
-            background-color: #fffdeb;
-            font-family: sans-serif;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            /* Hide overflow content */
-            position: relative;
-            display: flex;
-            /* Use flexbox to stack elements */
-            flex-direction: column;
-            /* Stack children vertically */
-        }
-
-  
-        .thumbnail {
-            flex: 1;
-            /* Allow image to take up remaining space */
-            background-size: cover;
-            /* Scale image to cover the container */
-            background-position: center;
-            /* Center the image */
-            background-repeat: no-repeat;
-            /* Prevent image repetition */
-        }
-
-        .backgroundimage {
-            height: auto;
-            left: 0;
-            margin: 0;
-            min-height: 100%;
-            min-width: 674px;
-            padding: 0;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: -1;
-        }
-
-        h1 {
-            font-size: 18px;
-            margin: 0;
-        }
-
-        a {
-            color: #0086b3;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .attribution {
-            color: #fff;
-            font-size: 10px;
-            font-weight: bold;
-            display: inline-block;
-            letter-spacing: 2px;
-            background-color: #ffd724;
-            border-radius: 2px;
-            padding: 245px;
-        }
-    </style>
-
+    
     <script>
         var PREBID_TIMEOUT = 2000;
 
@@ -83,16 +13,16 @@
                     native: {
                         adTemplate: `
     <div class="sponsored-post">
-        <div class="thumbnail" style="background-image: url('${encodeURI('##hb_native_asset_id_3##')}'); width: 300px;
-            height: 250px;">
+        <div class="thumbnail" style="background-image: url('${encodeURI('##hb_native_asset_id_3##')}'); width=100%; height=100%; background-repeat: no-repeat;
+        background-size: cover; >
         <div class="content">
             <h1>
-                <a href="${encodeURI("https://" + '##hb_native_linkurl##')}" target="_blank" class="pb-click" >
+                <a href="${encodeURI("https://" + '##hb_native_linkurl##')}" target="_blank" class="pb-click" hb_native_asset_id="4" >
                     ${encodeURI('##hb_native_body##')}
                 </a>
             </h1>
-            <p>${encodeURI('##hb_native_asset_id_4##')}</p>
-            <div class="attribution">${encodeURI('##hb_native_asset_id_1##')}</div>
+            <p class="pb-click">${encodeURI('##hb_native_asset_id_4##')}</p>
+            <div class="attribution" class="pb-click hb_native_asset_id="1">${encodeURI('##hb_native_asset_id_1##')}</div>
             </div>
         </div>
     </div>
@@ -201,15 +131,11 @@
                 if (div) {
                     let iframe = document.createElement('iframe');
                     iframe.frameBorder = '0';
-                    iframe.style.width = '100%';
-                    iframe.style.height = '100%';
+                    iframe.style.width = '300';
+                    iframe.style.height = '600';
                     div.appendChild(iframe);
                     console.log("Here 1234");
-                    if (winningBid.mediaType == "banner") {
-                        console.log("Here 1234 banner");
-                        var iframeDoc = iframe.contentWindow.document;
-                        pbjs.renderAd(iframeDoc, winningBid.adId);
-                    } else if (winningBid.mediaType == "native") {
+                    if (winningBid.mediaType == "native") {
                         console.log("Here 1234 native");
                         var domdoc = iframe.contentWindow.document;
                         console.log("Here 12345 native");
@@ -225,9 +151,21 @@
         pbjs.que.push(function () {
             pbjs.requestBids({
                 timeout: 2000,
+
                 bidsBackHandler: renderEverything
             });
         });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@latest/dist/native.js"></script>
+    <script>
+        var pbNativeTagData = {};
+        pbNativeTagData.pubUrl = '##hb_adomain##';     // GAM specific
+        pbNativeTagData.adId = "##hb_adid##";   // GAM specific
+        // if you're using 'Send All Bids' mode, you should use %%PATTERN:hb_adid_BIDDER%%
+        pbNativeTagData.requestAllAssets = true;
+        // if you want to track clicks in GAM, add the following variable
+        pbNativeTagData.clickUrlUnesc = "%%CLICK_URL_UNESC%%";
+        window.pbNativeTag.renderNativeAd(pbNativeTagData);
     </script>
 </head>
 
@@ -251,6 +189,7 @@
         Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance.
         The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
     </p>
+    <div id="test-nat-div"></div>
 </body>
 
 </html>

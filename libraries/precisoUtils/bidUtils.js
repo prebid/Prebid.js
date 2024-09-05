@@ -168,7 +168,7 @@ export function nativeResponse(serverResponse) {
           },
           netRevenue: true,
           currency: 'USD',
-          native: interpretNativeAd(serverBid.adm),
+          native: interpretNativeAd(macroReplace(serverBid.adm, serverBid.price)),
         });
       } else {
         logInfo('Invalid native bid response bid.adm is not valid');
@@ -182,8 +182,9 @@ function interpretNativeAd(adm) {
   const native = JSON.parse(adm).native;
   const result = {
     clickUrl: encodeURI(native.link.url),
+    // clickUrl: encodeURI(native.link.clicktrackers[0]),
     impressionTrackers: encodeURI(native.eventtrackers[0].url),
-    clickTrackers: encodeURI(native.link.clicktrackers)
+    clickTrackers: encodeURI(native.link.clicktrackers[0])
 
   };
   native.assets.forEach(asset => {
