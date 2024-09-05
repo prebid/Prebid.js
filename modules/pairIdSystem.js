@@ -39,6 +39,11 @@ export const pairIdSubmodule = {
    */
   name: MODULE_NAME,
   /**
+   * used to specify vendor id
+   * @type {number}
+   */
+  gvlid: 755,
+  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param { string | undefined } value
