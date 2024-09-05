@@ -166,6 +166,7 @@ describe('connatixBidAdapter', function () {
         bidder: 'connatix',
         cpm: 2.5,
         requestId: 'abc123',
+        bidId: 'dasdas-dsawda-dwaddw-dwdwd',
         adUnitCode: 'adunit_1',
         timeToRespond: 300,
         auctionId: 'auction_456',
@@ -179,6 +180,7 @@ describe('connatixBidAdapter', function () {
       expect(eventData.bestBidBidder).to.equal('connatix');
       expect(eventData.bestBidPrice).to.equal(2.5);
       expect(eventData.requestId).to.equal('abc123');
+      expect(eventData.bidId).to.equal('dasdas-dsawda-dwaddw-dwdwd');
       expect(eventData.adUnitCode).to.equal('adunit_1');
       expect(eventData.timeToRespond).to.equal(300);
       expect(eventData.auctionId).to.equal('auction_456');
