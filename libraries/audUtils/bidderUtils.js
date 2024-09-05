@@ -1,4 +1,5 @@
 import {
+  deepAccess,
   deepSetValue,
   generateUUID,
   logError
@@ -50,23 +51,23 @@ export const getBannerResponse = (bidResponse, mediaType) => {
   let responseArray = [];
   if (bidResponse) {
     try {
-      let bidResp = bidResponse.body && bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
+      let bidResp = deepAccess(bidResponse, 'body.seatbid', []);
       if (bidResp) {
-        bidResp.forEach(bidReq => {
+        bidResp[0].bid.forEach(bidReq => {
           let response = {};
-          response.requestId = bidReq.impid ? bidReq.impid : undefined;
-          response.cpm = bidReq.price ? bidReq.price : 0.0;
-          response.width = bidReq.w ? bidReq.w : 0;
-          response.height = bidReq.h ? bidReq.h : 0;
-          response.ad = bidReq.adm ? bidReq.adm : '';
+          response.requestId = bidReq.impid;
+          response.cpm = bidReq.price;
+          response.width = bidReq.w;
+          response.height = bidReq.h;
+          response.ad = bidReq.adm;
           response.meta = {
-            advertiserDomains: bidReq.adomain ? bidReq.adomain : []
+            advertiserDomains: bidReq.adomain
           };
-          response.creativeId = bidReq.crid ? bidReq.crid : undefined;
+          response.creativeId = bidReq.crid;
           response.netRevenue = false;
-          response.currency = bidReq.cur ? bidReq.cur : 'USD';
+          response.currency = 'USD';
           response.ttl = 300;
-          response.dealId = bidReq.dealId ? bidReq.dealId : undefined;
+          response.dealId = bidReq.dealId;
           response.mediaType = mediaType;
           responseArray.push(response);
         });
@@ -107,23 +108,32 @@ const getBannerDetails = (bidReq) => {
 }
 // Function to get floor price
 const getFloorPrice = (bidReq) => {
-  let bidfloor = bidReq.params && bidReq.params.bid_floor ? bidReq.params.bid_floor : 0
+  let bidfloor = deepAccess(bidReq, 'params.bid_floor', 0);
   return bidfloor;
 }
 // Function to get site object
 const getSiteDetails = (bidderRequest) => {
-  let page = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : '';
-  let name = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.domain ? bidderRequest.refererInfo.domain : '';
+  let page = '';
+  let name = '';
+  if (bidderRequest && bidderRequest.refererInfo) {
+    page = bidderRequest.refererInfo.page;
+    name = bidderRequest.refererInfo.domain;
+  }
   return {page: page, name: name};
 }
 // Function to build the user object
 const getUserDetails = (bidReq) => {
   let user = {};
-  if (bidReq.params) {
-    user.id = bidReq.params.user_id ? bidReq.params.user_id : '';
-    user.buyeruid = bidReq.params.buyeruid ? bidReq.params.buyeruid : ''; ;
-    user.keywords = bidReq.params.keywords ? bidReq.params.keywords : '';
-    user.customdata = bidReq.params.customdata ? bidReq.params.customdata : '';
+  if (bidReq && bidReq.ortb2 && bidReq.ortb2.user) {
+    user.id = bidReq.ortb2.user.id ? bidReq.ortb2.user.id : '';
+    user.buyeruid = bidReq.ortb2.user.buyeruid ? bidReq.ortb2.user.buyeruid : '';
+    user.keywords = bidReq.ortb2.user.keywords ? bidReq.ortb2.user.keywords : '';
+    user.customdata = bidReq.ortb2.user.customdata ? bidReq.ortb2.user.customdata : '';
+  } else {
+    user.id = '';
+    user.buyeruid = '';
+    user.keywords = '';
+    user.customdata = '';
   }
   return user;
 }

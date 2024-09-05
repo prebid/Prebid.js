@@ -29,8 +29,7 @@ Module that connects to dexerto's demand sources.
                 placement_id: 110003,  // Required parameter
                 width: 300,   // Optional parameter 
                 height: 250, // Optional parameter
-                domain: '', // Optional parameter
-		            bid_floor: 0.1 // Optional parameter
+                bid_floor: 0.1 // Optional parameter
             }
         }
       ]
