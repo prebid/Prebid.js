@@ -13,6 +13,39 @@ describe('pairId', function () {
     sandbox.restore();
   });
 
+  it('should read pairId from specified clean room if configured with storageKey', function() {
+    let pairIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('habu_pairId_custom').returns(btoa(JSON.stringify({'envelope': pairIds})));
+
+    let id = pairIdSubmodule.getId({
+      params: {
+        habu: {
+          storageKey: 'habu_pairId_custom'
+        }
+      }})
+
+    expect(id).to.be.deep.equal({id: pairIds});
+  })
+
+  it('should read pairID from liveramp with default storageKey and additional clean room with configured storageKey', function() {
+    let getDataStub = sandbox.stub(storage, 'getDataFromLocalStorage');
+    let liveRampPairIds = ['lr-test-pair-id1', 'lr-test-pair-id2', 'lr-test-pair-id3'];
+    getDataStub.withArgs('_lr_pairId').returns(btoa(JSON.stringify({'envelope': liveRampPairIds})));
+
+    let habuPairIds = ['habu-test-pair-id1', 'habu-test-pair-id2', 'habu-test-pair-id3'];
+    getDataStub.withArgs('habu_pairId_custom').returns(btoa(JSON.stringify({'envelope': habuPairIds})));
+
+    let id = pairIdSubmodule.getId({
+      params: {
+        habu: {
+          storageKey: 'habu_pairId_custom'
+        },
+        liveramp: {}
+      }})
+
+    expect(id).to.be.deep.equal({id: habuPairIds.concat(liveRampPairIds)});
+  });
+
   it('should log an error if no ID is found when getId', function() {
     pairIdSubmodule.getId({ params: {} });
     expect(logInfoStub.calledOnce).to.be.true;

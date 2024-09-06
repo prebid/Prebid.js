@@ -71,12 +71,12 @@ export const pairIdSubmodule = {
       }
     }
 
-    const configParams = (config && config.params) || {};
+    const configParams = (config && config.params) ? config.params : {};
     const cleanRooms = Object.keys(configParams);
 
     for (let i = 0; i < cleanRooms.length; i++) {
       const cleanRoom = cleanRooms[i];
-      const cleanRoomParams = cleanRoom[i];
+      const cleanRoomParams = configParams[cleanRoom];
 
       const cleanRoomStorageLocation = cleanRoomParams.storageKey || DEFAULT_STORAGE_PAID_ID_KEYS[cleanRoom];
       const cleanRoomValue = pairIdFromLocalStorage(cleanRoomStorageLocation) || pairIdFromCookie(cleanRoomStorageLocation);
