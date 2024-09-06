@@ -3,11 +3,15 @@ import {
   dapUtils,
   generateRealTimeData,
   symitriDapRtdSubmodule,
+  onBidWonListener,
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
 } from 'modules/symitriDapRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 import {hook} from '../../../src/hook.js';
+import { EVENTS } from 'src/constants.js';
 const responseHeader = {'Content-Type': 'application/json'};
+
+let events = require('src/events');
 
 describe('symitriDapRtdProvider', function() {
   const testReqBidsConfigObj = {
@@ -37,11 +41,12 @@ describe('symitriDapRtdProvider', function() {
   };
 
   const cmoduleConfig = {
-    'name': 'dap',
+    'name': 'symitriDap',
     'waitForIt': true,
     'params': {
       'apiHostname': 'prebid.dap.akadns.net',
       'apiVersion': 'x1',
+      'apiAuthToken': 'Token 1234',
       'domain': 'prebid.org',
       'identityType': 'dap-signature:1.0.0',
       'segtax': 503
@@ -49,7 +54,7 @@ describe('symitriDapRtdProvider', function() {
   }
 
   const emoduleConfig = {
-    'name': 'dap',
+    'name': 'symitriDap',
     'waitForIt': true,
     'params': {
       'apiHostname': 'prebid.dap.akadns.net',
@@ -595,6 +600,48 @@ describe('symitriDapRtdProvider', function() {
 
     it('USP consent present and user have not opted out', function () {
       expect(symitriDapRtdSubmodule.init(null, {'usp': '1YNY'})).to.equal(true);
+    });
+  });
+
+  describe('Test identifier is added properly to apiParams', function() {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('passed identifier is handled', async function () {
+      const test_identity = 'test_identity_1234';
+      let identity = {
+        value: test_identity
+      };
+      let apiParams = {
+        'type': identity.type,
+      };
+
+      if (window.crypto && window.crypto.subtle) {
+        let hid = await dapUtils.addIdentifier(identity, apiParams).then();
+        expect(hid['identity']).is.equal('843BE0FB20AAE699F27E5BC88C554B716F3DD366F58C1BDE0ACFB7EA0DD90CE7');
+      } else {
+        expect(window.crypto.subtle).is.undefined
+      }
+    });
+
+    it('passed undefined identifier is handled', async function () {
+      const test_identity = undefined;
+      let identity = {
+        identity: test_identity
+      }
+      let apiParams = {
+        'type': identity.type,
+      };
+
+      let hid = await dapUtils.addIdentifier(identity, apiParams);
+      expect(hid.identity).is.undefined;
     });
   });
 });
