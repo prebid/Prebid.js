@@ -183,8 +183,8 @@ function interpretNativeAd(adm) {
   const result = {
     clickUrl: encodeURI(native.link.url),
     // clickUrl: encodeURI(native.link.clicktrackers[0]),
-    impressionTrackers: encodeURI(native.eventtrackers[0].url),
-    clickTrackers: encodeURI(native.link.clicktrackers[0])
+    impressionTrackers: native.eventtrackers[0].url,
+    clickTrackers: native.link.clicktrackers[0]
 
   };
   native.assets.forEach(asset => {
