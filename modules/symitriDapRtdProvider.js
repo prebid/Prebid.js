@@ -641,8 +641,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       } else if (identity.type === 'hashedid') {
         this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
       } else {
-        onError(null, 'Unsupported Identity Type :' + identity.type, 'ClientError', onDone);
-        return;
+        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
       }
     },
 
