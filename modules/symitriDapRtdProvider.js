@@ -629,13 +629,20 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       let apiParams = {
         'type': identity.type,
+        'identity': identity.value
       };
-
-      if (identity.type === 'hid') {
+      if (identity.type === 'simpleId') {
         this.addIdentifier(identity, apiParams).then((apiParams) => {
           this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
         });
-      } else {
+      }
+      else if (identity.type === 'compositeId') {
+        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+      }
+      else if (identity.type === 'hashedId') {
+        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+      }
+      else {
         this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
       }
     },
