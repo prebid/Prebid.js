@@ -666,7 +666,7 @@ export const spec = {
         };
       }
 
-      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer) {
+      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer && bidResponse.mediaType === VIDEO) {
         bidResponse.renderer = createRenderer(bidderRequest, bidResponse) || undefined;
       }
 
