@@ -152,14 +152,14 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   }
 
   function onBidResponse(bidResponse, config, userConsent) {
-    if(bidResponse.dealId && typeof (bidResponse.dealId) != typeof (undefined)){
-      membership = dapUtils.dapGetMembershipFromLocalStorage(); //Get Membership details from Local Storage
-      deals = membership.deals; //Get list of Deals the user is mapped to
+    if (bidResponse.dealId && typeof (bidResponse.dealId) != typeof (undefined)) {
+      let membership = dapUtils.dapGetMembershipFromLocalStorage(); // Get Membership details from Local Storage
+      let deals = membership.deals; // Get list of Deals the user is mapped to
       deals.forEach((deal) => {
         deal = JSON.parse(deal);
-        if(bidResponse.dealId == deal.id){ //Check if the bid response deal Id matches to the deals mapped to the user
+        if (bidResponse.dealId == deal.id) { // Check if the bid response deal Id matches to the deals mapped to the user
           let token = dapUtils.dapGetTokenFromLocalStorage();
-          let url = "https://" + config.params.apiHostname + '/data-activation/' +  config.params.apiVersion + '/token/' + token + '/impression?deal_id=' + bidResponse.dealId;
+          let url = 'https://' + config.params.apiHostname + '/data-activation/' + config.params.apiVersion + '/token/' + token + '/impression?deal_id=' + bidResponse.dealId;
           bidResponse.ad = `${bidResponse.ad}<script src="${url}"/>`;
         }
       });
@@ -628,22 +628,21 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       }
 
       let apiParams = {
-        'type': identity.type,
+        'type': identity.type.toLowerCase(),
         'identity': identity.value
       };
-      if (identity.type === 'simpleId') {
+      if (identity.type === 'simpleid') {
         this.addIdentifier(identity, apiParams).then((apiParams) => {
           this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
         });
-      }
-      else if (identity.type === 'compositeId') {
+      } else if (identity.type === 'compositeid') {
+        identity = JSON.stringify(identity);
         this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
-      }
-      else if (identity.type === 'hashedId') {
+      } else if (identity.type === 'hashedid') {
         this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
-      }
-      else {
-        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+      } else {
+        onError(null, 'Unsupported Identity Type :' + identity.type, 'ClientError', onDone);
+        return;
       }
     },
 
