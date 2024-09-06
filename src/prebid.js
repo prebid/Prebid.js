@@ -194,7 +194,6 @@ function validateAdUnitPos(adUnit, mediaType) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
-    events.emit(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: warning });
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
