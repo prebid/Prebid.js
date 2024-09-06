@@ -159,7 +159,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         deal = JSON.parse(deal);
         if (bidResponse.dealId == deal.id) { // Check if the bid response deal Id matches to the deals mapped to the user
           let token = dapUtils.dapGetTokenFromLocalStorage();
-          let url = 'https://' + config.params.apiHostname + '/data-activation/' + config.params.apiVersion + '/token/' + token + '/impression?deal_id=' + bidResponse.dealId;
+          let url = config.params.pixelUrl + '?token=' + token + '&deal_id=' + bidResponse.dealId;
           bidResponse.ad = `${bidResponse.ad}<script src="${url}"/>`;
         }
       });

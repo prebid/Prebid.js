@@ -61,7 +61,8 @@ describe('symitriDapRtdProvider', function() {
       'apiVersion': 'x1',
       'domain': 'prebid.org',
       'identityType': 'dap-signature:1.0.0',
-      'segtax': 504
+      'segtax': 504,
+      'pixelUrl': 'https://www.test.com/pixel'
     }
   }
 
@@ -648,7 +649,7 @@ describe('symitriDapRtdProvider', function() {
 
   describe('onBidResponseEvent', function () {
     const bidResponse = {dealId: 'DEMODEAL555', ad: ''};
-    let url = 'https://' + emoduleConfig.params.apiHostname + '/data-activation/' + emoduleConfig.params.apiVersion + '/token/' + sampleCachedToken.token + '/impression?deal_id=' + bidResponse.dealId;
+    let url = emoduleConfig.params.pixelUrl + '?token=' + sampleCachedToken.token + '&deal_id=' + bidResponse.dealId;
     let adPixel = `${bidResponse.ad}<script src="${url}"/>`;
     it('should add pixel to "BidResponse" ad', function () {
       storage.setDataInLocalStorage(DAP_MEMBERSHIP, JSON.stringify(cachedMembershipWithDeals));
