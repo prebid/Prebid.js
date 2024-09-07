@@ -40,6 +40,7 @@ pbjs.setConfig({
             params: {
                 groupId: 'ABC123', //required
                 bidders: ['qortex', 'adapter2'], //optional (see below)
+                disableBidEnrichment: false, //optional (see below)
                 tagConfig: { // optional, please reach out to your account manager for configuration reccommendation
                     videoContainer: 'string',
                     htmlContainer: 'string',
@@ -67,3 +68,6 @@ pbjs.setConfig({
 - This optional parameter is an object containing the config settings that could be usedto initialize the Qortex integration on your page. A preconfigured object for this step will be provided to you by the Qortex team.
 
 - If this parameter is not present, the Qortex integration can still be configured and loaded manually on your page outside of prebid. The RTD module will continue to initialize and operate as normal.
+
+#### `disableBidEnrichment` - optional
+- This optional parameter allows a publisher to opt out of the RTD module from using our API to enrich bids with first party data for contextuality
