@@ -96,9 +96,14 @@ describe('adLoader', function () {
   });
 
   it('should disable loading external script for activity rule set', function () {
-    const unregisterRule = registerActivityControl(LOAD_EXTERNAL_SCRIPT, 'loadExternalScript config', () => ({allow: false}));
-    adLoader.loadExternalScript('someURL2', 'debugging');
-    expect(utilsLogErrorStub.called).to.be.true;
-    unregisterRule();
+    let unregisterRule;
+    try {
+      unregisterRule = registerActivityControl(LOAD_EXTERNAL_SCRIPT, 'loadExternalScript config', () => ({allow: false}));
+      adLoader.loadExternalScript(null, 'debugging');
+      expect(utilsLogErrorStub.called).to.be.false;
+    } finally {
+      unregisterRule?.();
+    }
+    
   })
 });

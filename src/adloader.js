@@ -54,8 +54,7 @@ const _approvedLoadExternalJSList = [
  * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
 export function loadExternalScript(url, moduleCode, callback, doc, attributes) {
-  if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(MODULE_TYPE_PREBID, 'adLoader'))) {
-    logError('cannot load external script as it\'s disabled by activity controls');
+  if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(MODULE_TYPE_PREBID, moduleCode))) {
     return;
   }
 
