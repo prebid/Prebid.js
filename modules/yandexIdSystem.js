@@ -18,8 +18,9 @@ import { logError, logInfo } from '../src/utils.js';
 
 // .com suffix is just a convention for naming the bidder eids
 // See https://github.com/prebid/Prebid.js/pull/11196#discussion_r1591165139
-const BIDDER_EID_KEY = 'yandex.com';
-const YANDEX_ID_KEY = 'yandexId';
+export const BIDDER_EID_KEY = 'yandex.com';
+export const YANDEX_ID_KEY = 'yandexId';
+export const YANDEX_EXT_COOKIE_NAMES = ['_ym_fa'];
 export const BIDDER_CODE = 'yandex';
 export const YANDEX_USER_ID_KEY = '_ym_uid';
 export const YANDEX_COOKIE_STORAGE_TYPE = 'cookie';
@@ -62,6 +63,14 @@ export const yandexIdSubmodule = {
     [YANDEX_ID_KEY]: {
       source: BIDDER_EID_KEY,
       atype: 1,
+      getUidExt() {
+        if (PREBID_STORAGE.cookiesAreEnabled()) {
+          return YANDEX_EXT_COOKIE_NAMES.reduce((acc, cookieName) => ({
+            ...acc,
+            [cookieName]: PREBID_STORAGE.getCookie(cookieName),
+          }), {});
+        }
+      },
     },
   },
 };
