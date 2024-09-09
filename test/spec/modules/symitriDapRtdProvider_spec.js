@@ -648,8 +648,8 @@ describe('symitriDapRtdProvider', function() {
   });
 
   describe('onBidResponseEvent', function () {
-    const bidResponse = {dealId: 'DEMODEAL555', ad: ''};
-    let url = emoduleConfig.params.pixelUrl + '?token=' + sampleCachedToken.token + '&deal_id=' + bidResponse.dealId;
+    const bidResponse = {adId: 'ad_123', bidder: 'test_bidder', bidderCode: 'test_bidder_code', cpm: '1.5', creativeId: 'creative_123', dealId: 'DEMODEAL555', mediaType: 'banner', responseTimestamp: '1725892736147', ad: ''};
+    let url = emoduleConfig.params.pixelUrl + '?token=' + sampleCachedToken.token + '&ad_id=' + bidResponse.adId + '&bidder=' + bidResponse.bidder + '&bidder_code=' + bidResponse.bidderCode + '&cpm=' + bidResponse.cpm + '&creative_id=' + bidResponse.creativeId + '&deal_id=' + bidResponse.dealId + '&media_type=' + bidResponse.mediaType + '&response_timestamp=' + bidResponse.responseTimestamp;
     let adPixel = `${bidResponse.ad}<script src="${url}"/>`;
     it('should add pixel to "BidResponse" ad', function () {
       storage.setDataInLocalStorage(DAP_MEMBERSHIP, JSON.stringify(cachedMembershipWithDeals));
