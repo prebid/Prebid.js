@@ -660,10 +660,6 @@ export const spec = {
         bidResponse.mediaType = VIDEO;
         bidResponse.meta.mediaType = VIDEO;
         bidResponse.vastXml = bid.adm;
-
-        if (bid.nurl) {
-          bidResponse.vastUrl = bid.nurl;
-        };
       }
 
       if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer && bidResponse.mediaType === VIDEO) {
