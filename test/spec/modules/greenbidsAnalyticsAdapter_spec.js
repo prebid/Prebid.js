@@ -280,13 +280,17 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     bidder: 'greenbids',
                     isTimeout: false,
                     hasBid: true,
-                    params: {}
+                    params: {},
+                    cpm: 0.1,
+                    currency: 'USD',
                   },
                   {
                     bidder: 'greenbidsx',
                     isTimeout: false,
                     hasBid: true,
-                    params: {'placement ID': 12784}
+                    params: { 'placement ID': 12784 },
+                    cpm: 0.08,
+                    currency: 'USD',
                   }
                 ]
               },

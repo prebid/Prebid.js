@@ -460,8 +460,9 @@ export function PrebidServer() {
 
     if (Array.isArray(_s2sConfigs)) {
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
+        const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
         let syncBidders = s2sBidRequest.s2sConfig.bidders
-          .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
+          .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
         queueSync(syncBidders, gdprConsent, uspConsent, gppConsent, s2sBidRequest.s2sConfig);
@@ -472,7 +473,8 @@ export function PrebidServer() {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
-          if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
+          const { seatNonBidData, atagData } = getAnalyticsFlags(s2sBidRequest.s2sConfig, response)
+          if (seatNonBidData) {
             events.emit(EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
               auctionId: bidRequests[0].auctionId,
@@ -480,6 +482,18 @@ export function PrebidServer() {
               response,
               adapterMetrics
             });
+          }
+          // pbs analytics event
+          if (seatNonBidData || atagData) {
+            const data = {
+              seatnonbid: seatNonBidData,
+              atag: atagData,
+              auctionId: bidRequests[0].auctionId,
+              requestedBidders,
+              response,
+              adapterMetrics
+            }
+            events.emit(EVENTS.PBS_ANALYTICS, data);
           }
           done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
@@ -598,8 +612,18 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   }
 }, 'processPBSRequest');
 
-function shouldEmitNonbids(s2sConfig, response) {
-  return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
+function getAnalyticsFlags(s2sConfig, response) {
+  return {
+    atagData: getAtagData(response),
+    seatNonBidData: getNonBidData(s2sConfig, response)
+  }
+}
+function getNonBidData(s2sConfig, response) {
+  return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid : undefined;
+}
+
+function getAtagData(response) {
+  return response?.ext?.prebid?.analytics?.tags;
 }
 
 adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');
