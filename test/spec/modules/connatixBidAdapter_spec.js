@@ -10,8 +10,11 @@ import {
   _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
   spec
 } from '../../../modules/connatixBidAdapter.js';
+import adapterManager from '../../../src/adapterManager.js';
 import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+
+const BIDDER_CODE = 'connatix';
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -841,6 +844,45 @@ describe('connatixBidAdapter', function () {
       }];
       let serverRequest = spec.buildRequests(validBidRequests, {});
       expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
+    });
+  });
+
+  describe('isConnatix', function () {
+    let aliasRegistryStub;
+
+    beforeEach(() => {
+      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry').value({});
+    });
+
+    afterEach(() => {
+      aliasRegistryStub.restore();
+    });
+
+    it('should return false if aliasName is undefined or null', () => {
+      expect(spec.isConnatix(undefined)).to.be.false;
+      expect(spec.isConnatix(null)).to.be.false;
+    });
+
+    it('should return true if aliasName matches BIDDER_CODE', () => {
+      const aliasName = BIDDER_CODE;
+      expect(spec.isConnatix(aliasName)).to.be.true;
+    });
+
+    it('should return true if aliasName is mapped to BIDDER_CODE in aliasRegistry', () => {
+      const aliasName = 'connatixAlias';
+      aliasRegistryStub.value({ 'connatixAlias': BIDDER_CODE });
+      expect(spec.isConnatix(aliasName)).to.be.true;
+    });
+
+    it('should return false if aliasName does not match BIDDER_CODE', () => {
+      const aliasName = 'otherBidder';
+      expect(spec.isConnatix(aliasName)).to.be.false;
+    });
+
+    it('should return false if aliasName is mapped to a different bidder in aliasRegistry', () => {
+      const aliasName = 'someOtherAlias';
+      aliasRegistryStub.value({ 'someOtherAlias': 'otherBidder' });
+      expect(spec.isConnatix(aliasName)).to.be.false;
     });
   });
 

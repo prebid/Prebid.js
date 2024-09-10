@@ -1,3 +1,4 @@
+import adapterManager from '../src/adapterManager.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -317,11 +318,20 @@ export const spec = {
     }];
   },
 
+  isConnatix: (aliasName) => {
+    if (!aliasName) {
+      return false;
+    }
+
+    const originalBidderName = adapterManager.aliasRegistry[aliasName] || aliasName;
+    return originalBidderName === BIDDER_CODE;
+  },
+
   /**
    * Register bidder specific code, which will execute if the server response time is greater than auction timeout
    */
   onTimeout: (timeoutData) => {
-    const connatixBidRequestTimeout = timeoutData.find(bidderRequest => bidderRequest.bidder === BIDDER_CODE);
+    const connatixBidRequestTimeout = timeoutData.find(bidderRequest => spec.isConnatix(bidderRequest.bidder));
 
     // Log only it is a timeout for Connatix
     // Otherwise it is not relevant for us
