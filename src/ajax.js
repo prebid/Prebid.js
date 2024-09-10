@@ -104,6 +104,7 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
     return xml;
   }
   return {
+    // eslint-disable-next-line prebid/no-global
     readyState: XMLHttpRequest.DONE,
     status,
     statusText,
@@ -145,6 +146,20 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
   return function (url, callback, data, options = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
   };
+}
+
+/**
+ * simple wrapper around sendBeacon such that invocations of navigator.sendBeacon can be centrally maintained.
+ * verifies that the navigator and sendBeacon are defined for maximum compatibility
+ * @param {string} url The URL that will receive the data. Can be relative or absolute.
+ * @param {*} data An ArrayBuffer, a TypedArray, a DataView, a Blob, a string literal or object, a FormData or a URLSearchParams object containing the data to send.
+ * @returns {boolean} true if the user agent successfully queued the data for transfer. Otherwise, it returns false.
+ */
+export function sendBeacon(url, data) {
+  if (!window.navigator || !window.navigator.sendBeacon) {
+    return false;
+  }
+  return window.navigator.sendBeacon(url, data);
 }
 
 export const ajax = ajaxBuilder();

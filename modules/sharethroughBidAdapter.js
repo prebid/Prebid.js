@@ -18,7 +18,7 @@ export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
   gvlid: 80,
-  isBidRequestValid: (bid) => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
+  isBidRequestValid: (bid) => !!bid.params.pkey,
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = bidderRequest.timeout;
@@ -66,6 +66,11 @@ export const sharethroughAdapterSpec = {
 
     if (bidderRequest.ortb2?.device?.ext?.cdep) {
       req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
+    }
+
+    // if present, merge device object from ortb2 into `req.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(req.device, bidderRequest.ortb2.device);
     }
 
     req.user = nullish(firstPartyData.user, {});
@@ -152,6 +157,7 @@ export const sharethroughAdapterSpec = {
             plcmt: videoRequest.plcmt ? videoRequest.plcmt : null,
           };
 
+          if (videoRequest.battr) impression.video.battr = videoRequest.battr;
           if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
           if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
           if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
@@ -161,6 +167,8 @@ export const sharethroughAdapterSpec = {
             topframe: inIframe() ? 0 : 1,
             format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
           };
+          const battr = deepAccess(bidReq, 'mediaTypes.banner.battr', null) || deepAccess(bidReq, 'ortb2Imp.banner.battr')
+          if (battr) impression.banner.battr = battr
         }
 
         return {
