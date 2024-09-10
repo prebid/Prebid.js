@@ -8,7 +8,9 @@ describe('auction index', () => {
       getAuctionId() { return id },
       getAdUnits() { return adUnits; },
       getBidRequests() { return bidderRequests; },
-      ortb2
+      getFPD() {
+        return { global: { ortb2 } }
+      }
     }
   }
 

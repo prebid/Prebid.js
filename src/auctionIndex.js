@@ -67,7 +67,7 @@ export function AuctionIndex(getAuctions) {
       }
     },
     getOrtb2(bid) {
-      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.ortb2
+      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2
     }
   });
 }

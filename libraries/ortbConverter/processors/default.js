@@ -101,8 +101,8 @@ export const DEFAULT_PROCESSORS = {
           bidResponse.meta.dsa = bid.ext.dsa;
         }
         if (bid.cat) {
-          bidResponse.meta.secondaryCatIds = bid.cat;
           bidResponse.meta.primaryCatId = bid.cat[0];
+          bidResponse.meta.secondaryCatIds = bid.cat.slice(1);
         }
         if (bid.attr) {
           bidResponse.meta.attr = bid.attr;
