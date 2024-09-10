@@ -15,7 +15,7 @@ import {
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
-// **************************** UTILS *************************** //
+// **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
 const BIDDER_ALIASES = ['33across_mgni'];
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -36,6 +36,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -72,9 +73,7 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
-
-  if (invalidBidderName || !bid.params) {
+  if (!bid.params) {
     return false;
   }
 
@@ -140,10 +139,10 @@ function _validateVideo(bid) {
   }
 
   // If placement if defined, it must be a number
-  if (
-    typeof videoParams.placement !== 'undefined' &&
-    typeof videoParams.placement !== 'number'
-  ) {
+  if ([ videoParams.placement, videoParams.plcmt ].some(value => (
+    typeof value !== 'undefined' &&
+    typeof value !== 'number'
+  ))) {
     return false;
   }
 
@@ -490,12 +489,24 @@ function _buildVideoORTB(bidRequest) {
 
   // Placement Inference Rules:
   // - If no placement is defined then default to 2 (In Banner)
-  // - If product is instream (for instream context) then override placement to 1
-  video.placement = video.placement || 2;
+  // - If the old deprecated field is defined, use its value for the recent placement field
+
+  const calculatePlacementValue = () => {
+    const IN_BANNER_PLACEMENT_VALUE = 2;
+
+    if (video.placement) {
+      logWarn('[33Across Adapter] The ORTB field `placement` is deprecated, please use `plcmt` instead');
+
+      return video.placement;
+    }
+
+    return IN_BANNER_PLACEMENT_VALUE;
+  }
+
+  video.plcmt ??= calculatePlacementValue();
 
   if (product === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
-    video.placement = 1;
   }
 
   // bidfloors
