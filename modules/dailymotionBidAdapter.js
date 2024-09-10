@@ -4,6 +4,8 @@ import { deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { userSync } from '../src/userSync.js';
 
+const DAILYMOTION_VENDOR_ID = 573;
+
 /**
  * Get video metadata from bid request
  *
@@ -110,7 +112,7 @@ function isUserSyncEnabled() {
 
 export const spec = {
   code: 'dailymotion',
-  gvlid: 573,
+  gvlid: DAILYMOTION_VENDOR_ID,
   supportedMediaTypes: [VIDEO],
 
   /**
@@ -157,13 +159,21 @@ export const spec = {
       deepAccess(bidderRequest, 'gdprConsent.vendorData.hasGlobalConsent') === true ||
       (
         // Vendor consent
-        deepAccess(bidderRequest, 'gdprConsent.vendorData.vendor.consents.573') === true &&
-        // Purposes
-        [1, 3, 4].every(v => deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true) &&
-        // Flexible purposes
+        deepAccess(bidderRequest, `gdprConsent.vendorData.vendor.consents.${DAILYMOTION_VENDOR_ID}`) === true &&
+
+        // Purposes with legal basis "consent". These are not flexible, so if publisher requires legitimate interest (2) it cancels them
+        [1, 3, 4].every(v =>
+          deepAccess(bidderRequest, `gdprConsent.vendorData.publisher.restrictions.${v}.${DAILYMOTION_VENDOR_ID}`) !== 0 &&
+          deepAccess(bidderRequest, `gdprConsent.vendorData.publisher.restrictions.${v}.${DAILYMOTION_VENDOR_ID}`) !== 2 &&
+          deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true
+        ) &&
+
+        // Purposes with legal basis "legitimate interest" (default) or "consent" (when specified as such by publisher)
         [2, 7, 9, 10].every(v =>
-          deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true ||
-          deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.legitimateInterests.${v}`) === true
+          deepAccess(bidderRequest, `gdprConsent.vendorData.publisher.restrictions.${v}.${DAILYMOTION_VENDOR_ID}`) !== 0 &&
+          (deepAccess(bidderRequest, `gdprConsent.vendorData.publisher.restrictions.${v}.${DAILYMOTION_VENDOR_ID}`) === 1
+            ? deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.consents.${v}`) === true
+            : deepAccess(bidderRequest, `gdprConsent.vendorData.purpose.legitimateInterests.${v}`) === true)
         )
       );
 

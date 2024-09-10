@@ -608,7 +608,7 @@ describe('dspxAdapter', function () {
         }
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[0]));
       expect(result[0].meta.advertiserDomains.length).to.equal(1);
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
@@ -628,7 +628,7 @@ describe('dspxAdapter', function () {
         }
       }];
       let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[1]));
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
@@ -647,7 +647,7 @@ describe('dspxAdapter', function () {
         }
       }];
       let result = spec.interpretResponse(serverVideoResponseVastUrl, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[2]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[2]));
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 

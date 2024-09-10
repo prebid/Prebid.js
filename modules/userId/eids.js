@@ -1,6 +1,7 @@
 import {deepClone, isFn, isStr} from '../../src/utils.js';
-/*
- * @typedef {import('../modules/userId/index.js').SubmoduleContainer} SubmoduleContainer
+
+/**
+ * @typedef {import('./index.js').SubmodulePriorityMap} SubmodulePriorityMap
  */
 
 export const EID_CONFIG = new Map();
