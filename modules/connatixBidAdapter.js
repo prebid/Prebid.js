@@ -4,7 +4,6 @@ import {
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
-
 import { config } from '../src/config.js';
 
 import { ajax } from '../src/ajax.js';
@@ -155,13 +154,19 @@ export function _getBidRequests(validBidRequests) {
       sizes,
     } = bid;
     const { placementId, viewabilityContainerIdentifier } = params;
+    let detectedViewabilityPercentage = detectViewability(bid);
+    if (isNumber(detectedViewabilityPercentage)) {
+      detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
+    }
     return {
       bidId,
       mediaTypes,
       sizes,
       placementId,
-      hasViewabilityContainerId: Boolean(viewabilityContainerIdentifier),
       floor: getBidFloor(bid),
+      hasViewabilityContainerId: Boolean(viewabilityContainerIdentifier),
+      declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
+      detectedViewabilityPercentage,
     };
   });
 }
@@ -219,22 +224,6 @@ export const spec = {
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     const bidRequests = _getBidRequests(validBidRequests);
-
-      let detectedViewabilityPercentage = detectViewability(bid);
-      if (isNumber(detectedViewabilityPercentage)) {
-        detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
-      }
-
-      return {
-        bidId,
-        mediaTypes,
-        sizes,
-        detectedViewabilityPercentage,
-        declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
-        placementId: params.placementId,
-        floor: getBidFloor(bid),
-      };
-    });
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
