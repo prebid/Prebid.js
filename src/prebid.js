@@ -101,13 +101,17 @@ function validateSizes(sizes, targLength) {
 }
 
 function setBattrForAdUnit(adUnit, mediaType) {
-  const battr = adUnit.ortb2Imp?.[mediaType]?.battr || adUnit.mediaType?.[mediaType]?.battr;
-  if (adUnit.ortb2Imp?.[mediaType] && battr) {
-    adUnit.ortb2Imp[mediaType].battr = battr;
+  const ortb2Imp = adUnit.ortb2Imp || {};
+  const mediaTypes = adUnit.mediaTypes || {};
+
+  if (ortb2Imp[mediaType]?.battr && mediaTypes[mediaType]?.battr && (ortb2Imp[mediaType]?.battr !== mediaTypes[mediaType]?.battr)) {
+    logWarn('battr field differ between ortb2Imp and mediaTypes');
   }
-  if (adUnit.mediaTypes?.[mediaType] && battr) {
-    adUnit.mediaTypes[mediaType].battr = battr;
-  }
+
+  const battr = ortb2Imp[mediaType]?.battr || mediaTypes[mediaType]?.battr;
+  
+  adUnit.ortb2Imp = {...ortb2Imp, [mediaType]: {...(ortb2Imp[mediaType] || {}), battr}};
+  adUnit.mediaTypes = {...mediaTypes, [mediaType]: {...(mediaTypes[mediaType] || {}), battr}};
 }
 
 function validateBannerMediaType(adUnit) {
