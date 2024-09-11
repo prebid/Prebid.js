@@ -123,7 +123,8 @@ describe('The Criteo bidding adapter', function () {
       getCookieStub,
       setCookieStub,
       getDataFromLocalStorageStub,
-      removeDataFromLocalStorageStub;
+      removeDataFromLocalStorageStub,
+      triggerPixelStub;
 
     beforeEach(function () {
       getConfigStub = sinon.stub(config, 'getConfig');
@@ -146,6 +147,8 @@ describe('The Criteo bidding adapter', function () {
       setCookieStub = sinon.stub(storage, 'setCookie');
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     });
 
     afterEach(function () {
@@ -158,6 +161,7 @@ describe('The Criteo bidding adapter', function () {
       setCookieStub.restore();
       getDataFromLocalStorageStub.restore();
       removeDataFromLocalStorageStub.restore();
+      triggerPixelStub.restore();
     });
 
     it('should not trigger sync if publisher did not enable iframe based syncs', function () {
@@ -300,6 +304,30 @@ describe('The Criteo bidding adapter', function () {
       expect(getDataFromLocalStorageStub.calledOnce).to.be.true
       expect(removeDataFromLocalStorageStub.called).to.be.false;
       expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should trigger sync pixel from iframe response', function (done) {
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+
+      const event = new MessageEvent('message', {
+        data: {
+          requestId: '123456',
+          callbacks: [
+            'https://example.com/pixel1',
+            'https://example.com/pixel2'
+          ]
+        },
+        origin: 'https://gum.criteo.com'
+      });
+
+      window.dispatchEvent(event);
+      setTimeout(() => {
+        expect(triggerPixelStub.calledTwice).to.be.true;
+        expect(triggerPixelStub.firstCall.calledWith('https://example.com/pixel1')).to.be.true;
+        expect(triggerPixelStub.secondCall.calledWith('https://example.com/pixel2')).to.be.true;
+
+        done();
+      }, 0);
     });
   });
 

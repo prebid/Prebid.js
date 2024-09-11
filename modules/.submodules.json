@@ -80,6 +80,7 @@
       "greenbidsRtdProvider",
       "growthCodeRtdProvider",
       "hadronRtdProvider",
+      "humansecurityRtdProvider",
       "iasRtdProvider",
       "idWardRtdProvider",
       "imRtdProvider",
