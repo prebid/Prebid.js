@@ -298,7 +298,9 @@ describe('AdPlayerProProvider', function () {
       provider.offEvent(AD_IMPRESSION, callback);
       expect(offSpy.calledOnce).to.be.true;
       const eventName = offSpy.args[0][0];
+      const eventCallback = offSpy.args[0][1];
       expect(eventName).to.be.equal('AdImpression');
+      expect(eventCallback).to.be.exist;
     });
 
     it('should remove event listener on player by eventName', function () {

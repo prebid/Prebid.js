@@ -169,9 +169,9 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     const playerEventName = utils.getPlayerEvent(event);
     const eventHandler = callbackStorage.getCallback(playerEventName, callback);
     if (eventHandler) {
-      player && player.off(playerEventName);
-    } else {
       player && player.off(playerEventName, eventHandler);
+    } else {
+      player && player.off(playerEventName);
     }
     callbackStorage.clearCallback(playerEventName, callback);
   }
