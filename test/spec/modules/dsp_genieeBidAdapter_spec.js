@@ -123,7 +123,7 @@ describe('Geniee adapter tests', () => {
         meta: {
           advertiserDomains: ['geniee.co.jp'],
           primaryCatId: 'IAB1',
-          secondaryCatIds: ['IAB1']
+          secondaryCatIds: []
         },
         netRevenue: true,
         requestId: 'bid-id',
