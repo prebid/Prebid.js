@@ -1041,11 +1041,19 @@ export function attachIdSystem(submodule) {
   }
 }
 
-function normalizePromise(fn) {
+function normalizePromise(fn, handleErrors = false, fnName) {
   // for public methods that return promises, make sure we return a "normal" one - to avoid
   // exposing confusing stack traces
   return function() {
-    return Promise.resolve(fn.apply(this, arguments));
+    const promise = Promise.resolve(fn.apply(this, arguments));
+
+    if (handleErrors) {
+      return promise.catch(error => {
+        logWarn(`Error occurred in ${fnName}: ${error.message || error}`);
+      });
+    }
+
+    return promise;
   }
 }
 
@@ -1088,7 +1096,7 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
   (getGlobal()).getEncryptedEidsForSource = normalizePromise(getEncryptedEidsForSource);
   (getGlobal()).registerSignalSources = registerSignalSources;
-  (getGlobal()).refreshUserIds = normalizePromise(refreshUserIds);
+  (getGlobal()).refreshUserIds = normalizePromise(refreshUserIds, true, 'refreshUserIds');
   (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
 }
