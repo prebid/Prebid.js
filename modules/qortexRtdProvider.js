@@ -368,7 +368,7 @@ function generateIndexData () {
   return {
     pageUrl: document.location.href,
     title: document.title,
-    text: Array.from(document.body.querySelectorAll('h1,h2,h3,h4,h5,h6,p')).reduce((acc, elm)=>acc.concat(elm.textContent.trim()), []).join(' ').replaceAll(/\r?\n\s{2,}/gi, ' ').substr(0,5000),
+    text: Array.from(document.body.querySelectorAll('h1,h2,h3,h4,h5,h6,p')).reduce((acc, elm) => acc.concat(elm.textContent.trim()), []).join(' ').replaceAll(/\r?\n\s{2,}/gi, ' ').substr(0, 5000),
     meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if (attr.length > 1) { acc[curr.attributes[0].value] = curr.attributes[1].value } return acc }, {}),
     videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => { const src = curr?.src; if (src != '') { acc.push(src) } return acc }, [])
   }
