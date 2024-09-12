@@ -21,7 +21,7 @@ const waitTNCScript = (tncNS) => {
 
 const loadRemoteScript = () => {
   return new Promise((resolve) => {
-    loadExternalScript(url, MODULE_NAME, MODULE_TYPE_UID, resolve);
+    loadExternalScript(url, MODULE_TYPE_UID, MODULE_NAME, resolve);
   })
 }
 

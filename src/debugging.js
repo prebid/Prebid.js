@@ -15,7 +15,7 @@ function isDebuggingInstalled() {
 
 function loadScript(url) {
   return new GreedyPromise((resolve) => {
-    loadExternalScript(url, 'debugging', MODULE_TYPE_PREBID, resolve);
+    loadExternalScript(url, MODULE_TYPE_PREBID, 'debugging', resolve);
   });
 }
 

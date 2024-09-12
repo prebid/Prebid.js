@@ -68,7 +68,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   logger.logMessage('url', url.toString());
 
   try {
-    loadExternalScript(url.toString(), MODULE_NAME, MODULE_TYPE_RTD, () => {
+    loadExternalScript(url.toString(), MODULE_TYPE_RTD, MODULE_NAME, () => {
       logger.logMessage('script injected');
       window.WURFLPromises.complete.then((res) => {
         logger.logMessage('received data', res);

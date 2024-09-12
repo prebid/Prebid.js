@@ -184,7 +184,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
       paramOrDefault(hadronIdUrl, HADRON_ID_DEFAULT_URL, userIds),
       `partner_id=${partnerId}&_it=prebid`
     );
-    loadExternalScript(scriptUrl, 'hadron', MODULE_TYPE_RTD, () => {
+    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, 'hadron', () => {
       logInfo(LOG_PREFIX, 'hadronIdTag loaded', scriptUrl);
     })
   }

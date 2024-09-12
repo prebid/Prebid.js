@@ -55,7 +55,8 @@ export const MediaFilter = {
    * @param {string} configurationHash - The configuration hash.
    */
   setupScript: function(configurationHash) {
-    loadExternalScript(MEDIAFILTER_BASE_URL.concat(configurationHash), 'mediafilter', MODULE_TYPE_RTD, () => {});
+    loadExternalScript(MEDIAFILTER_BASE_URL.concat(configurationHash), MODULE_TYPE_RTD, 'mediafilter', () => {
+    });
   },
 
   /**

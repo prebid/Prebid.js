@@ -141,7 +141,7 @@ function initializeBrandmetrics(scriptId) {
     const file = scriptId + '.js'
     const url = path + file
 
-    loadExternalScript(url, MODULE_CODE, MODULE_TYPE_RTD)
+    loadExternalScript(url, MODULE_TYPE_RTD, MODULE_CODE)
   }
 }
 

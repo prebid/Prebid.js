@@ -63,7 +63,7 @@ export function Renderer(options) {
     } else {
       // we expect to load a renderer url once only so cache the request to load script
       this.cmd.unshift(runRender) // should render run first ?
-      loadExternalScript(url, moduleCode, MODULE_TYPE_PREBID, this.callback, this.documentContext);
+      loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, this.callback, this.documentContext);
     }
   }.bind(this); // bind the function to this object to avoid 'this' errors
 }

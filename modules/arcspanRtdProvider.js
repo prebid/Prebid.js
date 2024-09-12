@@ -29,7 +29,7 @@ function init(config, userConsent) {
     } else {
       scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
     }
-    loadExternalScript(scriptUrl, SUBMODULE_NAME, MODULE_TYPE_RTD);
+    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME);
   }
   return true;
 }

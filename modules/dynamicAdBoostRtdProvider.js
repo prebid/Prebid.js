@@ -73,7 +73,7 @@ function loadLmScript(keyId) {
   let viewableAdUnits = Object.keys(dynamicAdBoostAdUnits);
   let viewableAdUnitsCSV = viewableAdUnits.join(',');
   const scriptUrl = `${SCRIPT_URL}/${keyId}.js?viewableAdUnits=${viewableAdUnitsCSV}`;
-  loadExternalScript(scriptUrl, MODULE_NAME, MODULE_TYPE_RTD);
+  loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME);
   observer.disconnect();
 }
 

@@ -339,7 +339,7 @@ function createOutstreamEmbedCode(bid) {
 
   const fragment = window.document.createDocumentFragment();
 
-  let script = loadExternalScript(urls.pubTag, 'showheroes-bs', MODULE_TYPE_BIDDER, function () {
+  let script = loadExternalScript(urls.pubTag, MODULE_TYPE_BIDDER, 'showheroes-bs', function () {
     window.ShowheroesTag = this;
   });
   script.setAttribute('data-player-host', urls.vlHost);

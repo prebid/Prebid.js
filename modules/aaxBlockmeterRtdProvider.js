@@ -29,7 +29,7 @@ function loadBlockmeter(_rtdConfig) {
   }
 
   const scriptUrl = `https://${url}&${params.join('&')}`;
-  loadExternalScript(scriptUrl, _config.MODULE, MODULE_TYPE_RTD);
+  loadExternalScript(scriptUrl, MODULE_TYPE_RTD, _config.MODULE);
   return true;
 }
 

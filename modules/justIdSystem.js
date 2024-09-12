@@ -155,7 +155,7 @@ const CombinedUidProvider = function(configWrapper, consentData, cacheIdObj) {
   const url = configWrapper.getUrl();
 
   this.getUid = function(idCallback, errCallback) {
-    const scriptTag = loadExternalScript(url, EXTERNAL_SCRIPT_MODULE_CODE, MODULE_TYPE_UID, () => {
+    const scriptTag = loadExternalScript(url, MODULE_TYPE_UID, EXTERNAL_SCRIPT_MODULE_CODE, () => {
       utils.logInfo(LOG_PREFIX, 'script loaded', url);
 
       const eventDetails = {

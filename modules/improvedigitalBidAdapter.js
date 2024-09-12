@@ -397,7 +397,7 @@ const ID_RAZR = {
       ns.q.push(data);
 
       if (!ns.loaded) {
-        loadExternalScript(ID_RAZR.RENDERER_URL, BIDDER_CODE, MODULE_TYPE_BIDDER);
+        loadExternalScript(ID_RAZR.RENDERER_URL, MODULE_TYPE_BIDDER, BIDDER_CODE);
       }
     });
 

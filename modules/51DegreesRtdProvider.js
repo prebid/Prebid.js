@@ -204,7 +204,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     }
 
     // Inject 51Degrees script, get device data and merge it into the ORTB2 object
-    loadExternalScript(scriptURL, MODULE_NAME, MODULE_TYPE_RTD, () => {
+    loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, () => {
       logMessage('Successfully injected 51Degrees script');
       const fod = /** @type {Object} */ (window.fod);
       // Convert and merge device data in the callback

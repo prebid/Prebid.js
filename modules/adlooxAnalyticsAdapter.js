@@ -263,7 +263,7 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
     [ 'creatype', '%%creatype%%' ]
   ]);
 
-  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), 'adloox', MODULE_TYPE_ANALYTICS);
+  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
 }
 
 adapterManager.registerAnalyticsAdapter({

@@ -106,7 +106,7 @@ export function preloadClient(key) {
   insertElement(iframe);
   iframe.contentWindow.grumi = getInitialParams(key);
   let url = getClientUrl(key);
-  loadExternalScript(url, SUBMODULE_NAME, MODULE_TYPE_RTD, markAsLoaded, iframe.contentDocument);
+  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument);
 }
 
 /**
@@ -257,7 +257,7 @@ function fireBillableEventsForApplicableBids(params) {
 function setupInPage(params) {
   window.grumi = params;
   window.grumi.fromPrebid = true;
-  loadExternalScript(getInPageUrl(params.key), SUBMODULE_NAME, MODULE_TYPE_RTD);
+  loadExternalScript(getInPageUrl(params.key), MODULE_TYPE_RTD, SUBMODULE_NAME);
 }
 
 function init(config, userConsent) {

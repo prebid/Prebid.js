@@ -85,7 +85,7 @@ function executeCommand(command) {
 
 function loadRtdScript(customerId) {
   const url = getClientUrl(customerId, window.location.hostname);
-  loadExternalScript(url, MODULE_NAME, MODULE_TYPE_RTD)
+  loadExternalScript(url, MODULE_TYPE_RTD, MODULE_NAME)
 }
 
 function getAdUnits(adUnits, adUnitCodes) {

@@ -47,13 +47,13 @@ const _approvedLoadExternalJSList = [
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
- * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  * @param {string} moduleType moduleType of the module requesting this resource
+ * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  * @param {function} [callback] callback function to be called after the script is loaded
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
  * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
-export function loadExternalScript(url, moduleCode, moduleType, callback, doc, attributes) {
+export function loadExternalScript(url, moduleType, moduleCode, callback, doc, attributes) {
   if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode))) {
     return;
   }

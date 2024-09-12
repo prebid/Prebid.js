@@ -59,7 +59,7 @@ function pageInitStepPreloadScript(scriptURL) {
  * @param {string} scriptURL The script URL to add to the page for protection
  */
 function pageInitStepProtectPage(scriptURL) {
-  loadExternalScript(scriptURL, 'clean.io', MODULE_TYPE_RTD);
+  loadExternalScript(scriptURL, MODULE_TYPE_RTD, 'clean.io');
 }
 
 /**

@@ -137,7 +137,7 @@ export function loadScriptTag(config) {
     }
   })
 
-  loadExternalScript(src, code, MODULE_TYPE_RTD, undefined, undefined, attr);
+  loadExternalScript(src, MODULE_TYPE_RTD, code, undefined, undefined, attr);
 }
 
 /**

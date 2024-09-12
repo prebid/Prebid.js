@@ -22,7 +22,8 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 function injectConfigScript(propertyId) {
   const scriptSrc = `https://cdn.confiant-integrations.net/${propertyId}/gpt_and_prebid/config.js`;
 
-  loadExternalScript(scriptSrc, 'confiant', MODULE_TYPE_RTD, () => {});
+  loadExternalScript(scriptSrc, MODULE_TYPE_RTD, 'confiant', () => {
+  });
 }
 
 /**

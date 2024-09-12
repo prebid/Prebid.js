@@ -26,7 +26,7 @@ describe('adLoader', function () {
     });
 
     it('only allows whitelisted vendors to load scripts', function () {
-      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID);
+      adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging');
       expect(utilsLogErrorStub.called).to.be.false;
       expect(utilsinsertElementStub.called).to.be.true;
     });
@@ -38,7 +38,7 @@ describe('adLoader', function () {
 
     it('callback function can be passed to the function', function() {
       let callback = function() {};
-      adLoader.loadExternalScript('someURL1', 'debugging', MODULE_TYPE_PREBID, callback);
+      adLoader.loadExternalScript('someURL1', MODULE_TYPE_PREBID, 'debugging', callback);
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
@@ -64,11 +64,11 @@ describe('adLoader', function () {
       }
       const doc1 = getDocSpec();
       const doc2 = getDocSpec();
-      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc1);
-      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc1);
-      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc1);
-      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc2);
-      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc2);
+      adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging', () => {}, doc1);
+      adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging', () => {}, doc1);
+      adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging', () => {}, doc1);
+      adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging', () => {}, doc2);
+      adLoader.loadExternalScript('someURL', MODULE_TYPE_PREBID, 'debugging', () => {}, doc2);
       expect(utilsinsertElementStub.callCount).to.equal(2);
     });
   });
@@ -91,7 +91,7 @@ describe('adLoader', function () {
         }
       },
       attrs = {'z': 'A', 'y': 2};
-    let script = adLoader.loadExternalScript('someUrl', 'debugging', MODULE_TYPE_PREBID, undefined, doc, attrs);
+    let script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);
   });
