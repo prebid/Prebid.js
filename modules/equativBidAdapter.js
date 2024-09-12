@@ -39,10 +39,10 @@ registerBidder({
    * @return {boolean}
    */
   isBidRequestValid: (bidRequest) => {
-    return !(!bidRequest.params.networkId &&
-      !deepAccess(bidRequest, 'ortb2Imp.site.publisher.id') &&
-      !deepAccess(bidRequest, 'ortb2Imp.app.publisher.id') &&
-      !deepAccess(bidRequest, 'ortb2Imp.dooh.publisher.id'));
+    return bidRequest.params.networkId ||
+      deepAccess(bidRequest, 'ortb2Imp.site.publisher.id') ||
+      deepAccess(bidRequest, 'ortb2Imp.app.publisher.id') ||
+      deepAccess(bidRequest, 'ortb2Imp.dooh.publisher.id');
   },
 
   /**
@@ -52,17 +52,19 @@ registerBidder({
    */
   getUserSyncs: (syncOptions, serverResponses) => {
     if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
-      return {
+      return [{
         type: 'iframe',
         url: serverResponses[0].body.cSyncUrl
-      };
+      }];
     } else if (syncOptions.pixelEnabled && serverResponses[0]?.body.dspPixels) {
+      const syncs = [];
       serverResponses[0].body.dspPixels.forEach((pixel) => {
-        return {
+        syncs.push({
           type: 'image',
           url: pixel
-        };
+        });
       });
+      return syncs;
     }
   }
 });
