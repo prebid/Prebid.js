@@ -3829,14 +3829,11 @@ describe('Unit: Prebid Module', function () {
       const adUnit = {
         mediaTypes: {
           native: {}
-        },
-        ortb2Imp: {
-          native: {}
         }
       }
       setBattrForAdUnit(adUnit, 'native');
-      expect(adUnit.ortb2Imp.native).to.deep.equal({});
       expect(adUnit.mediaTypes.native).to.deep.equal({});
+      expect(adUnit.mediaTypes.ortb2Imp).to.not.exist;
     })
   })
 });

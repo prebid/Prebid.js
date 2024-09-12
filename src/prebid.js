@@ -105,12 +105,12 @@ export function setBattrForAdUnit(adUnit, mediaType) {
   const mediaTypes = adUnit.mediaTypes || {};
 
   if (ortb2Imp[mediaType]?.battr && mediaTypes[mediaType]?.battr && (ortb2Imp[mediaType]?.battr !== mediaTypes[mediaType]?.battr)) {
-    logWarn(`not equal: adUnit.ortb2Imp.${mediaType}.battr: ${ortb2Imp[mediaType].battr} and adUnit.mediaTypes.${mediaType}.battr:  ${mediaTypes[mediaType].battr}`);
+    logWarn(`Ad unit ${adUnit.code} specifies conflicting ortb2Imp.${mediaType}.battr and mediaTypes.${mediaType}.battr, the latter will be ignored`, adUnit);
   }
 
   const battr = ortb2Imp[mediaType]?.battr || mediaTypes[mediaType]?.battr;
 
-  if (battr !== undefined) {
+  if (battr != null) {
     deepSetValue(adUnit, `ortb2Imp.${mediaType}.battr`, battr);
     deepSetValue(adUnit, `mediaTypes.${mediaType}.battr`, battr);
   }
