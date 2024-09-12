@@ -629,6 +629,61 @@ describe('Seedtag Adapter', function () {
       });
     });
 
+    describe('Site params', function () {
+      it('should add cat param to payload when bidderRequest has ortb2 site cat info', function () {
+        const siteCategories = ['1217', 'bsr004', '692']
+        var ortb2 = {
+          site: {
+            cat: siteCategories
+          }
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.site.cat).to.deep.equal(siteCategories);
+      });
+
+      it('should add pagecat param to payload when bidderRequest has ortb2 site pagecat info', function () {
+        const pageCategories = ['1217', 'bsr004', '692']
+        var ortb2 = {
+          site: {
+            pagecat: pageCategories
+          }
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.site.pagecat).to.deep.equal(pageCategories);
+      });
+
+      it('should add cattac param to payload when bidderRequest has ortb2 site cattax info', function () {
+        const taxonomy = 6
+        var ortb2 = {
+          site: {
+            cattax: taxonomy
+          }
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.site.cattax).to.equal(taxonomy);
+      });
+
+      it('should not add site params to payload when bidderRequest does not have ortb2 site info', function () {
+        var ortb2 = {}
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.site.cattax).to.be.undefined;
+        expect(data.site.cat).to.be.undefined;
+        expect(data.site.pagecat).to.be.undefined;
+      });
+    });
+
     describe('device.sua param', function () {
       it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
         const sua = 1
