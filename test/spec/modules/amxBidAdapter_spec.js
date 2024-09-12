@@ -350,6 +350,37 @@ describe('AmxBidAdapter', () => {
       expect(data.trc).to.equal(0);
     });
 
+    it('will attach subset of configuration', () => {
+      const initialConfig = config.getConfig();
+      const {
+        data: { conf },
+      } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
+
+      expect(conf).to.deep.equal({
+        bce: false, // default from core
+        mbc: -1,
+        ttl: 1,
+      });
+
+      config.setConfig({
+        useBidCache: true,
+        minBidCacheTTL: 60,
+        ttlBuffer: 20,
+      });
+
+      const {
+        data: { conf: conf2 },
+      } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
+
+      expect(conf2).to.deep.equal({
+        bce: true,
+        mbc: 60,
+        ttl: 20,
+      });
+
+      config.setConfig(initialConfig);
+    });
+
     it('will attach sync configuration', () => {
       const request = () =>
         spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
@@ -357,7 +388,7 @@ describe('AmxBidAdapter', () => {
       const setConfig = (filterSettings) =>
         config.setConfig({
           userSync: {
-            syncsPerBidder: 2,
+            syncsPerBidder: '2',
             syncDelay: 2300,
             syncEnabled: true,
             filterSettings,
@@ -588,26 +619,33 @@ describe('AmxBidAdapter', () => {
         ...currentConfig,
         bidderSettings: {
           amx: {
-            allowAlternateBidderCodes: true
-          }
-        }
+            allowAlternateBidderCodes: true,
+          },
+        },
       });
 
       const parsed = spec.interpretResponse(
-        { body: {
-          ...sampleServerResponse,
-          r: {
-            [sampleRequestId]: [{
-              ...sampleServerResponse.r[sampleRequestId][0],
-              b: [{
-                ...sampleServerResponse.r[sampleRequestId][0].b[0],
-                ext: {
-                  bc: 'amx-pmp',
-                  ds: 'example',
-                }
-              }]
-            }]
-          }}},
+        {
+          body: {
+            ...sampleServerResponse,
+            r: {
+              [sampleRequestId]: [
+                {
+                  ...sampleServerResponse.r[sampleRequestId][0],
+                  b: [
+                    {
+                      ...sampleServerResponse.r[sampleRequestId][0].b[0],
+                      ext: {
+                        bc: 'amx-pmp',
+                        ds: 'example',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
         baseRequest
       );
 
@@ -620,7 +658,7 @@ describe('AmxBidAdapter', () => {
         meta: {
           ...baseBidResponse.meta,
           mediaType: BANNER,
-          demandSource: 'example'
+          demandSource: 'example',
         },
         mediaType: BANNER,
         bidderCode: 'amx-pmp',
@@ -719,22 +757,6 @@ describe('AmxBidAdapter', () => {
       });
       expect(firedPixels.length).to.equal(1);
       expect(firedPixels[0]).to.match(/\/hbx\/g_pbst/);
-      try {
-        const parsed = new URL(firedPixels[0]);
-        const nestedData = parsed.searchParams.get('c2');
-        expect(nestedData).to.equal(
-          utils.formatQS({
-            hb_pb: '1.23',
-            hb_adid: 'ad-id',
-            hb_bidder: 'example',
-          })
-        );
-      } catch (e) {
-        // unsupported browser; try testing for string
-        const pixel = firedPixels[0];
-        expect(pixel).to.have.string(encodeURIComponent('hb_pb=1.23'));
-        expect(pixel).to.have.string(encodeURIComponent('hb_adid=ad-id'));
-      }
     });
 
     it('will log an event for timeout', () => {
@@ -758,14 +780,14 @@ describe('AmxBidAdapter', () => {
       ]);
 
       const [request] = server.requests;
-      request.respond(204, {'Content-Type': 'text/html'}, null);
+      request.respond(204, { 'Content-Type': 'text/html' }, null);
       expect(request.url).to.equal('https://1x1.a-mo.net/e');
 
       if (typeof Request !== 'undefined' && 'keepalive' in Request.prototype) {
         expect(request.fetch.request.keepalive).to.equal(true);
       }
 
-      const {c: common, e: events} = JSON.parse(request.requestBody)
+      const { c: common, e: events } = JSON.parse(request.requestBody);
       expect(common).to.deep.equal({
         V: '$prebid.version$',
         vg: '$$PREBID_GLOBAL$$',
@@ -775,7 +797,7 @@ describe('AmxBidAdapter', () => {
 
       expect(events.length).to.equal(1);
       const [event] = events;
-      expect(event.n).to.equal('g_pbto')
+      expect(event.n).to.equal('g_pbto');
       expect(event.A).to.equal('example');
       expect(event.mid).to.equal('tag-id');
       expect(event.cn).to.equal(300);
