@@ -62,6 +62,7 @@ registerBidder({
         url: pixel
       }));
     }
+    return [];
   }
 });
 
