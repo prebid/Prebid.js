@@ -45,5 +45,7 @@
   "rtdModule",
   "schain",
   "unifiedIdHubvisorSystem",
-  "userId"
+  "userId",
+  "utiqSystem",
+  "utiqMtpIdSystem"
 ]
