@@ -57,7 +57,7 @@ registerBidder({
         url: serverResponses[0].body.cSyncUrl
       }];
     } else if (syncOptions.pixelEnabled && serverResponses[0]?.body.dspPixels) {
-      return serverResponses[0].body.dspPixels.forEach((pixel) => ({
+      return serverResponses[0].body.dspPixels.map((pixel) => ({
         type: 'image',
         url: pixel
       }));
