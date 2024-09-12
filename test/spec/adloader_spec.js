@@ -2,6 +2,7 @@ import * as utils from 'src/utils.js';
 import * as adLoader from 'test/mocks/adloaderStub.js';
 import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities';
 import { registerActivityControl } from '../../src/activities/rules';
+import { MODULE_TYPE_PREBID } from '../../src/activities/modules';
 
 describe('adLoader', function () {
   let utilsinsertElementStub;
@@ -25,19 +26,19 @@ describe('adLoader', function () {
     });
 
     it('only allows whitelisted vendors to load scripts', function () {
-      adLoader.loadExternalScript('someURL', 'debugging');
+      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID);
       expect(utilsLogErrorStub.called).to.be.false;
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
     it('should not load cached script again', function() {
-      adLoader.loadExternalScript('someURL', 'debugging');
+      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID);
       expect(utilsinsertElementStub.called).to.be.false;
     });
 
     it('callback function can be passed to the function', function() {
       let callback = function() {};
-      adLoader.loadExternalScript('someURL1', 'debugging', callback);
+      adLoader.loadExternalScript('someURL1', 'debugging', MODULE_TYPE_PREBID, callback);
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
@@ -63,11 +64,11 @@ describe('adLoader', function () {
       }
       const doc1 = getDocSpec();
       const doc2 = getDocSpec();
-      adLoader.loadExternalScript('someURL', 'debugging', () => {}, doc1);
-      adLoader.loadExternalScript('someURL', 'debugging', () => {}, doc1);
-      adLoader.loadExternalScript('someURL', 'debugging', () => {}, doc1);
-      adLoader.loadExternalScript('someURL', 'debugging', () => {}, doc2);
-      adLoader.loadExternalScript('someURL', 'debugging', () => {}, doc2);
+      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc1);
+      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc1);
+      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc1);
+      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc2);
+      adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID, () => {}, doc2);
       expect(utilsinsertElementStub.callCount).to.equal(2);
     });
   });
@@ -90,7 +91,7 @@ describe('adLoader', function () {
         }
       },
       attrs = {'z': 'A', 'y': 2};
-    let script = adLoader.loadExternalScript('someUrl', 'debugging', undefined, doc, attrs);
+    let script = adLoader.loadExternalScript('someUrl', 'debugging', MODULE_TYPE_PREBID, undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);
   });
@@ -104,6 +105,5 @@ describe('adLoader', function () {
     } finally {
       unregisterRule?.();
     }
-    
   })
 });

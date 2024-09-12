@@ -211,7 +211,7 @@ function loadAdagioScript(config) {
       return;
     }
 
-    loadExternalScript(SCRIPT_URL, SUBMODULE_NAME, undefined, undefined, { id: `adagiojs-${getUniqueIdentifierStr()}`, 'data-pid': config.params.organizationId });
+    loadExternalScript(SCRIPT_URL, SUBMODULE_NAME, MODULE_TYPE_RTD, undefined, undefined, { id: `adagiojs-${getUniqueIdentifierStr()}`, 'data-pid': config.params.organizationId });
   });
 }
 

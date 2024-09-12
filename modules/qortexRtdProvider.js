@@ -4,6 +4,7 @@ import { logWarn, mergeDeep, logMessage, generateUUID } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 let requestUrl;
 let bidderArray;
@@ -136,7 +137,7 @@ export function loadScriptTag(config) {
     }
   })
 
-  loadExternalScript(src, code, undefined, undefined, attr);
+  loadExternalScript(src, code, MODULE_TYPE_RTD, undefined, undefined, attr);
 }
 
 /**

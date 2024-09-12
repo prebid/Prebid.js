@@ -52,7 +52,7 @@ let _ic = {};
  * @param {Object} data
  */
 export function addBrowsiTag(data) {
-  let script = loadExternalScript(data.u, 'browsi');
+  let script = loadExternalScript(data.u, 'browsi', MODULE_TYPE_RTD);
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);

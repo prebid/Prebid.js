@@ -147,7 +147,7 @@ function initCustomer(config) {
   });
 
   addConnectorEventListener(customer, config);
-  loadExternalScript(CONNECTOR_URL, MODULE_NAME);
+  loadExternalScript(CONNECTOR_URL, MODULE_NAME, MODULE_TYPE_RTD);
 }
 
 /**

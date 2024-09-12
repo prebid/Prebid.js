@@ -1,9 +1,8 @@
 import { LOAD_EXTERNAL_SCRIPT } from './activities/activities.js';
 import { activityParams } from './activities/activityParams.js';
-import { MODULE_TYPE_PREBID } from './activities/modules.js';
 import { isActivityAllowed } from './activities/rules.js';
-import {includes} from './polyfill.js';
-import { logError, logWarn, insertElement, setScriptAttributes } from './utils.js';
+import { includes } from './polyfill.js';
+import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js';
 
 const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
@@ -49,12 +48,13 @@ const _approvedLoadExternalJSList = [
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
+ * @param {string} moduleType moduleType of the module requesting this resource
  * @param {function} [callback] callback function to be called after the script is loaded
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
  * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
-export function loadExternalScript(url, moduleCode, callback, doc, attributes) {
-  if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(MODULE_TYPE_PREBID, moduleCode))) {
+export function loadExternalScript(url, moduleCode, moduleType, callback, doc, attributes) {
+  if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode))) {
     return;
   }
 

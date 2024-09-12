@@ -1,3 +1,4 @@
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
 import {prefixLog, deepAccess, mergeDeep} from '../src/utils.js';
@@ -203,7 +204,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     }
 
     // Inject 51Degrees script, get device data and merge it into the ORTB2 object
-    loadExternalScript(scriptURL, MODULE_NAME, () => {
+    loadExternalScript(scriptURL, MODULE_NAME, MODULE_TYPE_RTD, () => {
       logMessage('Successfully injected 51Degrees script');
       const fod = /** @type {Object} */ (window.fod);
       // Convert and merge device data in the callback

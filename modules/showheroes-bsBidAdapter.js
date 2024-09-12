@@ -16,6 +16,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
  */
 // eslint-disable-next-line no-restricted-imports
 import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_BIDDER } from '../src/activities/modules.js';
 
 const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
@@ -338,7 +339,7 @@ function createOutstreamEmbedCode(bid) {
 
   const fragment = window.document.createDocumentFragment();
 
-  let script = loadExternalScript(urls.pubTag, 'showheroes-bs', function () {
+  let script = loadExternalScript(urls.pubTag, 'showheroes-bs', MODULE_TYPE_BIDDER, function () {
     window.ShowheroesTag = this;
   });
   script.setAttribute('data-player-host', urls.vlHost);

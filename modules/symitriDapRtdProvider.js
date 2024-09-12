@@ -86,7 +86,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
             window.dapCalculateEntropy(resolve, reject);
           } else {
             if (rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapEntropyUrl)) {
-              loadExternalScript(rtdConfig.params.dapEntropyUrl, MODULE_CODE, () => { dapUtils.dapGetEntropy(resolve, reject) });
+              loadExternalScript(rtdConfig.params.dapEntropyUrl, MODULE_CODE, MODULE_TYPE_RTD, () => { dapUtils.dapGetEntropy(resolve, reject) });
             } else {
               reject(Error('Please check if dapEntropyUrl is specified and is valid under config.params'));
             }

@@ -50,7 +50,7 @@ function getScriptURL(config) {
  */
 export function attachScript(config, userConsent) {
   const script = getScriptURL(config);
-  loadExternalScript(script, SUBREAL_TIME_MODULE, () => {
+  loadExternalScript(script, SUBREAL_TIME_MODULE, MODULE_TYPE_RTD, () => {
     if (typeof window.azerionPublisherAudiences === 'function') {
       const publisherConfig = config.params?.process || {};
       window.azerionPublisherAudiences({
