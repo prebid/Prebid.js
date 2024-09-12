@@ -84,7 +84,6 @@ export const spec = {
     {code: 'unibots'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
-    {code: 'felixads'},
     {code: 'motionspots'},
     {code: 'sonic_twist'},
     {code: 'displayioads'},
