@@ -57,14 +57,10 @@ registerBidder({
         url: serverResponses[0].body.cSyncUrl
       }];
     } else if (syncOptions.pixelEnabled && serverResponses[0]?.body.dspPixels) {
-      const syncs = [];
-      serverResponses[0].body.dspPixels.forEach((pixel) => {
-        syncs.push({
-          type: 'image',
-          url: pixel
-        });
-      });
-      return syncs;
+      return serverResponses[0].body.dspPixels.forEach((pixel) => ({
+        type: 'image',
+        url: pixel
+      }));
     }
   }
 });
