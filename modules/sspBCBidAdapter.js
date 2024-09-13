@@ -22,7 +22,6 @@ const adUnitsCalled = {};
 const adSizesCalled = {};
 const bidderRequestsMap = {};
 const pageView = {};
-var consentApiVersion;
 
 /**
  * Native asset mapping - we use constant id per type
@@ -236,8 +235,7 @@ const applyUserIds = (validBidRequest, ortbRequest) => {
 const applyGdpr = (bidderRequest, ortbRequest) => {
   const { gdprConsent } = bidderRequest;
   if (gdprConsent) {
-    const { apiVersion, gdprApplies, consentString } = gdprConsent;
-    consentApiVersion = apiVersion;
+    const { gdprApplies, consentString } = gdprConsent;
     ortbRequest.regs = Object.assign(ortbRequest.regs || {}, { 'gdpr': gdprApplies ? 1 : 0 });
     ortbRequest.user = Object.assign(ortbRequest.user || {}, { 'consent': consentString });
   }
@@ -749,8 +747,7 @@ const spec = {
             } else {
               // unsupported bid format - send notification and set CPM to zero
               const payload = getNotificationPayload(bid);
-              payload.event = 'bidDropped';
-              payload.responseType = 'incorrect format';
+              payload.event = 'parseError';
               sendNotification(payload);
               bid.cpm = 0;
             }
@@ -768,13 +765,12 @@ const spec = {
 
     return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
   },
-  getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs(syncOptions) {
     let mySyncs = [];
-    // TODO: the check on CMP api version does not seem to make sense here. It means "always run the usersync unless an old (v1) CMP was detected". No attention is paid to the consent choices.
-    if (syncOptions.iframeEnabled && consentApiVersion != 1) {
+    if (syncOptions.iframeEnabled) {
       mySyncs.push({
         type: 'iframe',
-        url: `${SYNC_URL}?tcf=${consentApiVersion}&pvid=${pageView.id}&sn=${pageView.sn}`,
+        url: `${SYNC_URL}?tcf=2&pvid=${pageView.id}&sn=${pageView.sn}`,
       });
     };
     return mySyncs;
@@ -792,8 +788,7 @@ const spec = {
   onBidderError(errorData) {
     const payload = getNotificationPayload(errorData);
     if (payload) {
-      payload.event = 'bidDropped';
-      payload.responseType = 'bidder error';
+      payload.event = 'parseError';
       sendNotification(payload);
       return payload;
     }
