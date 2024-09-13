@@ -244,6 +244,11 @@ const AUCTION_INIT_ANOTHER = {
       'params': {
         ...PARAMS_ADG
       },
+    }, {
+      'bidder': 'anotherWithAlias',
+      'params': {
+        'publisherId': '1001'
+      },
     }, ],
     'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
     'ortb2Imp': {
@@ -340,7 +345,25 @@ const AUCTION_INIT_ANOTHER = {
       'auctionId': AUCTION_ID,
       'src': 'client',
       'bidRequestsCount': 1
-    }
+    }, {
+      'bidder': 'anotherWithAlias',
+      'params': {
+        'publisherId': '1001',
+      },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[640, 480]]
+        }
+      },
+      'adUnitCode': '/19968336/header-bid-tag-1',
+      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+      'sizes': [[640, 480]],
+      'bidId': '2ecff0db240757',
+      'bidderRequestId': '1be65d7958826a',
+      'auctionId': AUCTION_ID,
+      'src': 'client',
+      'bidRequestsCount': 1
+    },
     ],
     'timeout': 3000,
     'refererInfo': {
@@ -682,10 +705,12 @@ describe('adagio analytics adapter', () => {
           site: 'test-com',
         }
       });
+      adapterManager.aliasRegistry['anotherWithAlias'] = 'another';
     });
 
     afterEach(() => {
       adagioAnalyticsAdapter.disableAnalytics();
+      delete adapterManager.aliasRegistry['anotherWithAlias'];
     });
 
     it('builds and sends auction data', () => {
@@ -715,7 +740,8 @@ describe('adagio analytics adapter', () => {
         expect(search.plcmt).to.equal('pave_top');
         expect(search.mts).to.equal('ban');
         expect(search.ban_szs).to.equal('640x100,640x480');
-        expect(search.bdrs).to.equal('adagio,another,nobid');
+        expect(search.bdrs).to.equal('adagio,another,anotherWithAlias,nobid');
+        expect(search.bdrs_code).to.equal('adagio,another,another,nobid');
         expect(search.adg_mts).to.equal('ban');
       }
 
@@ -736,8 +762,8 @@ describe('adagio analytics adapter', () => {
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.e_sid).to.equal('42');
         expect(search.e_pba_test).to.equal('true');
-        expect(search.bdrs_bid).to.equal('1,1,0');
-        expect(search.bdrs_cpm).to.equal('1.42,2.052,');
+        expect(search.bdrs_bid).to.equal('1,1,0,0');
+        expect(search.bdrs_cpm).to.equal('1.42,2.052,,');
       }
 
       {
@@ -796,6 +822,7 @@ describe('adagio analytics adapter', () => {
         expect(search.mts).to.equal('ban');
         expect(search.ban_szs).to.equal('640x100,640x480');
         expect(search.bdrs).to.equal('adagio,another');
+        expect(search.bdrs_code).to.equal('adagio,another');
         expect(search.adg_mts).to.equal('ban');
         expect(search.t_n).to.equal('test');
         expect(search.t_v).to.equal('version');
@@ -819,6 +846,7 @@ describe('adagio analytics adapter', () => {
         expect(search.mts).to.equal('ban');
         expect(search.ban_szs).to.equal('640x480');
         expect(search.bdrs).to.equal('another');
+        expect(search.bdrs_code).to.equal('another');
         expect(search.adg_mts).to.not.exist;
       }
 
@@ -839,7 +867,8 @@ describe('adagio analytics adapter', () => {
         expect(search.plcmt).to.equal('pave_top');
         expect(search.mts).to.equal('ban');
         expect(search.ban_szs).to.equal('640x100,640x480');
-        expect(search.bdrs).to.equal('adagio,another,nobid');
+        expect(search.bdrs).to.equal('adagio,another,anotherWithAlias,nobid');
+        expect(search.bdrs_code).to.equal('adagio,another,another,nobid');
         expect(search.adg_mts).to.equal('ban');
       }
 
@@ -864,8 +893,8 @@ describe('adagio analytics adapter', () => {
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.e_sid).to.equal('42');
         expect(search.e_pba_test).to.equal('true');
-        expect(search.bdrs_bid).to.equal('0,0,0');
-        expect(search.bdrs_cpm).to.equal(',,');
+        expect(search.bdrs_bid).to.equal('0,0,0,0');
+        expect(search.bdrs_cpm).to.equal(',,,');
       }
 
       {
@@ -939,8 +968,8 @@ describe('adagio analytics adapter', () => {
         expect(search.v).to.equal('2');
         expect(search.e_sid).to.equal('42');
         expect(search.e_pba_test).to.equal('true');
-        expect(search.bdrs_bid).to.equal('1,1,0');
-        expect(search.bdrs_cpm).to.equal('1.42,,');
+        expect(search.bdrs_bid).to.equal('1,1,0,0');
+        expect(search.bdrs_cpm).to.equal('1.42,,,');
       }
     });
   });
