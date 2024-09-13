@@ -3,6 +3,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,33 +20,6 @@ const CACHE_URL = 'https://prisma.nexx360.io/cache';
 const METRICS_TRACKER_URL = 'https://prisma.nexx360.io/track-imp';
 
 const GVLID = 965;
-
-function getConnectionType() {
-  const connection = navigator.connection || navigator.webkitConnection;
-  if (!connection) {
-    return 0;
-  }
-  switch (connection.type) {
-    case 'ethernet':
-      return 1;
-    case 'wifi':
-      return 2;
-    case 'cellular':
-      switch (connection.effectiveType) {
-        case 'slow-2g':
-        case '2g':
-          return 4;
-        case '3g':
-          return 5;
-        case '4g':
-          return 6;
-        default:
-          return 3;
-      }
-    default:
-      return 0;
-  }
-}
 
 export const spec = {
   code: BIDDER_CODE,

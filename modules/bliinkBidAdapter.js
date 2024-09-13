@@ -1,8 +1,6 @@
-// eslint-disable-next-line prebid/validate-imports
-// eslint-disable-next-line prebid/validate-imports
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { config } from '../src/config.js'
-import { _each, deepAccess, deepSetValue, getWindowSelf, getWindowTop } from '../src/utils.js'
+import { _each, canAccessWindowTop, deepAccess, deepSetValue, getDomLoadingDuration, getWindowSelf, getWindowTop } from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
 export const GVL_ID = 658
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid'
@@ -123,35 +121,6 @@ export function getKeywords() {
   return [];
 }
 
-function canAccessTopWindow() {
-  try {
-    if (getWindowTop().location.href) {
-      return true;
-    }
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * domLoading feature is computed on window.top if reachable.
- */
-export function getDomLoadingDuration() {
-  let domLoadingDuration = -1;
-  let performance;
-
-  performance = (canAccessTopWindow()) ? getWindowTop().performance : getWindowSelf().performance;
-
-  if (performance && performance.timing && performance.timing.navigationStart > 0) {
-    const val = performance.timing.domLoading - performance.timing.navigationStart;
-    if (val > 0) {
-      domLoadingDuration = val;
-    }
-  }
-
-  return domLoadingDuration;
-}
-
 /**
  * @param bidResponse
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
@@ -210,7 +179,8 @@ export const isBidRequestValid = (bid) => {
  */
 export const buildRequests = (validBidRequests, bidderRequest) => {
   if (!validBidRequests || !bidderRequest || !bidderRequest.bids) return null
-  const domLoadingDuration = getDomLoadingDuration().toString();
+  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
+  const domLoadingDuration = getDomLoadingDuration(w).toString();
   const tags = bidderRequest.bids.map((bid) => {
     let bidFloor;
     const sizes = bid.sizes.map((size) => ({ w: size[0], h: size[1] }));
