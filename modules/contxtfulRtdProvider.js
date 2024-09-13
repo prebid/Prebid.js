@@ -1,8 +1,8 @@
 /**
- * Contxtful Technologies Inc
- * This RTD module provides receptivity feature that can be accessed using the
- * getReceptivity() function. The value returned by this function enriches the ad-units
- * that are passed within the `getTargetingData` functions and GAM.
+ * Contxtful Technologies Inc.
+ * This RTD module provides receptivity that can be accessed using the
+ * getTargetingData and getBidRequestData functions. The receptivity enriches ad units
+ * and bid requests.
  */
 
 import { submodule } from '../src/hook.js';
@@ -10,18 +10,86 @@ import {
   logInfo,
   logError,
   isStr,
+  mergeDeep,
   isEmptyStr,
+  isEmpty,
   buildUrl,
+  isArray,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
 const CONTXTFUL_RECEPTIVITY_DOMAIN = 'api.receptivity.io';
 
-let initialReceptivity = null;
-let contxtfulModule = null;
+const storageManager = getStorageManager({
+  moduleType: MODULE_TYPE_RTD,
+  moduleName: MODULE_NAME
+});
+
+let rxApi = null;
+let isFirstBidRequestCall = true;
+
+/**
+ * Return current receptivity value for the requester.
+ * @param { String } requester
+ * @return { { Object } }
+ */
+function getRxEngineReceptivity(requester) {
+  return rxApi?.receptivity(requester);
+}
+
+function getItemFromSessionStorage(key) {
+  let value = null;
+  try {
+    // Use the Storage Manager
+    value = storageManager.getDataFromSessionStorage(key, null);
+  } catch (error) {
+  }
+
+  return value;
+}
+
+function loadSessionReceptivity(requester) {
+  let sessionStorageValue = getItemFromSessionStorage(requester);
+  if (!sessionStorageValue) {
+    return null;
+  }
+
+  try {
+    // Check expiration of the cached value
+    let sessionStorageReceptivity = JSON.parse(sessionStorageValue);
+    let expiration = parseInt(sessionStorageReceptivity?.exp);
+    if (expiration < new Date().getTime()) {
+      return null;
+    }
+
+    let rx = sessionStorageReceptivity?.rx;
+    return rx;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Prepare a receptivity batch
+ * @param {Array.<String>} requesters
+ * @param {Function} method
+ * @returns A batch
+ */
+function prepareBatch(requesters, method) {
+  return requesters.reduce((acc, requester) => {
+    const receptivity = method(requester);
+    if (!isEmpty(receptivity)) {
+      return { ...acc, [requester]: receptivity };
+    } else {
+      return acc;
+    }
+  }, {});
+}
 
 /**
  * Init function used to start sub module
@@ -30,12 +98,10 @@ let contxtfulModule = null;
  */
 function init(config) {
   logInfo(MODULE, 'init', config);
-  initialReceptivity = null;
-  contxtfulModule = null;
+  rxApi = null;
 
   try {
-    const {version, customer, hostname} = extractParameters(config);
-    initCustomer(version, customer, hostname);
+    initCustomer(config);
     return true;
   } catch (error) {
     logError(MODULE, error);
@@ -51,7 +117,7 @@ function init(config) {
  * @return { { version: String, customer: String, hostname: String } }
  * @throws params.{name} should be a non-empty string
  */
-function extractParameters(config) {
+export function extractParameters(config) {
   const version = config?.params?.version;
   if (!isStr(version) || isEmptyStr(version)) {
     throw Error(`${MODULE}: params.version should be a non-empty string`);
@@ -64,87 +130,163 @@ function extractParameters(config) {
 
   const hostname = config?.params?.hostname || CONTXTFUL_RECEPTIVITY_DOMAIN;
 
-  return {version, customer, hostname};
+  return { version, customer, hostname };
 }
 
 /**
  * Initialize sub module for a customer.
  * This will load the external resources for the sub module.
- * @param { String } version
- * @param { String } customer
- * @param { String } hostname
+ * @param { String } config
  */
-function initCustomer(version, customer, hostname) {
+function initCustomer(config) {
+  const { version, customer, hostname } = extractParameters(config);
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
     host: hostname,
-    pathname: `/${version}/prebid/${customer}/connector/p.js`,
+    pathname: `/${version}/prebid/${customer}/connector/rxConnector.js`,
   });
 
-  const externalScript = loadExternalScript(CONNECTOR_URL, MODULE_NAME);
-  addExternalScriptEventListener(externalScript);
+  addConnectorEventListener(customer, config);
+  loadExternalScript(CONNECTOR_URL, MODULE_NAME);
 }
 
 /**
  * Add event listener to the script tag for the expected events from the external script.
- * @param { HTMLScriptElement } script
+ * @param { String } tagId
+ * @param { String } prebidConfig
  */
-function addExternalScriptEventListener(script) {
-  if (!script) {
-    return;
-  }
-
-  script.addEventListener('initialReceptivity', ({ detail }) => {
-    let receptivityState = detail?.ReceptivityState;
-    if (isStr(receptivityState) && !isEmptyStr(receptivityState)) {
-      initialReceptivity = receptivityState;
+function addConnectorEventListener(tagId, prebidConfig) {
+  window.addEventListener(
+    'rxConnectorIsReady',
+    async ({ detail: { [tagId]: rxConnector } }) => {
+      if (!rxConnector) {
+        return;
+      }
+      // Fetch the customer configuration
+      const { rxApiBuilder, fetchConfig } = rxConnector;
+      let config = await fetchConfig(tagId);
+      if (!config) {
+        return;
+      }
+      config['prebid'] = prebidConfig || {};
+      rxApi = await rxApiBuilder(config);
     }
-  });
-
-  script.addEventListener('rxEngineIsReady', ({ detail: api }) => {
-    contxtfulModule = api;
-  });
-}
-
-/**
- * Return current receptivity.
- * @return { { ReceptivityState: String } }
- */
-function getReceptivity() {
-  return {
-    ReceptivityState: contxtfulModule?.GetReceptivity()?.ReceptivityState || initialReceptivity
-  };
+  );
 }
 
 /**
  * Set targeting data for ad server
  * @param { [String] } adUnits
- * @param {*} _config
+ * @param {*} config
  * @param {*} _userConsent
- *  @return {{ code: { ReceptivityState: String } }}
+ * @return {{ code: { ReceptivityState: String } }}
  */
-function getTargetingData(adUnits, _config, _userConsent) {
-  logInfo(MODULE, 'getTargetingData');
-  if (!adUnits) {
+function getTargetingData(adUnits, config, _userConsent) {
+  try {
+    if (String(config?.params?.adServerTargeting) === 'false') {
+      return {};
+    }
+    logInfo(MODULE, 'getTargetingData');
+
+    const requester = config?.params?.customer;
+    const rx = getRxEngineReceptivity(requester) ||
+      loadSessionReceptivity(requester) || {};
+    if (isEmpty(rx)) {
+      return {};
+    }
+
+    return adUnits.reduce((targets, code) => {
+      targets[code] = rx;
+      return targets;
+    }, {});
+  } catch (error) {
+    logError(MODULE, error);
     return {};
   }
-
-  const receptivity = getReceptivity();
-  if (!receptivity?.ReceptivityState) {
-    return {};
-  }
-
-  return adUnits.reduce((targets, code) => {
-    targets[code] = receptivity;
-    return targets;
-  }, {});
 }
+
+/**
+ * @param {Object} reqBidsConfigObj Bid request configuration object
+ * @param {Function} onDone Called on completion
+ * @param {Object} config Configuration for Contxtful RTD module
+ * @param {Object} userConsent
+ */
+function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
+  function onReturn() {
+    if (isFirstBidRequestCall) {
+      isFirstBidRequestCall = false;
+    };
+    onDone();
+  }
+  logInfo(MODULE, 'getBidRequestData');
+  const bidders = config?.params?.bidders || [];
+  if (isEmpty(bidders) || !isArray(bidders)) {
+    onReturn();
+    return;
+  }
+
+  let fromApiBatched = () => rxApi?.receptivityBatched?.(bidders);
+  let fromApiSingle = () => prepareBatch(bidders, getRxEngineReceptivity);
+  let fromStorage = () => prepareBatch(bidders, loadSessionReceptivity);
+
+  function tryMethods(methods) {
+    for (let method of methods) {
+      try {
+        let batch = method();
+        if (!isEmpty(batch)) {
+          return batch;
+        }
+      } catch (error) { }
+    }
+    return {};
+  }
+  let rxBatch = {};
+  try {
+    if (isFirstBidRequestCall) {
+      rxBatch = tryMethods([fromStorage, fromApiBatched, fromApiSingle]);
+    } else {
+      rxBatch = tryMethods([fromApiBatched, fromApiSingle, fromStorage])
+    }
+  } catch (error) { }
+
+  if (isEmpty(rxBatch)) {
+    onReturn();
+    return;
+  }
+
+  bidders
+    .map((bidderCode) => ({ bidderCode, rx: rxBatch[bidderCode] }))
+    .filter(({ rx }) => !isEmpty(rx))
+    .forEach(({ bidderCode, rx }) => {
+      const ortb2 = {
+        user: {
+          data: [
+            {
+              name: MODULE_NAME,
+              ext: {
+                rx,
+                params: {
+                  ev: config.params?.version,
+                  ci: config.params?.customer,
+                },
+              },
+            },
+          ],
+        },
+      };
+      mergeDeep(reqBidsConfigObj.ortb2Fragments?.bidder, {
+        [bidderCode]: ortb2,
+      });
+    });
+
+  onReturn();
+};
 
 export const contxtfulSubmodule = {
   name: MODULE_NAME,
   init,
-  extractParameters,
   getTargetingData,
+  getBidRequestData,
 };
 
 submodule('realTimeData', contxtfulSubmodule);

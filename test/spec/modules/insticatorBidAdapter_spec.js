@@ -175,25 +175,6 @@ describe('InsticatorBidAdapter', function () {
       })).to.be.true;
     })
 
-    it('should return false if video placement is not a number', () => {
-      expect(spec.isBidRequestValid({
-        ...bidRequest,
-        ...{
-          mediaTypes: {
-            video: {
-              mimes: [
-                'video/mp4',
-                'video/mpeg',
-              ],
-              w: 250,
-              h: 300,
-              placement: 'NaN',
-            },
-          }
-        }
-      })).to.be.false;
-    });
-
     it('should return false if video plcmt is not a number', () => {
       expect(spec.isBidRequestValid({
         ...bidRequest,
@@ -224,7 +205,7 @@ describe('InsticatorBidAdapter', function () {
                 'video/mpeg',
               ],
               playerSize: [250, 300],
-              placement: 1,
+              plcmt: 1,
             },
           }
         }
@@ -293,7 +274,7 @@ describe('InsticatorBidAdapter', function () {
                 'video/mpeg',
               ],
               playerSize: [250, 300],
-              placement: 1,
+              plcmt: 1,
             },
           }
         },
@@ -306,7 +287,7 @@ describe('InsticatorBidAdapter', function () {
               'video/x-flv',
               'video/webm',
             ],
-            placement: 2,
+            plcmt: 2,
           },
         }
       })).to.be.true;
@@ -408,7 +389,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);
-      expect(data.device.js).to.equal(true);
+      expect(data.device.js).to.equal(1);
       expect(data.device.ext).to.be.an('object');
       expect(data.device.ext.localStorage).to.equal(true);
       expect(data.device.ext.cookies).to.equal(false);
@@ -458,6 +439,13 @@ describe('InsticatorBidAdapter', function () {
           insticator: {
             adUnitId: bidRequest.params.adUnitId,
           },
+          prebid: {
+            bidder: {
+              insticator: {
+                adUnitId: bidRequest.params.adUnitId,
+              }
+            }
+          }
         }
       }]);
       expect(data.ext).to.be.an('object');
@@ -784,6 +772,37 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext).to.have.property('gdpr');
       expect(data.regs.ext).to.have.property('us_privacy');
       expect(data.regs.ext).to.have.property('gppSid');
+    });
+
+    it('should return true if publisherId is absent', () => {
+      expect(spec.isBidRequestValid(bidRequest)).to.be.true;
+    })
+
+    it('should have publisher object with id in site object, if publisherId present in params', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      tempBiddRequest.params = {
+        ...tempBiddRequest.params,
+        publisherId: '86dd03a1-053f-4e3e-90e7-389070a0c62c'
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.site.publisher).to.be.an('object');
+      expect(data.site.publisher.id).to.equal(tempBiddRequest.params.publisherId)
+    });
+
+    it('should have publisher object should be empty, if publisherId is empty string', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      tempBiddRequest.params = {
+        ...tempBiddRequest.params,
+        publisherId: ''
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.site.publisher).to.not.an('object');
     });
   });
 

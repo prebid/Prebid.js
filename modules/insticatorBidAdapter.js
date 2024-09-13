@@ -102,24 +102,13 @@ function buildVideo(bidRequest) {
   let w = deepAccess(bidRequest, 'mediaTypes.video.w');
   let h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
-  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
+  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
   const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
   const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
 
-  if (!w && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      w = parseInt(playerSize[0][0], 10);
-    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
-      w = parseInt(playerSize[0], 10);
-    }
-  }
-  if (!h && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      h = parseInt(playerSize[0][1], 10);
-    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
-      h = parseInt(playerSize[1], 10);
-    }
+  if (!h && !w && playerSize) {
+    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
@@ -136,6 +125,10 @@ function buildVideo(bidRequest) {
     }
   }
 
+  if (placement && typeof placement !== 'undefined' && typeof placement === 'number') {
+    optionalParams['placement'] = placement;
+  }
+
   if (plcmt) {
     optionalParams['plcmt'] = plcmt;
   }
@@ -145,7 +138,6 @@ function buildVideo(bidRequest) {
   }
 
   let videoObj = {
-    placement,
     mimes,
     w,
     h,
@@ -168,6 +160,14 @@ function buildImpression(bidRequest) {
         adUnitId: bidRequest.params.adUnitId,
       },
     },
+  }
+
+  if (bidRequest?.params?.adUnitId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.adUnitId', bidRequest.params.adUnitId);
+  }
+
+  if (bidRequest?.params?.publisherId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.publisherId', bidRequest.params.publisherId);
   }
 
   let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
@@ -244,7 +244,7 @@ function buildDevice(bidRequest) {
   const device = {
     w: window.innerWidth,
     h: window.innerHeight,
-    js: true,
+    js: 1,
     ext: {
       localStorage: storage.localStorageIsEnabled(),
       cookies: storage.cookiesAreEnabled(),
@@ -436,6 +436,10 @@ function buildRequest(validBidRequests, bidderRequest) {
     deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
+  if (validBidRequests[0]?.params?.publisherId) {
+    deepSetValue(req, 'site.publisher.id', validBidRequests[0].params.publisherId);
+  }
+
   return req;
 }
 
@@ -562,24 +566,12 @@ function validateVideo(bid) {
   let w = deepAccess(bid, 'mediaTypes.video.w');
   let h = deepAccess(bid, 'mediaTypes.video.h');
   const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  if (!w && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      w = parseInt(playerSize[0][0], 10);
-    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
-      w = parseInt(playerSize[0], 10);
-    }
+
+  if (!h && !w && playerSize) {
+    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
-  if (!h && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      h = parseInt(playerSize[0][1], 10);
-    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
-      h = parseInt(playerSize[1], 10);
-    }
-  }
-  const videoSize = [
-    w,
-    h,
-  ];
+
+  const videoSize = [w, h];
 
   if (
     !validateSize(videoSize)
@@ -592,13 +584,6 @@ function validateVideo(bid) {
 
   if (!Array.isArray(mimes) || mimes.length === 0) {
     logError('insticator: mimes not specified');
-    return false;
-  }
-
-  const placement = deepAccess(bid, 'mediaTypes.video.placement');
-
-  if (typeof placement !== 'undefined' && typeof placement !== 'number') {
-    logError('insticator: video placement is not a number');
     return false;
   }
 
@@ -623,6 +608,25 @@ function validateVideo(bid) {
   }
 
   return true;
+}
+
+function parsePlayerSizeToWidthHeight(playerSize, w, h) {
+  if (!w && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      w = parseInt(playerSize[0][0], 10);
+    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
+      w = parseInt(playerSize[0], 10);
+    }
+  }
+  if (!h && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      h = parseInt(playerSize[0][1], 10);
+    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
+      h = parseInt(playerSize[1], 10);
+    }
+  }
+
+  return { w, h };
 }
 
 export const spec = {

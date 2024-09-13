@@ -1,9 +1,15 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import {
   spec,
-  getBidFloor as connatixGetBidFloor
+  detectViewability as connatixDetectViewability,
+  getBidFloor as connatixGetBidFloor,
+  _getMinSize as connatixGetMinSize,
+  _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
+  _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
+  _getViewability as connatixGetViewability,
 } from '../../../modules/connatixBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -24,6 +30,303 @@ describe('connatixBidAdapter', function () {
     };
   };
 
+  function addVideoToBidMock(bid) {
+    const mediaTypes = {
+      video: {
+        context: 'instream',
+        w: 1280,
+        h: 720,
+        playerSize: [1280, 720],
+        placement: 1,
+        plcmt: 1,
+        api: [1, 2],
+        mimes: ['video/mp4', 'application/javascript'],
+        minduration: 30,
+        maxduration: 60,
+        startdelay: 0,
+      }
+    }
+
+    bid.mediaTypes = mediaTypes;
+  }
+
+  describe('connatixGetMinSize', () => {
+    it('should return the smallest size based on area', () => {
+      const sizes = [
+        { w: 300, h: 250 },
+        { w: 728, h: 90 },
+        { w: 160, h: 600 }
+      ];
+      const result = connatixGetMinSize(sizes);
+      expect(result).to.deep.equal({ w: 728, h: 90 });
+    });
+
+    it('should handle an array with one size', () => {
+      const sizes = [{ w: 300, h: 250 }];
+      const result = connatixGetMinSize(sizes);
+      expect(result).to.deep.equal({ w: 300, h: 250 });
+    });
+
+    it('should handle empty array', () => {
+      const sizes = [];
+      const result = connatixGetMinSize(sizes);
+      expect(result).to.be.undefined;
+    });
+  });
+
+  describe('_isIframe', () => {
+    let querySelectorStub;
+
+    beforeEach(() => {
+      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
+    });
+
+    afterEach(() => {
+      querySelectorStub.restore();
+    });
+
+    it('should return true when window.top.document.querySelector does not throw an error', () => {
+      querySelectorStub.returns({});
+      expect(connatixCanSelectViewabilityContainer()).to.be.true;
+    });
+
+    it('should return false when window.top.document.querySelector throws an error', () => {
+      querySelectorStub.throws(new Error('test error'));
+      expect(connatixCanSelectViewabilityContainer()).to.be.false;
+    });
+  });
+
+  describe('_isViewabilityMeasurable', () => {
+    let querySelectorStub;
+
+    beforeEach(() => {
+      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
+    });
+
+    afterEach(() => {
+      querySelectorStub.restore();
+    });
+
+    it('should return false if the element is null or undefined', () => {
+      expect(connatixIsViewabilityMeasurable(null)).to.be.false;
+      expect(connatixIsViewabilityMeasurable(undefined)).to.be.false;
+    });
+
+    it('should return false if _isIframe returns true', () => {
+      querySelectorStub.throws(new Error('test error'));
+
+      const element = document.createElement('div');
+      expect(connatixIsViewabilityMeasurable(element)).to.be.false;
+    });
+
+    it('should return true if _isIframe returns false', () => {
+      querySelectorStub.returns(document.createElement('div'))
+
+      const element = document.createElement('div');
+      expect(connatixIsViewabilityMeasurable(element)).to.be.true;
+    });
+  });
+
+  describe('_getViewability', () => {
+    let element;
+    let getBoundingClientRectStub;
+    let topWinMock;
+
+    beforeEach(() => {
+      element = document.createElement('div');
+      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+
+      topWinMock = {
+        document: {
+          visibilityState: 'visible'
+        },
+        innerWidth: 800,
+        innerHeight: 600
+      };
+    });
+
+    afterEach(() => {
+      getBoundingClientRectStub.restore();
+    });
+
+    it('should return 0 if the document is not visible', () => {
+      topWinMock.document.visibilityState = 'hidden';
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(0);
+    });
+
+    it('should return 100% if the element is fully in view', () => {
+      const boundingBox = { left: 100, top: 100, right: 300, bottom: 300, width: 200, height: 200 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(100);
+    });
+
+    it('should return the correct percentage if the element is partially in view', () => {
+      const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
+    });
+
+    it('should return 0% if the element is not in view', () => {
+      const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(0);
+    });
+
+    it('should use provided width and height if element dimensions are zero', () => {
+      const boundingBox = { left: 100, top: 100, right: 100, bottom: 100, width: 0, height: 0 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const dimensions = { w: 200, h: 200 };
+      const viewability = connatixGetViewability(element, topWinMock, dimensions);
+
+      expect(viewability).to.equal(100); // Element fully in view with provided dimensions
+    });
+  });
+
+  describe('detectViewability', () => {
+    let element;
+    let getBoundingClientRectStub;
+    let topWinMock;
+    let querySelectorStub;
+    let getElementByIdStub;
+
+    beforeEach(() => {
+      element = document.createElement('div');
+      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+
+      topWinMock = {
+        document: {
+          visibilityState: 'visible'
+        },
+        innerWidth: 800,
+        innerHeight: 600
+      };
+
+      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
+      getElementByIdStub = sinon.stub(document, 'getElementById');
+    });
+
+    afterEach(() => {
+      getBoundingClientRectStub.restore();
+      querySelectorStub.restore();
+      getElementByIdStub.restore();
+    });
+
+    it('should return 100% viewability when the element is fully within view and has a valid viewabilityContainerIdentifier', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#validElement' },
+        adUnitCode: 'adUnitCode123',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]]
+      };
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      querySelectorStub.withArgs('#validElement').returns(element);
+      getElementByIdStub.returns(null);
+
+      const result = connatixDetectViewability(bid);
+
+      // Expected calculation: the element is fully in view, so 100% viewability
+      expect(result).to.equal(100);
+    });
+
+    it('should fall back to using bid sizes and adUnitCode when the viewabilityContainerIdentifier is invalid or was not provided', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#invalidElement' },
+        adUnitCode: 'adUnitCode123',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]]
+      };
+
+      getBoundingClientRectStub.returns({
+        left: 200,
+        top: 100,
+        right: 500,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      querySelectorStub.withArgs('#invalidElement').returns(null);
+      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+
+      const result = connatixDetectViewability(bid);
+
+      expect(result).to.equal(100); // Full viewability
+    });
+
+    it('should use the adUnitCode as a fallback when querying an element fails due to a browser error, and return 100% viewability because adUnitCode container is fully in view', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#invalidElement' },
+        adUnitCode: 'adUnitCode123',
+        sizes: [[300, 250]]
+      };
+
+      // Simulate an error when querying the element
+      querySelectorStub.withArgs('#invalidElement').throws(new Error('Query failed'));
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      // The fallback should use the adUnitCode to find the element
+      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+
+      const result = connatixDetectViewability(bid);
+
+      expect(result).to.equal(100); // Expect the fallback to work and return 100% viewability
+    });
+
+    it('should return null when querying the element by the provided identifier fails and the adUnitCode viewability container is unavailable', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#invalidElement' },
+        adUnitCode: 'adUnitCode123',
+        sizes: [[300, 250]]
+      };
+
+      // Simulate an error when querying the element
+      querySelectorStub.withArgs('#invalidElement').throws(new Error('Query failed'));
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      const result = connatixDetectViewability(bid);
+
+      expect(result).to.equal(null);
+    });
+  });
+
   describe('isBidRequestValid', function () {
     this.beforeEach(function () {
       bid = mockBidRequest();
@@ -31,10 +334,6 @@ describe('connatixBidAdapter', function () {
 
     it('Should return true if all required fileds are present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-    it('Should return false if bidder does not correspond', function () {
-      bid.bidder = 'abc';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return false if bidId is missing', function () {
       delete bid.bidId;
@@ -52,7 +351,7 @@ describe('connatixBidAdapter', function () {
       delete bid.mediaTypes;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
-    it('Should return false if banner is missing from mediaTypes ', function () {
+    it('Should return false if both banner and video are missing from mediaTypes', function () {
       delete bid.mediaTypes.banner;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
@@ -66,6 +365,15 @@ describe('connatixBidAdapter', function () {
     });
     it('Should return false if sizes is an empty array', function () {
       bid.mediaTypes.banner.sizes = [];
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+    it('Should return true if video is set correctly', function () {
+      addVideoToBidMock(bid);
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+    it('Should return false if context is set to adpod on video media type', function() {
+      addVideoToBidMock(bid);
+      bid.mediaTypes.video.context = ADPOD;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return true if add an extra field was added to the bidRequest', function () {
@@ -197,6 +505,30 @@ describe('connatixBidAdapter', function () {
       expect(bidResponses[0].cpm).to.equal(firstBidCpm);
       expect(bidResponses[1].cpm).to.equal(secondBidCpm);
     });
+
+    it('Should contain specific values for banner bids', function () {
+      const adHtml = 'ad html'
+      serverResponse.body.Bids = [ { ...Bid, Ad: adHtml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.vastXml).to.be.undefined;
+      expect(bidResponse.ad).to.equal(adHtml);
+      expect(bidResponse.mediaType).to.equal(BANNER);
+    });
+
+    it('Should contain specific values for video bids', function () {
+      const adVastXml = 'ad vast xml'
+      serverResponse.body.Bids = [ { ...Bid, VastXml: adVastXml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.ad).to.be.undefined;
+      expect(bidResponse.vastXml).to.equal(adVastXml);
+      expect(bidResponse.mediaType).to.equal(VIDEO);
+    });
   });
 
   describe('getUserSyncs', function() {
@@ -300,6 +632,38 @@ describe('connatixBidAdapter', function () {
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+    });
+  });
+
+  describe('userIdAsEids', function() {
+    let validBidRequests;
+
+    this.beforeEach(function () {
+      bid = mockBidRequest();
+      validBidRequests = [bid];
+    })
+
+    it('Connatix adapter reads EIDs from Prebid user models and adds it to Request', function() {
+      validBidRequests[0].userIdAsEids = [{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID_FROM_USER_ID_MODULE',
+          'atype': 1,
+          'ext': {
+            'stype': 'ppuid',
+            'rtiPartner': 'TDID'
+          }
+        }]
+      },
+      {
+        'source': 'pubserver.org',
+        'uids': [{
+          'id': 'TDID_FROM_USER_ID_MODULE',
+          'atype': 1
+        }]
+      }];
+      let serverRequest = spec.buildRequests(validBidRequests, {});
+      expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
   });
 

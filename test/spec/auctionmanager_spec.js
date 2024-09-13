@@ -12,7 +12,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import * as store from 'src/videoCache.js';
+import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
@@ -24,6 +24,10 @@ import {expect} from 'chai';
 import {deepClone} from '../../src/utils.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
+import '../../modules/currency.js'
+import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
+import { REJECTION_REASON } from '../../src/constants.js';
+import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -885,6 +889,20 @@ describe('auctionmanager.js', function () {
         })
       });
 
+      it('are not dropped after `minBidCacheTTL` seconds if the page was hidden', () => {
+        auction.callBids();
+        config.setConfig({
+          minBidCacheTTL: 10
+        });
+        return auction.end.then(() => {
+          expect(auctionManager.getNoBids().length).to.eql(1);
+          setDocumentHidden(true);
+          clock.tick(10 * 10000);
+          setDocumentHidden(false);
+          expect(auctionManager.getNoBids().length).to.eql(1);
+        })
+      });
+
       Object.entries({
         'bids': {
           bd: [{
@@ -1467,6 +1485,16 @@ describe('auctionmanager.js', function () {
       config.getConfig.restore();
       store.store.restore();
     });
+
+    it('should reject bid for price higher than limit for the same currency', () => {
+      sinon.stub(auction, 'addBidRejected');
+      config.setConfig({
+        maxBid: 1
+      });
+
+      auction.callBids();
+      sinon.assert.calledWith(auction.addBidRejected, sinon.match({rejectionReason: REJECTION_REASON.PRICE_TOO_HIGH}));
+    })
   });
 
   describe('addBidRequests', function () {

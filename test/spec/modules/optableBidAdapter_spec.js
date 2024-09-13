@@ -78,10 +78,10 @@ describe('optableBidAdapter', function() {
       }
     };
 
-    it('maps fledgeAuctionConfigs from ext.optable.fledge.auctionconfigs', function() {
+    it('maps paapi from ext.optable.fledge.auctionconfigs', function() {
       const request = spec.buildRequests([validBid], bidderRequest);
       const result = spec.interpretResponse(response, request);
-      expect(result.fledgeAuctionConfigs).to.deep.equal([
+      expect(result.paapi).to.deep.equal([
         { bidId: 'bid123', config: { seller: 'https://ads.optable.co' } }
       ]);
     });

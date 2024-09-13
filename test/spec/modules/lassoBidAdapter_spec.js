@@ -62,14 +62,14 @@ describe('lassoBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should return true when there are extra params', function () {
-      const bid = Object.assign({}, bid, {
+      const invalidBid = Object.assign({}, bid, {
         params: {
           adUnitId: 123456,
           zone: 1,
           publisher: 'test'
         }
       })
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
     it('should return false when there are no params', function () {
       const invalidBid = { ...bid };
