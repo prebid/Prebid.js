@@ -35,7 +35,9 @@ gulp build --modules="rtdModule,51DegreesRtdProvider,appnexusBidAdapter,..."
 ### Prerequisites
 
 #### Resource Key
-In order to use the module please first obtain a Resource Key using the [Configurator tool](https://configure.51degrees.com/tWrhNfY6) - choose the following properties:
+
+In order to use the module please first obtain a Resource Key using the [Configurator tool](https://configure.51degrees.com/HNZ75HT1) - choose the following properties:
+
 * DeviceId
 * DeviceType
 * HardwareVendor
@@ -45,11 +47,13 @@ In order to use the module please first obtain a Resource Key using the [Configu
 * PlatformVersion
 * ScreenPixelsHeight
 * ScreenPixelsWidth
+* ScreenPixelsPhysicalHeight
+* ScreenPixelsPhysicalWidth
 * ScreenInchesHeight
 * ScreenInchesWidth
-* PixelRatio (optional)
+* PixelRatio
 
-PixelRatio is desirable, but it's a paid property requiring a paid license.  Free API service is limited. Please check [51Degrees pricing](https://51degrees.com/pricing) to choose a plan that suits your needs.
+The Cloud API is **free** to integrate and use. To increase limits please check [51Degrees pricing](https://51degrees.com/pricing).
 
 #### User Agent Client Hint (UA-CH) Permissions
 
@@ -89,20 +93,20 @@ In summary we recommend using `Delegate-CH` http-equiv as the preferred method o
 
 ### Configuration
 
-This module is configured as part of the `realTimeData.dataProviders`
+This module is configured as part of the `realTimeData.dataProviders`.  We recommend setting `auctionDelay` to at least 250 ms and make sure `waitForIt` is set to `true` for the `51Degrees` RTD provider.
 
 ```javascript
 pbjs.setConfig({
-    debug: true, // turn on for testing, remove in production
+    debug: false, // turn on for testing, remove in production
     realTimeData: {
-        auctionDelay: 1000, // should be set lower in production use
+        auctionDelay: 250,
         dataProviders: [
             {
                 name: '51Degrees',
                 waitForIt: true, // should be true, otherwise the auctionDelay will be ignored
                 params: {
-                    // Get your resource key from https://configure.51degrees.com/tWrhNfY6 to connect to cloud.51degrees.com
                     resourceKey: '<YOUR_RESOURCE_KEY>',
+                    // Get your resource key from https://configure.51degrees.com/HNZ75HT1
                     // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen end point
                     // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
                 },

@@ -1,4 +1,7 @@
 import { tncidSubModule } from 'modules/tncIdSystem';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 const consentData = {
   gdprApplies: true,
@@ -104,6 +107,25 @@ describe('TNCID tests', function () {
       return callback(completeCallback).then(() => {
         expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_2')).to.be.true;
       })
+    });
+  });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(tncidSubModule);
+    });
+    it('tncid', function() {
+      const userId = {
+        tncid: 'TEST_TNCID'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'thenewco.it',
+        uids: [{
+          id: 'TEST_TNCID',
+          atype: 3
+        }]
+      });
     });
   });
 });

@@ -28,6 +28,7 @@ export let responseReady = defer();
 
 /**
  * Configuration function for currency
+ * @param {object} config
  * @param  {string} [config.adServerCurrency = 'USD']
  *  ISO 4217 3-letter currency code that represents the target currency. (e.g. 'EUR').  If this value is present,
  *  the currency conversion feature is activated.
@@ -61,13 +62,13 @@ export let responseReady = defer();
 export function setConfig(config) {
   ratesURL = DEFAULT_CURRENCY_RATE_URL;
 
-  if (typeof config.rates === 'object') {
+  if (config.rates !== null && typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
     needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
-  if (typeof config.defaultRates === 'object') {
+  if (config.defaultRates !== null && typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
 
     // set up the default rates to be used if the rate file doesn't get loaded in time
@@ -155,36 +156,35 @@ function loadRates() {
 
 function initCurrency() {
   conversionCache = {};
-  currencySupportEnabled = true;
-
-  logInfo('Installing addBidResponse decorator for currency module', arguments);
-
-  // Adding conversion function to prebid global for external module and on page use
-  getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
-  getHook('addBidResponse').before(addBidResponseHook, 100);
-  getHook('responsesReady').before(responsesReadyHook);
-  onEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
-  onEvent(EVENTS.AUCTION_INIT, loadRates);
-  loadRates();
+  if (!currencySupportEnabled) {
+    currencySupportEnabled = true;
+    // Adding conversion function to prebid global for external module and on page use
+    getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
+    getHook('addBidResponse').before(addBidResponseHook, 100);
+    getHook('responsesReady').before(responsesReadyHook);
+    onEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
+    onEvent(EVENTS.AUCTION_INIT, loadRates);
+    loadRates();
+  }
 }
 
 function resetCurrency() {
-  logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
+  if (currencySupportEnabled) {
+    getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+    getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
+    offEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
+    offEvent(EVENTS.AUCTION_INIT, loadRates);
+    delete getGlobal().convertCurrency;
 
-  getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
-  getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
-  offEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
-  offEvent(EVENTS.AUCTION_INIT, loadRates);
-  delete getGlobal().convertCurrency;
-
-  adServerCurrency = 'USD';
-  conversionCache = {};
-  currencySupportEnabled = false;
-  currencyRatesLoaded = false;
-  needToCallForCurrencyFile = true;
-  currencyRates = {};
-  bidderCurrencyDefault = {};
-  responseReady = defer();
+    adServerCurrency = 'USD';
+    conversionCache = {};
+    currencySupportEnabled = false;
+    currencyRatesLoaded = false;
+    needToCallForCurrencyFile = true;
+    currencyRates = {};
+    bidderCurrencyDefault = {};
+    responseReady = defer();
+  }
 }
 
 function responsesReadyHook(next, ready) {

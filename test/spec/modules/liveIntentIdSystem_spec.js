@@ -3,6 +3,8 @@ import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 import * as refererDetection from '../../../src/refererDetection.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
@@ -508,4 +510,280 @@ describe('LiveIntentId', function() {
       fpid: { id: expectedValue }
     });
   });
+
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(liveIntentIdSubmodule);
+    });
+    it('liveIntentId; getValue call and ext', function() {
+      const userId = {
+        lipb: {
+          lipbid: 'some-random-id-value',
+          segments: ['s1', 's2']
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.com',
+        uids: [{id: 'some-random-id-value', atype: 3}],
+        ext: {segments: ['s1', 's2']}
+      });
+    });
+    it('fpid; getValue call', function() {
+      const userId = {
+        fpid: {
+          id: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'fpid.liveintent.com',
+        uids: [{id: 'some-random-id-value', atype: 1}]
+      });
+    });
+    it('bidswitch', function() {
+      const userId = {
+        bidswitch: {'id': 'sample_id'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'bidswitch.net',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('bidswitch with ext', function() {
+      const userId = {
+        bidswitch: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'bidswitch.net',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+    it('medianet', function() {
+      const userId = {
+        medianet: {'id': 'sample_id'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'media.net',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('medianet with ext', function() {
+      const userId = {
+        medianet: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'media.net',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('sovrn', function() {
+      const userId = {
+        sovrn: {'id': 'sample_id'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.sovrn.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('sovrn with ext', function() {
+      const userId = {
+        sovrn: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.sovrn.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('magnite', function() {
+      const userId = {
+        magnite: {'id': 'sample_id'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'rubiconproject.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('magnite with ext', function() {
+      const userId = {
+        magnite: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'rubiconproject.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+    it('index', function() {
+      const userId = {
+        index: {'id': 'sample_id'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.indexexchange.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('index with ext', function() {
+      const userId = {
+        index: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.indexexchange.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('openx', function () {
+      const userId = {
+        openx: { 'id': 'sample_id' }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'openx.net',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('openx with ext', function () {
+      const userId = {
+        openx: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'openx.net',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('pubmatic', function() {
+      const userId = {
+        pubmatic: {'id': 'sample_id'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'pubmatic.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('pubmatic with ext', function() {
+      const userId = {
+        pubmatic: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'pubmatic.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('liveIntentId; getValue call and NO ext', function() {
+      const userId = {
+        lipb: {
+          lipbid: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.com',
+        uids: [{id: 'some-random-id-value', atype: 3}]
+      });
+    });
+  })
 })

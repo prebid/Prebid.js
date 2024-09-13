@@ -1,0 +1,113 @@
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <script src="shared/example-setup.js"></script>
+    <script src="../../build/dev/prebid.js"></script>
+
+    <script>
+        var PREBID_TIMEOUT = 3000;
+        var adUnits = [{
+                code: 'div-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]],
+                    }
+                },
+                ortb2Imp: {
+                    ext: {
+                        ae: 1
+                    }
+                },
+                bids: [
+                    {
+                        bidder: 'optable',
+                        params: {
+                            site: 'daa30ba1-5613-4a2c-b7f0-34e2c033202a'
+                        },
+                    },
+                    {
+                        bidder: 'contextual',
+                        params: {
+                            site: 'daa30ba1-5613-4a2c-b7f0-34e2c033202a'
+                        }
+                    }
+                ],
+            }
+            ]
+        ;
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                paapi: {
+                    enabled: true,
+                    gpt: {
+                        autoconfig: false
+                    },
+                    topLevelSeller: {
+                        auctionConfig: {
+                            seller: window.location.origin,
+                            decisionLogicURL: new URL('shared/decisionLogic.js', window.location).toString(),
+                        },
+                    }
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+            requestBids();
+        });
+
+        function requestBids() {
+            pbjs.requestBids({
+                bidsBackHandler: renderAd,
+                timeout: PREBID_TIMEOUT
+            });
+        }
+
+        function renderAd(bids) {
+            Object.entries(bids).forEach(([adUnit, {bids}]) => {
+                renderSlot(adUnit, bids?.[0])
+            })
+        }
+
+        function renderSlot(adUnit, bid) {
+            const frame = document.querySelector(`#${adUnit} iframe`);
+
+            pbjs.getPAAPIBids({adUnitCode: adUnit}).then((paapiBids) => {
+                frame.contentDocument.body.innerHTML = '';
+                // prefer PAAPI bid over contextual bid
+                const winnerAdId = paapiBids[adUnit]?.adId ?? bid?.adId;
+                winnerAdId && pbjs.renderAd(frame.contentDocument, winnerAdId);
+            });
+        }
+
+    </script>
+</head>
+
+<body>
+<h2>No ad server, publisher as top level PAAPI seller example</h2>
+
+<p>
+
+</p>
+<div id="controls">
+    <script>addExampleControls(requestBids)</script>
+</div>
+<h5>Div-1</h5>
+<div id="div-1" style='min-width: 300px; min-height: 250px;'>
+    <iframe class="ad" frameborder="0" marginheight="0" marginwidth="0" scrolling="no"></iframe>
+</div>
+<div style="margin-top: 20px">
+    <h2>Instructions</h2>
+    <p>Start local server with:</p>
+    <code>gulp serve-fast --https</code>
+    <p>Chrome flags:</p>
+    <code>--enable-features=CookieDeprecationFacilitatedTesting:label/treatment_1.2/force_eligible/true
+        --privacy-sandbox-enrollment-overrides=https://localhost:9999</code>
+    <p>Join interest group at <a href="https://www.optable.co/">https://www.optable.co/</a>
+    </p>
+</div>
+</body>
+</html>
