@@ -45,18 +45,27 @@ function getBidRequestData(bidReqConfig, callback, config) {
         const contentCategories = results.mobianContentCategories || [];
         const sentiment = results.mobianSentiment || 'unknown';
         const emotions = results.mobianEmotions || [];
+        const themes = results.mobianThemes || [];
+        const tones = results.mobianTones || [];
+        const genres = results.mobianGenres || [];
 
         const risk = {
           risk: mobianRisk,
           contentCategories: contentCategories,
           sentiment: sentiment,
-          emotions: emotions
+          emotions: emotions,
+          themes: themes,
+          tones: tones,
+          genres: genres,
         };
 
         deepSetValue(ortb2Site.ext, 'data.mobianRisk', mobianRisk);
         deepSetValue(ortb2Site.ext, 'data.mobianContentCategories', contentCategories);
         deepSetValue(ortb2Site.ext, 'data.mobianSentiment', sentiment);
         deepSetValue(ortb2Site.ext, 'data.mobianEmotions', emotions);
+        deepSetValue(ortb2Site.ext, 'data.mobianThemes', themes);
+        deepSetValue(ortb2Site.ext, 'data.mobianTones', tones);
+        deepSetValue(ortb2Site.ext, 'data.mobianGenres', genres);
 
         resolve(risk);
         callback();

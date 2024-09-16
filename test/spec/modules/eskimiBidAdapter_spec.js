@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec } from 'modules/eskimiBidAdapter.js';
+import {expect} from 'chai';
+import {spec} from 'modules/eskimiBidAdapter.js';
 import * as utils from 'src/utils';
 
 const BANNER_BID = {
@@ -165,8 +165,8 @@ describe('Eskimi bid adapter', function () {
     it('should properly forward ORTB blocking params', function () {
       let bid = utils.deepClone(BANNER_BID);
       bid = utils.mergeDeep(bid, {
-        params: { bcat: ['IAB1-1'], badv: ['example.com'], bapp: ['com.example'] },
-        mediaTypes: { banner: { battr: [1] } }
+        params: {bcat: ['IAB1-1'], badv: ['example.com'], bapp: ['com.example']},
+        mediaTypes: {banner: {battr: [1]}}
       });
 
       let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
@@ -253,7 +253,7 @@ describe('Eskimi bid adapter', function () {
         const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
         const response = utils.deepClone(BANNER_BID_RESPONSE);
 
-        const bids = spec.interpretResponse({ body: response }, request);
+        const bids = spec.interpretResponse({body: response}, request);
         expect(bids).to.be.an('array').that.is.not.empty;
 
         expect(bids[0].mediaType).to.equal('banner');
@@ -274,7 +274,7 @@ describe('Eskimi bid adapter', function () {
         const bid = utils.deepClone(BANNER_BID);
 
         let request = spec.buildRequests([bid], BIDDER_REQUEST)[0];
-        const EMPTY_RESP = Object.assign({}, BANNER_BID_RESPONSE, { 'body': {} });
+        const EMPTY_RESP = Object.assign({}, BANNER_BID_RESPONSE, {'body': {}});
         const bids = spec.interpretResponse(EMPTY_RESP, request);
         expect(bids).to.be.empty;
       });
@@ -285,7 +285,7 @@ describe('Eskimi bid adapter', function () {
           const bid = utils.deepClone(VIDEO_BID);
 
           const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
-          const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request);
+          const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request);
           expect(bids).to.be.an('array').that.is.not.empty;
 
           expect(bids[0].mediaType).to.equal('video');
