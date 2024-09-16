@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { deepAccess, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
