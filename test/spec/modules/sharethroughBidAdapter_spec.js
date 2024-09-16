@@ -217,7 +217,7 @@ describe('sharethrough adapter spec', function () {
             video: {
               pos: 3,
               skip: 1,
-              linearity: 0,
+              linearity: 1,
               minduration: 10,
               maxduration: 30,
               playbackmethod: [1],
@@ -233,6 +233,8 @@ describe('sharethrough adapter spec', function () {
               companiontype: 'companion type',
               companionad: 'companion ad',
               context: 'instream',
+              placement: 1,
+              plcmt: 1,
             },
           },
           getFloor: () => ({ currency: 'USD', floor: 42 }),
@@ -618,7 +620,7 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.pos).to.equal(3);
           expect(videoImp.topframe).to.equal(1);
           expect(videoImp.skip).to.equal(1);
-          expect(videoImp.linearity).to.equal(0);
+          expect(videoImp.linearity).to.equal(1);
           expect(videoImp.minduration).to.equal(10);
           expect(videoImp.maxduration).to.equal(30);
           expect(videoImp.playbackmethod).to.deep.equal([1]);
@@ -637,48 +639,55 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.companionad).to.equal('companion ad');
         });
 
-        it('should set defaults if no value provided', () => {
+        it('should set defaults in some circumstances if no value provided', () => {
           delete bidRequests[1].mediaTypes.video.pos;
-          delete bidRequests[1].mediaTypes.video.skip;
-          delete bidRequests[1].mediaTypes.video.linearity;
-          delete bidRequests[1].mediaTypes.video.minduration;
-          delete bidRequests[1].mediaTypes.video.maxduration;
-          delete bidRequests[1].mediaTypes.video.playbackmethod;
-          delete bidRequests[1].mediaTypes.video.api;
-          delete bidRequests[1].mediaTypes.video.mimes;
-          delete bidRequests[1].mediaTypes.video.protocols;
           delete bidRequests[1].mediaTypes.video.playerSize;
-          delete bidRequests[1].mediaTypes.video.startdelay;
-          delete bidRequests[1].mediaTypes.video.skipmin;
-          delete bidRequests[1].mediaTypes.video.skipafter;
-          delete bidRequests[1].mediaTypes.video.placement;
-          delete bidRequests[1].mediaTypes.video.delivery;
-          delete bidRequests[1].mediaTypes.video.battr;
-          delete bidRequests[1].mediaTypes.video.companiontype;
-          delete bidRequests[1].mediaTypes.video.companionad;
 
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
 
           const videoImp = builtRequest.data.imp[0].video;
           expect(videoImp.pos).to.equal(0);
-          expect(videoImp.skip).to.equal(0);
-          expect(videoImp.linearity).to.equal(1);
-          expect(videoImp.minduration).to.equal(5);
-          expect(videoImp.maxduration).to.equal(60);
-          expect(videoImp.playbackmethod).to.deep.equal([2]);
-          expect(videoImp.api).to.deep.equal([2]);
-          expect(videoImp.mimes).to.deep.equal(['video/mp4']);
-          expect(videoImp.protocols).to.deep.equal([2, 3, 5, 6, 7, 8]);
           expect(videoImp.w).to.equal(640);
           expect(videoImp.h).to.equal(360);
-          expect(videoImp.startdelay).to.equal(0);
-          expect(videoImp.skipmin).to.equal(0);
-          expect(videoImp.skipafter).to.equal(0);
-          expect(videoImp.placement).to.equal(1);
-          expect(videoImp.delivery).to.be.undefined;
+        });
+
+        it('should not set values in some circumstances when non-valid values are supplied', () => {
+          // arrange
+          bidRequests[1].mediaTypes.video.api = 1; // non-array value, will not be used
+          bidRequests[1].mediaTypes.video.battr = undefined; // non-array value, will not be used
+          bidRequests[1].mediaTypes.video.mimes = 'video/3gpp'; // non-array value, will not be used
+          bidRequests[1].mediaTypes.video.playbackmethod = null; // non-array value, will not be used
+          bidRequests[1].mediaTypes.video.protocols = []; // empty array, will not be used
+
+          // act
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+          const videoImp = builtRequest.data.imp[0].video;
+
+          // assert
+          expect(videoImp.api).to.be.undefined;
           expect(videoImp.battr).to.be.undefined;
-          expect(videoImp.companiontype).to.be.undefined;
-          expect(videoImp.companionad).to.be.undefined;
+          expect(videoImp.mimes).to.be.undefined;
+          expect(videoImp.playbackmethod).to.be.undefined;
+          expect(videoImp.protocols).to.be.undefined;
+        });
+
+        it('should not set a property if no corresponding property is detected on mediaTypes.video', () => {
+          // arrange
+          const propertiesToConsider = [
+            'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
+          ]
+
+          // act
+          propertiesToConsider.forEach(propertyToConsider => {
+            delete bidRequests[1].mediaTypes.video[propertyToConsider];
+          });
+          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+          const videoImp = builtRequest.data.imp[0].video;
+
+          // assert
+          propertiesToConsider.forEach(propertyToConsider => {
+            expect(videoImp[propertyToConsider]).to.be.undefined;
+          });
         });
 
         describe('outstream', () => {
@@ -690,36 +699,6 @@ describe('sharethrough adapter spec', function () {
             const videoImp = builtRequest.data.imp[0].video;
 
             expect(videoImp.placement).to.equal(3);
-          });
-
-          it('should default placement to 4 if not provided', () => {
-            bidRequests[1].mediaTypes.video.context = 'outstream';
-
-            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
-            const videoImp = builtRequest.data.imp[0].video;
-
-            expect(videoImp.placement).to.equal(4);
-          });
-
-          it('should not override "placement" value if "plcmt" prop is present', () => {
-            // ASSEMBLE
-            const ARBITRARY_PLACEMENT_VALUE = 99;
-            const ARBITRARY_PLCMT_VALUE = 100;
-
-            bidRequests[1].mediaTypes.video.context = 'instream';
-            bidRequests[1].mediaTypes.video.placement = ARBITRARY_PLACEMENT_VALUE;
-
-            // adding "plcmt" property - this should prevent "placement" prop
-            // from getting overridden to 1
-            bidRequests[1].mediaTypes.video['plcmt'] = ARBITRARY_PLCMT_VALUE;
-
-            // ACT
-            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
-            const videoImp = builtRequest.data.imp[0].video;
-
-            // ASSERT
-            expect(videoImp.placement).to.equal(ARBITRARY_PLACEMENT_VALUE);
-            expect(videoImp.plcmt).to.equal(ARBITRARY_PLCMT_VALUE);
           });
         });
       });
