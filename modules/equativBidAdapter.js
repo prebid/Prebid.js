@@ -1,7 +1,7 @@
-import {BANNER} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepSetValue, mergeDeep} from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepAccess, deepSetValue, mergeDeep } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -20,10 +20,10 @@ export const spec = {
    */
   buildRequests: (bidRequests, bidderRequest) => {
     return {
-      data: converter.toORTB({bidderRequest, bidRequests}),
+      data: converter.toORTB({ bidderRequest, bidRequests }),
       method: 'POST',
       // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
-      url: 'https://feature-ssb-engine-pips-2655-testenv.internal.smartadserver.com/api/bid?callerId=169'
+      url: 'https://feature-ssb-engine-pips-2655-testenv.internal.smartadserver.com/api/bid?callerId=169',
     };
   },
 
@@ -32,17 +32,23 @@ export const spec = {
    * @param bidRequest
    * @return {Bid[]}
    */
-  interpretResponse: (serverResponse, bidRequest) => converter.fromORTB({request: bidRequest.data, response: serverResponse.body}),
+  interpretResponse: (serverResponse, bidRequest) =>
+    converter.fromORTB({
+      request: bidRequest.data,
+      response: serverResponse.body,
+    }),
 
   /**
    * @param bidRequest
    * @return {boolean}
    */
   isBidRequestValid: (bidRequest) => {
-    return !!(deepAccess(bidRequest, 'params.networkId') ||
+    return !!(
+      deepAccess(bidRequest, 'params.networkId') ||
       deepAccess(bidRequest, 'ortb2Imp.site.publisher.id') ||
       deepAccess(bidRequest, 'ortb2Imp.app.publisher.id') ||
-      deepAccess(bidRequest, 'ortb2Imp.dooh.publisher.id'));
+      deepAccess(bidRequest, 'ortb2Imp.dooh.publisher.id')
+    );
   },
 
   /**
@@ -52,24 +58,26 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses) => {
     if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
-      return [{
-        type: 'iframe',
-        url: serverResponses[0].body.cSyncUrl
-      }];
+      return [
+        {
+          type: 'iframe',
+          url: serverResponses[0].body.cSyncUrl,
+        },
+      ];
     } else if (syncOptions.pixelEnabled && serverResponses[0]?.body.dspPixels) {
       return serverResponses[0].body.dspPixels.map((pixel) => ({
         type: 'image',
-        url: pixel
+        url: pixel,
       }));
     }
     return [];
-  }
+  },
 };
 
 export const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
   },
 
   imp(buildImp, bidRequest, context) {
@@ -92,7 +100,7 @@ export const converter = ortbConverter({
       }
 
       mergeDeep(imp, {
-        ext: { bidder }
+        ext: { bidder },
       });
     }
 
@@ -108,7 +116,7 @@ export const converter = ortbConverter({
     }
 
     return req;
-  }
+  },
 });
 
 registerBidder(spec);
