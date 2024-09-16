@@ -723,7 +723,7 @@ function getUserIdsAsEidBySource(sourceName) {
  * Sample use case is exposing this function to ESP
  */
 function getEncryptedEidsForSource(source, encrypt, customFunction) {
-  return initIdSystem().then(() => {
+  return retryOnCancel().then(() => {
     let eidsSignals = {};
 
     if (isFn(customFunction)) {
