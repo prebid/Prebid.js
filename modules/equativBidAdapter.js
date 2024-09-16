@@ -8,7 +8,7 @@ import {deepAccess, deepSetValue, mergeDeep} from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
-registerBidder({
+export const spec = {
   code: 'equativ',
   gvlid: 45,
   supportedMediaTypes: [BANNER],
@@ -39,10 +39,10 @@ registerBidder({
    * @return {boolean}
    */
   isBidRequestValid: (bidRequest) => {
-    return bidRequest.params.networkId ||
+    return !!(deepAccess(bidRequest, 'params.networkId') ||
       deepAccess(bidRequest, 'ortb2Imp.site.publisher.id') ||
       deepAccess(bidRequest, 'ortb2Imp.app.publisher.id') ||
-      deepAccess(bidRequest, 'ortb2Imp.dooh.publisher.id');
+      deepAccess(bidRequest, 'ortb2Imp.dooh.publisher.id'));
   },
 
   /**
@@ -64,9 +64,9 @@ registerBidder({
     }
     return [];
   }
-});
+};
 
-const converter = ortbConverter({
+export const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 300
@@ -110,3 +110,5 @@ const converter = ortbConverter({
     return req;
   }
 });
+
+registerBidder(spec);
