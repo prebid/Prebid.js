@@ -1632,9 +1632,8 @@ describe('adapterManager tests', function () {
       });
 
       it('should use gvlid of original adapter when option set', () => {
-        const mediaType = FEATURES.VIDEO ? 'video' : 'banner'
         const gvlid = 'origvlid';
-        let thisSpec = Object.assign(spec, { supportedMediaTypes: [mediaType], gvlid });
+        let thisSpec = Object.assign(spec, { gvlid });
         registerBidder(thisSpec);
         const alias = 'bidderWithGvlid';
         adapterManager.aliasBidAdapter(CODE, alias, {useBaseGvlid: true});

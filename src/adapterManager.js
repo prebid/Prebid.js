@@ -556,7 +556,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
           const { useBaseGvlid = false } = options || {};
           let spec = bidAdapter.getSpec();
           const gvlid = useBaseGvlid ? spec.gvlid : options?.gvlid;
-          if (!useBaseGvlid && spec.gvlid != null && options?.gvlid == null) {
+          if (gvlid == null && spec.gvlid != null) {
             logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`)
           }
 
