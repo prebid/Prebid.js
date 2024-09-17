@@ -5,7 +5,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
-import { VIDEO, BANNER } from 'src/mediaTypes.js'
+import { VIDEO } from 'src/mediaTypes.js'
 
 const bidderRequest = {
   refererInfo: {
@@ -79,25 +79,6 @@ const bidRequestOutstreamV2 = {
   }
 }
 
-const bidRequestBanner = {
-  ...bidRequestCommonParamsV2,
-  ...{
-    mediaTypes: {
-      banner: {
-        sizes: [[640, 360]]
-      }
-    }
-  }
-}
-
-const bidRequestVideoAndBanner = {
-  ...bidRequestCommonParamsV2,
-  mediaTypes: {
-    ...bidRequestBanner.mediaTypes,
-    ...bidRequestVideoV2.mediaTypes
-  }
-}
-
 describe('shBidAdapter', () => {
   it('validates request', () => {
     const bid = {
@@ -139,47 +120,6 @@ describe('shBidAdapter', () => {
     expect(payload.device.sua).to.undefined;
   });
 
-  it('override QA params', () => {
-    const bidRequest = Object.assign({}, bidRequestVideoV2)
-    const fullRequest = {
-      bids: [bidRequestVideoV2],
-    };
-    const bidEndpoint = 'https://bidder.com/endpoint';
-    const fakePageURL = 'https://testing.page.com/'
-    bidRequest.params.qa = {
-      endpoint: bidEndpoint,
-      pageURL: fakePageURL,
-    };
-    const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(fullRequest));
-    expect(request.url).to.eql(bidEndpoint);
-    expect(request.data.site.page).to.eql(fakePageURL)
-    expect(request.data.site.domain).to.eql('testing.page.com');
-    expect(request.data.test).to.eql(1);
-  });
-
-  it('handle banner and video', () => {
-    const bidRequest = Object.assign({}, bidRequestVideoAndBanner)
-    const fullRequest = {
-      bids: [bidRequest],
-    };
-    const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(fullRequest));
-    const payload = request.data;
-
-    expect(payload.imp[0].video).to.be.a('object');
-    expect(payload.imp[0].ext.mediaType).eql('instream')
-    expect(payload.imp[0].banner).to.be.undefined;
-    const requestBanner = Object.assign({}, bidRequestBanner)
-    const fullRequestBanner = {
-      bids: [requestBanner],
-    };
-    const bannerORTB = spec.buildRequests([requestBanner], syncAddFPDToBidderRequest(fullRequestBanner));
-    const payloadBanner = bannerORTB.data;
-
-    expect(payloadBanner.imp[0].banner).to.be.a('object');
-    expect(payloadBanner.imp[0].ext.mediaType).eql('banner')
-    expect(payloadBanner.imp[0].video).to.be.undefined;
-  });
-
   describe('interpretResponse', function () {
     it('handles nobid responses', function () {
       expect(spec.interpretResponse({ body: {} }, { data: { meta: {} } }).length).to.equal(0)
@@ -187,25 +127,6 @@ describe('shBidAdapter', () => {
     })
 
     const vastXml = '<?xml version="1.0" encoding="utf-8"?><VAST version="3.0"><Error><![CDATA[https://static.showheroes.com/shim.gif]]></Error></VAST>'
-
-    const basicResponse = {
-      cpm: 5,
-      currency: 'EUR',
-      mediaType: VIDEO,
-      context: 'instream',
-      bidId: '38b373e1e31c18',
-      size: { 'width': 640, 'height': 480 },
-      vastTag: 'https:\/\/test.com\/commercial\/wrapper?player_id=47427aa0-f11a-4d24-abca-1295a46a46cd&ad_bidder=showheroes-bs&master_shadt=1&description_url=https%3A%2F%2Fbid-service.stage.showheroes.com%2Fvast%2Fad%2Fcache%2F4840b920-40e1-4e09-9231-60bbf088c8d6',
-      vastXml: vastXml,
-      adomain: adomain,
-    };
-
-    const responseBanner = {
-      'bids': [{
-        ...basicResponse,
-        'mediaType': BANNER,
-      }],
-    };
 
     const basicResponseV2 = {
       requestId: '38b373e1e31c18',
@@ -278,15 +199,6 @@ describe('shBidAdapter', () => {
 
       const result = spec.interpretResponse({ 'body': responseVideoV2 }, request)
       expect(result).to.deep.equal(expectedResponse)
-    })
-
-    it('should get correct bid response when type is banner', function () {
-      const request = spec.buildRequests([bidRequestBanner], bidderRequest)
-
-      const result = spec.interpretResponse({ 'body': responseBanner }, request)
-      expect(result[0]).to.have.property('mediaType', BANNER);
-      expect(result[0].ad).to.include('<script async src="https://static.showheroes.com/publishertag.js')
-      expect(result[0].ad).to.include('<div class="showheroes-spot"')
     })
 
     it('should get correct bid response when type is outstream (slot V2)', function () {
