@@ -10,7 +10,7 @@ const ENDPOINT_URL = 'https://adx.digitalmatter.services/'
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
-  aliases: [],
+  aliases: ['dichange', 'digitalmatter'],
   bidParameters: ['accountId', 'siteId'],
   isBidRequestValid: function (bid) {
     if (typeof bid.params !== 'object') {
