@@ -8,13 +8,9 @@ import {
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { VIDEO } from '../src/mediaTypes.js';
 
-const VIRALIZE_ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction';
-const PROD_PUBLISHER_TAG = 'https://static.showheroes.com/publishertag.js';
-const STAGE_PUBLISHER_TAG = 'https://pubtag.stage.showheroes.com/publishertag.js';
-const PROD_VL = 'https://video-library.showheroes.com';
-const STAGE_VL = 'https://video-library.stage.showheroes.com';
+const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction';
 const BIDDER_CODE = 'showheroes-bs';
 const TTL = 300;
 
@@ -26,15 +22,8 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    // video has higher priority, so if there is banner configured at the same time, send video only
-    if (imp?.video && imp?.banner) {
-      delete imp['banner']
-    }
-    let mediaTypeContenxt = deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (!mediaTypeContenxt) {
-      mediaTypeContenxt = BANNER;
-    }
-    deepSetValue(imp, 'ext.mediaType', mediaTypeContenxt);
+    const mediaTypeContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    deepSetValue(imp, 'ext.mediaType', mediaTypeContext);
     imp.ext.params = bidRequest.params;
     imp.ext.adUnitCode = bidRequest.adUnitCode;
 
@@ -68,20 +57,13 @@ const converter = ortbConverter({
   },
 })
 
-function getEnvURLs(isStage) {
-  return {
-    pubTag: isStage ? STAGE_PUBLISHER_TAG : PROD_PUBLISHER_TAG,
-    vlHost: isStage ? STAGE_VL : PROD_VL
-  }
-}
-
 const GVLID = 111;
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: ['showheroesBs'],
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: [VIDEO],
   isBidRequestValid: (bid) => {
     return !!bid.params.unitId;
   },
@@ -89,21 +71,15 @@ export const spec = {
     const QA = bidRequests[0].params.qa;
 
     const ortbData = converter.toORTB({ bidRequests, bidderRequest })
-    if (QA?.pageURL) {
-      deepSetValue(ortbData, 'site.page', QA.pageURL);
-      const u = new URL(QA.pageURL);
-      deepSetValue(ortbData, 'site.domain', u.host);
-      ortbData.test = 1;
-    }
 
     return {
-      url: QA?.endpoint || VIRALIZE_ENDPOINT,
+      url: QA?.endpoint || ENDPOINT,
       method: 'POST',
       data: ortbData,
     };
   },
-  interpretResponse: (response, request) => {
-    return createBids(response.body, request.data);
+  interpretResponse: (response) => {
+    return createBids(response.body);
   },
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
@@ -145,7 +121,7 @@ export const spec = {
   },
 };
 
-function createBids(bidRes, reqData) {
+function createBids(bidRes) {
   if (!bidRes) {
     return [];
   }
@@ -187,9 +163,7 @@ function createBids(bidRes, reqData) {
     if (bid.vastTag || bid.vastUrl) {
       bidUnit.vastUrl = bid.vastTag || bid.vastUrl;
     }
-    if (bid.mediaType === BANNER) {
-      bidUnit.ad = getBannerHtml(bid, reqData);
-    } else if (bid.context === 'outstream') {
+    if (bid.context === 'outstream') {
       const renderConfig = {
         rendererUrl: bid.rendererConfig?.rendererUrl,
         renderFunc: bid.rendererConfig?.renderFunc,
@@ -227,25 +201,6 @@ function createRenderer(bid, renderConfig) {
     return outstreamRender(render, renderConfig);
   });
   return renderer;
-}
-
-function getBannerHtml(bid, reqData) {
-  const isStage = !!reqData.meta?.stage;
-  const urls = getEnvURLs(isStage);
-  return `<html>
-    <head></head>
-    <body>
-      <script async src="${urls.pubTag}"
-              data-canvas=""
-              data-noad-passback-listener=""
-              onload="window.ShowheroesTag=this"
-              data-player-host="${urls.vlHost}"></script>
-      <div class="showheroes-spot"
-            data-debug="${reqData.debug ? '1' : ''}"
-            data-player="${bid.playerId}"
-            data-ad-vast-tag="${bid.vastTag}"></div>
-    </body>
-  </html>`;
 }
 
 registerBidder(spec);
