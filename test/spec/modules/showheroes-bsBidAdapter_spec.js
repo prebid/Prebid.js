@@ -128,48 +128,29 @@ describe('shBidAdapter', () => {
 
     const vastXml = '<?xml version="1.0" encoding="utf-8"?><VAST version="3.0"><Error><![CDATA[https://static.showheroes.com/shim.gif]]></Error></VAST>'
 
-    const basicResponseV2 = {
-      requestId: '38b373e1e31c18',
-      adUnitCode: 'adunit-code-1',
-      cpm: 1,
-      currency: 'EUR',
-      width: 640,
-      height: 480,
-      advertiserDomain: [],
-      callbacks: {
-        won: ['https://test.com/track/?ver=15&session_id=01ecd03ce381505ccdeb88e555b05001&category=request_session&type=event&request_session_id=01ecd03ce381505ccdeb88e555b05001&label=prebid_won&reason=ok']
-      },
-      vastXml: vastXml,
-      mediaType: 'video',
-      adomain: adomain,
-    };
-
+    const callback_won = 'https://test.com/track/?ver=15&session_id=01ecd03ce381505ccdeb88e555b05001&category=request_session&type=event&request_session_id=01ecd03ce381505ccdeb88e555b05001&label=prebid_won&reason=ok'
+    const basicResponse = {
+      cur: 'EUR',
+      seatbid: [{
+        bid: [{
+          price: 1,
+          w: 640,
+          h: 480,
+          adm: vastXml,
+          impid: '38b373e1e31c18',
+          crid: 'c_38b373e1e31c18',
+          extra: 'test',
+          adomain: adomain,
+          ext: {
+            callbacks: {
+              won: [callback_won],
+            },
+          },
+        }],
+        seat: 'showheroes',
+      }]
+    }
     const vastUrl = 'https://test.com/vast/?zid=AACBWAcof-611K4U&u=https://example.org/?foo=bar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ecd03ce381505ccdeb88e555b05001&width=300&height=200&prebidmode=1'
-
-    const responseVideoV2 = {
-      bidResponses: [{
-        ...basicResponseV2,
-        context: 'instream',
-        vastUrl: vastUrl,
-        extra: 'test',
-      }],
-    };
-
-    const responseVideoOutstreamV2 = {
-      bidResponses: [{
-        ...basicResponseV2,
-        context: 'outstream',
-        ad: '<script id="testScript" data-wid="auto" type="text/javascript" src="https://test.tv/display/?zid=AACBTwsZVANd9NlB&u=https%3A%2F%2Fexample.org%2F%3Ffoo%3Dbar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ececb3b4c19270d6a77ccf75433001&width=300&height=200&prebidmode=1"></script>',
-        vastUrl: vastUrl,
-        rendererConfig: {
-          rendererUrl: 'https://test.com/render.js',
-          renderFunc: 'myRenderer.renderAd',
-          renderOptions: {
-            key: 'my renderer custom value',
-          }
-        },
-      }],
-    };
 
     it('should get correct bid response when type is video (V2)', function () {
       const request = spec.buildRequests([bidRequestVideoV2], bidderRequest)
@@ -183,7 +164,6 @@ describe('shBidAdapter', () => {
           height: 480,
           mediaType: 'video',
           netRevenue: true,
-          vastUrl: vastUrl,
           requestId: '38b373e1e31c18',
           ttl: 300,
           meta: {
@@ -193,11 +173,14 @@ describe('shBidAdapter', () => {
           adResponse: {
             content: vastXml,
           },
+          callbacks: {
+            won: [callback_won],
+          },
           extra: 'test',
         }
       ]
 
-      const result = spec.interpretResponse({ 'body': responseVideoV2 }, request)
+      const result = spec.interpretResponse({ 'body': basicResponse }, request)
       expect(result).to.deep.equal(expectedResponse)
     })
 
@@ -208,6 +191,14 @@ describe('shBidAdapter', () => {
         }
       }
       const bidRequestV2 = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
+      const bidResponse = JSON.parse(JSON.stringify(basicResponse));
+      bidResponse.seatbid[0].bid[0].ext.rendererConfig = {
+        rendererUrl: 'https://test.com/render.js',
+        renderFunc: 'myRenderer.renderAd',
+        renderOptions: {
+          key: 'my renderer custom value',
+        }
+      };
       const slotId = 'testSlot2'
 
       const container = document.createElement('div')
@@ -216,7 +207,7 @@ describe('shBidAdapter', () => {
 
       const request = spec.buildRequests([bidRequestV2], bidderRequest)
 
-      const result = spec.interpretResponse({ 'body': responseVideoOutstreamV2 }, request)
+      const result = spec.interpretResponse({ 'body': bidResponse }, request)
       const bid = result[0]
       expect(bid).to.have.property('mediaType', VIDEO);
       expect(typeof bid.renderer).to.be.eql('object');
@@ -236,21 +227,37 @@ describe('shBidAdapter', () => {
 
       const request = spec.buildRequests([bidRequest], bidderRequest)
 
-      const result = spec.interpretResponse({ 'body': responseVideoOutstreamV2 }, request)
+      const result = spec.interpretResponse({ 'body': basicResponse }, request)
       const bid = result[0];
       expect(bid).to.have.property('mediaType', VIDEO);
 
       expect(bid.vastXml).to.eql(vastXml);
-      expect(bid.vastUrl).to.equal(vastUrl);
+    })
+
+    it('should get vast url', function () {
+      const bidRequest = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
+      const bidResponse = JSON.parse(JSON.stringify(basicResponse));
+      bidResponse.seatbid[0].bid[0].nurl = vastUrl
+
+      const request = spec.buildRequests([bidRequest], bidderRequest)
+
+      const result = spec.interpretResponse({ 'body': bidResponse }, request)
+      const bid = result[0];
+      expect(bid).to.have.property('mediaType', VIDEO);
+
+      expect(bid.vastXml).to.eql(vastXml);
+      expect(bid.vastUrl).to.eql(vastUrl);
     })
   });
 
   describe('getUserSyncs', function () {
     const response = [{
       body: {
-        userSync: {
-          iframes: ['https://sync.showheroes.com/iframe'],
-          pixels: ['https://sync.showheroes.com/pixel']
+        ext: {
+          userSync: {
+            iframes: ['https://sync.showheroes.com/iframe'],
+            pixels: ['https://sync.showheroes.com/pixel']
+          }
         }
       }
     }]

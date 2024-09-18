@@ -78,17 +78,17 @@ export const spec = {
       data: ortbData,
     };
   },
-  interpretResponse: (response) => {
-    return createBids(response.body);
+  interpretResponse: (response, request) => {
+    return createBids(response.body, request.data);
   },
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
 
-    if (!serverResponses.length || !serverResponses[0].body.userSync) {
+    if (!serverResponses.length || !serverResponses[0].body?.ext?.userSync) {
       return syncs;
     }
 
-    const userSync = serverResponses[0].body.userSync;
+    const userSync = serverResponses[0].body.ext.userSync;
 
     if (syncOptions.iframeEnabled && userSync?.iframes?.length) {
       userSync.iframes.forEach(url => {
@@ -121,59 +121,56 @@ export const spec = {
   },
 };
 
-function createBids(bidRes) {
-  if (!bidRes) {
+function createBids(bidRes, bidReq) {
+  if (!bidRes || !bidRes.seatbid) {
     return [];
   }
-  const responseBids = bidRes.bids || bidRes.bidResponses;
-  if (!Array.isArray(responseBids) || responseBids.length < 1) {
-    return [];
-  }
-
   const bids = [];
 
-  responseBids.forEach((bid) => {
-    const requestId = bid.requestId;
-    const size = {
-      width: bid.width || bid.size.width,
-      height: bid.height || bid.size.height
-    };
-
-    let bidUnit = {};
-    bidUnit.cpm = bid.cpm;
-    bidUnit.requestId = requestId;
-    bidUnit.adUnitCode = bid.adUnitCode;
-    bidUnit.currency = bid.currency;
-    bidUnit.mediaType = bid.mediaType || VIDEO;
-    bidUnit.ttl = bid.exp || TTL;
-    bidUnit.creativeId = 'c_' + requestId;
-    bidUnit.netRevenue = bid.netRevenue ?? true;
-    bidUnit.extra = bid.extra;
-    bidUnit.width = size.width;
-    bidUnit.height = size.height;
-    bidUnit.meta = {
-      advertiserDomains: bid.adomain || []
-    };
-    if (bid.vastXml) {
-      bidUnit.vastXml = bid.vastXml;
-      bidUnit.adResponse = {
-        content: bid.vastXml,
-      };
+  bidRes.seatbid.forEach((seatbid) => {
+    if (!seatbid.bid?.length) {
+      return;
     }
-    if (bid.vastTag || bid.vastUrl) {
-      bidUnit.vastUrl = bid.vastTag || bid.vastUrl;
-    }
-    if (bid.context === 'outstream') {
-      const renderConfig = {
-        rendererUrl: bid.rendererConfig?.rendererUrl,
-        renderFunc: bid.rendererConfig?.renderFunc,
-        renderOptions: bid.rendererConfig?.renderOptions,
+    seatbid.bid.forEach((bid) => {
+      const imp = bidReq.imp.find((imp) => imp.id === bid.impid);
+      const bidUnit = {
+        cpm: bid.price,
+        requestId: bid.impid,
+        adUnitCode: imp?.ext?.adUnitCode,
+        currency: bidRes.cur,
+        mediaType: VIDEO,
+        ttl: bid.exp || TTL,
+        netRevenue: true,
+        extra: bid.extra,
+        width: bid.w,
+        height: bid.h,
+        creativeId: bid.crid,
+        callbacks: bid?.ext?.callbacks,
+        meta: {
+          advertiserDomains: bid.adomain || [],
+        },
       };
-      if (renderConfig.renderFunc && renderConfig.rendererUrl) {
-        bidUnit.renderer = createRenderer(bidUnit, renderConfig);
+      if (bid.adm) {
+        bidUnit.vastXml = bid.adm;
+        bidUnit.adResponse = {
+          content: bid.adm,
+        };
       }
-    };
-    bids.push(bidUnit);
+      if (bid.nurl) {
+        bidUnit.vastUrl = bid.nurl;
+      }
+      if (imp?.ext?.mediaType === 'outstream') {
+        const renderConfig = {
+          rendererUrl: bid.ext?.rendererConfig?.rendererUrl,
+          renderFunc: bid.ext?.rendererConfig?.renderFunc,
+          renderOptions: bid.ext?.rendererConfig?.renderOptions,
+        };
+        if (renderConfig.renderFunc && renderConfig.rendererUrl) {
+          bidUnit.renderer = createRenderer(bidUnit, renderConfig);
+        }
+      };
+      bids.push(bidUnit);
+    });
   });
 
   return bids;
