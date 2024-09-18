@@ -97,7 +97,6 @@ function readData(key) {
 
 function initLsValues() {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
-  iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY));
   let iiqArr = config.getConfig('userSync.userIds').filter(m => m.name == 'intentIqId');
   if (iiqArr && iiqArr.length > 0) iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
   if (!iiqArr) iiqArr = [];
@@ -112,18 +111,27 @@ function initLsValues() {
   if (iiqArr && iiqArr.length > 0) {
     if (iiqArr[0].params && iiqArr[0].params.partner && !isNaN(iiqArr[0].params.partner)) {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
+      iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
     }
-
-    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
   }
 }
 
 function initReadLsIds() {
   if (isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.partner) || iiqAnalyticsAnalyticsAdapter.initOptions.partner == -1) return;
+
+  const currentBrowserLowerCase = detectBrowser();
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
+    logError('IIQ ANALYTICS -> Browser is in blacklist!');
+    return;
+  }
+
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
-    let iData = readData(FIRST_PARTY_DATA_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner)
+    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY));
+    if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
+    }
+    let iData = readData(FIRST_PARTY_DATA_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
     if (iData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
       let pData = JSON.parse(iData);
@@ -137,12 +145,6 @@ function initReadLsIds() {
 
 function bidWon(args) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
-
-  const currentBrowserLowerCase = detectBrowser();
-  if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
-    logError('IIQ ANALYTICS -> Browser is in blacklist!');
-    return;
-  }
 
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
