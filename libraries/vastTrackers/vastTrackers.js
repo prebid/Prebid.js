@@ -14,7 +14,7 @@ addBidResponse.before(function (next, adUnitcode, bidResponse, reject) {
       bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml);
       const impTrackers = vastTrackers.get('impressions');
       if (impTrackers) {
-        bidResponse.vastImpUrl = [].concat(impTrackers).concat(bidResponse.vastImpUrl).filter(t => t);
+        bidResponse.vastImpUrl = [].concat([...impTrackers]).concat(bidResponse.vastImpUrl).filter(t => t);
       }
     }
   }
