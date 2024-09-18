@@ -1,15 +1,15 @@
 import { logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { buildRequests, interpretResponse, onBidWon } from '../libraries/precisoUtils/bidUtils.js';
+import { buildBidResponse, buildRequests, onBidWon } from '../libraries/precisoUtils/bidUtils.js';
 import { buildUserSyncs } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER__CODE = 'preciso';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
 // export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
-const SUPPORTED_MEDIA_TYPES = [BANNER];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const GVLID = 874;
 let precisoId = 'NA';
 let sharedId = 'NA';
@@ -37,17 +37,16 @@ export const spec = {
     return Boolean(bid.bidId && bid.params && bid.params.publisherId && precisoBid);
   },
   buildRequests: buildRequests(endpoint),
-  interpretResponse,
+  interpretResponse: buildBidResponse,
   onBidWon,
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     const isSpec = syncOptions.spec;
-    if (!Object.is(isSpec, true)) {
+    if ((!Object.is(isSpec, true)) && (storage.localStorageIsEnabled())) {
       let syncId = storage.getCookie('_sharedid');
       syncEndpoint = syncEndpoint + 'id=' + syncId;
     } else {
       syncEndpoint = syncEndpoint + 'id=NA';
     }
-
     return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint);
   }
 };
@@ -66,7 +65,9 @@ async function getapi(url) {
     const uuidValue = dataMap.get('UUID');
 
     if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-      storage.setDataInLocalStorage('_pre|id', uuidValue);
+      if (storage.localStorageIsEnabled()) {
+        storage.setDataInLocalStorage('_pre|id', uuidValue);
+      }
     }
     return data;
   } catch (error) {

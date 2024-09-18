@@ -2,7 +2,7 @@
 
 <head>
     <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
-    
+
     <script>
         var PREBID_TIMEOUT = 2000;
 
@@ -59,12 +59,12 @@
 
                 bids: [
                     {
-                        bidder: 'precisonat',
+                        bidder: 'preciso',
                         params: {
                             publisherId: 'PRECISO_TEST00001',
                             traffic: 'native',
-                            bidFloor: 0.12,
-                            currency: ['USD']
+                           // bidFloor: 0.12,
+                           // currency: ['USD']
                         }
                     }
                 ]
@@ -93,7 +93,7 @@
                     }],
                     filterSettings: {
                         iframe: {
-                            bidders: ['precisonat'],
+                            bidders: ['preciso'],
                             filter: 'include'
                         },
                         image: {
@@ -103,8 +103,16 @@
                     }
                 },
                 floors: {
-                    floorMin: 0.32,
-                    currency: ['USD']
+                    currency: 'USD',
+                    skipRate: 5,
+                    modelVersion: 'Sports Ad Unit Floors',
+                    schema: {
+                        fields: ['mediaType']
+                    },
+                    values: {
+                        'banner': 0.05,
+                        'native': 0.1
+                    }
                 },
                 ortb2: {
                     bcat: ['IAB1-1'],

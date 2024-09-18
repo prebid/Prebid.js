@@ -2,16 +2,14 @@ import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { replaceAuctionPrice, deepAccess, logInfo } from '../../src/utils.js';
 import { ajax } from '../../src/ajax.js';
 import { NATIVE } from '../../src/mediaTypes.js';
-import { consentCheck } from './bidUtilsCommon.js';
+import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
   let req = {
-    // bidRequest: bidderRequest,
     id: validBidRequests[0].auctionId,
-    cur: validBidRequests[0].params.currency || ['USD'],
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
     user: {
       id: validBidRequests[0].userId.pubcid || '',
@@ -72,7 +70,6 @@ export function interpretResponse(serverResponse) {
       })
     })
   })
-  logInfo('bid respone::' + JSON.stringify(bidsValue))
   return bidsValue
 }
 
@@ -103,23 +100,17 @@ export async function pid(sid) {
 }
 
 function mapImpression(slot, bidderRequest) {
+  const imp = {
+    id: slot.bidId,
+    bidFloor: getBidFloor(slot),
+  };
+
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
-    const imp = {
-      id: slot.bidId,
-      native: mapNative(slot),
-      bidfloor: slot.params.bidFloor,
-      bidfloorcur: slot.params.currency
-    };
-    return imp;
+    imp.native = mapNative(slot)
   } else {
-    const imp = {
-      id: slot.bidId,
-      banner: mapBanner(slot),
-      bidfloor: slot.params.bidFloor,
-      bidfloorcur: slot.params.currency
-    };
-    return imp;
+    imp.banner = mapBanner(slot)
   }
+  return imp
 }
 
 function mapNative(slot) {
@@ -146,7 +137,7 @@ function mapBanner(slot) {
   }
 }
 
-export function nativeResponse(serverResponse) {
+export function buildBidResponse(serverResponse) {
   const responseBody = serverResponse.body;
   const bids = [];
   responseBody.seatbid.forEach(seat => {
@@ -171,6 +162,20 @@ export function nativeResponse(serverResponse) {
           native: interpretNativeAd(macroReplace(serverBid.adm, serverBid.price)),
         });
       } else {
+        bids.push({
+          requestId: serverBid.impid,
+          cpm: serverBid.price,
+          width: serverBid.w,
+          height: serverBid.h,
+          creativeId: serverBid.crid,
+          ad: macroReplace(serverBid.adm, serverBid.price),
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 300,
+          meta: {
+            advertiserDomains: serverBid.adomain || '',
+          },
+        });
         logInfo('Invalid native bid response bid.adm is not valid');
       }
     })
