@@ -314,9 +314,11 @@ function getFledgeConfig(bidder) {
  * Given an array of size tuples, return the one that should be used for PAAPI.
  */
 export const getPAAPISize = hook('sync', function (sizes) {
+  sizes = sizes
+    ?.filter(([w, h]) => !(w === h && w <= 5));
+
   if (sizes?.length) {
     return sizes
-      .filter(([w, h]) => !(w === h && w <= 5))
       .reduce(maximum(keyCompare(([w, h]) => w * h)));
   }
 }, 'getPAAPISize');
