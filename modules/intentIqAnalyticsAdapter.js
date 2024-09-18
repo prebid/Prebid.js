@@ -111,19 +111,13 @@ function initLsValues() {
   if (iiqArr && iiqArr.length > 0) {
     if (iiqArr[0].params && iiqArr[0].params.partner && !isNaN(iiqArr[0].params.partner)) {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
-      iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
     }
+    iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
   }
 }
 
 function initReadLsIds() {
   if (isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.partner) || iiqAnalyticsAnalyticsAdapter.initOptions.partner == -1) return;
-
-  const currentBrowserLowerCase = detectBrowser();
-  if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
-    logError('IIQ ANALYTICS -> Browser is in blacklist!');
-    return;
-  }
 
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
@@ -145,6 +139,12 @@ function initReadLsIds() {
 
 function bidWon(args) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
+
+  const currentBrowserLowerCase = detectBrowser();
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
+    logError('IIQ ANALYTICS -> Browser is in blacklist!');
+    return;
+  }
 
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
