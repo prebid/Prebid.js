@@ -8,7 +8,7 @@ import { getStorageManager } from '../src/storageManager.js';
  * This RTD module has a dependency on the priceFloors module.
  * We utilize the createFloorsDataForAuction function from the priceFloors module to incorporate price floors data into the current auction.
  */
-import { createFloorsDataForAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
+import { createFloorsDataForAuction } from './priceFloors.js'; // eslint-disable-line prebidjs/validate-imports
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'pubxai';

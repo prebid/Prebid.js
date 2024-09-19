@@ -1,5 +1,5 @@
 {
-  "name": "eslint-plugin-prebid",
+  "name": "eslint-plugin-prebidjs",
   "version": "1.0.0",
   "description": "validates module imports can be found without custom webpack resolvers, are in module whitelist, and not module entry points",
   "main": "index.js",

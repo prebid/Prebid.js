@@ -10,7 +10,7 @@
  */
 
 /* eslint standard/no-callback-literal: "off" */
-/* eslint prebid/validate-imports: "off" */
+/* eslint prebidjs/validate-imports: "off" */
 
 import {auctionManager} from '../src/auctionManager.js';
 import {command as analyticsCommand, COMMAND} from './adlooxAnalyticsAdapter.js';

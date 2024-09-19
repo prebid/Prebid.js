@@ -27,7 +27,7 @@ module.exports = {
     'plugin:jsdoc/recommended'
   ],
   plugins: [
-    'prebid',
+    'prebidjs',
     'import',
     'jsdoc'
   ],
@@ -83,7 +83,7 @@ module.exports = {
   overrides: Object.keys(allowedModules).map((key) => ({
     files: key + '/**/*.js',
     rules: {
-      'prebid/validate-imports': ['error', allowedModules[key]],
+      'prebidjs/validate-imports': ['error', allowedModules[key]],
       'no-restricted-globals': [
         'error',
         {
@@ -91,7 +91,7 @@ module.exports = {
           message: 'use import instead'
         }
       ],
-      'prebid/no-global': [
+      'prebidjs/no-global': [
         'error',
         ...['localStorage', 'sessionStorage'].map(name => ({name, message: 'use storageManager instead'})),
         {
@@ -99,7 +99,7 @@ module.exports = {
           message: 'use ajax.js instead'
         },
       ],
-      'prebid/no-member': [
+      'prebidjs/no-member': [
         'error',
         {
           name: 'cookie',
