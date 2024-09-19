@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { _each, buildUrl, isStr, isEmptyStr, logInfo, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
+import { config as pbjsConfig } from '../src/config.js';
 import {
   isBidRequestValid,
   interpretResponse,
@@ -85,8 +85,8 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
     bidRequest.bidFloor = _getRequestBidFloor(mediaTypes, params.bidfloor, bidRequest);
     bidRequests.push(bidRequest)
   });
-  const pubConfig = config.getConfig();
-  const {version, customer} = extractParameters(pubConfig)
+  const config = pbjsConfig.getConfig();
+  const {version, customer} = extractParameters(config)
   const adapterUrl = buildUrl({
     protocol: 'https',
     host: BIDDER_ENDPOINT,
@@ -101,7 +101,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
       ortb2,
       bidRequests,
       bidderRequest,
-      pubConfig,
+      config,
     },
   };
 
@@ -109,26 +109,19 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 };
 
 // Prepare a sync object compatible with getUserSyncs.
-const buildSyncEntry = (sync, gdprConsent, uspConsent, gppConsent) => {
-  const syncDefaults = getUserSyncsLib('')(sync, gdprConsent, uspConsent, gppConsent);
-  const syncDefaultEntry = syncDefaults?.find(item => item.url !== undefined);
-  if (!syncDefaultEntry) return null;
-
-  const defaultParams = syncDefaultEntry.url.split('?')[1] ?? '';
-  const syncUrl = defaultParams ? `${sync.url}?${defaultParams}` : sync.url;
-  return {
-    ...syncDefaultEntry,
-    url: syncUrl,
-  };
+const buildSyncEntry = (sync, syncOptions, gdprConsent, uspConsent, gppConsent) => {
+  const userSyncsLibList = getUserSyncsLib(sync?.url ?? '')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
+  const userSyncsLibObject = userSyncsLibList?.find(item => item.url !== undefined);
+  return userSyncsLibObject ?? {};
 };
 
 // Returns the list of user synchronization objects.
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  const serverSyncsData = serverResponses.flatMap(response => response.body || [])
+  const serverSyncsData = serverResponses?.flatMap(response => response.body || [])
     .map(data => data.syncs)
     .find(syncs => Array.isArray(syncs) && syncs.length > 0) || [];
   const userSyncs = serverSyncsData
-    .map(sync => buildSyncEntry(sync, gdprConsent, uspConsent, gppConsent))
+    .map(sync => buildSyncEntry(sync, syncOptions, gdprConsent, uspConsent, gppConsent))
     .filter(Boolean); // Filter out nulls
   return userSyncs;
 };
@@ -146,7 +139,7 @@ const logEvent = (eventType, data, samplingEnabled) => {
     logInfo(BIDDER_CODE, `[${eventType}] ${JSON.stringify(data)}`);
 
     // Get Config
-    const bidderConfig = config.getConfig();
+    const bidderConfig = pbjsConfig.getConfig();
     const {version, customer} = extractParameters(bidderConfig);
 
     // Sampled monitoring
@@ -183,7 +176,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: isBidRequestValid(['placementId']),
+  isBidRequestValid,
   buildRequests,
   interpretResponse,
   getUserSyncs,
