@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { _each, buildUrl, isStr, isEmptyStr, logInfo, ajax, logError } from '../src/utils.js';
+import { _each, buildUrl, isStr, isEmptyStr, logInfo, logError } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import {
   isBidRequestValid,
