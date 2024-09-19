@@ -387,7 +387,7 @@ describe('contxtful bid adapter', function () {
     describe('on timeout callback', () => {
       it('will never call server if sampling is 0', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout' : 0.0}},
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 0.0}},
         });
 
         expect(spec.onTimeout({'customData': 'customvalue'}, ajaxStub)).to.not.throw;
@@ -396,7 +396,7 @@ describe('contxtful bid adapter', function () {
 
       it('will always call server if sampling is 1', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout' : 1.0}},
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 1.0}},
         });
 
         spec.onTimeout({'customData': 'customvalue'}, ajaxStub);
@@ -407,7 +407,7 @@ describe('contxtful bid adapter', function () {
     describe('on onBidderError callback', () => {
       it('will never call server if sampling is 0', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError' : 0.0}},
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError': 0.0}},
         });
 
         expect(spec.onBidderError({'customData': 'customvalue'}, ajaxStub)).to.not.throw;
@@ -416,7 +416,7 @@ describe('contxtful bid adapter', function () {
 
       it('will always call server if sampling is 1', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError' : 1.0}},
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError': 1.0}},
         });
 
         spec.onBidderError({'customData': 'customvalue'}, ajaxStub);
@@ -453,6 +453,5 @@ describe('contxtful bid adapter', function () {
         expect(ajaxStub.calledOnce).to.equal(true);
       });
     });
-
   });
 });
