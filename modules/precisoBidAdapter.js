@@ -8,7 +8,6 @@ import { buildUserSyncs } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER__CODE = 'preciso';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
-// export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const GVLID = 874;
 let precisoId = 'NA';
@@ -55,10 +54,7 @@ registerBidder(spec);
 
 async function getapi(url) {
   try {
-    // Storing response
     const response = await fetch(url);
-
-    // Storing data in form of JSON
     var data = await response.json();
 
     const dataMap = new Map(Object.entries(data));

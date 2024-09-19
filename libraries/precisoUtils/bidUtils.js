@@ -5,7 +5,6 @@ import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
-  // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
   let req = {
@@ -38,9 +37,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     publisherId: validBidRequests[0].params.publisherId
   };
 
-  //  req.language.indexOf('-') != -1 && (req.language = req.language.split('-')[0])
   consentCheck(bidderRequest, req);
-  logInfo('bidrequest :::' + req);
   return {
     method: 'POST',
     url: endpoint,
@@ -80,23 +77,9 @@ export function onBidWon(bid) {
   }
 }
 
-/* replacing auction_price macro from adm */
 function macroReplace(adm, cpm) {
   let replacedadm = replaceAuctionPrice(adm, cpm);
   return replacedadm;
-}
-
-export async function pid(sid) {
-  try {
-    const purl = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sid;
-    const response = await fetch(purl);
-    var data = await response.json();
-    const dataMap = new Map(Object.entries(data));
-    const uuidValue = dataMap.get('UUID');
-    return uuidValue;
-  } catch (error) {
-    logInfo('Error in preciso pid fetch' + error);
-  }
 }
 
 function mapImpression(slot, bidderRequest) {
@@ -176,7 +159,6 @@ export function buildBidResponse(serverResponse) {
             advertiserDomains: serverBid.adomain || '',
           },
         });
-        logInfo('Invalid native bid response bid.adm is not valid');
       }
     })
   });
@@ -184,45 +166,52 @@ export function buildBidResponse(serverResponse) {
 }
 
 function interpretNativeAd(adm) {
-  const native = JSON.parse(adm).native;
-  const result = {
-    clickUrl: encodeURI(native.link.url),
-    // clickUrl: encodeURI(native.link.clicktrackers[0]),
-    impressionTrackers: native.eventtrackers[0].url,
-    clickTrackers: native.link.clicktrackers[0]
+  try {
+    const native = JSON.parse(adm).native;
+    if (native) {
+      const result = {
+        clickUrl: encodeURI(native.link.url),
+        impressionTrackers: native.eventtrackers[0].url,
+        clickTrackers: native.link.clicktrackers[0]
 
-  };
-  native.assets.forEach(asset => {
-    switch (asset.id) {
-      case OPENRTB.NATIVE.ASSET_ID.TITLE:
-        result.title = asset.title.text;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.IMAGE:
-        result.image = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w || 300,
-          height: asset.img.h || 250
-        };
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.ICON:
-        result.icon = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w || 10,
-          height: asset.img.h || 10
-        };
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.DATA:
-        result.body = asset.data.value;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
-        result.sponsoredBy = asset.data.value;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.CTA:
-        result.cta = asset.data.value;
-        break;
+      };
+      native.assets.forEach(asset => {
+        switch (asset.id) {
+          case OPENRTB.NATIVE.ASSET_ID.TITLE:
+            result.title = asset.title.text;
+            break;
+          case OPENRTB.NATIVE.ASSET_ID.IMAGE:
+            result.image = {
+              url: encodeURI(asset.img.url),
+              width: asset.img.w || 300,
+              height: asset.img.h || 250
+            };
+            break;
+          case OPENRTB.NATIVE.ASSET_ID.ICON:
+            result.icon = {
+              url: encodeURI(asset.img.url),
+              width: asset.img.w || 10,
+              height: asset.img.h || 10
+            };
+            break;
+          case OPENRTB.NATIVE.ASSET_ID.DATA:
+            result.body = asset.data.value;
+            break;
+          case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
+            result.sponsoredBy = asset.data.value;
+            break;
+          case OPENRTB.NATIVE.ASSET_ID.CTA:
+            result.cta = asset.data.value;
+            break;
+        }
+      });
+      return result;
+    } else {
+      return
     }
-  });
-  return result;
+  } catch (error) {
+    logInfo('Error in bidUtils interpretNativeAd' + error);
+  }
 }
 
 export const OPENRTB = {
