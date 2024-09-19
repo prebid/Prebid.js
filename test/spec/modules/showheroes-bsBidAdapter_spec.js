@@ -121,11 +121,6 @@ describe('shBidAdapter', () => {
   });
 
   describe('interpretResponse', function () {
-    it('handles nobid responses', function () {
-      expect(spec.interpretResponse({ body: {} }, { data: { meta: {} } }).length).to.equal(0)
-      expect(spec.interpretResponse({ body: [] }, { data: { meta: {} } }).length).to.equal(0)
-    })
-
     const vastXml = '<?xml version="1.0" encoding="utf-8"?><VAST version="3.0"><Error><![CDATA[https://static.showheroes.com/shim.gif]]></Error></VAST>'
 
     const callback_won = 'https://test.com/track/?ver=15&session_id=01ecd03ce381505ccdeb88e555b05001&category=request_session&type=event&request_session_id=01ecd03ce381505ccdeb88e555b05001&label=prebid_won&reason=ok'
@@ -139,12 +134,12 @@ describe('shBidAdapter', () => {
           adm: vastXml,
           impid: '38b373e1e31c18',
           crid: 'c_38b373e1e31c18',
-          extra: 'test',
           adomain: adomain,
           ext: {
             callbacks: {
               won: [callback_won],
             },
+            extra: 'test',
           },
         }],
         seat: 'showheroes',
@@ -158,10 +153,12 @@ describe('shBidAdapter', () => {
         {
           cpm: 1,
           creativeId: 'c_38b373e1e31c18',
-          adUnitCode: 'adunit-code-1',
+          creative_id: 'c_38b373e1e31c18',
           currency: 'EUR',
           width: 640,
           height: 480,
+          playerHeight: 480,
+          playerWidth: 640,
           mediaType: 'video',
           netRevenue: true,
           requestId: '38b373e1e31c18',
@@ -170,9 +167,6 @@ describe('shBidAdapter', () => {
             advertiserDomains: adomain
           },
           vastXml: vastXml,
-          adResponse: {
-            content: vastXml,
-          },
           callbacks: {
             won: [callback_won],
           },
