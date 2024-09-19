@@ -109,10 +109,28 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 };
 
 // Prepare a sync object compatible with getUserSyncs.
+const constructUrl = (userSyncDefault, sync, syncOptions, gdprConsent, uspConsent, gppConsent) => {
+  const userSyncDefaultParts = userSyncDefault?.url?.split('?');
+  const syncurlPart = (sync?.url ?? '').split('?');
+  const type = userSyncDefault.type;
+  if (!syncurlPart || !userSyncDefaultParts) {
+    return null;
+  }
+  let url = syncurlPart[0] + '/' + type + '?';
+  if (syncurlPart.length > 1) {
+    url += syncurlPart[1] + '&';
+  }
+  url += userSyncDefaultParts[1];
+  return {
+    type,
+    url,
+  }
+};
+
 const buildSyncEntry = (sync, syncOptions, gdprConsent, uspConsent, gppConsent) => {
-  const userSyncsLibList = getUserSyncsLib(sync?.url ?? '')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
-  const userSyncsLibObject = userSyncsLibList?.find(item => item.url !== undefined);
-  return userSyncsLibObject ?? {};
+  const userSyncsLibList = getUserSyncsLib('')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
+  const userSyncDefault = userSyncsLibList?.find(item => item.url !== undefined);
+  return constructUrl(userSyncDefault, sync, syncOptions, gdprConsent, uspConsent, gppConsent);
 };
 
 // Returns the list of user synchronization objects.
@@ -133,7 +151,7 @@ const getSamplingRate = (bidderConfig, eventType) => {
 };
 
 // Handles the logging of events
-const logEvent = (eventType, data, samplingEnabled) => {
+const logEvent = (eventType, data, samplingEnabled, ajaxMethod = ajax) => {
   try {
     // Log event
     logInfo(BIDDER_CODE, `[${eventType}] ${JSON.stringify(data)}`);
@@ -157,7 +175,7 @@ const logEvent = (eventType, data, samplingEnabled) => {
       withCredentials: true,
     };
 
-    const request = { type: eventType, data };
+    const payload = { type: eventType, data };
 
     const eventUrl = buildUrl({
       protocol: 'https',
@@ -165,7 +183,7 @@ const logEvent = (eventType, data, samplingEnabled) => {
       pathname: `/${version}/prebid/${customer}/log/${eventType}`,
     });
 
-    ajax(eventUrl, null, request, options);
+    ajaxMethod(eventUrl, null, JSON.stringify(payload), options);
   } catch (error) {
     logError(`Failed to log event: ${eventType}`);
   }
@@ -180,12 +198,12 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon: function(bid) { logEvent('onBidWon', bid, false); },
-  onBidBillable: function(bid) { logEvent('onBidBillable', bid, false); },
-  onAdRenderSucceeded: function(bid) { logEvent('onAdRenderSucceeded', bid, false); },
+  onBidWon: function(bid, ajaxMethod = ajax) { logEvent('onBidWon', bid, false, ajaxMethod); },
+  onBidBillable: function(bid, ajaxMethod = ajax) { logEvent('onBidBillable', bid, false, ajaxMethod); },
+  onAdRenderSucceeded: function(bid, ajaxMethod = ajax) { logEvent('onAdRenderSucceeded', bid, false, ajaxMethod); },
   onSetTargeting: function(bid) { },
-  onTimeout: function(timeoutData) { logEvent('onTimeout', timeoutData, true); },
-  onBidderError: function(args) { logEvent('onBidderError', args, true); },
+  onTimeout: function(timeoutData, ajaxMethod = ajax) { logEvent('onTimeout', timeoutData, true, ajaxMethod); },
+  onBidderError: function(args, ajaxMethod = ajax) { logEvent('onBidderError', args, true, ajaxMethod); },
 };
 
 registerBidder(spec);
