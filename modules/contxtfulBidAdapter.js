@@ -109,28 +109,28 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 };
 
 // Prepare a sync object compatible with getUserSyncs.
-const constructUrl = (userSyncDefault, sync, syncOptions, gdprConsent, uspConsent, gppConsent) => {
-  const userSyncDefaultParts = userSyncDefault?.url?.split('?');
-  const syncurlPart = (sync?.url ?? '').split('?');
-  const type = userSyncDefault.type;
-  if (!syncurlPart || !userSyncDefaultParts) {
-    return null;
+const constructUrl = (userSyncsDefault, userSyncServer) => {
+  const urlSyncServer = (userSyncServer?.url ?? '').split('?');
+  const userSyncUrl = userSyncsDefault?.url || '';
+  const baseSyncUrl = urlSyncServer[0] || '';
+
+  let url = `${baseSyncUrl}${userSyncUrl}`;
+
+  if (urlSyncServer.length > 1) {
+    const urlParams = urlSyncServer[1];
+    url += url.includes('?') ? `&${urlParams}` : `?${urlParams}`;
   }
-  let url = syncurlPart[0] + '/' + type + '?';
-  if (syncurlPart.length > 1) {
-    url += syncurlPart[1] + '&';
-  }
-  url += userSyncDefaultParts[1];
+
   return {
-    type,
+    ...userSyncsDefault,
     url,
-  }
+  };
 };
 
 const buildSyncEntry = (sync, syncOptions, gdprConsent, uspConsent, gppConsent) => {
-  const userSyncsLibList = getUserSyncsLib('')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
-  const userSyncDefault = userSyncsLibList?.find(item => item.url !== undefined);
-  return constructUrl(userSyncDefault, sync, syncOptions, gdprConsent, uspConsent, gppConsent);
+  const userSyncsDefaultLib = getUserSyncsLib('')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
+  const userSyncsDefault = userSyncsDefaultLib?.find(item => item.url !== undefined);
+  return constructUrl(userSyncsDefault, sync);
 };
 
 // Returns the list of user synchronization objects.

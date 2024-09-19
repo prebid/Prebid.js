@@ -353,7 +353,7 @@ describe('contxtful bid adapter', function () {
       const userSyncs = spec.getUserSyncs(syncOptions, [{ body: bidResponse }]);
       expect(userSyncs).to.deep.equal([
         {
-          'url': 'mysyncurl.com/image?qparam1=qparamv1&qparam2=qparamv2&pbjs=1&coppa=0',
+          'url': 'mysyncurl.com/image?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
           'type': 'image'
         }
       ]);
@@ -367,7 +367,7 @@ describe('contxtful bid adapter', function () {
       const userSyncs = spec.getUserSyncs(syncOptions, [{ body: bidResponse }]);
       expect(userSyncs).to.deep.equal([
         {
-          'url': 'mysyncurl.com/iframe?qparam1=qparamv1&qparam2=qparamv2&pbjs=1&coppa=0',
+          'url': 'mysyncurl.com/iframe?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
           'type': 'iframe'
         }
       ]);
