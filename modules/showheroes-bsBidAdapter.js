@@ -151,10 +151,10 @@ function outstreamRender(response, renderConfig) {
     if (!isFn(func)) {
       return;
     }
-    const renderPayload = { ...response, ...renderConfig.renderOptions };
-    if (renderPayload.vastXml) {
+    const renderPayload = { ...renderConfig.renderOptions };
+    if (response.vastXml) {
       renderPayload.adResponse = {
-        content: renderPayload.vastXml,
+        content: response.vastXml,
       };
     }
     func(renderPayload);
