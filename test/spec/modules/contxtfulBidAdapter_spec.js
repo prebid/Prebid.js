@@ -1,6 +1,7 @@
 import { spec } from 'modules/contxtfulBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import * as ajax from 'src/ajax.js';
 const VERSION = 'v1';
 const CUSTOMER = 'CUSTOMER';
 const BIDDER_ENDPOINT = 'prebid.receptivity.io';
@@ -8,6 +9,17 @@ const RX_FROM_API = { ReceptivityState: 'Receptive', test_info: 'rx_from_engine'
 
 describe('contxtful bid adapter', function () {
   const adapter = newBidder(spec);
+  let sandbox, ajaxStub;
+
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+    ajaxStub = sandbox.stub(ajax, 'ajax');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+    ajaxStub.restore();
+  });
 
   describe('is a functions', function () {
     it('exists and is a function', function () {
@@ -186,12 +198,12 @@ describe('contxtful bid adapter', function () {
     });
     const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
 
-    it('will return a data property containing properties ortb2, bidRequests, bidderRequest and pubConfig', () => {
+    it('will return a data property containing properties ortb2, bidRequests, bidderRequest and config', () => {
       expect(bidRequest.data).not.to.be.undefined;
       expect(bidRequest.data.ortb2).not.to.be.undefined;
       expect(bidRequest.data.bidRequests).not.to.be.undefined;
       expect(bidRequest.data.bidderRequest).not.to.be.undefined;
-      expect(bidRequest.data.pubConfig).not.to.be.undefined;
+      expect(bidRequest.data.config).not.to.be.undefined;
     });
 
     it('will take custom parameters in the bid request and within the bidRequests array', () => {
@@ -291,6 +303,156 @@ describe('contxtful bid adapter', function () {
     it('will take the param.bidfloor as floor value if possible', () => {
       expect(bidRequest.data.bidRequests[1].bidFloor.currency).to.equal('USD');
       expect(bidRequest.data.bidRequests[1].bidFloor.floor).to.equal(54);
+    });
+  });
+
+  describe('valid bid response', () => {
+    const bidResponse = [
+      {
+        'requestId': 'arequestId',
+        'originalCpm': 1.5,
+        'cpm': 1.35,
+        'currency': 'CAD',
+        'width': 300,
+        'height': 600,
+        'creativeId': 'creativeid',
+        'netRevenue': true,
+        'ttl': 300,
+        'ad': '<script src="www.anadscript.com"></script>',
+        'mediaType': 'banner',
+        'syncs': [
+          {
+            'url': 'mysyncurl.com?qparam1=qparamv1&qparam2=qparamv2'
+          }
+        ]
+      }
+    ];
+    config.setConfig({
+      contxtful: {customer: CUSTOMER, version: VERSION},
+    });
+
+    const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+
+    it('will interpret response correcly', () => {
+      const bids = spec.interpretResponse({ body: bidResponse }, bidRequest);
+      expect(bids).not.to.be.undefined;
+      expect(bids).to.have.lengthOf(1);
+      expect(bids).to.deep.equal(bidResponse);
+    });
+
+    it('will return empty response if bid response is empty', () => {
+      const bids = spec.interpretResponse({ body: [] }, bidRequest);
+      expect(bids).to.have.lengthOf(0);
     })
-  })
+
+    it('will trigger user sync if enable pixel mode', () => {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [{ body: bidResponse }]);
+      expect(userSyncs).to.deep.equal([
+        {
+          'url': 'mysyncurl.com/image?qparam1=qparamv1&qparam2=qparamv2&pbjs=1&coppa=0',
+          'type': 'image'
+        }
+      ]);
+    });
+
+    it('will trigger user sync if enable iframe mode', () => {
+      const syncOptions = {
+        iframeEnabled: true
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [{ body: bidResponse }]);
+      expect(userSyncs).to.deep.equal([
+        {
+          'url': 'mysyncurl.com/iframe?qparam1=qparamv1&qparam2=qparamv2&pbjs=1&coppa=0',
+          'type': 'iframe'
+        }
+      ]);
+    });
+
+    it('will return empty value if no server response', () => {
+      const syncOptions = {
+        iframeEnabled: true
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, []);
+      expect(userSyncs).to.have.lengthOf(0);
+      const userSyncs2 = spec.getUserSyncs(syncOptions, null);
+      expect(userSyncs2).to.have.lengthOf(0);
+    });
+
+    describe('on timeout callback', () => {
+      it('will never call server if sampling is 0', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout' : 0.0}},
+        });
+
+        expect(spec.onTimeout({'customData': 'customvalue'}, ajaxStub)).to.not.throw;
+        expect(ajaxStub.calledOnce).to.equal(false);
+      });
+
+      it('will always call server if sampling is 1', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout' : 1.0}},
+        });
+
+        spec.onTimeout({'customData': 'customvalue'}, ajaxStub);
+        expect(ajaxStub.calledOnce).to.equal(true);
+      });
+    });
+
+    describe('on onBidderError callback', () => {
+      it('will never call server if sampling is 0', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError' : 0.0}},
+        });
+
+        expect(spec.onBidderError({'customData': 'customvalue'}, ajaxStub)).to.not.throw;
+        expect(ajaxStub.calledOnce).to.equal(false);
+      });
+
+      it('will always call server if sampling is 1', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError' : 1.0}},
+        });
+
+        spec.onBidderError({'customData': 'customvalue'}, ajaxStub);
+        expect(ajaxStub.calledOnce).to.equal(true);
+      });
+    });
+
+    describe('on onBidWon callback', () => {
+      it('will always call server', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION},
+        });
+        spec.onBidWon({'customData': 'customvalue'}, ajaxStub);
+        expect(ajaxStub.calledOnce).to.equal(true);
+      });
+    });
+
+    describe('on onBidBillable callback', () => {
+      it('will always call server', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION},
+        });
+        spec.onBidBillable({'customData': 'customvalue'}, ajaxStub);
+        expect(ajaxStub.calledOnce).to.equal(true);
+      });
+    });
+
+    describe('on onAdRenderSucceeded callback', () => {
+      it('will always call server', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION},
+        });
+        spec.onAdRenderSucceeded({'customData': 'customvalue'}, ajaxStub);
+        expect(ajaxStub.calledOnce).to.equal(true);
+      });
+    });
+
+  });
 });
