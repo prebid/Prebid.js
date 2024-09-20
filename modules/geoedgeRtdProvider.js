@@ -53,6 +53,10 @@ export let wrapper
 let wrapperReady;
 /** @type {boolean} */;
 let preloaded;
+/** @type {object} */;
+let refererInfo = getRefererInfo();
+/** @type {object} */;
+let overrides = window.grumi?.overrides;
 
 /**
  * fetches the creative wrapper
@@ -75,9 +79,8 @@ export function setWrapper(responseText) {
 }
 
 export function getInitialParams(key) {
-  let refererInfo = getRefererInfo();
   let params = {
-    wver: 'pbjs',
+    wver: '1.1.1',
     wtype: 'pbjs-module',
     key,
     meta: {
@@ -141,7 +144,7 @@ export function getMacros(bid, key) {
     '%_hbcid!': bid.creativeId || '',
     '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
-    '%%SITE%%': location.hostname,
+    '%%SITE%%': overrides?.site || refererInfo.domain,
     '%_pimp%': PV_ID,
     '%_hbCpm!': bid.cpm,
     '%_hbCurrency!': bid.currency

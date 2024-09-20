@@ -1630,6 +1630,15 @@ describe('adapterManager tests', function () {
           expect(adapterManager.videoAdapters).to.include(alias);
         }
       });
+
+      it('should use gvlid of original adapter when option set', () => {
+        const gvlid = 'origvlid';
+        let thisSpec = Object.assign(spec, { gvlid });
+        registerBidder(thisSpec);
+        const alias = 'bidderWithGvlid';
+        adapterManager.aliasBidAdapter(CODE, alias, {useBaseGvlid: true});
+        expect(adapterManager.bidderRegistry[alias].getSpec()?.gvlid).to.deep.eql(gvlid);
+      })
     });
 
     describe('special case for s2s-only bidders', function () {

@@ -102,7 +102,7 @@ const checkIfObjectHasKey = (keys, obj, mode = 'some') => {
     const val = obj[key];
 
     if (mode === 'some' && val) return true;
-    if (!val) return false;
+    if (mode === 'every' && !val) return false;
   }
 
   return mode === 'every';

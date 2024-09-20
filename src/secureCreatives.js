@@ -115,7 +115,7 @@ function handleNativeRequest(reply, data, adObject) {
       reply(getAllAssetsMessage(data, adObject));
       break;
     default:
-      handleNativeMessage(data, adObject, {resizeFn: getResizer(adObject)})
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)})
   }
 }
 
