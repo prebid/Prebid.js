@@ -15,9 +15,6 @@ describe('Equativ bid adapter tests', function () {
       },
       bidder: 'equativ',
       params: {
-        siteId: '1234',
-        pageId: '5678',
-        formatId: '90',
         networkId: 111,
       },
       requestId: 'efgh5678',
@@ -61,6 +58,13 @@ describe('Equativ bid adapter tests', function () {
       cur: 'USD',
       statuscode: 0,
     },
+  };
+
+  const RESPONSE_WITH_DSP_PIXELS = {
+    ...SAMPLE_RESPONSE,
+    body: {
+      dspPixels: ['1st-pixel', '2nd-pixel', '3rd-pixel']
+    }
   };
 
   describe('buildRequests', () => {
@@ -126,6 +130,33 @@ describe('Equativ bid adapter tests', function () {
         DEFAULT_BIDDER_REQUEST
       );
       expect(request.data.site.publisher.id).to.equal(111);
+    });
+  });
+
+  describe('getUserSyncs', () => {
+    it('should return empty array if no pixel sync not enabled', function () {
+      const syncs = spec.getUserSyncs({}, RESPONSE_WITH_DSP_PIXELS);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should return empty array if no pixels available', function () {
+      const syncs = spec.getUserSyncs(
+        { pixelEnabled: true },
+        SAMPLE_RESPONSE
+      );
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should register dsp pixels', function () {
+      const syncs = spec.getUserSyncs(
+        { pixelEnabled: true },
+        RESPONSE_WITH_DSP_PIXELS
+      );
+      expect(syncs).to.have.lengthOf(3);
+      expect(syncs[1]).to.deep.equal({
+        type: 'image',
+        url: '2nd-pixel',
+      });
     });
   });
 

@@ -22,8 +22,7 @@ export const spec = {
     return {
       data: converter.toORTB({ bidderRequest, bidRequests }),
       method: 'POST',
-      // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
-      url: 'https://feature-ssb-engine-pips-2655-testenv.internal.smartadserver.com/api/bid?callerId=169',
+      url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
     };
   },
 
@@ -53,25 +52,24 @@ export const spec = {
 
   /**
    * @param syncOptions
-   * @param serverResponses
-   * @return {{type: (string), url: (*|string)}[]}
+   * @param serverResponse
+   * @return {{type: string, url: string}[]}
    */
-  // getUserSyncs: (syncOptions, serverResponses) => {
-  //   if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
-  //     return [
-  //       {
-  //         type: 'iframe',
-  //         url: serverResponses[0].body.cSyncUrl,
-  //       },
-  //     ];
-  //   } else if (syncOptions.pixelEnabled && serverResponses[0]?.body.dspPixels) {
-  //     return serverResponses[0].body.dspPixels.map((pixel) => ({
-  //       type: 'image',
-  //       url: pixel,
-  //     }));
-  //   }
-  //   return [];
-  // },
+  getUserSyncs: (syncOptions, serverResponse) => {
+    // if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
+    //   return [
+    //     {
+    //       type: 'iframe',
+    //       url: serverResponses[0].body.cSyncUrl,
+    //     },
+    //   ];
+    // }
+    return (syncOptions.pixelEnabled && serverResponse.body.dspPixels)
+      ? serverResponse.body.dspPixels.map((pixel) => ({
+        type: 'image',
+        url: pixel,
+      })) : [];
+  },
 };
 
 export const converter = ortbConverter({
