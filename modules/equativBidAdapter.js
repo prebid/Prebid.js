@@ -64,7 +64,7 @@ export const spec = {
     //     },
     //   ];
     // }
-    return (syncOptions.pixelEnabled && serverResponse.body.dspPixels)
+    return (syncOptions.pixelEnabled && serverResponse.body?.dspPixels)
       ? serverResponse.body.dspPixels.map((pixel) => ({
         type: 'image',
         url: pixel,
