@@ -373,6 +373,24 @@ describe('contxtful bid adapter', function () {
       ]);
     });
 
+    describe('no sync option', () => {
+      it('will return image sync if no sync options', () => {
+        const userSyncs = spec.getUserSyncs({}, [{ body: bidResponse }]);
+        expect(userSyncs).to.deep.equal([
+          {
+            'url': 'mysyncurl.com/image?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
+            'type': 'image'
+          }
+        ]);
+      });
+      it('will return empty value if no server response', () => {
+        const userSyncs = spec.getUserSyncs({}, []);
+        expect(userSyncs).to.have.lengthOf(0);
+        const userSyncs2 = spec.getUserSyncs({}, null);
+        expect(userSyncs2).to.have.lengthOf(0);
+      });
+    });
+
     it('will return empty value if no server response', () => {
       const syncOptions = {
         iframeEnabled: true
