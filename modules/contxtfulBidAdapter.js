@@ -8,7 +8,6 @@ import {
   interpretResponse,
   getUserSyncs as getUserSyncsLib,
 } from '../libraries/teqblazeUtils/bidderUtils.js';
-
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 // Constants
