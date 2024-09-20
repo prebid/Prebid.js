@@ -23,8 +23,9 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    const mediaTypeContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-    deepSetValue(imp, 'ext.mediaType', mediaTypeContext);
+    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    deepSetValue(imp, 'video.ext.context', videoContext);
+    imp.ext = imp.ext || {};
     imp.ext.params = bidRequest.params;
     imp.ext.adUnitCode = bidRequest.adUnitCode;
 
@@ -60,7 +61,7 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
 
-    if (context.imp?.ext?.mediaType === 'outstream') {
+    if (context.imp?.video?.ext?.context === 'outstream') {
       const renderConfig = {
         rendererUrl: bid.ext?.rendererConfig?.rendererUrl,
         renderFunc: bid.ext?.rendererConfig?.renderFunc,
