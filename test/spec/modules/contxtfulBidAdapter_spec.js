@@ -9,16 +9,18 @@ const RX_FROM_API = { ReceptivityState: 'Receptive', test_info: 'rx_from_engine'
 
 describe('contxtful bid adapter', function () {
   const adapter = newBidder(spec);
-  let sandbox, ajaxStub;
+  let sandbox, ajaxStub, beaconStub;
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
     ajaxStub = sandbox.stub(ajax, 'ajax');
+    beaconStub = sandbox.stub(navigator, 'sendBeacon');
   });
 
   afterEach(function () {
     sandbox.restore();
     ajaxStub.restore();
+    beaconStub.restore();
   });
 
   describe('is a functions', function () {
@@ -408,8 +410,9 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 0.0}},
         });
 
-        expect(spec.onTimeout({'customData': 'customvalue'}, ajaxStub)).to.not.throw;
+        expect(spec.onTimeout({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub })).to.not.throw;
         expect(ajaxStub.calledOnce).to.equal(false);
+        expect(beaconStub.calledOnce).to.equal(false);
       });
 
       it('will always call server if sampling is 1', () => {
@@ -417,8 +420,9 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 1.0}},
         });
 
-        spec.onTimeout({'customData': 'customvalue'}, ajaxStub);
+        spec.onTimeout({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
         expect(ajaxStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(true);
       });
     });
 
@@ -428,8 +432,9 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError': 0.0}},
         });
 
-        expect(spec.onBidderError({'customData': 'customvalue'}, ajaxStub)).to.not.throw;
+        expect(spec.onBidderError({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub })).to.not.throw;
         expect(ajaxStub.calledOnce).to.equal(false);
+        expect(beaconStub.calledOnce).to.equal(false);
       });
 
       it('will always call server if sampling is 1', () => {
@@ -437,8 +442,9 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError': 1.0}},
         });
 
-        spec.onBidderError({'customData': 'customvalue'}, ajaxStub);
+        spec.onBidderError({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
         expect(ajaxStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(true);
       });
     });
 
@@ -447,8 +453,9 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
-        spec.onBidWon({'customData': 'customvalue'}, ajaxStub);
+        spec.onBidWon({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
         expect(ajaxStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(true);
       });
     });
 
@@ -457,8 +464,9 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
-        spec.onBidBillable({'customData': 'customvalue'}, ajaxStub);
+        spec.onBidBillable({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
         expect(ajaxStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(true);
       });
     });
 
@@ -467,8 +475,9 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
-        spec.onAdRenderSucceeded({'customData': 'customvalue'}, ajaxStub);
+        spec.onAdRenderSucceeded({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
         expect(ajaxStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(true);
       });
     });
   });

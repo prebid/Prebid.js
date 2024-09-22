@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { _each, buildUrl, isStr, isEmptyStr, logInfo, logError } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { ajax, sendBeacon } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import {
   isBidRequestValid,
@@ -126,19 +126,18 @@ const constructUrl = (userSyncsDefault, userSyncServer) => {
   };
 };
 
-const buildSyncEntry = (sync, syncOptions, gdprConsent, uspConsent, gppConsent) => {
-  const userSyncsDefaultLib = getUserSyncsLib('')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
-  const userSyncsDefault = userSyncsDefaultLib?.find(item => item.url !== undefined);
-  return constructUrl(userSyncsDefault, sync);
-};
-
 // Returns the list of user synchronization objects.
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+  // Get User Sync Defaults from pbjs lib
+  const userSyncsDefaultLib = getUserSyncsLib('')(syncOptions, null, gdprConsent, uspConsent, gppConsent);
+  const userSyncsDefault = userSyncsDefaultLib?.find(item => item.url !== undefined);
+
+  // Map Server Responses to User Syncs list
   const serverSyncsData = serverResponses?.flatMap(response => response.body || [])
     .map(data => data.syncs)
     .find(syncs => Array.isArray(syncs) && syncs.length > 0) || [];
   const userSyncs = serverSyncsData
-    .map(sync => buildSyncEntry(sync, syncOptions, gdprConsent, uspConsent, gppConsent))
+    .map(sync => constructUrl(userSyncsDefault, sync))
     .filter(Boolean); // Filter out nulls
   return userSyncs;
 };
@@ -150,7 +149,13 @@ const getSamplingRate = (bidderConfig, eventType) => {
 };
 
 // Handles the logging of events
-const logEvent = (eventType, data, samplingEnabled, ajaxMethod = ajax) => {
+const logEvent = (eventType, data, options = {}) => {
+  const {
+    samplingEnabled = false,
+    ajaxFunc = ajax,
+    sendBeaconFunc = sendBeacon,
+  } = options;
+
   try {
     // Log event
     logInfo(BIDDER_CODE, `[${eventType}] ${JSON.stringify(data)}`);
@@ -168,23 +173,27 @@ const logEvent = (eventType, data, samplingEnabled, ajaxMethod = ajax) => {
       }
     }
 
-    const options = {
-      method: 'POST',
-      contentType: 'application/json',
-      withCredentials: true,
-    };
-
     const payload = { type: eventType, data };
-
     const eventUrl = buildUrl({
       protocol: 'https',
       host: MONITORING_ENDPOINT,
       pathname: `/${version}/prebid/${customer}/log/${eventType}`,
     });
 
-    ajaxMethod(eventUrl, null, JSON.stringify(payload), options);
+    // Try sending the beacon
+    if (sendBeaconFunc?.(eventUrl, JSON.stringify(payload))) {
+      logInfo(BIDDER_CODE, `[${eventType}] Beacon sent with payload: ${JSON.stringify(data)}`);
+    } else {
+      // Fallback to using ajax
+      ajaxFunc?.(eventUrl, null, JSON.stringify(payload), {
+        method: 'POST',
+        contentType: 'application/json',
+        withCredentials: true,
+      });
+      logInfo(BIDDER_CODE, `[${eventType}] Ajax sent with payload: ${JSON.stringify(data)}`);
+    }
   } catch (error) {
-    logError(`Failed to log event: ${eventType}`);
+    logError(BIDDER_CODE, `Failed to log event: ${eventType}`);
   }
 };
 
@@ -197,12 +206,12 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon: function(bid, ajaxMethod = ajax) { logEvent('onBidWon', bid, false, ajaxMethod); },
-  onBidBillable: function(bid, ajaxMethod = ajax) { logEvent('onBidBillable', bid, false, ajaxMethod); },
-  onAdRenderSucceeded: function(bid, ajaxMethod = ajax) { logEvent('onAdRenderSucceeded', bid, false, ajaxMethod); },
-  onSetTargeting: function(bid) { },
-  onTimeout: function(timeoutData, ajaxMethod = ajax) { logEvent('onTimeout', timeoutData, true, ajaxMethod); },
-  onBidderError: function(args, ajaxMethod = ajax) { logEvent('onBidderError', args, true, ajaxMethod); },
+  onBidWon: function(bid, options) { logEvent('onBidWon', bid, { samplingEnabled: false, ...options }); },
+  onBidBillable: function(bid, options) { logEvent('onBidBillable', bid, { samplingEnabled: false, ...options }); },
+  onAdRenderSucceeded: function(bid, options) { logEvent('onAdRenderSucceeded', bid, { samplingEnabled: false, ...options }); },
+  onSetTargeting: function(bid, options) { },
+  onTimeout: function(timeoutData, options) { logEvent('onTimeout', timeoutData, { samplingEnabled: true, ...options }); },
+  onBidderError: function(args, options) { logEvent('onBidderError', args, { samplingEnabled: true, ...options }); },
 };
 
 registerBidder(spec);
