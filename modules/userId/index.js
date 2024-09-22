@@ -22,8 +22,8 @@
  * It's permissible to return neither, one, or both fields.
  * @callback getId
  * @param {SubmoduleConfig} config
- * @param {ConsentData|undefined} consentData
- * @param {Object|undefined} cacheIdObj
+ * @param {ConsentData|undefined} [consentData]
+ * @param {Object|undefined} [cacheIdObj]
  * @returns {IdResponse|undefined} A response object that contains id and/or callback.
  */
 
@@ -43,7 +43,7 @@
  * Decode a stored value for passing to bid requests
  * @callback decode
  * @param {Object|string} value
- * @param {SubmoduleConfig|undefined} config
+ * @param {SubmoduleConfig|undefined} [config]
  * @returns {Object|undefined}
  */
 
