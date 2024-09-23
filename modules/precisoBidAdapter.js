@@ -22,7 +22,7 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-    sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
+      sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
     let precisoBid = true;
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
     precisoId = storage.getDataFromLocalStorage('_pre|id');
@@ -39,13 +39,7 @@ export const spec = {
   interpretResponse: buildBidResponse,
   onBidWon,
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const isSpec = syncOptions.spec;
-    if ((!Object.is(isSpec, true)) && (storage.localStorageIsEnabled())) {
-      let syncId = storage.getCookie('_sharedid');
-      syncEndpoint = syncEndpoint + 'id=' + syncId;
-    } else {
-      syncEndpoint = syncEndpoint + 'id=NA';
-    }
+    syncEndpoint = syncEndpoint + 'id=' + sharedId;
     return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, syncEndpoint);
   }
 };

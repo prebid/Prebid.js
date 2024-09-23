@@ -178,36 +178,34 @@ function interpretNativeAd(adm) {
       native.assets.forEach(asset => {
         switch (asset.id) {
           case OPENRTB.NATIVE.ASSET_ID.TITLE:
-            result.title = asset.title.text;
+            result.title = deepAccess(asset, 'title.text');
             break;
           case OPENRTB.NATIVE.ASSET_ID.IMAGE:
             result.image = {
               url: encodeURI(asset.img.url),
-              width: asset.img.w || 300,
-              height: asset.img.h || 250
+              width: deepAccess(asset, 'img.w') || 300,
+              height: deepAccess(asset, 'img.h') || 250
             };
             break;
           case OPENRTB.NATIVE.ASSET_ID.ICON:
             result.icon = {
               url: encodeURI(asset.img.url),
-              width: asset.img.w || 10,
-              height: asset.img.h || 10
+              width: deepAccess(asset, 'img.w') || 10,
+              height: deepAccess(asset, 'img.h') || 10
             };
             break;
           case OPENRTB.NATIVE.ASSET_ID.DATA:
-            result.body = asset.data.value;
+            result.body = deepAccess(asset, 'data.value');
             break;
           case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
-            result.sponsoredBy = asset.data.value;
+            result.sponsoredBy = deepAccess(asset, 'data.value');
             break;
           case OPENRTB.NATIVE.ASSET_ID.CTA:
-            result.cta = asset.data.value;
+            result.cta = deepAccess(asset, 'data.value');
             break;
         }
       });
       return result;
-    } else {
-      return
     }
   } catch (error) {
     logInfo('Error in bidUtils interpretNativeAd' + error);
