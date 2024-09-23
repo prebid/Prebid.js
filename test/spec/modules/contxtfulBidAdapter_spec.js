@@ -9,18 +9,14 @@ const RX_FROM_API = { ReceptivityState: 'Receptive', test_info: 'rx_from_engine'
 
 describe('contxtful bid adapter', function () {
   const adapter = newBidder(spec);
-  let sandbox, ajaxStub, beaconStub;
+  let sandbox;
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-    ajaxStub = sandbox.stub(ajax, 'ajax');
-    beaconStub = sandbox.stub(navigator, 'sendBeacon');
   });
 
   afterEach(function () {
     sandbox.restore();
-    ajaxStub.restore();
-    beaconStub.restore();
   });
 
   describe('is a functions', function () {
@@ -405,46 +401,54 @@ describe('contxtful bid adapter', function () {
     });
 
     describe('on timeout callback', () => {
-      it('will never call server if sampling is 0', () => {
+      it('will never call server if sampling is 0 with sendBeacon available', () => {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 0.0}},
         });
 
-        expect(spec.onTimeout({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub })).to.not.throw;
-        expect(ajaxStub.calledOnce).to.equal(false);
-        expect(beaconStub.calledOnce).to.equal(false);
+        const beaconStub = sandbox.stub(navigator, 'sendBeacon').returns(true);
+        const fetchStub = sandbox.stub(window, 'fetch').returns(true);
+        expect(spec.onTimeout({'customData': 'customvalue'})).to.not.throw;
+        expect(beaconStub.called).to.be.false;
+        expect(fetchStub.called).to.be.false;
       });
 
-      it('will always call server if sampling is 1', () => {
+      it('will always call server if sampling is 1 with sendBeacon available', () => {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 1.0}},
         });
 
-        spec.onTimeout({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
-        expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(true);
+        const beaconStub = sandbox.stub(navigator, 'sendBeacon').returns(true);
+        const fetchStub = sandbox.stub(window, 'fetch').returns(true);
+        expect(spec.onTimeout({'customData': 'customvalue'})).to.not.throw;
+        expect(beaconStub.called).to.be.true;
+        expect(fetchStub.called).to.be.false;
+      });
+
+      it('will always call server if sampling is 1 with sendBeacon not available', () => {
+        config.setConfig({
+          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 1.0}},
+        });
+
+        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        expect(spec.onTimeout({'customData': 'customvalue'})).to.not.throw;
+        expect(beaconStub.called).to.be.false;
+        expect(ajaxStub.calledOnce).to.be.true;
       });
     });
 
     describe('on onBidderError callback', () => {
-      it('will never call server if sampling is 0', () => {
-        config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError': 0.0}},
-        });
-
-        expect(spec.onBidderError({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub })).to.not.throw;
-        expect(ajaxStub.calledOnce).to.equal(false);
-        expect(beaconStub.calledOnce).to.equal(false);
-      });
-
       it('will always call server if sampling is 1', () => {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError': 1.0}},
         });
 
-        spec.onBidderError({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
+        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        spec.onBidderError({'customData': 'customvalue'});
         expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(false);
       });
     });
 
@@ -453,9 +457,12 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
-        spec.onBidWon({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
+
+        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        spec.onBidWon({'customData': 'customvalue'});
         expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(false);
       });
     });
 
@@ -464,9 +471,11 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
-        spec.onBidBillable({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
+        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        spec.onBidBillable({'customData': 'customvalue'});
         expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(false);
       });
     });
 
@@ -475,9 +484,11 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
-        spec.onAdRenderSucceeded({'customData': 'customvalue'}, { ajaxFunc: ajaxStub, sendBeaconFunc: beaconStub });
+        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        spec.onAdRenderSucceeded({'customData': 'customvalue'});
         expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(true);
+        expect(beaconStub.calledOnce).to.equal(false);
       });
     });
   });

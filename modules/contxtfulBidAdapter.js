@@ -152,8 +152,6 @@ const getSamplingRate = (bidderConfig, eventType) => {
 const logEvent = (eventType, data, options = {}) => {
   const {
     samplingEnabled = false,
-    ajaxFunc = ajax,
-    sendBeaconFunc = sendBeacon,
   } = options;
 
   try {
@@ -181,11 +179,11 @@ const logEvent = (eventType, data, options = {}) => {
     });
 
     // Try sending the beacon
-    if (sendBeaconFunc?.(eventUrl, JSON.stringify(payload))) {
+    if (sendBeacon(eventUrl, JSON.stringify(payload))) {
       logInfo(BIDDER_CODE, `[${eventType}] Beacon sent with payload: ${JSON.stringify(data)}`);
     } else {
       // Fallback to using ajax
-      ajaxFunc?.(eventUrl, null, JSON.stringify(payload), {
+      ajax(eventUrl, null, JSON.stringify(payload), {
         method: 'POST',
         contentType: 'application/json',
         withCredentials: true,
