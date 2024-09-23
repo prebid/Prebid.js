@@ -22,7 +22,7 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-      sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
+    sharedId = storage.getDataFromLocalStorage('_sharedid') || storage.getCookie('_sharedid');
     let precisoBid = true;
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
     precisoId = storage.getDataFromLocalStorage('_pre|id');
