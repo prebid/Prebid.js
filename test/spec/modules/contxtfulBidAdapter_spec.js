@@ -406,11 +406,11 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 0.0}},
         });
 
-        const beaconStub = sandbox.stub(navigator, 'sendBeacon').returns(true);
-        const fetchStub = sandbox.stub(window, 'fetch').returns(true);
+        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(true);
+        const ajaxStub = sandbox.stub(ajax, 'ajax');
         expect(spec.onTimeout({'customData': 'customvalue'})).to.not.throw;
         expect(beaconStub.called).to.be.false;
-        expect(fetchStub.called).to.be.false;
+        expect(ajaxStub.called).to.be.false;
       });
 
       it('will always call server if sampling is 1 with sendBeacon available', () => {
@@ -418,11 +418,11 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 1.0}},
         });
 
-        const beaconStub = sandbox.stub(navigator, 'sendBeacon').returns(true);
-        const fetchStub = sandbox.stub(window, 'fetch').returns(true);
+        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(true);
+        const ajaxStub = sandbox.stub(ajax, 'ajax');
         expect(spec.onTimeout({'customData': 'customvalue'})).to.not.throw;
         expect(beaconStub.called).to.be.true;
-        expect(fetchStub.called).to.be.false;
+        expect(ajaxStub.called).to.be.false;
       });
 
       it('will always call server if sampling is 1 with sendBeacon not available', () => {
@@ -431,9 +431,10 @@ describe('contxtful bid adapter', function () {
         });
 
         const ajaxStub = sandbox.stub(ajax, 'ajax');
-        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         expect(spec.onTimeout({'customData': 'customvalue'})).to.not.throw;
-        expect(beaconStub.called).to.be.false;
+        expect(beaconStub.called).to.be.true;
+        expect(beaconStub.returned(false)).to.be.true;
         expect(ajaxStub.calledOnce).to.be.true;
       });
     });
@@ -445,10 +446,10 @@ describe('contxtful bid adapter', function () {
         });
 
         const ajaxStub = sandbox.stub(ajax, 'ajax');
-        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidderError({'customData': 'customvalue'});
-        expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(false);
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(beaconStub.returned(false)).to.be.true;
       });
     });
 
@@ -459,10 +460,10 @@ describe('contxtful bid adapter', function () {
         });
 
         const ajaxStub = sandbox.stub(ajax, 'ajax');
-        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidWon({'customData': 'customvalue'});
-        expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(false);
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(beaconStub.returned(false)).to.be.true;
       });
     });
 
@@ -472,10 +473,10 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
         const ajaxStub = sandbox.stub(ajax, 'ajax');
-        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidBillable({'customData': 'customvalue'});
-        expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(false);
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(beaconStub.returned(false)).to.be.true;
       });
     });
 
@@ -485,10 +486,10 @@ describe('contxtful bid adapter', function () {
           contxtful: {customer: CUSTOMER, version: VERSION},
         });
         const ajaxStub = sandbox.stub(ajax, 'ajax');
-        const beaconStub = sandbox.stub(navigator, 'sendBeacon').value(undefined);
+        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onAdRenderSucceeded({'customData': 'customvalue'});
-        expect(ajaxStub.calledOnce).to.equal(true);
-        expect(beaconStub.calledOnce).to.equal(false);
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(beaconStub.returned(false)).to.be.true;
       });
     });
   });
