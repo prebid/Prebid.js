@@ -3700,5 +3700,3 @@ describe('ozone Adapter', function () {
     });
   });
 });
-ozoneBidAdapter_spec.js.2024-09-24_12_52_20.txt
-Displaying ozoneBidAdapter_spec.js.2024-09-24_12_52_20.txt.
