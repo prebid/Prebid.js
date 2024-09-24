@@ -1,4 +1,3 @@
-
 import { expect } from 'chai';
 import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter.js';
 import { config } from 'src/config.js';
