@@ -5,7 +5,6 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, formatQS, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
-
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -104,10 +103,7 @@ export const spec = {
       tmax: parseInt(tmax)
     };
 
-    if (config.getConfig('currency.adServerCurrency')) {
-      payload.ext.cur = config.getConfig('currency.adServerCurrency');
-    }
-
+    payload.ext.cur = currency;    
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
