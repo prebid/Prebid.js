@@ -1,4 +1,4 @@
-import { generateUUID, deepSetValue, deepAccess, isArray, isInteger, logError, logWarn } from '../src/utils.js';
+import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isInteger, isPlainObject, logError, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'deepintent';
@@ -175,9 +175,11 @@ function formatResponse(bid) {
 
 function buildImpression(bid) {
   let impression = {};
+  const floor = getFloor(bid);
   impression = {
     id: bid.bidId,
     tagid: bid.params.tagId || '',
+    ...(floor && { bidfloor: floor }),
     secure: window.location.protocol === 'https:' ? 1 : 0,
     displaymanager: 'di_prebid',
     displaymanagerver: DI_M_V,
@@ -190,6 +192,23 @@ function buildImpression(bid) {
     impression['video'] = _buildVideo(bid);
   }
   return impression;
+}
+
+function getFloor(bidRequest) {
+  if (!isFn(bidRequest.getFloor)) {
+    return bidRequest.params.bidfloor ? bidRequest.params.bidfloor : null;
+  }
+
+  let floor = bidRequest.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 function _buildVideo(bid) {
