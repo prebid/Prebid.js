@@ -8,7 +8,7 @@
 
 import {
   createRtdProvider
-} from './symitriDapRtdProvider.js'/* eslint prebid/validate-imports: "off" */
+} from './symitriDapRtdProvider.js'/* eslint prebidjs/validate-imports: "off" */
 
 export const {
   addRealTimeData,

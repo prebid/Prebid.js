@@ -4,7 +4,7 @@
  * @requires module:modules/adlooxAnalyticsAdapter
  */
 
-/* eslint prebid/validate-imports: "off" */
+/* eslint prebidjs/validate-imports: "off" */
 
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';

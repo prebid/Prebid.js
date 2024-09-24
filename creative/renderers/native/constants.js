@@ -1,4 +1,4 @@
-// eslint-disable-next-line prebid/validate-imports
+// eslint-disable-next-line prebidjs/validate-imports
 import { MESSAGES } from '../../../src/constants.js';
 
 export const MESSAGE_NATIVE = MESSAGES.NATIVE;
