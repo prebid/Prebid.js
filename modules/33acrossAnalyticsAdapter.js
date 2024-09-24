@@ -630,8 +630,6 @@ function setCachedBidStatus(auctionId, bidId, status) {
  * @param {string} endpoint URL
  */
 function sendReport(report, endpoint) {
-  // TODO FIX THIS RULES VIOLATION
-  // eslint-disable-next-line
   if (sendBeacon(endpoint, JSON.stringify(report))) {
     log.info(`Analytics report sent to ${endpoint}`, report);
 
