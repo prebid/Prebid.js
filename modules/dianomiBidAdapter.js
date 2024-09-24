@@ -16,6 +16,7 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const { getConfig } = config;
 
@@ -303,19 +304,8 @@ export const spec = {
       .filter(Boolean);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
-    const params = {};
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params['gdpr'] = Number(gdprConsent.gdprApplies);
-      }
-      if (typeof gdprConsent.consentString === 'string') {
-        params['gdpr_consent'] = gdprConsent.consentString;
-      }
-    }
+    const params = getUserSyncParams(gdprConsent, uspConsent);
 
-    if (uspConsent) {
-      params['us_privacy'] = encodeURIComponent(uspConsent);
-    }
     if (syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       return {

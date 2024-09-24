@@ -3,7 +3,7 @@
  */
 
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
-import { deepAccess, logError, logInfo, logWarn } from '../src/utils.js';
+import { deepAccess, logError, logInfo, logWarn, isPlainObject } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
@@ -186,7 +186,7 @@ function handlerAuctionInit(event) {
   // Check if Adagio is on the bid requests.
   const adagioBidRequest = event.bidderRequests.find(bidRequest => isAdagio(bidRequest.bidderCode));
 
-  const rtdUid = deepAccess(adagioBidRequest, 'ortb2.site.ext.data.adg_rtd.uid');
+  const rtdUid = deepAccess(event.bidderRequests[0], 'ortb2.site.ext.data.adg_rtd.uid');
   cache.addPrebidAuctionIdRef(prebidAuctionId, rtdUid);
 
   cache.auctions[prebidAuctionId] = {};
@@ -214,13 +214,16 @@ function handlerAuctionInit(event) {
       bannerSize => bannerSize
     ).sort();
 
-    const sortedBidderCodes = bidders.sort()
+    const sortedBidderNames = bidders.sort();
 
     const bidSrcMapper = (bidder) => {
+      // bidderCode in the context of the bidderRequest is the name given to the bidder in the adunit.
+      // It is not always the "true" bidder code, it can also be its alias
       const request = event.bidderRequests.find(br => br.bidderCode === bidder)
       return request ? request.bids[0].src : null
     }
-    const biddersSrc = sortedBidderCodes.map(bidSrcMapper).join(',');
+    const biddersSrc = sortedBidderNames.map(bidSrcMapper).join(',');
+    const biddersCode = sortedBidderNames.map(bidder => adapterManager.resolveAlias(bidder)).join(',');
 
     // if adagio was involved in the auction we identified it with rtdUid, if not use the prebid auctionId
     const auctionId = rtdUid || prebidAuctionId;
@@ -238,7 +241,7 @@ function handlerAuctionInit(event) {
       url_dmn: w.location.hostname,
       mts: mediaTypesKeys.join(','),
       ban_szs: bannerSizes.join(','),
-      bdrs: sortedBidderCodes.join(','),
+      bdrs: sortedBidderNames.join(','),
       pgtyp: deepAccess(event.bidderRequests[0], 'ortb2.site.ext.data.pagetype', null),
       plcmt: deepAccess(adUnits[0], 'ortb2Imp.ext.data.placement', null),
       t_n: adgRtdSession.testName || null,
@@ -246,6 +249,7 @@ function handlerAuctionInit(event) {
       s_id: adgRtdSession.id || null,
       s_new: adgRtdSession.new || null,
       bdrs_src: biddersSrc,
+      bdrs_code: biddersCode,
     };
 
     if (adagioBidRequest && adagioBidRequest.bids) {
@@ -375,6 +379,33 @@ function handlerAdRender(event, isSuccess) {
 };
 
 /**
+ * handlerPbsAnalytics add to the cache data coming from Adagio PBS AdResponse.
+ * The data is retrieved from an AnalyticsTag (set by a custom PBS module named `adg-pba`),
+ * located in the AdResponse at `response.ext.prebid.analytics.tags[].pba`.
+ */
+function handlerPbsAnalytics(event) {
+  const pbaByAdUnit = event.atag.find(e => {
+    return e.module === 'adg-pba'
+  })?.pba;
+
+  if (!pbaByAdUnit) {
+    return;
+  }
+
+  const adUnitCodes = cache.getAllAdUnitCodes(event.auctionId);
+
+  adUnitCodes.forEach(adUnitCode => {
+    const pba = pbaByAdUnit[adUnitCode]
+
+    if (isPlainObject(pba)) {
+      cache.updateAuction(event.auctionId, adUnitCode, {
+        ...addKeyPrefix(pba, 'e_')
+      });
+    }
+  })
+}
+
+/**
  * END HANDLERS
  */
 
@@ -400,6 +431,9 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
         // case CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED:
         case EVENTS.AD_RENDER_FAILED:
           handlerAdRender(args, eventType === EVENTS.AD_RENDER_SUCCEEDED);
+          break;
+        case EVENTS.PBS_ANALYTICS:
+          handlerPbsAnalytics(args);
           break;
       }
     } catch (error) {

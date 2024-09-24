@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isArray, logError, logWarn, parseUrl} from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -282,6 +282,10 @@ export const spec = {
         } else {
           if (response.bundle) {
             saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR);
+          }
+
+          if (response.callbacks) {
+            response.callbacks.forEach(triggerPixel);
           }
         }
       }, true);

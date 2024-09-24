@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
+import * as detectBrowserUtils from '../../../libraries/detectBrowserUtils/detectBrowserUtils';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { EVENTS } from 'src/constants.js';
@@ -12,6 +13,7 @@ import { REPORTER_ID, getReferrer, preparePayload } from '../../../modules/inten
 
 const partner = 10;
 const defaultData = '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344", "group": "A"}';
+const version = 0.2;
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
@@ -66,6 +68,10 @@ let wonRequest = {
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
+  let getWindowSelfStub;
+  let getWindowTopStub;
+  let getWindowLocationStub;
+  let detectBrowserStub;
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
@@ -93,6 +99,10 @@ describe('IntentIQ tests all', function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    if (getWindowSelfStub) getWindowSelfStub.restore();
+    if (getWindowTopStub) getWindowTopStub.restore();
+    if (getWindowLocationStub) getWindowLocationStub.restore();
+    if (detectBrowserStub) detectBrowserStub.restore();
     config.getConfig.restore();
     events.getEvents.restore();
     iiqAnalyticsAnalyticsAdapter.disableAnalytics();
@@ -111,7 +121,7 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain('&jsver=0.1&vrref=http://localhost:9876/');
+    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
@@ -128,23 +138,25 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain('&jsver=0.1&vrref=http://localhost:9876/');
+    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
     expect(request.url).to.contain('iiqid=testpcid');
   });
 
   it('should handle BID_WON event with default group configuration', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    const defaultDataObj = JSON.parse(defaultData)
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
-    const data = preparePayload(wonRequest);
-    const base64String = btoa(JSON.stringify(data));
+    const dataToSend = preparePayload(wonRequest);
+    const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
     expect(request.url).to.equal(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344&agid=${REPORTER_ID}&jsver=0.1&vrref=${getReferrer()}&source=pbjs&payload=${payload}`
+      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}`
     );
+    expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
 
   it('should not send request if manualReport is true', function () {
@@ -168,5 +180,68 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
+  });
+
+  it('should return window.location.href when window.self === window.top', function () {
+    // Stub helper functions
+    getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns(window);
+    getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns(window);
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+
+    const referrer = getReferrer();
+    expect(referrer).to.equal('http://localhost:9876/');
+  });
+
+  it('should return window.top.location.href when window.self !== window.top and access is successful', function () {
+    // Stub helper functions to simulate iframe
+    getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns({});
+    getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns({ location: { href: 'http://example.com/' } });
+
+    const referrer = getReferrer();
+    expect(referrer).to.equal('http://example.com/');
+  });
+
+  it('should return an empty string and log an error when accessing window.top.location.href throws an error', function () {
+    // Stub helper functions to simulate error
+    getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns({});
+    getWindowTopStub = sinon.stub(utils, 'getWindowTop').throws(new Error('Access denied'));
+
+    const referrer = getReferrer();
+    expect(referrer).to.equal('');
+    expect(logErrorStub.calledOnce).to.be.true;
+    expect(logErrorStub.firstCall.args[0]).to.contain('Error accessing location: Error: Access denied');
+  });
+
+  it('should not send request if the browser is in blacklist (chrome)', function () {
+    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    USERID_CONFIG_BROWSER[0].params.browserBlackList = 'ChrOmE';
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
+    detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('chrome');
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.equal(0);
+  });
+
+  it('should send request if the browser is not in blacklist (safari)', function () {
+    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    USERID_CONFIG_BROWSER[0].params.browserBlackList = 'chrome,firefox';
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
+    detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('safari');
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
+    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
+    expect(request.url).to.contain('&payload=');
+    expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
 });
