@@ -319,7 +319,7 @@ describe('targeting tests', function () {
     let bidsReceived;
 
     beforeEach(function () {
-      bidsReceived = [bid1, bid2, bid3];
+      bidsReceived = [bid1, bid2, bid3].map(deepClone);
 
       amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return bidsReceived;
@@ -392,7 +392,7 @@ describe('targeting tests', function () {
       beforeEach(function() {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
-        bid4.cpm = 0;
+        bid4.cpm = 0.01;
         enableSendAllBids = true;
 
         bidsReceived.push(bid4);
@@ -543,8 +543,8 @@ describe('targeting tests', function () {
       });
 
       after(function() {
-        bidsReceived = [bid1, bid2, bid3];
         $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
+        enableSendAllBids = false;
       })
 
       it('targeting should not include a 0 cpm by default', function() {
@@ -559,6 +559,8 @@ describe('targeting tests', function () {
             allowZeroCpmBids: true
           }
         };
+
+        enableSendAllBids = true;
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_pb', 'hb_bidder', 'hb_adid', 'hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
@@ -815,6 +817,7 @@ describe('targeting tests', function () {
           hb_pb: '3.0',
           hb_adid: '111111',
           hb_bidder: 'pubmatic',
+          foobar: '300x250'
         };
         bid5.bidder = bid5.bidderCode = 'pubmatic';
         bid5.cpm = 3.0; // winning bid!
@@ -899,6 +902,7 @@ describe('targeting tests', function () {
     let bidExpiryStub;
 
     beforeEach(function () {
+      enableSendAllBids = false;
       amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return [];
       });
@@ -921,6 +925,7 @@ describe('targeting tests', function () {
       let bidExpiryStub;
       let auctionManagerStub;
       beforeEach(function () {
+        enableSendAllBids = false;
         bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
         auctionManagerStub = sandbox.stub(auctionManager, 'getBidsReceived');
       });
