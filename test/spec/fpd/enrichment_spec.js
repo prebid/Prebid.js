@@ -3,7 +3,10 @@ import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as activities from 'src/activities/rules.js'
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../../../src/activities/activities.js';
+import {ACTIVITY_PARAM_COMPONENT} from '../../../src/activities/params.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -31,7 +34,11 @@ describe('FPD enrichment', () => {
       },
       document: {
         querySelector: sinon.stub()
-      }
+      },
+      screen: {
+        width: 1,
+        height: 1,
+      },
     };
   }
 
@@ -144,26 +151,6 @@ describe('FPD enrichment', () => {
         expect(ortb2.site.publisher.domain).to.eql('pub.com');
       });
     });
-
-    it('respects config set through setConfig({site})', () => {
-      sandbox.stub(dep, 'getRefererInfo').callsFake(() => ({
-        page: 'www.example.com',
-        ref: 'referrer.com',
-      }));
-      config.setConfig({
-        site: {
-          ref: 'override.com',
-          priority: 'lower'
-        }
-      });
-      return fpd({site: {priority: 'highest'}}).then(ortb2 => {
-        sinon.assert.match(ortb2.site, {
-          page: 'www.example.com',
-          ref: 'override.com',
-          priority: 'highest'
-        })
-      })
-    })
   });
 
   describe('device', () => {
@@ -173,12 +160,38 @@ describe('FPD enrichment', () => {
     });
     testWindows(() => win, () => {
       it('sets w/h', () => {
-        win.innerHeight = 123;
-        win.innerWidth = 321;
+        win.screen.width = 321;
+        win.screen.height = 123;
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
             h: 123,
+          });
+        });
+      });
+
+      it('sets ext.vpw/vph', () => {
+        win.innerWidth = 12;
+        win.innerHeight = 21;
+        return fpd().then(ortb2 => {
+          sinon.assert.match(ortb2.device.ext, {
+            vpw: 12,
+            vph: 21,
+          });
+        });
+      });
+
+      describe('ext.webdriver', () => {
+        it('when navigator.webdriver is available', () => {
+          win.navigator.webdriver = true;
+          return fpd().then(ortb2 => {
+            expect(ortb2.device.ext?.webdriver).to.eql(true);
+          });
+        });
+
+        it('when navigator.webdriver is not present', () => {
+          return fpd().then(ortb2 => {
+            expect(ortb2.device.ext?.webdriver).to.not.exist;
           });
         });
       });
@@ -196,43 +209,8 @@ describe('FPD enrichment', () => {
           expect(ortb2.device.language).to.eql('lang');
         })
       });
-
-      it('respects setConfig({device})', () => {
-        win.navigator.userAgent = 'ua';
-        win.navigator.language = 'lang';
-        config.setConfig({
-          device: {
-            language: 'override',
-            priority: 'lower'
-          }
-        });
-        return fpd({device: {priority: 'highest'}}).then(ortb2 => {
-          sinon.assert.match(ortb2.device, {
-            language: 'override',
-            priority: 'highest',
-            ua: 'ua'
-          })
-        })
-      })
     });
   });
-
-  describe('app', () => {
-    it('respects setConfig({app})', () => {
-      config.setConfig({
-        app: {
-          priority: 'lower',
-          prop: 'value'
-        }
-      });
-      return fpd({app: {priority: 'highest'}}).then(ortb2 => {
-        sinon.assert.match(ortb2.app, {
-          priority: 'highest',
-          prop: 'value'
-        })
-      })
-    })
-  })
 
   describe('regs', () => {
     describe('gpc', () => {
@@ -275,7 +253,13 @@ describe('FPD enrichment', () => {
 
   describe('sua', () => {
     it('does not set device.sua if resolved sua is null', () => {
-      sandbox.stub(dep, 'getHighEntropySUA').returns(Promise.resolve())
+      sandbox.stub(dep, 'getHighEntropySUA').returns(Promise.resolve());
+      // Add hints so it will attempt to retrieve high entropy values
+      config.setConfig({
+        firstPartyData: {
+          uaHints: ['bitness'],
+        }
+      });
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.not.exist;
       })
@@ -300,6 +284,71 @@ describe('FPD enrichment', () => {
       });
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.eql({hints: ['h1', 'h2']})
+      })
+    });
+  });
+
+  describe('privacy sandbox cookieDeprecationLabel', () => {
+    let isAllowed, cdep, shouldCleanupNav = false;
+
+    before(() => {
+      if (!navigator.cookieDeprecationLabel) {
+        navigator.cookieDeprecationLabel = {};
+        shouldCleanupNav = true;
+      }
+    });
+
+    after(() => {
+      if (shouldCleanupNav) {
+        delete navigator.cookieDeprecationLabel;
+      }
+    });
+
+    beforeEach(() => {
+      isAllowed = true;
+      sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
+        if (activity === ACTIVITY_ACCESS_DEVICE && params[ACTIVITY_PARAM_COMPONENT] === 'prebid.cdep') {
+          return isAllowed;
+        } else {
+          throw new Error('Unexpected activity check');
+        }
+      });
+      sandbox.stub(window.navigator, 'cookieDeprecationLabel').value({
+        getValue: sinon.stub().callsFake(() => cdep)
+      })
+    })
+
+    it('enrichment sets device.ext.cdep when allowed and navigator.getCookieDeprecationLabel exists', () => {
+      cdep = Promise.resolve('example-test-label');
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext.cdep).to.eql('example-test-label');
+      })
+    });
+
+    Object.entries({
+      'not allowed'() {
+        isAllowed = false;
+      },
+      'not supported'() {
+        delete navigator.cookieDeprecationLabel
+      }
+    }).forEach(([t, setup]) => {
+      it(`if ${t}, the navigator API is not called and no enrichment happens`, () => {
+        setup();
+        cdep = Promise.resolve('example-test-label');
+        return fpd().then(ortb2 => {
+          expect(ortb2.device.ext?.cdep).to.not.exist;
+          if (navigator.cookieDeprecationLabel) {
+            sinon.assert.notCalled(navigator.cookieDeprecationLabel.getValue);
+          }
+        })
+      });
+    })
+
+    it('if the navigator API returns a promise that rejects, the enrichment does not halt forever', () => {
+      cdep = Promise.reject(new Error('oops, something went wrong'));
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext?.cdep).to.not.exist;
       })
     });
   });

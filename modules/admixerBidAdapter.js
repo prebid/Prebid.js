@@ -1,23 +1,31 @@
-import {logError} from '../src/utils.js';
+import {isStr, logError, isFn, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'admixer';
-const BIDDER_CODE_ADX = 'admixeradx';
-const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads', 'admixeradx'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
-const ADX_ENDPOINT_URL = 'https://inv-nets.admixer.net/adxprebid.1.2.aspx';
+const ALIASES = [
+  {code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx'},
+  'adblender',
+  {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
+  {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
+  {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
+  'rtbstack'
+];
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ALIASES,
+  aliases: ALIASES.map(val => isStr(val) ? val : val.code),
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    */
   isBidRequestValid: function (bid) {
-    return !!bid.params.zone;
+    return bid.bidder === 'rtbstack'
+      ? !!bid.params.tagId
+      : !!bid.params.zone;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -43,8 +51,12 @@ export const spec = {
     };
     let endpointUrl;
     if (bidderRequest) {
-      const {bidderCode} = bidderRequest;
-      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
+      // checks if there is specified any endpointUrl in bidder config
+      endpointUrl = config.getConfig('bidderURL');
+      if (!endpointUrl && bidderRequest.bidderCode === 'rtbstack') {
+        logError('The bidderUrl config is required for RTB Stack bids. Please set it with setBidderConfig() for "rtbstack".');
+        return;
+      }
       // TODO: is 'page' the right value here?
       if (bidderRequest.refererInfo?.page) {
         payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
@@ -59,23 +71,22 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;
       }
-      let bidFloor = getBidFloor(bidderRequest);
-      if (bidFloor) {
-        payload.bidFloor = bidFloor;
-      }
     }
     validRequest.forEach((bid) => {
       let imp = {};
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      imp.ortb2 && delete imp.ortb2;
+      let bidFloor = getBidFloor(bid);
+      if (bidFloor) {
+        imp.bidFloor = bidFloor;
+      }
       payload.imps.push(imp);
     });
+
+    let urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
     return {
       method: 'POST',
-      url:
-        endpointUrl ||
-        (bidderRequest.bidderCode === BIDDER_CODE_ADX
-          ? ADX_ENDPOINT_URL
-          : ENDPOINT_URL),
+      url: urlForRequest,
       data: payload,
     };
   },
@@ -106,7 +117,16 @@ export const spec = {
     return pixels;
   }
 };
+
+function getEndpointUrl(code) {
+  return find(ALIASES, (val) => val.code === code)?.endpoint || ENDPOINT_URL;
+}
+
 function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidFloor', 0);
+  }
+
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
@@ -118,4 +138,5 @@ function getBidFloor(bid) {
     return 0;
   }
 }
+
 registerBidder(spec);

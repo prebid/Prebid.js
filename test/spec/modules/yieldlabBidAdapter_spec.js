@@ -191,12 +191,22 @@ const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
           url: 'https://localhost:8080/yl-logo100x100.jpg',
           w: 100,
           h: 100,
+          type: 3,
         },
       },
       {
         id: 3,
         data: {
           value: 'Native body value',
+        },
+      },
+      {
+        id: 4,
+        img: {
+          url: 'https://localhost:8080/assets/favicon/favicon-16x16.png',
+          w: 16,
+          h: 16,
+          type: 1,
         },
       },
     ],
@@ -215,6 +225,36 @@ const VIDEO_RESPONSE = Object.assign({}, RESPONSE, {
 const PVID_RESPONSE = Object.assign({}, VIDEO_RESPONSE, {
   pvid: '43513f11-55a0-4a83-94e5-0ebc08f54a2c',
 });
+
+const DIGITAL_SERVICES_ACT_RESPONSE = Object.assign({}, RESPONSE, {
+  dsa: {
+    behalf: 'some-behalf',
+    paid: 'some-paid',
+    transparency: [{
+      domain: 'test.com',
+      dsaparams: [1, 2, 3]
+    }],
+    adrender: 1
+  }
+});
+
+const DIGITAL_SERVICES_ACT_CONFIG = {
+  ortb2: {
+    regs: {
+      ext: {
+        dsa: {
+          dsarequired: '1',
+          pubrender: '2',
+          datatopub: '3',
+          transparency: [{
+            domain: 'test.com',
+            dsaparams: [1, 2, 3]
+          }]
+        },
+      }
+    },
+  }
+}
 
 const REQPARAMS = {
   json: true,
@@ -476,6 +516,145 @@ describe('yieldlabBidAdapter', () => {
         expect(request.url).to.not.include('sizes');
       });
     });
+
+    describe('Digital Services Act handling', () => {
+      beforeEach(() => {
+        config.setConfig(DIGITAL_SERVICES_ACT_CONFIG);
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('does pass dsarequired parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsarequired=1');
+      });
+
+      it('does pass dsapubrender parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsapubrender=2');
+      });
+
+      it('does pass dsadatatopub parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsadatatopub=3');
+      });
+
+      it('does pass dsadomain parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsadomain=test.com');
+      });
+
+      it('does pass encoded dsaparams parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
+        expect(request.url).to.include('dsaparams=1%2C2%2C3');
+      });
+
+      it('does pass multiple transparencies in dsatransparency param', () => {
+        const DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES = {
+          ortb2: {
+            regs: {
+              ext: {
+                dsa: {
+                  dsarequired: '1',
+                  pubrender: '2',
+                  datatopub: '3',
+                  transparency: [
+                    {
+                      domain: 'test.com',
+                      dsaparams: [1, 2, 3]
+                    },
+                    {
+                      domain: 'example.com',
+                      dsaparams: [4, 5, 6]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        };
+
+        config.setConfig(DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES);
+
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES });
+
+        expect(request.url).to.include('dsatransparency=test.com~1_2_3~~example.com~4_5_6');
+        expect(request.url).to.not.include('dsadomain');
+        expect(request.url).to.not.include('dsaparams');
+      });
+    });
+
+    describe('google topics handling', () => {
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('does pass segtax, segclass, segments for google topics data', () => {
+        const GOOGLE_TOPICS_DATA = {
+          ortb2: {
+            user: {
+              data: [
+                {
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {id: '717'}, {id: '808'},
+                  ]
+                }
+              ]
+            },
+          },
+        }
+        config.setConfig(GOOGLE_TOPICS_DATA);
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA });
+        expect(request.url).to.include('segtax=600&segclass=v1&segments=717%2C808');
+      });
+
+      it('does not pass topics params for invalid topics data', () => {
+        const INVALID_TOPICS_DATA = {
+          ortb2: {
+            user: {
+              data: [
+                {
+                  segment: []
+                },
+                {
+                  segment: [{id: ''}]
+                },
+                {
+                  segment: [{id: null}]
+                },
+                {
+                  segment: [{id: 'dummy'}, {id: '123'}]
+                },
+                {
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {
+                      name: 'dummy'
+                    }
+                  ]
+                },
+              ]
+            }
+          }
+        };
+
+        config.setConfig(INVALID_TOPICS_DATA);
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...INVALID_TOPICS_DATA });
+
+        expect(request.url).to.not.include('segtax');
+        expect(request.url).to.not.include('segclass');
+        expect(request.url).to.not.include('segments');
+      });
+    });
   });
 
   describe('interpretResponse', () => {
@@ -503,7 +682,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].netRevenue).to.equal(false);
       expect(result[0].ttl).to.equal(300);
       expect(result[0].referrer).to.equal('');
-      expect(result[0].meta.advertiserDomains).to.equal('yieldlab');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
       expect(result[0].ad).to.include('&id=abc');
     });
@@ -540,7 +719,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].netRevenue).to.equal(false);
       expect(result[0].ttl).to.equal(300);
       expect(result[0].referrer).to.equal('');
-      expect(result[0].meta.advertiserDomains).to.equal('yieldlab');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
       expect(result[0].ad).to.include('&id=abc');
     });
@@ -557,7 +736,6 @@ describe('yieldlabBidAdapter', () => {
 
     it('should add adUrl and native assets when type is Native', () => {
       const result = spec.interpretResponse({body: [NATIVE_RESPONSE]}, {validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS});
-
       expect(result[0].requestId).to.equal('2d925f27f5079f');
       expect(result[0].cpm).to.equal(0.01);
       expect(result[0].mediaType).to.equal('native');
@@ -567,8 +745,24 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].native.image.url).to.equal('https://localhost:8080/yl-logo100x100.jpg');
       expect(result[0].native.image.width).to.equal(100);
       expect(result[0].native.image.height).to.equal(100);
+      expect(result[0].native.icon.url).to.equal('https://localhost:8080/assets/favicon/favicon-16x16.png');
+      expect(result[0].native.icon.width).to.equal(16);
+      expect(result[0].native.icon.height).to.equal(16);
       expect(result[0].native.clickUrl).to.equal('https://www.yieldlab.de');
       expect(result[0].native.impressionTrackers.length).to.equal(3);
+      expect(result[0].native.assets.length).to.equal(4);
+      const titleAsset = result[0].native.assets.find(asset => 'title' in asset);
+      const imageAsset = result[0].native.assets.find((asset) => {
+        return asset?.img?.type === 3;
+      });
+      const iconAsset = result[0].native.assets.find((asset) => {
+        return asset?.img?.type === 1;
+      });
+      const bodyAsset = result[0].native.assets.find(asset => 'data' in asset);
+      expect(titleAsset).to.exist.and.to.have.nested.property('id', 1)
+      expect(imageAsset).to.exist.and.to.have.nested.property('id', 2)
+      expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3)
+      expect(iconAsset).to.exist.and.to.have.nested.property('id', 4)
     });
 
     it('should add adUrl and default native assets when type is Native', () => {
@@ -592,6 +786,28 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].native.image.url).to.equal('');
       expect(result[0].native.image.width).to.equal(0);
       expect(result[0].native.image.height).to.equal(0);
+    });
+
+    it('should not add icon if not present in the native response', () => {
+      const NATIVE_RESPONSE_WITHOUT_ICON = Object.assign({}, NATIVE_RESPONSE, {
+        native: {
+          link: {
+            url: 'https://www.yieldlab.de',
+          },
+          assets: [
+            {
+              id: 1,
+              title: {
+                text: 'This is a great headline',
+              }
+            }
+          ],
+          imptrackers: [],
+        },
+      });
+      const result = spec.interpretResponse({body: [NATIVE_RESPONSE_WITHOUT_ICON]}, {validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS});
+      expect(result[0].native.hasOwnProperty('icon')).to.be.false;
+      expect(result[0].native.title).to.equal('This is a great headline');
     });
 
     it('should append gdpr parameters to vastUrl', () => {
@@ -628,6 +844,17 @@ describe('yieldlabBidAdapter', () => {
     it('should append iab_content to vastUrl', () => {
       const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS_IAB_CONTENT});
       expect(result[0].vastUrl).to.include('&iab_content=id%3Afoo_id%2Cepisode%3A99%2Ctitle%3Afoo_title%252Cbar_title%2Cseries%3Afoo_series%2Cseason%3As1%2Cartist%3Afoo%2520bar%2Cgenre%3Abaz%2Cisrc%3ACC-XXX-YY-NNNNN%2Curl%3Ahttp%253A%252F%252Ffoo_url.de%2Ccat%3Acat1%7Ccat2%252Cppp%7Ccat3%257C%257C%257C%252F%252F%2Ccontext%3A7%2Ckeywords%3Ak1%252C%7Ck2..%2Clive%3A0');
+    });
+
+    it('should get digital services act object in matched bid response', () => {
+      const result = spec.interpretResponse({body: [DIGITAL_SERVICES_ACT_RESPONSE]}, {validBidRequests: [{...DEFAULT_REQUEST(), ...DIGITAL_SERVICES_ACT_CONFIG}], queryParams: REQPARAMS});
+
+      expect(result[0].requestId).to.equal('2d925f27f5079f');
+      expect(result[0].meta.dsa.behalf).to.equal('some-behalf');
+      expect(result[0].meta.dsa.paid).to.equal('some-paid');
+      expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com');
+      expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3]);
+      expect(result[0].meta.dsa.adrender).to.equal(1);
     });
   });
 

@@ -12,7 +12,7 @@ import { submodule } from '../src/hook.js';
 import { logError, generateUUID } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 /**
  * Injects the Confiant Inc. configuration script into the page, based on proprtyId provided
@@ -44,7 +44,7 @@ function setupPage(config) {
 
   if (config?.params?.shouldEmitBillableEvent) {
     if (window.frames['cnftComm']) {
-      subscribeToConfiantCommFrame(window);
+      subscribeToConfiantCommFrame(window, propertyId);
     } else {
       setUpMutationObserver();
     }
@@ -58,8 +58,8 @@ function setupPage(config) {
  * Subscribe to window's message events to report Billable events
  * @param {Window} targetWindow window instance to subscribe to
  */
-function subscribeToConfiantCommFrame(targetWindow) {
-  targetWindow.addEventListener('message', reportBillableEvents);
+function subscribeToConfiantCommFrame(targetWindow, propertyId) {
+  targetWindow.addEventListener('message', getEventHandlerFunction(propertyId));
 }
 
 let mutationObserver;
@@ -86,14 +86,18 @@ function setUpMutationObserver() {
 /**
  * Emit billable event when Confiant integration reports that it has monitored an impression
  */
-function reportBillableEvents (e) {
-  events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
-    auctionId: e.data.auctionId,
-    billingId: generateUUID(),
-    transactionId: e.data.transactionId,
-    type: 'impression',
-    vendor: 'confiant'
-  });
+function getEventHandlerFunction(propertyId) {
+  return function reportBillableEvent(e) {
+    if (e.data.type.indexOf('cnft:reportBillableEvent:' + propertyId) > -1) {
+      events.emit(EVENTS.BILLABLE_EVENT, {
+        auctionId: e.data.auctionId,
+        billingId: generateUUID(),
+        transactionId: e.data.transactionId,
+        type: 'impression',
+        vendor: 'confiant'
+      });
+    }
+  }
 }
 
 /**
@@ -123,6 +127,5 @@ export default {
   setupPage,
   subscribeToConfiantCommFrame,
   setUpMutationObserver,
-  reportBillableEvents,
   registerConfiantSubmodule
 };

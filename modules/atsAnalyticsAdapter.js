@@ -1,12 +1,14 @@
 import { logError, logInfo } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adaptermanager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
-export const storage = getStorageManager();
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+const MODULE_CODE = 'atsAnalytics';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 /**
  * Analytics adapter for - https://liveramp.com
@@ -344,12 +346,12 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
 };
 
 atsAnalyticsAdapter.callHandler = function (evtype, args) {
-  if (evtype === CONSTANTS.EVENTS.BID_REQUESTED) {
+  if (evtype === EVENTS.BID_REQUESTED) {
     handlerRequest = handlerRequest.concat(bidRequestedHandler(args));
-  } else if (evtype === CONSTANTS.EVENTS.BID_RESPONSE) {
+  } else if (evtype === EVENTS.BID_RESPONSE) {
     handlerResponse.push(bidResponseHandler(args));
   }
-  if (evtype === CONSTANTS.EVENTS.AUCTION_END) {
+  if (evtype === EVENTS.AUCTION_END) {
     let bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
     let events = [];
     setTimeout(() => {
@@ -399,7 +401,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,
-  code: 'atsAnalytics',
+  code: MODULE_CODE,
   gvlid: 97
 });
 

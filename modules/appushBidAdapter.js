@@ -57,6 +57,7 @@ function getPlacementReqData(bid) {
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
     placement.placement = mediaTypes[VIDEO].placement;
+    placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
     placement.minbitrate = mediaTypes[VIDEO].minbitrate;
@@ -154,7 +155,7 @@ export const spec = {
       coppa: config.getConfig('coppa') === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
       gdpr: bidderRequest.gdprConsent || undefined,
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest.timeout
     };
 
     const len = validBidRequests.length;

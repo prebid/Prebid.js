@@ -1,7 +1,21 @@
 import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
-// import { config } from 'src/config'
+import { getGlobal } from '../src/prebidGlobal.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+
+const converter = ortbConverter({
+  context: {
+    // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
+    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
+    ttl: 30 // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    imp.tagid = bidRequest.adUnitCode
+    return imp;
+  }
+});
 
 const BIDDER_CODE = 'nativo'
 const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
@@ -14,11 +28,13 @@ const SUPPORTED_AD_TYPES = [BANNER]
 const FLOOR_PRICE_CURRENCY = 'USD'
 const PRICE_FLOOR_WILDCARD = '*'
 
+const localPbjsRef = getGlobal()
+
 /**
  * Keep track of bid data by keys
  * @returns {Object} - Map of bid data that can be referenced by multiple keys
  */
-export const BidDataMap = () => {
+export function BidDataMap() {
   const referenceMap = {}
   const bids = []
 
@@ -133,6 +149,13 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // Get OpenRTB Data
+    const openRTBData = converter.toORTB({bidRequests: validBidRequests, bidderRequest})
+    const openRTBDataString = JSON.stringify(openRTBData)
+
+    const requestData = new RequestData()
+    requestData.addBidRequestDataSource(new UserEIDs())
+
     // Parse values from bid requests
     const placementIds = new Set()
     const bidDataMap = BidDataMap()
@@ -166,6 +189,8 @@ export const spec = {
       if (bidRequestFloorPriceData) {
         floorPriceData[bidRequest.adUnitCode] = bidRequestFloorPriceData
       }
+
+      requestData.processBidRequestData(bidRequest, bidderRequest)
     })
     bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
 
@@ -174,6 +199,10 @@ export const spec = {
 
     // Build basic required QS Params
     let params = [
+      // Prebid version
+      {
+        key: 'ntv_pbv', value: localPbjsRef.version
+      },
       // Prebid request id
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       // Ad unit data
@@ -255,9 +284,13 @@ export const spec = {
       params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
     }
 
+    const qsParamStrings = [requestData.getRequestDataQueryString(), arrayToQS(params)]
+    const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
+
     let serverRequest = {
-      method: 'GET',
-      url: BIDDER_ENDPOINT + arrayToQS(params),
+      method: 'POST',
+      url: requestUrl,
+      data: openRTBDataString,
     }
 
     return serverRequest
@@ -405,13 +438,6 @@ export const spec = {
   },
 
   /**
-   * Will be called when an adpater timed out for an auction.
-   * Adapter can fire a ajax or pixel call to register a timeout at thier end.
-   * @param {Object} timeoutData - Timeout specific data
-   */
-  onTimeout: function (timeoutData) {},
-
-  /**
    * Will be called when a bid from the adapter won the auction.
    * @param {Object} bid - The bid that won the auction
    */
@@ -424,12 +450,6 @@ export const spec = {
     appendFilterData(advertisersToFilter, ext.advertisersToFilter)
     appendFilterData(campaignsToFilter, ext.campaignsToFilter)
   },
-
-  /**
-   * Will be called when the adserver targeting has been set for a bid from the adapter.
-   * @param {Object} bidder - The bid of which the targeting has been set
-   */
-  onSetTargeting: function (bid) {},
 
   /**
    * Maps Prebid's bidId to Nativo's placementId values per unique bidderRequestId
@@ -451,6 +471,78 @@ export const spec = {
 registerBidder(spec)
 
 // Utils
+export class RequestData {
+  constructor() {
+    this.bidRequestDataSources = []
+  }
+
+  addBidRequestDataSource(bidRequestDataSource) {
+    if (!(bidRequestDataSource instanceof BidRequestDataSource)) return
+
+    this.bidRequestDataSources.push(bidRequestDataSource)
+  }
+
+  processBidRequestData(bidRequest, bidderRequest) {
+    for (let bidRequestDataSource of this.bidRequestDataSources) {
+      bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest)
+    }
+  }
+
+  getRequestDataQueryString() {
+    if (this.bidRequestDataSources.length == 0) return
+
+    const queryParams = this.bidRequestDataSources.map(dataSource => dataSource.getRequestQueryString()).filter(queryString => queryString !== '')
+    return queryParams.join('&')
+  }
+}
+
+export class BidRequestDataSource {
+  constructor() {
+    this.type = 'BidRequestDataSource'
+  }
+  processBidRequestData(bidRequest, bidderRequest) { }
+  getRequestQueryString() { return '' }
+}
+
+export class UserEIDs extends BidRequestDataSource {
+  constructor() {
+    super()
+    this.type = 'UserEIDs'
+    this.qsParam = new QueryStringParam('ntv_pb_eid')
+    this.eids = []
+  }
+
+  processBidRequestData(bidRequest, bidderRequest) {
+    if (bidRequest.userIdAsEids === undefined || this.eids.length > 0) return
+    this.eids = bidRequest.userIdAsEids
+  }
+
+  getRequestQueryString() {
+    if (this.eids.length === 0) return ''
+
+    const encodedValueArray = encodeToBase64(this.eids)
+    this.qsParam.value = encodedValueArray
+    return this.qsParam.toString()
+  }
+}
+
+export class QueryStringParam {
+  constructor(key, value) {
+    this.key = key
+    this.value = value
+  }
+}
+
+QueryStringParam.prototype.toString = function () {
+  return `${this.key}=${this.value}`
+}
+
+export function encodeToBase64(value) {
+  try {
+    return btoa(JSON.stringify(value))
+  } catch (err) { }
+}
+
 export function parseFloorPriceData(bidRequest) {
   if (typeof bidRequest.getFloor !== 'function') return
 
@@ -589,12 +681,9 @@ function appendQSParamString(str, key, value) {
  * @returns
  */
 function arrayToQS(arr) {
-  return (
-    '?' +
-    arr.reduce((value, obj) => {
-      return appendQSParamString(value, obj.key, obj.value)
-    }, '')
-  )
+  return arr.reduce((value, obj) => {
+    return appendQSParamString(value, obj.key, obj.value)
+  }, '')
 }
 
 /**
@@ -613,6 +702,24 @@ function getLargestSize(sizes, method = area) {
       return prev
     }
   })
+}
+
+/**
+ * Build the final request url
+ */
+export function buildRequestUrl(baseUrl, qsParamStringArray = []) {
+  if (qsParamStringArray.length === 0 || !Array.isArray(qsParamStringArray)) return baseUrl
+
+  const nonEmptyQSParamStrings = qsParamStringArray.filter(qsParamString => qsParamString.trim() !== '')
+
+  if (nonEmptyQSParamStrings.length === 0) return baseUrl
+
+  let requestUrl = `${baseUrl}?${nonEmptyQSParamStrings[0]}`
+  for (let i = 1; i < nonEmptyQSParamStrings.length; i++) {
+    requestUrl += `&${nonEmptyQSParamStrings[i]}`
+  }
+
+  return requestUrl
 }
 
 /**
@@ -645,7 +752,7 @@ export function getPageUrlFromBidRequest(bidRequest) {
   try {
     const url = new URL(paramPageUrl)
     return url.href
-  } catch (err) {}
+  } catch (err) { }
 }
 
 export function hasProtocol(url) {

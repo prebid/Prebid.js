@@ -1,20 +1,17 @@
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { logInfo, logError } from '../src/utils.js';
 import * as events from '../src/events.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    TCF2_ENFORCEMENT,
-    BID_WON,
-    BID_VIEWABLE,
-    AD_RENDER_FAILED
-  }
-} = CONSTANTS
+  AUCTION_END,
+  TCF2_ENFORCEMENT,
+  BID_WON,
+  BID_VIEWABLE,
+  AD_RENDER_FAILED
+} = EVENTS
 
 const GVLID = 131;
 
@@ -35,7 +32,7 @@ const FLUSH_EVENTS = [
 
 const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
 const TZ = new Date().getTimezoneOffset();
-const PBJS_VERSION = getGlobal().version;
+const PBJS_VERSION = 'v' + '$prebid.version$';
 const ID5_REDACTED = '__ID5_REDACTED__';
 const isArray = Array.isArray;
 

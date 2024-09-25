@@ -1,21 +1,18 @@
 import {
-  logMessage,
+  deepAccess,
   flatten,
-  parseSizesInput,
-  isGptPubadsDefined,
-  isSlotMatchingAdUnitCode,
-  logInfo,
-  logWarn,
   getWindowSelf,
   getWindowTop,
-  deepAccess
+  isGptPubadsDefined,
+  logInfo,
+  logMessage,
+  logWarn,
+  parseSizesInput
 } from '../src/utils.js';
-import {
-  config
-} from '../src/config.js';
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
 const UDM_VENDOR_ID = '159';
@@ -74,10 +71,10 @@ export const spec = {
     let data = {
       dt: 10,
       gdpr: {},
-      pbTimeout: config.getConfig('bidderTimeout'),
+      pbTimeout: +config.getConfig('bidderTimeout') || 3001, // KP: convert to number and if NaN we default to 3001. Particular value to let us know that there was a problem in converting pbTimeout
       pbjsVersion: prebidVersion,
       placements: [],
-      ref: deepAccess(bidderRequest, 'refererInfo.ref') ? bidderRequest.refererInfo.ref : undefined,
+      ref: deepAccess(bidderRequest, 'refererInfo.page') ? bidderRequest.refererInfo.page : undefined,
       usp: {},
       userIds: {
         '33acrossId': deepAccess(validBidRequests[0], 'userId.33acrossId.envelope') ? validBidRequests[0].userId['33acrossId'].envelope : undefined,
@@ -188,7 +185,6 @@ export const spec = {
 
       const bidResponse = {
         requestId: bidParam.bidId,
-        bidderCode: spec.code,
         cpm: parseFloat(mid.cpm),
         width: mid.width,
         height: mid.height,
@@ -196,7 +192,7 @@ export const spec = {
         creativeId: mid.mid,
         currency: 'USD',
         netRevenue: false,
-        ttl: mid.ttl || 60,
+        ttl: mid.ttl || 300,
         meta: {
           advertiserDomains: mid.advertiser_domains || []
         }
@@ -377,7 +373,7 @@ function makeNotification(bid, mid, bidParam) {
   url += `;version=${UDM_ADAPTER_VERSION}`;
   url += ';cb=' + Math.random();
   url += ';qqq=' + (1 / bid.cpm);
-  url += ';hbt=' + config.getConfig('_bidderTimeout');
+  url += ';hbt=' + config.getConfig('bidderTimeout');
   url += ';style=adapter';
   url += ';vis=' + encodeURIComponent(document.visibilityState);
 

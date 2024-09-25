@@ -36,7 +36,11 @@ describe('Livewrapped adapter tests', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+          ortb2Imp: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+            }
+          },
         }
       ],
       start: 1472239426002,
@@ -115,8 +119,49 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
-          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          }
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should send ortb2Imp', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+      let ortb2ImpRequest = clone(bidderRequest);
+      ortb2ImpRequest.bids[0].ortb2Imp.ext.data = {key: 'value'};
+      let result = spec.buildRequests(ortb2ImpRequest.bids, ortb2ImpRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          rtbData: {
+            ext: {
+              data: {key: 'value'},
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          }
         }]
       };
 
@@ -152,12 +197,20 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }, {
           callerAdUnitId: 'box_d_1',
           bidId: '3ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 300, height: 250}]
         }]
       };
@@ -189,7 +242,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'caller id 1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -220,7 +277,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -251,7 +312,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -284,7 +349,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -317,7 +386,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -347,7 +420,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           options: {keyvalues: [{key: 'key', value: 'value'}]}
         }]
@@ -379,7 +456,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -409,7 +490,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           native: {'nativedata': 'content parsed serverside only'}
         }]
@@ -440,7 +525,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           native: {'nativedata': 'content parsed serverside only'},
           banner: true
@@ -472,7 +561,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           video: {'videodata': 'content parsed serverside only'}
         }]
@@ -520,7 +613,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -550,7 +647,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 728, height: 90}]
         }]
       };
@@ -587,7 +688,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -622,7 +727,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -655,7 +764,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -695,7 +808,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -725,7 +842,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -755,7 +876,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -805,7 +930,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -837,7 +966,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -871,7 +1004,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -905,7 +1042,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -941,7 +1082,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -977,7 +1122,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -1013,7 +1162,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -1058,7 +1211,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           flr: 10
         }]
@@ -1096,7 +1253,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           flr: 10
         }]
@@ -1211,7 +1372,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1251,7 +1411,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1293,7 +1452,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1347,7 +1505,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1359,7 +1516,6 @@ describe('Livewrapped adapter tests', function () {
         meta: undefined
       }, {
         requestId: '42e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 3.565917,
         width: 980,
         height: 240,
@@ -1398,7 +1554,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,

@@ -1,7 +1,13 @@
-import {deepClone, getAdUnitSizes, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
+import {deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
 
 export const BIDDER_CODE = 'aduptech';
 export const GVLID = 647;
@@ -255,6 +261,7 @@ export const spec = {
         url: internal.buildEndpointUrl(publisher),
         method: ENDPOINT_METHOD,
         data: {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: auctionId,
           pageUrl: pageUrl,
           referrer: referrer,
@@ -271,7 +278,7 @@ export const spec = {
       groupedBidRequests[publisher].forEach(bidRequest => {
         const bid = {
           bidId: bidRequest.bidId,
-          transactionId: bidRequest.transactionId,
+          transactionId: bidRequest.ortb2Imp?.ext?.tid,
           adUnitCode: bidRequest.adUnitCode,
           params: internal.extractParams(bidRequest)
         };

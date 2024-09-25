@@ -10,6 +10,11 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 const MODULE_NAME = 'permutive'
 
@@ -20,7 +25,7 @@ export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
 export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive'
 export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
-export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME})
 
 function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
@@ -90,7 +95,8 @@ export function getModuleConfig(customModuleConfig) {
 /**
  * Sets ortb2 config for ac bidders
  * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
- * @param {Object} customModuleConfig - Publisher config for module
+ * @param {Object} moduleConfig - Publisher config for module
+ * @param {Object} segmentData - Segment data grouped by bidder or type
  */
 export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
@@ -99,6 +105,7 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
 
   const ssps = segmentData?.ssp?.ssps ?? []
   const sspCohorts = segmentData?.ssp?.cohorts ?? []
+  const topics = segmentData?.topics ?? {}
 
   const bidders = new Set([...acBidders, ...ssps])
   bidders.forEach(function (bidder) {
@@ -116,23 +123,24 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
       cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
     }
 
-    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, transformationConfigs, segmentData)
+    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, topics, transformationConfigs, segmentData)
     bidderOrtb2[bidder] = nextConfig.ortb2
   })
 }
 
 /**
  * Updates `user.data` object in existing bidder config with Permutive segments
- * @param string bidder - The bidder
+ * @param {string} bidder - The bidder identifier
  * @param {Object} currConfig - Current bidder config
- * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
- *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
+ * @param {Object} topics - Privacy Sandbox Topics, keyed by IAB taxonomy version (600, 601, etc.)
+ * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
+ *                                           the transformations on user data to include the ORTB2 object
  * @param {Object} segmentData - The segments available for targeting
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transformationConfigs, segmentData) {
+function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, segmentData) {
   logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig })
 
   const customCohortsData = deepAccess(segmentData, bidder) || []
@@ -156,9 +164,21 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
   const ortbConfig = mergeDeep({}, currConfig)
   const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
 
+  let topicsUserData = []
+  for (const [k, value] of Object.entries(topics)) {
+    topicsUserData.push({
+      name,
+      ext: {
+        segtax: Number(k)
+      },
+      segment: value.map(topic => ({ id: topic.toString() })),
+    })
+  }
+
   const updatedUserData = currentUserData
     .filter(el => el.name !== permutiveUserData.name && el.name !== customCohortsUserData.name)
     .concat(permutiveUserData, transformedUserData, customCohortsUserData)
+    .concat(topicsUserData)
 
   logger.logInfo(`Updating ortb2.user.data`, { bidder, user_data: updatedUserData })
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
@@ -200,6 +220,12 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
     logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
   }
 
+  // Set site extensions
+  if (segmentIDs.length > 0) {
+    deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
+    logger.logInfo(`Extending ortb2.site.ext.permutive with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs)
+  }
+
   logger.logInfo(`Updated ortb2 config`, { bidder, config: ortbConfig })
   return ortbConfig
 }
@@ -229,12 +255,11 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
       }
       const acEnabled = isAcEnabled(moduleConfig, bidder)
       const customFn = getCustomBidderFn(moduleConfig, bidder)
-      const defaultFn = getDefaultBidderFn(bidder)
 
       if (customFn) {
-        customFn(bid, segmentData, acEnabled, utils, defaultFn)
-      } else if (defaultFn) {
-        defaultFn(bid, segmentData, acEnabled)
+        // For backwards compatibility we pass an identity function to any custom bidder function set by a publisher
+        const bidIdentity = (bid) => bid
+        customFn(bid, segmentData, acEnabled, utils, bidIdentity)
       }
     })
   })
@@ -246,7 +271,7 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
  */
 function makeSafe (fn) {
   try {
-    fn()
+    return fn()
   } catch (e) {
     logError(e)
   }
@@ -260,40 +285,6 @@ function getCustomBidderFn (moduleConfig, bidder) {
   } else {
     return null
   }
-}
-
-/**
- * Returns a function that receives a `bid` object, a `data` object and a `acEnabled` boolean
- * and which will set the right segment targeting keys for `bid` based on `data` and `acEnabled`
- * @param {string} bidder - Bidder name
- * @return {Object} Bidder function
- */
-function getDefaultBidderFn (bidder) {
-  const isPStandardTargetingEnabled = (data, acEnabled) => {
-    return (acEnabled && data.ac && data.ac.length) || (data.ssp && data.ssp.cohorts && data.ssp.cohorts.length)
-  }
-  const pStandardTargeting = (data, acEnabled) => {
-    const ac = (acEnabled) ? (data.ac ?? []) : []
-    const ssp = data?.ssp?.cohorts ?? []
-    return [...new Set([...ac, ...ssp])]
-  }
-  const bidderMap = {
-    ozone: function (bid, data, acEnabled) {
-      if (isPStandardTargetingEnabled(data, acEnabled)) {
-        const segments = pStandardTargeting(data, acEnabled)
-        deepSetValue(bid, 'params.customData.0.targeting.p_standard', segments)
-      }
-
-      return bid
-    }
-  }
-
-  // On no default bidder just return the same bid as passed in
-  function bidIdentity(bid) {
-    return bid
-  }
-
-  return bidderMap[bidder] || bidIdentity
 }
 
 /**
@@ -320,34 +311,88 @@ export function isPermutiveOnPage () {
  * @param {number} maxSegs - Maximum number of segments to be included
  * @return {Object}
  */
-export function getSegments (maxSegs) {
-  const legacySegs = readSegments('_psegs', []).map(Number).filter(seg => seg >= 1000000).map(String)
-  const _ppam = readSegments('_ppam', [])
-  const _pcrprs = readSegments('_pcrprs', [])
-
+export function getSegments(maxSegs) {
   const segments = {
-    ac: [..._pcrprs, ..._ppam, ...legacySegs],
-    ix: readSegments('_pindexs', []),
-    rubicon: readSegments('_prubicons', []),
-    appnexus: readSegments('_papns', []),
-    gam: readSegments('_pdfps', []),
-    ssp: readSegments('_pssps', {
-      cohorts: [],
-      ssps: []
+    ac:
+      makeSafe(() => {
+        const legacySegs =
+          makeSafe(() =>
+            readSegments('_psegs', [])
+              .map(Number)
+              .filter((seg) => seg >= 1000000)
+              .map(String),
+          ) || [];
+        const _ppam = makeSafe(() => readSegments('_ppam', []).map(String)) || [];
+        const _pcrprs = makeSafe(() => readSegments('_pcrprs', []).map(String)) || [];
+
+        return [..._pcrprs, ..._ppam, ...legacySegs];
+      }) || [],
+
+    ix:
+      makeSafe(() => {
+        const _pindexs = readSegments('_pindexs', []);
+        return _pindexs.map(String);
+      }) || [],
+
+    rubicon:
+      makeSafe(() => {
+        const _prubicons = readSegments('_prubicons', []);
+        return _prubicons.map(String);
+      }) || [],
+
+    appnexus:
+      makeSafe(() => {
+        const _papns = readSegments('_papns', []);
+        return _papns.map(String);
+      }) || [],
+
+    gam:
+      makeSafe(() => {
+        const _pdfps = readSegments('_pdfps', []);
+        return _pdfps.map(String);
+      }) || [],
+
+    ssp: makeSafe(() => {
+      const _pssps = readSegments('_pssps', {
+        cohorts: [],
+        ssps: [],
+      });
+
+      return {
+        cohorts: makeSafe(() => _pssps.cohorts.map(String)) || [],
+        ssps: makeSafe(() => _pssps.ssps.map(String)) || [],
+      };
     }),
-  }
+
+    topics:
+      makeSafe(() => {
+        const _ppsts = readSegments('_ppsts', {});
+
+        const topics = {};
+        for (const [k, value] of Object.entries(_ppsts)) {
+          topics[k] = makeSafe(() => value.map(String)) || [];
+        }
+
+        return topics;
+      }) || {},
+  };
 
   for (const bidder in segments) {
     if (bidder === 'ssp') {
       if (segments[bidder].cohorts && Array.isArray(segments[bidder].cohorts)) {
         segments[bidder].cohorts = segments[bidder].cohorts.slice(0, maxSegs)
       }
+    } else if (bidder === 'topics') {
+      for (const taxonomy in segments[bidder]) {
+        segments[bidder][taxonomy] = segments[bidder][taxonomy].slice(0, maxSegs)
+      }
     } else {
       segments[bidder] = segments[bidder].slice(0, maxSegs)
     }
   }
 
-  return segments
+  logger.logInfo(`Read segments`, segments)
+  return segments;
 }
 
 /**
@@ -398,7 +443,7 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  * Pull the latest configuration and cohort information and update accordingly.
  *
  * @param reqBidsConfigObj - Bidder provided config for request
- * @param customModuleConfig - Publisher provide config
+ * @param moduleConfig - Publisher provided config
  */
 export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
   const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))

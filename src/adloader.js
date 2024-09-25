@@ -4,26 +4,42 @@ import { logError, logWarn, insertElement, setScriptAttributes } from './utils.j
 const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
+  // Prebid maintained modules:
   'debugging',
-  'adloox',
-  'criteo',
   'outstream',
+  // Bid Modules - only exception is on rendering edge cases, to clean up in Prebid 10:
+  'improvedigital',
+  'showheroes-bs',
+  // RTD modules:
+  'aaxBlockmeter',
   'adagio',
-  'spotx',
+  'adloox',
+  'akamaidap',
+  'arcspan',
+  'airgrid',
   'browsi',
   'brandmetrics',
+  'clean.io',
+  'humansecurity',
+  'confiant',
+  'contxtful',
+  'hadron',
+  'mediafilter',
+  'medianet',
+  'azerionedge',
+  'a1Media',
+  'geoedge',
+  'qortex',
+  'dynamicAdBoost',
+  '51Degrees',
+  'symitridap',
+  'wurfl',
+  // UserId Submodules
   'justtag',
   'tncId',
-  'akamaidap',
   'ftrackId',
-  'inskin',
-  'hadron',
-  'medianet',
-  'improvedigital',
-  'aaxBlockmeter',
-  'confiant',
-  'arcspan'
-]
+  'id5',
+];
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
@@ -32,7 +48,7 @@ const _approvedLoadExternalJSList = [
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  * @param {function} [callback] callback function to be called after the script is loaded
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
- * @param {object} an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
+ * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
 export function loadExternalScript(url, moduleCode, callback, doc, attributes) {
   if (!moduleCode || !url) {

@@ -93,22 +93,22 @@ describe('WinrAdapter', function () {
     });
 
     it('should return false when mediaType is not banner', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.mediaTypes;
-      bid.mediaTypes = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.mediaTypes;
+      invalidBid.mediaTypes = {
         'video': {}
       };
-      expect(getMediaTypeFromBid(bid)).to.not.equal('banner');
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(getMediaTypeFromBid(invalidBid)).to.not.equal('banner');
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placementId': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -599,15 +599,6 @@ describe('WinrAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bfStub;
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     let response = {
       'version': '3.0.0',
       'tags': [

@@ -1,7 +1,14 @@
 import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'concert';
 const CONCERT_ENDPOINT = 'https://bids.concert.io';
@@ -41,13 +48,15 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
+        browserLanguage: window.navigator.language,
         debug: debugTurnedOn(),
-        uid: getUid(bidderRequest),
+        uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
-        adapterVersion: '1.1.1',
+        adapterVersion: '1.2.0',
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent,
         gppConsent: bidderRequest.gppConsent,
+        tdid: getTdid(bidderRequest, validBidRequests),
       }
     };
 
@@ -66,7 +75,7 @@ export const spec = {
       let slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         sizes: bidRequest.params.sizes || bidRequest.sizes,
         partnerId: bidRequest.params.partnerId,
         slotType: bidRequest.params.slotType,
@@ -119,7 +128,8 @@ export const spec = {
         meta: { advertiserDomains: bid && bid.adomain ? bid.adomain : [] },
         creativeId: bid.creativeId,
         netRevenue: bid.netRevenue,
-        currency: bid.currency
+        currency: bid.currency,
+        ...(bid.dealid && { dealId: bid.dealid }),
       };
     });
 
@@ -158,16 +168,23 @@ export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 /**
  * Check or generate a UID for the current user.
  */
-function getUid(bidderRequest) {
+function getUid(bidderRequest, validBidRequests) {
   if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return false;
   }
 
-  const sharedId = deepAccess(bidderRequest, 'userId._sharedid.id');
+  /**
+   * check for shareId or pubCommonId before generating a new one
+   * sharedId: @see https://docs.prebid.org/dev-docs/modules/userId.html
+   * pubCid (no longer supported): @see https://docs.prebid.org/dev-docs/modules/pubCommonId.html#adapter-integration
+   */
+  const sharedId =
+    deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
+    deepAccess(validBidRequests[0], 'userId.pubcid')
+  const pubCid = deepAccess(validBidRequests[0], 'crumbs.pubcid');
 
-  if (sharedId) {
-    return sharedId;
-  }
+  if (sharedId) return sharedId;
+  if (pubCid) return pubCid;
 
   const LEGACY_CONCERT_UID_KEY = 'c_uid';
   const CONCERT_UID_KEY = 'vmconcert_uid';
@@ -254,4 +271,12 @@ function getOffset(el) {
       top: rect.top + window.scrollY
     };
   }
+}
+
+function getTdid(bidderRequest, validBidRequests) {
+  if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
+    return null;
+  }
+
+  return deepAccess(validBidRequests[0], 'userId.tdid') || null;
 }

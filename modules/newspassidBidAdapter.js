@@ -1,4 +1,15 @@
-import { logInfo, logError, deepAccess, logWarn, deepSetValue, isArray, contains, parseUrl } from '../src/utils.js';
+import {
+  deepClone,
+  logInfo,
+  logError,
+  deepAccess,
+  logWarn,
+  deepSetValue,
+  isArray,
+  contains,
+  parseUrl,
+  generateUUID
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -8,7 +19,7 @@ const BIDDER_CODE = 'newspassid';
 const ORIGIN = 'https://bidder.newspassid.com' // applies only to auction & cookie
 const AUCTIONURI = '/openrtb2/auction';
 const NEWSPASSCOOKIESYNC = '/static/load-cookie.html';
-const NEWSPASSVERSION = '1.0.1';
+const NEWSPASSVERSION = '1.1.4';
 export const spec = {
   version: NEWSPASSVERSION,
   code: BIDDER_CODE,
@@ -23,12 +34,12 @@ export const spec = {
   },
   loadConfiguredData(bid) {
     if (this.propertyBag.config) { return; }
-    this.propertyBag.config = JSON.parse(JSON.stringify(this.config_defaults));
+    this.propertyBag.config = deepClone(this.config_defaults);
     let bidder = bid.bidder || 'newspassid';
     this.propertyBag.config.logId = bidder.toUpperCase();
     this.propertyBag.config.bidder = bidder;
     let bidderConfig = config.getConfig(bidder) || {};
-    logInfo('got bidderConfig: ', JSON.parse(JSON.stringify(bidderConfig)));
+    logInfo('got bidderConfig: ', deepClone(bidderConfig));
     let arrGetParams = this.getGetParametersAsObject();
     if (bidderConfig.endpointOverride) {
       if (bidderConfig.endpointOverride.origin) {
@@ -121,7 +132,7 @@ export const spec = {
   buildRequests(validBidRequests, bidderRequest) {
     this.loadConfiguredData(validBidRequests[0]);
     this.propertyBag.buildRequestsStart = new Date().getTime();
-    logInfo(`buildRequests time: ${this.propertyBag.buildRequestsStart} v ${NEWSPASSVERSION} validBidRequests`, JSON.parse(JSON.stringify(validBidRequests)), 'bidderRequest', JSON.parse(JSON.stringify(bidderRequest)));
+    logInfo(`buildRequests time: ${this.propertyBag.buildRequestsStart} v ${NEWSPASSVERSION} validBidRequests`, deepClone(validBidRequests), 'bidderRequest', deepClone(bidderRequest));
     if (this.blockTheRequest()) {
       return [];
     }
@@ -154,7 +165,7 @@ export const spec = {
       let placementId = placementIdOverrideFromGetParam || this.getPlacementId(npBidRequest); // prefer to use a valid override param, else the bidRequest placement Id
       obj.id = npBidRequest.bidId; // this causes an error if we change it to something else, even if you update the bidRequest object: "WARNING: Bidder newspass made bid for unknown request ID: mb7953.859498327448. Ignoring."
       obj.tagid = placementId;
-      let parsed = parseUrl(getRefererInfo().page);
+      let parsed = parseUrl(this.getRefererInfo().page);
       obj.secure = parsed.protocol === 'https' ? 1 : 0;
       let arrBannerSizes = [];
       if (!npBidRequest.hasOwnProperty('mediaTypes')) {
@@ -188,7 +199,6 @@ export const spec = {
       deepSetValue(obj, 'ext.prebid', {'storedrequest': {'id': placementId}});
       obj.ext['newspassid'] = {};
       obj.ext['newspassid'].adUnitCode = npBidRequest.adUnitCode; // eg. 'mpu'
-      obj.ext['newspassid'].transactionId = npBidRequest.transactionId; // this is the transactionId PER adUnit, common across bidders for this unit
       if (npBidRequest.params.hasOwnProperty('customData')) {
         obj.ext['newspassid'].customData = npBidRequest.params.customData;
       }
@@ -215,6 +225,10 @@ export const spec = {
       if (!schain && deepAccess(npBidRequest, 'schain')) {
         schain = npBidRequest.schain;
       }
+      let gpid = deepAccess(npBidRequest, 'ortb2Imp.ext.gpid');
+      if (gpid) {
+        deepSetValue(obj, 'ext.gpid', gpid);
+      }
       return obj;
     });
     let extObj = {};
@@ -239,7 +253,7 @@ export const spec = {
     let userExtEids = deepAccess(validBidRequests, '0.userIdAsEids', []); // generate the UserIDs in the correct format for UserId module
     npRequest.site = {
       'publisher': {'id': htmlParams.publisherId},
-      'page': getRefererInfo().page,
+      'page': this.getRefererInfo().page,
       'id': htmlParams.siteId
     };
     npRequest.test = config.getConfig('debug') ? 1 : 0;
@@ -258,11 +272,9 @@ export const spec = {
     }
     if (singleRequest) {
       logInfo('buildRequests starting to generate response for a single request');
-      npRequest.id = bidderRequest.auctionId; // Unique ID of the bid request, provided by the exchange.
-      npRequest.auctionId = bidderRequest.auctionId; // not sure if this should be here?
+      npRequest.id = generateUUID(); // Unique ID of the bid request, provided by the exchange. (REQUIRED)
       npRequest.imp = tosendtags;
       npRequest.ext = extObj;
-      deepSetValue(npRequest, 'source.tid', bidderRequest.auctionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(npRequest, 'user.ext.eids', userExtEids);
       var ret = {
         method: 'POST',
@@ -270,7 +282,7 @@ export const spec = {
         data: JSON.stringify(npRequest),
         bidderRequest: bidderRequest
       };
-      logInfo('buildRequests request data for single = ', JSON.parse(JSON.stringify(npRequest)));
+      logInfo('buildRequests request data for single = ', deepClone(npRequest));
       this.propertyBag.buildRequestsEnd = new Date().getTime();
       logInfo(`buildRequests going to return for single at time ${this.propertyBag.buildRequestsEnd} (took ${this.propertyBag.buildRequestsEnd - this.propertyBag.buildRequestsStart}ms): `, ret);
       return ret;
@@ -278,12 +290,9 @@ export const spec = {
     let arrRet = tosendtags.map(imp => {
       logInfo('buildRequests starting to generate non-single response, working on imp : ', imp);
       let npRequestSingle = Object.assign({}, npRequest);
-      imp.ext['newspassid'].pageAuctionId = bidderRequest['auctionId']; // make a note in the ext object of what the original auctionId was, in the bidderRequest object
-      npRequestSingle.id = imp.ext['newspassid'].transactionId; // Unique ID of the bid request, provided by the exchange.
-      npRequestSingle.auctionId = imp.ext['newspassid'].transactionId; // not sure if this should be here?
+      npRequestSingle.id = generateUUID();
       npRequestSingle.imp = [imp];
       npRequestSingle.ext = extObj;
-      deepSetValue(npRequestSingle, 'source.tid', imp.ext['newspassid'].transactionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(npRequestSingle, 'user.ext.eids', userExtEids);
       logInfo('buildRequests RequestSingle (for non-single) = ', npRequestSingle);
       return {
@@ -301,8 +310,9 @@ export const spec = {
     if (request && request.bidderRequest && request.bidderRequest.bids) { this.loadConfiguredData(request.bidderRequest.bids[0]); }
     let startTime = new Date().getTime();
     logInfo(`interpretResponse time: ${startTime}. buildRequests done -> interpretResponse start was ${startTime - this.propertyBag.buildRequestsEnd}ms`);
-    logInfo(`serverResponse, request`, JSON.parse(JSON.stringify(serverResponse)), JSON.parse(JSON.stringify(request)));
+    logInfo(`serverResponse, request`, deepClone(serverResponse), deepClone(request));
     serverResponse = serverResponse.body || {};
+    let aucId = serverResponse.id; // this will be correct for single requests and non-single
     if (!serverResponse.hasOwnProperty('seatbid')) {
       return [];
     }
@@ -349,7 +359,7 @@ export const spec = {
           logInfo(`newspassid.enhancedAdserverTargeting is set to false, no per-bid keys will be sent to adserver.`);
         }
         let {seat: winningSeat, bid: winningBid} = this.getWinnerForRequestBid(thisBid.bidId, serverResponse.seatbid);
-        adserverTargeting['np_auc_id'] = String(request.bidderRequest.auctionId);
+        adserverTargeting['np_auc_id'] = String(aucId);
         adserverTargeting['np_winner'] = String(winningSeat);
         adserverTargeting['np_bid'] = 'true';
         if (enhancedAdserverTargeting) {
@@ -455,10 +465,6 @@ export const spec = {
       if (id5id) {
         ret['id5id'] = id5id;
       }
-      let parrableId = deepAccess(bidRequest.userId, 'parrableId.eid');
-      if (parrableId) {
-        ret['parrableId'] = parrableId;
-      }
       let sharedid = deepAccess(bidRequest.userId, 'sharedid.id');
       if (sharedid) {
         ret['sharedid'] = sharedid;
@@ -488,9 +494,28 @@ export const spec = {
     return null;
   },
   getGetParametersAsObject() {
-    let parsed = parseUrl(getRefererInfo().page);
+    let parsed = parseUrl(this.getRefererInfo().location); // was getRefererInfo().page but this is not backwards compatible
     logInfo('getGetParametersAsObject found:', parsed.search);
     return parsed.search;
+  },
+  getRefererInfo() {
+    if (getRefererInfo().hasOwnProperty('location')) {
+      logInfo('FOUND location on getRefererInfo OK (prebid >= 7); will use getRefererInfo for location & page');
+      return getRefererInfo();
+    } else {
+      logInfo('DID NOT FIND location on getRefererInfo (prebid < 7); will use legacy code that ALWAYS worked reliably to get location & page ;-)');
+      try {
+        return {
+          page: top.location.href,
+          location: top.location.href
+        };
+      } catch (e) {
+        return {
+          page: window.location.href,
+          location: window.location.href
+        };
+      }
+    }
   },
   blockTheRequest() {
     let npRequest = config.getConfig('newspassid.np_request');

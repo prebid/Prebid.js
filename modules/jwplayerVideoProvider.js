@@ -12,6 +12,12 @@ import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 import { submodule } from '../src/hook.js';
+/**
+ * @typedef {import('../libraries/video/constants/ortb.js').OrtbVideoParams} OrtbVideoParams
+ * @typedef {import('../libraries/video/shared/state.js').State} State
+ * @typedef {import('../modules/videoModule/coreVideo.js').VideoProvider} VideoProvider
+ * @typedef {import('../modules/videoModule/coreVideo.js').videoProviderConfig} videoProviderConfig
+ */
 
 /**
  * @constructor
@@ -47,31 +53,29 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
   function init() {
     if (!jwplayer) {
-      triggerSetupFailure(-1); // TODO: come up with error code schema- player is absent
+      triggerSetupFailure({ code: -1 }); // TODO: come up with error code schema- player is absent
       return;
     }
 
     playerVersion = jwplayer.version;
 
     if (playerVersion < minimumSupportedPlayerVersion) {
-      triggerSetupFailure(-2); // TODO: come up with error code schema - version not supported
+      triggerSetupFailure({ code: -2 }); // TODO: come up with error code schema - version not supported
       return;
     }
 
     if (!document.getElementById(divId)) {
-      triggerSetupFailure(-3); // TODO: come up with error code schema - missing div id
+      triggerSetupFailure({ code: -3 }); // TODO: come up with error code schema - missing div id
       return;
     }
 
     player = jwplayer(divId);
     if (!player || !player.getState) {
-      triggerSetupFailure(-4); // TODO: come up with error code schema - factory function failure
+      triggerSetupFailure({ code: -4 }); // TODO: come up with error code schema - factory function failure
     } else if (player.getState() === undefined) {
       setupPlayer(playerConfig);
     } else {
-      const payload = getSetupCompletePayload();
-      setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
-      setupCompleteCallbacks = [];
+      triggerSetupComplete();
     }
   }
 
@@ -192,8 +196,12 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   function onEvent(externalEventName, callback, basePayload) {
     if (externalEventName === SETUP_COMPLETE) {
       setupCompleteCallbacks.push(callback);
-    } else if (externalEventName === SETUP_FAILED) {
+      return;
+    }
+
+    if (externalEventName === SETUP_FAILED) {
       setupFailedCallbacks.push(callback);
+      return;
     }
 
     if (!player) {
@@ -203,25 +211,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     let getEventPayload;
 
     switch (externalEventName) {
-      case SETUP_COMPLETE:
-        getEventPayload = () => {
-          setupCompleteCallbacks = [];
-          return getSetupCompletePayload();
-        };
-        break;
-
-      case SETUP_FAILED:
-        getEventPayload = e => {
-          setupFailedCallbacks = [];
-          return {
-            playerVersion,
-            errorCode: e.code,
-            errorMessage: e.message,
-            sourceError: e.sourceError
-          };
-        };
-        break;
-
       case AD_REQUEST:
       case AD_PLAY:
       case AD_PAUSE:
@@ -496,7 +485,17 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     if (!config) {
       return;
     }
-    player.setup(utils.getJwConfig(config));
+    player.setup(utils.getJwConfig(config)).on('ready', triggerSetupComplete).on('setupError', triggerSetupFailure);
+  }
+
+  function triggerSetupComplete() {
+    if (!setupCompleteCallbacks.length) {
+      return;
+    }
+
+    const payload = getSetupCompletePayload();
+    setupCompleteCallbacks.forEach(callback => callback(SETUP_COMPLETE, payload));
+    setupCompleteCallbacks = [];
   }
 
   function getSetupCompletePayload() {
@@ -511,7 +510,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     };
   }
 
-  function triggerSetupFailure(errorCode) {
+  function triggerSetupFailure(e) {
     if (!setupFailedCallbacks.length) {
       return;
     }
@@ -520,9 +519,9 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       divId,
       playerVersion,
       type: SETUP_FAILED,
-      errorCode,
-      errorMessage: '',
-      sourceError: null
+      errorCode: e.code,
+      errorMessage: e.message,
+      sourceError: e.sourceError
     };
 
     setupFailedCallbacks.forEach(callback => callback(SETUP_FAILED, payload));

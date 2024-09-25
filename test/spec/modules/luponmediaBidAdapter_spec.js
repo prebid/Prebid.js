@@ -21,12 +21,12 @@ describe('luponmediaBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'siteId': 12345
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -133,7 +133,7 @@ describe('luponmediaBidAdapter', function () {
         }
       ],
       'auctionStart': 1587413920820,
-      'timeout': 2000,
+      'timeout': 1500,
       'refererInfo': {
         'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines',
         'reachedTop': true,
@@ -142,7 +142,12 @@ describe('luponmediaBidAdapter', function () {
           'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'
         ]
       },
-      'start': 1587413920835
+      'start': 1587413920835,
+      ortb2: {
+        source: {
+          tid: 'mock-tid'
+        }
+      },
     };
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -150,7 +155,23 @@ describe('luponmediaBidAdapter', function () {
       let dynRes = JSON.parse(requests.data);
       expect(requests.url).to.equal(ENDPOINT_URL);
       expect(requests.method).to.equal('POST');
-      expect(requests.data).to.equal('{"id":"585d96a5-bd93-4a89-b8ea-0f546f3aaa82","test":0,"source":{"tid":"585d96a5-bd93-4a89-b8ea-0f546f3aaa82","ext":{"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"novi.ba","sid":"199424","hp":1}]}}},"tmax":1500,"imp":[{"id":"268a30af10dd6f","secure":1,"ext":{"luponmedia":{"siteId":303522,"keyId":"4o2c4"}},"banner":{"format":[{"w":300,"h":250}]}}],"ext":{"prebid":{"targeting":{"includewinners":true,"includebidderkeys":false}}},"user":{"id":"' + dynRes.user.id + '","buyeruid":"8d8b16cb-1383-4a0f-b4bb-0be28464d974"},"site":{"page":"https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines"}}');
+      expect(JSON.parse(requests.data)).to.deep.include({
+        'test': 0,
+        'source': {
+          tid: 'mock-tid',
+          'ext': {'schain': {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'novi.ba', 'sid': '199424', 'hp': 1}]}}
+        },
+        'tmax': 1500,
+        'imp': [{
+          'id': '268a30af10dd6f',
+          'secure': 1,
+          'ext': {'luponmedia': {'siteId': 303522, 'keyId': '4o2c4'}},
+          'banner': {'format': [{'w': 300, 'h': 250}]}
+        }],
+        'ext': {'prebid': {'targeting': {'includewinners': true, 'includebidderkeys': false}}},
+        'user': {'id': dynRes.user.id, 'buyeruid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'},
+        'site': {'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'}
+      });
     });
   });
 
@@ -362,51 +383,6 @@ describe('luponmediaBidAdapter', function () {
 
       const checkSchain = hasValidSupplyChainParams(schain);
       expect(checkSchain).to.equal(false);
-    });
-  });
-
-  describe('onBidWon', function () {
-    const bidWonEvent = {
-      'bidderCode': 'luponmedia',
-      'width': 300,
-      'height': 250,
-      'statusMessage': 'Bid available',
-      'adId': '105bbf8c54453ff',
-      'requestId': '934b8752185955',
-      'mediaType': 'banner',
-      'source': 'client',
-      'cpm': 0.364,
-      'creativeId': '443801010',
-      'currency': 'USD',
-      'netRevenue': false,
-      'ttl': 300,
-      'referrer': '',
-      'ad': '',
-      'auctionId': '926a8ea3-3dd4-4bf2-95ab-c85c2ce7e99b',
-      'responseTimestamp': 1598527728026,
-      'requestTimestamp': 1598527727629,
-      'bidder': 'luponmedia',
-      'adUnitCode': 'div-gpt-ad-1533155193780-5',
-      'timeToRespond': 397,
-      'size': '300x250',
-      'status': 'rendered'
-    };
-
-    let ajaxStub;
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'sendWinningsToServer')
-    })
-
-    afterEach(() => {
-      ajaxStub.restore()
-    })
-
-    it('calls luponmedia\'s callback endpoint', () => {
-      const result = spec.onBidWon(bidWonEvent);
-      expect(result).to.equal(undefined);
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.deep.equal(JSON.stringify(bidWonEvent));
     });
   });
 });

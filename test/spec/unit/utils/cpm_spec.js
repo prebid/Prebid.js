@@ -1,11 +1,14 @@
 import {adjustCpm} from '../../../../src/utils/cpm.js';
+import {ScopedSettings} from '../../../../src/bidderSettings.js';
+import {expect} from 'chai/index.js';
 
 describe('adjustCpm', () => {
   const bidderCode = 'mockBidder';
   let adjustmentFn, bs, index;
   beforeEach(() => {
     bs = {
-      get: sinon.stub()
+      get: sinon.stub(),
+      getOwn: sinon.stub()
     }
     index = {
       getBidRequest: sinon.stub()
@@ -61,4 +64,56 @@ describe('adjustCpm', () => {
       });
     });
   })
+});
+
+describe('adjustAlternateBids', () => {
+  let bs;
+  afterEach(() => {
+    bs = null;
+  });
+
+  function runAdjustment(cpm, bidderCode, adapterCode) {
+    return adjustCpm(cpm, {bidderCode, adapterCode}, null, {bs: new ScopedSettings(() => bs)});
+  }
+
+  it('should fall back to the adapter adjustment fn when adjustAlternateBids is true', () => {
+    bs = {
+      adapter: {
+        adjustAlternateBids: true,
+        bidCpmAdjustment: function (cpm) {
+          return cpm * 2;
+        }
+      },
+      bidder: {}
+    };
+    expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(2);
+  });
+
+  it('should NOT fall back to the adapter adjustment fn when adjustAlternateBids is not true', () => {
+    bs = {
+      adapter: {
+        bidCpmAdjustment(cpm) {
+          return cpm * 2
+        }
+      }
+    }
+    expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(1);
+  });
+
+  it('should prioritize bidder adjustment fn', () => {
+    bs = {
+      adapter: {
+        adjustAlternateBids: true,
+        bidCpmAdjustment(cpm) {
+          return cpm * 2
+        }
+      },
+      bidder: {
+        bidCpmAdjustment(cpm) {
+          return cpm * 3
+        }
+      }
+    }
+    expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(3);
+  });
 });

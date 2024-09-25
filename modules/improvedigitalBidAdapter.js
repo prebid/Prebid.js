@@ -3,9 +3,23 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
+ * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
+ * Also see https://github.com/prebid/Prebid.js/issues/11656
+ */
+// eslint-disable-next-line no-restricted-imports
 import {loadExternalScript} from '../src/adloader.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
@@ -17,11 +31,7 @@ const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
 
 const VIDEO_PARAMS = {
-  DEFAULT_MIMES: ['video/mp4'],
-  PLACEMENT_TYPE: {
-    INSTREAM: 1,
-    OUTSTREAM: 3,
-  }
+  DEFAULT_MIMES: ['video/mp4']
 };
 
 export const spec = {
@@ -38,7 +48,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid && bid.params && (bid.params.placementId || (bid.params.placementKey && bid.params.publisherId)));
+    return !!(bid && bid.params && bid.params.placementId && bid.params.publisherId);
   },
 
   /**
@@ -132,14 +142,11 @@ export const CONVERTER = ortbConverter({
     }
     const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
     const placementId = bidRequest.params.placementId;
-    if (placementId) {
-      deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
-      if (context.extendMode) {
-        deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
-      }
-    } else {
-      deepSetValue(imp, `${bidderParamsPath}.publisherId`, getBidIdParameter('publisherId', bidRequest.params));
-      deepSetValue(imp, `${bidderParamsPath}.placementKey`, getBidIdParameter('placementKey', bidRequest.params));
+    const publisherId = bidRequest.params.publisherId;
+    deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
+    deepSetValue(imp, `${bidderParamsPath}.publisherId`, publisherId);
+    if (context.extendMode) {
+      deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
     }
     deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
 
@@ -150,8 +157,7 @@ export const CONVERTER = ortbConverter({
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
       source: {
-        // TODO: once https://github.com/prebid/Prebid.js/issues/8573 is resolved, this should be handled by the base ortbConverter logic
-        tid: context.bidRequests[0].transactionId,
+
       },
       ext: {
         improvedigital: {
@@ -183,6 +189,10 @@ export const CONVERTER = ortbConverter({
     })();
     const bidResponse = buildBidResponse(bid, context);
     const idExt = deepAccess(bid, `ext.${BIDDER_CODE}`, {});
+    // Programmatic guaranteed flag
+    if (idExt.pg === 1) {
+      bidResponse.adserverTargeting = { hb_deal_type_improve: 'pg' };
+    }
     Object.assign(bidResponse, {
       dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
       netRevenue: idExt.is_net || false,
@@ -199,9 +209,9 @@ export const CONVERTER = ortbConverter({
   overrides: {
     imp: {
       banner(fillImpBanner, imp, bidRequest, context) {
-        // override to disregard banner.sizes if usePrebidSizes is not set
+        // override to disregard banner.sizes if usePrebidSizes is false
         if (!bidRequest.mediaTypes[BANNER]) return;
-        if (config.getConfig('improvedigital.usePrebidSizes') !== true) {
+        if (config.getConfig('improvedigital.usePrebidSizes') === false) {
           const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
           bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
         }
@@ -221,33 +231,6 @@ export const CONVERTER = ortbConverter({
           context
         );
         deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
-        if (!imp.video.placement && ID_REQUEST.isOutstreamVideo(bidRequest)) {
-          // fillImpVideo will have already set placement = 1 for instream
-          imp.video.placement = VIDEO_PARAMS.PLACEMENT_TYPE.OUTSTREAM;
-        }
-      }
-    },
-    request: {
-      gdprAddtlConsent(setAddtlConsent, ortbRequest, bidderRequest) {
-        const additionalConsent = bidderRequest?.gdprConsent?.addtlConsent;
-        if (!additionalConsent) {
-          return;
-        }
-        if (spec.syncStore.extendMode) {
-          setAddtlConsent(ortbRequest, bidderRequest);
-          return;
-        }
-        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
-          // Google Ad Tech Provider IDs
-          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          if (atpIds) {
-            deepSetValue(
-              ortbRequest,
-              'user.ext.consented_providers_settings.consented_providers',
-              atpIds.split('.').map(id => parseInt(id, 10))
-            );
-          }
-        }
       }
     }
   }
@@ -380,7 +363,8 @@ const ID_RAZR = {
 
     const cfgStr = JSON.stringify(cfg).replace(/<\/script>/ig, '\\x3C/script>');
     const s = `<script>window.__razr_config = ${cfgStr};</script>`;
-    bid.ad = bid.ad.replace(/<body[^>]*>/, match => match + s);
+    // prepend RAZR config to ad markup:
+    bid.ad = s + bid.ad;
 
     this.installListener();
   },
