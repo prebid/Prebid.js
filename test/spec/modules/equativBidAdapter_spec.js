@@ -1,6 +1,6 @@
 import { spec, converter } from 'modules/equativBidAdapter.js';
 
-describe('Equativ bid adapter tests', function () {
+describe('Equativ bid adapter tests', () => {
   const DEFAULT_BID_REQUESTS = [
     {
       adUnitCode: 'eqtv_42',
@@ -131,15 +131,39 @@ describe('Equativ bid adapter tests', function () {
       );
       expect(request.data.site.publisher.id).to.equal(111);
     });
+
+    it('should send default floor of 0.0', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BID_REQUESTS,
+        DEFAULT_BIDDER_REQUEST
+      );
+      expect(request.data.imp[0]).to.have.property('bidfloor').that.eq(0.0);
+    });
+
+    it('should send secure connection', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BID_REQUESTS,
+        DEFAULT_BIDDER_REQUEST
+      );
+      expect(request.data.imp[0]).to.have.property('secure').that.within(0, 1);
+    });
+
+    it('should have tagid', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BID_REQUESTS,
+        DEFAULT_BIDDER_REQUEST
+      );
+      expect(request.data.imp[0]).to.have.property('tagid').that.eq(DEFAULT_BID_REQUESTS[0].adUnitCode);
+    });
   });
 
   describe('getUserSyncs', () => {
-    it('should return empty array if no pixel sync not enabled', function () {
+    it('should return empty array if no pixel sync not enabled', () => {
       const syncs = spec.getUserSyncs({}, RESPONSE_WITH_DSP_PIXELS);
       expect(syncs).to.deep.equal([]);
     });
 
-    it('should return empty array if no pixels available', function () {
+    it('should return empty array if no pixels available', () => {
       const syncs = spec.getUserSyncs(
         { pixelEnabled: true },
         SAMPLE_RESPONSE
@@ -147,7 +171,7 @@ describe('Equativ bid adapter tests', function () {
       expect(syncs).to.deep.equal([]);
     });
 
-    it('should register dsp pixels', function () {
+    it('should register dsp pixels', () => {
       const syncs = spec.getUserSyncs(
         { pixelEnabled: true },
         RESPONSE_WITH_DSP_PIXELS

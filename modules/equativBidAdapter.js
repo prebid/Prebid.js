@@ -22,7 +22,7 @@ export const spec = {
     return {
       data: converter.toORTB({ bidderRequest, bidRequests }),
       method: 'POST',
-      url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+      url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
     };
   },
 
@@ -81,6 +81,10 @@ export const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const { siteId, pageId, formatId } = bidRequest.params;
+
+    imp.bidfloor = imp.bidfloor || 0.0;
+    imp.secure = Number(window.location.protocol === 'https:');
+    imp.tagid = bidRequest.adUnitCode;
 
     if (siteId || pageId || formatId) {
       const bidder = {};
