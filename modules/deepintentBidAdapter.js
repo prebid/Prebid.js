@@ -143,7 +143,7 @@ function buildImpression(bid) {
   impression = {
     id: bid.bidId,
     tagid: bid.params.tagId || '',
-    ...(floor && { bidfloor: floor }),
+    ...(!isNaN(floor) && { bidfloor: floor }),
     secure: window.location.protocol === 'https:' ? 1 : 0,
     displaymanager: 'di_prebid',
     displaymanagerver: DI_M_V,
@@ -160,7 +160,7 @@ function buildImpression(bid) {
 
 function getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
-    return bidRequest.params.bidfloor ? bidRequest.params.bidfloor : null;
+    return bidRequest.params?.bidfloor;
   }
 
   let floor = bidRequest.getFloor({

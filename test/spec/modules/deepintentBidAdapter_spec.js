@@ -258,6 +258,11 @@ describe('Deepintent adapter', function () {
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].bidfloor).to.not.exist;
 
+      requestClone[0].params.bidfloor = 0;
+      bRequest = spec.buildRequests(requestClone);
+      data = JSON.parse(bRequest.data);
+      expect(data.imp[0].bidfloor).to.equal(0);
+
       requestClone[0].params.bidfloor = 1.2;
       bRequest = spec.buildRequests(requestClone);
       data = JSON.parse(bRequest.data);
