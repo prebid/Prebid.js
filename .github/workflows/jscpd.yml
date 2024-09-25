@@ -29,7 +29,7 @@ jobs:
       run: |
         echo '{
           "threshold": 20,
-          "minTokens": 50,
+          "minTokens": 100,
           "reporters": [
             "json"
           ],

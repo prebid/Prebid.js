@@ -18,6 +18,8 @@ import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
 import {fireNativeTrackers} from './native.js';
 import {GreedyPromise} from './utils/promise.js';
+import adapterManager from './adapterManager.js';
+import {useMetrics} from './utils/perfMetrics.js';
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -67,6 +69,8 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   const data = { doc };
   if (bid) data.bid = bid;
   if (id) data.adId = id;
+
+  adapterManager.callAdRenderSucceededBidder(bid.adapterCode || bid.bidder, bid);
 
   events.emit(AD_RENDER_SUCCEEDED, data);
 }
@@ -164,32 +168,70 @@ doRender.before(function (next, args) {
 }, 100)
 
 export function handleRender({renderFn, resizeFn, adId, options, bidResponse, doc}) {
-  if (bidResponse == null) {
-    emitAdRenderFail({
-      reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
-      message: `Cannot find ad '${adId}'`,
-      id: adId
-    });
-    return;
-  }
-  if (bidResponse.status === BID_STATUS.RENDERED) {
-    logWarn(`Ad id ${adId} has been rendered before`);
-    events.emit(STALE_RENDER, bidResponse);
-    if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+  deferRendering(bidResponse, () => {
+    if (bidResponse == null) {
+      emitAdRenderFail({
+        reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+        message: `Cannot find ad '${adId}'`,
+        id: adId
+      });
       return;
     }
+    if (bidResponse.status === BID_STATUS.RENDERED) {
+      logWarn(`Ad id ${adId} has been rendered before`);
+      events.emit(STALE_RENDER, bidResponse);
+      if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+        return;
+      }
+    }
+    try {
+      doRender({renderFn, resizeFn, bidResponse, options, doc});
+    } catch (e) {
+      emitAdRenderFail({
+        reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+        message: e.message,
+        id: adId,
+        bid: bidResponse
+      });
+    }
+  })
+}
+
+export function markBidAsRendered(bidResponse) {
+  const metrics = useMetrics(bidResponse.metrics);
+  metrics.checkpoint('bidRender');
+  metrics.timeBetween('bidWon', 'bidRender', 'render.deferred');
+  metrics.timeBetween('auctionEnd', 'bidRender', 'render.pending');
+  metrics.timeBetween('requestBids', 'bidRender', 'render.e2e');
+  bidResponse.status = BID_STATUS.RENDERED;
+}
+
+const DEFERRED_RENDER = new WeakMap();
+const WINNERS = new WeakSet();
+
+export function deferRendering(bidResponse, renderFn) {
+  if (bidResponse == null) {
+    // if the bid is missing, let renderFn deal with it now
+    renderFn();
+    return;
   }
-  try {
-    doRender({renderFn, resizeFn, bidResponse, options, doc});
-  } catch (e) {
-    emitAdRenderFail({
-      reason: AD_RENDER_FAILED_REASON.EXCEPTION,
-      message: e.message,
-      id: adId,
-      bid: bidResponse
-    });
+  DEFERRED_RENDER.set(bidResponse, renderFn);
+  if (!bidResponse.deferRendering) {
+    renderIfDeferred(bidResponse);
   }
-  markWinningBid(bidResponse);
+  if (!WINNERS.has(bidResponse)) {
+    WINNERS.add(bidResponse);
+    markWinningBid(bidResponse);
+  }
+}
+
+export function renderIfDeferred(bidResponse) {
+  const renderFn = DEFERRED_RENDER.get(bidResponse);
+  if (renderFn) {
+    renderFn();
+    markBidAsRendered(bidResponse);
+    DEFERRED_RENDER.delete(bidResponse);
+  }
 }
 
 export function renderAdDirect(doc, adId, options) {

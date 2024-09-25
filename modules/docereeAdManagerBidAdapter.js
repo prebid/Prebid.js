@@ -20,12 +20,12 @@ export const spec = {
     }
     return true;
   },
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
     const { data } = config.getConfig('docereeadmanager.user') || {};
 
     validBidRequests.forEach(function (validBidRequest) {
-      const payload = getPayload(validBidRequest, data);
+      const payload = getPayload(validBidRequest, data, bidderRequest);
 
       if (!payload) {
         return;
@@ -70,14 +70,19 @@ export const spec = {
   },
 };
 
-function getPayload(bid, userData) {
+export function getPayload(bid, userData, bidderRequest) {
   if (!userData || !bid) {
     return false;
   }
   const { bidId, params } = bid;
-  const { placementId } = params;
+  const { placementId, publisherUrl } = params;
   const {
     userid,
+    email,
+    firstname,
+    lastname,
+    hcpid,
+    dob,
     specialization,
     gender,
     city,
@@ -95,11 +100,11 @@ function getPayload(bid, userData) {
 
   const data = {
     userid: platformUid || userid || '',
-    email: '',
-    firstname: '',
-    lastname: '',
+    email: email || '',
+    firstname: firstname || '',
+    lastname: lastname || '',
     specialization: specialization || '',
-    hcpid: '',
+    hcpid: hcpid || '',
     gender: gender || '',
     city: city || '',
     state: state || '',
@@ -113,10 +118,24 @@ function getPayload(bid, userData) {
     hashedmobile: hashedmobile || '',
     country: country || '',
     organization: organization || '',
-    dob: '',
+    dob: dob || '',
     userconsent: 1,
-    mobile: mobile || ''
+    mobile: mobile || '',
+    pageurl: publisherUrl || ''
   };
+
+  try {
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      const { gdprApplies, consentString } = bidderRequest.gdprConsent;
+      data['consent'] = {
+        'gdpr': gdprApplies ? 1 : 0,
+        'gdprstr': consentString || '',
+      }
+    }
+  } catch (error) {
+
+  }
+
   return {
     data,
   };

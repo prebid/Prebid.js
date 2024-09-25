@@ -1,10 +1,24 @@
-import {fillVideoDefaults, isValidVideoBid} from 'src/video.js';
+import {fillVideoDefaults, isValidVideoBid, validateOrtbVideoFields} from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
+import * as utils from '../../src/utils.js';
 
 describe('video.js', function () {
+  let sandbox;
+  let utilsMock;
+
   before(() => {
     hook.ready();
+  });
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    utilsMock = sandbox.mock(utils);
+  })
+
+  afterEach(() => {
+    utilsMock.restore();
+    sandbox.restore();
   });
 
   describe('fillVideoDefaults', () => {
@@ -75,6 +89,94 @@ describe('video.js', function () {
         })
       })
     })
+  })
+
+  describe('validateOrtbVideoFields', () => {
+    it('remove incorrect ortb properties, and keep non ortb ones', () => {
+      sandbox.spy(utils, 'logWarn');
+
+      const mt = {
+        content: 'outstream',
+
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 15,
+        startdelay: 0,
+        maxseq: 0,
+        poddur: 0,
+        protocols: [7],
+        w: 600,
+        h: 480,
+        podid: 'an-id',
+        podseq: 0,
+        rqddurs: [5],
+        placement: 1,
+        plcmt: 1,
+        linearity: 1,
+        skip: 0,
+        skipmin: 3,
+        skipafter: 3,
+        sequence: 0,
+        slotinpod: 0,
+        mincpmpersec: 2.5,
+        battr: [6, 7],
+        maxextended: 0,
+        minbitrate: 800,
+        maxbitrate: 1000,
+        boxingallowed: 1,
+        playbackmethod: [1],
+        playbackend: 1,
+        delivery: [2],
+        pos: 0,
+        api: 6, // -- INVALID
+        companiontype: [1, 2, 3],
+        poddedupe: [1],
+
+        otherOne: 'test',
+      };
+
+      const expected = {...mt};
+      delete expected.api;
+
+      const adUnit = {
+        code: 'adUnitCode',
+        mediaTypes: { video: mt }
+      };
+      validateOrtbVideoFields(adUnit);
+
+      expect(adUnit.mediaTypes.video).to.eql(expected);
+      sinon.assert.callCount(utils.logWarn, 1);
+    });
+
+    it('Early return when 1st param is not a plain object', () => {
+      sandbox.spy(utils, 'logWarn');
+
+      validateOrtbVideoFields();
+      validateOrtbVideoFields([]);
+      validateOrtbVideoFields(null);
+      validateOrtbVideoFields('hello');
+      validateOrtbVideoFields(() => {});
+
+      sinon.assert.callCount(utils.logWarn, 5);
+    });
+
+    it('Calls onInvalidParam when a property is invalid', () => {
+      const onInvalidParam = sandbox.spy();
+      const adUnit = {
+        code: 'adUnitCode',
+        mediaTypes: {
+          video: {
+            content: 'outstream',
+            mimes: ['video/mp4'],
+            api: 6
+          }
+        }
+      };
+      validateOrtbVideoFields(adUnit, onInvalidParam);
+
+      sinon.assert.calledOnce(onInvalidParam);
+      sinon.assert.calledWith(onInvalidParam, 'api', 6, adUnit);
+    });
   })
 
   describe('isValidVideoBid', () => {

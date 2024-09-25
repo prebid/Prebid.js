@@ -145,6 +145,7 @@ const BIDDER_REQUEST = {
       'cat': ['IAB2'],
       'pagecat': ['IAB2-2'],
       'content': {
+        'language': 'en',
         'data': [{
           'name': 'example.com',
           'ext': {
@@ -159,7 +160,8 @@ const BIDDER_REQUEST = {
     },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     device: ORTB2_DEVICE,
     user: {
@@ -355,6 +357,8 @@ describe('VidazooBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          contentLang: 'en',
+          coppa: 0,
           device: ORTB2_DEVICE,
           contentData: [{
             'name': 'example.com',
@@ -465,6 +469,8 @@ describe('VidazooBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -557,6 +563,8 @@ describe('VidazooBidAdapter', function () {
         gpid: '1234567890',
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
+        contentLang: 'en',
+        coppa: 0,
         contentData: [{
           'name': 'example.com',
           'ext': {
