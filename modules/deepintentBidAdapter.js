@@ -1,35 +1,17 @@
-import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isInteger, isPlainObject, logError, logWarn } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
 const DI_M_V = '1.0.0';
 export const ORTB_VIDEO_PARAMS = {
-  'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  'minduration': (value) => isInteger(value),
-  'maxduration': (value) => isInteger(value),
-  'protocols': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 10),
-  'w': (value) => isInteger(value),
-  'h': (value) => isInteger(value),
-  'startdelay': (value) => isInteger(value),
+  ...COMMON_ORTB_VIDEO_PARAMS,
   'plcmt': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
-  'linearity': (value) => [1, 2].indexOf(value) !== -1,
-  'skip': (value) => [0, 1].indexOf(value) !== -1,
-  'skipmin': (value) => isInteger(value),
-  'skipafter': (value) => isInteger(value),
-  'sequence': (value) => isInteger(value),
-  'battr': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 17),
-  'maxextended': (value) => isInteger(value),
-  'minbitrate': (value) => isInteger(value),
-  'maxbitrate': (value) => isInteger(value),
-  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
-  'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
-  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
   'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
   'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 };
 export const spec = {
   code: BIDDER_CODE,
