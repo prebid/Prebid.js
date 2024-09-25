@@ -22,3 +22,21 @@ export const COMMON_ORTB_VIDEO_PARAMS = {
   'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 };
+
+export function formatResponse(bid) {
+  return {
+    requestId: bid && bid.impid ? bid.impid : undefined,
+    cpm: bid && bid.price ? bid.price : 0.0,
+    width: bid && bid.w ? bid.w : 0,
+    height: bid && bid.h ? bid.h : 0,
+    ad: bid && bid.adm ? bid.adm : '',
+    meta: {
+      advertiserDomains: bid && bid.adomain ? bid.adomain : []
+    },
+    creativeId: bid && bid.crid ? bid.crid : undefined,
+    netRevenue: false,
+    currency: bid && bid.cur ? bid.cur : 'USD',
+    ttl: 300,
+    dealId: bid && bid.dealId ? bid.dealId : undefined
+  }
+}
