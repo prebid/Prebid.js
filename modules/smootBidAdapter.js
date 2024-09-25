@@ -3,7 +3,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'smoot';
-const AD_URL = 'https://endpoint1.smxconv.com/pbjs';
+const AD_URL = 'https://endpoint1.smoot.ai/pbjs';
 const SYNC_URL = 'https://usync.smxconv.com';
 
 export const spec = {
