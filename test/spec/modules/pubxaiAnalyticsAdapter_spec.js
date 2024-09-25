@@ -22,8 +22,8 @@ const readBlobSafariCompat = (blob) => {
 
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
-    getGlobal().refreshUserIds()
     sinon.stub(events, 'getEvents').returns([]);
+    getGlobal().refreshUserIds?.()
   });
 
   afterEach(() => {
@@ -31,9 +31,10 @@ describe('pubxai analytics adapter', () => {
   });
 
   describe('track', () => {
+    const pubxId = '6c415fc0-8b0e-4cf5-be73-01526a4db625';
     let initOptions = {
       samplingRate: '1',
-      pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625',
+      pubxId: pubxId,
     };
 
     let originalVS;
@@ -148,7 +149,7 @@ describe('pubxai analytics adapter', () => {
         timeout: 1000,
         config: {
           samplingRate: '1',
-          pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625',
+          pubxId: pubxId,
         },
       },
       bidRequested: {
@@ -529,7 +530,7 @@ describe('pubxai analytics adapter', () => {
             null,
           auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
           sizes: '300x250',
-          renderStatus: 2,
+          bidType: 2,
           requestTimestamp: 1616654312804,
           creativeId: 96846035,
           currency: 'USD',
@@ -598,6 +599,7 @@ describe('pubxai analytics adapter', () => {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
       pmacDetail: {},
+      extraData: {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
@@ -651,7 +653,7 @@ describe('pubxai analytics adapter', () => {
         placementId: 13144370,
         renderedSize: '300x250',
         sizes: '300x250',
-        renderStatus: 4,
+        bidType: 4,
         responseTimestamp: 1616654313071,
         requestTimestamp: 1616654312804,
         status: 'rendered',
@@ -692,6 +694,7 @@ describe('pubxai analytics adapter', () => {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
       pmacDetail: {},
+      extraData: {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
@@ -762,8 +765,9 @@ describe('pubxai analytics adapter', () => {
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
-          pubxaiAnalyticsVersion: 'v2.0.0',
+          pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
+          pubxId: pubxId,
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
@@ -772,15 +776,15 @@ describe('pubxai analytics adapter', () => {
       }
     });
 
-    it('auction with no bids', async () => {
+    it('auction data with only rejected bids', async () => {
       // Step 1: Send auction init event
       events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
 
       // Step 2: Send bid requested event
       events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
 
-      // Step 3: Send bid time out event
-      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+      // Step 3: Send bid rejected (afaict the only expected reason would be a bid being too low)
+      events.emit(EVENTS.BID_REJECTED, prebidEvent['bidResponse']);
 
       // Simulate "navigate away" behaviour
       document.dispatchEvent(new Event('visibilitychange'));
@@ -805,11 +809,111 @@ describe('pubxai analytics adapter', () => {
       // Step 8: check that the meta information in the call is correct
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
         auctionTimestamp: '1616654312804',
-        pubxaiAnalyticsVersion: 'v2.0.0',
+        pubxaiAnalyticsVersion: 'v2.1.0',
         prebidVersion: '$prebid.version$',
+        pubxId: pubxId,
       });
 
       // Step 9: check that the data sent in the request is correct
+      expect(expectedData.type).to.equal('text/json');
+      expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
+        {
+          ...expectedAfterBid,
+          bids: [{
+            ...expectedAfterBid.bids[0],
+            bidType: 1
+          }]
+        }
+      ]);
+    });
+
+    it('auction data with only timed out bids', async () => {
+      // Step 1: Send auction init event
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+
+      // Step 2: Send bid requested event
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+
+      // Step 3: Send bid rejected (afaict the only expected reason would be a bid being too low)
+      events.emit(EVENTS.BID_TIMEOUT, [prebidEvent['bidResponse']]);
+
+      // Simulate "navigate away" behaviour
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      // Step 4: check the number of calls made to pubx.ai
+      expect(navigator.sendBeacon.callCount).to.equal(0);
+
+      // Step 5: Send auction end event
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+
+      // Simulate end of session
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      // Step 6: check the number of calls made to pubx.ai
+      expect(navigator.sendBeacon.callCount).to.equal(1);
+
+      // Step 7: check the pathname of the calls is correct (sent only to the auction endpoint)
+      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
+      const parsedUrl = new URL(expectedUrl);
+      expect(parsedUrl.pathname).to.equal('/analytics/auction');
+
+      // Step 8: check that the meta information in the call is correct
+      expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
+        auctionTimestamp: '1616654312804',
+        pubxaiAnalyticsVersion: 'v2.1.0',
+        prebidVersion: '$prebid.version$',
+        pubxId: pubxId,
+      });
+
+      // Step 9: check that the data sent in the request is correct
+      expect(expectedData.type).to.equal('text/json');
+      expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
+        {
+          ...expectedAfterBid,
+          bids: [{
+            ...expectedAfterBid.bids[0],
+            bidType: 3
+          }]
+        }
+      ]);
+    });
+
+    it('auction with no bids', async () => {
+      // Step 1: Send auction init event
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+
+      // Step 2: Send bid requested event
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+
+      // Simulate "navigate away" behaviour
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      // Step 3: check the number of calls made to pubx.ai
+      expect(navigator.sendBeacon.callCount).to.equal(0);
+
+      // Step 4: Send auction end event
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+
+      // Simulate end of session
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      // Step 5: check the number of calls made to pubx.ai
+      expect(navigator.sendBeacon.callCount).to.equal(1);
+
+      // Step 6: check the pathname of the calls is correct (sent only to the auction endpoint)
+      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
+      const parsedUrl = new URL(expectedUrl);
+      expect(parsedUrl.pathname).to.equal('/analytics/auction');
+
+      // Step 7: check that the meta information in the call is correct
+      expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
+        auctionTimestamp: '1616654312804',
+        pubxaiAnalyticsVersion: 'v2.1.0',
+        prebidVersion: '$prebid.version$',
+        pubxId: pubxId,
+      });
+
+      // Step 8: check that the data sent in the request is correct
       expect(expectedData.type).to.equal('text/json');
       expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
         {
@@ -930,8 +1034,9 @@ describe('pubxai analytics adapter', () => {
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
-          pubxaiAnalyticsVersion: 'v2.0.0',
+          pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
+          pubxId: pubxId,
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
@@ -1046,8 +1151,9 @@ describe('pubxai analytics adapter', () => {
         );
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
-          pubxaiAnalyticsVersion: 'v2.0.0',
+          pubxaiAnalyticsVersion: 'v2.1.0',
           prebidVersion: '$prebid.version$',
+          pubxId: pubxId,
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([

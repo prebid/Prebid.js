@@ -20,6 +20,7 @@ const _approvedLoadExternalJSList = [
   'browsi',
   'brandmetrics',
   'clean.io',
+  'humansecurity',
   'confiant',
   'contxtful',
   'hadron',
@@ -32,6 +33,7 @@ const _approvedLoadExternalJSList = [
   'dynamicAdBoost',
   '51Degrees',
   'symitridap',
+  'wurfl',
   // UserId Submodules
   'justtag',
   'tncId',

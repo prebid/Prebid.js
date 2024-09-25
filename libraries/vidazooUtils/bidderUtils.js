@@ -245,6 +245,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
   const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
+  const contentLang = deepAccess(bidderRequest, 'ortb2.site.content.language') || document.documentElement.lang;
+  const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa', 0);
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -278,6 +280,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     gpid: gpid,
     cat: cat,
     contentData,
+    contentLang,
+    coppa,
     userData: userData,
     pagecat: pagecat,
     transactionId: ortb2Imp?.ext?.tid,
@@ -322,6 +326,22 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     if (fledge) {
       data.fledge = fledge;
     }
+  }
+
+  const api = deepAccess(mediaTypes, 'video.api', []);
+  if (api.includes(7)) {
+    const sourceExt = deepAccess(bidderRequest, 'ortb2.source.ext');
+    if (sourceExt?.omidpv) {
+      data.omidpv = sourceExt.omidpv;
+    }
+    if (sourceExt?.omidpn) {
+      data.omidpn = sourceExt.omidpn;
+    }
+  }
+
+  const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+  if (dsa) {
+    data.dsa = dsa;
   }
 
   _each(ext, (value, key) => {
