@@ -69,5 +69,5 @@ pbjs.setConfig({
 
 - If this parameter is not present, the Qortex integration can still be configured and loaded manually on your page outside of prebid. The RTD module will continue to initialize and operate as normal.
 
-#### `disableBidEnrichment` - optional
-- This optional parameter allows a publisher to opt out of the RTD module from using our API to enrich bids with first party data for contextuality
+#### `enableBidEnrichment` - optional
+- This optional parameter allows a publisher to opt-in to the features of the RTD module that use our API to enrich bids with first party data for contextuality. Enabling this feature will allow this module to collect and send the content of the page (video, text, image, etc.) to our AI analysis server for indexing and analysis. Please use caution when adding this module to pages that may contain personal user data or proprietary information. 
