@@ -1,10 +1,10 @@
 import { deepAccess, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { includes as strIncludes } from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -284,7 +284,7 @@ const getHighestFloor = (slot) => {
  * Get currency (either default or adserver)
  * @returns {string} currency name
  */
-const getCurrency = () => config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+const getCurrency = (bidderRequest) => getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
 /**
  * Get value for first occurence of key within the collection
@@ -617,7 +617,7 @@ const spec = {
         content: { language: getContentLanguage() },
       },
       imp: validBidRequests.map(slot => mapImpression(slot)),
-      cur: [getCurrency()],
+      cur: [getCurrency(bidderRequest)],
       tmax,
       user: {},
       regs,

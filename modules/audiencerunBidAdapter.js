@@ -1,3 +1,7 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   _each,
   deepAccess,
@@ -8,9 +12,6 @@ import {
   logError,
   triggerPixel,
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -136,7 +137,7 @@ export const spec = {
       referer: deepAccess(bidderRequest, 'refererInfo.topmostLocation'),
       // TODO: please do not send internal data structures over the network
       refererInfo: deepAccess(bidderRequest, 'refererInfo.legacy'),
-      currencyCode: config.getConfig('currency.adServerCurrency'),
+      currencyCode: getCurrencyFromBidderRequest(bidderRequest),
       timeout: config.getConfig('bidderTimeout'),
       bids,
     };

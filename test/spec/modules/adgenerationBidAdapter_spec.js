@@ -4,6 +4,8 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {NATIVE} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import prebid from '../../../package.json';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
@@ -248,19 +250,20 @@ describe('AdgenerationAdapter', function () {
       config.resetConfig();
     });
     it('allows setConfig to set bidder currency for USD', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'USD'
-        }
+      setCurrencyConfig({ adServerCurrency: 'USD' });
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        const bidRequest = spec.buildRequests(bidRequests, res)[0];
+        expect(bidRequest.data).to.equal(data.bannerUSD);
+        setCurrencyConfig({});
       });
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data).to.equal(data.bannerUSD);
-      config.resetConfig();
     });
   });
   describe('interpretResponse', function () {
     const bidRequests = {
       banner: {
+        bidderRequest: {
+          ortb2: {ext: {prebid: {adServerCurrency: 'JPY'}}}
+        },
         bidRequest: {
           bidder: 'adg',
           params: {
@@ -275,6 +278,9 @@ describe('AdgenerationAdapter', function () {
         },
       },
       native: {
+        bidderRequest: {
+          ortb2: {ext: {prebid: {adServerCurrency: 'JPY'}}}
+        },
         bidRequest: {
           bidder: 'adg',
           params: {
@@ -312,6 +318,9 @@ describe('AdgenerationAdapter', function () {
         },
       },
       upperBillboard: {
+        bidderRequest: {
+          ortb2: {ext: {prebid: {adServerCurrency: 'JPY'}}}
+        },
         bidRequest: {
           bidder: 'adg',
           params: {
@@ -916,21 +925,26 @@ describe('AdgenerationAdapter', function () {
     });
 
     it('handles ADGBrowserM responses', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'JPY'
+      setCurrencyConfig({ adServerCurrency: 'JPY' });
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://example.com'
         }
+      };
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        spec.buildRequests(bidRequests, res)[0];
+        const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, { ...bidRequests.upperBillboard, bidderRequest: res })[0];
+        expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
+        expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
+        expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);
+        expect(result.creativeId).to.equal(bidResponses.normal.upperBillboard.creativeId);
+        expect(result.dealId).to.equal(bidResponses.normal.upperBillboard.dealId);
+        expect(result.currency).to.equal(bidResponses.normal.upperBillboard.currency);
+        expect(result.netRevenue).to.equal(bidResponses.normal.upperBillboard.netRevenue);
+        expect(result.ttl).to.equal(bidResponses.normal.upperBillboard.ttl);
+        expect(result.ad).to.equal(bidResponses.normal.upperBillboard.ad);
+        setCurrencyConfig({});
       });
-      const result = spec.interpretResponse({body: serverResponse.normal.upperBillboard}, bidRequests.upperBillboard)[0];
-      expect(result.requestId).to.equal(bidResponses.normal.upperBillboard.requestId);
-      expect(result.width).to.equal(bidResponses.normal.upperBillboard.width);
-      expect(result.height).to.equal(bidResponses.normal.upperBillboard.height);
-      expect(result.creativeId).to.equal(bidResponses.normal.upperBillboard.creativeId);
-      expect(result.dealId).to.equal(bidResponses.normal.upperBillboard.dealId);
-      expect(result.currency).to.equal(bidResponses.normal.upperBillboard.currency);
-      expect(result.netRevenue).to.equal(bidResponses.normal.upperBillboard.netRevenue);
-      expect(result.ttl).to.equal(bidResponses.normal.upperBillboard.ttl);
-      expect(result.ad).to.equal(bidResponses.normal.upperBillboard.ad);
     });
 
     it('handles banner responses for empty adomain', function () {
