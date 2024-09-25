@@ -1,7 +1,7 @@
 import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
+import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
@@ -134,24 +134,6 @@ function clean(obj) {
     if (obj[propName] === null || obj[propName] === undefined) {
       delete obj[propName];
     }
-  }
-}
-
-function formatResponse(bid) {
-  return {
-    requestId: bid && bid.impid ? bid.impid : undefined,
-    cpm: bid && bid.price ? bid.price : 0.0,
-    width: bid && bid.w ? bid.w : 0,
-    height: bid && bid.h ? bid.h : 0,
-    ad: bid && bid.adm ? bid.adm : '',
-    meta: {
-      advertiserDomains: bid && bid.adomain ? bid.adomain : []
-    },
-    creativeId: bid && bid.crid ? bid.crid : undefined,
-    netRevenue: false,
-    currency: bid && bid.cur ? bid.cur : 'USD',
-    ttl: 300,
-    dealId: bid && bid.dealId ? bid.dealId : undefined
   }
 }
 
