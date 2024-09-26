@@ -29,6 +29,7 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.params', bidRequest.params);
+    deepSetValue(imp, 'ext.mediaTypes', bidRequest.mediaTypes)
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -79,17 +80,22 @@ export const spec = {
       const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL
       const url = `${urlBase}?${urlParams}`;
 
-      const data = {
+      let data = {
         currency: getCurrencyType(bidderRequest),
         pbver: '$prebid.version$',
         sdkname: 'prebidjs',
         adapterver: ADGENE_PREBID_VERSION,
-        imark: 1,
         ortb: {
           imp: [impObj],
           ...otherParams
         }
       }
+
+      // native以外にvideo等の対応が入った場合は要修正
+      if (!impObj?.ext?.mediaTypes || !impObj?.ext?.mediaTypes.native) {
+        data.imark = 1;
+      }
+
       return {
         method: 'POST',
         url: url,
