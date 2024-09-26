@@ -103,6 +103,7 @@ const response_banner = {
       price: 5,
       adomain: ['example.com'],
       adm: 'admcode',
+      nurl: 'https://trc.contextualadv.com/nurl/81d39516c777565f_2/0.1',
       crid: 'crid',
       ext: {
         mediaType: 'banner'
@@ -121,6 +122,7 @@ const response_video = {
       price: 5,
       adomain: ['example.com'],
       adm: 'admcode',
+      nurl: 'https://trc.contextualadv.com/nurl/81d39516c777565f_2/0.1',
       crid: 'crid',
       ext: {
         mediaType: 'video'
@@ -144,7 +146,7 @@ const response_native = {
       impid: 'request_imp_id',
       price: 5,
       adomain: ['example.com'],
-      adm: { native:
+      adm: JSON.stringify({ native:
           {
             assets: [
               {id: 1, title: 'dummyText'},
@@ -158,7 +160,8 @@ const response_native = {
             imptrackers: ['tracker1.com', 'tracker2.com', 'tracker3.com'],
             jstracker: 'tracker1.com'
           }
-      },
+      }),
+      nurl: 'https://trc.contextualadv.com/nurl/81d39516c777565f_2/0.1',
       crid: 'crid',
       ext: {
         mediaType: 'native'
@@ -267,6 +270,7 @@ describe('VideoheroesBidAdapter', function() {
         netRevenue: true,
         creativeId: response_banner.seatbid[0].bid[0].crid,
         dealId: response_banner.seatbid[0].bid[0].dealid,
+        nurl: response_banner.seatbid[0].bid[0].nurl,
         mediaType: 'banner',
         ad: response_banner.seatbid[0].bid[0].adm
       }
@@ -276,7 +280,7 @@ describe('VideoheroesBidAdapter', function() {
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'nurl', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
       expect(dataItem.ad).to.equal(expectedBidResponse.ad);
@@ -284,6 +288,7 @@ describe('VideoheroesBidAdapter', function() {
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);
+      expect(dataItem.nurl).to.equal(expectedBidResponse.nurl);
       expect(dataItem.width).to.equal(expectedBidResponse.width);
       expect(dataItem.height).to.equal(expectedBidResponse.height);
     });
@@ -303,23 +308,25 @@ describe('VideoheroesBidAdapter', function() {
         netRevenue: true,
         creativeId: response_video.seatbid[0].bid[0].crid,
         dealId: response_video.seatbid[0].bid[0].dealid,
+        nurl: response_banner.seatbid[0].bid[0].nurl,
         mediaType: 'video',
-        vastUrl: response_video.seatbid[0].bid[0].adm
+        vastXml: response_video.seatbid[0].bid[0].adm
       }
 
       let videoResponses = spec.interpretResponse(videoResponse);
 
       expect(videoResponses).to.be.an('array').that.is.not.empty;
       let dataItem = videoResponses[0];
-      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
+        'netRevenue', 'currency', 'dealId', 'nurl', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.vastUrl).to.equal(expectedBidResponse.vastUrl)
+      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);
+      expect(dataItem.nurl).to.equal(expectedBidResponse.nurl);
       expect(dataItem.width).to.equal(expectedBidResponse.width);
       expect(dataItem.height).to.equal(expectedBidResponse.height);
     });
@@ -339,8 +346,9 @@ describe('VideoheroesBidAdapter', function() {
         netRevenue: true,
         creativeId: response_native.seatbid[0].bid[0].crid,
         dealId: response_native.seatbid[0].bid[0].dealid,
+        nurl: response_banner.seatbid[0].bid[0].nurl,
         mediaType: 'native',
-        native: {clickUrl: response_native.seatbid[0].bid[0].adm.native.link.url}
+        native: {clickUrl: 'example.com'}
       }
 
       let nativeResponses = spec.interpretResponse(nativeResponse);
@@ -348,7 +356,7 @@ describe('VideoheroesBidAdapter', function() {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
       let dataItem = nativeResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'native', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'nurl', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
       expect(dataItem.native.clickUrl).to.equal(expectedBidResponse.native.clickUrl)
@@ -356,6 +364,7 @@ describe('VideoheroesBidAdapter', function() {
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(expectedBidResponse.currency);
+      expect(dataItem.nurl).to.equal(expectedBidResponse.nurl);
       expect(dataItem.width).to.equal(expectedBidResponse.width);
       expect(dataItem.height).to.equal(expectedBidResponse.height);
     });
