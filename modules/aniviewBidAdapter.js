@@ -64,7 +64,7 @@ const converter = ortbConverter({
 
     // For local testing
     if (shouldMockSite && request.site) {
-      request.site.page = "https://example.com";
+      request.site.page = 'https://example.com';
     }
 
     mergeDeep(request, {
