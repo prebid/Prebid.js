@@ -77,8 +77,8 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
     // filter top bid for each bucket by bidder
     Object.keys(buckets).forEach(bucketKey => {
       let bucketBids = [];
-      let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
-      Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(winReducer)));
+      let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode')
+      Object.keys(bidsByBidder).forEach(key => { bucketBids.push(bidsByBidder[key].reduce(winReducer)) });
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit) {
         bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
@@ -355,12 +355,14 @@ export function newTargeting(auctionManager) {
   function getfilteredBidsAndCustomKeys(adUnitCodes, bidsReceived) {
     const filteredBids = [];
     const customKeysByUnit = {};
+    const alwaysIncludeDeals = config.getConfig('targetingControls.alwaysIncludeDeals');
 
     bidsReceived.forEach(bid => {
       const adUnitIsEligible = includes(adUnitCodes, bid.adUnitCode);
       const cpmAllowed = bidderSettings.get(bid.bidderCode, 'allowZeroCpmBids') === true ? bid.cpm >= 0 : bid.cpm > 0;
+      const isPreferredDeal = alwaysIncludeDeals && bid.dealId;
 
-      if (adUnitIsEligible && cpmAllowed) {
+      if (adUnitIsEligible && (isPreferredDeal || cpmAllowed)) {
         filteredBids.push(bid);
         Object.keys(bid.adserverTargeting)
           .filter(getCustomKeys())
@@ -575,10 +577,11 @@ export function newTargeting(auctionManager) {
     return bidsReceived
       .reduce((result, bid) => {
         const code = bid.adUnitCode;
+        const cpmEligible = bidderSettings.get(code, 'allowZeroCpmBids') === true ? bid.cpm >= 0 : bid.cpm > 0;
+        const isPreferredDeal = config.getConfig('targetingControls.alwaysIncludeDeals') && bid.dealId;
         const eligible = includes(adUnitCodes, code) &&
-          ((bidderSettings.get(code, 'allowZeroCpmBids') === true) ? bid.cpm >= 0 : bid.cpm > 0) &&
-          !includes(usedCodes, code);
-
+          !includes(usedCodes, code) &&
+          (isPreferredDeal || cpmEligible)
         if (eligible) {
           result.push(bid);
           usedCodes.push(code);

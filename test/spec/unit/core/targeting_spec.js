@@ -392,13 +392,28 @@ describe('targeting tests', function () {
       beforeEach(function() {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
-        bid4.cpm = 0.01;
+        bid4.cpm = 0;
         enableSendAllBids = true;
 
         bidsReceived.push(bid4);
       });
 
+      after(function() {
+        config.setConfig({
+          targetingControls: {
+            alwaysIncludeDeals: false
+          }
+        });
+        enableSendAllBids = false;
+      })
+
       it('returns targeting with both hb_deal and hb_deal_{bidder_code}', function () {
+        config.setConfig({
+          targetingControls: {
+            alwaysIncludeDeals: true
+          }
+        });
+
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // We should add both keys rather than one or the other
