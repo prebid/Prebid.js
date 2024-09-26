@@ -1,5 +1,4 @@
 import * as utils from 'src/utils.js';
-import * as ajax from 'src/ajax.js';
 import * as events from 'src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 import {loadExternalScript} from 'src/adloader.js';
@@ -37,15 +36,15 @@ describe('qortexRtdProvider', () => {
     params: {
       groupId: defaultGroupId,
       apiUrl: defaultApiHost,
-      bidders: validBidderArray
+      bidders: validBidderArray,
+      enableBidEnrichment: true
     }
   }
   const bidEnrichmentDisabledModuleConfig = {
     params: {
       groupId: defaultGroupId,
       apiUrl: defaultApiHost,
-      bidders: validBidderArray,
-      disableBidEnrichment: true
+      bidders: validBidderArray
     }
   }
   const emptyModuleConfig = {

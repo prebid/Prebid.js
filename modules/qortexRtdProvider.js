@@ -20,7 +20,7 @@ function init (config) {
     return false;
   } else {
     initializeModuleData(config);
-    if (!config?.params?.disableBidEnrichment) {
+    if (config?.params?.enableBidEnrichment) {
       logMessage('Requesting Qortex group configuration')
       getGroupConfig()
         .then(groupConfig => {
@@ -324,10 +324,10 @@ export function initializeBidEnrichment() {
  * @param {Object} config module config obtained during init
  */
 export function initializeModuleData(config) {
-  const {apiUrl, groupId, bidders, disableBidEnrichment} = config.params;
+  const {apiUrl, groupId, bidders, enableBidEnrichment} = config.params;
   const qortexUrlBase = apiUrl || DEFAULT_API_URL;
   const windowUrl = window.top.location.host;
-  qortexSessionInfo.bidEnrichmentDisabled = disableBidEnrichment !== null ? disableBidEnrichment : false;
+  qortexSessionInfo.bidEnrichmentDisabled = enableBidEnrichment !== null ? !enableBidEnrichment : true;
   qortexSessionInfo.bidderArray = bidders;
   qortexSessionInfo.impressionIds = new Set();
   qortexSessionInfo.currentSiteContext = null;
