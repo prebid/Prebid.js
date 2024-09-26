@@ -201,7 +201,8 @@ export const spec = {
           },
         },
         config: {
-          api_key: bid.params.apiKey
+          api_key: bid.params.apiKey,
+          ts: bid.params.dmTs,
         },
         // Cast boolean in any case (value should be 0 or 1) to ensure type
         coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),

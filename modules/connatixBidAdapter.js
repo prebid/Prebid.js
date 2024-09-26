@@ -1,19 +1,23 @@
+import adapterManager from '../src/adapterManager.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
+import { config } from '../src/config.js';
+
+import { ajax } from '../src/ajax.js';
 import {
   deepAccess,
-  isFn,
-  logError,
-  isArray,
+  deepSetValue,
   formatQS,
   getWindowTop,
+  isArray,
+  isFn,
   isNumber,
   isStr,
-  deepSetValue
+  logError
 } from '../src/utils.js';
 
 import {
@@ -23,9 +27,14 @@ import {
 } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'connatix';
+
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
+
+const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+
+let context = {};
 
 /*
  * Get the bid floor value from the bid object, either using the getFloor function or by accessing the 'params.bidfloor' property.
@@ -137,6 +146,32 @@ export function detectViewability(bid) {
   return null;
 }
 
+export function _getBidRequests(validBidRequests) {
+  return validBidRequests.map(bid => {
+    const {
+      bidId,
+      mediaTypes,
+      params,
+      sizes,
+    } = bid;
+    const { placementId, viewabilityContainerIdentifier } = params;
+    let detectedViewabilityPercentage = detectViewability(bid);
+    if (isNumber(detectedViewabilityPercentage)) {
+      detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
+    }
+    return {
+      bidId,
+      mediaTypes,
+      sizes,
+      placementId,
+      floor: getBidFloor(bid),
+      hasViewabilityContainerId: Boolean(viewabilityContainerIdentifier),
+      declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
+      detectedViewabilityPercentage,
+    };
+  });
+}
+
 /**
  * Get ids from Prebid User ID Modules and add them to the payload
  */
@@ -189,29 +224,7 @@ export const spec = {
    * Return an object containing the request method, url, and the constructed payload.
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
-    const bidRequests = validBidRequests.map(bid => {
-      const {
-        bidId,
-        mediaTypes,
-        params,
-        sizes,
-      } = bid;
-
-      let detectedViewabilityPercentage = detectViewability(bid);
-      if (isNumber(detectedViewabilityPercentage)) {
-        detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
-      }
-
-      return {
-        bidId,
-        mediaTypes,
-        sizes,
-        detectedViewabilityPercentage,
-        declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
-        placementId: params.placementId,
-        floor: getBidFloor(bid),
-      };
-    });
+    const bidRequests = _getBidRequests(validBidRequests);
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
@@ -224,10 +237,12 @@ export const spec = {
 
     _handleEids(requestPayload, validBidRequests);
 
+    context = requestPayload;
+
     return {
       method: 'POST',
       url: AD_URL,
-      data: requestPayload
+      data: context
     };
   },
 
@@ -301,7 +316,51 @@ export const spec = {
       type: 'iframe',
       url
     }];
-  }
+  },
+
+  isConnatix: (aliasName) => {
+    if (!aliasName) {
+      return false;
+    }
+
+    const originalBidderName = adapterManager.aliasRegistry[aliasName] || aliasName;
+    return originalBidderName === BIDDER_CODE;
+  },
+
+  /**
+   * Register bidder specific code, which will execute if the server response time is greater than auction timeout
+   */
+  onTimeout: (timeoutData) => {
+    const connatixBidRequestTimeout = timeoutData.find(bidderRequest => spec.isConnatix(bidderRequest.bidder));
+
+    // Log only it is a timeout for Connatix
+    // Otherwise it is not relevant for us
+    if (!connatixBidRequestTimeout) {
+      return;
+    }
+    const requestTimeout = connatixBidRequestTimeout.timeout;
+    const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
+    spec.triggerEvent({type: 'Timeout', timeout, context});
+  },
+
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   */
+  onBidWon(bidWinData) {
+    if (bidWinData == null) {
+      return;
+    }
+    const {bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId} = bidWinData;
+
+    spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context});
+  },
+
+  triggerEvent(data) {
+    ajax(EVENTS_URL, null, JSON.stringify(data), {
+      method: 'POST',
+      withCredentials: false
+    });
+  },
 };
 
 registerBidder(spec);

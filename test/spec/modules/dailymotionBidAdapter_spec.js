@@ -104,6 +104,7 @@ describe('dailymotionBidAdapterTests', () => {
       sizes: [[1920, 1080]],
       params: {
         apiKey: 'test_api_key',
+        dmTs: '123456',
         video: {
           description: 'this is a test video',
           duration: 556,
@@ -189,6 +190,7 @@ describe('dailymotionBidAdapterTests', () => {
       gppConsent: bidderRequestData.gppConsent,
     });
     expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
+    expect(reqData.config.ts).to.eql(bidRequestData[0].params.dmTs);
     expect(reqData.coppa).to.be.true;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);

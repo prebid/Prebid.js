@@ -66,7 +66,6 @@
  */
 
 import {
-  callBurl,
   deepAccess,
   generateUUID,
   getValue,
@@ -370,11 +369,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
-    const winningAd = adUnits.find(adUnit => adUnit.adUnitId === winningBid.adUnitId);
     _winningBids = _winningBids.concat(winningBid);
-    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
-    if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
+    if (!winningBid.deferBilling) {
+      adapterManager.triggerBilling(winningBid)
+    }
   }
 
   function setBidTargeting(bid) {
