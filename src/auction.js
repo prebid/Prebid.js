@@ -94,7 +94,7 @@ import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
 import adapterManager from './adapterManager.js';
-import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
+import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, TARGETING_KEYS} from './constants.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
@@ -111,7 +111,6 @@ events.on(EVENTS.BID_ADJUSTMENT, function (bid) {
   adjustBids(bid);
 });
 
-const MAX_REQUESTS_PER_ORIGIN = 4;
 const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
@@ -285,7 +284,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       addBidRequests(bidRequest);
     });
 
-    let requests = {};
     let call = {
       bidRequests,
       run: () => {
@@ -297,76 +295,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
         let callbacks = auctionCallbacks(auctionDone, this);
         adapterManager.callBids(_adUnits, bidRequests, callbacks.addBidResponse, callbacks.adapterDone, {
-          request(source, origin) {
-            increment(outstandingRequests, origin);
-            increment(requests, source);
-
-            if (!sourceInfo[source]) {
-              sourceInfo[source] = {
-                SRA: true,
-                origin
-              };
-            }
-            if (requests[source] > 1) {
-              sourceInfo[source].SRA = false;
-            }
-          },
-          done(origin) {
-            outstandingRequests[origin]--;
-            if (queuedCalls[0]) {
-              if (runIfOriginHasCapacity(queuedCalls[0])) {
-                queuedCalls.shift();
-              }
-            }
-          }
+          request() {},
+          done() {}
         }, _timeout, onTimelyResponse, ortb2Fragments);
       }
     };
 
-    if (!runIfOriginHasCapacity(call)) {
-      logWarn('queueing auction due to limited endpoint capacity');
-      queuedCalls.push(call);
-    }
-
-    function runIfOriginHasCapacity(call) {
-      let hasCapacity = true;
-
-      let maxRequests = config.getConfig('maxRequestsPerOrigin') || MAX_REQUESTS_PER_ORIGIN;
-
-      call.bidRequests.some(bidRequest => {
-        let requests = 1;
-        let source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC) ? 's2s'
-          : bidRequest.bidderCode;
-        // if we have no previous info on this source just let them through
-        if (sourceInfo[source]) {
-          if (sourceInfo[source].SRA === false) {
-            // some bidders might use more than the MAX_REQUESTS_PER_ORIGIN in a single auction.  In those cases
-            // set their request count to MAX_REQUESTS_PER_ORIGIN so the auction isn't permanently queued waiting
-            // for capacity for that bidder
-            requests = Math.min(bidRequest.bids.length, maxRequests);
-          }
-          if (outstandingRequests[sourceInfo[source].origin] + requests > maxRequests) {
-            hasCapacity = false;
-          }
-        }
-        // return only used for terminating this .some() iteration early if it is determined we don't have capacity
-        return !hasCapacity;
-      });
-
-      if (hasCapacity) {
-        call.run();
-      }
-
-      return hasCapacity;
-    }
-
-    function increment(obj, prop) {
-      if (typeof obj[prop] === 'undefined') {
-        obj[prop] = 1
-      } else {
-        obj[prop]++;
-      }
-    }
+    call.run();
   }
 
   function addWinningBid(winningBid) {

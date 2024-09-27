@@ -129,7 +129,7 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
     }
 
     const maxRequestsPerOrigin = config.getConfig('maxRequestsPerOrigin');
-    
+
     if (maxRequestsPerOrigin && (maxRequestsPerOrigin === activeOriginsCalls.get(origin))) {
       queuedCalls.push({origin, invokeRequest});
     } else {
