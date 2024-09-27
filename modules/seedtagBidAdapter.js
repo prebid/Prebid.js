@@ -38,6 +38,22 @@ const deviceConnection = {
   UNKNOWN: 'unknown',
 };
 
+export const BIDFLOOR_CURRENCY = 'USD'
+
+function getBidFloor(bidRequest) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: BIDFLOOR_CURRENCY,
+      mediaType: '*',
+      size: '*'
+    });
+  }
+
+  return floorInfo.floor;
+}
+
 const getConnectionType = () => {
   const connection =
     navigator.connection ||
@@ -131,6 +147,11 @@ function buildBidRequest(validBidRequest) {
 
   if (hasVideoMediaType(validBidRequest)) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
+  }
+
+  const bidFloor = getBidFloor(validBidRequest)
+  if (bidFloor) {
+    bidRequest.bidFloor = bidFloor;
   }
 
   return bidRequest;
