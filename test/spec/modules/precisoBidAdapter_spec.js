@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/precisoBidAdapter.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
-import { OPENRTB } from '../../../libraries/precisoUtils/bidUtils.js';
+import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js';
 
 // simport { config } from '../../../src/config.js';
 
@@ -97,7 +97,7 @@ describe('PrecisoAdapter', function () {
     nativeOrtbRequest: {
       assets: [
         {
-          id: 3,
+          id: 2,
           required: 1,
           img: {
             type: 3,
@@ -111,7 +111,7 @@ describe('PrecisoAdapter', function () {
       ortb: {
         assets: [
           {
-            id: 3,
+            id: 2,
             required: 1,
             img: {
               type: 3,
