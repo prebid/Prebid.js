@@ -157,32 +157,32 @@ describe('Equativ bid adapter tests', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
-    it('should return empty array if no pixel sync not enabled', () => {
-      const syncs = spec.getUserSyncs({}, RESPONSE_WITH_DSP_PIXELS);
-      expect(syncs).to.deep.equal([]);
-    });
+  // describe('getUserSyncs', () => {
+  //   it('should return empty array if no pixel sync not enabled', () => {
+  //     const syncs = spec.getUserSyncs({}, RESPONSE_WITH_DSP_PIXELS);
+  //     expect(syncs).to.deep.equal([]);
+  //   });
 
-    it('should return empty array if no pixels available', () => {
-      const syncs = spec.getUserSyncs(
-        { pixelEnabled: true },
-        SAMPLE_RESPONSE
-      );
-      expect(syncs).to.deep.equal([]);
-    });
+  //   it('should return empty array if no pixels available', () => {
+  //     const syncs = spec.getUserSyncs(
+  //       { pixelEnabled: true },
+  //       SAMPLE_RESPONSE
+  //     );
+  //     expect(syncs).to.deep.equal([]);
+  //   });
 
-    it('should register dsp pixels', () => {
-      const syncs = spec.getUserSyncs(
-        { pixelEnabled: true },
-        RESPONSE_WITH_DSP_PIXELS
-      );
-      expect(syncs).to.have.lengthOf(3);
-      expect(syncs[1]).to.deep.equal({
-        type: 'image',
-        url: '2nd-pixel',
-      });
-    });
-  });
+  //   it('should register dsp pixels', () => {
+  //     const syncs = spec.getUserSyncs(
+  //       { pixelEnabled: true },
+  //       RESPONSE_WITH_DSP_PIXELS
+  //     );
+  //     expect(syncs).to.have.lengthOf(3);
+  //     expect(syncs[1]).to.deep.equal({
+  //       type: 'image',
+  //       url: '2nd-pixel',
+  //     });
+  //   });
+  // });
 
   describe('interpretResponse', () => {
     it('should return data returned by ORTB converter', () => {

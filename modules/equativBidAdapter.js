@@ -55,21 +55,21 @@ export const spec = {
    * @param serverResponse
    * @return {{type: string, url: string}[]}
    */
-  getUserSyncs: (syncOptions, serverResponse) => {
-    // if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
-    //   return [
-    //     {
-    //       type: 'iframe',
-    //       url: serverResponses[0].body.cSyncUrl,
-    //     },
-    //   ];
-    // }
-    return (syncOptions.pixelEnabled && serverResponse.body?.dspPixels)
-      ? serverResponse.body.dspPixels.map((pixel) => ({
-        type: 'image',
-        url: pixel,
-      })) : [];
-  },
+  // getUserSyncs: (syncOptions, serverResponse) => {
+  //   if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
+  //     return [
+  //       {
+  //         type: 'iframe',
+  //         url: serverResponses[0].body.cSyncUrl,
+  //       },
+  //     ];
+  //   }
+  //   return (syncOptions.pixelEnabled && serverResponse.body?.dspPixels)
+  //     ? serverResponse.body.dspPixels.map((pixel) => ({
+  //       type: 'image',
+  //       url: pixel,
+  //     })) : [];
+  // },
 };
 
 export const converter = ortbConverter({
