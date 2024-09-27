@@ -216,6 +216,7 @@ const mapToPayloadBaseBid = (bidRequest) => ({
   bid: bidRequest.bidId,
   sid: bidRequest.params.sid,
   viz: elementInView(bidRequest.adUnitCode),
+  sfp: bidRequest.params.sfp,
 });
 
 const mapToPayloadBannerBid = (bidRequest) => {
