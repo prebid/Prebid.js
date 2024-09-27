@@ -1,14 +1,23 @@
+import adapterManager from '../src/adapterManager.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 
+import { percentInView } from '../libraries/percentInView/percentInView.js';
+
+import { config } from '../src/config.js';
+
+import { ajax } from '../src/ajax.js';
 import {
   deepAccess,
-  isFn,
-  logError,
-  isArray,
+  deepSetValue,
   formatQS,
-  deepSetValue
+  getWindowTop,
+  isArray,
+  isFn,
+  isNumber,
+  isStr,
+  logError
 } from '../src/utils.js';
 
 import {
@@ -18,9 +27,14 @@ import {
 } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'connatix';
+
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
+
+const EVENTS_URL = 'https://capi.connatix.com/tr/am';
+
+let context = {};
 
 /*
  * Get the bid floor value from the bid object, either using the getFloor function or by accessing the 'params.bidfloor' property.
@@ -62,6 +76,102 @@ export function validateVideo(mediaTypes) {
   return video.context !== ADPOD;
 }
 
+export function _getMinSize(sizes) {
+  if (!sizes || sizes.length === 0) return undefined;
+  return sizes.reduce((minSize, currentSize) => {
+    const minArea = minSize.w * minSize.h;
+    const currentArea = currentSize.w * currentSize.h;
+    return currentArea < minArea ? currentSize : minSize;
+  });
+}
+
+export function _canSelectViewabilityContainer() {
+  try {
+    window.top.document.querySelector('#viewability-container');
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export function _isViewabilityMeasurable(element) {
+  if (!element) return false;
+  return _canSelectViewabilityContainer(element);
+}
+
+export function _getViewability(element, topWin, { w, h } = {}) {
+  return topWin.document.visibilityState === 'visible'
+    ? percentInView(element, topWin, { w, h })
+    : 0;
+}
+
+export function detectViewability(bid) {
+  const { params, adUnitCode } = bid;
+
+  const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
+
+  let element = null;
+  let bidParamSizes = null;
+  let minSize = [];
+
+  if (isStr(viewabilityContainerIdentifier)) {
+    try {
+      element = document.querySelector(viewabilityContainerIdentifier) || window.top.document.querySelector(viewabilityContainerIdentifier);
+      if (element) {
+        bidParamSizes = [element.offsetWidth, element.offsetHeight];
+        minSize = _getMinSize(bidParamSizes)
+      }
+    } catch (e) {
+      logError(`Error while trying to find viewability container element: ${viewabilityContainerIdentifier}`);
+    }
+  }
+
+  if (!element) {
+    // Get the sizes from the mediaTypes object if it exists, otherwise use the sizes array from the bid object
+    bidParamSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
+    bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
+    bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
+    minSize = _getMinSize(bidParamSizes ?? [])
+    element = document.getElementById(adUnitCode);
+  }
+
+  if (_isViewabilityMeasurable(element)) {
+    const minSizeObj = {
+      w: minSize[0],
+      h: minSize[1]
+    }
+    return Math.round(_getViewability(element, getWindowTop(), minSizeObj))
+  }
+
+  return null;
+}
+
+export function _getBidRequests(validBidRequests) {
+  return validBidRequests.map(bid => {
+    const {
+      bidId,
+      mediaTypes,
+      params,
+      sizes,
+    } = bid;
+    const { placementId, viewabilityContainerIdentifier } = params;
+    let detectedViewabilityPercentage = detectViewability(bid);
+    if (isNumber(detectedViewabilityPercentage)) {
+      detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
+    }
+    return {
+      bidId,
+      mediaTypes,
+      sizes,
+      placementId,
+      floor: getBidFloor(bid),
+      hasViewabilityContainerId: Boolean(viewabilityContainerIdentifier),
+      declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
+      detectedViewabilityPercentage,
+    };
+  });
+}
+
 /**
  * Get ids from Prebid User ID Modules and add them to the payload
  */
@@ -91,9 +201,10 @@ export const spec = {
     const hasMediaTypes = Boolean(mediaTypes) && (Boolean(mediaTypes[BANNER]) || Boolean(mediaTypes[VIDEO]));
     const isValidBanner = validateBanner(mediaTypes);
     const isValidVideo = validateVideo(mediaTypes);
+    const isValidViewability = typeof params.viewabilityPercentage === 'undefined' || (isNumber(params.viewabilityPercentage) && params.viewabilityPercentage >= 0 && params.viewabilityPercentage <= 1);
     const hasRequiredBidParams = Boolean(params.placementId);
 
-    const isValid = hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams;
+    const isValid = hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams && isValidViewability;
     if (!isValid) {
       logError(
         `Invalid bid request:
@@ -113,21 +224,7 @@ export const spec = {
    * Return an object containing the request method, url, and the constructed payload.
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
-    const bidRequests = validBidRequests.map(bid => {
-      const {
-        bidId,
-        mediaTypes,
-        params,
-        sizes,
-      } = bid;
-      return {
-        bidId,
-        mediaTypes,
-        sizes,
-        placementId: params.placementId,
-        floor: getBidFloor(bid),
-      };
-    });
+    const bidRequests = _getBidRequests(validBidRequests);
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
@@ -140,10 +237,12 @@ export const spec = {
 
     _handleEids(requestPayload, validBidRequests);
 
+    context = requestPayload;
+
     return {
       method: 'POST',
       url: AD_URL,
-      data: requestPayload
+      data: context
     };
   },
 
@@ -217,7 +316,51 @@ export const spec = {
       type: 'iframe',
       url
     }];
-  }
+  },
+
+  isConnatix: (aliasName) => {
+    if (!aliasName) {
+      return false;
+    }
+
+    const originalBidderName = adapterManager.aliasRegistry[aliasName] || aliasName;
+    return originalBidderName === BIDDER_CODE;
+  },
+
+  /**
+   * Register bidder specific code, which will execute if the server response time is greater than auction timeout
+   */
+  onTimeout: (timeoutData) => {
+    const connatixBidRequestTimeout = timeoutData.find(bidderRequest => spec.isConnatix(bidderRequest.bidder));
+
+    // Log only it is a timeout for Connatix
+    // Otherwise it is not relevant for us
+    if (!connatixBidRequestTimeout) {
+      return;
+    }
+    const requestTimeout = connatixBidRequestTimeout.timeout;
+    const timeout = isNumber(requestTimeout) ? requestTimeout : config.getConfig('bidderTimeout');
+    spec.triggerEvent({type: 'Timeout', timeout, context});
+  },
+
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   */
+  onBidWon(bidWinData) {
+    if (bidWinData == null) {
+      return;
+    }
+    const {bidder, cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId} = bidWinData;
+
+    spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context});
+  },
+
+  triggerEvent(data) {
+    ajax(EVENTS_URL, null, JSON.stringify(data), {
+      method: 'POST',
+      withCredentials: false
+    });
+  },
 };
 
 registerBidder(spec);

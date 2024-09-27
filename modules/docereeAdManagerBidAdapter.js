@@ -20,12 +20,12 @@ export const spec = {
     }
     return true;
   },
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
     const { data } = config.getConfig('docereeadmanager.user') || {};
 
     validBidRequests.forEach(function (validBidRequest) {
-      const payload = getPayload(validBidRequest, data);
+      const payload = getPayload(validBidRequest, data, bidderRequest);
 
       if (!payload) {
         return;
@@ -70,7 +70,7 @@ export const spec = {
   },
 };
 
-export function getPayload(bid, userData) {
+export function getPayload(bid, userData, bidderRequest) {
   if (!userData || !bid) {
     return false;
   }
@@ -123,6 +123,19 @@ export function getPayload(bid, userData) {
     mobile: mobile || '',
     pageurl: publisherUrl || ''
   };
+
+  try {
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      const { gdprApplies, consentString } = bidderRequest.gdprConsent;
+      data['consent'] = {
+        'gdpr': gdprApplies ? 1 : 0,
+        'gdprstr': consentString || '',
+      }
+    }
+  } catch (error) {
+
+  }
+
   return {
     data,
   };

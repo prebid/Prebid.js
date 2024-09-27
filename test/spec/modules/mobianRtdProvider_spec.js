@@ -36,7 +36,10 @@ describe('Mobian RTD Submodule', function () {
           mobianRisk: 'low',
           mobianSentiment: 'positive',
           mobianContentCategories: [],
-          mobianEmotions: ['joy']
+          mobianEmotions: ['joy'],
+          mobianThemes: [],
+          mobianTones: [],
+          mobianGenres: []
         }
       }));
     });
@@ -46,13 +49,19 @@ describe('Mobian RTD Submodule', function () {
         risk: 'low',
         contentCategories: [],
         sentiment: 'positive',
-        emotions: ['joy']
+        emotions: ['joy'],
+        themes: [],
+        tones: [],
+        genres: []
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'low',
         mobianContentCategories: [],
         mobianSentiment: 'positive',
-        mobianEmotions: ['joy']
+        mobianEmotions: ['joy'],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: []
       });
     });
   });
@@ -68,7 +77,10 @@ describe('Mobian RTD Submodule', function () {
           mobianRisk: 'medium',
           mobianSentiment: 'negative',
           mobianContentCategories: ['arms', 'crime'],
-          mobianEmotions: ['anger', 'fear']
+          mobianEmotions: ['anger', 'fear'],
+          mobianThemes: ['conflict', 'international relations'],
+          mobianTones: ['factual', 'serious'],
+          mobianGenres: ['news', 'political_analysis']
         }
       }));
     });
@@ -78,13 +90,19 @@ describe('Mobian RTD Submodule', function () {
         risk: 'medium',
         contentCategories: ['arms', 'crime'],
         sentiment: 'negative',
-        emotions: ['anger', 'fear']
+        emotions: ['anger', 'fear'],
+        themes: ['conflict', 'international relations'],
+        tones: ['factual', 'serious'],
+        genres: ['news', 'political_analysis']
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'medium',
         mobianContentCategories: ['arms', 'crime'],
         mobianSentiment: 'negative',
-        mobianEmotions: ['anger', 'fear']
+        mobianEmotions: ['anger', 'fear'],
+        mobianThemes: ['conflict', 'international relations'],
+        mobianTones: ['factual', 'serious'],
+        mobianGenres: ['news', 'political_analysis']
       });
     });
   });
@@ -103,7 +121,7 @@ describe('Mobian RTD Submodule', function () {
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
       expect(result).to.deep.equal({});
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.not.have.any.keys(
-        'mobianRisk', 'mobianContentCategories', 'mobianSentiment', 'mobianEmotions'
+        'mobianRisk', 'mobianContentCategories', 'mobianSentiment', 'mobianEmotions', 'mobianThemes', 'mobianTones', 'mobianGenres'
       );
     });
   });
@@ -149,13 +167,19 @@ describe('Mobian RTD Submodule', function () {
         risk: 'high',
         contentCategories: [],
         sentiment: 'unknown',
-        emotions: []
+        emotions: [],
+        themes: [],
+        tones: [],
+        genres: [],
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'high',
         mobianContentCategories: [],
         mobianSentiment: 'unknown',
-        mobianEmotions: []
+        mobianEmotions: [],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: []
       });
     });
   });
