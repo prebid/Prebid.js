@@ -52,7 +52,7 @@ export const getBannerResponse = (bidResponse, mediaType) => {
   if (bidResponse) {
     try {
       let bidResp = deepAccess(bidResponse, 'body.seatbid', []);
-      if (bidResp) {
+      if (bidResp && bidResp[0] && bidResp[0].bid) {
         bidResp[0].bid.forEach(bidReq => {
           let response = {};
           response.requestId = bidReq.impid;
