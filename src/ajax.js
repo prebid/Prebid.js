@@ -14,14 +14,14 @@ export const activeOriginsCalls = new Map();
 export const queuedCalls = [];
 
 // Function to safely increment number of active calls for a given origin
-function addRequestForOrigin(key) {
+function incrementRequestsForOrigin(key) {
   const currentValue = activeOriginsCalls.get(key);
   const newValue = (currentValue ?? 0) + 1;
   activeOriginsCalls.set(key, newValue);
 }
 
 // Function to safely decrement number of active calls for a given origin
-function removeRequestForOrigin(key) {
+function decrementRequestsForOrigin(key) {
   const currentValue = activeOriginsCalls.get(key);
   const newValue = (currentValue ?? 0) - 1;
   activeOriginsCalls.set(key, newValue);
@@ -112,13 +112,13 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
 
     const invokeRequest = () => {
       request && request(origin);
-      addRequestForOrigin(origin);
+      incrementRequestsForOrigin(origin);
       dep.fetch(resource, options)
         .then(pm.resolve)
         .catch(pm.reject)
         .finally(() => {
           if (to?.done != null) to.done();
-          removeRequestForOrigin(origin);
+          decrementRequestsForOrigin(origin);
           const index = queuedCalls.findIndex((entry) => origin === entry.origin);
           if (index >= 0) {
             const entry = queuedCalls[index];
