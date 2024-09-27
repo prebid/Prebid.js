@@ -1,8 +1,7 @@
-import {attachCallbacks, dep, fetcherFactory, toFetchRequest} from '../../../../src/ajax.js';
-import {config} from 'src/config.js';
-import {server} from '../../../mocks/xhr.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {logError} from 'src/utils.js';
+import { activeOriginsCalls, attachCallbacks, dep, fetcherFactory, getOrigin, queuedCalls, toFetchRequest } from '../../../../src/ajax.js';
+import { server } from '../../../mocks/xhr.js';
 
 const EXAMPLE_URL = 'https://www.example.com';
 
@@ -425,3 +424,67 @@ describe('attachCallbacks', () => {
     });
   });
 });
+
+describe('origin queue', () => {
+  afterEach(() => {
+    activeOriginsCalls.clear();
+    queuedCalls.length = 0;
+    config.resetConfig();
+  })
+
+  it('should return valid origin', () => {
+    let resource = `${EXAMPLE_URL}/endpoint`;
+    expect(getOrigin(resource)).to.deep.eql(EXAMPLE_URL);
+
+    resource = { url: `${EXAMPLE_URL}/endpoint` };
+    expect(getOrigin(resource)).to.deep.eql(EXAMPLE_URL);
+  })
+
+  it('should add origin to the active requests queue', (done) => {
+    const resource = `${EXAMPLE_URL}/endpoint`;
+    const fetch = fetcherFactory();
+    let pm = fetch(resource);
+    expect(activeOriginsCalls.get(EXAMPLE_URL)).to.deep.eql(1);
+    server.requests[0].respond();
+    expect(activeOriginsCalls.get(EXAMPLE_URL)).to.deep.eql(0);
+    pm.then(() => done());
+  })
+
+  it('should not execute the request if the limit is met for origin', (done) => {
+    config.setConfig({maxRequestsPerOrigin: 2});
+    const resource = `${EXAMPLE_URL}/endpoint`;
+    const fetch = fetcherFactory();
+    const request = sinon.stub();
+    const deferredFetch = fetcherFactory(3000, {request});
+    let pm = fetch(resource);
+    fetch(resource);
+    expect(activeOriginsCalls.get(EXAMPLE_URL)).to.deep.eql(2);
+    deferredFetch(resource);
+    expect(activeOriginsCalls.get(EXAMPLE_URL)).to.deep.eql(2);
+    sinon.assert.notCalled(request);
+    expect(queuedCalls.length).to.deep.eql(1);
+    server.requests[0].respond();
+    pm.then(() => done());
+  })
+
+  it('should run request when the capacity has freed', (done) => {
+    config.setConfig({maxRequestsPerOrigin: 2});
+    const resource = `${EXAMPLE_URL}/endpoint`;
+    const request = sinon.stub();
+    const fetch = fetcherFactory(3000);
+    const deferredFetch = fetcherFactory(3000, {request});
+
+    let pm = fetch(resource);
+    fetch(resource);
+    expect(activeOriginsCalls.get(EXAMPLE_URL)).to.deep.eql(2);
+
+    deferredFetch(resource);
+
+    server.requests[0].respond();
+
+    pm.finally(() => {
+      sinon.assert.calledOnce(request);
+      done();
+    });
+  })
+})

@@ -1,5 +1,31 @@
 import {config} from './config.js';
 import {buildUrl, logError, parseUrl} from './utils.js';
+import { defer } from './utils/promise.js';
+
+/**
+ * A map holding number of active calls to particular origins
+ * @type {Map<string, number>}
+ */
+export const activeOriginsCalls = new Map();
+
+/**
+ * An array holding calls that are postponed till the capacity is back
+ */
+export const queuedCalls = [];
+
+// Function to safely increment number of active calls for a given origin
+function addRequestForOrigin(key) {
+  const currentValue = activeOriginsCalls.get(key);
+  const newValue = (currentValue ?? 0) + 1;
+  activeOriginsCalls.set(key, newValue);
+}
+
+// Function to safely decrement number of active calls for a given origin
+function removeRequestForOrigin(key) {
+  const currentValue = activeOriginsCalls.get(key);
+  const newValue = (currentValue ?? 0) - 1;
+  activeOriginsCalls.set(key, newValue);
+}
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -59,6 +85,13 @@ export function toFetchRequest(url, data, options = {}) {
 }
 
 /**
+ *  Returns origin for passed resource
+ */
+export function getOrigin(resource) {
+  return new URL(resource?.url == null ? resource : resource.url, document.location).origin;
+}
+
+/**
  * Return a version of `fetch` that automatically cancels requests after `timeout` milliseconds.
  *
  * If provided, `request` and `done` should be functions accepting a single argument.
@@ -73,16 +106,43 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
       to = dep.timeout(timeout, resource);
       options = Object.assign({signal: to.signal}, options);
     }
-    let pm = dep.fetch(resource, options);
-    if (to?.done != null) pm = pm.finally(to.done);
-    return pm;
+
+    const pm = defer();
+    const origin = getOrigin(resource);
+
+    const invokeRequest = () => {
+      request && request(origin);
+      addRequestForOrigin(origin);
+      dep.fetch(resource, options)
+        .then(pm.resolve)
+        .catch(pm.reject)
+        .finally(() => {
+          if (to?.done != null) to.done();
+          removeRequestForOrigin(origin);
+          const index = queuedCalls.findIndex((entry) => origin === entry.origin);
+          if (index >= 0) {
+            const entry = queuedCalls[index];
+            entry.invokeRequest();
+            queuedCalls.splice(index, 1);
+          }
+        })
+    }
+
+    const maxRequestsPerOrigin = config.getConfig('maxRequestsPerOrigin');
+    
+    if (maxRequestsPerOrigin && (maxRequestsPerOrigin === activeOriginsCalls.get(origin))) {
+      queuedCalls.push({origin, invokeRequest});
+    } else {
+      invokeRequest();
+    }
+
+    return pm.promise;
   };
 
-  if (request != null || done != null) {
+  if (done != null) {
     fetcher = ((fetch) => function (resource, options) {
-      const origin = new URL(resource?.url == null ? resource : resource.url, document.location).origin;
+      const origin = getOrigin(resource);
       let req = fetch(resource, options);
-      request && request(origin);
       if (done) req = req.finally(() => done(origin));
       return req;
     })(fetcher);
