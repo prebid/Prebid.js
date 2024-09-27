@@ -2186,54 +2186,73 @@ describe('AppNexusAdapter', function () {
     });
   });
 
-  // describe('transformBidParams', function () {
-  //   let gcStub;
-  //   let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
+  describe('getUserSyncs', function() {
+    let syncOptions, gdprConsent;
 
-  //   before(function () {
-  //     gcStub = sinon.stub(config, 'getConfig');
-  //   });
+    beforeEach(() => {
+      gdprConsent = {
+        gdprApplies: true,
+        consentString: 'CPJl4C8PJl4C8OoAAAENAwCMAP_AAH_AAAAAAPgAAAAIAPgAAAAIAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g',
+        vendorData: {
+          purpose: {
+            consents: {
+              '1': true
+            }
+          }
+        }
+      }
+    });
 
-  //   after(function () {
-  //     gcStub.restore();
-  //   });
+    describe('pixel', function () {
+      beforeEach(() => {
+        syncOptions = { pixelEnabled: true };
+      });
 
-  //   it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
-  //     gcStub.withArgs('s2sConfig').returns({
-  //       bidders: ['appnexus'],
-  //       endpoint: {
-  //         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-  //       }
-  //     });
+      it('pixelEnabled on', function () {
+        const result = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
+        expect(result).to.have.length(1);
+        expect(result[0].type).to.equal('image');
+        expect(result[0].url).to.equal('https://px.ads.linkedin.com/setuid?partner=appNexus');
+      });
 
-  //     const oldParams = {
-  //       keywords: {
-  //         genre: ['rock', 'pop'],
-  //         pets: 'dog'
-  //       }
-  //     };
+      it('pixelEnabled off', function () {
+        syncOptions.pixelEnabled = false;
+        const result = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
+        expect(result).to.be.undefined;
+      });
+    });
 
-  //     const newParams = spec.transformBidParams(oldParams, true, adUnit);
-  //     expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
-  //   });
+    describe('iframe', function () {
+      beforeEach(() => {
+        syncOptions = { iframeEnabled: true };
+      });
 
-  //   it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
-  //     gcStub.withArgs('s2sConfig').returns([{
-  //       bidders: ['appnexus'],
-  //       endpoint: {
-  //         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-  //       }
-  //     }]);
+      it('iframeEnabled on with gdpr purpose 1 on', function () {
+        const result = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
+        expect(result).to.have.length(1);
+        expect(result[0].type).to.equal('iframe');
+        expect(result[0].url).to.equal('https://acdn.adnxs.com/dmp/async_usersync.html');
+      });
 
-  //     const oldParams = {
-  //       keywords: {
-  //         genre: ['rock', 'pop'],
-  //         pets: 'dog'
-  //       }
-  //     };
+      it('iframeEnabled on with gdpr purpose1 off', function () {
+        gdprConsent.vendorData.purpose.consents['1'] = false
 
-  //     const newParams = spec.transformBidParams(oldParams, true, adUnit);
-  //     expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
-  //   });
-  // });
+        const result = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
+        expect(result).to.be.undefined;
+      });
+
+      it('iframeEnabled on without gdpr', function () {
+        const result = spec.getUserSyncs(syncOptions, [], null, null);
+        expect(result).to.have.length(1);
+        expect(result[0].type).to.equal('iframe');
+        expect(result[0].url).to.equal('https://acdn.adnxs.com/dmp/async_usersync.html');
+      });
+
+      it('iframeEnabled off', function () {
+        syncOptions.iframeEnabled = false;
+        const result = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
+        expect(result).to.be.undefined;
+      });
+    });
+  });
 });

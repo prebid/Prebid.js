@@ -51,7 +51,6 @@ describe('anPspParamsConverter', function () {
 
     const testBidderRequests = deepClone(bidderRequests);
 
-    debugger; //eslint-disable-line
     convertAnParams(function () {
       didHookRun = true;
     }, testBidderRequests);

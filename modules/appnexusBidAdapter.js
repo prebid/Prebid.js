@@ -452,16 +452,20 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    function checkGppStatus(gppConsent) {
-      // user sync suppression for adapters is handled in activity controls and not needed in adapters
-      return true;
-    }
-
-    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent) && checkGppStatus(gppConsent)) {
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       }];
+    }
+
+    if (syncOptions.pixelEnabled) {
+      // first attempt using static list
+      const imgList = ['https://px.ads.linkedin.com/setuid?partner=appNexus'];
+      return imgList.map(url => ({
+        type: 'image',
+        url
+      }));
     }
   }
 };
