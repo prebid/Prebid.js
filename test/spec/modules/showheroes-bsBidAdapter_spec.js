@@ -147,101 +147,103 @@ describe('shBidAdapter', () => {
     }
     const vastUrl = 'https://test.com/vast/?zid=AACBWAcof-611K4U&u=https://example.org/?foo=bar&gdpr=0&cs=XXXXXXXXXXXXXXXXXXXX&sid=01ecd03ce381505ccdeb88e555b05001&width=300&height=200&prebidmode=1'
 
-    it('should get correct bid response when type is video (V2)', function () {
-      const request = spec.buildRequests([bidRequestVideoV2], bidderRequest)
-      const expectedResponse = [
-        {
-          cpm: 1,
-          creativeId: 'c_38b373e1e31c18',
-          creative_id: 'c_38b373e1e31c18',
-          currency: 'EUR',
-          width: 640,
-          height: 480,
-          playerHeight: 480,
-          playerWidth: 640,
-          mediaType: 'video',
-          netRevenue: true,
-          requestId: '38b373e1e31c18',
-          ttl: 300,
-          meta: {
-            advertiserDomains: adomain
-          },
-          vastXml: vastXml,
-          callbacks: {
-            won: [callback_won],
-          },
-          extra: 'test',
+    if (FEATURES.VIDEO) {
+      it('should get correct bid response when type is video (V2)', function () {
+        const request = spec.buildRequests([bidRequestVideoV2], bidderRequest)
+        const expectedResponse = [
+          {
+            cpm: 1,
+            creativeId: 'c_38b373e1e31c18',
+            creative_id: 'c_38b373e1e31c18',
+            currency: 'EUR',
+            width: 640,
+            height: 480,
+            playerHeight: 480,
+            playerWidth: 640,
+            mediaType: 'video',
+            netRevenue: true,
+            requestId: '38b373e1e31c18',
+            ttl: 300,
+            meta: {
+              advertiserDomains: adomain
+            },
+            vastXml: vastXml,
+            callbacks: {
+              won: [callback_won],
+            },
+            extra: 'test',
+          }
+        ]
+
+        const result = spec.interpretResponse({ 'body': basicResponse }, request)
+        expect(result).to.deep.equal(expectedResponse)
+      })
+
+      it('should get correct bid response when type is outstream (slot V2)', function () {
+        window.myRenderer = {
+          renderAd: function() {
+            return null;
+          }
         }
-      ]
+        const bidRequestV2 = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
+        const bidResponse = JSON.parse(JSON.stringify(basicResponse));
+        bidResponse.seatbid[0].bid[0].ext.rendererConfig = {
+          rendererUrl: 'https://test.com/render.js',
+          renderFunc: 'myRenderer.renderAd',
+          renderOptions: {
+            key: 'my renderer custom value',
+          }
+        };
+        const slotId = 'testSlot2'
 
-      const result = spec.interpretResponse({ 'body': basicResponse }, request)
-      expect(result).to.deep.equal(expectedResponse)
-    })
+        const container = document.createElement('div')
+        container.setAttribute('id', slotId)
+        document.body.appendChild(container)
 
-    it('should get correct bid response when type is outstream (slot V2)', function () {
-      window.myRenderer = {
-        renderAd: function() {
-          return null;
-        }
-      }
-      const bidRequestV2 = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
-      const bidResponse = JSON.parse(JSON.stringify(basicResponse));
-      bidResponse.seatbid[0].bid[0].ext.rendererConfig = {
-        rendererUrl: 'https://test.com/render.js',
-        renderFunc: 'myRenderer.renderAd',
-        renderOptions: {
-          key: 'my renderer custom value',
-        }
-      };
-      const slotId = 'testSlot2'
+        const request = spec.buildRequests([bidRequestV2], bidderRequest)
 
-      const container = document.createElement('div')
-      container.setAttribute('id', slotId)
-      document.body.appendChild(container)
+        const result = spec.interpretResponse({ 'body': bidResponse }, request)
+        const bid = result[0]
+        expect(bid).to.have.property('mediaType', VIDEO);
+        expect(typeof bid.renderer).to.be.eql('object');
+        expect(bid.renderer.url).to.eql('https://test.com/render.js');
 
-      const request = spec.buildRequests([bidRequestV2], bidderRequest)
+        sinon.spy(window.myRenderer, 'renderAd');
+        bid.renderer.render(bid);
 
-      const result = spec.interpretResponse({ 'body': bidResponse }, request)
-      const bid = result[0]
-      expect(bid).to.have.property('mediaType', VIDEO);
-      expect(typeof bid.renderer).to.be.eql('object');
-      expect(bid.renderer.url).to.eql('https://test.com/render.js');
+        const renderCall = window.myRenderer.renderAd.getCall(0);
+        const renderPayload = renderCall.args[0];
+        expect(renderPayload.adResponse.content).to.eql(vastXml);
+        expect(renderPayload.key).to.eql('my renderer custom value');
+      })
 
-      sinon.spy(window.myRenderer, 'renderAd');
-      bid.renderer.render(bid);
+      it('should get correct bid response when type is outstream (customRender)', function () {
+        const bidRequest = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
 
-      const renderCall = window.myRenderer.renderAd.getCall(0);
-      const renderPayload = renderCall.args[0];
-      expect(renderPayload.adResponse.content).to.eql(vastXml);
-      expect(renderPayload.key).to.eql('my renderer custom value');
-    })
+        const request = spec.buildRequests([bidRequest], bidderRequest)
 
-    it('should get correct bid response when type is outstream (customRender)', function () {
-      const bidRequest = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
+        const result = spec.interpretResponse({ 'body': basicResponse }, request)
+        const bid = result[0];
+        expect(bid).to.have.property('mediaType', VIDEO);
 
-      const request = spec.buildRequests([bidRequest], bidderRequest)
+        expect(bid.vastXml).to.eql(vastXml);
+      })
 
-      const result = spec.interpretResponse({ 'body': basicResponse }, request)
-      const bid = result[0];
-      expect(bid).to.have.property('mediaType', VIDEO);
+      it('should get vast url', function () {
+        const bidRequest = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
+        const bidResponse = JSON.parse(JSON.stringify(basicResponse));
+        bidResponse.seatbid[0].bid[0].nurl = vastUrl
 
-      expect(bid.vastXml).to.eql(vastXml);
-    })
+        const request = spec.buildRequests([bidRequest], bidderRequest)
 
-    it('should get vast url', function () {
-      const bidRequest = JSON.parse(JSON.stringify(bidRequestOutstreamV2));
-      const bidResponse = JSON.parse(JSON.stringify(basicResponse));
-      bidResponse.seatbid[0].bid[0].nurl = vastUrl
+        const result = spec.interpretResponse({ 'body': bidResponse }, request)
+        const bid = result[0];
+        expect(bid).to.have.property('mediaType', VIDEO);
 
-      const request = spec.buildRequests([bidRequest], bidderRequest)
-
-      const result = spec.interpretResponse({ 'body': bidResponse }, request)
-      const bid = result[0];
-      expect(bid).to.have.property('mediaType', VIDEO);
-
-      expect(bid.vastXml).to.eql(vastXml);
-      expect(bid.vastUrl).to.eql(vastUrl);
-    })
+        expect(bid.vastXml).to.eql(vastXml);
+        expect(bid.vastUrl).to.eql(vastUrl);
+      })
+    }
   });
 
   describe('getUserSyncs', function () {
