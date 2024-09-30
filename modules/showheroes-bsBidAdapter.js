@@ -71,7 +71,7 @@ const converter = ortbConverter({
         bidResponse.renderer = createRenderer(bidResponse, renderConfig);
       }
     }
-    bidResponse.callbacks = bid.ext.callbacks;
+    bidResponse.callbacks = bid.ext?.callbacks;
     bidResponse.extra = bid.ext?.extra;
     return bidResponse;
   },
