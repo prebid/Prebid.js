@@ -3,7 +3,6 @@ import {spec} from 'modules/vdoaiBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 
-
 const ENDPOINT_URL = 'https://prebid-v2.vdo.ai/auction';
 
 describe('vdoaiBidAdapter', function () {
@@ -65,7 +64,6 @@ describe('vdoaiBidAdapter', function () {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
         'mediaType': 'banner',
         'adUnitCode': '1234',
-        'bidderRequestId': 12345,
         'mediaTypes': {
           banner: {
             sizes: [300, 250]
@@ -133,13 +131,13 @@ describe('vdoaiBidAdapter', function () {
       },
       userIdAsEids: {},
       schain: {
-        "ver": "1.0",
-        "complete": 1,
-        "nodes": [
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
           {
-            "asi": "vdo.ai",
-            "sid": "4359",
-            "hp": 1
+            'asi': 'vdo.ai',
+            'sid': '4359',
+            'hp': 1
           }
         ]
       }
@@ -190,8 +188,6 @@ describe('vdoaiBidAdapter', function () {
       let result = spec.buildRequests(bidRequests, bidderRequests);
       expect(result[0].data.uspConsent).to.be.undefined;
     });
-    
-    
   });
 
   describe('interpretResponse', function () {
@@ -224,8 +220,7 @@ describe('vdoaiBidAdapter', function () {
         'mediaType': 'banner'
       }
     };
-   
-    
+
     it('should get the correct bid response', function () {
       let expectedResponse = [{
         'requestId': '31d1375caab87a',
@@ -325,14 +320,14 @@ describe('vdoaiBidAdapter', function () {
           'netRevenue': true,
           'mediaType': 'video',
           'cookiesync': {
-            "status": "no_cookie",
-            "bidder_status": [
+            'status': 'no_cookie',
+            'bidder_status': [
               {
-                "bidder": "vdoai",
-                "no_cookie": true,
-                "usersync": {
-                  "url": "https://rtb.vdo.ai/setuid/",
-                  "type": "iframe"
+                'bidder': 'vdoai',
+                'no_cookie': true,
+                'usersync': {
+                  'url': 'https://rtb.vdo.ai/setuid/',
+                  'type': 'iframe'
                 }
               }
             ]
@@ -364,8 +359,8 @@ describe('vdoaiBidAdapter', function () {
           'netRevenue': true,
           'mediaType': 'video',
           'cookiesync': {
-            "status": "no_cookie",
-            "bidder_status": [
+            'status': 'no_cookie',
+            'bidder_status': [
             ]
           }
         }
