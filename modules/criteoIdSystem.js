@@ -10,15 +10,26 @@ import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ */
 
 const gvlid = 91;
 const bidderCode = 'criteo';
-export const storage = getStorageManager({ gvlid: gvlid, moduleName: bidderCode });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: bidderCode });
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
 const dnaBundleStorageKey = 'cto_dna_bundle';
 const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
+
+const STORAGE_TYPE_LOCALSTORAGE = 'html5';
+const STORAGE_TYPE_COOKIES = 'cookie';
 
 const pastDateString = new Date(0).toString();
 const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
@@ -30,14 +41,26 @@ function extractProtocolHost(url, returnOnlyHost = false) {
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
 }
 
-function getFromAllStorages(key) {
+function getFromStorage(submoduleConfig, key) {
+  if (submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) {
+    return storage.getDataFromLocalStorage(key);
+  } else if (submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) {
+    return storage.getCookie(key);
+  }
+
   return storage.getCookie(key) || storage.getDataFromLocalStorage(key);
 }
 
-function saveOnAllStorages(key, value, hostname) {
+function saveOnStorage(submoduleConfig, key, value, hostname) {
   if (key && value) {
-    storage.setDataInLocalStorage(key, value);
-    setCookieOnAllDomains(key, value, expirationString, hostname, true);
+    if (submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) {
+      storage.setDataInLocalStorage(key, value);
+    } else if (submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) {
+      setCookieOnAllDomains(key, value, expirationString, hostname, true);
+    } else {
+      storage.setDataInLocalStorage(key, value);
+      setCookieOnAllDomains(key, value, expirationString, hostname, true);
+    }
   }
 }
 
@@ -68,29 +91,45 @@ function deleteFromAllStorages(key, hostname) {
   storage.removeDataFromLocalStorage(key);
 }
 
-function getCriteoDataFromAllStorages() {
+function getCriteoDataFromStorage(submoduleConfig) {
   return {
-    bundle: getFromAllStorages(bundleStorageKey),
-    dnaBundle: getFromAllStorages(dnaBundleStorageKey),
-    bidId: getFromAllStorages(bididStorageKey),
+    bundle: getFromStorage(submoduleConfig, bundleStorageKey),
+    dnaBundle: getFromStorage(submoduleConfig, dnaBundleStorageKey),
+    bidId: getFromStorage(submoduleConfig, bididStorageKey),
   }
 }
 
-function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent, gdprString) {
-  const url = 'https://gum.criteo.com/sid/json?origin=prebid' +
+function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
+  let url = 'https://gum.criteo.com/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
     `${bundle ? '&bundle=' + encodeURIComponent(bundle) : ''}` +
     `${dnaBundle ? '&info=' + encodeURIComponent(dnaBundle) : ''}` +
-    `${gdprString ? '&gdprString=' + encodeURIComponent(gdprString) : ''}` +
     `${areCookiesWriteable ? '&cw=1' : ''}` +
     `${isPublishertagPresent ? '&pbt=1' : ''}` +
     `${isLocalStorageWritable ? '&lsw=1' : ''}`;
 
+  const usPrivacyString = uspDataHandler.getConsentData();
+  if (usPrivacyString) {
+    url = url + `&us_privacy=${encodeURIComponent(usPrivacyString)}`;
+  }
+
+  const gdprConsent = gdprDataHandler.getConsentData()
+  if (gdprConsent) {
+    url = url + `${gdprConsent.consentString ? '&gdprString=' + encodeURIComponent(gdprConsent.consentString) : ''}`;
+    url = url + `&gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`;
+  }
+
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    url = url + `${gppConsent.gppString ? '&gpp=' + encodeURIComponent(gppConsent.gppString) : ''}`;
+    url = url + `${gppConsent.applicableSections ? '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections) : ''}`;
+  }
+
   return url;
 }
 
-function callSyncPixel(domain, pixel) {
+function callSyncPixel(submoduleConfig, domain, pixel) {
   if (pixel.writeBundleInStorage && pixel.bundlePropertyName && pixel.storageKeyName) {
     ajax(
       pixel.pixelUrl,
@@ -99,9 +138,12 @@ function callSyncPixel(domain, pixel) {
           if (response) {
             const jsonResponse = JSON.parse(response);
             if (jsonResponse && jsonResponse[pixel.bundlePropertyName]) {
-              saveOnAllStorages(pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain);
+              saveOnStorage(submoduleConfig, pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain);
             }
           }
+        },
+        error: error => {
+          logError(`criteoIdSystem: unable to sync user id`, error);
         }
       },
       undefined,
@@ -112,9 +154,9 @@ function callSyncPixel(domain, pixel) {
   }
 }
 
-function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
-  const cw = storage.cookiesAreEnabled();
-  const lsw = storage.localStorageIsEnabled();
+function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
+  const cw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) && storage.cookiesAreEnabled();
+  const lsw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) && storage.localStorageIsEnabled();
   const topUrl = extractProtocolHost(getRefererInfo().page);
   // TODO: should domain really be extracted from the current frame?
   const domain = extractProtocolHost(document.location.href, true);
@@ -127,8 +169,7 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
     parsedCriteoData.dnaBundle,
     cw,
     lsw,
-    isPublishertagPresent,
-    gdprString
+    isPublishertagPresent
   );
 
   const callbacks = {
@@ -136,18 +177,18 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
       const jsonResponse = JSON.parse(response);
 
       if (jsonResponse.pixels) {
-        jsonResponse.pixels.forEach(pixel => callSyncPixel(domain, pixel));
+        jsonResponse.pixels.forEach(pixel => callSyncPixel(submoduleConfig, domain, pixel));
       }
 
       if (jsonResponse.acwsUrl) {
         const urlsToCall = typeof jsonResponse.acwsUrl === 'string' ? [jsonResponse.acwsUrl] : jsonResponse.acwsUrl;
         urlsToCall.forEach(url => triggerPixel(url));
       } else if (jsonResponse.bundle) {
-        saveOnAllStorages(bundleStorageKey, jsonResponse.bundle, domain);
+        saveOnStorage(submoduleConfig, bundleStorageKey, jsonResponse.bundle, domain);
       }
 
       if (jsonResponse.bidId) {
-        saveOnAllStorages(bididStorageKey, jsonResponse.bidId, domain);
+        saveOnStorage(submoduleConfig, bididStorageKey, jsonResponse.bidId, domain);
         const criteoId = { criteoId: jsonResponse.bidId };
         callback(criteoId);
       } else {
@@ -187,18 +228,21 @@ export const criteoIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {{id: {criteoId: string} | undefined}}}
    */
-  getId(config, consentData) {
-    const hasGdprData = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
-    const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
+  getId(submoduleConfig) {
+    let localData = getCriteoDataFromStorage(submoduleConfig);
 
-    let localData = getCriteoDataFromAllStorages();
-
-    const result = (callback) => callCriteoUserSync(localData, gdprConsentString, callback);
+    const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback);
 
     return {
       id: localData.bidId ? { criteoId: localData.bidId } : undefined,
       callback: result
     }
+  },
+  eids: {
+    'criteoId': {
+      source: 'criteo.com',
+      atype: 1
+    },
   }
 };
 

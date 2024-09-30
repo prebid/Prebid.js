@@ -29,9 +29,7 @@ The Trade Desk bid adapter supports Banner and Video.
                         bidder: 'ttd',
                         params: {
                             supplySourceId: 'supplier',
-                            publisherId: '1427ab10f2e448057ed3b422',
-                            siteId: 'site-123',
-                            placementId: 'footer1'
+                            publisherId: '1427ab10f2e448057ed3b422'
                         }
                     }
                 ]
@@ -51,8 +49,8 @@ The Trade Desk bid adapter supports Banner and Video.
                         params: {
                             supplySourceId: 'supplier',
                             publisherId: '1427ab10f2e448057ed3b422',
-                            siteId: 'site-123',
-                            placementId: 'footer1',
+                            placementId: '/1111/home#header',
+                            bidfloor: 0.45,
                             banner: {
                                 expdir: [1, 3]
                             },
@@ -77,9 +75,7 @@ The Trade Desk bid adapter supports Banner and Video.
                         bidder: 'ttd',
                         params: {
                             supplySourceId: 'supplier',
-                            publisherId: '1427ab10f2e448057ed3b422',
-                            siteId: 'site-123',
-                            placementId: 'footer1'
+                            publisherId: '1427ab10f2e448057ed3b422'
                         }
                     }
                 ]
@@ -112,8 +108,8 @@ The Trade Desk bid adapter supports Banner and Video.
                         params: {
                             supplySourceId: 'supplier',
                             publisherId: '1427ab10f2e448057ed3b422',
-                            siteId: 'site-123',
-                            placementId: 'footer1'
+                            placementId: '/1111/home#header',
+                            bidfloor: 0.45
                         }
                     }
                 ]

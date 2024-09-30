@@ -1,6 +1,7 @@
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'loglylift';
 const ENDPOINT_URL = 'https://bid.logly.co.jp/prebid/client/v1';
@@ -14,6 +15,9 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const requests = [];
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const request = {
@@ -60,9 +64,10 @@ function newBidRequest(bid, bidderRequest) {
   const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 
   return {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
     bidderRequestId: bid.bidderRequestId,
-    transactionId: bid.transactionId,
+    transactionId: bid.ortb2Imp?.ext?.tid,
     adUnitCode: bid.adUnitCode,
     bidId: bid.bidId,
     mediaTypes: bid.mediaTypes,

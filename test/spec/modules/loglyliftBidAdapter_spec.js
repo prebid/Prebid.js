@@ -11,6 +11,11 @@ describe('loglyliftBidAdapter', function () {
     },
     adUnitCode: '/19968336/prebid_native_example_1',
     transactionId: '10aee457-617c-4572-ab5b-99df1d73ccb4',
+    ortb2Imp: {
+      ext: {
+        tid: '10aee457-617c-4572-ab5b-99df1d73ccb4',
+      }
+    },
     sizes: [[300, 250], [300, 600]],
     bidderRequestId: '15da3afd9632d7',
     auctionId: 'f890b7d9-e787-4237-ac21-6d8554abac9f',
@@ -29,6 +34,11 @@ describe('loglyliftBidAdapter', function () {
     },
     adUnitCode: '/19968336/prebid_native_example_1',
     transactionId: '10aee457-617c-4572-ab5b-99df1d73ccb4',
+    ortb2Imp: {
+      ext: {
+        tid: '10aee457-617c-4572-ab5b-99df1d73ccb4',
+      }
+    },
     sizes: [
       []
     ],

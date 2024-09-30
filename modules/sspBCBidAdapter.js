@@ -1,26 +1,59 @@
-import {deepAccess, getWindowTop, isArray, logWarn} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {includes as strIncludes} from '../src/polyfill.js';
+import { deepAccess, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { includes as strIncludes } from '../src/polyfill.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
-const TRACKER_URL = 'https://bdr.wpcdn.pl/tag/jstracker.js';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.6';
+const BIDDER_VERSION = '6.00';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
 const adUnitsCalled = {};
 const adSizesCalled = {};
+const bidderRequestsMap = {};
 const pageView = {};
-var consentApiVersion;
+
+/**
+ * Native asset mapping - we use constant id per type
+ * id > 10 indicates additional images
+ */
+var nativeAssetMap = {
+  title: 0,
+  cta: 1,
+  icon: 2,
+  image: 3,
+  body: 4,
+  sponsoredBy: 5
+};
+
+/**
+ * return native asset type, based on asset id
+ * @param {number} id - native asset id
+ * @returns {string} asset type
+ */
+const getNativeAssetType = id => {
+  // id>10 will always be an image...
+  if (id > 10) {
+    return 'image';
+  }
+
+  // ...others should be decoded from nativeAssetMap
+  for (let assetName in nativeAssetMap) {
+    const assetId = nativeAssetMap[assetName];
+    if (assetId === id) {
+      return assetName;
+    }
+  }
+}
 
 /**
  * Get preferred language of browser (i.e. user)
@@ -42,6 +75,16 @@ const getContentLanguage = () => {
 };
 
 /**
+ * Get Bid parameters - returns bid params from Object, or 1el array
+ * @param {*} bidParams - bid (bidWon), or array of bids (timeout)
+ * @returns {object} params object
+ */
+const unpackParams = (bidParams) => {
+  const result = isArray(bidParams) ? bidParams[0] : bidParams;
+  return result || {};
+}
+
+/**
  * Get bid parameters for notification
  * @param {*} bidData - bid (bidWon), or array of bids (timeout)
  */
@@ -50,21 +93,21 @@ const getNotificationPayload = bidData => {
     const bids = isArray(bidData) ? bidData : [bidData];
     if (bids.length > 0) {
       let result = {
-        requestId: undefined,
         siteId: [],
         slotId: [],
         tagid: [],
       }
       bids.forEach(bid => {
-        const { adUnitCode, auctionId, cpm, creativeId, meta, params: bidParams, requestId, timeout } = bid;
-        let params = isArray(bidParams) ? bidParams[0] : bidParams;
-        params = params || {};
+        const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
+        const { platform = 'wpartner' } = meta;
+        const params = unpackParams(bidParams);
 
         // basic notification data
         const bidBasicData = {
-          requestId: auctionId || result.requestId,
+          requestId: bidderRequestId || bidderRequestsMap[requestId],
           timeout: timeout || result.timeout,
           pvid: pageView.id,
+          platform
         }
         result = { ...result, ...bidBasicData }
 
@@ -84,12 +127,14 @@ const getNotificationPayload = bidData => {
 
         if (cpm) {
           // non-empty bid data
+          const { advertiserDomains = [], networkName, pricepl } = meta;
           const bidNonEmptyData = {
             cpm,
-            cpmpl: meta && meta.pricepl,
+            cpmpl: pricepl,
             creativeId,
-            adomain: meta && meta.advertiserDomains && meta.advertiserDomains[0],
-            networkName: meta && meta.networkName,
+            adomain: advertiserDomains[0],
+            adtype: mediaType,
+            networkName,
           }
           result = { ...result, ...bidNonEmptyData }
         }
@@ -98,13 +143,6 @@ const getNotificationPayload = bidData => {
     }
   }
 }
-
-const cookieSupport = () => {
-  const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  const useCookies = navigator.cookieEnabled || !!document.cookie.length;
-
-  return !isSafari && useCookies;
-};
 
 const applyClientHints = ortbRequest => {
   const { location } = document;
@@ -127,7 +165,7 @@ const applyClientHints = ortbRequest => {
     Check / generate page view id
     Should be generated dureing first call to applyClientHints(),
     and re-generated if pathname has changed
-  */
+   */
   if (!pageView.id || location.pathname !== pageView.path) {
     pageView.path = location.pathname;
     pageView.id = Math.floor(1E20 * Math.random()).toString();
@@ -162,9 +200,28 @@ const applyClientHints = ortbRequest => {
   ortbRequest.user = { ...ortbRequest.user, ...ch };
 };
 
+const applyTopics = (validBidRequest, ortbRequest) => {
+  const userData = validBidRequest.ortb2?.user?.data || [];
+  const topicsData = userData.filter(dataObj => {
+    const segtax = dataObj.ext?.segtax;
+    return segtax >= 600 && segtax <= 609;
+  })[0];
+
+  // format topics obj for exchange
+  if (topicsData) {
+    topicsData.id = `${topicsData.ext.segtax}`;
+    topicsData.name = 'topics';
+    delete (topicsData.ext);
+    ortbRequest.user.data.push(topicsData);
+  }
+};
+
 const applyUserIds = (validBidRequest, ortbRequest) => {
-  const eids = validBidRequest.userIdAsEids
-  if (eids && eids.length) {
+  const { userIdAsEids: eidsVbr = [], ortb2 = {} } = validBidRequest;
+  const eidsOrtb = ortb2.user?.ext?.data?.eids || [];
+  const eids = [...eidsVbr, ...eidsOrtb];
+
+  if (eids.length) {
     const ids = { eids };
     ortbRequest.user = { ...ortbRequest.user, ...ids };
   }
@@ -177,12 +234,51 @@ const applyUserIds = (validBidRequest, ortbRequest) => {
 const applyGdpr = (bidderRequest, ortbRequest) => {
   const { gdprConsent } = bidderRequest;
   if (gdprConsent) {
-    const { apiVersion, gdprApplies, consentString } = gdprConsent;
-    consentApiVersion = apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { 'gdpr': gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { 'consent': consentString });
+    const { gdprApplies, consentString } = gdprConsent;
+    ortbRequest.regs = Object.assign(ortbRequest.regs || {}, { 'gdpr': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user || {}, { 'consent': consentString });
   }
 }
+
+/**
+ * Get highest floorprice for a given adslot
+ * (sspBC adapter accepts one floor per imp)
+ * returns floor = 0 if getFloor() is not defined
+ *
+ * @param {object} slot bid request adslot
+ * @returns {number} floorprice
+ */
+const getHighestFloor = (slot) => {
+  const currency = getCurrency();
+  let result = { floor: 0, currency };
+
+  if (typeof slot.getFloor === 'function') {
+    let bannerFloor = 0;
+
+    if (slot.sizes.length) {
+      bannerFloor = slot.sizes.reduce(function (prev, next) {
+        const { floor: currentFloor = 0 } = slot.getFloor({
+          mediaType: 'banner',
+          size: next,
+          currency
+        });
+        return prev > currentFloor ? prev : currentFloor;
+      }, 0);
+    }
+
+    const { floor: nativeFloor = 0 } = slot.getFloor({
+      mediaType: 'native', currency
+    });
+
+    const { floor: videoFloor = 0 } = slot.getFloor({
+      mediaType: 'video', currency
+    });
+
+    result.floor = Math.max(bannerFloor, nativeFloor, videoFloor);
+  }
+
+  return result;
+};
 
 /**
  * Get currency (either default or adserver)
@@ -232,71 +328,111 @@ const mapBanner = slot => {
  * @param {object} paramValue Native parameter value
  * @returns {object} native asset object that conforms to ortb native ads spec
  */
-const mapAsset = (paramName, paramValue) => {
-  let asset;
-  switch (paramName) {
-    case 'title':
-      asset = {
-        id: 0,
-        required: paramValue.required,
-        title: { len: paramValue.len }
-      }
-      break;
-    case 'cta':
-      asset = {
-        id: 1,
-        required: paramValue.required,
-        data: { type: 12 }
-      }
-      break;
-    case 'icon':
-      asset = {
-        id: 2,
-        required: paramValue.required,
-        img: { type: 1, w: paramValue.sizes[0], h: paramValue.sizes[1] }
-      }
-      break;
-    case 'image':
-      asset = {
-        id: 3,
-        required: paramValue.required,
-        img: { type: 3, w: paramValue.sizes[0], h: paramValue.sizes[1] }
-      }
-      break;
-    case 'body':
-      asset = {
-        id: 4,
-        required: paramValue.required,
-        data: { type: 2 }
-      }
-      break;
-    case 'sponsoredBy':
-      asset = {
-        id: 5,
-        required: paramValue.required,
-        data: { type: 1 }
-      }
-      break;
+var mapAsset = function mapAsset(paramName, paramValue) {
+  const { required, sizes, wmin, hmin, len } = paramValue;
+  var id = nativeAssetMap[paramName];
+  var assets = [];
+
+  if (id !== undefined) {
+    switch (paramName) {
+      case 'title':
+        assets.push({
+          id: id,
+          required: required,
+          title: {
+            len: len || 140
+          }
+        });
+        break;
+
+      case 'cta':
+        assets.push({
+          id: id,
+          required: required,
+          data: {
+            type: 12
+          }
+        });
+        break;
+
+      case 'icon':
+        assets.push({
+          id: id,
+          required: required,
+          img: {
+            type: 1,
+            w: sizes && sizes[0],
+            h: sizes && sizes[1]
+          }
+        });
+        break;
+
+      case 'image':
+        var hasMultipleImages = sizes && Array.isArray(sizes[0]);
+        var imageSizes = hasMultipleImages ? sizes : [sizes];
+
+        for (var i = 0; i < imageSizes.length; i++) {
+          assets.push({
+            id: i > 0 ? 10 + i : id,
+            required: required,
+            img: {
+              type: 3,
+              w: imageSizes[i][0],
+              h: imageSizes[i][1],
+              wmin: wmin,
+              hmin: hmin
+            }
+          });
+        }
+
+        break;
+
+      case 'body':
+        assets.push({
+          id: id,
+          required: required,
+          data: {
+            type: 2
+          }
+        });
+        break;
+
+      case 'sponsoredBy':
+        assets.push({
+          id: id,
+          required: required,
+          data: {
+            type: 1
+          }
+        });
+        break;
+    }
   }
-  return asset;
-}
+
+  return assets;
+};
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} native object that conforms to ortb native ads spec
  */
-const mapNative = slot => {
+const mapNative = (slot) => {
   const native = deepAccess(slot, 'mediaTypes.native');
-  let assets;
   if (native) {
-    const nativeParams = Object.keys(native);
-    assets = [];
-    nativeParams.forEach(par => {
-      const newAsset = mapAsset(par, native[par]);
-      if (newAsset) { assets.push(newAsset) };
+    var nativeParams = Object.keys(native);
+    var assets = [];
+    nativeParams.forEach(function (par) {
+      var newAssets = mapAsset(par, native[par]);
+      assets = assets.concat(newAssets);
     });
+    return {
+      request: JSON.stringify({
+        native: {
+          assets: assets
+        }
+      })
+    };
   }
-  return assets ? { request: JSON.stringify({ native: { assets } }) } : undefined;
 }
 
 var mapVideo = (slot, videoFromBid) => {
@@ -331,9 +467,14 @@ var mapVideo = (slot, videoFromBid) => {
 };
 
 const mapImpression = slot => {
-  const { adUnitCode, bidId, params = {}, ortb2Imp = {} } = slot;
+  const { adUnitCode, bidderRequestId, bidId, params = {}, ortb2Imp = {} } = slot;
   const { id, siteId, video } = params;
-  const { ext = {} } = ortb2Imp;
+  const { instl, ext = {} } = ortb2Imp;
+
+  /*
+    store bidId <-> bidderRequestId mapping for bidWon notification
+  */
+  bidderRequestsMap[bidId] = bidderRequestId;
 
   /*
      check max size for this imp, and check/store number this size was called (for current view)
@@ -344,7 +485,7 @@ const mapImpression = slot => {
   if (!adUnitsCalled[adUnitCode]) {
     // this is a new adunit - assign & save pbsize
     adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
-    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`
+    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`;
   }
 
   ext.data = Object.assign({ pbsize: adUnitsCalled[adUnitCode] }, ext.data);
@@ -352,46 +493,24 @@ const mapImpression = slot => {
   const imp = {
     id: id && siteId ? id.padStart(3, '0') : 'bidid-' + bidId,
     banner: mapBanner(slot),
-    native: mapNative(slot),
+    native: mapNative(slot, bidId),
     video: mapVideo(slot, video),
     tagid: adUnitCode,
     ext,
+    instl,
   };
 
   // Check floorprices for this imp
-  const currency = getCurrency();
-  if (typeof slot.getFloor === 'function') {
-    var bannerFloor = 0;
-    var nativeFloor = 0;
-    var videoFloor = 0; // sspBC adapter accepts only floor per imp - check for maximum value for requested ad types and sizes
+  const { floor, currency } = getHighestFloor(slot);
 
-    if (slot.sizes.length) {
-      bannerFloor = slot.sizes.reduce(function (prev, next) {
-        var currentFloor = slot.getFloor({
-          mediaType: 'banner',
-          size: next,
-          currency
-        }).floor;
-        return prev > currentFloor ? prev : currentFloor;
-      }, 0);
-    }
-
-    nativeFloor = slot.getFloor({
-      mediaType: 'native', currency
-    });
-    videoFloor = slot.getFloor({
-      mediaType: 'video', currency
-    });
-    imp.bidfloor = Math.max(bannerFloor, nativeFloor, videoFloor);
-  } else {
-    imp.bidfloor = 0;
-  }
+  imp.bidfloor = floor;
   imp.bidfloorcur = currency;
+
   return imp;
 }
 
 const isVideoAd = bid => {
-  const xmlTester = new RegExp(/^<\?xml/);
+  const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
 }
 
@@ -401,130 +520,62 @@ const isNativeAd = bid => {
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
 }
 
-const parseNative = nativeData => {
-  const result = {};
-  nativeData.assets.forEach(asset => {
-    const id = parseInt(asset.id);
-    switch (id) {
-      case 0:
-        result.title = asset.title.text;
-        break;
-      case 1:
-        result.cta = asset.data.value;
-        break;
-      case 2:
-        result.icon = {
-          url: asset.img.url,
-          width: asset.img.w,
-          height: asset.img.h,
-        };
-        break;
-      case 3:
-        result.image = {
-          url: asset.img.url,
-          width: asset.img.w,
-          height: asset.img.h,
-        };
-        break;
-      case 4:
-        result.body = asset.data.value;
-        break;
-      case 5:
-        result.sponsoredBy = asset.data.value;
-        break;
-
-      default:
-        logWarn('Unrecognized native asset', asset);
-    }
-  });
-  result.clickUrl = nativeData.link.url;
-  result.impressionTrackers = nativeData.imptrackers;
-
-  if (isArray(nativeData.jstracker)) {
-    result.javascriptTrackers = nativeData.jstracker;
-  } else if (nativeData.jstracker) {
-    result.javascriptTrackers = [nativeData.jstracker];
-  }
-  return result;
+const isHTML = bid => {
+  const xmlTester = new RegExp(/^<html|<iframe/, 'i');
+  return bid.adm && bid.adm.match(xmlTester);
 }
 
-const renderCreative = (site, auctionId, bid, seat, request) => {
-  let gam;
+const parseNative = (nativeData, adUnitCode) => {
+  const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
+  const { url: clickUrl, clicktrackers: clickTrackers = [] } = link;
+  const macroReplacer = tracker => tracker.replace(new RegExp('%native_dom_id%', 'g'), adUnitCode);
+  let javascriptTrackers = isArray(jstracker) ? jstracker : jstracker && [jstracker];
 
-  const mcad = {
-    id: auctionId,
-    seat,
-    seatbid: [{
-      bid: [bid],
-    }],
+  // replace known macros in js trackers
+  javascriptTrackers = javascriptTrackers && javascriptTrackers.map(macroReplacer);
+
+  const result = {
+    clickUrl,
+    clickTrackers,
+    impressionTrackers,
+    javascriptTrackers,
   };
 
-  const mcbase = btoa(encodeURI(JSON.stringify(mcad)));
-
-  if (bid.adm) {
-    // parse adm for gam config
-    try {
-      gam = JSON.parse(bid.adm).gam;
-
-      if (!gam || !Object.keys(gam).length) {
-        gam = undefined;
-      } else {
-        gam.namedSizes = ['fluid'];
-        gam.div = 'div-gpt-ad-x01';
-        gam.targeting = Object.assign(gam.targeting || {}, {
-          OAS_retarg: '0',
-          PREBID_ON: '1',
-          emptygaf: '0',
-        });
-      }
-
-      if (gam && !gam.targeting) {
-        gam.targeting = {};
-      }
-    } catch (err) {
-      logWarn('Could not parse adm data', bid.adm);
+  nativeData.assets.forEach(asset => {
+    const { id, img = {}, title = {}, data = {} } = asset;
+    const { w: imgWidth, h: imgHeight, url: imgUrl, type: imgType } = img;
+    const { type: dataType, value: dataValue } = data;
+    const { text: titleText } = title;
+    const detectedType = getNativeAssetType(id);
+    if (titleText) {
+      result.title = titleText;
     }
-  }
+    if (imgUrl) {
+      // image or icon
+      const thisImage = {
+        url: imgUrl,
+        width: imgWidth,
+        height: imgHeight,
+      };
+      if (imgType === 3 || detectedType === 'image') {
+        result.image = thisImage;
+      } else if (imgType === 1 || detectedType === 'icon') {
+        result.icon = thisImage;
+      }
+    }
+    if (dataValue) {
+      // call-to-action, sponsored-by or body
+      if (dataType === 1 || detectedType === 'sponsoredBy') {
+        result.sponsoredBy = dataValue;
+      } else if (dataType === 2 || detectedType === 'body') {
+        result.body = dataValue;
+      } else if (dataType === 12 || detectedType === 'cta') {
+        result.cta = dataValue;
+      }
+    }
+  });
 
-  let adcode = `<head>
-  <title></title>
-  <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-    body {
-    background-color: transparent;
-    margin: 0;
-    padding: 0;
-  }
-</style>
-  <script>
-  window.rekid = ${site.id};
-  window.slot = ${parseInt(site.slot, 10)};
-  window.responseTimestamp = ${Date.now()};
-  window.wp_sn = "${site.sn}";
-  window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
-  window.gdpr = ${JSON.stringify(request.gdprConsent)};
-  window.page = "${site.page}";
-  window.ref = "${site.ref}";
-  window.adlabel = "${site.adLabel ? site.adLabel : ''}";
-  window.pubid = "${site.publisherId ? site.publisherId : ''}";
-  window.requestPVID = "${pageView.id}";
-  `;
-
-  if (gam) {
-    adcode += `window.gam = ${JSON.stringify(gam)};`;
-  }
-
-  adcode += `</script>
-    </head>
-    <body>
-    <div id="c"></div>
-    <script async crossorigin nomodule src="https://std.wpcdn.pl/wpjslib/wpjslib-inline.js" id="wpjslib"></script>
-    <script async crossorigin type="module" src="https://std.wpcdn.pl/wpjslib6/wpjslib-inline.js" id="wpjslib6"></script>
-  </body>
-  </html>`;
-
-  return adcode;
+  return result;
 }
 
 const spec = {
@@ -537,10 +588,14 @@ const spec = {
     return true;
   },
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if ((!validBidRequests) || (validBidRequests.length < 1)) {
       return false;
     }
 
+    const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
@@ -549,11 +604,12 @@ const spec = {
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
     const ref = bidderRequest.refererInfo.ref;
+    const { regs = {} } = ortb2 || {};
 
     const payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
-        id: siteId,
+        id: siteId ? `${siteId}` : undefined,
         publisher: publisherId ? { id: publisherId } : undefined,
         page,
         domain,
@@ -564,18 +620,23 @@ const spec = {
       cur: [getCurrency()],
       tmax,
       user: {},
-      regs: {},
-      device: { language: getBrowserLanguage() },
+      regs,
+      device: {
+        language: getBrowserLanguage(),
+        w: screen.width,
+        h: screen.height,
+      },
       test: testMode,
     };
 
     applyGdpr(bidderRequest, payload);
     applyClientHints(payload);
     applyUserIds(validBidRequests[0], payload);
+    applyTopics(bidderRequest, payload);
 
     return {
       method: 'POST',
-      url: `${BIDDER_URL}?cs=${cookieSupport()}&bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
+      url: `${BIDDER_URL}?bdver=${BIDDER_VERSION}&pbver=${pbver}&inver=0`,
       data: JSON.stringify(payload),
       bidderRequest,
     };
@@ -583,55 +644,53 @@ const spec = {
 
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
-    const response = serverResponse.body;
+    const { body: response = {} } = serverResponse;
+    const { seatbid: responseSeat, ext: responseExt = {} } = response;
+    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
     const bids = [];
-    const site = JSON.parse(request.data).site; // get page and referer data from request
+    let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
     pageView.sn = site.sn; // store site_name (for syncing and notifications)
-    let seat;
 
-    if (response.seatbid !== undefined) {
+    if (responseSeat !== undefined) {
       /*
         Match response to request, by comparing bid id's
         'bidid-' prefix indicates oneCode (parameterless) request and response
       */
-      response.seatbid.forEach(seatbid => {
-        let creativeCache;
-        seat = seatbid.seat;
-        seatbid.bid.forEach(serverBid => {
+      responseSeat.forEach(seatbid => {
+        const { seat, bid } = seatbid;
+        bid.forEach(serverBid => {
           // get data from bid response
-          const { adomain, crid = `mcad_${bidderRequest.auctionId}_${site.slot}`, impid, exp = 300, ext, price, w, h } = serverBid;
+          const { adomain, crid = `mcad_${bidderRequest.auctionId}_${site.slot}`, impid, exp = 300, ext = {}, price, w, h } = serverBid;
 
           const bidRequest = bidderRequest.bids.filter(b => {
-            const { bidId, params = {} } = b;
+            const { bidId, params: requestParams = {} } = b;
+            const params = unpackParams(requestParams);
             const { id, siteId } = params;
             const currentBidId = id && siteId ? id : 'bidid-' + bidId;
             return currentBidId === impid;
           })[0];
 
-          // get data from linked bidRequest
-          const { bidId, params } = bidRequest || {};
+          // get bidid from linked bidRequest
+          const { bidId } = bidRequest || {};
 
-          // get slot id for current bid
-          site.slot = params && params.id;
+          // get ext data from bid
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, platform = 'wpartner', pricepl } = ext;
 
-          if (ext) {
-            /*
-              bid response might include ext object containing siteId / slotId, as detected by OneCode
-              update site / slot data in this case
-
-              ext also might contain publisherId and custom ad label
-            */
-            const { siteid, slotid, pubid, adlabel, cache } = ext;
-            site.id = siteid || site.id;
-            site.slot = slotid || site.slot;
-            site.publisherId = pubid;
-            site.adLabel = adlabel;
-            creativeCache = cache;
-          }
+          // update site data
+          site = {
+            ...site,
+            ...{
+              id: siteid,
+              slot: slotid,
+              publisherId: pubid,
+              adLabel: adlabel
+            }
+          };
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
             // found a matching request; add this bid
+            const { adUnitCode } = bidRequest;
 
             // store site data for future notification
             oneCodeDetection[bidId] = [site.id, site.slot];
@@ -644,13 +703,15 @@ const spec = {
               ttl: exp,
               width: w,
               height: h,
-              bidderCode: BIDDER_CODE,
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,
-                pricepl: ext && ext.pricepl,
+                pricepl,
+                dsa,
+                platform,
               },
               netRevenue: true,
+              vurls,
             };
 
             // mediaType and ad data for instream / native / banner
@@ -661,44 +722,37 @@ const spec = {
               bid.vastXml = serverBid.adm;
               bid.vastContent = serverBid.adm;
               bid.vastUrl = creativeCache;
+
+              logInfo(`Bid ${bid.creativeId} is a video ad`);
             } else if (isNativeAd(serverBid)) {
               // native
               bid.mediaType = 'native';
               // check native object
               try {
                 const nativeData = serverBid.admNative || JSON.parse(serverBid.adm).native;
-                bid.native = parseNative(nativeData);
+                bid.native = parseNative(nativeData, adUnitCode);
                 bid.width = 1;
                 bid.height = 1;
-
-                // append viewability tracker
-                const jsData = {
-                  rid: bidRequest.auctionId,
-                  crid: bid.creativeId,
-                  adunit: bidRequest.adUnitCode,
-                  url: bid.native.clickUrl,
-                  vendor: seat,
-                  site: site.id,
-                  slot: site.slot,
-                  cpm: bid.cpm.toPrecision(4),
-                }
-                const jsTracker = '<script type="text/javascript" async="true" src="' + TRACKER_URL + '" ' + Object.keys(jsData).reduce((acc, current) => { return acc + ` data-wpar-${current}="${jsData[current]}"` }, '') + '><\/script>';
-                if (bid.native.javascriptTrackers) {
-                  bid.native.javascriptTrackers.push(jsTracker);
-                } else {
-                  bid.native.javascriptTrackers = [jsTracker];
-                }
               } catch (err) {
                 logWarn('Could not parse native data', serverBid.adm);
                 bid.cpm = 0;
               }
-            } else {
-              // banner ad (default)
+              logInfo(`Bid ${bid.creativeId} as a native ad`);
+            } else if (isHTML(serverBid)) {
+              // banner ad (preformatted)
               bid.mediaType = 'banner';
-              bid.ad = renderCreative(site, response.id, serverBid, seat, bidderRequest);
+              logInfo(`Bid ${bid.creativeId} as a preformatted banner`);
+              bid.ad = serverBid.adm;
+            } else {
+              // unsupported bid format - send notification and set CPM to zero
+              const payload = getNotificationPayload(bid);
+              payload.event = 'parseError';
+              sendNotification(payload);
+              bid.cpm = 0;
             }
 
             if (bid.cpm > 0) {
+              // push this bid
               bids.push(bid);
             }
           } else {
@@ -708,15 +762,14 @@ const spec = {
       });
     }
 
-    return bids;
+    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
   },
-  getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs(syncOptions) {
     let mySyncs = [];
-    // TODO: the check on CMP api version does not seem to make sense here. It means "always run the usersync unless an old (v1) CMP was detected". No attention is paid to the consent choices.
-    if (syncOptions.iframeEnabled && consentApiVersion != 1) {
+    if (syncOptions.iframeEnabled) {
       mySyncs.push({
         type: 'iframe',
-        url: `${SYNC_URL}?tcf=${consentApiVersion}&pvid=${pageView.id}&sn=${pageView.sn}`,
+        url: `${SYNC_URL}?tcf=2&pvid=${pageView.id}&sn=${pageView.sn}`,
       });
     };
     return mySyncs;
@@ -731,6 +784,33 @@ const spec = {
     }
   },
 
+  onBidderError(errorData) {
+    const payload = getNotificationPayload(errorData);
+    if (payload) {
+      payload.event = 'parseError';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidViewable(bid) {
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidViewable';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidBillable(bid) {
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidBillable';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
   onBidWon(bid) {
     const payload = getNotificationPayload(bid);
     if (payload) {
@@ -739,6 +819,7 @@ const spec = {
       return payload;
     }
   },
+
 };
 
 registerBidder(spec);

@@ -1,8 +1,9 @@
 import { Renderer } from '../src/Renderer.js';
 import {ajax} from '../src/ajax.js';
-import { createTrackPixelHtml, getBidIdParameter, logError, logWarn, tryAppendQueryString } from '../src/utils.js';
+import {createTrackPixelHtml, getBidIdParameter, logError, logWarn} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'open8';
 const URL = 'https://as.vt.open8.com/v1/control/prebid';
@@ -68,7 +69,7 @@ export const spec = {
       meta: {
         advertiserDomains: ad.adomain || []
       }
-    }
+    };
 
     if (ad.adType === AD_TYPE.VIDEO) {
       const videoAd = bidderResponse.ad.video;

@@ -249,9 +249,33 @@
               }
             },
             {
-              "name": "uid2"
-            }
-            ,
+              "name": "uid2",
+              "params": {
+                "uid2ApiBase": "https://operator-integ.uidapi.com", // Omit this setting for production
+                "uid2Token": {
+                  "advertising_token": "advertising token goes here",
+                  "refresh_token": "refresh token goes here",
+                  "identity_expires": Date.now() + 60*1000, // These timestamps should be from the token generate response
+                  "refresh_from": Date.now() - 10*1000,
+                  "refresh_expires": Date.now() + 12*60*60*1000,
+                  "refresh_response_key": "refresh key goes here"
+                }
+              }
+            },
+            {
+              "name": "euid",
+              "params": {
+                "euidApiBase": "https://integ.euid.eu", // Omit this setting for production
+                "euidToken": {
+                  "advertising_token": "advertising token goes here",
+                  "refresh_token": "refresh token goes here",
+                  "identity_expires": Date.now() + 60*1000, // These timestamps should be from the token generate response
+                  "refresh_from": Date.now() - 10*1000,
+                  "refresh_expires": Date.now() + 12*60*60*1000,
+                  "refresh_response_key": "refresh key goes here"
+                }
+              }
+            },
             {
               "name": "imuid",
               "params": {
@@ -296,9 +320,7 @@
       var gads = document.createElement('script');
       gads.async = true;
       gads.type = 'text/javascript';
-      var useSSL = 'https:' == document.location.protocol;
-      gads.src = (useSSL ? 'https:' : 'http:') +
-        '//www.googletagservices.com/tag/js/gpt.js';
+      gads.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
       var node = document.getElementsByTagName('script')[0];
       node.parentNode.insertBefore(gads, node);
     })();

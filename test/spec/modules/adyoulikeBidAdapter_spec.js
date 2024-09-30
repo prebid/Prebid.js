@@ -2,10 +2,12 @@ import { expect } from 'chai';
 
 import { spec } from 'modules/adyoulikeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'https://canonical.url/?t=%26';
   const referrerUrl = 'http://referrer.url/?param=value';
+  const pageUrl = 'http://page.url/?param=value';
   const domain = 'domain:123';
   const defaultDC = 'hb-api';
   const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
@@ -17,7 +19,8 @@ describe('Adyoulike Adapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    refererInfo: {location: referrerUrl, canonicalUrl, domain}
+    refererInfo: {location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL'},
+    ortb2: {site: {page: pageUrl, ref: referrerUrl}}
   };
   const bidRequestWithEmptyPlacement = [
     {
@@ -42,7 +45,11 @@ describe('Adyoulike Adapter', function () {
         'params': {
           'placement': 'placement_0'
         },
-        'transactionId': 'bid_id_0_transaction_id'
+        'ortb2Imp': {
+          'ext': {
+            'tid': 'bid_id_0_transaction_id'
+          }
+        },
       }
     ],
   };
@@ -106,7 +113,11 @@ describe('Adyoulike Adapter', function () {
           ]
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      }
     }
   ];
 
@@ -140,7 +151,11 @@ describe('Adyoulike Adapter', function () {
           },
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -160,7 +175,11 @@ describe('Adyoulike Adapter', function () {
           'playerSize': [[ 640, 480 ]]
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -183,7 +202,11 @@ describe('Adyoulike Adapter', function () {
           }
         },
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -284,7 +307,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x250']
           }
         },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -302,7 +329,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x250']
           }
         },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_1',
@@ -317,7 +348,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x600']
           }
         },
-      'transactionId': 'bid_id_1_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_1_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_2',
@@ -325,7 +360,11 @@ describe('Adyoulike Adapter', function () {
       'placementCode': 'adunit/hb-2',
       'params': {},
       'sizes': '300x400',
-      'transactionId': 'bid_id_2_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_2_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_3',
@@ -334,7 +373,11 @@ describe('Adyoulike Adapter', function () {
       'params': {
         'placement': 'placement_3'
       },
-      'transactionId': 'bid_id_3_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_3_transaction_id'
+        }
+      },
     }
   ];
 
@@ -576,19 +619,19 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.size;
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.sizes;
 
-      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placement': 0
       };
-      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -601,7 +644,8 @@ describe('Adyoulike Adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
       expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
-      expect(request.url).to.contains('PublisherDomain=' + encodeURIComponent(domain));
+      expect(request.url).to.contains('PageUrl=' + encodeURIComponent(pageUrl));
+      expect(request.url).to.contains('PageReferrer=' + encodeURIComponent(referrerUrl));
 
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
@@ -664,30 +708,21 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentRequired).to.be.null;
     });
 
-    it('should add userid eids information to the request', function () {
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'userId': {
-          pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-          unsuported: '666'
-        }
-      };
-
-      bidderRequest.bids = bidRequestWithSinglePlacement;
-
-      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal([{
+    it('should add eids eids information to the request', function () {
+      let bidRequest = bidRequestWithSinglePlacement;
+      bidRequest[0].userIdAsEids = [{
         'source': 'pubcid.org',
         'uids': [{
           'atype': 1,
           'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
         }]
-      }]);
+      }]
+
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.eids).to.exist;
+      expect(payload.eids).to.deep.equal(bidRequest[0].userIdAsEids);
     });
 
     it('sends bid request to endpoint with single placement', function () {
@@ -698,12 +733,14 @@ describe('Adyoulike Adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
       expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
-      expect(request.url).to.contains('PublisherDomain=' + encodeURIComponent(domain));
+      expect(request.url).to.contains('PageUrl=' + encodeURIComponent(pageUrl));
+      expect(request.url).to.contains('PageReferrer=' + encodeURIComponent(referrerUrl));
 
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
+      expect(payload.ortb2).to.deep.equal({site: {page: pageUrl, ref: referrerUrl}});
     });
 
     it('sends bid request to endpoint with single placement without canonical', function () {
@@ -717,6 +754,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
@@ -731,6 +769,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
@@ -753,6 +792,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_1'].TransactionID).to.be.equal('bid_id_1_transaction_id');
       expect(payload.Bids['bid_id_3'].TransactionID).to.be.equal('bid_id_3_transaction_id');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
     });
 
     it('sends bid request to endpoint setted by parameters', function () {
@@ -770,6 +810,12 @@ describe('Adyoulike Adapter', function () {
       serverResponse = {
         body: {}
       }
+    });
+
+    it('handles 204 responses', function () {
+      serverResponse.body = '';
+      let result = spec.interpretResponse(serverResponse, []);
+      expect(result).deep.equal([]);
     });
 
     it('handles nobid responses', function () {
@@ -847,5 +893,116 @@ describe('Adyoulike Adapter', function () {
     it('should expose gvlid', function() {
       expect(spec.gvlid).to.equal(259)
     })
+  });
+
+  describe('getUserSyncs', function () {
+    const syncurl_iframe = 'https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4';
+
+    const emptySync = [];
+
+    describe('with iframe enabled', function() {
+      const userSyncConfig = { iframeEnabled: true };
+
+      it('should not add parameters if not provided', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}`
+        }]);
+      });
+
+      it('should add GDPR parameters if provided', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
+        }]);
+
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: 'foo?'}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo%3F`
+        }]);
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: false, consentString: 'bar'}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=bar`
+        }]);
+      });
+
+      it('should add CCPA parameters if provided', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, undefined, 'foo?')).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&us_privacy=foo%3F`
+        }]);
+      });
+
+      describe('COPPA', function() {
+        let sandbox;
+
+        this.beforeEach(function() {
+          sandbox = sinon.sandbox.create();
+        });
+
+        this.afterEach(function() {
+          sandbox.restore();
+        });
+
+        it('should add coppa parameters if provided', function() {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+
+          expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&coppa=1`
+          }]);
+        });
+      });
+
+      describe('GPP', function() {
+        it('should not apply if not gppConsent.gppString', function() {
+          const gppConsent = { gppString: '', applicableSections: [123] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should not apply if not gppConsent.applicableSections', function() {
+          const gppConsent = { gppString: '', applicableSections: undefined };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should not apply if empty gppConsent.applicableSections', function() {
+          const gppConsent = { gppString: '', applicableSections: [] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should apply if all above are available', function() {
+          const gppConsent = { gppString: 'foo?', applicableSections: [123] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gpp=foo%3F&gpp_sid=123`
+          }]);
+        });
+
+        it('should support multiple sections', function() {
+          const gppConsent = { gppString: 'foo', applicableSections: [123, 456] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gpp=foo&gpp_sid=123%2C456`
+          }]);
+        });
+      });
+    });
+
+    describe('with iframe disabled', function() {
+      const userSyncConfig = { iframeEnabled: false };
+
+      it('should return empty list of syncs', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal(emptySync);
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: 'foo'}, 'bar')).to.deep.equal(emptySync);
+      });
+    });
   });
 });

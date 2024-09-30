@@ -1,6 +1,11 @@
 import { parseSizesInput } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'coinzilla';
 const ENDPOINT_URL = 'https://request.czilladx.com/serve/request.php';
@@ -78,7 +83,7 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: response.timeout,
         referrer: referrer,
         ad: response.ad,
         mediaType: response.mediaType,

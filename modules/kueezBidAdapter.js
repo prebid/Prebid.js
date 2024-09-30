@@ -1,4 +1,16 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
+import {
+  logWarn,
+  logInfo,
+  isArray,
+  isFn,
+  deepAccess,
+  isEmpty,
+  contains,
+  timestamp,
+  triggerPixel,
+  isInteger,
+  getBidIdParameter
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -244,11 +256,12 @@ function generateBidParameters(bid, bidderRequest) {
   const bidObject = {
     adUnitCode: getBidIdParameter('adUnitCode', bid),
     bidId: getBidIdParameter('bidId', bid),
+    loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     floorPrice: Math.max(getFloorPrice(bid, mediaType), paramsFloorPrice),
     mediaType,
     sizes: sizesArray,
-    transactionId: getBidIdParameter('transactionId', bid)
+    transactionId: bid.ortb2Imp?.ext?.tid || ''
   };
 
   if (pos) {
@@ -292,7 +305,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
   const generalBidParams = getBidIdParameter('params', sharedParams);
   const userIds = getBidIdParameter('userId', sharedParams);
   const ortb2Metadata = bidderRequest.ortb2 || {};
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   const params = {
     adapter_version: VERSION,
@@ -308,7 +321,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$'
-  }
+  };
 
   if (syncEnabled) {
     const allowedSyncMethod = getSyncMethod(filterSettings, bidderCode);
@@ -351,7 +364,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     params.userIds = JSON.stringify(userIds);
   }
 
-  return params
+  return params;
 }
 
 /**
@@ -404,6 +417,7 @@ function populateVideoParams(params, bid) {
   const maxDuration = deepAccess(bid, `mediaTypes.video.maxduration`);
   const minDuration = deepAccess(bid, `mediaTypes.video.minduration`);
   const placement = deepAccess(bid, `mediaTypes.video.placement`);
+  const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
   const playbackMethod = getPlaybackMethod(bid);
   const skip = deepAccess(bid, `mediaTypes.video.skip`);
 
@@ -422,7 +436,9 @@ function populateVideoParams(params, bid) {
   if (placement) {
     params.placement = placement;
   }
-
+  if (plcmt) {
+    params.plcmt = plcmt;
+  }
   if (playbackMethod) {
     params.playbackMethod = playbackMethod;
   }

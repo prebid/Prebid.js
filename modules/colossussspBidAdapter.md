@@ -22,22 +22,45 @@ Module that connects to Colossus SSP demand sources
         bids: [{
             bidder: 'colossusssp',
             params: {
-                placement_id: 0,
-                traffic: 'banner'
+                placement_id: 0
             }
         }]
     }, {
         code: 'placementid_1',
         mediaTypes: {
-            banner: {
-                sizes: [[300, 250], [300,600]]
+            video: {
+                playerSize: [ [640, 480] ],
+                context: 'instream',
+                minduration: 5,
+                maxduration: 60,
             }
         },
         bids: [{
             bidder: 'colossusssp',
             params: {
-                group_id: 0,
-                traffic: 'banner'
+                group_id: 0
+            }
+        }]
+    }, {
+        code: 'placementid_2',
+        mediaTypes: {
+            native: {
+                title: {
+                    required: true
+                },
+                body: {
+                    required: true
+                },
+                icon: {
+                    required: true,
+                    size: [64, 64]
+                }
+            }
+        },
+        bids: [{
+            bidder: 'colossusssp',
+            params: {
+                placement_id: 0,
             }
         }]
     }];

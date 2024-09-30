@@ -1,6 +1,6 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
+import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -185,28 +185,6 @@ function storeData(data, name, stringify = true) {
 
 function getData(name, remove = true) {
   let data = [];
-  if (storage.hasLocalStorage()) {
-    Object.keys(localStorage).filter((key) => {
-      if (key.indexOf(name) > -1) {
-        data.push(storage.getDataFromLocalStorage(key));
-        if (remove) {
-          storage.removeDataFromLocalStorage(key);
-        }
-      }
-    });
-  }
-
-  if (storage.cookiesAreEnabled()) {
-    document.cookie.split(';').forEach((item) => {
-      let value = item.split('=');
-      if (value[0].indexOf(name) > -1) {
-        data.push(value[1]);
-        if (remove) {
-          storage.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
-        }
-      }
-    });
-  }
   return data;
 }
 
@@ -234,7 +212,7 @@ function getLcuid() {
 }
 
 function encodedParamValue(value) {
-  const requiredStringify = typeof JSON.parse(JSON.stringify(value)) === 'object';
+  const requiredStringify = typeof deepClone(value) === 'object';
   return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 

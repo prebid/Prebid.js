@@ -362,25 +362,7 @@ pbjs.setConfig({
 });
 ```
 #### The **detectMissingSizes** feature
-By default, the IX bidding adapter bids on all banner sizes available in the ad unit when configured to at least one banner size. If you want the IX bidding adapter to only bid on the banner size it’s configured to, switch off this feature using `detectMissingSizes`.
-```
-pbjs.setConfig({
-    ix: {
-        detectMissingSizes: false
-    }
-});
-```
-OR
-```
-pbjs.setBidderConfig({
-    bidders: ["ix"],
-    config: {
-        ix: {
-            detectMissingSizes: false
-        }
-    }
-});
-```
+`detectMissingSize` config is now deprecated and IX bidding adapter bids on all banner sizes available in the ad unit when configured to at least one banner size.
 
 **Native**
 
@@ -487,6 +469,11 @@ pbjs.setConfig({
 
 The timeout value must be a positive whole number in milliseconds.
 
+Protected Audience API (FLEDGE)
+===========================
+
+In order to enable receiving [Protected Audience API](https://developer.chrome.com/en/docs/privacy-sandbox/fledge/) traffic, follow Prebid's documentation on [paapiForGpt](https://docs.prebid.org/dev-docs/modules/paapiForGpt.html) module to build and enable Fledge.
+
 Additional Information
 ======================
 
@@ -502,11 +489,8 @@ to `'ix'` across all ad units that bids are being requested for does not exceed 
 
 ### Time-To-Live (TTL)
 
-Banner bids from IX have a TTL of 300 seconds while video bids have a TTL of 1 hour, after which time they become
-invalid.
-
-If an invalid bid wins, and its associated ad is rendered, it will not count
-towards total impressions on IX's side.
+Banner bids from Index have a TTL of 600 seconds while video bids have a TTL of three hours, after which time they become invalid.
+**Note:** Index supports the `bid.exp` attribute in the bid response which allows our adapter to specify the maximum number of seconds allowed between the auction and billing notice. In the absence of the `bid.exp` attribute, the TTL provided above applies.
 
 FAQs
 ====

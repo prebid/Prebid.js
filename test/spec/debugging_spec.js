@@ -1,6 +1,6 @@
 import {ready, loadSession, getConfig, reset, debuggingModuleLoader, debuggingControls} from '../../src/debugging.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
-import {promiseControls} from '../../src/utils/promise.js';
+import {defer} from '../../src/utils/promise.js';
 import funHooks from 'fun-hooks/no-eval/index.js';
 
 describe('Debugging', () => {
@@ -67,7 +67,7 @@ describe('Debugging', () => {
     let debugging, loader, hook, hookRan;
 
     beforeEach(() => {
-      loader = promiseControls();
+      loader = defer();
       hookRan = false;
       hook = funHooks()('sync', () => { hookRan = true });
       debugging = debuggingControls({load: sinon.stub().returns(loader.promise), hook});

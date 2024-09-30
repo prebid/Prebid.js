@@ -1,6 +1,13 @@
 import { getDNT, deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize, isEmpty } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'mediaforce';
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
@@ -109,6 +116,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests.length === 0) {
       return;
     }
@@ -133,7 +143,7 @@ export const spec = {
         bidfloor: bidfloor,
         ext: {
           mediaforce: {
-            transactionId: bid.transactionId
+            transactionId: bid.ortb2Imp?.ext?.tid,
           }
         }
 
@@ -173,6 +183,7 @@ export const spec = {
           },
           ext: {
             mediaforce: {
+              // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
               hb_key: auctionId
             }
           },

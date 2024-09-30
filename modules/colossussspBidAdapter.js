@@ -3,6 +3,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -61,6 +67,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let deviceWidth = 0;
     let deviceHeight = 0;
     let winLocation;
@@ -83,6 +92,11 @@ export const spec = {
       logMessage(e);
     }
 
+    const firstPartyData = bidderRequest.ortb2 || {};
+    const userObj = firstPartyData.user;
+    const siteObj = firstPartyData.site;
+    const appObj = firstPartyData.app;
+
     // TODO: does the fallback to window.location make sense?
     const location = refferLocation || winLocation;
     let placements = [];
@@ -93,7 +107,10 @@ export const spec = {
       secure: location.protocol === 'https:' ? 1 : 0,
       host: location.host,
       page: location.pathname,
-      placements: placements,
+      userObj,
+      siteObj,
+      appObj,
+      placements: placements
     };
 
     if (bidderRequest) {
@@ -101,32 +118,40 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
-        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
+        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      }
+
+      // Add GPP consent
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent.gppString;
+        request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        request.gpp = bidderRequest.ortb2.regs.gpp;
+        request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
       }
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER;
+      const { mediaTypes } = bid;
       let placement = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        traffic: traff,
-        eids: [],
+        tid: bid.ortb2Imp?.ext?.tid,
+        eids: bid.userIdAsEids || [],
         floor: {}
       };
 
       if (bid.schain) {
         placement.schain = bid.schain;
       }
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         placement.gpid = gpid;
       }
       if (bid.userId) {
-        getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
         getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
@@ -134,32 +159,39 @@ export const spec = {
           rtiPartner: 'TDID'
         });
       }
-      if (traff === BANNER) {
-        placement.sizes = bid.mediaTypes[BANNER].sizes
-      } else if (traff === VIDEO) {
-        placement.sizes = bid.mediaTypes[VIDEO].playerSize;
-        placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
-        placement.minduration = bid.mediaTypes[VIDEO].minduration;
-        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
-        placement.mimes = bid.mediaTypes[VIDEO].mimes;
-        placement.protocols = bid.mediaTypes[VIDEO].protocols;
-        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
-        placement.placement = bid.mediaTypes[VIDEO].placement;
-        placement.skip = bid.mediaTypes[VIDEO].skip;
-        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
-        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
-        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
-        placement.delivery = bid.mediaTypes[VIDEO].delivery;
-        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
-        placement.api = bid.mediaTypes[VIDEO].api;
-        placement.linearity = bid.mediaTypes[VIDEO].linearity;
+
+      if (mediaTypes && mediaTypes[BANNER]) {
+        placement.traffic = BANNER;
+        placement.sizes = mediaTypes[BANNER].sizes;
+      } else if (mediaTypes && mediaTypes[VIDEO]) {
+        placement.traffic = VIDEO;
+        placement.sizes = mediaTypes[VIDEO].playerSize;
+        placement.playerSize = mediaTypes[VIDEO].playerSize;
+        placement.minduration = mediaTypes[VIDEO].minduration;
+        placement.maxduration = mediaTypes[VIDEO].maxduration;
+        placement.mimes = mediaTypes[VIDEO].mimes;
+        placement.protocols = mediaTypes[VIDEO].protocols;
+        placement.startdelay = mediaTypes[VIDEO].startdelay;
+        placement.placement = mediaTypes[VIDEO].plcmt;
+        placement.skip = mediaTypes[VIDEO].skip;
+        placement.skipafter = mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
+        placement.api = mediaTypes[VIDEO].api;
+        placement.linearity = mediaTypes[VIDEO].linearity;
+      } else if (mediaTypes && mediaTypes[NATIVE]) {
+        placement.traffic = NATIVE;
+        placement.native = mediaTypes[NATIVE];
       }
+
       if (typeof bid.getFloor === 'function') {
         let tmpFloor = {};
         for (let size of placement.sizes) {
           tmpFloor = bid.getFloor({
             currency: 'USD',
-            mediaType: traff,
+            mediaType: placement.traffic,
             size: size
           });
           if (tmpFloor) {
@@ -203,7 +235,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'html' : 'hms.gif';
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = G_URL_SYNC + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {

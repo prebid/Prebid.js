@@ -9,10 +9,10 @@
 
 ## Release Schedule
 
-We aim to push a new release of Prebid.js every week on Tuesday.
+We aim to push a new release of Prebid.js each week barring any unforseen circumstances or in observance of holidays.
 
 While the releases will be available immediately for those using direct Git access,
-it will be about a week before the Prebid Org [Download Page](http://prebid.org/download.html) will be updated.
+it will be about a week before the Prebid Org [Download Page](https://docs.prebid.org/download.html) will be updated.
 
 You can determine what is in a given build using the [releases page](https://github.com/prebid/Prebid.js/releases)
 

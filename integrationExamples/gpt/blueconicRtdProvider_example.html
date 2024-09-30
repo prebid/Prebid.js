@@ -30,7 +30,7 @@
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
     </script>
-    <script src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js" async></script>
 
     <script>
         var googletag = googletag || {};
@@ -88,9 +88,7 @@
             var gads = document.createElement('script');
             gads.async = true;
             gads.type = 'text/javascript';
-            var useSSL = 'https:' == document.location.protocol;
-            gads.src = (useSSL ? 'https:' : 'http:') +
-                '//securepubads.g.doubleclick.net/tag/js/gpt.js';
+            gads.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
             var node = document.getElementsByTagName('script')[0];
             node.parentNode.insertBefore(gads, node);
         })();

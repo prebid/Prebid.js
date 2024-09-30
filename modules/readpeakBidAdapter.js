@@ -2,6 +2,7 @@ import { logError, replaceAuctionPrice, triggerPixel, isStr } from '../src/utils
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
 
@@ -24,6 +25,9 @@ export const spec = {
   isBidRequestValid: bid => !!(bid && bid.params && bid.params.publisherId),
 
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 
@@ -37,7 +41,7 @@ export const spec = {
       cur: [currency],
       source: {
         fd: 1,
-        tid: bidRequests[0].transactionId,
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           prebid: '$prebid.version$'
         }
@@ -345,7 +349,7 @@ function nativeResponse(imp, bid) {
         keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta;
       });
       if (nativeAd.link) {
-        keys.clickUrl = encodeURIComponent(nativeAd.link.url);
+        keys.clickUrl = nativeAd.link.url;
       }
       const trackers = nativeAd.imptrackers || [];
       trackers.unshift(replaceAuctionPrice(bid.burl, bid.price));

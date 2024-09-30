@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adtrue';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -42,9 +43,10 @@ const VIDEO_CUSTOM_PARAMS = {
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
   'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER
-}
+};
 
 const NATIVE_ASSETS = {
   'TITLE': {ID: 1, KEY: 'title', TYPE: 0},
@@ -450,6 +452,9 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -465,7 +470,7 @@ export const spec = {
       conf.zoneId = conf.zoneId || bid.params.zoneId;
       conf.pubId = conf.pubId || bid.params.publisherId;
 
-      conf.transactionId = bid.transactionId;
+      conf.transactionId = bid.ortb2Imp?.ext?.tid;
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
@@ -488,7 +493,7 @@ export const spec = {
     payload.ext.wrapper = {};
 
     payload.ext.wrapper.transactionId = conf.transactionId;
-    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
+    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.ortb2?.ext?.tid;
     payload.ext.wrapper.wp = 'pbjs';
 
     payload.user.geo = {};

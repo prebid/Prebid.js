@@ -1,31 +1,33 @@
-import { expect } from 'chai';
-import { spec } from 'modules/relaidoBidAdapter.js';
+import {expect} from 'chai';
+import {spec} from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { getStorageManager } from '../../../src/storageManager.js';
+import {VIDEO} from 'src/mediaTypes.js';
+import {getCoreStorageManager} from '../../../src/storageManager.js';
+import * as mockGpt from '../integration/faker/googletag.js';
 
 const UUID_KEY = 'relaido_uuid';
-const DEFAULT_USER_AGENT = window.navigator.userAgent;
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Mobile/15E148 Safari/604.1';
 const relaido_uuid = 'hogehoge';
-
-const setUADefault = () => { window.navigator.__defineGetter__('userAgent', function () { return DEFAULT_USER_AGENT }) };
-const setUAMobile = () => { window.navigator.__defineGetter__('userAgent', function () { return MOBILE_USER_AGENT }) };
-
-const storage = getStorageManager();
-storage.setCookie(UUID_KEY, relaido_uuid);
 
 describe('RelaidoAdapter', function () {
   let bidRequest;
   let bidderRequest;
   let serverResponse;
+  let serverResponseBanner;
   let serverRequest;
   let generateUUIDStub;
   let triggerPixelStub;
+  let sandbox;
+
+  before(() => {
+    const storage = getCoreStorageManager();
+    storage.setCookie(UUID_KEY, relaido_uuid);
+  });
 
   beforeEach(function () {
+    mockGpt.disable();
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    sandbox = sinon.sandbox.create();
     bidRequest = {
       bidder: 'relaido',
       params: {
@@ -43,7 +45,11 @@ describe('RelaidoAdapter', function () {
       bidId: '2ed93003f7bb99',
       bidderRequestId: '1c50443387a1f2',
       auctionId: '413ed000-8c7a-4ba1-a1fa-9732e006f8c3',
-      transactionId: '5c2d064c-7b76-42e8-a383-983603afdc45',
+      ortb2Imp: {
+        ext: {
+          tid: '5c2d064c-7b76-42e8-a383-983603afdc45',
+        }
+      },
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0
@@ -51,7 +57,8 @@ describe('RelaidoAdapter', function () {
     bidderRequest = {
       timeout: 1000,
       refererInfo: {
-        page: 'https://publisher.com/home'
+        page: 'https://publisher.com/home?aaa=test1&bbb=test2',
+        canonicalUrl: 'https://publisher.com/home'
       }
     };
     serverResponse = {
@@ -76,6 +83,27 @@ describe('RelaidoAdapter', function () {
         uuid: relaido_uuid,
       }
     };
+    serverResponseBanner = {
+      body: {
+        status: 'ok',
+        ads: [{
+          placementId: 100000,
+          width: 640,
+          height: 360,
+          bidId: '2ed93003f7bb99',
+          price: 500,
+          model: 'vcpm',
+          currency: 'JPY',
+          creativeId: 1000,
+          adTag: '%3Cdiv%3E%3Cimg%20src%3D%22https%3A%2F%2Frelaido%2Ftest.jpg%22%20%2F%3E%3C%2Fdiv%3E',
+          syncUrl: 'https://relaido/sync.html',
+          adomain: ['relaido.co.jp', 'www.cmertv.co.jp'],
+          mediaType: 'banner'
+        }],
+        syncUrl: 'https://api-dev.ulizaex.com/tr/v1/prebid/sync.html',
+        uuid: relaido_uuid,
+      }
+    };
     serverRequest = {
       method: 'POST',
       data: {
@@ -83,7 +111,13 @@ describe('RelaidoAdapter', function () {
           bidId: bidRequest.bidId,
           width: bidRequest.mediaTypes.video.playerSize[0][0] || bidRequest.mediaTypes.video.playerSize[0],
           height: bidRequest.mediaTypes.video.playerSize[0][1] || bidRequest.mediaTypes.video.playerSize[1],
-          mediaType: 'video'}]
+          mediaType: 'video'
+        }]
+      }
+    };
+    window.RelaidoPlayer = {
+      renderAd: function() {
+        return null;
       }
     };
   });
@@ -91,6 +125,7 @@ describe('RelaidoAdapter', function () {
   afterEach(() => {
     generateUUIDStub.restore();
     triggerPixelStub.restore();
+    sandbox.restore();
   });
 
   describe('spec.isBidRequestValid', function () {
@@ -126,7 +161,6 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should return true when the required params are passed by banner', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         banner: {
           sizes: [
@@ -135,11 +169,9 @@ describe('RelaidoAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-      setUADefault();
     });
 
     it('should return false when missing 300x250 over and 1x1 by banner', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         banner: {
           sizes: [
@@ -149,11 +181,9 @@ describe('RelaidoAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-      setUADefault();
     });
 
     it('should return true when 300x250 by banner', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         banner: {
           sizes: [
@@ -162,11 +192,9 @@ describe('RelaidoAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-      setUADefault();
     });
 
     it('should return true when 1x1 by banner', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         banner: {
           sizes: [
@@ -175,11 +203,9 @@ describe('RelaidoAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-      setUADefault();
     });
 
     it('should return true when 300x250 over by banner', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         banner: {
           sizes: [
@@ -189,7 +215,6 @@ describe('RelaidoAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-      setUADefault();
     });
 
     it('should return false when the placementId params are missing', function () {
@@ -205,21 +230,8 @@ describe('RelaidoAdapter', function () {
     });
 
     it('should return false when the mediaType banner params are missing', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         banner: {}
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-      setUADefault();
-    });
-
-    it('should return false when the non-mobile', function () {
-      bidRequest.mediaTypes = {
-        banner: {
-          sizes: [
-            [300, 250]
-          ]
-        }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
@@ -238,6 +250,8 @@ describe('RelaidoAdapter', function () {
       const request = data.bids[0];
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
+      expect(data.canonical_url).to.equal('https://publisher.com/home');
+      expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
       expect(request.ad_unit_code).to.equal(bidRequest.adUnitCode);
@@ -246,14 +260,15 @@ describe('RelaidoAdapter', function () {
       expect(request.bidder_request_id).to.equal(bidRequest.bidderRequestId);
       expect(data.bid_requests_count).to.equal(bidRequest.bidRequestsCount);
       expect(request.bid_id).to.equal(bidRequest.bidId);
-      expect(request.transaction_id).to.equal(bidRequest.transactionId);
+      expect(request.transaction_id).to.equal(bidRequest.ortb2Imp.ext.tid);
       expect(request.media_type).to.equal('video');
+      expect(request.pagekvt).to.deep.equal({});
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');
+      expect(request.userIdAsEids).to.be.an('array');
     });
 
     it('should build bid requests by banner', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         video: {
           context: 'outstream',
@@ -273,10 +288,10 @@ describe('RelaidoAdapter', function () {
       expect(data.bids).to.have.lengthOf(1);
       const request = data.bids[0];
       expect(request.media_type).to.equal('banner');
+      expect(request.banner_sizes).to.equal('640x360,1x1');
     });
 
     it('should take 1x1 size', function () {
-      setUAMobile();
       bidRequest.mediaTypes = {
         video: {
           context: 'outstream',
@@ -316,14 +331,86 @@ describe('RelaidoAdapter', function () {
       expect(data.bids).to.have.lengthOf(1);
       expect(data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
     });
+
+    it('should get userIdAsEids', function () {
+      const userIdAsEids = [
+        {
+          source: 'hogehoge.com',
+          uids: {
+            atype: 1,
+            id: 'hugahuga'
+          }
+        }
+      ]
+      bidRequest.userIdAsEids = userIdAsEids
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids[0].userIdAsEids).to.have.lengthOf(1);
+      expect(data.bids[0].userIdAsEids[0].source).to.equal('hogehoge.com');
+    });
+
+    it('should get pagekvt', function () {
+      mockGpt.enable();
+      window.googletag.pubads().clearTargeting();
+      window.googletag.pubads().setTargeting('testkey', ['testvalue']);
+      bidRequest.adUnitCode = 'test-adunit-code-1';
+      window.googletag.pubads().setSlots([mockGpt.makeSlot({ code: bidRequest.adUnitCode })]);
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      const request = data.bids[0];
+      expect(request.pagekvt).to.deep.equal({testkey: ['testvalue']});
+    });
+
+    it('should get canonicalUrl (ogUrl:true)', function () {
+      bidRequest.params.ogUrl = true;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.equal('http://localhost:9999/fb-test');
+      expect(data.canonical_url_hash).to.equal('cd106829f866d60ee4ed43c6e2a5d0a5212ffc97');
+    });
+
+    it('should not get canonicalUrl (ogUrl:false)', function () {
+      bidRequest.params.ogUrl = false;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
+      expect(data.canonical_url_hash).to.be.null;
+    });
+
+    it('should not get canonicalUrl (ogUrl:nothing)', function () {
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
+      expect(data.canonical_url_hash).to.be.null;
+    });
   });
 
   describe('spec.interpretResponse', function () {
-    it('should build bid response by video', function () {
+    it('should build bid response by video and serverResponse contains vast', function () {
       const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -336,12 +423,13 @@ describe('RelaidoAdapter', function () {
       expect(response.ad).to.be.undefined;
     });
 
-    it('should build bid response by banner', function () {
+    it('should build bid response by banner and serverResponse contains vast', function () {
       serverResponse.body.ads[0].mediaType = 'banner';
       const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -352,6 +440,20 @@ describe('RelaidoAdapter', function () {
       expect(response.ad).to.include(`<div id="rop-prebid">`);
       expect(response.ad).to.include(`<script src="https://relaido/player.js"></script>`);
       expect(response.ad).to.include(`window.RelaidoPlayer.renderAd`);
+    });
+
+    it('should build bid response by banner and serverResponse contains adTag', function () {
+      const bidResponses = spec.interpretResponse(serverResponseBanner, serverRequest);
+      expect(bidResponses).to.have.lengthOf(1);
+      const response = bidResponses[0];
+      expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponseBanner.body.ads[0].placementId);
+      expect(response.cpm).to.equal(serverResponseBanner.body.ads[0].price);
+      expect(response.currency).to.equal(serverResponseBanner.body.ads[0].currency);
+      expect(response.creativeId).to.equal(serverResponseBanner.body.ads[0].creativeId);
+      expect(response.vastXml).to.be.undefined;
+      expect(response.playerUrl).to.be.undefined;
+      expect(response.ad).to.include(`<div><img src="https://relaido/test.jpg" /></div>`);
     });
 
     it('should build bid response by video and playerUrl in ads', function () {
@@ -470,6 +572,22 @@ describe('RelaidoAdapter', function () {
       expect(query.bid_id).to.equal('2ed93003f7bb99');
       expect(query.ad_unit_code).to.equal('test');
       expect(query.ref).to.include(window.location.href);
+    });
+  });
+
+  describe('spec.outstreamRender', function () {
+    it('Should to pass a Bid to renderAd', function () {
+      const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
+      const response = bidResponses[0];
+      sinon.spy(window.RelaidoPlayer, 'renderAd');
+      response.renderer.render(response);
+      const renderCall = window.RelaidoPlayer.renderAd.getCall(0);
+      const arg = renderCall.args[0];
+      expect(arg.width).to.equal(640);
+      expect(arg.height).to.equal(360);
+      expect(arg.vastXml).to.equal('<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>');
+      expect(arg.mediaType).to.equal(VIDEO);
+      expect(arg.placementId).to.equal(100000);
     });
   });
 });

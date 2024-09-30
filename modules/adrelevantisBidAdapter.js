@@ -1,8 +1,5 @@
 import {Renderer} from '../src/Renderer.js';
 import {
-  chunk,
-  convertCamelToUnderscore,
-  convertTypes,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -13,14 +10,21 @@ import {
   isStr,
   logError,
   logMessage,
-  logWarn,
-  transformBidderParamKeywords
+  logWarn
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'adrelevantis';
 const URL = 'https://ssp.adrelevantis.com/prebid';
@@ -71,6 +75,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj;
@@ -178,44 +185,8 @@ export const spec = {
     }
 
     return bids;
-  },
-
-  transformBidParams: function(params, isOpenRtb) {
-    params = convertTypes({
-      'placementId': 'number',
-      'keywords': transformBidderParamKeywords
-    }, params);
-
-    if (isOpenRtb) {
-      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
-      if (params.usePaymentRule) { delete params.usePaymentRule; }
-
-      if (isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(deleteValues);
-      }
-
-      Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-    }
-
-    return params;
   }
-}
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
+};
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
@@ -440,7 +411,7 @@ function bidToTag(bid) {
     tag.cpm = bid.params.cpm;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   if (bid.params.position) {
@@ -471,14 +442,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
-  }
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
   if (bid.params.category) {
     tag.category = bid.params.category;
   }
@@ -614,6 +578,8 @@ function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType === VIDEO) {
     return VIDEO;
+  } else if (adType === NATIVE) {
+    return NATIVE;
   } else {
     return BANNER;
   }

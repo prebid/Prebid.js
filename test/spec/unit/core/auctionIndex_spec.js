@@ -38,22 +38,22 @@ describe('auction index', () => {
     let adUnits;
 
     beforeEach(() => {
-      adUnits = [{transactionId: 'au1'}, {transactionId: 'au2'}];
+      adUnits = [{adUnitId: 'au1'}, {adUnitId: 'au2'}];
       auctions = [
         mockAuction('a1', [adUnits[0], {}]),
         mockAuction('a2', [adUnits[1]])
       ];
     });
 
-    it('should find adUnits by transactionId', () => {
-      expect(index.getAdUnit({transactionId: 'au2'})).to.equal(adUnits[1]);
+    it('should find adUnits by adUnitId', () => {
+      expect(index.getAdUnit({adUnitId: 'au2'})).to.equal(adUnits[1]);
     });
 
     it('should return undefined if adunit is missing', () => {
-      expect(index.getAdUnit({transactionId: 'missing'})).to.be.undefined;
+      expect(index.getAdUnit({adUnitId: 'missing'})).to.be.undefined;
     });
 
-    it('should return undefined if no transactionId is provided', () => {
+    it('should return undefined if no adUnitId is provided', () => {
       expect(index.getAdUnit({})).to.be.undefined;
     });
   });
@@ -87,12 +87,12 @@ describe('auction index', () => {
     beforeEach(() => {
       mediaTypes = [{mockMT: '1'}, {mockMT: '2'}, {mockMT: '3'}, {mockMT: '4'}]
       adUnits = [
-        {transactionId: 'au1', mediaTypes: mediaTypes[0]},
-        {transactionId: 'au2', mediaTypes: mediaTypes[1]}
+        {adUnitId: 'au1', mediaTypes: mediaTypes[0]},
+        {adUnitId: 'au2', mediaTypes: mediaTypes[1]}
       ]
       bidderRequests = [
-        {bidderRequestId: 'ber1', bids: [{bidId: 'b1', mediaTypes: mediaTypes[2], transactionId: 'au1'}, {}]},
-        {bidderRequestId: 'ber2', bids: [{bidId: 'b2', mediaTypes: mediaTypes[3], transactionId: 'au2'}]}
+        {bidderRequestId: 'ber1', bids: [{bidId: 'b1', mediaTypes: mediaTypes[2], adUnitId: 'au1'}, {}]},
+        {bidderRequestId: 'ber2', bids: [{bidId: 'b2', mediaTypes: mediaTypes[3], adUnitId: 'au2'}]}
       ]
       auctions = [
         mockAuction('a1', [adUnits[0]], [bidderRequests[0], {}]),
@@ -100,8 +100,8 @@ describe('auction index', () => {
       ]
     });
 
-    it('should find mediaTypes by transactionId', () => {
-      expect(index.getMediaTypes({transactionId: 'au2'})).to.equal(mediaTypes[1]);
+    it('should find mediaTypes by adUnitId', () => {
+      expect(index.getMediaTypes({adUnitId: 'au2'})).to.equal(mediaTypes[1]);
     });
 
     it('should find mediaTypes by requestId', () => {
@@ -109,18 +109,18 @@ describe('auction index', () => {
     });
 
     it('should give precedence to request.mediaTypes over adUnit.mediaTypes', () => {
-      expect(index.getMediaTypes({requestId: 'b2', transactionId: 'au2'})).to.equal(mediaTypes[3]);
+      expect(index.getMediaTypes({requestId: 'b2', adUnitId: 'au2'})).to.equal(mediaTypes[3]);
     });
 
-    it('should return undef if requestId and transactionId do not match', () => {
-      expect(index.getMediaTypes({requestId: 'b1', transactionId: 'au2'})).to.be.undefined;
+    it('should return undef if requestId and adUnitId do not match', () => {
+      expect(index.getMediaTypes({requestId: 'b1', adUnitId: 'au2'})).to.be.undefined;
     });
 
     it('should return undef if no params are provided', () => {
       expect(index.getMediaTypes({})).to.be.undefined;
     });
 
-    ['requestId', 'transactionId'].forEach(param => {
+    ['requestId', 'adUnitId'].forEach(param => {
       it(`should return undef if ${param} is missing`, () => {
         expect(index.getMediaTypes({[param]: 'missing'})).to.be.undefined;
       });

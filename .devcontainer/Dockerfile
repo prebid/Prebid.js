@@ -1,5 +1,7 @@
-ARG VARIANT="12"
+ARG VARIANT="20"
 FROM mcr.microsoft.com/vscode/devcontainers/javascript-node:${VARIANT}
+
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor > /usr/share/keyrings/yarn-archive-keyring.gpg
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \

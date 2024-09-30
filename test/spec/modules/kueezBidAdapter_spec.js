@@ -53,6 +53,7 @@ describe('kueezBidAdapter', function () {
           'org': 'test-publisher-id'
         },
         'bidId': '5wfg9887sd5478',
+        'loop': 1,
         'bidderRequestId': 'op87952ewq8567',
         'auctionId': '87se98rt-5789-8735-2546-t98yh5678231',
         'mediaTypes': {
@@ -71,6 +72,7 @@ describe('kueezBidAdapter', function () {
           'org': 'test-publisher-id'
         },
         'bidId': '5wfg9887sd5478',
+        'loop': 1,
         'bidderRequestId': 'op87952ewq8567',
         'auctionId': '87se98rt-5789-8735-2546-t98yh5678231',
         'mediaTypes': {
@@ -91,6 +93,7 @@ describe('kueezBidAdapter', function () {
           'testMode': true
         },
         'bidId': '5wfg9887sd5478',
+        'loop': 2,
         'bidderRequestId': 'op87952ewq8567',
         'auctionId': '87se98rt-5789-8735-2546-t98yh5678231',
       }

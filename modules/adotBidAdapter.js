@@ -5,9 +5,28 @@ import {isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuction
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {OUTSTREAM} from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').MediaType} MediaType
+ * @typedef {import('../src/adapters/bidderFactory.js').Site} Site
+ * @typedef {import('../src/adapters/bidderFactory.js').Device} Device
+ * @typedef {import('../src/adapters/bidderFactory.js').User} User
+ * @typedef {import('../src/adapters/bidderFactory.js').Banner} Banner
+ * @typedef {import('../src/adapters/bidderFactory.js').Video} Video
+ * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp
+ */
 
 const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
+const GVLID = 272;
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidrequest';
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'protocols'];
@@ -178,7 +197,7 @@ function buildVideo(video) {
     mimes: video.mimes,
     minduration: video.minduration,
     maxduration: video.maxduration,
-    placement: video.placement,
+    placement: video.plcmt,
     playbackmethod: video.playbackmethod,
     pos: video.position || 0,
     protocols: video.protocols,
@@ -373,6 +392,8 @@ function splitAdUnits(validBidRequests) {
  * @returns {Array<AjaxRequest>}
  */
 function buildRequests(validBidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   const adUnits = splitAdUnits(validBidRequests);
   const publisherPathConfig = config.getConfig('adot.publisherPath');
   const publisherPath = publisherPathConfig === undefined ? '' : '/' + publisherPathConfig;
@@ -632,7 +653,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getFloor
+  getFloor,
+  gvlid: GVLID
 };
 
 registerBidder(spec);
