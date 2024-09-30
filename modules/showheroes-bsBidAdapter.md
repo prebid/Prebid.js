@@ -25,7 +25,7 @@ A module that connects to ShowHeroes demand source to fetch bids.
                    {
                        bidder: "showheroes-bs",
                        params: {
-                           unitId: 'AACBWAcof-611K4U',
+                           unitId: '1234abcd-5678efgh',
                        }
                    }
                ]
@@ -42,7 +42,7 @@ A module that connects to ShowHeroes demand source to fetch bids.
                    {
                        bidder: "showheroes-bs",
                        params: {
-                           unitId: 'AACBTwsZVANd9NlB',
+                           unitId: '1234abcd-5678efgh',
                        }
                    }
                ]
