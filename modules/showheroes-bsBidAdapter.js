@@ -10,7 +10,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
-const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction';
+const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction/';
 const BIDDER_CODE = 'showheroes-bs';
 const TTL = 300;
 
