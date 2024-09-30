@@ -13,20 +13,6 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'vdoai';
 const ENDPOINT_URL = 'https://prebid-v2.vdo.ai/auction';
 
-function getFrameNesting() {
-  let topmostFrame = window;
-  let parent = window.parent;
-  try {
-    while (topmostFrame !== topmostFrame.parent) {
-      parent = topmostFrame.parent;
-      // eslint-disable-next-line no-unused-expressions
-      parent.location.href;
-      topmostFrame = topmostFrame.parent;
-    }
-  } catch (e) { }
-  return topmostFrame;
-}
-
 function getDocumentVisibility(window) {
   try {
     if (typeof window.document.hidden !== 'undefined') {
@@ -41,6 +27,20 @@ function getDocumentVisibility(window) {
   } catch (e) {
     return null;
   }
+}
+
+function getFrameNesting() {
+  let topmostFrame = window;
+  let parent = window.parent;
+  try {
+    while (topmostFrame !== topmostFrame.parent) {
+      parent = topmostFrame.parent;
+      // eslint-disable-next-line no-unused-expressions
+      parent.location.href;
+      topmostFrame = topmostFrame.parent;
+    }
+  } catch (e) { }
+  return topmostFrame;
 }
 
 function getTiming() {
@@ -66,26 +66,26 @@ function getTiming() {
 function getPageInfo(bidderRequest) {
   const topmostFrame = getFrameNesting();
   return {
-    location: deepAccess(bidderRequest, 'refererInfo.page', null),
     referrer: deepAccess(bidderRequest, 'refererInfo.ref', null),
     stack: deepAccess(bidderRequest, 'refererInfo.stack', []),
     numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
     wWidth: topmostFrame.innerWidth,
+    location: deepAccess(bidderRequest, 'refererInfo.page', null),
     wHeight: topmostFrame.innerHeight,
+    aWidth: topmostFrame.screen.availWidth,
+    aHeight: topmostFrame.screen.availHeight,
     oWidth: topmostFrame.outerWidth,
     oHeight: topmostFrame.outerHeight,
     sWidth: topmostFrame.screen.width,
     sHeight: topmostFrame.screen.height,
-    aWidth: topmostFrame.screen.availWidth,
-    aHeight: topmostFrame.screen.availHeight,
     sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
     sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
     xOffset: topmostFrame.pageXOffset,
-    yOffset: topmostFrame.pageYOffset,
-    docHidden: getDocumentVisibility(topmostFrame),
     docHeight: topmostFrame.document.body ? topmostFrame.document.body.scrollHeight : null,
     hLength: history.length,
     timing: getTiming(),
+    yOffset: topmostFrame.pageYOffset,
+    docHidden: getDocumentVisibility(topmostFrame),
     version: {
       prebid_version: '$prebid.version$',
       adapter_version: '1.0.0',
@@ -193,28 +193,28 @@ export const spec = {
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdprConsent = {
-          consentString: bidderRequest.gdprConsent.consentString,
           consentRequired: bidderRequest.gdprConsent.gdprApplies,
+          consentString: bidderRequest.gdprConsent.consentString,
           addtlConsent: bidderRequest.gdprConsent.addtlConsent
         };
       }
       if (bidderRequest && bidderRequest.gppConsent) {
         payload.gppConsent = {
+          applicableSections: bidderRequest.gppConsent.applicableSections,
           consentString: bidderRequest.gppConsent.gppString,
-          applicableSections: bidderRequest.gppConsent.applicableSections
         }
-      }
-      if (bidderRequest && bidderRequest.uspConsent) {
-        payload.usPrivacy = bidderRequest.uspConsent;
       }
       if (bidderRequest && bidderRequest.ortb2) {
         payload.ortb2 = bidderRequest.ortb2;
       }
-      if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
-        payload.userId = validBidRequests[0].userIdAsEids;
+      if (bidderRequest && bidderRequest.uspConsent) {
+        payload.usPrivacy = bidderRequest.uspConsent;
       }
       if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
         payload.schain = validBidRequests[0].schain;
+      }
+      if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
+        payload.userId = validBidRequests[0].userIdAsEids;
       }
       if (config.getConfig('coppa') === true) {
         payload.coppa = true;
