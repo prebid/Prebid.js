@@ -10,6 +10,8 @@ import { _map, isArray, triggerPixel } from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').bidderRequest} bidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
 const BIDDER_CODE = 'seedtag';
@@ -292,7 +294,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests an array of bids
+   * @param {bidderRequest} bidderRequest an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
@@ -416,7 +419,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {TimedOutBid} data Containing timeout specific data
    */
   onTimeout(data) {
     const url = getTimeoutUrl(data);
@@ -425,7 +428,7 @@ export const spec = {
 
   /**
    * Function to call when the adapter wins the auction
-   * @param {bid} Bid information received from the server
+   * @param {Bid} bid The bid information received from the server
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {
