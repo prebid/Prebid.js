@@ -151,7 +151,7 @@ describe('vdoaiBidAdapter', function () {
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
     it('should contain all keys', function() {
-      expect(request[0].data.pageInfo).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'docHidden', 'xOffset', 'yOffset', 'timing', 'version');
+      expect(request[0].data.pageInfo).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'xOffset', 'yOffset', 'version');
     })
     it('should return empty array if no valid bid was passed', function () {
       expect(spec.buildRequests([], bidderRequests)).to.be.empty;

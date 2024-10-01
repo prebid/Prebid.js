@@ -13,22 +13,6 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'vdoai';
 const ENDPOINT_URL = 'https://prebid-v2.vdo.ai/auction';
 
-function getDocumentVisibility(window) {
-  try {
-    if (typeof window.document.hidden !== 'undefined') {
-      return window.document.hidden;
-    } else if (typeof window.document['msHidden'] !== 'undefined') {
-      return window.document['msHidden'];
-    } else if (typeof window.document['webkitHidden'] !== 'undefined') {
-      return window.document['webkitHidden'];
-    } else {
-      return null;
-    }
-  } catch (e) {
-    return null;
-  }
-}
-
 function getFrameNesting() {
   let topmostFrame = window;
   let parent = window.parent;
@@ -41,22 +25,6 @@ function getFrameNesting() {
     }
   } catch (e) { }
   return topmostFrame;
-}
-
-function getTiming() {
-  try {
-    if (window.performance != null && window.performance.timing != null) {
-      const timing = {};
-      const perf = window.performance.timing;
-      timing.pageLoadTime = perf.loadEventEnd - perf.navigationStart;
-      timing.connectTime = perf.responseEnd - perf.requestStart;
-      timing.renderTime = perf.domComplete - perf.domLoading;
-      return timing;
-    }
-  } catch (e) {
-    return null;
-  }
-  return null;
 }
 
 /**
@@ -83,9 +51,7 @@ function getPageInfo(bidderRequest) {
     xOffset: topmostFrame.pageXOffset,
     docHeight: topmostFrame.document.body ? topmostFrame.document.body.scrollHeight : null,
     hLength: history.length,
-    timing: getTiming(),
     yOffset: topmostFrame.pageYOffset,
-    docHidden: getDocumentVisibility(topmostFrame),
     version: {
       prebid_version: '$prebid.version$',
       adapter_version: '1.0.0',
