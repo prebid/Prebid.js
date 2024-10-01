@@ -10,6 +10,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { subscribeToGamSlotRenderEndedEvent, SlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -24,7 +25,8 @@ const ADAGIO_CODE = 'adagio';
 export const _internal = {
   getAdagioNs: function() {
     return _ADAGIO;
-  }
+  },
+  gamSlotCallback
 };
 
 const cache = {
@@ -52,6 +54,18 @@ const cache = {
   },
   getAdagioAuctionId(auctionId) {
     return this.auctionIdReferences[auctionId];
+  },
+
+  // Map adunitcode with prebid auction ID
+  auctionByAdunit: {},
+  getAuctionIdByAdunit(adUnitPath, adSlotElementId) {
+    if (cache.auctionByAdunit[adUnitPath]) {
+      return { auctionId: cache.auctionByAdunit[adUnitPath], adUnitCode: adUnitPath }
+    }
+    if (cache.auctionByAdunit[adSlotElementId]) {
+      return { auctionId: cache.auctionByAdunit[adSlotElementId], adUnitCode: adSlotElementId }
+    }
+    return { auctionId: null, adUnitCode: null }
   }
 };
 const enc = window.encodeURIComponent;
@@ -269,6 +283,7 @@ function handlerAuctionInit(event) {
     }
 
     cache.auctions[prebidAuctionId][adUnitCode] = qp;
+    cache.auctionByAdunit[adUnitCode] = prebidAuctionId;
     sendNewBeacon(prebidAuctionId, adUnitCode);
   });
 };
@@ -316,6 +331,10 @@ function handlerAuctionEnd(event) {
 
     const perfNavigation = performance.getEntriesByType('navigation')[0];
 
+    const auction = cache.getAuction(auctionId, adUnitCode);
+    const bdrs = auction.bdrs.split(',');
+    const bdrsTimeout = auction.bdrs_timeout || [];
+
     cache.updateAuction(auctionId, adUnitCode, {
       bdrs_bid: cache.getBiddersFromAuction(auctionId, adUnitCode).map(bidResponseMapper).join(','),
       bdrs_cpm: cache.getBiddersFromAuction(auctionId, adUnitCode).map(bidCpmMapper).join(','),
@@ -323,6 +342,7 @@ function handlerAuctionEnd(event) {
       dom_i: Math.round(perfNavigation['domInteractive']) || null,
       dom_c: Math.round(perfNavigation['domComplete']) || null,
       loa_e: Math.round(perfNavigation['loadEventEnd']) || null,
+      bdrs_timeout: bdrs.map(b => bdrsTimeout.includes(b) ? '1' : '0').join(','),
     });
 
     sendNewBeacon(auctionId, adUnitCode);
@@ -378,6 +398,23 @@ function handlerAdRender(event, isSuccess) {
   sendNewBeacon(auctionId, adUnitCode);
 };
 
+function handlerBidTimeout(args) {
+  args.forEach(event => {
+    const auction = cache.getAuction(event.auctionId, event.adUnitCode);
+    if (!auction) {
+      logWarn(`bid timeout on auction ${event.auctionId}, with adunitCode ${event.adUnitCode}: could not retrieve auction from cache`);
+      return;
+    }
+
+    // an array of bidder names is first created
+    // in AUCTION_END handler, this array is sorted
+    // and transformed in a comma-separated list.
+    const bdrsTimeout = auction.bdrs_timeout || [];
+    bdrsTimeout.push(event.bidder);
+    auction.bdrs_timeout = bdrsTimeout;
+  });
+};
+
 /**
  * handlerPbsAnalytics add to the cache data coming from Adagio PBS AdResponse.
  * The data is retrieved from an AnalyticsTag (set by a custom PBS module named `adg-pba`),
@@ -409,10 +446,36 @@ function handlerPbsAnalytics(event) {
  * END HANDLERS
  */
 
+/**
+ * @param {SlotRenderEndedEvent} event
+ * @returns {void}
+ */
+function gamSlotCallback(event) {
+  const { auctionId, adUnitCode } = cache.getAuctionIdByAdunit(event.slot.getAdUnitPath(), event.slot.getSlotElementId());
+  if (!auctionId) {
+    const slotName = `${event.slot.getAdUnitPath()} - ${event.slot.getSlotElementId()}`;
+    logWarn('Could not find configured ad unit matching GAM render of slot: ' + slotName);
+    return;
+  }
+
+  cache.updateAuction(auctionId, adUnitCode, {
+    adsrv: 'gam',
+    adsrv_empty: event.isEmpty
+  });
+
+  // This event can be triggered after AUCTION_END
+  // To make sure the data is sent, we must send a new beacon version.
+  const auction = cache.getAuction(auctionId, adUnitCode)
+  if (auction?.loa_e !== undefined) {
+    // loa_e = loadEventEnd
+    // It means the AUCTION_END has already been sent.
+    sendNewBeacon(auctionId, adUnitCode);
+  }
+}
+
 let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
   track: function(event) {
     const { eventType, args } = event;
-
     try {
       switch (eventType) {
         case EVENTS.AUCTION_INIT:
@@ -434,6 +497,9 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
           break;
         case EVENTS.PBS_ANALYTICS:
           handlerPbsAnalytics(args);
+          break;
+        case EVENTS.BID_TIMEOUT:
+          handlerBidTimeout(args);
           break;
       }
     } catch (error) {
@@ -478,6 +544,8 @@ adagioAdapter.enableAnalytics = config => {
     adagioAdapter.options.site = undefined;
   }
   adagioAdapter.originEnableAnalytics(config);
+
+  subscribeToGamSlotRenderEndedEvent(gamSlotCallback)
 }
 
 adapterManager.registerAnalyticsAdapter({
