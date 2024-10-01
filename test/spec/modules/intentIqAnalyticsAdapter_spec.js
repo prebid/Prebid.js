@@ -68,6 +68,9 @@ let wonRequest = {
 
 describe('IntentIQ tests all', function () {
   let logErrorStub;
+  let getWindowSelfStub;
+  let getWindowTopStub;
+  let getWindowLocationStub;
   let detectBrowserStub;
 
   beforeEach(function () {
@@ -96,6 +99,9 @@ describe('IntentIQ tests all', function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    if (getWindowSelfStub) getWindowSelfStub.restore();
+    if (getWindowTopStub) getWindowTopStub.restore();
+    if (getWindowLocationStub) getWindowLocationStub.restore();
     if (detectBrowserStub) detectBrowserStub.restore();
     config.getConfig.restore();
     events.getEvents.restore();
@@ -174,6 +180,36 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
+  });
+
+  it('should return window.location.href when window.self === window.top', function () {
+    // Stub helper functions
+    getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns(window);
+    getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns(window);
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+
+    const referrer = getReferrer();
+    expect(referrer).to.equal('http://localhost:9876/');
+  });
+
+  it('should return window.top.location.href when window.self !== window.top and access is successful', function () {
+    // Stub helper functions to simulate iframe
+    getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns({});
+    getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns({ location: { href: 'http://example.com/' } });
+
+    const referrer = getReferrer();
+    expect(referrer).to.equal('http://example.com/');
+  });
+
+  it('should return an empty string and log an error when accessing window.top.location.href throws an error', function () {
+    // Stub helper functions to simulate error
+    getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns({});
+    getWindowTopStub = sinon.stub(utils, 'getWindowTop').throws(new Error('Access denied'));
+
+    const referrer = getReferrer();
+    expect(referrer).to.equal('');
+    expect(logErrorStub.calledOnce).to.be.true;
+    expect(logErrorStub.firstCall.args[0]).to.contain('Error accessing location: Error: Access denied');
   });
 
   it('should not send request if the browser is in blacklist (chrome)', function () {
