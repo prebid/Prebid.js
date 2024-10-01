@@ -606,6 +606,10 @@ export function isApnGetTagDefined() {
   }
 }
 
+export const sortByHighestCpm = (a, b) => {
+  return b.cpm - a.cpm;
+}
+
 /**
  * Fisher–Yates shuffle
  * http://stackoverflow.com/a/6274398
