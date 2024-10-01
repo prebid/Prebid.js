@@ -16,6 +16,7 @@ import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
@@ -205,11 +206,17 @@ describe('Improve Digital Adapter Tests', function () {
 
   describe('buildRequests', function () {
     let getConfigStub = null;
+    let getGlobalStub = null;
 
     afterEach(function () {
       if (getConfigStub) {
         getConfigStub.restore();
         getConfigStub = null;
+      }
+
+      if (getGlobalStub) {
+        getGlobalStub.restore();
+        getGlobalStub = null;
       }
     });
 
@@ -349,10 +356,17 @@ describe('Improve Digital Adapter Tests', function () {
       }
     });
 
-    it('should add bid floor', function () {
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+    it('should add bid floor correctly', function () {
+      getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
+        convertCurrency: (cpm, from, to) => {
+          const conversionKeys = { 'EUR-USD': 1.75 };
+          return cpm * conversionKeys[`${from}-${to}`];
+        }
+      });
+      const bidRequest = deepClone(simpleBidRequest);
+
       // Floor price currency shouldn't be populated without a floor price
+      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
       expect(payload.imp[0].bidfloorcur).to.not.exist;
 
       // Default floor price currency
@@ -361,18 +375,25 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].bidfloor).to.equal(0.05);
       expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
-      // Floor price currency
+      // Floor price omitted when currency cannot be converted to default bid adapter currency
+      bidRequest.params.bidFloorCur = 'UAH';
+      bidRequest.params.bidFloor = 0.05;
+      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].bidfloor).to.be.undefined;
+      expect(payload.imp[0].bidfloorcur).to.not.exist;
+
+      // Floor price currency converted to default bid adapter currency
       bidRequest.params.bidFloorCur = 'eUR';
       payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].bidfloor).to.equal(0.05);
-      expect(payload.imp[0].bidfloorcur).to.equal('EUR');
+      expect(payload.imp[0].bidfloor).to.equal(0.09);
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
       // getFloor defined -> use it over bidFloor
       let getFloorResponse = { currency: 'USD', floor: 3 };
       bidRequest.getFloor = () => getFloorResponse;
       payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
       expect(payload.imp[0].bidfloor).to.equal(3);
-      // expect(payload.imp[0].bidfloorcur).to.equal('USD');
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
     });
 
     it('should add GDPR consent string', function () {

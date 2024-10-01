@@ -5,6 +5,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 /**
  * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
  * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
@@ -29,6 +30,7 @@ const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
 const PB_ENDPOINT = 'pb';
 const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
+const DEFAULT_CURRENCY = 'USD';
 
 const VIDEO_PARAMS = {
   DEFAULT_MIMES: ['video/mp4']
@@ -124,6 +126,30 @@ export const spec = {
 
 registerBidder(spec);
 
+const convertBidFloorCurrency = (imp) => {
+  const omitBidFloor = () => {
+    delete imp.bidfloor;
+    delete imp.bidfloorcur;
+    logWarn('Cannot convert bid floor currency. Omitting bid floor from request.');
+  };
+
+  try {
+    imp.bidfloor = parseFloat(convertCurrency(
+      imp.bidfloor,
+      imp.bidfloorcur.toUpperCase(),
+      DEFAULT_CURRENCY,
+      false,
+    ).toFixed(2));
+    imp.bidfloorcur = DEFAULT_CURRENCY;
+
+    if (isNaN(imp.bidfloor)) {
+      omitBidFloor();
+    }
+  } catch (err) {
+    omitBidFloor();
+  }
+};
+
 export const CONVERTER = ortbConverter({
   context: {
     ttl: CREATIVE_TTL,
@@ -138,7 +164,11 @@ export const CONVERTER = ortbConverter({
     imp.secure = Number(window.location.protocol === 'https:');
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || DEFAULT_CURRENCY;
+    }
+
+    if (imp.bidfloor && imp.bidfloorcur && imp.bidfloorcur.toUpperCase() !== DEFAULT_CURRENCY) {
+      convertBidFloorCurrency(imp);
     }
     const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
     const placementId = bidRequest.params.placementId;
