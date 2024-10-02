@@ -7,7 +7,7 @@ import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
-import { FIRST_PARTY_KEY, FIRST_PARTY_DATA_KEY, VERSION } from '../libraries/intentIqConstants/intentIqConstants';
+import { FIRST_PARTY_KEY, FIRST_PARTY_DATA_KEY, VERSION } from '../libraries/intentIqConstants/intentIqConstants.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -155,8 +155,8 @@ function getRandom(start, end) {
   return Math.floor((Math.random() * (end - start + 1)) + start);
 }
 
-const intentIqBidWon = {reportExternalWin: bidWon}
-pbjs.intentIqBidWon = intentIqBidWon
+const intentIqBidWon = { reportExternalWin: bidWon }
+window.pbjs.intentIqBidWon = intentIqBidWon
 
 export function preparePayload(data) {
   let result = getDefaultDataObject();

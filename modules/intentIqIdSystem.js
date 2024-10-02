@@ -24,7 +24,7 @@ import {
   CLIENT_HINTS_KEY,
   EMPTY,
   VERSION
-} from '../libraries/intentIqConstants/intentIqConstants';
+} from '../libraries/intentIqConstants/intentIqConstants.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
