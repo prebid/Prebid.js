@@ -180,7 +180,7 @@ const logEvent = (eventType, data, options = {}) => {
       pathname: `/${version}/prebid/${customer}/log/${eventType}`,
     });
 
-    // Try sending the beacon
+    // Try sending a beacon
     if (ajax.sendBeacon(eventUrl, JSON.stringify(payload))) {
       logInfo(BIDDER_CODE, `[${eventType}] Beacon sent with payload: ${JSON.stringify(data)}`);
     } else {
