@@ -14,6 +14,17 @@ import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
 import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {
+  FIRST_PARTY_KEY,
+  FIRST_PARTY_DATA_KEY,
+  WITH_IIQ, WITHOUT_IIQ,
+  NOT_YET_DEFINED,
+  OPT_OUT,
+  BLACK_LIST,
+  CLIENT_HINTS_KEY,
+  EMPTY,
+  VERSION
+} from '../libraries/intentIqConstants/intentIqConstants';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -24,16 +35,6 @@ import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtil
 const PCID_EXPIRY = 365;
 
 const MODULE_NAME = 'intentIqId';
-export const FIRST_PARTY_KEY = '_iiq_fdata';
-export let FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-export const WITH_IIQ = 'A';
-export const WITHOUT_IIQ = 'B';
-export const NOT_YET_DEFINED = 'U';
-export const OPT_OUT = 'O';
-export const BLACK_LIST = 'L';
-export const CLIENT_HINTS_KEY = '_iiq_ch';
-export const EMPTY = 'EMPTY'
-export const VERSION = 0.2
 
 const encoderCH = {
   brands: 0,
@@ -233,6 +234,10 @@ export const intentIqIdSubmodule = {
     let callbackFired = false
     let runtimeEids = {}
 
+    const allowedStorage = defineStorageType(config.enabledStorageTypes);
+
+    let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
@@ -257,7 +262,6 @@ export const intentIqIdSubmodule = {
 
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
-    const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
     // Check if current browser is in blacklist
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
@@ -312,9 +316,6 @@ export const intentIqIdSubmodule = {
     if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) {
       FIRST_PARTY_DATA_KEY += '_' + configParams.partner;
     }
-
-    // Read Intent IQ 1st party id or generate it if none exists
-    let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();

@@ -492,4 +492,18 @@ describe('IntentIQ tests', function () {
     const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5']);
     expect(savedClientHints).to.equal(handleClientHints(testClientHints));
   });
+
+  it('should get firstPartyData', async () => {
+    let wasCallbackCalled = false
+    const callbackConfigParams = { params: { partner: partner,
+      pai: pai,
+      pcid: pcid,
+      browserBlackList: 'Chrome',
+      callback: () => {
+        wasCallbackCalled = true
+      } } };
+
+    await intentIqIdSubmodule.getId(callbackConfigParams);
+    expect(wasCallbackCalled).to.equal(true);
+  });
 });

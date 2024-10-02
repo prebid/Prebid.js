@@ -238,6 +238,7 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
+    expect(pbjs.intentIqBidWon.bidWon).to.be.a('function');
     const request = server.requests[0];
     expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
     expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);

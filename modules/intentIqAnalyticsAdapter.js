@@ -7,6 +7,7 @@ import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import { FIRST_PARTY_KEY, FIRST_PARTY_DATA_KEY, VERSION } from '../libraries/intentIqConstants/intentIqConstants';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -14,10 +15,6 @@ const defaultUrl = 'https://reports.intentiq.com/report';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME });
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
-
-const FIRST_PARTY_KEY = '_iiq_fdata';
-const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-const JSVERSION = 0.2
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
@@ -158,6 +155,9 @@ function getRandom(start, end) {
   return Math.floor((Math.random() * (end - start + 1)) + start);
 }
 
+const intentIqBidWon = {reportExternalWin: bidWon}
+pbjs.intentIqBidWon = intentIqBidWon
+
 export function preparePayload(data) {
   let result = getDefaultDataObject();
 
@@ -206,7 +206,7 @@ function getDefaultDataObject() {
     'partnerAuctionId': 'BW',
     'reportSource': 'pbjs',
     'abGroup': 'U',
-    'jsversion': JSVERSION,
+    'jsversion': VERSION,
     'partnerId': -1,
     'biddingPlatformId': 1,
     'idls': false,
@@ -224,7 +224,7 @@ function constructFullUrl(data) {
     ((iiqAnalyticsAnalyticsAdapter.initOptions && iiqAnalyticsAnalyticsAdapter.initOptions.fpid)
       ? '&iiqid=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid) : '') +
     '&agid=' + REPORTER_ID +
-    '&jsver=' + JSVERSION +
+    '&jsver=' + VERSION +
     '&vrref=' + getReferrer() +
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report)
