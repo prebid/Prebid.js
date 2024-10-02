@@ -188,7 +188,7 @@ const track = ({ eventType, args }) => {
         timestamp: args.timestamp,
       });
       if (
-        auctionCache[args.auctionId].bids.every((bid) => bid.bidType === 3)
+        auctionCache[args.auctionId].bids.every((bid) => [1, 3].includes(bid.bidType))
       ) {
         prepareSend(args.auctionId);
       }

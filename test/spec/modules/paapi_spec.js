@@ -1122,6 +1122,10 @@ describe('paapi module', () => {
       'can handle no input': {
         in: undefined,
         out: undefined
+      },
+      'can handle placeholder sizes': {
+        in: [[1, 1]],
+        out: undefined
       }
     }).forEach(([t, {in: input, out}]) => {
       it(t, () => {
