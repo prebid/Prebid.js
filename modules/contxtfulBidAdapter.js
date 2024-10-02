@@ -16,6 +16,7 @@ const BIDDER_ENDPOINT = 'prebid.receptivity.io';
 const MONITORING_ENDPOINT = 'monitoring.receptivity.io';
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_TTL = 300;
+const PREBID_VERSION = '$prebid.version$';
 
 // ORTB conversion
 const converter = ortbConverter({
@@ -85,6 +86,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
     bidRequests.push(bidRequest)
   });
   const config = pbjsConfig.getConfig();
+  config.pbjsVersion = PREBID_VERSION;
   const {version, customer} = extractParameters(config)
   const adapterUrl = buildUrl({
     protocol: 'https',
