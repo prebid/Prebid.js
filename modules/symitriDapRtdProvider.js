@@ -70,32 +70,41 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
    */
   function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     let entropyDict = JSON.parse(storage.getDataFromLocalStorage(DAP_CLIENT_ENTROPY));
-    let loadScriptPromise = new Promise((resolve, reject) => {
-      if (rtdConfig && rtdConfig.params && rtdConfig.params.dapEntropyTimeout && Number.isInteger(rtdConfig.params.dapEntropyTimeout)) {
-        setTimeout(reject, rtdConfig.params.dapEntropyTimeout, Error('DapEntropy script could not be loaded'));
-      }
-      if (entropyDict && entropyDict.expires_at > Math.round(Date.now() / 1000.0)) {
-        logMessage('Using cached entropy');
-        resolve();
-      } else {
-        if (typeof window.dapCalculateEntropy === 'function') {
-          window.dapCalculateEntropy(resolve, reject);
+
+    // Attempt to load entroy script if no entropy object exist and entropy config settings are present.
+    // Else
+    if (!entropyDict && rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapEntropyUrl)) {
+      let loadScriptPromise = new Promise((resolve, reject) => {
+        if (rtdConfig && rtdConfig.params && rtdConfig.params.dapEntropyTimeout && Number.isInteger(rtdConfig.params.dapEntropyTimeout)) {
+          setTimeout(reject, rtdConfig.params.dapEntropyTimeout, Error('DapEntropy script could not be loaded'));
+        }
+        if (entropyDict && entropyDict.expires_at > Math.round(Date.now() / 1000.0)) {
+          logMessage('Using cached entropy');
+          resolve();
         } else {
-          if (rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapEntropyUrl)) {
-            loadExternalScript(rtdConfig.params.dapEntropyUrl, MODULE_CODE, () => { dapUtils.dapGetEntropy(resolve, reject) });
+          if (typeof window.dapCalculateEntropy === 'function') {
+            window.dapCalculateEntropy(resolve, reject);
           } else {
-            reject(Error('Please check if dapEntropyUrl is specified and is valid under config.params'));
+            if (rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapEntropyUrl)) {
+              loadExternalScript(rtdConfig.params.dapEntropyUrl, MODULE_CODE, () => { dapUtils.dapGetEntropy(resolve, reject) });
+            } else {
+              reject(Error('Please check if dapEntropyUrl is specified and is valid under config.params'));
+            }
           }
         }
-      }
-    });
-    loadScriptPromise
-      .catch((error) => {
-        logError('Entropy could not be calculated due to: ', error.message);
-      })
-      .finally(() => {
-        generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent);
       });
+
+      loadScriptPromise
+        .catch((error) => {
+          logError('Entropy could not be calculated due to: ', error.message);
+        })
+        .finally(() => {
+          generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent);
+        });
+    } else {
+      logMessage('No dapEntropyUrl is specified.');
+      generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent);
+    }
   }
 
   function generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
@@ -131,25 +140,41 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
   /**
    * Module init
-   * @param {Object} provider
+   * @param {Object} config
    * @param {Object} userConsent
    * @return {boolean}
    */
-  function init(provider, userConsent) {
+  function init(config, userConsent) {
     if (dapUtils.checkConsent(userConsent) === false) {
       return false;
     }
     return true;
   }
 
-  /** @type {RtdSubmodule} */
+  function onBidResponse(bidResponse, config, userConsent) {
+    if (bidResponse.dealId && typeof (bidResponse.dealId) != typeof (undefined)) {
+      let membership = dapUtils.dapGetMembershipFromLocalStorage(); // Get Membership details from Local Storage
+      let deals = membership.deals; // Get list of Deals the user is mapped to
+      deals.forEach((deal) => {
+        deal = JSON.parse(deal);
+        if (bidResponse.dealId == deal.id) { // Check if the bid response deal Id matches to the deals mapped to the user
+          let token = dapUtils.dapGetTokenFromLocalStorage();
+          let url = config.params.pixelUrl + '?token=' + token + '&ad_id=' + bidResponse.adId + '&bidder=' + bidResponse.bidder + '&bidder_code=' + bidResponse.bidderCode + '&cpm=' + bidResponse.cpm + '&creative_id=' + bidResponse.creativeId + '&deal_id=' + bidResponse.dealId + '&media_type=' + bidResponse.mediaType + '&response_timestamp=' + bidResponse.responseTimestamp;
+          bidResponse.ad = `${bidResponse.ad}<script src="${url}"/>`;
+        }
+      });
+    }
+  }
+
   const rtdSubmodule = {
     name: SUBMODULE_NAME,
     getBidRequestData: getRealTimeData,
+    onBidResponseEvent: onBidResponse,
     init: init
   };
 
   submodule(MODULE_NAME, rtdSubmodule);
+
   const dapUtils = {
 
     callDapAPIs: function(bidConfig, onDone, rtdConfig, userConsent) {
@@ -159,7 +184,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           api_version: rtdConfig.params.apiVersion,
           domain: rtdConfig.params.domain,
           segtax: rtdConfig.params.segtax,
-          identity: {type: rtdConfig.params.identityType}
+          identity: {type: rtdConfig.params.identityType, value: rtdConfig.params.identityValue},
         };
         let refreshMembership = true;
         let token = dapUtils.dapGetTokenFromLocalStorage();
@@ -246,6 +271,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           membership = {
             said: item.said,
             cohorts: item.cohorts,
+            deals: item.deals,
             attributes: null
           };
         }
@@ -266,6 +292,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           }
           item.said = membership.said;
           item.cohorts = membership.cohorts;
+          item.deals = membership.deals ? membership.deals : [];
           storage.setDataInLocalStorage(DAP_MEMBERSHIP, JSON.stringify(item));
           dapUtils.dapLog('Successfully updated and stored membership:');
           dapUtils.dapLog(item);
@@ -526,6 +553,16 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return [ config, false ];
     },
 
+    addIdentifier: async function(identity, apiParams) {
+      if (window.crypto && window.crypto.subtle && typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        apiParams.identity = hashHex.toUpperCase();
+      }
+      return apiParams
+    },
+
     /**
      * SYNOPSIS
      *
@@ -591,12 +628,24 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       }
 
       let apiParams = {
-        'type': identity.type,
+        'type': identity.type.toLowerCase(),
+        'identity': identity.value
       };
-
-      if (typeof (identity.identity) != typeof (undefined)) {
-        apiParams.identity = identity.identity;
+      if (identity.type === 'simpleid') {
+        this.addIdentifier(identity, apiParams).then((apiParams) => {
+          this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+        });
+      } else if (identity.type === 'compositeid') {
+        identity = JSON.stringify(identity);
+        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+      } else if (identity.type === 'hashedid') {
+        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
+      } else {
+        this.callTokenize(config, identity, apiParams, onDone, onSuccess, onError);
       }
+    },
+
+    callTokenize(config, identity, apiParams, onDone, onSuccess, onError) {
       if (typeof (identity.attributes) != typeof (undefined)) {
         apiParams.attributes = identity.attributes;
       }
@@ -621,7 +670,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           return;
       }
 
-      let customHeaders = {'Content-Type': 'application/json'};
+      let customHeaders = { 'Content-Type': 'application/json' };
       let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
       if (dapSSID) {
         customHeaders[headerPrefix + '-DAP-SS-ID'] = dapSSID;
