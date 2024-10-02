@@ -197,7 +197,7 @@ const logEvent = (eventType, data, options = {}) => {
   }
 };
 
-// Bidder exposed specification
+// Bidder public specification
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
