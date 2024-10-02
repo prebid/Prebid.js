@@ -705,6 +705,10 @@ export const spec = {
           bid.meta.advertiserDomains = Array.isArray(ad.adomain) ? ad.adomain : [ad.adomain];
         }
 
+        if (ad.emulated_format) {
+          bid.meta.mediaType = ad.emulated_format
+        }
+
         if (ad.creative_type === VIDEO) {
           bid.width = associatedBidRequest.params.video.playerWidth;
           bid.height = associatedBidRequest.params.video.playerHeight;
