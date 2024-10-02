@@ -182,7 +182,7 @@ const logEvent = (eventType, data, options = {}) => {
 
     // Try sending a beacon
     if (ajax.sendBeacon(eventUrl, JSON.stringify(payload))) {
-      logInfo(BIDDER_CODE, `[${eventType}] Beacon sent with payload: ${JSON.stringify(data)}`);
+      logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Beacon and payload: ${JSON.stringify(data)}`);
     } else {
       // Fallback to using ajax
       ajax.ajax(eventUrl, null, JSON.stringify(payload), {
@@ -190,7 +190,7 @@ const logEvent = (eventType, data, options = {}) => {
         contentType: 'application/json',
         withCredentials: true,
       });
-      logInfo(BIDDER_CODE, `[${eventType}] Ajax sent with payload: ${JSON.stringify(data)}`);
+      logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Ajax and payload: ${JSON.stringify(data)}`);
     }
   } catch (error) {
     logError(BIDDER_CODE, `Failed to log event: ${eventType}`);
