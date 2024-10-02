@@ -7,7 +7,7 @@ import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
-import { FIRST_PARTY_KEY, FIRST_PARTY_DATA_KEY, VERSION } from '../libraries/intentIqConstants/intentIqConstants.js';
+import { FIRST_PARTY_KEY, VERSION } from '../libraries/intentIqConstants/intentIqConstants.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -120,7 +120,7 @@ function initReadLsIds() {
     if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
-    let iData = readData(FIRST_PARTY_DATA_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
+    let iData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
     if (iData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
       let pData = JSON.parse(iData);
@@ -146,6 +146,7 @@ function bidWon(args) {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
     ajax(constructFullUrl(preparePayload(args, true)), undefined, null, { method: 'GET' });
+    return true
   }
 
   logInfo('IIQ ANALYTICS -> BID WON')
@@ -233,9 +234,9 @@ function constructFullUrl(data) {
 export function getReferrer() {
   try {
     if (getWindowSelf() === getWindowTop()) {
-      return getWindowLocation().href;
+      return encodeURIComponent(getWindowLocation().href);
     } else {
-      return getWindowTop().location.href;
+      return encodeURIComponent(getWindowTop().location.href);
     }
   } catch (error) {
     logError(`Error accessing location: ${error}`);

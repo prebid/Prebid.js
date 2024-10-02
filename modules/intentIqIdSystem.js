@@ -16,7 +16,6 @@ import Utf8 from 'crypto-js/enc-utf8.js';
 import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
 import {
   FIRST_PARTY_KEY,
-  FIRST_PARTY_DATA_KEY,
   WITH_IIQ, WITHOUT_IIQ,
   NOT_YET_DEFINED,
   OPT_OUT,
@@ -256,6 +255,9 @@ export const intentIqIdSubmodule = {
       firePartnerCallback()
       return;
     }
+
+    const FIRST_PARTY_DATA_KEY = `_iiq_fdata_${configParams.partner}`;
+
     let rrttStrtTime = 0;
     let partnerData = {};
     let shouldCallServer = false
@@ -311,10 +313,6 @@ export const intentIqIdSubmodule = {
           clientHints = handleClientHints(ch);
           storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage)
         });
-    }
-
-    if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) {
-      FIRST_PARTY_DATA_KEY += '_' + configParams.partner;
     }
 
     if (!firstPartyData?.pcid) {

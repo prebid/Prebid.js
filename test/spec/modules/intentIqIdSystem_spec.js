@@ -2,10 +2,11 @@ import { expect } from 'chai';
 import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, decryptData, handleClientHints, handleGPPData, readData } from '../../../modules/intentIqIdSystem';
+import { decryptData, handleClientHints, handleGPPData, readData } from '../../../modules/intentIqIdSystem';
 import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/detectBrowserUtils/detectBrowserUtils';
+import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 
 const partner = 10;
 const pai = '11';
