@@ -127,26 +127,19 @@ export const spec = {
 registerBidder(spec);
 
 const convertBidFloorCurrency = (imp) => {
-  const omitBidFloor = () => {
-    delete imp.bidfloor;
-    delete imp.bidfloorcur;
-    logWarn('Cannot convert bid floor currency. Omitting bid floor from request.');
-  };
-
   try {
-    imp.bidfloor = parseFloat(convertCurrency(
+    const bidFloor = convertCurrency(
       imp.bidfloor,
       imp.bidfloorcur.toUpperCase(),
       DEFAULT_CURRENCY,
       false,
-    ).toFixed(2));
-    imp.bidfloorcur = DEFAULT_CURRENCY;
-
-    if (isNaN(imp.bidfloor)) {
-      omitBidFloor();
+    );
+    if (typeof bidFloor === 'number' && !isNaN(bidFloor)) {
+      imp.bidfloor = bidFloor;
+      imp.bidfloorcur = DEFAULT_CURRENCY;
     }
   } catch (err) {
-    omitBidFloor();
+    logWarn(`Failed to convert bid floor to ${DEFAULT_CURRENCY}. Passing floor price in its original currency.`, err);
   }
 };
 

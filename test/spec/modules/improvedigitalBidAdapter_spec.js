@@ -375,17 +375,17 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].bidfloor).to.equal(0.05);
       expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
-      // Floor price omitted when currency cannot be converted to default bid adapter currency
+      // Floor price sent as is when currency cannot be converted to default bid adapter currency
       bidRequest.params.bidFloorCur = 'UAH';
       bidRequest.params.bidFloor = 0.05;
       payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].bidfloor).to.be.undefined;
-      expect(payload.imp[0].bidfloorcur).to.not.exist;
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+      expect(payload.imp[0].bidfloorcur).to.equal('UAH');
 
       // Floor price currency converted to default bid adapter currency
       bidRequest.params.bidFloorCur = 'eUR';
       payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].bidfloor).to.equal(0.09);
+      expect(payload.imp[0].bidfloor).to.equal(0.08750000000000001);
       expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
       // getFloor defined -> use it over bidFloor
