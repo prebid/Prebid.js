@@ -146,10 +146,10 @@ function bidWon(args) {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
     ajax(constructFullUrl(preparePayload(args, true)), undefined, null, { method: 'GET' });
+    logInfo('IIQ ANALYTICS -> BID WON')
     return true
   }
 
-  logInfo('IIQ ANALYTICS -> BID WON')
 }
 
 function getRandom(start, end) {
