@@ -475,7 +475,12 @@ describe('adnuntiusBidAdapter', function () {
         return 'overridden-value';
       });
 
-      const request = spec.buildRequests(bidderRequests, {});
+      const request = spec.buildRequests(bidderRequests, {
+        refererInfo: {
+          canonicalUrl: 'https://canonical.com/page.html',
+          page: 'https://canonical.com/something-else.html'
+        }
+      });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       const bid = request[0].bid[0]
@@ -483,7 +488,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url');
       expect(request[0].url).to.equal(ENDPOINT_URL.replace('format=prebid', 'format=prebid&so=overridden-value'));
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}]}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}],"context":"https://canonical.com/something-else.html","canonical":"https://canonical.com/page.html"}');
     });
 
     it('Test requests with no local storage', function () {
@@ -876,14 +881,15 @@ describe('adnuntiusBidAdapter', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
-          useCookie: false
+          useCookie: false,
+          advertiserTransparency: true
         }
       });
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
-      expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE);
+      expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE + '&advertiserTransparency=true');
     });
   });
 
@@ -981,7 +987,9 @@ describe('adnuntiusBidAdapter', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
-          maxDeals: 2
+          maxDeals: 2,
+          useCookie: 'ignore-this',
+          advertiserTransparency: 'ignore-this-as-well'
         }
       });
 

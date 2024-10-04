@@ -39,9 +39,9 @@ import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
-import {renderAdDirect} from './adRendering.js';
+import {insertLocatorFrame, markBidAsRendered, renderAdDirect, renderIfDeferred} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults} from './video.js';
+import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -134,6 +134,7 @@ function validateVideoMediaType(adUnit) {
       delete validatedAdUnit.mediaTypes.video.playerSize;
     }
   }
+  validateOrtbVideoFields(validatedAdUnit);
   return validatedAdUnit;
 }
 
@@ -193,7 +194,6 @@ function validateAdUnitPos(adUnit, mediaType) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
-    events.emit(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: warning });
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
@@ -502,6 +502,9 @@ pbjsInstance.requestBids = (function() {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
+      adUnitCodes = [adUnitCodes];
+    }
     if (adUnitCodes && adUnitCodes.length) {
       // if specific adUnitCodes supplied filter adUnits for those codes
       adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
@@ -509,6 +512,7 @@ pbjsInstance.requestBids = (function() {
       // otherwise derive adUnitCodes from adUnits
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
     }
+    adUnitCodes = adUnitCodes.filter(uniques);
     const ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
@@ -869,6 +873,10 @@ pbjsInstance.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
 
+pbjsInstance.clearAllAuctions = function () {
+  auctionManager.clearAllAuctions();
+};
+
 if (FEATURES.VIDEO) {
   /**
    * Mark the winning bid as used, should only be used in conjunction with video
@@ -878,31 +886,21 @@ if (FEATURES.VIDEO) {
    *
    * @alias module:pbjs.markWinningBidAsUsed
    */
-  pbjsInstance.markWinningBidAsUsed = function (markBidRequest) {
-    const bids = fetchReceivedBids(markBidRequest, 'Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
-
+  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode}) {
+    let bids;
+    if (adUnitCode && adId == null) {
+      bids = targeting.getWinningBids(adUnitCode);
+    } else if (adId) {
+      bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
+    } else {
+      logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+    }
     if (bids.length > 0) {
       auctionManager.addWinningBid(bids[0]);
+      markBidAsRendered(bids[0])
     }
   }
 }
-
-const fetchReceivedBids = (bidRequest, warningMessage) => {
-  let bids = [];
-
-  if (bidRequest.adUnitCode && bidRequest.adId) {
-    bids = auctionManager.getBidsReceived()
-      .filter(bid => bid.adId === bidRequest.adId && bid.adUnitCode === bidRequest.adUnitCode);
-  } else if (bidRequest.adUnitCode) {
-    bids = targeting.getWinningBids(bidRequest.adUnitCode);
-  } else if (bidRequest.adId) {
-    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === bidRequest.adId);
-  } else {
-    logWarn(warningMessage);
-  }
-
-  return bids;
-};
 
 /**
  * Get Prebid config options
@@ -976,6 +974,7 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 pbjsInstance.processQueue = function () {
+  insertLocatorFrame();
   hook.ready();
   processQueue(pbjsInstance.que);
   processQueue(pbjsInstance.cmd);
@@ -984,19 +983,13 @@ pbjsInstance.processQueue = function () {
 /**
  * @alias module:pbjs.triggerBilling
  */
-pbjsInstance.triggerBilling = (winningBid) => {
-  const bids = fetchReceivedBids(winningBid, 'Improper use of triggerBilling. It requires a bid with at least an adUnitCode or an adId to function.');
-  const triggerBillingBid = bids.find(bid => bid.requestId === winningBid.requestId) || bids[0];
-
-  if (bids.length > 0 && triggerBillingBid) {
-    try {
-      adapterManager.callBidBillableBidder(triggerBillingBid);
-    } catch (e) {
-      logError('Error when triggering billing :', e);
-    }
-  } else {
-    logWarn('The bid provided to triggerBilling did not match any bids received.');
-  }
+pbjsInstance.triggerBilling = ({adId, adUnitCode}) => {
+  auctionManager.getAllWinningBids()
+    .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
+    .forEach((bid) => {
+      adapterManager.triggerBilling(bid);
+      renderIfDeferred(bid);
+    });
 };
 
 export default pbjsInstance;
