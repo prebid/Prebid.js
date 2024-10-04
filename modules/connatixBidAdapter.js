@@ -34,6 +34,7 @@ const DEFAULT_CURRENCY = 'USD';
 const CNX_IDS = 'cnx_ids';
 const CNX_ID_RETENTION_TIME_HOUR = 24 * 30; // 30 days
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const CNX_IDS_VALUES = [];
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
 
@@ -189,21 +190,14 @@ function saveOnAllStorages(name, value, expirationTimeHours) {
   const date = new Date();
   date.setTime(date.getTime() + (expirationTimeHours * 60 * 60 * 1000));
   const expires = `expires=${date.toUTCString()}`;
-  // eslint-disable-next-line no-console
-  console.log('TEST: save on all storages:', name, ' AND', value);
   storage.setCookie(name, value, expires);
   storage.setDataInLocalStorage(name, value);
-  const fromCookie = storage.getCookie(name);
-  const fromLocalStorage = storage.getDataFromLocalStorage(name);
-  // eslint-disable-next-line no-console
-  console.log('TEST: SAVE ABD READ on all storages:', fromCookie, ' AND', fromLocalStorage);
+  CNX_IDS_VALUES.push(value);
 }
 
 function readFromAllStorages(name) {
   const fromCookie = storage.getCookie(name);
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
-  // eslint-disable-next-line no-console
-  console.log('TEST read from all storages: ', fromCookie, fromLocalStorage)
 
   return fromCookie || fromLocalStorage || undefined;
 }
@@ -251,7 +245,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     const bidRequests = _getBidRequests(validBidRequests);
-    const cnxIds = readFromAllStorages(CNX_IDS);
+    const cnxIds = [readFromAllStorages(CNX_IDS)] || CNX_IDS_VALUES;
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
@@ -337,8 +331,6 @@ export const spec = {
     }
 
     window.addEventListener('message', function handler(event) {
-      // eslint-disable-next-line no-console
-      console.log('TEST: event:', event);
       if (!event.data || !event.origin.includes('connatix')) {
         return;
       }
