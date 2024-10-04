@@ -331,7 +331,7 @@ export const spec = {
     }
 
     window.addEventListener('message', function handler(event) {
-      if (!event.data || !event.origin.includes('connatix')) {
+      if (!event.data || event.origin != 'https://cds.connatix.com') {
         return;
       }
 
