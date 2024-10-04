@@ -1,6 +1,6 @@
-import { spec } from 'modules/kimberliteBidAdapter.js';
+import { spec, ENDPOINT_URL } from 'modules/kimberliteBidAdapter.js';
 import { assert } from 'chai';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 const BIDDER_CODE = 'kimberlite';
 
@@ -8,42 +8,63 @@ describe('kimberliteBidAdapter', function () {
   const sizes = [[640, 480]];
 
   describe('isBidRequestValid', function () {
-    let bidRequest;
+    let bidRequests;
 
     beforeEach(function () {
-      bidRequest = {
-        mediaTypes: {
-          [BANNER]: {
-            sizes: [[320, 240]]
+      bidRequests = [
+        {
+          mediaTypes: {
+            [BANNER]: {
+              sizes: [[320, 240]]
+            }
+          },
+          params: {
+            placementId: 'test-placement'
           }
         },
-        params: {
-          placementId: 'test-placement'
+        {
+          mediaTypes: {
+            [VIDEO]: {
+              mimes: ['video/mp4']
+            }
+          },
+          params: {
+            placementId: 'test-placement'
+          }
         }
-      };
+      ];
     });
 
-    it('pass on valid bidRequest', function () {
-      assert.isTrue(spec.isBidRequestValid(bidRequest));
+    it('pass on valid banner bidRequest', function () {
+      assert.isTrue(spec.isBidRequestValid(bidRequests[0]));
     });
 
     it('fails on missed placementId', function () {
-      delete bidRequest.params.placementId;
-      assert.isFalse(spec.isBidRequestValid(bidRequest));
+      delete bidRequests[0].params.placementId;
+      assert.isFalse(spec.isBidRequestValid(bidRequests[0]));
     });
 
     it('fails on empty banner', function () {
-      delete bidRequest.mediaTypes.banner;
-      assert.isFalse(spec.isBidRequestValid(bidRequest));
+      delete bidRequests[0].mediaTypes.banner;
+      assert.isFalse(spec.isBidRequestValid(bidRequests[0]));
     });
 
     it('fails on empty banner.sizes', function () {
-      delete bidRequest.mediaTypes.banner.sizes;
-      assert.isFalse(spec.isBidRequestValid(bidRequest));
+      delete bidRequests[0].mediaTypes.banner.sizes;
+      assert.isFalse(spec.isBidRequestValid(bidRequests[0]));
     });
 
     it('fails on empty request', function () {
       assert.isFalse(spec.isBidRequestValid());
+    });
+
+    it('pass on valid video bidRequest', function () {
+      assert.isTrue(spec.isBidRequestValid(bidRequests[1]));
+    });
+
+    it('fails on missed video.mimes', function () {
+      delete bidRequests[1].mediaTypes.video.mimes;
+      assert.isFalse(spec.isBidRequestValid(bidRequests[1]));
     });
   });
 
@@ -51,31 +72,40 @@ describe('kimberliteBidAdapter', function () {
     let bidRequests, bidderRequest;
 
     beforeEach(function () {
-      bidRequests = [{
-        mediaTypes: {
-          [BANNER]: {sizes: sizes}
+      bidRequests = [
+        {
+          mediaTypes: {
+            [BANNER]: {sizes: sizes}
+          },
+          params: {
+            placementId: 'test-placement'
+          }
         },
-        params: {
-          placementId: 'test-placement'
+        {
+          mediaTypes: {
+            [VIDEO]: {
+              mimes: ['video/mp4'],
+            }
+          },
+          params: {
+            placementId: 'test-placement'
+          }
         }
-      }];
+      ];
 
       bidderRequest = {
         refererInfo: {
           domain: 'example.com',
           page: 'https://www.example.com/test.html',
-        },
-        bids: [{
-          mediaTypes: {
-            [BANNER]: {sizes: sizes}
-          }
-        }]
+        }
       };
     });
 
     it('valid bid request', function () {
       const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+
       assert.equal(bidRequest.method, 'POST');
+      assert.equal(bidRequest.url, ENDPOINT_URL);
       assert.ok(bidRequest.data);
 
       const requestData = bidRequest.data;
@@ -87,10 +117,10 @@ describe('kimberliteBidAdapter', function () {
       expect(requestData.ext).to.be.an('Object').and.have.all.keys('prebid');
       expect(requestData.ext.prebid).to.be.an('Object').and.have.all.keys('ver', 'adapterVer');
 
-      const impData = requestData.imp[0];
-      expect(impData.banner).is.to.be.an('Object').and.have.all.keys(['format', 'topframe']);
+      const impBannerData = requestData.imp[0];
+      expect(impBannerData.banner).is.to.be.an('Object').and.have.all.keys(['format', 'topframe']);
 
-      const bannerData = impData.banner;
+      const bannerData = impBannerData.banner;
       expect(bannerData.format).to.be.an('array').and.is.not.empty;
 
       const formatData = bannerData.format[0];
@@ -98,30 +128,44 @@ describe('kimberliteBidAdapter', function () {
 
       assert.equal(formatData.w, sizes[0][0]);
       assert.equal(formatData.h, sizes[0][1]);
+
+      if (FEATURES.VIDEO) {
+        const impVideoData = requestData.imp[1];
+        expect(impVideoData.video).is.to.be.an('Object').and.have.all.keys(['mimes']);
+
+        const videoData = impVideoData.video;
+        expect(videoData.mimes).to.be.an('array').and.is.not.empty;
+        expect(videoData.mimes[0]).to.be.a('string').that.equals('video/mp4');
+      }
     });
   });
 
   describe('interpretResponse', function () {
-    let bidderResponse, bidderRequest, bidRequest, expectedBid;
+    let bidderResponse, bidderRequest, bidRequest, expectedBids;
 
     const requestId = '07fba8b0-8812-4dc6-b91e-4a525d81729c';
-    const bidId = '222209853178';
-    const impId = 'imp-id';
-    const crId = 'creative-id';
-    const adm = '<a href="http://test.landing.com">landing</a>';
+    const bannerAdm = '<a href="http://test.landing.com">landing</a>';
+    const videoAdm = '<VAST version="3.0">test vast</VAST>';
 
     beforeEach(function () {
       bidderResponse = {
         body: {
           id: requestId,
           seatbid: [{
-            bid: [{
-              crid: crId,
-              id: bidId,
-              impid: impId,
-              price: 1,
-              adm: adm
-            }]
+            bid: [
+              {
+                crid: 1,
+                impid: 1,
+                price: 1,
+                adm: bannerAdm
+              },
+              {
+                crid: 2,
+                impid: 2,
+                price: 1,
+                adm: videoAdm
+              }
+            ]
           }]
         }
       };
@@ -131,36 +175,64 @@ describe('kimberliteBidAdapter', function () {
           domain: 'example.com',
           page: 'https://www.example.com/test.html',
         },
-        bids: [{
-          bidId: impId,
-          mediaTypes: {
-            [BANNER]: {sizes: sizes}
+        bids: [
+          {
+            bidId: 1,
+            mediaTypes: {
+              banner: {sizes: sizes}
+            },
+            params: {
+              placementId: 'test-placement'
+            }
           },
-          params: {
-            placementId: 'test-placement'
+          {
+            bidId: 2,
+            mediaTypes: {
+              video: {
+                mimes: ['video/mp4']
+              }
+            },
+            params: {
+              placementId: 'test-placement'
+            }
           }
-        }]
+        ]
       };
 
-      expectedBid = {
-        mediaType: 'banner',
-        requestId: 'imp-id',
-        seatBidId: '222209853178',
-        cpm: 1,
-        creative_id: 'creative-id',
-        creativeId: 'creative-id',
-        ttl: 300,
-        netRevenue: true,
-        ad: adm,
-        meta: {}
-      };
+      expectedBids = [
+        {
+          mediaType: 'banner',
+          requestId: 1,
+          cpm: 1,
+          creative_id: 1,
+          creativeId: 1,
+          ttl: 300,
+          netRevenue: true,
+          ad: bannerAdm,
+          meta: {}
+        },
+        {
+          mediaType: 'video',
+          requestId: 2,
+          cpm: 1,
+          creative_id: 2,
+          creativeId: 2,
+          ttl: 300,
+          netRevenue: true,
+          vastXml: videoAdm,
+          meta: {}
+        },
+      ];
 
       bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
     });
 
     it('pass on valid request', function () {
       const bids = spec.interpretResponse(bidderResponse, bidRequest);
-      assert.deepEqual(bids[0], expectedBid);
+      assert.deepEqual(bids[0], expectedBids[0]);
+      if (FEATURES.VIDEO) {
+        assert.deepEqual(bids[1], expectedBids[1]);
+      }
     });
 
     it('fails on empty response', function () {

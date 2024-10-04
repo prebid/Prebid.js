@@ -321,6 +321,23 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.have.property('gpid');
       expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
     });
+    it('should set ae value to 1 for PAAPI', function () {
+      const req = { ...bidRequests[0],
+        ortb2Imp: {
+          ext: {
+            ae: 1,
+            data: {
+              adserver: {
+                name: 'test',
+                adslot: 123456
+              }
+            }
+          }
+        } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('ae');
+      expect(bidRequest.data.ae).to.equal(true);
+    });
 
     it('should set the global placement id (gpid) if in pbadslot property', function () {
       const pbadslot = 'abc123'
