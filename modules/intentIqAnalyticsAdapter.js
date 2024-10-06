@@ -132,7 +132,7 @@ function initReadLsIds() {
   }
 }
 
-function bidWon(args) {
+function bidWon(args, isReportExternal) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
 
   if (isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.partner) || iiqAnalyticsAnalyticsAdapter.initOptions.partner == -1) return;
@@ -144,20 +144,23 @@ function bidWon(args) {
   }
 
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
-  if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
-    ajax(constructFullUrl(preparePayload(args, true)), undefined, null, { method: 'GET' });
+  if ((isReportExternal && iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) || (!isReportExternal && !iiqAnalyticsAnalyticsAdapter.initOptions.manualReport)) {
+    ajax(constructFullUrl(preparePayload(args, true)), undefined, null, {method: 'GET'});
     logInfo('IIQ ANALYTICS -> BID WON')
-    return true
+    return true;
   }
-
 }
 
 function getRandom(start, end) {
   return Math.floor((Math.random() * (end - start + 1)) + start);
 }
 
-const intentIqBidWon = { reportExternalWin: bidWon }
-window.pbjs.intentIqBidWon = intentIqBidWon
+function reportExternalWin(args) {
+  return bidWon(args, true)
+}
+
+const intentIqBidWon = { reportExternalWin: reportExternalWin }
+window.intentIqAnalyticsAdapter = intentIqBidWon
 
 export function preparePayload(data) {
   let result = getDefaultDataObject();

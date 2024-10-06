@@ -180,8 +180,14 @@ describe('IntentIQ tests all', function () {
     events.emit(EVENTS.BID_WON, wonRequest);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
-    expect(window.pbjs.intentIqBidWon.reportExternalWin).to.be.a('function');
-    expect(window.pbjs.intentIqBidWon.reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(true);
+  });
+
+  it('should handle reportExternalWin', function () {
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualReport = true;
+    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
+    expect(window.intentIqAnalyticsAdapter.reportExternalWin).to.be.a('function');
+    expect(window.intentIqAnalyticsAdapter.reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(true);
   });
 
   it('should return window.location.href when window.self === window.top', function () {

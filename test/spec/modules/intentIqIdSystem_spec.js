@@ -494,7 +494,7 @@ describe('IntentIQ tests', function () {
     expect(savedClientHints).to.equal(handleClientHints(testClientHints));
   });
 
-  it('should get firstPartyData', async () => {
+  it('should run callback from params', async () => {
     let wasCallbackCalled = false
     const callbackConfigParams = { params: { partner: partner,
       pai: pai,
