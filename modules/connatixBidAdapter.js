@@ -340,8 +340,8 @@ export const spec = {
       event.stopImmediatePropagation();
 
       const response = event.data;
-      if (!response.optout && response.ids) {
-        saveOnAllStorages(CNX_IDS, response.ids, CNX_ID_RETENTION_TIME_HOUR);
+      if (response.data) {
+        saveOnAllStorages(CNX_IDS, response.data, CNX_ID_RETENTION_TIME_HOUR);
       }
     }, true)
 
