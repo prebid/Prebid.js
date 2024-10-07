@@ -335,9 +335,11 @@ export const spec = {
         return;
       }
 
-      this.removeEventListener('message', handler);
-
-      event.stopImmediatePropagation();
+      if(event.response.type === 'cnx_all_identity_providers_resolved')
+      {
+        this.removeEventListener('message', handler);
+        event.stopImmediatePropagation();
+      }
 
       const response = event.data;
       if (response.data) {
