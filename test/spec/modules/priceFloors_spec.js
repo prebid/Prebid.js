@@ -2419,13 +2419,13 @@ describe('setting null as rule value', () => {
     }
   };
 
-    const basicBidRequest = {
-      bidder: 'rubicon',
-      adUnitCode: 'test_div_1',
-      auctionId: '1234-56-789',
-      transactionId: 'tr_test_div_1',
-      adUnitId: 'tr_test_div_1',
-    };
+  const basicBidRequest = {
+    bidder: 'rubicon',
+    adUnitCode: 'test_div_1',
+    auctionId: '1234-56-789',
+    transactionId: 'tr_test_div_1',
+    adUnitId: 'tr_test_div_1',
+  };
 
   it('should validate for null values', function () {
     let data = utils.deepClone(nullFloorData);
@@ -2437,17 +2437,17 @@ describe('setting null as rule value', () => {
 
   it('getFloor should not return numeric value if null set as value', function () {
     const basicFloorConfig = {
-          enabled: true,
-          auctionDelay: 0,
-          endpoint: {},
-          enforcement: {
-            enforceJS: true,
-            enforcePBS: false,
-            floorDeals: false,
-            bidAdjustment: true
-          },
-          data: nullFloorData
-      }
+      enabled: true,
+      auctionDelay: 0,
+      endpoint: {},
+      enforcement: {
+        enforceJS: true,
+        enforcePBS: false,
+        floorDeals: false,
+        bidAdjustment: true
+      },
+      data: nullFloorData
+    }
     _floorDataForAuction[bidRequest.auctionId] = basicFloorConfig;
 
     let inputParams = {};
