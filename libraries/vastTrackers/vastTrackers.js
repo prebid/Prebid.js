@@ -7,19 +7,24 @@ import {activityParams} from '../../src/activities/activityParams.js';
 
 const vastTrackers = [];
 
-addBidResponse.before(function (next, adUnitcode, bidResponse, reject) {
+export function reset() {
+  vastTrackers.length = 0;
+}
+
+export function addTrackersToResponse(next, adUnitcode, bidResponse, reject) {
   if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
     const vastTrackers = getVastTrackers(bidResponse);
     if (vastTrackers) {
       bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml);
       const impTrackers = vastTrackers.get('impressions');
       if (impTrackers) {
-        bidResponse.vastImpUrl = [].concat(impTrackers).concat(bidResponse.vastImpUrl).filter(t => t);
+        bidResponse.vastImpUrl = [].concat([...impTrackers]).concat(bidResponse.vastImpUrl).filter(t => t);
       }
     }
   }
   next(adUnitcode, bidResponse, reject);
-});
+}
+addBidResponse.before(addTrackersToResponse);
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {
   if (typeof trackerFn === 'function') {
