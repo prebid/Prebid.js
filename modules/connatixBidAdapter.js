@@ -335,8 +335,7 @@ export const spec = {
         return;
       }
 
-      if(event.response.type === 'cnx_all_identity_providers_resolved')
-      {
+      if (event.response.type === 'cnx_all_identity_providers_resolved') {
         this.removeEventListener('message', handler);
         event.stopImmediatePropagation();
       }
