@@ -23,6 +23,43 @@ const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
+const USER_ID_KEY = 'hb_missena_uid';
+const USER_ID_COOKIE_EXP = 2592000000;
+
+function getUserIdFromStorage() {
+  return storage.localStorageIsEnabled()
+    ? storage.getDataFromLocalStorage(USER_ID_KEY)
+    : storage.getCookie(USER_ID_KEY);
+}
+
+function setUserId(userId) {
+  if (storage.localStorageIsEnabled()) {
+    storage.setDataInLocalStorage(USER_ID_KEY, userId);
+  } else if (storage.cookiesAreEnabled()) {
+    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toUTCString();
+    storage.setCookie(USER_ID_KEY, userId, expires);
+  }
+}
+
+function getUserId() {
+  const id = getUserIdFromStorage() || common.generateUUID();
+
+  setUserId(id);
+
+  return id;
+}
+
+function buildUser(bidderRequest) {
+  const user = {
+    id: getUserId(),
+  };
+
+  if (bidderRequest.gdprConsent) {
+    user.gdprConsentString = bidderRequest.gdprConsent.consentString || '';
+  }
+
+  return user;
+}
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 window.msna_ik = window.msna_ik || generateUUID();
@@ -62,13 +99,15 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests An array of bids
+   * @param {Object} bidderRequest Bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
     const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
-    const referer = bidderRequest?.refererInfo?.topmostLocation;
+    const referer = bidderRequest?.refererInfo?.ref;
+
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
@@ -87,15 +126,16 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        // TODO: is 'topmostLocation' the right value here?
-        payload.referer = bidderRequest.refererInfo.topmostLocation;
+        payload.referer = bidderRequest.refererInfo.ref;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
+        payload.location = bidderRequest.refererInfo.topmostLocation;
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
+
       const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
       if (bidRequest.params.test) {
         payload.test = bidRequest.params.test;
@@ -113,6 +153,7 @@ export const spec = {
         payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
       }
       payload.userEids = bidRequest.userIdAsEids || [];
+      payload.user = buildUser(bidderRequest);
       payload.version = '$prebid.version$';
 
       const bidFloor = getFloor(bidRequest);
@@ -170,7 +211,7 @@ export const spec = {
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} timeoutData Containing timeout specific data
    */
   onTimeout: function onTimeout(timeoutData) {
     logInfo('Missena - Timeout from adapter', timeoutData);
@@ -178,7 +219,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
@@ -200,3 +241,12 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+export const common = {
+  generateUUID: function () {
+    return generateUUID();
+  },
+  getConfig: function (property) {
+    return config.getConfig(property);
+  }
+};

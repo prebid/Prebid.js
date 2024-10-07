@@ -59,7 +59,8 @@ describe('Missena Adapter', function () {
       gdprApplies: true,
     },
     refererInfo: {
-      topmostLocation: REFERRER,
+      ref: REFERRER,
+      topmostLocation: 'https://topmostLocation',
       canonicalUrl: 'https://canonical',
     },
   };
@@ -77,15 +78,13 @@ describe('Missena Adapter', function () {
     });
 
     it('should return false if the apiKey is missing', function () {
-      expect(
-        spec.isBidRequestValid(Object.assign(bid, { params: {} })),
-      ).to.equal(false);
+      const bidWithoutApiKey = Object.assign({}, bid, { params: {} });
+      expect(spec.isBidRequestValid(bidWithoutApiKey)).to.equal(false);
     });
 
     it('should return false if the apiKey is an empty string', function () {
-      expect(
-        spec.isBidRequestValid(Object.assign(bid, { params: { apiKey: '' } })),
-      ).to.equal(false);
+      const bidWithEmptyApiKey = Object.assign({}, bid, { params: { apiKey: '' } });
+      expect(spec.isBidRequestValid(bidWithEmptyApiKey)).to.equal(false);
     });
   });
 
@@ -95,49 +94,72 @@ describe('Missena Adapter', function () {
       'getDataFromLocalStorage',
     );
 
-    const requests = spec.buildRequests(bids, bidderRequest);
-    const request = requests[0];
-    const payload = JSON.parse(request.data);
-    const payloadNoFloor = JSON.parse(requests[1].data);
-
     it('should return as many server requests as bidder requests', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
       expect(requests.length).to.equal(2);
     });
 
     it('should have a post method', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
       expect(request.method).to.equal('POST');
     });
 
     it('should send the bidder id', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(payload.request_id).to.equal(bidId);
     });
 
     it('should send placement', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(payload.placement).to.equal('sticky');
     });
 
     it('should send formats', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(payload.formats).to.eql(['sticky-banner']);
     });
 
     it('should send referer information to the request', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
+
       expect(payload.referer).to.equal(REFERRER);
       expect(payload.referer_canonical).to.equal('https://canonical');
+      expect(payload.location).to.equal('https://topmostLocation');
     });
 
     it('should send gdpr consent information to the request', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(payload.consent_string).to.equal(consentString);
       expect(payload.consent_required).to.equal(true);
     });
     it('should send floor data', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(payload.floor).to.equal(3.5);
       expect(payload.floor_currency).to.equal('EUR');
     });
     it('should not send floor data if not available', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const payloadNoFloor = JSON.parse(requests[1].data);
       expect(payloadNoFloor.floor).to.equal(undefined);
       expect(payloadNoFloor.floor_currency).to.equal(undefined);
     });
     it('should send the idempotency key', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(window.msna_ik).to.not.equal(undefined);
       expect(payload.ik).to.equal(window.msna_ik);
     });
@@ -153,52 +175,55 @@ describe('Missena Adapter', function () {
           expiry: new Date().getTime() + 600_000, // 10 min into the future
         }),
     };
-    getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
-    const cappedRequests = spec.buildRequests(bids, bidderRequest);
 
     it('should not participate if capped', function () {
+      getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
+      const cappedRequests = spec.buildRequests(bids, bidderRequest);
       expect(cappedRequests.length).to.equal(0);
     });
 
-    const localStorageDataSamePage = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-          referer: REFERRER,
-        }),
-    };
-
-    getDataFromLocalStorageStub.callsFake(
-      (key) => localStorageDataSamePage[key],
-    );
-    const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest);
-
     it('should not participate if capped on same page', function () {
+      const localStorageDataSamePage = {
+        [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+          JSON.stringify({
+            expiry: new Date().getTime() + 600_000, // 10 min into the future
+            referer: REFERRER,
+          }),
+      };
+      getDataFromLocalStorageStub.callsFake(
+        (key) => localStorageDataSamePage[key],
+      );
+      const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest);
       expect(cappedRequestsSamePage.length).to.equal(0);
     });
 
-    const localStorageDataOtherPage = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-          referer: REFERRER2,
-        }),
-    };
-
-    getDataFromLocalStorageStub.callsFake(
-      (key) => localStorageDataOtherPage[key],
-    );
-    const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest);
-
     it('should participate if capped on a different page', function () {
+      const localStorageDataOtherPage = {
+        [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+          JSON.stringify({
+            expiry: new Date().getTime() + 600_000, // 10 min into the future
+            referer: REFERRER2,
+          }),
+      };
+
+      getDataFromLocalStorageStub.callsFake(
+        (key) => localStorageDataOtherPage[key],
+      );
+      const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest);
       expect(cappedRequestsOtherPage.length).to.equal(2);
     });
 
     it('should send the prebid version', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(payload.version).to.equal('$prebid.version$');
     });
 
     it('should send cookie deprecation', function () {
+      const requests = spec.buildRequests(bids, bidderRequest);
+      const request = requests[0];
+      const payload = JSON.parse(request.data);
       expect(payload.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
     });
   });
