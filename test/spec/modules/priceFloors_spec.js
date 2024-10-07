@@ -2401,3 +2401,59 @@ describe('the price floors module', function () {
     })
   });
 });
+
+describe('setting null as rule value', () => {
+  const nullFloorData = {
+    modelVersion: 'basic model',
+    modelWeight: 10,
+    modelTimestamp: 1606772895,
+    currency: 'USD',
+    schema: {
+      delimiter: '|',
+      fields: ['mediaType']
+    },
+    values: {
+      'banner': null,
+      'video': null,
+      '*': null
+    }
+  };
+
+    const basicBidRequest = {
+      bidder: 'rubicon',
+      adUnitCode: 'test_div_1',
+      auctionId: '1234-56-789',
+      transactionId: 'tr_test_div_1',
+      adUnitId: 'tr_test_div_1',
+    };
+
+  it('should validate for null values', function () {
+    let data = utils.deepClone(nullFloorData);
+    data.floorsSchemaVersion = 1;
+    expect(isFloorsDataValid(data)).to.to.equal(true);
+  });
+
+  const bidRequest = { ...basicBidRequest, getFloor };
+
+  it('getFloor should not return numeric value if null set as value', function () {
+    const basicFloorConfig = {
+          enabled: true,
+          auctionDelay: 0,
+          endpoint: {},
+          enforcement: {
+            enforceJS: true,
+            enforcePBS: false,
+            floorDeals: false,
+            bidAdjustment: true
+          },
+          data: nullFloorData
+      }
+    _floorDataForAuction[bidRequest.auctionId] = basicFloorConfig;
+
+    let inputParams = {};
+    expect(bidRequest.getFloor(inputParams)).to.deep.equal({
+      currency: 'USD',
+      floor: null
+    });
+  })
+})
