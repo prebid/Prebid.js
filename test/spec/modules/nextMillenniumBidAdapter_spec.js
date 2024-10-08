@@ -926,7 +926,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                 domain: 'example.com',
                 page: 'http://example.com'
               }
-            }
+            },
           },
         ],
 
