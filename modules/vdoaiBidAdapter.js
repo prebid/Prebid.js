@@ -182,7 +182,9 @@ export const spec = {
       if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
         payload.userId = validBidRequests[0].userIdAsEids;
       }
-      if (config.getConfig('coppa') === true) {
+      let coppaOrtb2 = !!deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      let coppaConfig = config.getConfig('coppa');
+      if(coppaOrtb2 === true || coppaConfig === true) {
         payload.coppa = true;
       }
       return {
