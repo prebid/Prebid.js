@@ -31,9 +31,10 @@ const BIDDER_CODE = 'connatix';
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
-const CNX_IDS = 'cnx_ids';
-const CNX_ID_RETENTION_TIME_HOUR = 24 * 30; // 30 days
+const USER_IDS = 'cnx_ids';
+const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
 let CNX_IDS_VALUES;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
@@ -186,9 +187,9 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
-function saveOnAllStorages(name, value, expirationTimeHours) {
+function saveOnAllStorages(name, value, expirationTimeMs) {
   const date = new Date();
-  date.setTime(date.getTime() + (expirationTimeHours * 60 * 60 * 1000));
+  date.setTime(date.getTime() + expirationTimeMs);
   const expires = `expires=${date.toUTCString()}`;
   storage.setCookie(name, JSON.stringify(value), expires);
   storage.setDataInLocalStorage(name, JSON.stringify(value));
@@ -248,7 +249,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     const bidRequests = _getBidRequests(validBidRequests);
-    let cnxIds = readFromAllStorages(CNX_IDS) || CNX_IDS_VALUES;
+    let cnxIds = readFromAllStorages(USER_IDS) || CNX_IDS_VALUES;
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
@@ -334,18 +335,18 @@ export const spec = {
     }
 
     window.addEventListener('message', function handler(event) {
-      if (!event.data || event.origin != 'https://cds.connatix.com') {
+      if (!event.data || event.origin !== 'https://cds.connatix.com') {
         return;
       }
 
-      if (event.data.type === 'cnx_all_identity_providers_resolved') {
+      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT) {
         this.removeEventListener('message', handler);
         event.stopImmediatePropagation();
       }
 
       const response = event.data;
       if (response.data) {
-        saveOnAllStorages(CNX_IDS, response.data, CNX_ID_RETENTION_TIME_HOUR);
+        saveOnAllStorages(USER_IDS, response.data, CNX_IDS_EXPIRY);
       }
     }, true)
 
