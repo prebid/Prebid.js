@@ -100,6 +100,22 @@ function validateSizes(sizes, targLength) {
   return cleanSizes;
 }
 
+export function setBattrForAdUnit(adUnit, mediaType) {
+  const ortb2Imp = adUnit.ortb2Imp || {};
+  const mediaTypes = adUnit.mediaTypes || {};
+
+  if (ortb2Imp[mediaType]?.battr && mediaTypes[mediaType]?.battr && (ortb2Imp[mediaType]?.battr !== mediaTypes[mediaType]?.battr)) {
+    logWarn(`Ad unit ${adUnit.code} specifies conflicting ortb2Imp.${mediaType}.battr and mediaTypes.${mediaType}.battr, the latter will be ignored`, adUnit);
+  }
+
+  const battr = ortb2Imp[mediaType]?.battr || mediaTypes[mediaType]?.battr;
+
+  if (battr != null) {
+    deepSetValue(adUnit, `ortb2Imp.${mediaType}.battr`, battr);
+    deepSetValue(adUnit, `mediaTypes.${mediaType}.battr`, battr);
+  }
+}
+
 function validateBannerMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
@@ -112,6 +128,7 @@ function validateBannerMediaType(adUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
+  setBattrForAdUnit(validatedAdUnit, 'banner');
   return validatedAdUnit;
 }
 
@@ -135,6 +152,7 @@ function validateVideoMediaType(adUnit) {
     }
   }
   validateOrtbVideoFields(validatedAdUnit);
+  setBattrForAdUnit(validatedAdUnit, 'video');
   return validatedAdUnit;
 }
 
@@ -184,6 +202,7 @@ function validateNativeMediaType(adUnit) {
     logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.icon.sizes;
   }
+  setBattrForAdUnit(validatedAdUnit, 'native');
   return validatedAdUnit;
 }
 
