@@ -20,7 +20,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '4.0.0';
+const NM_VERSION = '4.0.1';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -80,6 +80,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
+    const bidIds = {};
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
     const device = getDeviceObj();
@@ -109,6 +110,8 @@ export const spec = {
       if (i === 0) postBody.cur = cur;
       postBody.imp.push(getImp(bid, id, mediaTypes));
       postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
+
+      bidIds[bid.adUnitCode] = bid.bidId;
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -121,6 +124,8 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: true,
       },
+
+      bidIds,
     });
 
     return requests;
@@ -133,7 +138,7 @@ export const spec = {
     const bids = [];
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
-        const requestId = bidRequest.bidId;
+        const requestId = bidRequest.bidIds[bid.impid];
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
