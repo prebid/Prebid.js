@@ -126,6 +126,16 @@ describe('pbjs -> ortb banner conversion', () => {
     expect(imp.banner.someParam).to.eql('someValue');
   });
 
+  it('should keep ortb2Imp.banner.battr', () => {
+    const imp = {
+      banner: {
+        battr: 'battr'
+      }
+    };
+    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {});
+    expect(imp.banner.battr).to.eql('battr');
+  });
+
   it('does nothing if context.mediaType is set but is not BANNER', () => {
     const imp = {};
     fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {mediaType: VIDEO});
