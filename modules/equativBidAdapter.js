@@ -82,6 +82,8 @@ export const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     const { siteId, pageId, formatId } = bidRequest.params;
 
+    delete imp.dt;
+
     imp.bidfloor = imp.bidfloor || 0.0;
     imp.secure = Number(window.location.protocol === 'https:');
     imp.tagid = bidRequest.adUnitCode;

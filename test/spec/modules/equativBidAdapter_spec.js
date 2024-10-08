@@ -60,12 +60,12 @@ describe('Equativ bid adapter tests', () => {
     },
   };
 
-  const RESPONSE_WITH_DSP_PIXELS = {
-    ...SAMPLE_RESPONSE,
-    body: {
-      dspPixels: ['1st-pixel', '2nd-pixel', '3rd-pixel']
-    }
-  };
+  // const RESPONSE_WITH_DSP_PIXELS = {
+  //   ...SAMPLE_RESPONSE,
+  //   body: {
+  //     dspPixels: ['1st-pixel', '2nd-pixel', '3rd-pixel']
+  //   }
+  // };
 
   describe('buildRequests', () => {
     it('should build correct request using ORTB converter', () => {
@@ -154,6 +154,15 @@ describe('Equativ bid adapter tests', () => {
         DEFAULT_BIDDER_REQUEST
       );
       expect(request.data.imp[0]).to.have.property('tagid').that.eq(DEFAULT_BID_REQUESTS[0].adUnitCode);
+    });
+
+    it('should remove dt', () => {
+      const bidRequests = [
+        { ...DEFAULT_BID_REQUESTS[0], ortb2Imp: { dt: 1728377558235 } }
+      ];
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0]).to.not.have.property('dt');
     });
   });
 
