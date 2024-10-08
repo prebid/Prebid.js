@@ -199,7 +199,10 @@ function readFromAllStorages(name) {
   const fromCookie = storage.getCookie(name);
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
 
-  return JSON.parse(fromCookie) || JSON.parse(fromLocalStorage) || undefined;
+  const parsedCookie = fromCookie ? JSON.parse(fromCookie) : undefined;
+  const parsedLocalStorage = fromLocalStorage ? JSON.parse(fromLocalStorage) : undefined;
+
+  return parsedCookie || parsedLocalStorage || undefined;
 }
 
 export const spec = {
