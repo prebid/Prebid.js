@@ -3,7 +3,7 @@
 ```
 Module Name: Impactify Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: filipe.neves@impactify.io
+Maintainer: programmatic@impactify.io
 ```
 
 # Description
