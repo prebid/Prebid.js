@@ -184,7 +184,7 @@ export const spec = {
       }
       let coppaOrtb2 = !!deepAccess(bidderRequest, 'ortb2.regs.coppa');
       let coppaConfig = config.getConfig('coppa');
-      if(coppaOrtb2 === true || coppaConfig === true) {
+      if (coppaOrtb2 === true || coppaConfig === true) {
         payload.coppa = true;
       }
       return {
