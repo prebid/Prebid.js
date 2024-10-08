@@ -34,7 +34,7 @@ const DEFAULT_CURRENCY = 'USD';
 const CNX_IDS = 'cnx_ids';
 const CNX_ID_RETENTION_TIME_HOUR = 24 * 30; // 30 days
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-const CNX_IDS_VALUES = [];
+let CNX_IDS_VALUES;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
 
@@ -190,16 +190,16 @@ function saveOnAllStorages(name, value, expirationTimeHours) {
   const date = new Date();
   date.setTime(date.getTime() + (expirationTimeHours * 60 * 60 * 1000));
   const expires = `expires=${date.toUTCString()}`;
-  storage.setCookie(name, value, expires);
-  storage.setDataInLocalStorage(name, value);
-  CNX_IDS_VALUES.push(value);
+  storage.setCookie(name, JSON.stringify(value), expires);
+  storage.setDataInLocalStorage(name, JSON.stringify(value));
+  CNX_IDS_VALUES = value;
 }
 
 function readFromAllStorages(name) {
   const fromCookie = storage.getCookie(name);
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
 
-  return fromCookie || fromLocalStorage || undefined;
+  return JSON.parse(fromCookie) || JSON.parse(fromLocalStorage) || undefined;
 }
 
 export const spec = {
@@ -245,7 +245,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     const bidRequests = _getBidRequests(validBidRequests);
-    const cnxIds = [readFromAllStorages(CNX_IDS)] || CNX_IDS_VALUES;
+    let cnxIds = readFromAllStorages(CNX_IDS) || CNX_IDS_VALUES;
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
