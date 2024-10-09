@@ -1,18 +1,18 @@
-import { logInfo, logError, getWindowSelf, getWindowTop, getWindowLocation } from '../src/utils.js';
+import {getWindowLocation, getWindowSelf, getWindowTop, logError, logInfo} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { config } from '../src/config.js';
-import { EVENTS } from '../src/constants.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
-import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {ajax} from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {config} from '../src/config.js';
+import {EVENTS} from '../src/constants.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import {detectBrowser} from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, VERSION} from '../libraries/intentIqConstants/intentIqConstants.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://reports.intentiq.com/report';
-const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME });
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
@@ -52,7 +52,7 @@ const PARAMS_NAMES = {
   firstPartyId: 'pcid'
 };
 
-let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
+let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl, analyticsType}), {
   initOptions: {
     lsValueInitialized: false,
     partner: null,
@@ -63,11 +63,13 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
     lsIdsInitialized: false,
     manualWinReportEnabled: false
   },
-  track({ eventType, args }) {
+  track({eventType, args}) {
     switch (eventType) {
       case BID_WON:
         bidWon(args);
         break;
+      case BID_REQUESTED:
+        defineGlobalVariableName()
       default:
         break;
     }
@@ -76,7 +78,8 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
 
 // Events needed
 const {
-  BID_WON
+  BID_WON,
+  BID_REQUESTED
 } = EVENTS;
 
 function readData(key) {
@@ -110,7 +113,7 @@ function initLsValues() {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
     }
     iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =  iiqArr[0].params.manualWinReportEnabled || false
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = iiqArr[0].params.manualWinReportEnabled || false
   }
 }
 
@@ -140,7 +143,9 @@ function initReadLsIds() {
 }
 
 function bidWon(args, isReportExternal) {
-  if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
+  if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) {
+    initLsValues();
+  }
 
   if (isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.partner) || iiqAnalyticsAnalyticsAdapter.initOptions.partner == -1) return;
 
@@ -150,7 +155,9 @@ function bidWon(args, isReportExternal) {
     return;
   }
 
-  if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) {
+    initReadLsIds();
+  }
   if ((isReportExternal && iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled) || (!isReportExternal && !iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled)) {
     ajax(constructFullUrl(preparePayload(args, true)), undefined, null, {method: 'GET'});
     logInfo('IIQ ANALYTICS -> BID WON')
@@ -158,16 +165,26 @@ function bidWon(args, isReportExternal) {
   }
 }
 
+function defineGlobalVariableName() {
+  function reportExternalWin(args) {
+    return bidWon(args, true)
+  }
+
+  let partnerId = 0
+  const userConfig = config.getConfig('userSync.userIds')
+
+  if (userConfig) {
+    const iiqArr = userConfig.filter(m => m.name == 'intentIqId');
+    if (iiqArr.length) partnerId = iiqArr[0].params.partner
+  }
+
+  window[`intentIqAnalyticsAdapter_${partnerId}`] = {reportExternalWin: reportExternalWin}
+}
+
+
 function getRandom(start, end) {
   return Math.floor((Math.random() * (end - start + 1)) + start);
 }
-
-function reportExternalWin(args) {
-  return bidWon(args, true)
-}
-
-const intentIqBidWon = { reportExternalWin: reportExternalWin }
-window.intentIqAnalyticsAdapter = intentIqBidWon
 
 export function preparePayload(data) {
   let result = getDefaultDataObject();
@@ -198,13 +215,27 @@ function fillEidsData(result) {
 }
 
 function fillPrebidEventData(eventData, result) {
-  if (eventData.bidderCode) { result.bidderCode = eventData.bidderCode; }
-  if (eventData.cpm) { result.cpm = eventData.cpm; }
-  if (eventData.currency) { result.currency = eventData.currency; }
-  if (eventData.originalCpm) { result.originalCpm = eventData.originalCpm; }
-  if (eventData.originalCurrency) { result.originalCurrency = eventData.originalCurrency; }
-  if (eventData.status) { result.status = eventData.status; }
-  if (eventData.auctionId) { result.prebidAuctionId = eventData.auctionId; }
+  if (eventData.bidderCode) {
+    result.bidderCode = eventData.bidderCode;
+  }
+  if (eventData.cpm) {
+    result.cpm = eventData.cpm;
+  }
+  if (eventData.currency) {
+    result.currency = eventData.currency;
+  }
+  if (eventData.originalCpm) {
+    result.originalCpm = eventData.originalCpm;
+  }
+  if (eventData.originalCurrency) {
+    result.originalCurrency = eventData.originalCurrency;
+  }
+  if (eventData.status) {
+    result.status = eventData.status;
+  }
+  if (eventData.auctionId) {
+    result.prebidAuctionId = eventData.auctionId;
+  }
 
   result.biddingPlatformId = 1;
   result.partnerAuctionId = 'BW';

@@ -186,8 +186,8 @@ describe('IntentIQ tests all', function () {
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
-    expect(window.intentIqAnalyticsAdapter.reportExternalWin).to.be.a('function');
-    expect(window.intentIqAnalyticsAdapter.reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(true);
+    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin).to.be.a('function');
+    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(true);
   });
 
   it('should return window.location.href when window.self === window.top', function () {

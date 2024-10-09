@@ -31,16 +31,18 @@ We recommend including the Intent IQ Analytics adapter module for improved visib
 
 Please find below list of paramters that could be used in configuring Intent IQ Universal ID module
 
-| Param under userSync.userIds[] | Scope    | Type     | Description                                                                                                                         | Example                                         |
-| ------------------------------ | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| name                           | Required | String   | The name of this module: "intentIqId"                                                                                               | `"intentIqId"`                                  |
-| params                         | Required | Object   | Details for IntentIqId initialization.                                                                                              |                                                 |
-| params.partner                 | Required | Number   | This is the partner ID value obtained from registering with IntentIQ.                                                               | `1177538`                                       |
-| params.pcid                    | Optional | String   | This is the partner cookie ID, it is a dynamic value attached to the request.                                                       | `"g3hC52b"`                                     |
-| params.pai                     | Optional | String   | This is the partner customer ID / advertiser ID, it is a dynamic value attached to the request.                                     | `"advertiser1"`                                 |
+| Param under userSync.userIds[] | Scope    | Type     | Description                                                                                                                         | Example                                       |
+| ------------------------------ | -------- |----------| ----------------------------------------------------------------------------------------------------------------------------------- |-----------------------------------------------|
+| name                           | Required | String   | The name of this module: "intentIqId"                                                                                               | `"intentIqId"`                                |
+| params                         | Required | Object   | Details for IntentIqId initialization.                                                                                              |                                               |
+| params.partner                 | Required | Number   | This is the partner ID value obtained from registering with IntentIQ.                                                               | `1177538`                                     |
+| params.pcid                    | Optional | String   | This is the partner cookie ID, it is a dynamic value attached to the request.                                                       | `"g3hC52b"`                                   |
+| params.pai                     | Optional | String   | This is the partner customer ID / advertiser ID, it is a dynamic value attached to the request.                                     | `"advertiser1"`                               |
 | params.callback                | Required | Function | This is a callback which is trigered with data and AB group                                                                         | `(data, group) => console.log({ data, group })` |
-| params.timeoutInMillis         | Optional | Number   | This is the timeout in milliseconds, which defines the maximum duration before the callback is triggered. The default value is 500. | `450`                                           |
-| params.browserBlackList        | Optional |  String  | This is the name of a browser that can be added to a blacklist.                                                                     | `"chrome"`                                      |
+| params.timeoutInMillis         | Optional | Number   | This is the timeout in milliseconds, which defines the maximum duration before the callback is triggered. The default value is 500. | `450`                                         |
+| params.browserBlackList        | Optional |  String  | This is the name of a browser that can be added to a blacklist.                                                                   | `"chrome"`                                    |
+| params.manualWinReportEnabled        | Optional | Boolean  | If this variable is false, bidwon will be called automatically but you will not be able to call reportExternalWin. If true, bidwon will not be called automatically but you can call reportExternalWinreportExternalWin.                                                                | `true`                                        |
+
 
 ### Configuration example
 
@@ -53,7 +55,8 @@ pbjs.setConfig({
                 partner: 123456,     // valid partner id
                 timeoutInMillis: 500,
                 browserBlackList: "chrome",
-                callback: (data, group) => window.pbjs.requestBids()
+                callback: (data, group) => window.pbjs.requestBids(),
+                manualWinReportEnabled: true
             },
             storage: {
                 type: "html5",
