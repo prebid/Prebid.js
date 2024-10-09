@@ -1,7 +1,7 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepSetValue, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, isFn, mergeDeep } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -27,9 +27,30 @@ export const spec = {
   },
 
   /**
+   * @param bidRequest
+   * @returns {number}
+   */
+  getMinFloor: (bidRequest) => {
+    const floors = [];
+
+    if (isFn(bidRequest.getFloor)) {
+      deepAccess(bidRequest, 'mediaTypes.banner.sizes').forEach(size => {
+        const floor = bidRequest.getFloor({ size }).floor;
+        if (!isNaN(floor)) {
+          floors.push(floor);
+        } else {
+          floors.push(0.0);
+        }
+      });
+    }
+
+    return floors.length ? Math.min(...floors) : 0.0;
+  },
+
+  /**
    * @param serverResponse
    * @param bidRequest
-   * @return {Bid[]}
+   * @returns {Bid[]}
    */
   interpretResponse: (serverResponse, bidRequest) =>
     converter.fromORTB({
@@ -39,21 +60,21 @@ export const spec = {
 
   /**
    * @param bidRequest
-   * @return {boolean}
+   * @returns {boolean}
    */
   isBidRequestValid: (bidRequest) => {
     return !!(
       deepAccess(bidRequest, 'params.networkId') ||
-      deepAccess(bidRequest, 'ortb2Imp.site.publisher.id') ||
-      deepAccess(bidRequest, 'ortb2Imp.app.publisher.id') ||
-      deepAccess(bidRequest, 'ortb2Imp.dooh.publisher.id')
+      deepAccess(bidRequest, 'ortb2.site.publisher.id') ||
+      deepAccess(bidRequest, 'ortb2.app.publisher.id') ||
+      deepAccess(bidRequest, 'ortb2.dooh.publisher.id')
     );
   },
 
   /**
    * @param syncOptions
    * @param serverResponse
-   * @return {{type: string, url: string}[]}
+   * @returns {{type: string, url: string}[]}
    */
   // getUserSyncs: (syncOptions, serverResponse) => {
   //   if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
@@ -84,7 +105,7 @@ export const converter = ortbConverter({
 
     delete imp.dt;
 
-    imp.bidfloor = imp.bidfloor || 0.0;
+    imp.bidfloor = imp.bidfloor || spec.getMinFloor(bidRequest);
     imp.secure = Number(window.location.protocol === 'https:');
     imp.tagid = bidRequest.adUnitCode;
 
@@ -115,7 +136,13 @@ export const converter = ortbConverter({
     const bid = context.bidRequests[0];
     const req = buildRequest(imps, bidderRequest, context);
 
-    if (bid.params.networkId) {
+    if (deepAccess(bid, 'ortb2.site.publisher')) {
+      deepSetValue(req, 'site.publisher.id', bid.ortb2.site.publisher.id || bid.params.networkId);
+    } else if (deepAccess(bid, 'ortb2.app.publisher')) {
+      deepSetValue(req, 'app.publisher.id', bid.ortb2.app.publisher.id || bid.params.networkId);
+    } else if (deepAccess(bid, 'ortb2.dooh.publisher')) {
+      deepSetValue(req, 'dooh.publisher.id', bid.ortb2.dooh.publisher.id || bid.params.networkId);
+    } else {
       deepSetValue(req, 'site.publisher.id', bid.params.networkId);
     }
 

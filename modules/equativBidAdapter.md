@@ -28,7 +28,7 @@ var adUnits = [
             {
                 bidder: 'equativ',
                 params: {
-                    networkId: 10,  // mandatory if no ortb2Imp.(site or app).publisher.id defined
+                    networkId: 13,  // mandatory if no ortb2.(site or app).publisher.id set
                     siteId: 20743,  // optional
                     pageId: 89653,  // optional
                     formatId: 291,  // optional

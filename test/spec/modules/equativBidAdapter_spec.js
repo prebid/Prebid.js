@@ -9,7 +9,7 @@ describe('Equativ bid adapter tests', () => {
         banner: {
           sizes: [
             [300, 250],
-            [300, 200],
+            [300, 600],
           ],
         },
       },
@@ -132,6 +132,99 @@ describe('Equativ bid adapter tests', () => {
       expect(request.data.site.publisher.id).to.equal(111);
     });
 
+    it('should pass ortb2.site.publisher.id', () => {
+      const bidRequests = [{
+        ...DEFAULT_BID_REQUESTS[0],
+        ortb2: {
+          site: {
+            publisher: {
+              id: 98,
+            }
+          }
+        }
+      }];
+      delete bidRequests[0].params;
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.publisher.id).to.equal(98);
+    });
+
+    it('should pass networkId as site.publisher.id', () => {
+      const bidRequests = [{
+        ...DEFAULT_BID_REQUESTS[0],
+        ortb2: {
+          site: {
+            publisher: {}
+          }
+        }
+      }];
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.publisher.id).to.equal(111);
+    });
+
+    it('should pass ortb2.app.publisher.id', () => {
+      const bidRequests = [{
+        ...DEFAULT_BID_REQUESTS[0],
+        ortb2: {
+          app: {
+            publisher: {
+              id: 27,
+            }
+          }
+        }
+      }];
+      delete bidRequests[0].params;
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.app.publisher.id).to.equal(27);
+    });
+
+    it('should pass networkId as app.publisher.id', () => {
+      const bidRequests = [{
+        ...DEFAULT_BID_REQUESTS[0],
+        ortb2: {
+          app: {
+            publisher: {}
+          }
+        }
+      }];
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.app.publisher.id).to.equal(111);
+    });
+
+    it('should pass ortb2.dooh.publisher.id', () => {
+      const bidRequests = [{
+        ...DEFAULT_BID_REQUESTS[0],
+        ortb2: {
+          dooh: {
+            publisher: {
+              id: 35,
+            }
+          }
+        }
+      }];
+      delete bidRequests[0].params;
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.dooh.publisher.id).to.equal(35);
+    });
+
+    it('should pass networkId as dooh.publisher.id', () => {
+      const bidRequests = [{
+        ...DEFAULT_BID_REQUESTS[0],
+        ortb2: {
+          dooh: {
+            publisher: {}
+          }
+        }
+      }];
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.dooh.publisher.id).to.equal(111);
+    });
+
     it('should send default floor of 0.0', () => {
       const request = spec.buildRequests(
         DEFAULT_BID_REQUESTS,
@@ -163,6 +256,64 @@ describe('Equativ bid adapter tests', () => {
       const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0]).to.not.have.property('dt');
+    });
+  });
+
+  describe('getMinFloor', () => {
+    it('should return floor of 0.0 if floor module not available', () => {
+      const bid = {
+        ...DEFAULT_BID_REQUESTS[0],
+        getFloor: false,
+      };
+      expect(spec.getMinFloor(bid)).to.deep.eq(0.0);
+    });
+
+    it('should return proper min floor', () => {
+      const bid = {
+        ...DEFAULT_BID_REQUESTS[0],
+        getFloor: data => {
+          if (data.size[0] === 300 && data.size[1] === 250) {
+            return { floor: 1.13 };
+          } else if (data.size[0] === 300 && data.size[1] === 600) {
+            return { floor: 1.39 };
+          } else {
+            return { floor: 0.52 };
+          }
+        }
+      };
+      expect(spec.getMinFloor(bid)).to.deep.eq(1.13);
+    });
+
+    it('should return global media type floor if no rule for size', () => {
+      const bid = {
+        ...DEFAULT_BID_REQUESTS[0],
+        getFloor: data => {
+          if (data.size[0] === 728 && data.size[1] === 90) {
+            return { floor: 1.13 };
+          } else if (data.size[0] === 300 && data.size[1] === 600) {
+            return { floor: 1.36 };
+          } else {
+            return { floor: 0.34 };
+          }
+        }
+      };
+      expect(spec.getMinFloor(bid)).to.deep.eq(0.34);
+    });
+
+    it('should return floor of 0 if no rule for size', () => {
+      const bid = {
+        ...DEFAULT_BID_REQUESTS[0],
+        getFloor: data => {
+          if (data.size[0] === 728 && data.size[1] === 90) {
+            return { floor: 1.13 };
+          } else if (data.size[0] === 300 && data.size[1] === 600) {
+            return { floor: 1.36 };
+          } else {
+            return {};
+          }
+        }
+      };
+      expect(spec.getMinFloor(bid)).to.deep.eq(0.0);
     });
   });
 
@@ -219,9 +370,9 @@ describe('Equativ bid adapter tests', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return true if ortb2Imp.site.publisher.id is set', () => {
+    it('should return true if ortb2.site.publisher.id is set', () => {
       const bidRequest = {
-        ortb2Imp: {
+        ortb2: {
           site: {
             publisher: {
               id: 123,
@@ -232,9 +383,9 @@ describe('Equativ bid adapter tests', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return true if ortb2Imp.app.publisher.id is set', () => {
+    it('should return true if ortb2.app.publisher.id is set', () => {
       const bidRequest = {
-        ortb2Imp: {
+        ortb2: {
           app: {
             publisher: {
               id: 123,
@@ -245,9 +396,9 @@ describe('Equativ bid adapter tests', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return true if ortb2Imp.dooh.publisher.id is set', () => {
+    it('should return true if ortb2.dooh.publisher.id is set', () => {
       const bidRequest = {
-        ortb2Imp: {
+        ortb2: {
           dooh: {
             publisher: {
               id: 123,
