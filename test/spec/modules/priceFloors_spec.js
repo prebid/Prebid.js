@@ -2410,12 +2410,10 @@ describe('setting null as rule value', () => {
     currency: 'USD',
     schema: {
       delimiter: '|',
-      fields: ['mediaType']
+      fields: ['mediaType', 'size']
     },
     values: {
-      'banner': null,
-      'video': null,
-      '*': null
+      'banner|600x300': null,
     }
   };
 
@@ -2433,9 +2431,9 @@ describe('setting null as rule value', () => {
     expect(isFloorsDataValid(data)).to.to.equal(true);
   });
 
-  const bidRequest = { ...basicBidRequest, getFloor };
 
   it('getFloor should not return numeric value if null set as value', function () {
+    const bidRequest = { ...basicBidRequest, getFloor };
     const basicFloorConfig = {
       enabled: true,
       auctionDelay: 0,
@@ -2450,10 +2448,41 @@ describe('setting null as rule value', () => {
     }
     _floorDataForAuction[bidRequest.auctionId] = basicFloorConfig;
 
-    let inputParams = {};
-    expect(bidRequest.getFloor(inputParams)).to.deep.equal({
-      currency: 'USD',
-      floor: null
-    });
+    let inputParams = {mediaType: 'banner', size: [600, 300]};
+    expect(bidRequest.getFloor(inputParams)).to.deep.equal(null);
   })
+
+  it('getFloor should not return numeric value if null set as value - external floor provider', function () {
+    const basicFloorConfig = {
+      enabled: true,
+      auctionDelay: 0,
+      endpoint: {},
+      enforcement: {
+        enforceJS: true,
+        enforcePBS: false,
+        floorDeals: false,
+        bidAdjustment: true
+      },
+      data: nullFloorData
+    }
+    server.respondWith(JSON.stringify(nullFloorData));
+    let exposedAdUnits;
+
+    handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', endpoint: {url: 'http://www.fakefloorprovider.json/'}});
+
+    const adUnits = [{
+      cod: 'test_div_1',
+      mediaTypes: {banner: { sizes: [[600, 300]] }, native: {}},
+      bids: [{bidder: 'someBidder', adUnitCode: 'test_div_1'}, {bidder: 'someOtherBidder', adUnitCode: 'test_div_1'}]
+    }];
+
+    requestBidsHook(config => exposedAdUnits = config.adUnits, {
+      auctionId: basicBidRequest.auctionId,
+      adUnits
+    });
+
+    let inputParams = {mediaType: 'banner', size: [600, 300]};
+
+    expect(exposedAdUnits[0].bids[0].getFloor(inputParams)).to.deep.equal(null);
+  });
 })

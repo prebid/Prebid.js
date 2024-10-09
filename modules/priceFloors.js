@@ -271,10 +271,7 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
   }
 
   if (floorInfo.floorRuleValue === null) {
-    return {
-      floor: null,
-      currency
-    };
+    return null;
   }
 
   if (floorInfo.matchingFloor) {
