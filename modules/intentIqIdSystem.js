@@ -5,15 +5,15 @@
  * @requires module:modules/userId
  */
 
-import { logError, logInfo } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
+import {logError, logInfo} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js'
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {gppDataHandler, uspDataHandler} from '../src/consentHandler.js';
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
-import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {detectBrowser} from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -49,7 +49,7 @@ const encoderCH = {
 const INVALID_ID = 'INVALID_ID';
 const SUPPORTED_TYPES = ['html5', 'cookie']
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
  * Generate standard UUID string
@@ -219,7 +219,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return value && value != '' && INVALID_ID != value ? { 'intentIqId': value } : undefined;
+    return value && value != '' && INVALID_ID != value ? {'intentIqId': value} : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -317,7 +317,15 @@ export const intentIqIdSubmodule = {
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
-      firstPartyData = { pcid: firstPartyId, pcidDate: Date.now(), group: NOT_YET_DEFINED, cttl: 0, uspapi_value: EMPTY, gpp_value: EMPTY, date: Date.now() };
+      firstPartyData = {
+        pcid: firstPartyId,
+        pcidDate: Date.now(),
+        group: NOT_YET_DEFINED,
+        cttl: 0,
+        uspapi_value: EMPTY,
+        gpp_value: EMPTY,
+        date: Date.now()
+      };
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
@@ -356,7 +364,7 @@ export const intentIqIdSubmodule = {
 
     if (!shouldCallServer) {
       firePartnerCallback();
-      return { id: runtimeEids?.eids || [] };
+      return {id: runtimeEids?.eids || []};
     }
 
     // use protocol relative urls for http or https
@@ -405,9 +413,9 @@ export const intentIqIdSubmodule = {
               if (respJson.tc == 41) {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                 defineEmptyDataAndFireCallback();
+                defineEmptyDataAndFireCallback();
                 callback({})
-                 return
+                return
               } else {
                 firstPartyData.group = WITH_IIQ;
               }
@@ -419,7 +427,7 @@ export const intentIqIdSubmodule = {
               if (respJson.isOptedOut === true) {
                 firstPartyData.group = OPT_OUT;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                 defineEmptyDataAndFireCallback()
+                defineEmptyDataAndFireCallback()
                 callback({})
                 return
               }
@@ -429,7 +437,7 @@ export const intentIqIdSubmodule = {
             }
             if ('ls' in respJson) {
               if (respJson.ls === false) {
-                 defineEmptyDataAndFireCallback()
+                defineEmptyDataAndFireCallback()
                 callback({})
                 return
               }
@@ -439,7 +447,7 @@ export const intentIqIdSubmodule = {
               } else {
                 // If data is a single string, assume it is an id with source intentiq.com
                 if (respJson.data && typeof respJson.data === 'string') {
-                  respJson.data = { eids: [respJson.data] }
+                  respJson.data = {eids: [respJson.data]}
                 }
               }
               partnerData.data = respJson.data;
@@ -471,9 +479,9 @@ export const intentIqIdSubmodule = {
         }
       };
 
-      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
+      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
-    const respObj = { callback: resp };
+    const respObj = {callback: resp};
     if (runtimeEids?.eids?.length) respObj.id = runtimeEids.eids;
     return respObj
   },
