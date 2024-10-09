@@ -253,7 +253,7 @@ export const intentIqIdSubmodule = {
     if (typeof configParams.partner !== 'number') {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
       firePartnerCallback()
-      return;
+      return {};
     }
 
     const FIRST_PARTY_DATA_KEY = `_iiq_fdata_${configParams.partner}`;
@@ -269,7 +269,7 @@ export const intentIqIdSubmodule = {
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
       logError('User ID - intentIqId submodule: browser is in blacklist!');
       if (configParams.callback) configParams.callback('', BLACK_LIST);
-      return;
+      return {};
     }
 
     // Get consent information
@@ -343,19 +343,20 @@ export const intentIqIdSubmodule = {
       firstPartyData.cttl = 0
       shouldCallServer = true;
       partnerData.data = {}
+      partnerData.eidl = -1
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
       storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
     } else if (firstPartyData.isOptedOut) {
       firePartnerCallback()
     }
 
-    if (firstPartyData.group === WITHOUT_IIQ || (firstPartyData.group !== WITHOUT_IIQ && runtimeEids && Object.keys(runtimeEids).length)) {
+    if (firstPartyData.group === WITHOUT_IIQ || (firstPartyData.group !== WITHOUT_IIQ && runtimeEids?.eids?.length)) {
       firePartnerCallback()
     }
 
     if (!shouldCallServer) {
       firePartnerCallback();
-      return { id: runtimeEids };
+      return { id: runtimeEids?.eids || [] };
     }
 
     // use protocol relative urls for http or https
@@ -375,6 +376,7 @@ export const intentIqIdSubmodule = {
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
 
     const storeFirstPartyData = () => {
+      partnerData.eidl = runtimeEids?.eids?.length || -1
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
       storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
     }
@@ -389,9 +391,11 @@ export const intentIqIdSubmodule = {
             firstPartyData.date = Date.now();
             const defineEmptyDataAndFireCallback = () => {
               respJson.data = partnerData.data = runtimeEids = {};
-              removeDataByKey(FIRST_PARTY_DATA_KEY, allowedStorage)
+              partnerData.data = ''
+              storeFirstPartyData()
               firePartnerCallback()
               callback()
+              return {}
             }
             if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
             if ('cttl' in respJson) {
@@ -403,8 +407,7 @@ export const intentIqIdSubmodule = {
               if (respJson.tc == 41) {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                defineEmptyDataAndFireCallback();
-                return;
+                return defineEmptyDataAndFireCallback();
               } else {
                 firstPartyData.group = WITH_IIQ;
               }
@@ -416,8 +419,7 @@ export const intentIqIdSubmodule = {
               if (respJson.isOptedOut === true) {
                 firstPartyData.group = OPT_OUT;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                defineEmptyDataAndFireCallback()
-                return;
+                return defineEmptyDataAndFireCallback()
               }
             }
             if ('pid' in respJson) {
@@ -425,8 +427,7 @@ export const intentIqIdSubmodule = {
             }
             if ('ls' in respJson) {
               if (respJson.ls === false) {
-                defineEmptyDataAndFireCallback();
-                return
+                return defineEmptyDataAndFireCallback()
               }
               // If data is empty, means we should save as INVALID_ID
               if (respJson.data == '') {
@@ -445,10 +446,10 @@ export const intentIqIdSubmodule = {
             }
 
             if (respJson.data?.eids) {
-              runtimeEids = respJson.data.eids
+              runtimeEids = respJson.data
               callback(respJson.data.eids);
               firePartnerCallback()
-              const encryptedData = encryptData(JSON.stringify(respJson.data.eids))
+              const encryptedData = encryptData(JSON.stringify(respJson.data))
               partnerData.data = encryptedData;
             } else {
               callback();
@@ -469,7 +470,7 @@ export const intentIqIdSubmodule = {
       ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
     const respObj = { callback: resp };
-    if (runtimeEids?.length) respObj.id = runtimeEids;
+    if (runtimeEids?.eids?.length) respObj.id = runtimeEids.eids;
     return respObj
   },
   eids: {

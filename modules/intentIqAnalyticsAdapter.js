@@ -16,6 +16,19 @@ const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleNam
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
+/**
+ * Parse json if possible, else return null
+ * @param data
+ */
+function tryParse(data) {
+  try {
+    return JSON.parse(data);
+  } catch (err) {
+    logError(err);
+    return null;
+  }
+}
+
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
   pbPauseUntil: 'pbPauseUntil',
@@ -61,7 +74,7 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
     dataInLs: null,
     eidl: null,
     lsIdsInitialized: false,
-    manualReport: false
+    manualWinReportEnabled: false
   },
   track({ eventType, args }) {
     switch (eventType) {
@@ -120,10 +133,11 @@ function initReadLsIds() {
     if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
-    let iData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
-    if (iData) {
+    let partnerData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
+    if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
-      let pData = JSON.parse(iData);
+      let pData = JSON.parse(partnerData);
+      iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = pData.terminationCause
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
     }
@@ -144,7 +158,7 @@ function bidWon(args, isReportExternal) {
   }
 
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
-  if ((isReportExternal && iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) || (!isReportExternal && !iiqAnalyticsAnalyticsAdapter.initOptions.manualReport)) {
+  if ((isReportExternal && iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled) || (!isReportExternal && !iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled)) {
     ajax(constructFullUrl(preparePayload(args, true)), undefined, null, {method: 'GET'});
     logInfo('IIQ ANALYTICS -> BID WON')
     return true;
@@ -164,11 +178,12 @@ window.intentIqAnalyticsAdapter = intentIqBidWon
 
 export function preparePayload(data) {
   let result = getDefaultDataObject();
-
+  let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+  readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.referrer] = getReferrer();
-
+  result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
   result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup == 'A';
