@@ -257,6 +257,8 @@ function _getDeviceData(ortb2Data) {
 
   // set device data params from ortb2
   const _deviceRequestParams = {
+    ip: _device.ip,
+    ipv6: _device.ipv6,
     ua: _device.ua,
     dnt: _device.dnt,
     os: _device.os,

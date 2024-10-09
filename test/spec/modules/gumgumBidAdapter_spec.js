@@ -800,6 +800,8 @@ describe('gumgumAdapter', function () {
           os: 'iOS',
           osv: '17.4',
           ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          ip: '127.0.0.1',
+          ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
         },
       };
 
@@ -814,6 +816,8 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.os).to.equal(ortb2.device.os);
       expect(bidRequest.data.osv).to.equal(ortb2.device.osv);
       expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
+      expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
+      expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
     });
   })
 
