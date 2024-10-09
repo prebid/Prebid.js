@@ -310,6 +310,10 @@ function getFloorType(floorResponseData) {
   return floorResponseData ? (floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
 }
 
+function getFloorValue(floorResponseData) {
+  return floorResponseData ? floorResponseData.floorValue : undefined;
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid, e) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
@@ -354,6 +358,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid, e) {
         'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'frv': bid.bidResponse ? bid.bidResponse.floorData?.floorRuleValue : undefined,
+        'fv': bid.bidResponse ? bid.bidResponse.floorData?.floorValue : undefined,
         'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
         'pb': pg || undefined
       });
@@ -535,7 +540,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
   pixelURL += '&ss=' + enc(isS2SBidder(winningBid.bidder));
   (fskp != undefined) && (pixelURL += '&fskp=' + enc(fskp));
-  if (floorData && floorFetchStatus) {
+  if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData.floorRequestData);
     const { fsrc, fp, mv } = floorRootValues;
   	const params = { fsrc, fp, fmv: mv };
@@ -547,6 +552,10 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     const floorType = getFloorType(floorData.floorResponseData);
     if (floorType !== undefined) {
       pixelURL += '&ft=' + enc(floorType);
+    }
+    const floorValue = getFloorValue(floorData.floorResponseData);
+    if (floorValue !== undefined) {
+      pixelURL += '&fv=' + enc(floorValue);
     }
   	const floorRule = getFloorRule(floorData.floorResponseData);
     if (floorRule !== undefined) {
