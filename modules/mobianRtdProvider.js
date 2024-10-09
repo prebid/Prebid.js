@@ -61,14 +61,14 @@ function getBidRequestData(bidReqConfig, callback, config) {
           apValues: apValues,
         };
 
-        deepSetValue(ortb2Site.ext, 'data.mobianRisk', mobianRisk);
-        deepSetValue(ortb2Site.ext, 'data.mobianContentCategories', contentCategories);
-        deepSetValue(ortb2Site.ext, 'data.mobianSentiment', sentiment);
-        deepSetValue(ortb2Site.ext, 'data.mobianEmotions', emotions);
-        deepSetValue(ortb2Site.ext, 'data.mobianThemes', themes);
-        deepSetValue(ortb2Site.ext, 'data.mobianTones', tones);
-        deepSetValue(ortb2Site.ext, 'data.mobianGenres', genres);
-        deepSetValue(ortb2Site.ext, 'data.apValues', apValues);
+        deepSetValue(ortb2Site, 'ext.data.mobianRisk', mobianRisk);
+        deepSetValue(ortb2Site, 'ext.data.mobianContentCategories', contentCategories);
+        deepSetValue(ortb2Site, 'ext.data.mobianSentiment', sentiment);
+        deepSetValue(ortb2Site, 'ext.data.mobianEmotions', emotions);
+        deepSetValue(ortb2Site, 'ext.data.mobianThemes', themes);
+        deepSetValue(ortb2Site, 'ext.data.mobianTones', tones);
+        deepSetValue(ortb2Site, 'ext.data.mobianGenres', genres);
+        deepSetValue(ortb2Site, 'ext.data.apValues', apValues);
 
         resolve(risk);
         callback();
