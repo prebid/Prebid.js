@@ -542,7 +542,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   (fskp != undefined) && (pixelURL += '&fskp=' + enc(fskp));
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData.floorRequestData);
-    const { fsrc, fp, mv } = floorRootValues;
+    const { fsrc, fp, mv } = floorRootValues || {};
   	const params = { fsrc, fp, fmv: mv };
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
