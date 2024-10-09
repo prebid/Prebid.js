@@ -16,19 +16,6 @@ const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleNam
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
-/**
- * Parse json if possible, else return null
- * @param data
- */
-function tryParse(data) {
-  try {
-    return JSON.parse(data);
-  } catch (err) {
-    logError(err);
-    return null;
-  }
-}
-
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
   pbPauseUntil: 'pbPauseUntil',
@@ -178,7 +165,6 @@ window.intentIqAnalyticsAdapter = intentIqBidWon
 
 export function preparePayload(data) {
   let result = getDefaultDataObject();
-  let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
   readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
