@@ -110,7 +110,8 @@
     ],
     "videoModule": [
       "jwplayerVideoProvider",
-      "videojsVideoProvider"
+      "videojsVideoProvider",
+      "adplayerproVideoProvider"
     ],
     "paapi": [
       "paapiForGpt",

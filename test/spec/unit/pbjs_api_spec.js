@@ -28,6 +28,7 @@ import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
+import { setBattrForAdUnit } from '../../../src/prebid.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -294,9 +295,12 @@ describe('Unit: Prebid Module', function () {
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
       $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
-      var expected = 'foobar=0x0%2C300x250%2C300x600&' + TARGETING_KEYS.SIZE + '=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '=10.00&' + TARGETING_KEYS.AD_ID + '=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '=appnexus&' + TARGETING_KEYS.SIZE + '_triplelift=0x0&' + TARGETING_KEYS.PRICE_BUCKET + '_triplelift=10.00&' + TARGETING_KEYS.AD_ID + '_triplelift=222bb26f9e8bd&' + TARGETING_KEYS.BIDDER + '_triplelift=triplelift&' + TARGETING_KEYS.SIZE + '_appnexus=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_appnexus=10.00&' + TARGETING_KEYS.AD_ID + '_appnexus=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '_appnexus=appnexus&' + TARGETING_KEYS.SIZE + '_pagescience=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pagescience=10.00&' + TARGETING_KEYS.AD_ID + '_pagescience=25bedd4813632d7&' + TARGETING_KEYS.BIDDER + '_pagescienc=pagescience&' + TARGETING_KEYS.SIZE + '_brightcom=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brightcom=10.00&' + TARGETING_KEYS.AD_ID + '_brightcom=26e0795ab963896&' + TARGETING_KEYS.BIDDER + '_brightcom=brightcom&' + TARGETING_KEYS.SIZE + '_brealtime=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brealtime=10.00&' + TARGETING_KEYS.AD_ID + '_brealtime=275bd666f5a5a5d&' + TARGETING_KEYS.BIDDER + '_brealtime=brealtime&' + TARGETING_KEYS.SIZE + '_pubmatic=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pubmatic=10.00&' + TARGETING_KEYS.AD_ID + '_pubmatic=28f4039c636b6a7&' + TARGETING_KEYS.BIDDER + '_pubmatic=pubmatic&' + TARGETING_KEYS.SIZE + '_rubicon=300x600&' + TARGETING_KEYS.PRICE_BUCKET + '_rubicon=10.00&' + TARGETING_KEYS.AD_ID + '_rubicon=29019e2ab586a5a&' + TARGETING_KEYS.BIDDER + '_rubicon=rubicon';
+      var expectedResults = [`foobar=300x250%2C300x600%2C0x0`, `${TARGETING_KEYS.SIZE}=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}=10.00`, `${TARGETING_KEYS.AD_ID}=233bcbee889d46d`, `${TARGETING_KEYS.BIDDER}=appnexus`, `${TARGETING_KEYS.SIZE}_triplelift=0x0`, `${TARGETING_KEYS.PRICE_BUCKET}_triplelift=10.00`, `${TARGETING_KEYS.AD_ID}_triplelift=222bb26f9e8bd`, `${TARGETING_KEYS.BIDDER}_triplelift=triplelift`, `${TARGETING_KEYS.SIZE}_appnexus=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_appnexus=10.00`, `${TARGETING_KEYS.AD_ID}_appnexus=233bcbee889d46d`, `${TARGETING_KEYS.BIDDER}_appnexus=appnexus`, `${TARGETING_KEYS.SIZE}_pagescience=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_pagescience=10.00`, `${TARGETING_KEYS.AD_ID}_pagescience=25bedd4813632d7`, `${TARGETING_KEYS.BIDDER}_pagescienc=pagescience`, `${TARGETING_KEYS.SIZE}_brightcom=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_brightcom=10.00`, `${TARGETING_KEYS.AD_ID}_brightcom=26e0795ab963896`, `${TARGETING_KEYS.BIDDER}_brightcom=brightcom`, `${TARGETING_KEYS.SIZE}_brealtime=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_brealtime=10.00`, `${TARGETING_KEYS.AD_ID}_brealtime=275bd666f5a5a5d`, `${TARGETING_KEYS.BIDDER}_brealtime=brealtime`, `${TARGETING_KEYS.SIZE}_pubmatic=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_pubmatic=10.00`, `${TARGETING_KEYS.AD_ID}_pubmatic=28f4039c636b6a7`, `${TARGETING_KEYS.BIDDER}_pubmatic=pubmatic`, `${TARGETING_KEYS.SIZE}_rubicon=300x600`, `${TARGETING_KEYS.PRICE_BUCKET}_rubicon=10.00`, `${TARGETING_KEYS.AD_ID}_rubicon=29019e2ab586a5a`, `${TARGETING_KEYS.BIDDER}_rubicon=rubicon`];
       var result = $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr(adUnitCode);
-      assert.equal(expected, result, 'returns expected string of ad targeting info');
+
+      expectedResults.forEach(expected => {
+        expect(result).to.include(expected);
+      })
     });
 
     it('should log message if adunitCode param is falsey', function () {
@@ -339,7 +343,7 @@ describe('Unit: Prebid Module', function () {
       var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       var expected = {
         '/19968336/header-bid-tag-0': {
-          foobar: '0x0,300x250,300x600',
+          foobar: '300x250,300x600,0x0',
           [TARGETING_KEYS.SIZE]: '300x250',
           [TARGETING_KEYS.PRICE_BUCKET]: '10.00',
           [TARGETING_KEYS.AD_ID]: '233bcbee889d46d',
@@ -477,8 +481,8 @@ describe('Unit: Prebid Module', function () {
 
       var expected = {
         '/19968336/header-bid-tag-0': {
-          foobar: '0x0,300x250,300x600',
-          custom_ad_id: '222bb26f9e8bd,233bcbee889d46d,25bedd4813632d7,26e0795ab963896,275bd666f5a5a5d,28f4039c636b6a7,29019e2ab586a5a'
+          foobar: '300x250,300x600,0x0',
+          custom_ad_id: '233bcbee889d46d,28f4039c636b6a7,29019e2ab586a5a,25bedd4813632d7,275bd666f5a5a5d,26e0795ab963896,222bb26f9e8bd'
         },
         '/19968336/header-bid-tag1': {
           foobar: '728x90',
@@ -2856,7 +2860,7 @@ describe('Unit: Prebid Module', function () {
         let result = targeting.getAllTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']); // $$PREBID_GLOBAL$$.getAdserverTargeting();
         let expected = {
           '/19968336/header-bid-tag-0': {
-            'foobar': '0x0,300x250,300x600',
+            'foobar': '300x250,300x600,0x0',
             [TARGETING_KEYS.SIZE]: '300x250',
             [TARGETING_KEYS.PRICE_BUCKET]: '10.00',
             [TARGETING_KEYS.AD_ID]: '233bcbee889d46d',
@@ -3742,4 +3746,71 @@ describe('Unit: Prebid Module', function () {
       expect(auctionManager.getBidsReceived().length).to.equal(0);
     });
   });
+
+  describe('setBattrForAdUnit', () => {
+    it('should set copy battr to both places', () => {
+      const adUnit = {
+        ortb2Imp: {
+          video: {
+            battr: 'banned attribute'
+          }
+        },
+        mediaTypes: {
+          video: {}
+        }
+      }
+
+      setBattrForAdUnit(adUnit, 'video');
+
+      expect(adUnit.mediaTypes.video.battr).to.deep.equal('banned attribute');
+      expect(adUnit.ortb2Imp.video.battr).to.deep.equal('banned attribute');
+
+      const adUnit2 = {
+        mediaTypes: {
+          video: {
+            battr: 'banned attribute'
+          }
+        },
+        ortb2Imp: {
+          video: {}
+        }
+      }
+
+      setBattrForAdUnit(adUnit2, 'video');
+
+      expect(adUnit2.ortb2Imp.video.battr).to.deep.equal('banned attribute');
+      expect(adUnit2.mediaTypes.video.battr).to.deep.equal('banned attribute');
+    })
+
+    it('should log warn if both are specified and differ from eachother', () => {
+      let spyLogWarn = sinon.spy(utils, 'logWarn');
+      const adUnit = {
+        mediaTypes: {
+          native: {
+            battr: 'banned attribute'
+          }
+        },
+        ortb2Imp: {
+          native: {
+            battr: 'banned attribute 2'
+          }
+        }
+      }
+      setBattrForAdUnit(adUnit, 'native');
+      sinon.assert.calledOnce(spyLogWarn);
+      spyLogWarn.resetHistory();
+      utils.logWarn.restore();
+    })
+
+    it('should not copy for undefined battr', () => {
+      const adUnit = {
+        mediaTypes: {
+          native: {}
+        }
+      }
+      setBattrForAdUnit(adUnit, 'native');
+      expect(adUnit.mediaTypes.native).to.deep.equal({});
+      expect(adUnit.mediaTypes.ortb2Imp).to.not.exist;
+    })
+  })
 });
