@@ -69,7 +69,8 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl, analyticsT
         bidWon(args);
         break;
       case BID_REQUESTED:
-        defineGlobalVariableName()
+        defineGlobalVariableName();
+        break;
       default:
         break;
     }
@@ -127,7 +128,6 @@ function initReadLsIds() {
     const partnerData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
     const clientsHints = readData(CLIENT_HINTS_KEY) || '';
 
-
     if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
       let pData = JSON.parse(partnerData);
@@ -180,7 +180,6 @@ function defineGlobalVariableName() {
 
   window[`intentIqAnalyticsAdapter_${partnerId}`] = {reportExternalWin: reportExternalWin}
 }
-
 
 function getRandom(start, end) {
   return Math.floor((Math.random() * (end - start + 1)) + start);

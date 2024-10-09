@@ -402,6 +402,7 @@ export const intentIqIdSubmodule = {
               partnerData.data = ''
               storeFirstPartyData()
               firePartnerCallback()
+              callback(runtimeEids)
             }
             if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
             if ('cttl' in respJson) {
@@ -414,7 +415,6 @@ export const intentIqIdSubmodule = {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
                 defineEmptyDataAndFireCallback();
-                callback({})
                 return
               } else {
                 firstPartyData.group = WITH_IIQ;
@@ -428,7 +428,6 @@ export const intentIqIdSubmodule = {
                 firstPartyData.group = OPT_OUT;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
                 defineEmptyDataAndFireCallback()
-                callback({})
                 return
               }
             }
@@ -438,7 +437,6 @@ export const intentIqIdSubmodule = {
             if ('ls' in respJson) {
               if (respJson.ls === false) {
                 defineEmptyDataAndFireCallback()
-                callback({})
                 return
               }
               // If data is empty, means we should save as INVALID_ID
@@ -464,18 +462,18 @@ export const intentIqIdSubmodule = {
               const encryptedData = encryptData(JSON.stringify(respJson.data))
               partnerData.data = encryptedData;
             } else {
-              callback();
+              callback(runtimeEids);
               firePartnerCallback()
             }
             storeFirstPartyData();
           } else {
-            callback();
+            callback(runtimeEids);
             firePartnerCallback()
           }
         },
         error: error => {
           logError(MODULE_NAME + ': ID fetch encountered an error', error);
-          callback();
+          callback(runtimeEids);
         }
       };
 
