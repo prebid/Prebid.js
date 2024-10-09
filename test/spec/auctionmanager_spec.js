@@ -5,7 +5,7 @@ import {
   adjustBids,
   getMediaTypeGranularity,
   getPriceByGranularity,
-  addBidResponse, resetAuctionState, responsesReady
+  addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
 import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
@@ -28,6 +28,7 @@ import '../../modules/currency.js'
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
+import {sandbox} from 'sinon';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -1737,6 +1738,42 @@ describe('auctionmanager.js', function () {
       })).to.equal('high');
     });
   });
+
+  describe('addWinningBid', () => {
+    let auction, bid, adUnits, sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(adapterManager, 'callBidWonBidder');
+      sandbox.stub(adapterManager, 'triggerBilling')
+      adUnits = [{code: 'au1'}, {code: 'au2'}]
+      auction = newAuction({adUnits});
+      bid = {
+        bidder: 'mock-bidder'
+      };
+    })
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should call bidWon', () => {
+      auction.addWinningBid(bid);
+      sinon.assert.calledWith(adapterManager.callBidWonBidder, bid.bidder, bid, adUnits);
+    });
+
+    [undefined, false].forEach(deferBilling => {
+      it(`should call onBidBillable if deferBilling = ${deferBilling}`, () => {
+        bid.deferBilling = deferBilling;
+        auction.addWinningBid(bid);
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+    })
+
+    it('should NOT call onBidBillable if deferBilling  = true', () => {
+      bid.deferBilling = true;
+      auction.addWinningBid(bid);
+      sinon.assert.notCalled(adapterManager.triggerBilling);
+    })
+  })
 
   function mockAuction(getBidRequests, start = 1) {
     return {

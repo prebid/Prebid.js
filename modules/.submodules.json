@@ -80,6 +80,7 @@
       "greenbidsRtdProvider",
       "growthCodeRtdProvider",
       "hadronRtdProvider",
+      "humansecurityRtdProvider",
       "iasRtdProvider",
       "idWardRtdProvider",
       "imRtdProvider",
@@ -100,7 +101,8 @@
       "sirdataRtdProvider",
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider",
+      "wurflRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
@@ -108,7 +110,8 @@
     ],
     "videoModule": [
       "jwplayerVideoProvider",
-      "videojsVideoProvider"
+      "videojsVideoProvider",
+      "adplayerproVideoProvider"
     ],
     "paapi": [
       "paapiForGpt",
