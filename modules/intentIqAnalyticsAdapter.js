@@ -7,7 +7,7 @@ import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
-import { FIRST_PARTY_KEY, VERSION } from '../libraries/intentIqConstants/intentIqConstants.js';
+import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, VERSION} from '../libraries/intentIqConstants/intentIqConstants.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -110,6 +110,7 @@ function initLsValues() {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
     }
     iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled =  iiqArr[0].params.manualWinReportEnabled || false
   }
 }
 
@@ -120,7 +121,10 @@ function initReadLsIds() {
     if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
-    let partnerData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
+    const partnerData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
+    const clientsHints = readData(CLIENT_HINTS_KEY) || '';
+
+
     if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
       let pData = JSON.parse(partnerData);
@@ -128,6 +132,8 @@ function initReadLsIds() {
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
     }
+
+    iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints = clientsHints
   } catch (e) {
     logError(e)
   }
@@ -232,7 +238,8 @@ function constructFullUrl(data) {
     '&jsver=' + VERSION +
     '&vrref=' + getReferrer() +
     '&source=pbjs' +
-    '&payload=' + JSON.stringify(report)
+    '&payload=' + JSON.stringify(report) +
+    '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints
 }
 
 export function getReferrer() {

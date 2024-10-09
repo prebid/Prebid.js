@@ -253,7 +253,7 @@ export const intentIqIdSubmodule = {
     if (typeof configParams.partner !== 'number') {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
       firePartnerCallback()
-      return {};
+      return;
     }
 
     const FIRST_PARTY_DATA_KEY = `_iiq_fdata_${configParams.partner}`;
@@ -269,7 +269,7 @@ export const intentIqIdSubmodule = {
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
       logError('User ID - intentIqId submodule: browser is in blacklist!');
       if (configParams.callback) configParams.callback('', BLACK_LIST);
-      return {};
+      return;
     }
 
     // Get consent information
@@ -394,8 +394,6 @@ export const intentIqIdSubmodule = {
               partnerData.data = ''
               storeFirstPartyData()
               firePartnerCallback()
-              callback()
-              return {}
             }
             if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
             if ('cttl' in respJson) {
@@ -407,7 +405,9 @@ export const intentIqIdSubmodule = {
               if (respJson.tc == 41) {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                return defineEmptyDataAndFireCallback();
+                 defineEmptyDataAndFireCallback();
+                callback({})
+                 return
               } else {
                 firstPartyData.group = WITH_IIQ;
               }
@@ -419,7 +419,9 @@ export const intentIqIdSubmodule = {
               if (respJson.isOptedOut === true) {
                 firstPartyData.group = OPT_OUT;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                return defineEmptyDataAndFireCallback()
+                 defineEmptyDataAndFireCallback()
+                callback({})
+                return
               }
             }
             if ('pid' in respJson) {
@@ -427,7 +429,9 @@ export const intentIqIdSubmodule = {
             }
             if ('ls' in respJson) {
               if (respJson.ls === false) {
-                return defineEmptyDataAndFireCallback()
+                 defineEmptyDataAndFireCallback()
+                callback({})
+                return
               }
               // If data is empty, means we should save as INVALID_ID
               if (respJson.data == '') {

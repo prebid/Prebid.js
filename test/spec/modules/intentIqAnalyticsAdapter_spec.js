@@ -89,7 +89,7 @@ describe('IntentIQ tests all', function () {
       dataInLs: null,
       eidl: null,
       lsIdsInitialized: false,
-      manualReport: false
+      manualWinReportEnabled: false
     };
     if (iiqAnalyticsAnalyticsAdapter.track.restore) {
       iiqAnalyticsAnalyticsAdapter.track.restore();
@@ -159,8 +159,8 @@ describe('IntentIQ tests all', function () {
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
 
-  it('should not send request if manualReport is true', function () {
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualReport = true;
+  it('should not send request if manualWinReportEnabled is true', function () {
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
     events.emit(EVENTS.BID_WON, wonRequest);
     expect(server.requests.length).to.equal(0);
   });
@@ -183,7 +183,7 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should handle reportExternalWin', function () {
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualReport = true;
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
     expect(window.intentIqAnalyticsAdapter.reportExternalWin).to.be.a('function');
