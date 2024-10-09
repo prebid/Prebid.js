@@ -230,7 +230,6 @@ export function generateAnalyticsHostUrl(qortexUrlBase) {
 /**
  * Updates bidder configs with the response from Qortex context services
  * @param {Object} reqBidsConfig Bid request configuration object
- * @param {string[]} bidders Bidders specified in module's configuration
  */
 export function addContextToRequests (reqBidsConfig) {
   if (qortexSessionInfo.currentSiteContext === null) {
