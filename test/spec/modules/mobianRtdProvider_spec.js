@@ -228,4 +228,47 @@ describe('Mobian RTD Submodule', function () {
       });
     });
   });
+
+  it('should set key-value pairs when ext object is missing', function () {
+    bidReqConfig = {
+      ortb2Fragments: {
+        global: {
+          site: {}
+        }
+      }
+    };
+
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.success(JSON.stringify({
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          mobianRisk: 'low',
+          mobianSentiment: 'positive',
+          mobianContentCategories: [],
+          mobianEmotions: ['joy'],
+          mobianThemes: [],
+          mobianTones: [],
+          mobianGenres: [],
+          ap: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
+        }
+      }));
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, () => {}, {}).then(() => {
+      expect(bidReqConfig.ortb2Fragments.global.site.ext).to.exist;
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'low',
+        mobianContentCategories: [],
+        mobianSentiment: 'positive',
+        mobianEmotions: ['joy'],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: [],
+        apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
+      });
+    });
+  });
 });
