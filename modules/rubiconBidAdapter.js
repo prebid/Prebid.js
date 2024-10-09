@@ -42,6 +42,8 @@ config.getConfig('rubicon', config => {
 
 const GVLID = 52;
 
+let impIdMap = {};
+
 var sizeMap = {
   1: '468x60',
   2: '728x90',
@@ -211,6 +213,17 @@ export const converter = ortbConverter({
     }
 
     setBidFloors(bidRequest, imp);
+    // ensure unique imp IDs for twin adunits
+    var adUnitCodeCount = {};
+    var adUnitCode = imp.id;
+    if (adUnitCodeCount[adUnitCode]) {
+      adUnitCodeCount[adUnitCode] += 1;
+      imp.id = adUnitCode + adUnitCodeCount[adUnitCode];
+    } else {
+      adUnitCodeCount[adUnitCode] = 1;
+    }
+    // update adunit map so we can translate back to original adunit code
+    impIdMap[imp.id] = adUnitCode;
 
     return imp;
   },
@@ -302,6 +315,7 @@ export const spec = {
 
     if (filteredRequests && filteredRequests.length) {
       const data = converter.toORTB({bidRequests: filteredRequests, bidderRequest});
+      impIdMap = {};
 
       filteredHttpRequest.push({
         method: 'POST',
