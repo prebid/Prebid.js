@@ -31,7 +31,7 @@ const BIDDER_CODE = 'connatix';
 const AD_URL = 'https://capi.connatix.com/rtb/hba';
 const DEFAULT_MAX_TTL = '3600';
 const DEFAULT_CURRENCY = 'USD';
-const USER_IDS = 'user_ids';
+const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'user_ids';
 const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
@@ -249,7 +249,12 @@ export const spec = {
    */
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     const bidRequests = _getBidRequests(validBidRequests);
-    let userIds = readFromAllStorages(USER_IDS) || CNX_IDS_VALUES;
+    let userIds;
+    try {
+      userIds = readFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY) || CNX_IDS_VALUES;
+    } catch (error) {
+      userIds = CNX_IDS_VALUES;
+    }
 
     const requestPayload = {
       ortb2: bidderRequest.ortb2,
@@ -346,7 +351,7 @@ export const spec = {
 
       const response = event.data;
       if (response.data) {
-        saveOnAllStorages(USER_IDS, response.data, CNX_IDS_EXPIRY);
+        saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
       }
     }, true)
 
