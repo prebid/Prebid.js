@@ -46,6 +46,7 @@
     "sharedIdSystem",
     "sharethroughBidAdapter",
     "sizeMappingV2",
+    "sonobiBidAdapter",
     "teadsBidAdapter",
     "topicsFpdModule",
     "tripleliftBidAdapter",
