@@ -785,6 +785,40 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pu.includes('ggad')).to.be.false;
       expect(bidRequest.data.pu.includes('ggdeal')).to.be.false;
     });
+
+    it('should handle ORTB2 device data', function () {
+      const ortb2 = {
+        device: {
+          w: 980,
+          h: 1720,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+          language: 'en',
+          devicetype: 1,
+          make: 'Apple',
+          model: 'iPhone 12 Pro Max',
+          os: 'iOS',
+          osv: '17.4',
+          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          ip: '127.0.0.1',
+          ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
+        },
+      };
+
+      const bidRequest = spec.buildRequests(bidRequests, { ortb2 })[0];
+
+      expect(bidRequest.data.dnt).to.equal(ortb2.device.dnt);
+      expect(bidRequest.data.ua).to.equal(ortb2.device.ua);
+      expect(bidRequest.data.lang).to.equal(ortb2.device.language);
+      expect(bidRequest.data.dt).to.equal(ortb2.device.devicetype);
+      expect(bidRequest.data.make).to.equal(ortb2.device.make);
+      expect(bidRequest.data.model).to.equal(ortb2.device.model);
+      expect(bidRequest.data.os).to.equal(ortb2.device.os);
+      expect(bidRequest.data.osv).to.equal(ortb2.device.osv);
+      expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
+      expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
+      expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
+    });
   })
 
   describe('interpretResponse', function () {
