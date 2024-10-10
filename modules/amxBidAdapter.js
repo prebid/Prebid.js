@@ -18,9 +18,8 @@ import { fetch } from '../src/ajax.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
-const VERSION = 'pba1.3.4';
+const VERSION = 'pba1.4.0';
 const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_BASE = 'https://1x1.a-mo.net/';
 const TRACKING_ENDPOINT = TRACKING_BASE + 'hbx/';
@@ -59,7 +58,7 @@ function flatMap(input, mapFn) {
 const isVideoADM = (html) => html != null && VAST_RXP.test(html);
 
 function getMediaType(bid) {
-  if (isVideoADM(bid.adm)) {
+  if (isVideoADM(bid.adm) || bid.mtype === 2) {
     return VIDEO;
   }
 
@@ -67,14 +66,6 @@ function getMediaType(bid) {
 }
 
 const nullOrType = (value, type) => value == null || typeof value === type; // eslint-disable-line valid-typeof
-
-function getID(loc) {
-  const host = loc.hostname.split('.');
-  const short = host
-    .slice(host.length - (SIMPLE_TLD_TEST.test(loc.hostname) ? 3 : 2))
-    .join('.');
-  return btoa(short).replace(/=+$/, '');
-}
 
 const enc = encodeURIComponent;
 
@@ -94,21 +85,30 @@ function setUIDSafe(uid) {
   }
 }
 
-function nestedQs(qsData) {
-  const out = [];
-  Object.keys(qsData || {}).forEach((key) => {
-    out.push(enc(key) + '=' + enc(String(qsData[key])));
-  });
-
-  return enc(out.join('&'));
-}
-
 function createBidMap(bids) {
   const out = {};
   _each(bids, (bid) => {
     out[bid.bidId] = convertRequest(bid);
   });
   return out;
+}
+
+function ensureNumber(value, defaultValue) {
+  if (value == null) {
+    return defaultValue;
+  }
+
+  const valueType = typeof value;
+  if (valueType === 'number') {
+    return value;
+  }
+
+  if (valueType !== 'string' || isNaN(value)) {
+    return defaultValue;
+  }
+
+  const parsed = parseFloat(value);
+  return isFinite(parsed) ? parsed : defaultValue;
 }
 
 const trackEvent = (eventName, data) =>
@@ -132,7 +132,10 @@ function ensureFloor(floorValue) {
 
 function getFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.floor', DEFAULT_MIN_FLOOR);
+    return ensureNumber(
+      deepAccess(bid, 'params.floor', DEFAULT_MIN_FLOOR),
+      DEFAULT_MIN_FLOOR
+    );
   }
 
   try {
@@ -142,6 +145,7 @@ function getFloor(bid) {
       size: '*',
       bidRequest: bid,
     });
+
     return floor.floor;
   } catch (e) {
     logError('call to getFloor failed: ', e);
@@ -161,8 +165,8 @@ function convertRequest(bid) {
 
   const au =
     bid.params != null &&
-      typeof bid.params.adUnitId === 'string' &&
-      bid.params.adUnitId !== ''
+    typeof bid.params.adUnitId === 'string' &&
+    bid.params.adUnitId !== ''
       ? bid.params.adUnitId
       : bid.adUnitCode;
 
@@ -240,11 +244,12 @@ function getSyncSettings() {
   }
 
   const settings = {
-    d: syncConfig.syncDelay,
-    l: syncConfig.syncsPerBidder,
+    d: ensureNumber(syncConfig.syncDelay),
+    l: ensureNumber(syncConfig.syncsPerBidder),
     t: 0,
-    e: syncConfig.syncEnabled,
+    e: isTrue(syncConfig.syncEnabled),
   };
+
   const all = isSyncEnabled(syncConfig.filterSettings, 'all');
 
   if (all) {
@@ -301,6 +306,29 @@ function buildReferrerInfo(bidderRequest) {
 const isTrue = (boolValue) =>
   boolValue === true || boolValue === 1 || boolValue === 'true';
 
+const NONE = Symbol('None');
+const [getConfig, readConfig] = (() => {
+  let _config = null;
+  return [
+    (key, defaultValue = null) => {
+      _config ??= config.getConfig() ?? {};
+      const value = deepAccess(_config, key, NONE);
+      return value === NONE ? defaultValue : value;
+    },
+    () => {
+      _config = null;
+    },
+  ];
+})();
+
+function extractConfig() {
+  return {
+    bce: getConfig('useBidCache'),
+    mbc: getConfig('minBidCacheTTL', -1),
+    ttl: getConfig('ttlBuffer', 1),
+  };
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 737,
@@ -314,6 +342,8 @@ export const spec = {
   },
 
   buildRequests(bidRequests, bidderRequest) {
+    readConfig();
+
     const loc = getLocation(bidderRequest);
     const tagId = deepAccess(bidRequests[0], 'params.tagId', null);
     const testMode = deepAccess(bidRequests[0], 'params.testMode', 0);
@@ -328,7 +358,6 @@ export const spec = {
 
     const payload = {
       a: generateUUID(),
-      B: 0,
       b: loc.host,
       brc: fbid.bidderRequestsCount || 0,
       bwc: fbid.bidderWinsCount || 0,
@@ -336,11 +365,8 @@ export const spec = {
       tm: isTrue(testMode),
       V: '$prebid.version$',
       vg: '$$PREBID_GLOBAL$$',
-      i: testMode && tagId != null ? tagId : getID(loc),
-      l: {},
-      f: 0.01,
+      i: testMode && tagId != null ? tagId : null,
       cv: VERSION,
-      st: 'prebid',
       h: screen.height,
       w: screen.width,
       gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
@@ -351,15 +377,14 @@ export const spec = {
       re: refInfo(bidderRequest, 'ref'),
       am: getUIDSafe(),
       usp: bidderRequest.uspConsent || '1---',
-      smt: 1,
-      d: '',
       m: createBidMap(bidRequests),
-      cpp: config.getConfig('coppa') ? 1 : 0,
+      cpp: getConfig('coppa', false) ? 1 : 0,
       fpd2: bidderRequest.ortb2,
       tmax: bidderRequest.timeout,
       amp: refInfo(bidderRequest, 'isAmp', null),
       ri: buildReferrerInfo(bidderRequest),
       sync: getSyncSettings(),
+      conf: extractConfig(),
       eids: values(
         bidRequests.reduce((all, bid) => {
           // we only want unique ones in here
@@ -418,9 +443,9 @@ export const spec = {
     const output = [];
     let hasFrame = false;
 
-    _each(serverResponses, function({ body: response }) {
+    _each(serverResponses, function ({ body: response }) {
       if (response != null && response.p != null && response.p.hreq) {
-        _each(response.p.hreq, function(syncPixel) {
+        _each(response.p.hreq, function (syncPixel) {
           const pixelType =
             syncPixel.indexOf('__st=iframe') !== -1 ? 'iframe' : 'image';
           if (syncOptions.iframeEnabled || pixelType === 'image') {
@@ -473,7 +498,9 @@ export const spec = {
           const { bc: bidderCode, ds: demandSource } = bid.ext ?? {};
 
           return {
-            ...(bidderCode != null && allowAlternateBidderCodes ? { bidderCode } : {}),
+            ...(bidderCode != null && allowAlternateBidderCodes
+              ? { bidderCode }
+              : {}),
             requestId: bidID,
             cpm: bid.price,
             width: size[0],
@@ -509,7 +536,6 @@ export const spec = {
       np: targetingData.cpm,
       aud: targetingData.requestId,
       a: targetingData.adUnitCode,
-      c2: nestedQs(targetingData.adserverTargeting),
       cn3: targetingData.timeToRespond,
     });
   },
@@ -559,7 +585,7 @@ export const spec = {
       body: payload,
       keepalive: true,
       withCredentials: true,
-      method: 'POST'
+      method: 'POST',
     }).catch((_e) => {
       // do nothing; ignore errors
     });
