@@ -2974,6 +2974,24 @@ describe('PubMatic adapter', function () {
           expect(data.device).to.include.any.keys('connectiontype');
         }
       });
+
+      it('should send imp.pmp in request if pmp json is present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        originalBidRequests[0].ortb2Imp.pmp = {
+          'private_auction': 0,
+          'deals': [{ 'id': '5678' }]
+        }
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.exist.and.to.be.an('object');
+      })
+
+      it('should not send imp.pmp in request if pmp json is not present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.deep.equal(undefined);
+      })
   	});
 
     it('Request params dctr check', function () {

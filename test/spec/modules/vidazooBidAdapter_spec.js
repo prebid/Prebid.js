@@ -92,7 +92,7 @@ const VIDEO_BID = {
       'minduration': 0,
       'startdelay': 0,
       'linearity': 1,
-      'api': [2],
+      'api': [2, 7],
       'placement': 1
     }
   }
@@ -115,6 +115,7 @@ const BIDDER_REQUEST = {
       'cat': ['IAB2'],
       'pagecat': ['IAB2-2'],
       'content': {
+        'language': 'en',
         'data': [{
           'name': 'example.com',
           'ext': {
@@ -129,7 +130,8 @@ const BIDDER_REQUEST = {
     },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -157,8 +159,14 @@ const BIDDER_REQUEST = {
           segment: [{id: '243'}],
         },
       ],
+    },
+    source: {
+      ext: {
+        omidpn: 'MyIntegrationPartner',
+        omidpv: '7.1'
+      }
     }
-  },
+  }
 };
 
 const SERVER_RESPONSE = {
@@ -336,6 +344,8 @@ describe('VidazooBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -359,7 +369,7 @@ describe('VidazooBidAdapter', function () {
           webSessionId: webSessionId,
           mediaTypes: {
             video: {
-              api: [2],
+              api: [2, 7],
               context: 'instream',
               linearity: 1,
               maxduration: 60,
@@ -373,7 +383,9 @@ describe('VidazooBidAdapter', function () {
               protocols: [2, 3, 5, 6],
               startdelay: 0
             }
-          }
+          },
+          omidpn: 'MyIntegrationPartner',
+          omidpv: '7.1'
         }
       })
       ;
@@ -442,6 +454,8 @@ describe('VidazooBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -533,6 +547,8 @@ describe('VidazooBidAdapter', function () {
         gpid: '1234567890',
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
+        contentLang: 'en',
+        coppa: 0,
         contentData: [{
           'name': 'example.com',
           'ext': {

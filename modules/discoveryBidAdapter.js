@@ -2,11 +2,11 @@ import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { getHLen, getHC, getDM } from '../src/fpd/navigator.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice, getScreenSize } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
+import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -291,8 +291,6 @@ function getParam(validBidRequests, bidderRequest) {
       },
       device: {
         nbw: getConnectionDownLink(),
-        hc: getHC(),
-        dm: getDM()
       }
     }
   } catch (error) {}

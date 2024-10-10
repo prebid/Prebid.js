@@ -354,17 +354,30 @@ describe('Debugging config', () => {
 });
 
 describe('bidderBidInterceptor', () => {
-  let next, interceptBids, onCompletion, interceptResult, done, addBid;
+  let next, interceptBids, onCompletion, interceptResult, done, addBid, wrapCallback, addPaapiConfig, wrapped;
 
-  function interceptorArgs({spec = {}, bids = [], bidRequest = {}, ajax = {}, wrapCallback = {}, cbs = {}} = {}) {
+  function interceptorArgs({spec = {}, bids = [], bidRequest = {}, ajax = {}, cbs = {}} = {}) {
     return [next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, Object.assign({onCompletion}, cbs)];
   }
 
   beforeEach(() => {
     next = sinon.spy();
+    wrapped = false;
+    wrapCallback = sinon.stub().callsFake(cb => {
+      if (cb == null) return cb;
+      return function () {
+        wrapped = true;
+        try {
+          return cb.apply(this, arguments)
+        } finally {
+          wrapped = false;
+        }
+      }
+    });
     interceptBids = sinon.stub().callsFake((opts) => {
       done = opts.done;
       addBid = opts.addBid;
+      addPaapiConfig = opts.addPaapiConfig;
       return interceptResult;
     });
     onCompletion = sinon.spy();
@@ -372,12 +385,25 @@ describe('bidderBidInterceptor', () => {
   });
 
   it('should pass to interceptBid an addBid that triggers onBid', () => {
-    const onBid = sinon.spy();
+    const onBid = sinon.stub().callsFake(() => {
+      expect(wrapped).to.be.true;
+    });
     bidderBidInterceptor(...interceptorArgs({cbs: {onBid}}));
-    const bid = {};
+    const bid = {
+      bidder: 'bidder'
+    };
     addBid(bid);
     expect(onBid.calledWith(sinon.match.same(bid))).to.be.true;
   });
+
+  it('should pass addPaapiConfig that triggers onPaapi', () => {
+    const onPaapi = sinon.stub().callsFake(() => {
+      expect(wrapped).to.be.true;
+    });
+    bidderBidInterceptor(...interceptorArgs({cbs: {onPaapi}}));
+    addPaapiConfig({paapi: 'config'}, {bidId: 'bidId'});
+    sinon.assert.calledWith(onPaapi, {paapi: 'config', bidId: 'bidId'})
+  })
 
   describe('with no remaining bids', () => {
     it('should pass a done callback that triggers onCompletion', () => {
@@ -386,6 +412,12 @@ describe('bidderBidInterceptor', () => {
       interceptBids.args[0][0].done();
       expect(onCompletion.calledOnce).to.be.true;
     });
+
+    it('should call onResponse', () => {
+      const onResponse = sinon.stub();
+      bidderBidInterceptor(...interceptorArgs({cbs: {onResponse}}));
+      sinon.assert.called(onResponse);
+    })
 
     it('should not call next()', () => {
       bidderBidInterceptor(...interceptorArgs());

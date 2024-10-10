@@ -1,8 +1,7 @@
 import {submodule} from '../src/hook.js';
 import {buildUrl, deepAccess, formatQS, logError, parseSizesInput} from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
-import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, setGdprConsent} from '../libraries/dfpUtils/dfpUtils.js';
-import {gdprDataHandler} from '../src/consentHandler.js';
+import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 import {registerVideoSupport} from '../src/adServerManager.js';
 
 export const adpodUtils = {};
@@ -75,11 +74,9 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       DEFAULT_DFP_PARAMS,
       derivedParams,
       params,
-      { cust_params: encodedCustomParams }
+      { cust_params: encodedCustomParams },
+      gdprParams(),
     );
-
-    const gdprConsent = gdprDataHandler.getConsentData();
-    setGdprConsent(gdprConsent, queryParams);
 
     const masterTag = buildUrl({
       ...DFP_ENDPOINT,

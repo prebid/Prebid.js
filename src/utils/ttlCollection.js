@@ -1,6 +1,6 @@
 import {GreedyPromise} from './promise.js';
 import {binarySearch, logError, timestamp} from '../utils.js';
-import setFocusTimeout from './focusTimeout.js';
+import {setFocusTimeout} from './focusTimeout.js';
 
 /**
  * Create a set-like collection that automatically forgets items after a certain time.

@@ -1,4 +1,4 @@
-import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
+import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'libraries/liveIntentId/idSystem.js';
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
