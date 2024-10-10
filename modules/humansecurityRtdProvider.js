@@ -92,7 +92,7 @@ function load(config) {
   const scriptAttrs = { 'data-sid': sessionId };
   const scriptUrl = `${SCRIPT_URL}?r=${refDomain}${clientId ? `&c=${clientId}` : ''}`;
 
-  loadExternalScript(scriptUrl, MODULE_TYPE_RTD ,SUBMODULE_NAME, onImplLoaded, null, scriptAttrs);
+  loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, onImplLoaded, null, scriptAttrs);
 }
 
 /**
