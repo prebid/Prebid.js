@@ -163,6 +163,7 @@ function bidWon(args, isReportExternal) {
     logInfo('IIQ ANALYTICS -> BID WON')
     return true;
   }
+  return false;
 }
 
 function defineGlobalVariableName() {

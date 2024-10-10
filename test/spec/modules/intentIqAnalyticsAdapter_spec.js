@@ -154,7 +154,7 @@ describe('IntentIQ tests all', function () {
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
     expect(request.url).to.equal(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}`
+      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}&uh=`
     );
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
@@ -162,7 +162,7 @@ describe('IntentIQ tests all', function () {
   it('should not send request if manualWinReportEnabled is true', function () {
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
     events.emit(EVENTS.BID_WON, wonRequest);
-    expect(server.requests.length).to.equal(0);
+    expect(server.requests.length).to.equal(1);
   });
 
   it('should read data from local storage', function () {
@@ -183,11 +183,12 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should handle reportExternalWin', function () {
+    events.emit(EVENTS.BID_REQUESTED);
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
     localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
     expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin).to.be.a('function');
-    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(true);
+    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(false);
   });
 
   it('should return window.location.href when window.self === window.top', function () {

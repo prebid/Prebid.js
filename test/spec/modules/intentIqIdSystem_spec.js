@@ -58,7 +58,7 @@ describe('IntentIQ tests', function () {
     'date': Date.now(),
     'cttl': 9999999999999,
     'rrtt': 123,
-    'data': 'U2FsdGVkX18AKRyhEPdiL9kuxSigBrlqLaDJWvwSird2O5TdBW67gX+xbL4nYxHDjdS5G5FpdhtpouZiBFw2FBjyUyobZheM857G5q4BapdiA8z3K6j0W+r0im30Ak2SSn2NBfFwxcCgP/UAF5/ddxIIaeWl1yBMZBO+Gic6us2JUg86paAtp3Sk4unCvg1G+4myYYSKgGi/Vrw51ye/jAGn4AdAbFOCojENhV+Ts/XyVK0AQGdC3wqnQUId9MZpB2VoTA9wgXeYEzjpDDJmcKQ18V3WTKnK/H1FBVZa1vovOj13ZUeuMUZbZL83NFE/PkCrzJjRy14orcdnGbDUaxXUBBulDCr21gNnc0mLbYj7b18OQQ75/GhX80HroxbMEyc5tiECBrE/JsW+2sQ4MwoqePPPj/f5Bf4wJ4z3UphjK6maypoWaXsZCZTp2mJYmsf0XsNHLpt1MUrBeAmy6Bewkb+WEAeVe6/b53DQDlo2LQXpSzDPVucMn3CQOWFv1Bvz5cLIZRD8/NtDjgYzWNXHRRAGhhN19yew0ZyeS09x3UBiwER6A6ppv2qQVGs8QNsif3z7pkhkNoETcXQKyv1xa5X87tLvXkO4FYDQQvXEGInyPuNmkFtsZS5FJl+TYrdyaEiCOwRgkshwCU4s93WrfRUtPHtd4zNiA1LWAKGKeBEK6woeFn1YU1YIqsvx9wXfkCbqNkHTi2mD1Eb85a2niSK9BzDdbxwv6EzZ+f9j6esEVdBUIiYmsUuOfTp/ftOHKjBKi1lbeC5imAzZfV/AKvqS5opAVGp7Y9pq976sYblCrPBQ0PYI+Cm2ZNhG1vKc2Pa0rjwJwvusZp2Wvw9zSbnoZUeBi1O+XGYqGhkqYVvH3rXvrFiSmA7pk5Buz6vPd6YV1d55PVahv/4u3jksEI/ZN8QNshrM0foJ4tE/q4x8EKx22txb6433QQybwFfExdmA/XaPqM0rwqTm4qyK0mbX984A8niQka5T5pPkEfL4ALqlIgJ2Fo7X/s6FRU/sZq72JWKcVET4edebD0w5mjeotsjUz5EGT0jRSWRba0yxe4myNaAyY7Y0NTNY9J9Q0JLDFh9Hb05Ejt0Jeoq4Olv8/zFWObBoQtkQyeeRB8L7XIari/xgl191J6euhe5+8vu3ta3tX+XGk+gqdfip1R11tEYpW/XPsV+6DBEfS/8icDHiwK7sPpAgTx7GuJGL1U3Hbg7P/2zUU6xMSR5In/Oa5i1B9FtayGd+utiqrGJsqg8IyFlAt1B9B11k/wJFnWWevMly+y+Ko75ShF7UzfcNR2s41doov+2DEz/YiKH1qHjVOXjslBTYjceB3xqa8sSPDt/vQDDUIX5CPLyVBZj7AeeB/IKDFjZVovBDH92Xl8JTNILRuDHsWmSwNI1DUzgus6ox4u9Mi439caK6KnpNYso+ksLXNEQCm0m15WV2NC+fjkEwLV6hGNbz'
+    'data': 'U2FsdGVkX185JJuQ2Zk0JLGjpgEbqxNy0Yl2qMtj9PqA5Q3IkNQYyTyFyTOkJi9Nf7E43PZQvIUgiUY/A9QxKYmy1LHX9LmZMKlLOcY1Je13Kr1EN7HRF8nIIWXo2jRgS5n0Nmty5995x3YMjLw+aRweoEtcrMC6p4wOdJnxfrOhdg0d/R7b8C+IN85rDLfNXANL1ezX8zwh4rj9XpMmWw=='
   }
   let testResponseWithValues = {
     'abPercentage': 90,
@@ -133,7 +133,7 @@ describe('IntentIQ tests', function () {
     const cookieValue = storage.getCookie('_iiq_fdata_' + partner);
     expect(cookieValue).to.not.equal(null);
     const decryptedData = JSON.parse(decryptData(JSON.parse(cookieValue).data));
-    expect(decryptedData).to.deep.equal(['test_personid']);
+    expect(decryptedData).to.deep.equal({eids: ['test_personid']});
   });
 
   it('should call the IntentIQ endpoint with only partner', function () {
@@ -252,7 +252,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false })
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.args[0][0]).to.be.undefined;
+    expect(callBackSpy.args[0][0]).to.deep.equal({});
   });
 
   it('send addition parameters if were found in localstorage', function () {
@@ -277,7 +277,7 @@ describe('IntentIQ tests', function () {
   it('return data stored in local storage ', function () {
     localStorage.setItem('_iiq_fdata_' + partner, JSON.stringify(testLSValueWithData));
     let returnedValue = intentIqIdSubmodule.getId(allConfigParams);
-    expect(JSON.stringify(returnedValue.id)).to.equal(decryptData(testLSValueWithData.data));
+    expect(returnedValue.id).to.deep.equal(JSON.parse(decryptData(testLSValueWithData.data)).eids);
   });
 
   it('should handle browser blacklisting', function () {

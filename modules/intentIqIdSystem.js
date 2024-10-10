@@ -480,6 +480,7 @@ export const intentIqIdSubmodule = {
       ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
     const respObj = {callback: resp};
+
     if (runtimeEids?.eids?.length) respObj.id = runtimeEids.eids;
     return respObj
   },
