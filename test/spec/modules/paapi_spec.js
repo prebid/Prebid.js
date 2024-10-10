@@ -7,7 +7,7 @@ import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
 import {
-  addPaapiConfigHook,
+  addPaapiConfigHook, addPaapiData,
   buyersToAuctionConfigs,
   getPAAPIConfig,
   getPAAPISize,
@@ -652,110 +652,171 @@ describe('paapi module', () => {
         config.resetConfig();
       });
 
-      function mark() {
-        return Object.fromEntries(
-          adapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {
-            },
-            []
-          ).map(b => [b.bidderCode, b])
-        );
-      }
+      describe('makeBidRequests', () => {
+        function mark() {
+          return Object.fromEntries(
+            adapterManager.makeBidRequests(
+              adUnits,
+              Date.now(),
+              utils.getUniqueIdentifierStr(),
+              function callback() {
+              },
+              []
+            ).map(b => [b.bidderCode, b])
+          );
+        }
 
-      function expectFledgeFlags(...enableFlags) {
-        const bidRequests = mark();
-        expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
-        bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
+        function expectFledgeFlags(...enableFlags) {
+          const bidRequests = mark();
+          expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
+          bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
 
-        expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
-        bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
+          expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
+          bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
 
-        Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
-          if (bid.ortb2Imp?.ext?.ae) {
-            sinon.assert.match(bid.ortb2Imp.ext.igs, {
-              ae: bid.ortb2Imp.ext.ae,
-              biddable: 1
-            });
-          }
-        });
-      }
-
-      describe('with setConfig()', () => {
-        it('should set paapi.enabled correctly per bidder', function () {
-          config.setConfig({
-            bidderSequence: 'fixed',
-            paapi: {
-              enabled: true,
-              bidders: ['appnexus'],
-              defaultForSlots: 1,
+          Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
+            if (bid.ortb2Imp?.ext?.ae) {
+              sinon.assert.match(bid.ortb2Imp.ext.igs, {
+                ae: bid.ortb2Imp.ext.ae,
+                biddable: 1
+              });
             }
           });
-          expectFledgeFlags({enabled: true, ae: 1}, {enabled: false, ae: undefined});
-        });
+        }
 
-        it('should set paapi.enabled correctly for all bidders', function () {
-          config.setConfig({
-            bidderSequence: 'fixed',
-            paapi: {
-              enabled: true,
-              defaultForSlots: 1,
-            }
-          });
-          expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
-        });
-
-        Object.entries({
-          'not set': {
-            cfg: {},
-            componentSeller: false
-          },
-          'set': {
-            cfg: {
-              componentSeller: {
-                auctionConfig: {
-                  decisionLogicURL: 'publisher.example'
-                }
-              }
-            },
-            componentSeller: true
-          }
-        }).forEach(([t, {cfg, componentSeller}]) => {
-          it(`should set request paapi.componentSeller = ${componentSeller} when config componentSeller is ${t}`, () => {
+        describe('with setConfig()', () => {
+          it('should set paapi.enabled correctly per bidder', function () {
             config.setConfig({
+              bidderSequence: 'fixed',
+              paapi: {
+                enabled: true,
+                bidders: ['appnexus'],
+                defaultForSlots: 1,
+              }
+            });
+            expectFledgeFlags({enabled: true, ae: 1}, {enabled: false, ae: 0});
+          });
+
+          it('should set paapi.enabled correctly for all bidders', function () {
+            config.setConfig({
+              bidderSequence: 'fixed',
               paapi: {
                 enabled: true,
                 defaultForSlots: 1,
-                ...cfg
               }
             });
-            Object.values(mark()).forEach(br => expect(br.paapi?.componentSeller).to.eql(componentSeller));
+            expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
+          });
+
+          Object.entries({
+            'not set': {
+              cfg: {},
+              componentSeller: false
+            },
+            'set': {
+              cfg: {
+                componentSeller: {
+                  auctionConfig: {
+                    decisionLogicURL: 'publisher.example'
+                  }
+                }
+              },
+              componentSeller: true
+            }
+          }).forEach(([t, {cfg, componentSeller}]) => {
+            it(`should set request paapi.componentSeller = ${componentSeller} when config componentSeller is ${t}`, () => {
+              config.setConfig({
+                paapi: {
+                  enabled: true,
+                  defaultForSlots: 1,
+                  ...cfg
+                }
+              });
+              Object.values(mark()).forEach(br => expect(br.paapi?.componentSeller).to.eql(componentSeller));
+            });
           });
         });
+      });
+      describe('addPaapiData', () => {
+        function getEnrichedAdUnits() {
+          const next = sinon.stub();
+          addPaapiData(next, adUnits);
+          sinon.assert.calledWith(next, adUnits);
+          return adUnits;
+        }
+
+        function getImpExt() {
+          const next = sinon.stub();
+          addPaapiData(next, adUnits);
+          sinon.assert.calledWith(next, adUnits);
+          return {
+            global: adUnits[0].ortb2Imp?.ext,
+            ...Object.fromEntries(adUnits[0].bids.map(bid => [bid.bidder, bid.ortb2Imp?.ext]))
+          }
+        }
 
         it('should not override pub-defined ext.ae', () => {
           config.setConfig({
-            bidderSequence: 'fixed',
             paapi: {
               enabled: true,
               defaultForSlots: 1,
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 0}}});
-          expectFledgeFlags({enabled: true, ae: 0}, {enabled: true, ae: 0});
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 0,
+            },
+            rubicon: undefined,
+            appnexus: undefined
+          });
         });
+
+        it('should override per-bidder when excluded via paapi.bidders', () => {
+          config.setConfig({
+            paapi: {
+              enabled: true,
+              defaultForSlots: 1,
+              bidders: ['rubicon']
+            }
+          })
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 1,
+              igs: {
+                ae: 1,
+                biddable: 1
+              }
+            },
+            rubicon: undefined,
+            appnexus: {
+              ae: 0,
+              igs: {
+                ae: 0,
+                biddable: 0
+              }
+            }
+          })
+        })
 
         it('should populate ext.igs when request has ext.ae', () => {
           config.setConfig({
-            bidderSequence: 'fixed',
             paapi: {
               enabled: true
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 3}}});
-          expectFledgeFlags({enabled: true, ae: 3}, {enabled: true, ae: 3});
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 3,
+              igs: {
+                ae: 3,
+                biddable: 1
+              }
+            },
+            rubicon: undefined,
+            appnexus: undefined,
+          });
         });
 
         it('should not override pub-defined ext.igs', () => {
@@ -765,16 +826,17 @@ describe('paapi module', () => {
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 1, igs: {biddable: 0}}}});
-          const bidReqs = mark();
-          Object.values(bidReqs).flatMap(req => req.bids).forEach(bid => {
-            sinon.assert.match(bid.ortb2Imp.ext, {
+          sinon.assert.match(getImpExt(), {
+            global: {
               ae: 1,
               igs: {
                 ae: 1,
                 biddable: 0
               }
-            });
-          });
+            },
+            rubicon: undefined,
+            appnexus: undefined
+          })
         });
 
         it('should fill ext.ae from ext.igs, if defined', () => {
@@ -784,60 +846,64 @@ describe('paapi module', () => {
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {igs: {}}}});
-          expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 1,
+              igs: {
+                ae: 1,
+                biddable: 1
+              }
+            },
+            appnexus: undefined,
+            rubicon: undefined
+          })
         });
-      });
 
-      describe('ortb2Imp.ext.paapi.requestedSize', () => {
-        beforeEach(() => {
-          config.setConfig({
-            paapi: {
-              enabled: true,
-              defaultForSlots: 1,
-            }
+        describe('ortb2Imp.ext.paapi.requestedSize', () => {
+          beforeEach(() => {
+            config.setConfig({
+              paapi: {
+                enabled: true,
+                defaultForSlots: 1,
+              }
+            });
           });
-        });
 
-        it('should default to value returned by getPAAPISize', () => {
-          getPAAPISizeStub.returns([123, 321]);
-          Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
-            sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
+          it('should default to value returned by getPAAPISize', () => {
+            getPAAPISizeStub.returns([123, 321]);
+            expect(getImpExt().global.paapi).to.eql({
               requestedSize: {
                 width: 123,
                 height: 321
               }
             });
           });
-        });
 
-        it('should not be overridden, if provided by the pub', () => {
-          adUnits[0].ortb2Imp = {
-            ext: {
-              paapi: {
-                requestedSize: {
-                  width: '123px',
-                  height: '321px'
+          it('should not be overridden, if provided by the pub', () => {
+            adUnits[0].ortb2Imp = {
+              ext: {
+                paapi: {
+                  requestedSize: {
+                    width: '123px',
+                    height: '321px'
+                  }
                 }
               }
-            }
-          };
-          Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
-            sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
+            };
+            expect(getImpExt().global.paapi).to.eql({
               requestedSize: {
                 width: '123px',
                 height: '321px'
               }
-            });
+            })
+            sinon.assert.notCalled(getPAAPISizeStub);
           });
-          sinon.assert.notCalled(getPAAPISizeStub);
-        });
 
-        it('should not be set if adUnit has no banner sizes', () => {
-          adUnits[0].mediaTypes = {
-            video: {}
-          };
-          Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
-            expect(bidRequest.ortb2Imp?.ext?.paapi?.requestedSize).to.not.exist;
+          it('should not be set if adUnit has no banner sizes', () => {
+            adUnits[0].mediaTypes = {
+              video: {}
+            };
+            expect(getImpExt().global?.paapi?.requestedSize).to.not.exist;
           });
         });
       });
@@ -1055,6 +1121,10 @@ describe('paapi module', () => {
       },
       'can handle no input': {
         in: undefined,
+        out: undefined
+      },
+      'can handle placeholder sizes': {
+        in: [[1, 1]],
         out: undefined
       }
     }).forEach(([t, {in: input, out}]) => {

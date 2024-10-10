@@ -54,6 +54,7 @@ export function init(cfg) {
 }
 
 getHook('addPaapiConfig').before(addPaapiConfigHook);
+getHook('makeBidRequests').before(addPaapiData);
 getHook('makeBidRequests').after(markForFledge);
 events.on(EVENTS.AUCTION_END, onAuctionEnd);
 
@@ -313,9 +314,11 @@ function getFledgeConfig(bidder) {
  * Given an array of size tuples, return the one that should be used for PAAPI.
  */
 export const getPAAPISize = hook('sync', function (sizes) {
+  sizes = sizes
+    ?.filter(([w, h]) => !(w === h && w <= 5));
+
   if (sizes?.length) {
     return sizes
-      .filter(([w, h]) => !(w === h && w <= 5))
       .reduce(maximum(keyCompare(([w, h]) => w * h)));
   }
 }, 'getPAAPISize');
@@ -332,36 +335,48 @@ function getRequestedSize(adUnit) {
   })();
 }
 
+export function addPaapiData(next, adUnits, ...args) {
+  if (isFledgeSupported() && moduleConfig.enabled) {
+    adUnits.forEach(adUnit => {
+      // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
+      const igsAe = adUnit.ortb2Imp?.ext?.igs != null
+        ? adUnit.ortb2Imp.ext.igs.ae || 1
+        : null;
+      const extAe = adUnit.ortb2Imp?.ext?.ae;
+      if (igsAe !== extAe && igsAe != null && extAe != null) {
+        logWarn(MODULE, `Ad unit defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, adUnit);
+      }
+      const ae = igsAe ?? extAe ?? moduleConfig.defaultForSlots;
+      if (ae) {
+        deepSetValue(adUnit, 'ortb2Imp.ext.ae', ae);
+        adUnit.ortb2Imp.ext.igs = Object.assign({
+          ae: ae,
+          biddable: 1
+        }, adUnit.ortb2Imp.ext.igs);
+        const requestedSize = getRequestedSize(adUnit);
+        if (requestedSize) {
+          deepSetValue(adUnit, 'ortb2Imp.ext.paapi.requestedSize', requestedSize);
+        }
+        adUnit.bids.forEach(bidReq => {
+          if (!getFledgeConfig(bidReq.bidder).enabled) {
+            deepSetValue(bidReq, 'ortb2Imp.ext.ae', 0);
+            bidReq.ortb2Imp.ext.igs = {ae: 0, biddable: 0};
+          }
+        })
+      }
+    })
+  }
+  next(adUnits, ...args);
+}
+
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((bidderReq) => {
-      const {enabled, ae} = getFledgeConfig(bidderReq.bidderCode);
+      const {enabled} = getFledgeConfig(bidderReq.bidderCode);
       Object.assign(bidderReq, {
         paapi: {
           enabled,
           componentSeller: !!moduleConfig.componentSeller?.auctionConfig
-        }
-      });
-      bidderReq.bids.forEach(bidReq => {
-        // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
-        const igsAe = bidReq.ortb2Imp?.ext?.igs != null
-          ? bidReq.ortb2Imp.ext.igs.ae || 1
-          : null;
-        const extAe = bidReq.ortb2Imp?.ext?.ae;
-        if (igsAe !== extAe && igsAe != null && extAe != null) {
-          logWarn(MODULE, `Bid request defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, bidReq);
-        }
-        const bidAe = igsAe ?? extAe ?? ae;
-        if (bidAe) {
-          deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidAe);
-          bidReq.ortb2Imp.ext.igs = Object.assign({
-            ae: bidAe,
-            biddable: 1
-          }, bidReq.ortb2Imp.ext.igs);
-          const requestedSize = getRequestedSize(bidReq);
-          if (requestedSize) {
-            deepSetValue(bidReq, 'ortb2Imp.ext.paapi.requestedSize', requestedSize);
-          }
         }
       });
     });
@@ -377,18 +392,6 @@ export function setImpExtAe(imp, bidRequest, context) {
 }
 
 registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
-
-function paapiResponseParser(configs, response, context) {
-  configs.forEach((config) => {
-    const impCtx = context.impContext[config.impid];
-    if (!impCtx?.imp?.ext?.ae) {
-      logWarn(MODULE, 'Received auction configuration for an impression that was not in the request or did not ask for it', config, impCtx?.imp);
-    } else {
-      impCtx.paapiConfigs = impCtx.paapiConfigs || [];
-      impCtx.paapiConfigs.push(config);
-    }
-  });
-}
 
 export function parseExtIgi(response, ortbResponse, context) {
   paapiResponseParser(
@@ -409,6 +412,18 @@ export function parseExtIgi(response, ortbResponse, context) {
     response,
     context
   )
+}
+
+function paapiResponseParser(configs, response, context) {
+  configs.forEach((config) => {
+    const impCtx = context.impContext[config.impid];
+    if (!impCtx?.imp?.ext?.ae) {
+      logWarn(MODULE, 'Received auction configuration for an impression that was not in the request or did not ask for it', config, impCtx?.imp);
+    } else {
+      impCtx.paapiConfigs = impCtx.paapiConfigs || [];
+      impCtx.paapiConfigs.push(config);
+    }
+  });
 }
 
 // to make it easier to share code between the PBS adapter and adapters whose backend is PBS, break up
