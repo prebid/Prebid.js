@@ -10,10 +10,10 @@ const waitTNCScript = (tncNS) => {
     var tnc = window[tncNS];
     if (!tnc) reject(new Error('No TNC Object'));
     if (tnc.tncid) resolve(tnc.tncid);
-    tnc.ready(() => {
+    tnc.ready(async () => {
       tnc = window[tncNS];
-      if (tnc.tncid) resolve(tnc.tncid);
-      else tnc.on('data-sent', () => resolve(tnc.tncid));
+      let tncid = await tnc.getTNCID('prebid');
+      resolve(tncid);
     });
   });
 }
