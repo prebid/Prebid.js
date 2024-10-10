@@ -190,7 +190,7 @@ export function registerBidder(spec) {
   }
 }
 
-export function guardTids(bidderCode) {
+export const guardTids = memoize(({bidderCode}) => {
   if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
     return {
       bidRequest: (br) => br,
@@ -228,7 +228,7 @@ export function guardTids(bidderCode) {
       }
     })
   }
-}
+});
 
 /**
  * Make a new bidder from the given spec. This is exported mainly for testing.
@@ -246,7 +246,7 @@ export function newBidder(spec) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
-      const tidGuard = guardTids(bidderRequest.bidderCode);
+      const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
@@ -287,7 +287,7 @@ export function newBidder(spec) {
         }
       });
 
-      processBidderRequests(spec, validBidRequests.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest), ajax, configEnabledCallback, {
+      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
         onRequest: requestObject => events.emit(EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
@@ -383,8 +383,8 @@ const RESPONSE_PROPS = ['bids', 'paapi']
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}) {
   const metrics = adapterMetrics(bidderRequest);
   onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
-
-  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids, bidderRequest));
+  const tidGuard = guardTids(bidderRequest);
+  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest)));
 
   if (!requests || requests.length === 0) {
     onCompletion();
@@ -611,6 +611,6 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   return true;
 }
 
-function adapterMetrics(bidderRequest) {
+export function adapterMetrics(bidderRequest) {
   return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`])
 }
