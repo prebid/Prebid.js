@@ -35,6 +35,7 @@ const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
 const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
+const IDENTITY_PROVIDER_RESOLVED_EVENT = 'cnx_identity_provider_resolved';
 let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
@@ -349,9 +350,11 @@ export const spec = {
         event.stopImmediatePropagation();
       }
 
-      const response = event.data;
-      if (response.data) {
-        saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT || event.data.type === IDENTITY_PROVIDER_RESOLVED_EVENT) {
+        const response = event.data;
+        if (response.data) {
+          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+        }
       }
     }, true)
 
