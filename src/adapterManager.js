@@ -10,6 +10,7 @@ import {
   getUniqueIdentifierStr,
   getUserConfiguredParams,
   groupBy,
+  internal,
   isArray,
   isPlainObject,
   isValidMediaTypes,
@@ -30,13 +31,15 @@ import {find, includes} from './polyfill.js';
 import {
   getBidderRequestsCounter,
   getBidderWinsCounter,
-  getRequestsCounter, incrementBidderRequestsCounter,
-  incrementBidderWinsCounter, incrementRequestsCounter
+  getRequestsCounter,
+  incrementBidderRequestsCounter,
+  incrementBidderWinsCounter,
+  incrementRequestsCounter
 } from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
-import { EVENTS, S2S } from './constants.js';
+import {EVENTS, S2S} from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
@@ -134,6 +137,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           bidRequestsCount: getRequestsCounter(adUnit.code),
           bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
           bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
+          deferBilling: !!adUnit.deferBilling
         }));
         return bids;
       }, [])
@@ -644,7 +648,7 @@ function invokeBidderMethod(bidder, method, spec, fn, ...params) {
 }
 
 function tryCallBidderMethod(bidder, method, param) {
-  if (param?.src !== S2S.SRC) {
+  if (param?.source !== S2S.SRC) {
     const target = getBidderMethod(bidder, method);
     if (target != null) {
       invokeBidderMethod(bidder, method, ...target, param);
@@ -673,9 +677,18 @@ adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
-adapterManager.callBidBillableBidder = function(bid) {
-  tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
-};
+adapterManager.triggerBilling = (() => {
+  const BILLED = new WeakSet();
+  return (bid) => {
+    if (!BILLED.has(bid)) {
+      BILLED.add(bid);
+      if (bid.source === S2S.SRC && bid.burl) {
+        internal.triggerPixel(bid.burl);
+      }
+      tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
+    }
+  }
+})();
 
 adapterManager.callSetTargetingBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onSetTargeting', bid);
