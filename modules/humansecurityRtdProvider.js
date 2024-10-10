@@ -17,6 +17,7 @@ import {
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -91,7 +92,7 @@ function load(config) {
   const scriptAttrs = { 'data-sid': sessionId };
   const scriptUrl = `${SCRIPT_URL}?r=${refDomain}${clientId ? `&c=${clientId}` : ''}`;
 
-  loadExternalScript(scriptUrl, SUBMODULE_NAME, onImplLoaded, null, scriptAttrs);
+  loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, onImplLoaded, null, scriptAttrs);
 }
 
 /**
