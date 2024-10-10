@@ -8,12 +8,12 @@ import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
-import { FIRST_PARTY_KEY } from '../../../modules/intentIqIdSystem';
 import { REPORTER_ID, getReferrer, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
+import {FIRST_PARTY_KEY, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 
 const partner = 10;
 const defaultData = '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344", "group": "A"}';
-const version = 0.2;
+const version = VERSION;
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
@@ -89,7 +89,7 @@ describe('IntentIQ tests all', function () {
       dataInLs: null,
       eidl: null,
       lsIdsInitialized: false,
-      manualReport: false
+      manualWinReportEnabled: false
     };
     if (iiqAnalyticsAnalyticsAdapter.track.restore) {
       iiqAnalyticsAnalyticsAdapter.track.restore();
@@ -121,7 +121,7 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
+    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
@@ -138,7 +138,7 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
+    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
     expect(request.url).to.contain('iiqid=testpcid');
   });
 
@@ -154,15 +154,15 @@ describe('IntentIQ tests all', function () {
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
     expect(request.url).to.equal(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}`
+      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}&uh=`
     );
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
 
-  it('should not send request if manualReport is true', function () {
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualReport = true;
+  it('should not send request if manualWinReportEnabled is true', function () {
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
     events.emit(EVENTS.BID_WON, wonRequest);
-    expect(server.requests.length).to.equal(0);
+    expect(server.requests.length).to.equal(1);
   });
 
   it('should read data from local storage', function () {
@@ -182,6 +182,15 @@ describe('IntentIQ tests all', function () {
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
   });
 
+  it('should handle reportExternalWin', function () {
+    events.emit(EVENTS.BID_REQUESTED);
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
+    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+    localStorage.setItem(FIRST_PARTY_KEY + '_' + partner, '{"data":"testpcid"}');
+    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin).to.be.a('function');
+    expect(window[`intentIqAnalyticsAdapter_${partner}`].reportExternalWin({cpm: 1, currency: 'USD'})).to.equal(false);
+  });
+
   it('should return window.location.href when window.self === window.top', function () {
     // Stub helper functions
     getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns(window);
@@ -189,7 +198,7 @@ describe('IntentIQ tests all', function () {
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
     const referrer = getReferrer();
-    expect(referrer).to.equal('http://localhost:9876/');
+    expect(referrer).to.equal(encodeURIComponent('http://localhost:9876/'));
   });
 
   it('should return window.top.location.href when window.self !== window.top and access is successful', function () {
@@ -198,7 +207,8 @@ describe('IntentIQ tests all', function () {
     getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns({ location: { href: 'http://example.com/' } });
 
     const referrer = getReferrer();
-    expect(referrer).to.equal('http://example.com/');
+
+    expect(referrer).to.equal(encodeURIComponent('http://example.com/'));
   });
 
   it('should return an empty string and log an error when accessing window.top.location.href throws an error', function () {
@@ -240,7 +250,7 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
-    expect(request.url).to.contain(`&jsver=${version}&vrref=http://localhost:9876/`);
+    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
