@@ -34,7 +34,7 @@ export const spec = {
     const floors = [];
 
     if (isFn(bidRequest.getFloor)) {
-      deepAccess(bidRequest, 'mediaTypes.banner.sizes').forEach(size => {
+      (deepAccess(bidRequest, 'mediaTypes.banner.sizes') || []).forEach(size => {
         const floor = bidRequest.getFloor({ size }).floor;
         if (!isNaN(floor)) {
           floors.push(floor);

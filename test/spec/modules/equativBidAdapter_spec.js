@@ -268,6 +268,14 @@ describe('Equativ bid adapter tests', () => {
       expect(spec.getMinFloor(bid)).to.deep.eq(0.0);
     });
 
+    it('should return floor of 0.0 if mediaTypes not defined', () => {
+      const bid = {
+        getFloor: () => ({})
+      };
+      expect(bid.mediaTypes).to.be.undefined;
+      expect(spec.getMinFloor(bid)).to.deep.eq(0.0);
+    });
+
     it('should return proper min floor', () => {
       const bid = {
         ...DEFAULT_BID_REQUESTS[0],
