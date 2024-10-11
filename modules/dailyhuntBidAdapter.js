@@ -129,7 +129,7 @@ const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validB
 // get bidFloor Function for different creatives
 function getBidFloor(bid, creative) {
   let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
-  return Math.floor(floorInfo.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
+  return Math.floor(floorInfo?.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
 }
 
 const createOrtbImpObj = (bid) => {

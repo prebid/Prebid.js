@@ -494,13 +494,13 @@ export const spec = {
     logInfo('getFloorObjectForAuction mediaTypesSizes : ', mediaTypesSizes);
     let ret = {};
     if (mediaTypesSizes.banner) {
-      ret.banner = bidRequestRef.getFloor({mediaType: 'banner', currency: 'USD', size: mediaTypesSizes.banner});
+      ret.banner = bidRequestRef.getFloor({mediaType: 'banner', currency: 'USD', size: mediaTypesSizes.banner}) || {};
     }
     if (mediaTypesSizes.video) {
-      ret.video = bidRequestRef.getFloor({mediaType: 'video', currency: 'USD', size: mediaTypesSizes.video});
+      ret.video = bidRequestRef.getFloor({mediaType: 'video', currency: 'USD', size: mediaTypesSizes.video}) || {};
     }
     if (mediaTypesSizes.native) {
-      ret.native = bidRequestRef.getFloor({mediaType: 'native', currency: 'USD', size: mediaTypesSizes.native});
+      ret.native = bidRequestRef.getFloor({mediaType: 'native', currency: 'USD', size: mediaTypesSizes.native}) || {};
     }
     logInfo('getFloorObjectForAuction returning : ', deepClone(ret));
     return ret;

@@ -1,4 +1,4 @@
-import {deepAccess, logError, parseSizesInput} from '../src/utils.js';
+import {deepAccess, isPlainObject, logError, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -88,7 +88,7 @@ function getBidFloor(bid, mediaType, sizes, bidfloor) {
   var size = sizes && sizes.length > 0 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(bidfloor, parseFloat(floorInfo.floor));
     }
   }

@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, generateUUID, inIframe, logWarn, mergeDeep } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -285,7 +285,7 @@ function getBidRequestFloor(bid) {
       mediaType: bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner',
       size: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
     });
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
   }

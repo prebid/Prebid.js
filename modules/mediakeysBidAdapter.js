@@ -11,6 +11,7 @@ import {
   isFn,
   isInteger,
   isNumber,
+  isPlainObject,
   isStr,
   logError,
   logWarn,
@@ -139,7 +140,7 @@ function getFloor(bid, mediaType, size = '*') {
     size
   })
 
-  return (!isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
+  return (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
 }
 
 /**

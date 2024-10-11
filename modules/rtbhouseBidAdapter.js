@@ -237,7 +237,7 @@ function applyFloor(slot) {
   if (typeof slot.getFloor === 'function') {
     Object.keys(slot.mediaTypes).forEach(type => {
       if (includes(SUPPORTED_MEDIA_TYPES, type)) {
-        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' }).floor);
+        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' })?.floor);
       }
     });
   }

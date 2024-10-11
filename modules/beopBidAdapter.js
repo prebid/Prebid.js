@@ -3,6 +3,7 @@ import {
   deepAccess, getBidIdParameter,
   getValue,
   isArray,
+  isPlainObject,
   logInfo,
   logWarn,
   triggerPixel
@@ -147,7 +148,7 @@ function beOpRequestSlotsMaker(bid) {
   let floor;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});
-    if (typeof floorInfo === 'object' && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
   }

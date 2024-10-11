@@ -411,7 +411,7 @@ function getBidFloor(bidRequest, mediaType, sizes) {
         currency: 'EUR',
         mediaType: mediaType || '*',
         size: [size.width, size.height]
-      });
+      }) || {};
       floor.size = deepClone(size);
       if (!floor.floor) { floor.floor = null; }
       priceFloors.push(floor);

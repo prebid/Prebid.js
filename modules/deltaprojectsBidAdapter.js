@@ -229,7 +229,7 @@ export function getBidFloor(bid, mediaType, size, currency) {
   if (isFn(bid.getFloor)) {
     const bidFloorCurrency = currency || 'USD';
     const bidFloor = bid.getFloor({currency: bidFloorCurrency, mediaType: mediaType, size: size});
-    if (isNumber(bidFloor.floor)) {
+    if (isNumber(bidFloor?.floor)) {
       return bidFloor;
     }
   }
