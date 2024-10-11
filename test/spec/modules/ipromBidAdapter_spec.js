@@ -29,13 +29,15 @@ describe('iPROM Adapter', function () {
     bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://adserver.si/index.html',
-        reachedTop: true,
-        numIframes: 1,
-        stack: [
-          'https://adserver.si/index.html',
-          'https://adserver.si/iframe1.html',
-        ]
+        legacy: {
+          referer: 'https://adserver.si/index.html',
+          reachedTop: true,
+          numIframes: 1,
+          stack: [
+            'https://adserver.si/index.html',
+            'https://adserver.si/iframe1.html',
+          ]
+        }
       }
     }
   });

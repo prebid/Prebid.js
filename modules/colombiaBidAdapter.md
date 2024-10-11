@@ -24,7 +24,7 @@ COLOMBIA adapter requires setup and approval from the COLOMBIA team. Please reac
     bids: [{
     bidder: 'colombia',
       params: { 
-        placementId: '307466'
+        placementId: '540799'
       }
     }]
   }];

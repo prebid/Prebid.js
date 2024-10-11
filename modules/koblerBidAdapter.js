@@ -1,4 +1,12 @@
-import { deepAccess, isStr, replaceAuctionPrice, triggerPixel, isArray, parseQueryStringParameters, getWindowSelf } from '../src/utils.js';
+import {
+  deepAccess,
+  getWindowSelf,
+  isArray,
+  isStr,
+  parseQueryStringParameters,
+  replaceAuctionPrice,
+  triggerPixel
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -6,19 +14,25 @@ import {getRefererInfo} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'kobler';
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
+const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_call';
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
 const SUPPORTED_CURRENCY = 'USD';
-const DEFAULT_TIMEOUT = 1000;
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
 
 export const isBidRequestValid = function (bid) {
-  return !!(bid && bid.bidId && bid.params && bid.params.placementId);
+  if (!bid || !bid.bidId) {
+    return false;
+  }
+
+  const sizes = deepAccess(bid, 'mediaTypes.banner.sizes', bid.sizes);
+  return isArray(sizes) && sizes.length > 0;
 };
 
 export const buildRequests = function (validBidRequests, bidderRequest) {
+  const bidderEndpoint = isTest(validBidRequests[0]) ? DEV_BIDDER_ENDPOINT : BIDDER_ENDPOINT;
   return {
     method: 'POST',
-    url: BIDDER_ENDPOINT,
+    url: bidderEndpoint,
     data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
     options: {
       contentType: 'application/json'
@@ -27,14 +41,11 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 };
 
 export const interpretResponse = function (serverResponse) {
-  const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const res = serverResponse.body;
   const bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        const adWithCorrectCurrency = b.adm
-          .replace(/\${AUCTION_PRICE_CURRENCY}/g, adServerPriceCurrency);
         bids.push({
           requestId: b.impid,
           cpm: b.price,
@@ -45,7 +56,7 @@ export const interpretResponse = function (serverResponse) {
           dealId: b.dealid,
           netRevenue: true,
           ttl: TIME_TO_LIVE_IN_SECONDS,
-          ad: adWithCorrectCurrency,
+          ad: b.adm,
           nurl: b.nurl,
           meta: {
             advertiserDomains: b.adomain
@@ -58,13 +69,15 @@ export const interpretResponse = function (serverResponse) {
 };
 
 export const onBidWon = function (bid) {
-  const cpm = bid.cpm || 0;
-  const cpmCurrency = bid.currency || SUPPORTED_CURRENCY;
+  // We intentionally use the price set by the publisher to replace the ${AUCTION_PRICE} macro
+  // instead of the `originalCpm` here. This notification is not used for billing, only for extra logging.
+  const publisherPrice = bid.cpm || 0;
+  const publisherCurrency = bid.currency || config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   const adServerPrice = deepAccess(bid, 'adserverTargeting.hb_pb', 0);
   const adServerPriceCurrency = config.getConfig('currency.adServerCurrency') || SUPPORTED_CURRENCY;
   if (isStr(bid.nurl) && bid.nurl !== '') {
-    const winNotificationUrl = replaceAuctionPrice(bid.nurl, cpm)
-      .replace(/\${AUCTION_PRICE_CURRENCY}/g, cpmCurrency)
+    const winNotificationUrl = replaceAuctionPrice(bid.nurl, publisherPrice)
+      .replace(/\${AUCTION_PRICE_CURRENCY}/g, publisherCurrency)
       .replace(/\${AD_SERVER_PRICE}/g, adServerPrice)
       .replace(/\${AD_SERVER_PRICE_CURRENCY}/g, adServerPriceCurrency);
     triggerPixel(winNotificationUrl);
@@ -73,17 +86,12 @@ export const onBidWon = function (bid) {
 
 export const onTimeout = function (timeoutDataArray) {
   if (isArray(timeoutDataArray)) {
-    const refererInfo = getRefererInfo();
-    const pageUrl = (refererInfo && refererInfo.referer)
-      ? refererInfo.referer
-      : window.location.href;
+    const pageUrl = getPageUrlFromRefererInfo();
     timeoutDataArray.forEach(timeoutData => {
       const query = parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
-        auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
-        placement_id: deepAccess(timeoutData, 'params.0.placementId'),
         page_url: pageUrl,
       });
       const timeoutNotificationUrl = `${TIMEOUT_NOTIFICATION_ENDPOINT}?${query}`;
@@ -92,27 +100,61 @@ export const onTimeout = function (timeoutDataArray) {
   }
 };
 
+function getPageUrlFromRequest(validBidRequest, bidderRequest) {
+  return (bidderRequest.refererInfo && bidderRequest.refererInfo.page)
+    ? bidderRequest.refererInfo.page
+    : window.location.href;
+}
+
+function getPageUrlFromRefererInfo() {
+  const refererInfo = getRefererInfo();
+  return (refererInfo && refererInfo.page)
+    ? refererInfo.page
+    : window.location.href;
+}
+
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
-  const timeout = bidderRequest.timeout || config.getConfig('bidderTimeout') || DEFAULT_TIMEOUT;
-  const pageUrl = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
-    ? bidderRequest.refererInfo.referer
-    : window.location.href;
-
+  const timeout = bidderRequest.timeout;
+  const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest);
+  // Kobler, a contextual advertising provider, does not process any personal data itself, so it is not part of TCF/GVL.
+  // However, it supports using select third-party creatives in its platform, some of which require certain permissions
+  // in order to be shown. Kobler's bidder checks if necessary permissions are present to avoid bidding
+  // with ineligible creatives.
+  let purpose2Given;
+  let purpose3Given;
+  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.vendorData) {
+    const vendorData = bidderRequest.gdprConsent.vendorData
+    const purposeData = vendorData.purpose;
+    const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
+    const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;
+    purpose2Given = restrictionForPurpose2 === 1 ? (
+      purposeData && purposeData.consents && purposeData.consents[2]
+    ) : (
+      restrictionForPurpose2 === 0
+        ? false : (purposeData && purposeData.legitimateInterests && purposeData.legitimateInterests[2])
+    );
+    purpose3Given = purposeData && purposeData.consents && purposeData.consents[3];
+  }
   const request = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     tmax: timeout,
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice(),
-      geo: getGeo(validBidRequests[0])
+      devicetype: getDevice()
     },
     site: {
       page: pageUrl,
     },
-    test: getTest(validBidRequests[0])
+    test: getTestAsNumber(validBidRequests[0]),
+    ext: {
+      kobler: {
+        tcf_purpose_2_given: purpose2Given,
+        tcf_purpose_3_given: purpose3Given
+      }
+    }
   };
 
   return JSON.stringify(request);
@@ -128,14 +170,8 @@ function buildOpenRtbImpObject(validBidRequest) {
     banner: {
       format: buildFormatArray(sizes),
       w: mainSize[0],
-      h: mainSize[1],
-      ext: {
-        kobler: {
-          pos: getPosition(validBidRequest)
-        }
-      }
+      h: mainSize[1]
     },
-    tagid: validBidRequest.params.placementId,
     bidfloor: floorInfo.floor,
     bidfloorcur: floorInfo.currency,
     pmp: buildPmpObject(validBidRequest)
@@ -157,17 +193,12 @@ function getDevice() {
   return 2; // personal computers
 }
 
-function getGeo(validBidRequest) {
-  if (validBidRequest.params.zip) {
-    return {
-      zip: validBidRequest.params.zip
-    };
-  }
-  return {};
+function getTestAsNumber(validBidRequest) {
+  return isTest(validBidRequest) ? 1 : 0;
 }
 
-function getTest(validBidRequest) {
-  return validBidRequest.params.test ? 1 : 0;
+function isTest(validBidRequest) {
+  return validBidRequest.params && validBidRequest.params.test === true;
 }
 
 function getSizes(validBidRequest) {
@@ -188,10 +219,6 @@ function buildFormatArray(sizes) {
   });
 }
 
-function getPosition(validBidRequest) {
-  return parseInt(validBidRequest.params.position) || 0;
-}
-
 function getFloorInfo(validBidRequest, mainSize) {
   if (typeof validBidRequest.getFloor === 'function') {
     const sizeParam = mainSize[0] === 0 && mainSize[1] === 0 ? '*' : mainSize;
@@ -209,11 +236,11 @@ function getFloorInfo(validBidRequest, mainSize) {
 }
 
 function getFloorPrice(validBidRequest) {
-  return parseFloat(validBidRequest.params.floorPrice) || 0.0;
+  return parseFloat(deepAccess(validBidRequest, 'params.floorPrice', 0.0));
 }
 
 function buildPmpObject(validBidRequest) {
-  if (validBidRequest.params.dealIds) {
+  if (validBidRequest.params && validBidRequest.params.dealIds && isArray(validBidRequest.params.dealIds)) {
     return {
       deals: validBidRequest.params.dealIds.map(dealId => {
         return {

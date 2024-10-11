@@ -1,0 +1,7 @@
+paths:
+  - src
+  - modules
+  - libraries
+queries:
+  - name: Prebid queries
+    uses: ./.github/codeql/queries

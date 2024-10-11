@@ -32,10 +32,21 @@ describe('gnetAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+  });
+
+  describe('onBidWon', function () {
+    const bid = {
+      requestId: '29d5b1d3a520f8'
+    };
+
+    it('return success adserver won bid endpoint', () => {
+      const result = spec.onBidWon(bid);
+      assert.ok(result);
     });
   });
 
@@ -52,12 +63,17 @@ describe('gnetAdapter', function () {
       bidId: '2a19afd5173318',
       bidderRequestId: '1f4001782ac16c',
       auctionId: 'aba03555-4802-4c45-9f15-05ffa8594cff',
-      transactionId: '894bdff6-61ec-4bec-a5a9-f36a5bfccef5'
+      ortb2Imp: {
+        ext: {
+          tid: '894bdff6-61ec-4bec-a5a9-f36a5bfccef5',
+        }
+      },
+      gftuid: null
     }];
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'https://gnetrtb.com'
+        page: 'https://gnetrtb.com'
       }
     };
 
@@ -70,6 +86,7 @@ describe('gnetAdapter', function () {
         'adUnitCode': '/150790500/4_ZONA_IAB_300x250_5',
         'bidId': '2a19afd5173318',
         'transactionId': '894bdff6-61ec-4bec-a5a9-f36a5bfccef5',
+        'gftuid': null,
         'sizes': ['300x250'],
         'params': {
           'websiteId': '1', 'adunitId': '1'

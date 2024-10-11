@@ -1,18 +1,17 @@
 import { deepAccess, getUniqueIdentifierStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'truereach';
-const BIDDER_URL = 'https://ads.momagic.com/exchange/openrtb25/';
+const BIDDER_URL = 'https://ads-sg.momagic.com/exchange/openrtb25/';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   isBidRequestValid: function (bidRequest) {
-    return (bidRequest.params.site_id && bidRequest.params.bidfloor &&
+    return (bidRequest.params.site_id &&
     deepAccess(bidRequest, 'mediaTypes.banner') && (deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
   },
 
@@ -25,6 +24,8 @@ export const spec = {
 
     let siteId = deepAccess(validBidRequests[0], 'params.site_id');
 
+    // TODO: should this use auctionId? see #8573
+    // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
     let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
     return {
@@ -94,7 +95,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'http://ads.momagic.com/jsp/usersync.jsp' + gdprParams
+        url: 'https://ads-sg.momagic.com/jsp/usersync.jsp' + gdprParams
       });
     }
     return syncs;
@@ -115,8 +116,6 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     adH = adSizes[0][1];
   }
 
-  let bidFloor = Number(0);
-
   let domain = window.location.host;
   let page = window.location.host + window.location.pathname + location.search + location.hash;
 
@@ -128,8 +127,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
         banner: {
           w: adW,
           h: adH
-        },
-        bidfloor: bidFloor
+        }
       }
     ],
     site: {
@@ -139,7 +137,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     device: {
       ua: window.navigator.userAgent
     },
-    tmax: config.getConfig('bidderTimeout')
+    tmax: bidderRequest.timeout
   };
 
   return defaultParams;

@@ -2,7 +2,7 @@
  * Analytics Adapter for Pubperf
  */
 
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { logError } from '../src/utils.js';
 

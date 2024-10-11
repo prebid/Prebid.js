@@ -1,19 +1,26 @@
 import {
-  deepAccess,
-  parseUrl,
-  isNumber,
-  getBidIdParameter,
-  isPlainObject,
-  isFn,
-  isStr,
-  replaceAuctionPrice,
+  deepAccess, getBidIdParameter,
   isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  parseUrl,
+  replaceAuctionPrice,
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getOsVersion } from '../libraries/advangUtils/index.js';
 
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 5;
@@ -39,7 +46,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    // TODO: is 'page' the right value here?
+    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
 
     return validBidRequests.map((bidRequest) => {
       return {
@@ -65,7 +75,6 @@ export const spec = {
             }
           },
 
-          user: _getUser(validBidRequests),
           site: _getSite(bidRequest, topLocation),
           seller: _getSeller(bidRequest),
           device: _getDevice(bidRequest),
@@ -186,22 +195,6 @@ function _getNativeAssets(mediaTypeNative) {
     .filter(asset => asset !== undefined);
 }
 
-function _getUser(requests) {
-  const id = deepAccess(requests, '0.userId.nextrollId');
-  if (id === undefined) {
-    return;
-  }
-
-  return {
-    ext: {
-      eid: [{
-        'source': 'nextroll',
-        id
-      }]
-    }
-  };
-}
-
 function _getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
@@ -244,8 +237,8 @@ function _buildResponse(bidResponse, bid) {
   return response;
 }
 
-const privacyLink = 'https://info.evidon.com/pub_info/573';
-const privacyIcon = 'https://c.betrad.com/pub/icon1.png';
+const privacyLink = 'https://app.adroll.com/optout/personalized';
+const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
 function _getNativeResponse(adm, price) {
   let baseResponse = {
@@ -320,7 +313,7 @@ function _getDevice(_bidRequest) {
     ua: navigator.userAgent,
     language: navigator['language'],
     os: _getOs(navigator.userAgent.toLowerCase()),
-    osv: _getOsVersion(navigator.userAgent)
+    osv: getOsVersion()
   };
 }
 
@@ -349,27 +342,6 @@ function _getOs(userAgent) {
       return os;
     }
   }) || 'etc';
-}
-
-function _getOsVersion(userAgent) {
-  const clientStrings = [
-    { s: 'Android', r: /Android/ },
-    { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
-    { s: 'Mac OS X', r: /Mac OS X/ },
-    { s: 'Mac OS', r: /(MacPPC|MacIntel|Mac_PowerPC|Macintosh)/ },
-    { s: 'Linux', r: /(Linux|X11)/ },
-    { s: 'Windows 10', r: /(Windows 10.0|Windows NT 10.0)/ },
-    { s: 'Windows 8.1', r: /(Windows 8.1|Windows NT 6.3)/ },
-    { s: 'Windows 8', r: /(Windows 8|Windows NT 6.2)/ },
-    { s: 'Windows 7', r: /(Windows 7|Windows NT 6.1)/ },
-    { s: 'Windows Vista', r: /Windows NT 6.0/ },
-    { s: 'Windows Server 2003', r: /Windows NT 5.2/ },
-    { s: 'Windows XP', r: /(Windows NT 5.1|Windows XP)/ },
-    { s: 'UNIX', r: /UNIX/ },
-    { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
-  ];
-  let cs = find(clientStrings, cs => cs.r.test(userAgent));
-  return cs ? cs.s : 'unknown';
 }
 
 registerBidder(spec);

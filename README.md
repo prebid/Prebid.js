@@ -1,17 +1,14 @@
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
-[![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](https://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
-[![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
-[![Total Alerts](https://img.shields.io/lgtm/alerts/g/prebid/Prebid.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/prebid/Prebid.js/alerts/)
 
 # Prebid.js
 
 > A free and open source library for publishers to quickly implement header bidding.
 
 This README is for developers who want to contribute to Prebid.js.
-Additional documentation can be found at [the Prebid homepage](http://prebid.org).
-Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
+Additional documentation can be found at [the Prebid.js documentation homepage](https://docs.prebid.org/prebid/prebidjs.html).
+Working examples can be found in [the developer docs](https://prebid.org/dev-docs/getting-started.html).
 
 Prebid.js is open source software that is offered for free as a convenience. While it is designed to help companies address legal requirements associated with header bidding, we cannot and do not warrant that your use of Prebid.js will satisfy legal requirements. You are solely responsible for ensuring that your use of Prebid.js complies with all applicable laws.  We strongly encourage you to obtain legal advice when using Prebid.js to ensure your implementation complies with all laws where you operate.
 
@@ -91,7 +88,7 @@ Or for Babel 6:
             }
 ```
 
-Then you can use Prebid.js as any other npm depedendency
+Then you can use Prebid.js as any other npm dependency
 
 ```javascript
 import pbjs from 'prebid.js';
@@ -110,6 +107,8 @@ pbjs.requestBids({
 <a name="Install"></a>
 
 ## Install
+
+
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
@@ -193,7 +192,52 @@ Most likely your custom `prebid.js` will only change when there's:
 
 Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
 
+**Build once, bundle multiple times**
+
+If you need to generate multiple distinct bundles from the same Prebid version, you can reuse a single build with:
+
+```
+gulp build
+gulp bundle --tag one --modules=one.json
+gulp bundle --tag two --modules=two.json
+```
+
+This generates slightly larger files, but has the advantage of being much faster to run (after the initial `gulp build`). It's also the method used by [the Prebid.org download page](https://docs.prebid.org/download.html).  
+
 <a name="Run"></a>
+
+### Excluding particular features from the build
+
+Since version 7.2.0, you may instruct the build to exclude code for some features - for example, if you don't need support for native ads:
+
+```
+gulp build --disable NATIVE --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter # substitute your module list
+```
+
+Or, if you are consuming Prebid through npm, with the `disableFeatures` option in your Prebid rule:
+
+```javascript
+  {
+    test: /.js$/,
+    include: new RegExp(`\\${path.sep}prebid\\.js`),
+    use: {
+      loader: 'babel-loader',
+      options: require('prebid.js/babelConfig.js')({disableFeatures: ['NATIVE']})
+    }
+  }
+```
+
+**Note**: this is still a work in progress - at the moment, `NATIVE` is the only feature that can be disabled this way, resulting in a minimal decrease in size (but you can expect that to improve over time).
+
+## Unminified code
+
+You can get a version of the code that's unminified for debugging with `build-bundle-dev`:
+
+```bash
+gulp build-bundle-dev --modules=bidderA,module1,...
+```
+
+The results will be in build/dev/prebid.js.
 
 ## Test locally
 
@@ -201,6 +245,12 @@ To lint the code:
 
 ```bash
 gulp lint
+```
+
+To lint and only show errors
+
+```bash
+gulp lint --no-lint-warnings
 ```
 
 To run the unit tests:
@@ -211,7 +261,7 @@ gulp test
 
 To run the unit tests for a particular file (example for pubmaticBidAdapter_spec.js):
 ```bash
-gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
+gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js" --nolint
 ```
 
 To generate and view the code coverage reports:
@@ -219,6 +269,12 @@ To generate and view the code coverage reports:
 ```bash
 gulp test-coverage
 gulp view-coverage
+```
+
+Local end-to-end testing can be done with:
+
+```bash
+gulp e2e-test --local
 ```
 
 For Prebid.org members with access to BrowserStack, additional end-to-end testing can be done with:
@@ -318,7 +374,7 @@ The results will be in
 
 *Note*: Starting in June 2016, all pull requests to Prebid.js need to include tests with greater than 80% code coverage before they can be merged.  For more information, see [#421](https://github.com/prebid/Prebid.js/issues/421).
 
-For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://prebid.org/dev-docs/testing-prebid.html).
+For instructions on writing tests for Prebid.js, see [Testing Prebid.js](https://prebid.org/dev-docs/testing-prebid.html).
 
 ### Supported Browsers
 
@@ -326,3 +382,4 @@ Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
+### END

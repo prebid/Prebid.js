@@ -13,18 +13,28 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
+ * @property {?string} splitKey
  */
 
-import { deepClone, logError, isGptPubadsDefined, isNumber, isFn, deepSetValue } from '../src/utils.js';
+import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {getStorageManager} from '../src/storageManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find, includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import * as events from '../src/events.js';
+import {EVENTS} from '../src/constants.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
-const storage = getStorageManager();
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
+const MODULE_NAME = 'browsi';
+
+const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+const RANDOM = Math.floor(Math.random() * 10) + 1;
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -42,18 +52,40 @@ let _ic = {};
  * @param {Object} data
  */
 export function addBrowsiTag(data) {
-  let script = loadExternalScript(data.u, 'browsi');
+  let script = loadExternalScript(data.u, MODULE_TYPE_RTD, 'browsi');
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = deepClone(data);
+  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
+  script.brwRandom = RANDOM;
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
   return script;
+}
+
+export function setKeyValue(key) {
+  if (!key || typeof key !== 'string') return false;
+  window.googletag = window.googletag || {cmd: []};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(() => {
+    window.googletag.pubads().setTargeting(key, RANDOM.toString());
+  });
+}
+
+export function sendPageviewEvent(eventType) {
+  if (eventType === 'PAGEVIEW') {
+    window.addEventListener('browsi_pageview', () => {
+      events.emit(EVENTS.BILLABLE_EVENT, {
+        vendor: 'browsi',
+        type: 'pageview',
+        billingId: generateUUID()
+      })
+    })
+  }
 }
 
 /**
@@ -73,6 +105,7 @@ export function collectData() {
   let predictorData = {
     ...{
       sk: _moduleParams.siteKey,
+      pk: _moduleParams.pubKey,
       sw: (win.screen && win.screen.width) || -1,
       sh: (win.screen && win.screen.height) || -1,
       url: `${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`,
@@ -92,7 +125,7 @@ export function collectData() {
 function waitForData(callback) {
   if (_browsiData) {
     _dataReadyCallback = null;
-    callback(_browsiData);
+    callback();
   } else {
     _dataReadyCallback = callback;
   }
@@ -101,12 +134,13 @@ function waitForData(callback) {
 export function setData(data) {
   _browsiData = data;
   if (isFn(_dataReadyCallback)) {
-    _dataReadyCallback(_browsiData);
+    _dataReadyCallback();
     _dataReadyCallback = null;
   }
 }
 
 function getRTD(auc) {
+  logInfo(`Browsi RTD provider is fetching data for ${auc}`);
   try {
     const _bp = (_browsiData && _browsiData.p) || {};
     return auc.reduce((rp, uc) => {
@@ -118,7 +152,6 @@ function getRTD(auc) {
       const adSlot = getSlotByCode(uc);
       const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
       const _pd = _bp[identifier];
-      rp[uc] = getKVObject(-1);
       if (!_pd) {
         return rp
       }
@@ -170,7 +203,6 @@ function getAllSlots() {
 /**
  * get prediction and return valid object for key value set
  * @param {number} p
- * @param {string?} keyName
  * @return {Object} key:value
  */
 function getKVObject(p) {
@@ -259,11 +291,12 @@ function getPredictionsFromServer(url) {
         if (req.status === 200) {
           try {
             const data = JSON.parse(response);
-            if (data && data.p && data.kn) {
-              setData({p: data.p, kn: data.kn, pmd: data.pmd});
+            if (data) {
+              setData({p: data.p, kn: data.kn, pmd: data.pmd, bet: data.bet});
             } else {
               setData({});
             }
+            sendPageviewEvent(data.bet);
             addBrowsiTag(data);
           } catch (err) {
             logError('unable to parse data');
@@ -321,7 +354,7 @@ export const browsiSubmodule = {
    * used to link submodule with realTimeData
    * @type {string}
    */
-  name: 'browsi',
+  name: MODULE_NAME,
   /**
    * get data and send back to realTimeData module
    * @function
@@ -332,13 +365,26 @@ export const browsiSubmodule = {
   getBidRequestData: setBidRequestsData
 };
 
-function getTargetingData(uc) {
+function getTargetingData(uc, c, us, a) {
   const targetingData = getRTD(uc);
+  const auctionId = a.auctionId;
+  const sendAdRequestEvent = (_browsiData && _browsiData['bet'] === 'AD_REQUEST');
   uc.forEach(auc => {
     if (isNumber(_ic[auc])) {
       _ic[auc] = _ic[auc] + 1;
     }
+    if (sendAdRequestEvent) {
+      const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
+      events.emit(EVENTS.BILLABLE_EVENT, {
+        vendor: 'browsi',
+        type: 'adRequest',
+        billingId: generateUUID(),
+        transactionId: transactionId,
+        auctionId: auctionId
+      })
+    }
   });
+  logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc)
   return targetingData;
 }
 
@@ -346,6 +392,7 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     collectData();
+    setKeyValue(_moduleParams.splitKey);
   } else {
     logError('missing params for Browsi provider');
   }

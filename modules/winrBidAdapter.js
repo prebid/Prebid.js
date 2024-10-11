@@ -1,12 +1,27 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, logError, convertTypes, getParameterByName, getBidRequest, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {
+  deepAccess,
+  getBidRequest,
+  getParameterByName,
+  isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  logError
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 
-export const storage = getStorageManager();
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'winr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -16,6 +31,8 @@ const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const SOURCE = 'pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const GATE_COOKIE_NAME = 'wnr_gate';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function buildBid(bidData) {
   const bid = bidData;
@@ -39,9 +56,9 @@ function wrapAd(bid, position) {
         <title></title>
         <style>html, body {width: 100%; height: 100%; margin: 0;}</style>
     </head>
-    <body>   
+    <body>
       <script>
-        function winrPbRendererLoad(cb) {     
+        function winrPbRendererLoad(cb) {
           var w = parent.document.createElement("script");
           w.innerHTML = \`
             var WINR = {
@@ -58,13 +75,13 @@ function wrapAd(bid, position) {
                 tg: ${position.domParent},
                 rf: ${position.child}
               },
-            }; 
+            };
           \`;
           var s = parent.document.head.getElementsByTagName("script")[0];
-          s.parentNode.insertBefore(w, s);              
+          s.parentNode.insertBefore(w, s);
           var n = parent.document.createElement("script");
           n.src = 'https://helpers.winr.com.au/dist/prebidRenderer.js';
-          n.onload = function () {            
+          n.onload = function () {
             var WinrLib = window.parent.WinrPbRenderer.default;
             window.parent.winrLib = new WinrLib();
             if (!window.parent.winrLib) {
@@ -195,7 +212,7 @@ export const spec = {
     }
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj
+      payload.device = appDeviceObj;
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
@@ -215,7 +232,8 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        // TODO: this collects everything it finds, except for canonicalUrl
+        rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack
@@ -228,7 +246,6 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
 
-      addUserId(eids, deepAccess(bidRequests[0], `userId.flocId.id`), 'chrome.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
       addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
@@ -295,72 +312,7 @@ export const spec = {
       ];
     }
   },
-
-  transformBidParams: function (params, isOpenRtb) {
-    params = convertTypes(
-      {
-        member: 'string',
-        invCode: 'string',
-        placementId: 'number',
-        keywords: transformBidderParamKeywords,
-        publisherId: 'number',
-      },
-      params
-    );
-
-    if (isOpenRtb) {
-      params.use_pmt_rule =
-        typeof params.usePaymentRule === 'boolean'
-          ? params.usePaymentRule
-          : false;
-      if (params.usePaymentRule) {
-        delete params.usePaymentRule;
-      }
-
-      if (isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(deleteValues);
-      }
-
-      Object.keys(params).forEach((paramKey) => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-    }
-
-    return params;
-  },
 };
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
-
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (
-      bidderRequest.gdprConsent.gdprApplies &&
-      bidderRequest.gdprConsent.apiVersion === 2
-    ) {
-      result = !!(
-        deepAccess(
-          bidderRequest.gdprConsent,
-          'vendorData.purpose.consents.1'
-        ) === true
-      );
-    }
-  }
-  return result;
-}
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
@@ -370,7 +322,7 @@ function formatRequest(payload, bidderRequest) {
 
   let endpointUrl = URL;
 
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     endpointUrl = URL_SIMPLE;
   }
 
@@ -407,6 +359,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     adType: rtbBid.ad_type,
     requestId: serverBid.uuid,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bidRequest.auctionId,
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
@@ -502,16 +455,9 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
-  }
-
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -523,32 +469,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-/* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  let sizes = [];
-  let sizeObj = {};
-
-  if (
-    isArray(requestSizes) &&
-    requestSizes.length === 2 &&
-    !isArray(requestSizes[0])
-  ) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
 }
 
 function hasUserInfo(bid) {

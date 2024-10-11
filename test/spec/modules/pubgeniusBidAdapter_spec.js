@@ -5,6 +5,7 @@ import { config } from 'src/config.js';
 import { VIDEO } from 'src/mediaTypes.js';
 import { deepClone, parseQueryStringParameters } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import * as utils from 'src/utils.js';
 
 const {
   code,
@@ -175,7 +176,7 @@ describe('pubGENIUS adapter', () => {
         method: 'POST',
         url: 'https://auction.adpearl.io/prebid/auction',
         data: {
-          id: 'fake-auction-id',
+          id: 'fakebidderrequestid',
           imp: [
             {
               id: 'fakebidid',
@@ -239,17 +240,8 @@ describe('pubGENIUS adapter', () => {
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
     });
 
-    it('should take pageUrl in config over referer in refererInfo', () => {
-      config.setConfig({ pageUrl: 'http://pageurl.org' });
-      bidderRequest.refererInfo.referer = 'http://referer.org';
-      expectedRequest.data.site = { page: 'http://pageurl.org' };
-
-      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
-    });
-
-    it('should use canonical URL over referer in refererInfo', () => {
-      bidderRequest.refererInfo.canonicalUrl = 'http://pageurl.org';
-      bidderRequest.refererInfo.referer = 'http://referer.org';
+    it('should use page from refererInfo', () => {
+      bidderRequest.refererInfo.page = 'http://pageurl.org';
       expectedRequest.data.site = { page: 'http://pageurl.org' };
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
@@ -391,7 +383,6 @@ describe('pubGENIUS adapter', () => {
         w: 200,
         h: 100,
         startdelay: -1,
-        placement: 1,
         skip: 1,
         skipafter: 1,
         playbackmethod: [3, 4],

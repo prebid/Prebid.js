@@ -1,7 +1,8 @@
-import { deepAccess, getBidIdParameter, logWarn, logError } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'cpmstar';
 
@@ -11,25 +12,28 @@ const ENDPOINT_PRODUCTION = 'https://server.cpmstar.com/view.aspx';
 
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_NET_REVENUE = true;
 
-function fixedEncodeURIComponent(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return '%' + c.charCodeAt(0).toString(16);
-  });
-}
+export const converter = ortbConverter({
+  context: {
+    ttl: DEFAULT_TTL,
+    netRevenue: DEFAULT_NET_REVENUE
+  }
+});
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 1317,
   supportedMediaTypes: [BANNER, VIDEO],
   pageID: Math.floor(Math.random() * 10e6),
 
   getMediaType: function (bidRequest) {
     if (bidRequest == null) return BANNER;
-    return !deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
+    return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
   },
 
   getPlayerSize: function (bidRequest) {
-    var playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     if (playerSize == null) return [640, 440];
     if (playerSize[0] != null) playerSize = playerSize[0];
     if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
@@ -42,21 +46,30 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     var requests = [];
-    // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
 
     for (var i = 0; i < validBidRequests.length; i++) {
       var bidRequest = validBidRequests[i];
-      var referer = encodeURIComponent(bidderRequest.refererInfo.referer);
-      var e = getBidIdParameter('endpoint', bidRequest.params);
-      var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
-      var mediaType = spec.getMediaType(bidRequest);
-      var playerSize = spec.getPlayerSize(bidRequest);
-      var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
-      var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
-        '&json=c_b&mv=1&poolid=' + getBidIdParameter('placementId', bidRequest.params) +
-        '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
-        '&requestid=' + bidRequest.bidId +
-        '&referer=' + encodeURIComponent(referer);
+      const referer = bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : bidderRequest.refererInfo.domain;
+      const e = utils.getBidIdParameter('endpoint', bidRequest.params);
+      const ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
+      const url = new URL(ENDPOINT);
+      const body = {};
+      const mediaType = spec.getMediaType(bidRequest);
+      const playerSize = spec.getPlayerSize(bidRequest);
+      url.searchParams.set('media', mediaType);
+      if (mediaType == VIDEO) {
+        url.searchParams.set('fv', 0);
+        if (playerSize) {
+          url.searchParams.set('w', playerSize?.[0]);
+          url.searchParams.set('h', playerSize?.[1]);
+        }
+      }
+      url.searchParams.set('json', 'c_b');
+      url.searchParams.set('mv', 1);
+      url.searchParams.set('poolid', utils.getBidIdParameter('placementId', bidRequest.params));
+      url.searchParams.set('reachedTop', bidderRequest.refererInfo.reachedTop);
+      url.searchParams.set('requestid', bidRequest.bidId);
+      url.searchParams.set('referer', referer);
 
       if (bidRequest.schain && bidRequest.schain.nodes) {
         var schain = bidRequest.schain;
@@ -65,37 +78,51 @@ export const spec = {
         for (var i2 = 0; i2 < schain.nodes.length; i2++) {
           var node = schain.nodes[i2];
           schainString += '!' +
-            fixedEncodeURIComponent(node.asi || '') + ',' +
-            fixedEncodeURIComponent(node.sid || '') + ',' +
-            fixedEncodeURIComponent(node.hp || '') + ',' +
-            fixedEncodeURIComponent(node.rid || '') + ',' +
-            fixedEncodeURIComponent(node.name || '') + ',' +
-            fixedEncodeURIComponent(node.domain || '');
+            (node.asi || '') + ',' +
+            (node.sid || '') + ',' +
+            (node.hp || '') + ',' +
+            (node.rid || '') + ',' +
+            (node.name || '') + ',' +
+            (node.domain || '');
         }
-        url += '&schain=' + schainString
+        url.searchParams.set('schain', schainString);
       }
 
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString != null) {
-          url += '&gdpr_consent=' + bidderRequest.gdprConsent.consentString;
+          url.searchParams.set('gdpr_consent', bidderRequest.gdprConsent.consentString);
         }
         if (bidderRequest.gdprConsent.gdprApplies != null) {
-          url += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+          url.searchParams.set('gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
         }
       }
 
       if (bidderRequest.uspConsent != null) {
-        url += '&us_privacy=' + bidderRequest.uspConsent;
+        url.searchParams.set('us_privacy', bidderRequest.uspConsent);
       }
 
       if (config.getConfig('coppa')) {
-        url += '&tfcd=' + (config.getConfig('coppa') ? 1 : 0);
+        url.searchParams.set('tfcd', (config.getConfig('coppa') ? 1 : 0));
       }
 
+      let adUnitCode = bidRequest.adUnitCode;
+      if (adUnitCode) {
+        body.adUnitCode = adUnitCode;
+      }
+      if (mediaType == VIDEO) {
+        body.video = utils.deepAccess(bidRequest, 'mediaTypes.video');
+      } else if (mediaType == BANNER) {
+        body.banner = utils.deepAccess(bidRequest, 'mediaTypes.banner');
+      }
+
+      const ortb = converter.toORTB({ bidderRequest, bidRequests: [bidRequest] });
+      Object.assign(body, ortb);
+
       requests.push({
-        method: 'GET',
-        url: url,
+        method: 'POST',
+        url: url.toString(),
         bidRequest: bidRequest,
+        data: body
       });
     }
 
@@ -116,13 +143,13 @@ export const spec = {
       var raw = serverResponse.body[i];
       var rawBid = raw.creatives[0];
       if (!rawBid) {
-        logWarn('cpmstarBidAdapter: server response failed check');
+        utils.logWarn('cpmstarBidAdapter: server response failed check');
         return;
       }
       var cpm = (parseFloat(rawBid.cpm) || 0);
 
       if (!cpm) {
-        logWarn('cpmstarBidAdapter: server response failed check. Missing cpm')
+        utils.logWarn('cpmstarBidAdapter: server response failed check. Missing cpm');
         return;
       }
 
@@ -132,7 +159,7 @@ export const spec = {
         width: rawBid.width || 0,
         height: rawBid.height || 0,
         currency: rawBid.currency ? rawBid.currency : DEFAULT_CURRENCY,
-        netRevenue: rawBid.netRevenue ? rawBid.netRevenue : true,
+        netRevenue: rawBid.netRevenue ? rawBid.netRevenue : DEFAULT_NET_REVENUE,
         ttl: rawBid.ttl ? rawBid.ttl : DEFAULT_TTL,
         creativeId: rawBid.creativeid || 0,
         meta: {
@@ -141,7 +168,7 @@ export const spec = {
       };
 
       if (rawBid.hasOwnProperty('dealId')) {
-        bidResponse.dealId = rawBid.dealId
+        bidResponse.dealId = rawBid.dealId;
       }
 
       if (mediaType == BANNER && rawBid.code) {
@@ -155,7 +182,7 @@ export const spec = {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = rawBid.creativemacros.HTML5VID_VASTSTRING;
       } else {
-        return logError('bad response', rawBid);
+        return utils.logError('bad response', rawBid);
       }
 
       bidResponses.push(bidResponse);
@@ -179,4 +206,5 @@ export const spec = {
   }
 
 };
+
 registerBidder(spec);

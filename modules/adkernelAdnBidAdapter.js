@@ -1,7 +1,8 @@
-import { deepAccess, parseSizesInput, isArray, deepSetValue, parseUrl, isStr, isNumber, logInfo } from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -10,7 +11,7 @@ const DEFAULT_APIS = [1, 2];
 const GVLID = 14;
 
 function isRtbDebugEnabled(refInfo) {
-  return refInfo.referer.indexOf('adk_debug=true') !== -1;
+  return refInfo.topmostLocation?.indexOf('adk_debug=true') !== -1;
 }
 
 function buildImp(bidRequest) {
@@ -58,10 +59,11 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
+  let {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
   let req = {
-    id: auctionId,
-    tid: transactionId,
+    id: bidderRequest.bidderRequestId,
+    // TODO: root-level `tid` is not ORTB; is this intentional?
+    tid: ortb2?.source?.tid,
     site: buildSite(refererInfo),
     imp: tags
   };
@@ -83,13 +85,10 @@ function buildRequestParams(tags, bidderRequest) {
 }
 
 function buildSite(refInfo) {
-  let loc = parseUrl(refInfo.referer);
-  let result = {
-    page: `${loc.protocol}://${loc.hostname}${loc.pathname}`,
-    secure: ~~(loc.protocol === 'https')
-  };
-  if (self === top && document.referrer) {
-    result.ref = document.referrer;
+  const result = {
+    page: refInfo.page,
+    secure: ~~(refInfo.page && refInfo.page.startsWith('https')),
+    ref: refInfo.ref
   }
   let keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
@@ -101,7 +100,6 @@ function buildSite(refInfo) {
 function buildBid(tag) {
   let bid = {
     requestId: tag.impid,
-    bidderCode: spec.code,
     cpm: tag.bid,
     creativeId: tag.crid,
     currency: 'USD',
@@ -146,23 +144,11 @@ function fillBidMeta(bid, tag) {
   }
 }
 
-function getBidFloor(bid, mediaType, sizes) {
-  var floor;
-  var size = sizes.length === 1 ? sizes[0] : '*';
-  if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
-}
-
 export const spec = {
   code: 'adkernelAdn',
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['engagesimply'],
+  aliases: ['engagesimply', 'adpluto_dsp'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&

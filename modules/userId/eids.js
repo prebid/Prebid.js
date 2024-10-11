@@ -1,312 +1,30 @@
-import { pick, isFn, isStr, isPlainObject, deepAccess } from '../../src/utils.js';
+import {deepClone, isFn, isStr} from '../../src/utils.js';
 
-// Each user-id sub-module is expected to mention respective config here
-const USER_IDS_CONFIG = {
+/**
+ * @typedef {import('./index.js').SubmodulePriorityMap} SubmodulePriorityMap
+ */
 
-  // key-name : {config}
-
-  // trustpid
-  'trustpid': {
-    source: 'trustpid.com',
-    atype: 1,
-    getValue: function (data) {
-      return data;
-    },
-  },
-
-  // intentIqId
-  'intentIqId': {
-    source: 'intentiq.com',
-    atype: 1
-  },
-
-  // naveggId
-  'naveggId': {
-    source: 'navegg.com',
-    atype: 1
-  },
-
-  // justId
-  'justId': {
-    source: 'justtag.com',
-    atype: 1
-  },
-
-  // pubCommonId
-  'pubcid': {
-    source: 'pubcid.org',
-    atype: 1
-  },
-
-  // unifiedId
-  'tdid': {
-    source: 'adserver.org',
-    atype: 1,
-    getUidExt: function() {
-      return {
-        rtiPartner: 'TDID'
-      };
-    }
-  },
-
-  // id5Id
-  'id5id': {
-    getValue: function(data) {
-      return data.uid
-    },
-    source: 'id5-sync.com',
-    atype: 1,
-    getUidExt: function(data) {
-      if (data.ext) {
-        return data.ext;
-      }
-    }
-  },
-
-  // parrableId
-  'parrableId': {
-    source: 'parrable.com',
-    atype: 1,
-    getValue: function(parrableId) {
-      if (parrableId.eid) {
-        return parrableId.eid;
-      }
-      if (parrableId.ccpaOptout) {
-        // If the EID was suppressed due to a non consenting ccpa optout then
-        // we still wish to provide this as a reason to the adapters
-        return '';
-      }
-      return null;
-    },
-    getUidExt: function(parrableId) {
-      const extendedData = pick(parrableId, [
-        'ibaOptout',
-        'ccpaOptout'
-      ]);
-      if (Object.keys(extendedData).length) {
-        return extendedData;
-      }
-    }
-  },
-
-  // identityLink
-  'idl_env': {
-    source: 'liveramp.com',
-    atype: 3
-  },
-
-  // liveIntentId
-  'lipb': {
-    getValue: function(data) {
-      return data.lipbid;
-    },
-    source: 'liveintent.com',
-    atype: 3,
-    getEidExt: function(data) {
-      if (Array.isArray(data.segments) && data.segments.length) {
-        return {
-          segments: data.segments
-        };
-      }
-    }
-  },
-
-  // britepoolId
-  'britepoolid': {
-    source: 'britepool.com',
-    atype: 3
-  },
-
-  // dmdId
-  'dmdId': {
-    source: 'hcn.health',
-    atype: 3
-  },
-
-  // lotamePanoramaId
-  lotamePanoramaId: {
-    source: 'crwdcntrl.net',
-    atype: 1,
-  },
-
-  // criteo
-  'criteoId': {
-    source: 'criteo.com',
-    atype: 1
-  },
-
-  // merkleId
-  'merkleId': {
-    source: 'merkleinc.com',
-    atype: 3,
-    getValue: function(data) {
-      return data.id;
-    },
-    getUidExt: function(data) {
-      return (data && data.keyID) ? {
-        keyID: data.keyID
-      } : undefined;
-    }
-  },
-
-  // NetId
-  'netId': {
-    source: 'netid.de',
-    atype: 1
-  },
-
-  // zeotapIdPlus
-  'IDP': {
-    source: 'zeotap.com',
-    atype: 1
-  },
-
-  // hadronId
-  'hadronId': {
-    source: 'audigent.com',
-    atype: 1
-  },
-
-  // haloId (deprecated in 7.0, use hadronId)
-  'haloId': {
-    source: 'audigent.com',
-    atype: 1
-  },
-
-  // quantcastId
-  'quantcastId': {
-    source: 'quantcast.com',
-    atype: 1
-  },
-
-  // nextroll
-  'nextrollId': {
-    source: 'nextroll.com',
-    atype: 1
-  },
-
-  // IDx
-  'idx': {
-    source: 'idx.lat',
-    atype: 1
-  },
-
-  // Verizon Media ConnectID
-  'connectid': {
-    source: 'verizonmedia.com',
-    atype: 3
-  },
-
-  // Neustar Fabrick
-  'fabrickId': {
-    source: 'neustar.biz',
-    atype: 1
-  },
-
-  // MediaWallah OpenLink
-  'mwOpenLinkId': {
-    source: 'mediawallahscript.com',
-    atype: 1
-  },
-
-  'tapadId': {
-    source: 'tapad.com',
-    atype: 1
-  },
-
-  // Novatiq Snowflake
-  'novatiq': {
-    getValue: function(data) {
-      return data.snowflake
-    },
-    source: 'novatiq.com',
-    atype: 1
-  },
-
-  'uid2': {
-    source: 'uidapi.com',
-    atype: 3,
-    getValue: function(data) {
-      return data.id;
-    }
-  },
-
-  // Akamai Data Activation Platform (DAP)
-  'dapId': {
-    source: 'akamai.com',
-    atype: 1
-  },
-
-  'deepintentId': {
-    source: 'deepintent.com',
-    atype: 3
-  },
-
-  // Admixer Id
-  'admixerId': {
-    source: 'admixer.net',
-    atype: 3
-  },
-
-  // Adtelligent Id
-  'adtelligentId': {
-    source: 'adtelligent.com',
-    atype: 3
-  },
-
-  amxId: {
-    source: 'amxrtb.com',
-    atype: 1,
-  },
-
-  'publinkId': {
-    source: 'epsilon.com',
-    atype: 3
-  },
-
-  'kpuid': {
-    source: 'kpuid.com',
-    atype: 3
-  },
-
-  'imuid': {
-    source: 'intimatemerger.com',
-    atype: 1
-  },
-
-  // Yahoo ConnectID
-  'connectId': {
-    source: 'yahoo.com',
-    atype: 3
-  },
-
-  // Adquery ID
-  'qid': {
-    source: 'adquery.io',
-    atype: 1
-  },
-};
+export const EID_CONFIG = new Map();
 
 // this function will create an eid object for the given UserId sub-module
-function createEidObject(userIdData, subModuleKey) {
-  const conf = USER_IDS_CONFIG[subModuleKey];
-  if (conf && userIdData) {
+function createEidObject(userIdData, subModuleKey, eidConf) {
+  if (eidConf && userIdData) {
     let eid = {};
-    eid.source = conf['source'];
-    const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
+    eid.source = isFn(eidConf['getSource']) ? eidConf['getSource'](userIdData) : eidConf['source'];
+    const value = isFn(eidConf['getValue']) ? eidConf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
-      const uid = { id: value, atype: conf['atype'] };
+      const uid = { id: value, atype: eidConf['atype'] };
       // getUidExt
-      if (isFn(conf['getUidExt'])) {
-        const uidExt = conf['getUidExt'](userIdData);
+      if (isFn(eidConf['getUidExt'])) {
+        const uidExt = eidConf['getUidExt'](userIdData);
         if (uidExt) {
           uid.ext = uidExt;
         }
       }
       eid.uids = [uid];
       // getEidExt
-      if (isFn(conf['getEidExt'])) {
-        const eidExt = conf['getEidExt'](userIdData);
+      if (isFn(eidConf['getEidExt'])) {
+        const eidExt = eidConf['getEidExt'](userIdData);
         if (eidExt) {
           eid.ext = eidExt;
         }
@@ -317,44 +35,37 @@ function createEidObject(userIdData, subModuleKey) {
   return null;
 }
 
-// this function will generate eids array for all available IDs in bidRequest.userId
-// this function will be called by userId module
-// if any adapter does not want any particular userId to be passed then adapter can use Array.filter(e => e.source != 'tdid')
-export function createEidsArray(bidRequestUserId) {
-  let eids = [];
-  for (const subModuleKey in bidRequestUserId) {
-    if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      if (subModuleKey === 'pubProvidedId') {
-        eids = eids.concat(bidRequestUserId['pubProvidedId']);
-      } else {
-        const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
-        if (eid) {
-          eids.push(eid);
-        }
-      }
+export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
+  const allEids = {};
+  function collect(eid) {
+    const key = JSON.stringify([eid.source?.toLowerCase(), eid.ext]);
+    if (allEids.hasOwnProperty(key)) {
+      allEids[key].uids.push(...eid.uids);
+    } else {
+      allEids[key] = eid;
     }
   }
-  return eids;
+
+  Object.entries(bidRequestUserId).forEach(([name, values]) => {
+    values = Array.isArray(values) ? values : [values];
+    const eids = name === 'pubProvidedId' ? deepClone(values) : values.map(value => createEidObject(value, name, eidConfigs.get(name)));
+    eids.filter(eid => eid != null).forEach(collect);
+  })
+  return Object.values(allEids);
 }
 
 /**
- * @param {SubmoduleContainer[]} submodules
+ * @param {SubmodulePriorityMap} priorityMap
  */
-export function buildEidPermissions(submodules) {
-  let eidPermissions = [];
-  submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
-    .forEach(i => {
-      Object.keys(i.idObj).forEach(key => {
-        if (deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
-          deepAccess(USER_IDS_CONFIG, key + '.source')) {
-          eidPermissions.push(
-            {
-              source: USER_IDS_CONFIG[key].source,
-              bidders: i.config.bidders
-            }
-          );
-        }
-      });
-    });
-  return eidPermissions;
+export function getEids(priorityMap) {
+  const eidConfigs = new Map();
+  const idValues = {};
+  Object.entries(priorityMap).forEach(([key, submodules]) => {
+    const submodule = submodules.find(mod => mod.idObj?.[key] != null);
+    if (submodule) {
+      idValues[key] = submodule.idObj[key];
+      eidConfigs.set(key, submodule.submodule.eids?.[key])
+    }
+  })
+  return createEidsArray(idValues, eidConfigs);
 }

@@ -5,12 +5,17 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { parseDomain } from '../src/refererDetection.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.1005';
+const TAPPX_BIDDER_VERSION = '0.1.3';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -33,7 +38,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'h': DATA_TYPES.NUMBER,
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
-  'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
@@ -51,7 +56,7 @@ export const spec = {
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   */
   isBidRequestValid: function(bid) {
     // bid.params.host
     if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
@@ -144,22 +149,22 @@ function validBasic(bid) {
     return false;
   }
 
-  if (bid.params.tappxkey == null) {
+  if (!bid.params.tappxkey) {
     logWarn(LOG_PREFIX, 'Please review the mandatory Tappxkey parameter.');
     return false;
   }
 
-  if (bid.params.host == null) {
+  if (!bid.params.host) {
     logWarn(LOG_PREFIX, 'Please review the mandatory Host parameter.');
     return false;
   }
 
-  let classicEndpoint = true
+  let classicEndpoint = true;
   if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) {
-    classicEndpoint = false
+    classicEndpoint = false;
   }
 
-  if (classicEndpoint && bid.params.endpoint == null) {
+  if (classicEndpoint && !bid.params.endpoint) {
     logWarn(LOG_PREFIX, 'Please review the mandatory endpoint Tappx parameters.');
     return false;
   }
@@ -189,7 +194,7 @@ function validMediaType(bid) {
  */
 function interpretBid(serverBid, request) {
   let bidReturned = {
-    requestId: request.bids.bidId,
+    requestId: request.bids?.bidId,
     cpm: serverBid.price,
     currency: serverBid.cur ? serverBid.cur : CUR,
     width: serverBid.w,
@@ -204,7 +209,7 @@ function interpretBid(serverBid, request) {
   if (typeof serverBid.nurl != 'undefined') { bidReturned.nurl = serverBid.nurl }
   if (typeof serverBid.burl != 'undefined') { bidReturned.burl = serverBid.burl }
 
-  if (typeof request.bids.mediaTypes !== 'undefined' && typeof request.bids.mediaTypes.video !== 'undefined') {
+  if (typeof request.bids?.mediaTypes !== 'undefined' && typeof request.bids?.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
     bidReturned.vastUrl = serverBid.lurl;
     bidReturned.ad = serverBid.adm;
@@ -212,13 +217,12 @@ function interpretBid(serverBid, request) {
     bidReturned.width = serverBid.w;
     bidReturned.height = serverBid.h;
 
-    if (request.bids.mediaTypes.video.context === 'outstream') {
-      const url = (serverBid.ext.purl) ? serverBid.ext.purl : false;
-      if (typeof url === 'undefined') {
+    if (request.bids?.mediaTypes.video.context === 'outstream') {
+      if (!serverBid.ext.purl) {
         logWarn(LOG_PREFIX, 'Error getting player outstream from tappx');
         return false;
       }
-      bidReturned.renderer = createRenderer(bidReturned, request, url);
+      bidReturned.renderer = createRenderer(bidReturned, request, serverBid.ext.purl);
     }
   } else {
     bidReturned.ad = serverBid.adm;
@@ -226,19 +230,19 @@ function interpretBid(serverBid, request) {
   }
 
   if (typeof bidReturned.adomain !== 'undefined' || bidReturned.adomain !== null) {
-    bidReturned.meta = { advertiserDomains: request.bids.adomain };
+    bidReturned.meta = { advertiserDomains: request.bids?.adomain };
   }
 
   return bidReturned;
 }
 
 /**
-* Build and makes the request
-*
-* @param {*} validBidRequests
-* @param {*} bidderRequest
-* @return response ad
-*/
+ * Build and makes the request
+ *
+ * @param {*} validBidRequests
+ * @param {*} bidderRequest
+ * @return response ad
+ */
 function buildOneRequest(validBidRequests, bidderRequest) {
   let hostInfo = _getHostInfo(validBidRequests);
   const ENDPOINT = hostInfo.endpoint;
@@ -250,6 +254,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const BIDEXTRA = deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = deepAccess(validBidRequests, 'mediaTypes.video');
+  const ORTB2 = deepAccess(validBidRequests, 'ortb2');
 
   // let requests = [];
   let payload = {};
@@ -270,12 +275,32 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     api[0] = deepAccess(validBidRequests, 'params.api') ? deepAccess(validBidRequests, 'params.api') : [3, 5];
   } else {
     let bundle = _extractPageUrl(validBidRequests, bidderRequest);
-    let site = {};
+    let site = deepAccess(validBidRequests, 'params.site') || {};
     site.name = bundle;
+    site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
+    try {
+      site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+    } catch (e) {
+      site.ref = bidderRequest?.refererInfo?.ref || window.document.referrer || '';
+    }
+    site.ext = {};
+    site.ext.is_amp = bidderRequest?.refererInfo?.isAmp || 0;
+    site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || '-';
+    site.ext.page_rip = bidderRequest?.refererInfo?.page || '-';
+    site.ext.page_rit = bidderRequest?.refererInfo?.topmostLocation || '-';
+    site.ext.page_wlh = window.location.href || '-';
     publisher.name = bundle;
     publisher.domain = bundle;
+    let sitename = document.getElementsByTagName('meta')['title'];
+    if (sitename && sitename.content) {
+      site.name = sitename.content;
+    }
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
+    let keywords = document.getElementsByTagName('meta')['keywords'];
+    if (keywords && keywords.content) {
+      site.keywords = keywords.content;
+    }
     payload.site = site;
   }
   // < App/Site object
@@ -286,6 +311,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let h;
 
   if (bannerMediaType) {
+    if (!Array.isArray(bannerMediaType.sizes)) { logWarn(LOG_PREFIX, 'Banner sizes array not found.'); }
+
     let banner = {};
     w = bannerMediaType.sizes[0][0];
     h = bannerMediaType.sizes[0][1];
@@ -294,18 +321,15 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     if (
       ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) ||
       ((bannerMediaType.sizes[0].indexOf(768) >= 0) && (bannerMediaType.sizes[0].indexOf(1024) >= 0))) {
-      banner.pos = 7
+      banner.pos = 0;
     } else {
-      banner.pos = 4
+      banner.pos = 0;
     }
 
     banner.api = api;
 
-    let format = {};
-    format[0] = {};
-    format[0].w = w;
-    format[0].h = h;
-    banner.format = format;
+    const formatArr = bannerMediaType.sizes.map(size => ({w: size[0], h: size[1]}))
+    banner.format = Object.assign({}, formatArr);
 
     imp.banner = banner;
   }
@@ -323,7 +347,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     }
 
     if ((video.w === undefined || video.w == null || video.w <= 0) ||
-        (video.h === undefined || video.h == null || video.h <= 0)) {
+      (video.h === undefined || video.h == null || video.h <= 0)) {
+      if (!Array.isArray(videoMediaType.playerSize)) { logWarn(LOG_PREFIX, 'Video playerSize array not found.'); }
+
       w = videoMediaType.playerSize[0][0];
       h = videoMediaType.playerSize[0][1];
       video.w = w;
@@ -387,11 +413,19 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   device.w = screen.width;
   device.dnt = getDNT() ? 1 : 0;
   device.language = getLanguage();
-  device.make = navigator.vendor ? navigator.vendor : '';
+  device.make = getVendor();
 
   let geo = {};
   geo.country = deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
+  let configGeo = {};
+  configGeo.country = ORTB2?.device?.geo;
+
+  if (typeof configGeo.country !== 'undefined') {
+    device.geo = configGeo;
+  } else if (typeof geo.country !== 'undefined') {
+    device.geo = geo;
+  };
 
   // > GDPR
   let user = {};
@@ -405,9 +439,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
         (typeof uuid !== 'undefined' && uuid !== null) &&
         (typeof uuid.source == 'string' && uuid.source !== null) &&
         (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
-    )
+    );
 
-    if (typeof user !== 'undefined') { user.ext.eids = eidsArr }
+    user.ext.eids = eidsArr;
   };
 
   let regs = {};
@@ -443,7 +477,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // < Payload Ext
 
   // > Payload
-  payload.id = validBidRequests.auctionId;
+  payload.id = bidderRequest.bidderRequestId;
   payload.test = deepAccess(validBidRequests, 'params.test') ? 1 : 0;
   payload.at = 1;
   payload.tmax = bidderRequest.timeout ? bidderRequest.timeout : 600;
@@ -456,7 +490,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = ($$PREBID_GLOBAL$$.version !== null) ? encodeURIComponent($$PREBID_GLOBAL$$.version) : -1;
+  let pbjsv = 'v' + '$prebid.version$';
 
   return {
     method: 'POST',
@@ -473,7 +507,12 @@ function getLanguage() {
 
 function getOs() {
   let ua = navigator.userAgent;
-  if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
+  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+}
+
+function getVendor() {
+  let ua = navigator.userAgent;
+  if (ua.indexOf('Chrome') != -1) { return 'Google'; } else if (ua.indexOf('Firefox') != -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') != -1) { return 'Apple'; } else if (ua.indexOf('Edge') != -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') != -1 || ua.indexOf('Trident') != -1) { return 'Microsoft'; } else { return ''; }
 }
 
 export function _getHostInfo(validBidRequests) {
@@ -483,8 +522,17 @@ export function _getHostInfo(validBidRequests) {
 
   domainInfo.domain = hostParam.split('/', 1)[0];
 
+  let regexHostParamHttps = new RegExp(`^https:\/\/`);
+  let regexHostParamHttp = new RegExp(`^http:\/\/`);
+
   let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+
+  if (regexHostParamHttps.test(hostParam)) {
+    hostParam = hostParam.replace('https://', '');
+  } else if (regexHostParamHttp.test(hostParam)) {
+    hostParam = hostParam.replace('http://', '');
+  }
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
     domainInfo.newEndpoint = true;
@@ -555,19 +603,8 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  let referrer = deepAccess(bidderRequest, 'refererInfo.referer');
-  let page = deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(window, 'location.href');
-  let paramUrl = deepAccess(validBidRequests, 'params.domainUrl') || config.getConfig('pageUrl');
-
-  let domainUrl = referrer || page || paramUrl;
-
-  try {
-    domainUrl = domainUrl.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0].replace(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?/img, '');
-  } catch (error) {
-    domainUrl = undefined;
-  }
-
-  return domainUrl;
+  let url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
+  return parseDomain(url, {noLeadingWww: true});
 }
 
 registerBidder(spec);

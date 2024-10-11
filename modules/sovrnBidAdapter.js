@@ -1,33 +1,41 @@
-import { _each, getBidIdParameter, isArray, deepClone, parseUrl, getUniqueIdentifierStr, deepSetValue, logError, deepAccess, isInteger, logWarn } from '../src/utils.js';
+import {
+  _each,
+  isArray,
+  getUniqueIdentifierStr,
+  deepSetValue,
+  logError,
+  deepAccess,
+  isInteger,
+  logWarn,
+  getBidIdParameter,
+  isEmptyStr,
+  mergeDeep
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js'
-import { createEidsArray } from './userId/eids.js';
-import {config} from '../src/config.js';
+import {
+  ADPOD,
+  BANNER,
+  VIDEO
+} from '../src/mediaTypes.js'
+import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const ORTB_VIDEO_PARAMS = {
-  'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  'minduration': (value) => isInteger(value),
-  'maxduration': (value) => isInteger(value),
-  'protocols': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 10),
-  'w': (value) => isInteger(value),
-  'h': (value) => isInteger(value),
-  'startdelay': (value) => isInteger(value),
-  'placement': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
-  'linearity': (value) => [1, 2].indexOf(value) !== -1,
-  'skip': (value) => [0, 1].indexOf(value) !== -1,
-  'skipmin': (value) => isInteger(value),
-  'skipafter': (value) => isInteger(value),
-  'sequence': (value) => isInteger(value),
-  'battr': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 17),
-  'maxextended': (value) => isInteger(value),
-  'minbitrate': (value) => isInteger(value),
-  'maxbitrate': (value) => isInteger(value),
-  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
-  'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
-  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => Array.isArray(value) && value.every(v => v >= 0 && v <= 7),
-  'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
+  ...COMMON_ORTB_VIDEO_PARAMS,
+  'placement': (value) => isInteger(value) && value >= 1 && value <= 5,
+  'plcmt': (value) => isInteger(value) && value >= 1 && value <= 4,
+  'delivery': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 3),
+  'pos': (value) => isInteger(value) && value >= 1 && value <= 7,
+}
+
+const REQUIRED_VIDEO_PARAMS = {
+  context: (value) => value !== ADPOD,
+  mimes: ORTB_VIDEO_PARAMS.mimes,
+  maxduration: ORTB_VIDEO_PARAMS.maxduration,
+  protocols: ORTB_VIDEO_PARAMS.protocols
 }
 
 export const spec = {
@@ -40,19 +48,25 @@ export const spec = {
    * @param {object} bid the Sovrn bid to validate
    * @return boolean for whether or not a bid is valid
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
+    const video = bid?.mediaTypes?.video
     return !!(
       bid.params.tagid &&
       !isNaN(parseFloat(bid.params.tagid)) &&
-      isFinite(bid.params.tagid) &&
-      deepAccess(bid, 'mediaTypes.video.context') !== ADPOD
+      isFinite(bid.params.tagid) && (
+        !video || (
+          Object.keys(REQUIRED_VIDEO_PARAMS)
+            .every(key => REQUIRED_VIDEO_PARAMS[key](video[key]))
+        )
+      )
     )
   },
 
   /**
    * Format the bid request object for our endpoint
-   * @param {BidRequest[]} bidRequests Array of Sovrn bidders
    * @return object of parameters for Prebid AJAX request
+   * @param bidReqs
+   * @param bidderRequest
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
@@ -60,18 +74,16 @@ export const spec = {
       let iv;
       let schain;
       let eids;
-      let tpid = []
       let criteoId;
 
       _each(bidReqs, function (bid) {
-        if (!eids && bid.userId) {
-          eids = createEidsArray(bid.userId)
+        if (!eids && bid.userIdAsEids) {
+          eids = bid.userIdAsEids;
           eids.forEach(function (id) {
             if (id.uids && id.uids[0]) {
               if (id.source === 'criteo.com') {
                 criteoId = id.uids[0].id
               }
-              tpid.push({source: id.source, uid: id.uids[0].id})
             }
           })
         }
@@ -81,18 +93,11 @@ export const spec = {
         }
         iv = iv || getBidIdParameter('iv', bid.params)
 
-        const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
-          currency: 'USD',
-          mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
-          size: '*'
-        }) : {}
-        floorInfo.floor = floorInfo.floor || getBidIdParameter('bidfloor', bid.params)
-
         const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
           tagid: String(getBidIdParameter('tagid', bid.params)),
-          bidfloor: floorInfo.floor
+          bidfloor: _getBidFloors(bid)
         }
 
         if (deepAccess(bid, 'mediaTypes.banner')) {
@@ -118,21 +123,34 @@ export const spec = {
           imp.ext = imp.ext || {}
           imp.ext.deals = segmentsString.split(',').map(deal => deal.trim())
         }
+
+        const auctionEnvironment = bid?.ortb2Imp?.ext?.ae
+        if (bidderRequest.paapi?.enabled && isInteger(auctionEnvironment)) {
+          imp.ext = imp.ext || {}
+          imp.ext.ae = auctionEnvironment
+        } else {
+          if (imp.ext?.ae) {
+            delete imp.ext.ae
+          }
+        }
+
         sovrnImps.push(imp)
       })
 
-      const fpd = deepClone(config.getConfig('ortb2'))
+      const fpd = bidderRequest.ortb2 || {};
 
       const site = fpd.site || {}
-      site.page = bidderRequest.refererInfo.referer
-      // clever trick to get the domain
-      site.domain = parseUrl(site.page).hostname
+      site.page = bidderRequest.refererInfo.page
+      site.domain = bidderRequest.refererInfo.domain
+
+      const tmax = deepAccess(bidderRequest, 'timeout');
 
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
         imp: sovrnImps,
         site: site,
-        user: fpd.user || {}
+        user: fpd.user || {},
+        tmax: tmax
       }
 
       if (schain) {
@@ -143,6 +161,16 @@ export const spec = {
         };
       }
 
+      const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+      if (tid) {
+        deepSetValue(sovrnBidReq, 'source.tid', tid)
+      }
+
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (coppa) {
+        deepSetValue(sovrnBidReq, 'regs.coppa', 1);
+      }
+
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
@@ -150,10 +178,19 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
+      if (bidderRequest.gppConsent) {
+        deepSetValue(sovrnBidReq, 'regs.gpp', bidderRequest.gppConsent.gppString);
+        deepSetValue(sovrnBidReq, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+      }
+
+      // if present, merge device object from ortb2 into `sovrnBidReq.device`
+      if (bidderRequest?.ortb2?.device) {
+        sovrnBidReq.device = sovrnBidReq.device || {};
+        mergeDeep(sovrnBidReq.device, bidderRequest.ortb2.device);
+      }
 
       if (eids) {
         deepSetValue(sovrnBidReq, 'user.ext.eids', eids)
-        deepSetValue(sovrnBidReq, 'user.ext.tpid', tpid)
         if (criteoId) {
           deepSetValue(sovrnBidReq, 'user.ext.prebid_criteoid', criteoId)
         }
@@ -175,18 +212,16 @@ export const spec = {
 
   /**
    * Format Sovrn responses as Prebid bid responses
-   * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
-   * @return {Bid[]} An array of formatted bids.
-  */
-  interpretResponse: function({ body: {id, seatbid} }) {
+   * @param {id, seatbid, ext} sovrnResponse A successful response from Sovrn.
+   * @return An array of formatted bids (+ fledgeAuctionConfigs if available)
+   */
+  interpretResponse: function({ body: {id, seatbid, ext} }) {
+    if (!id || !seatbid || !Array.isArray(seatbid)) return []
+
     try {
-      let sovrnBidResponses = [];
-      if (id &&
-        seatbid &&
-        seatbid.length > 0 &&
-        seatbid[0].bid &&
-        seatbid[0].bid.length > 0) {
-        seatbid[0].bid.map(sovrnBid => {
+      let bids = seatbid
+        .filter(seat => seat)
+        .map(seat => seat.bid.map(sovrnBid => {
           const bid = {
             requestId: sovrnBid.impid,
             cpm: parseFloat(sovrnBid.price),
@@ -196,27 +231,66 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            ttl: sovrnBid.ext ? (sovrnBid.ext.ttl || 90) : 90,
+            mediaType: sovrnBid.nurl ? BANNER : VIDEO,
+            ttl: sovrnBid.ext?.ttl || 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (!sovrnBid.nurl) {
-            bid.mediaType = VIDEO
-            bid.vastXml = decodeURIComponent(sovrnBid.adm)
-          } else {
-            bid.mediaType = BANNER
+          if (sovrnBid.nurl) {
             bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
+          } else {
+            bid.vastXml = decodeURIComponent(sovrnBid.adm)
           }
-          sovrnBidResponses.push(bid);
-        });
+
+          return bid
+        }))
+        .flat()
+
+      let fledgeAuctionConfigs = null;
+      if (isArray(ext?.igbid)) {
+        const seller = ext.seller
+        const decisionLogicUrl = ext.decisionLogicUrl
+        const sellerTimeout = ext.sellerTimeout
+        ext.igbid.filter(item => isValidIgBid(item)).forEach((igbid) => {
+          const perBuyerSignals = {}
+          igbid.igbuyer.filter(item => isValidIgBuyer(item)).forEach(buyerItem => {
+            perBuyerSignals[buyerItem.igdomain] = buyerItem.buyerdata
+          })
+          const interestGroupBuyers = [...Object.keys(perBuyerSignals)]
+          if (interestGroupBuyers.length) {
+            fledgeAuctionConfigs = fledgeAuctionConfigs || {}
+            fledgeAuctionConfigs[igbid.impid] = {
+              seller,
+              decisionLogicUrl,
+              sellerTimeout,
+              interestGroupBuyers: interestGroupBuyers,
+              perBuyerSignals,
+            }
+          }
+        })
       }
-      return sovrnBidResponses
+      if (fledgeAuctionConfigs) {
+        fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+          return {
+            bidId,
+            config: Object.assign({
+              auctionSignals: {}
+            }, cfg)
+          }
+        })
+        return {
+          bids,
+          paapi: fledgeAuctionConfigs,
+        }
+      }
+      return bids
     } catch (e) {
-      logError('Could not intrepret bidresponse, error deatils:', e);
+      logError('Could not interpret bidresponse, error details:', e)
+      return e
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     try {
       const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
@@ -230,12 +304,16 @@ export const spec = {
           if (uspConsent) {
             params.push(['us_privacy', uspConsent]);
           }
+          if (gppConsent) {
+            params.push(['gpp', gppConsent.gppString]);
+            params.push(['gpp_sid', gppConsent.applicableSections])
+          }
 
           if (iidArr[0]) {
             params.push(['informer', iidArr[0]]);
             tracks.push({
               type: 'iframe',
-              url: 'https://ap.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
+              url: 'https://ce.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
             });
           }
         }
@@ -256,11 +334,16 @@ export const spec = {
 
 function _buildVideoRequestObj(bid) {
   const videoObj = {}
+  const bidSizes = deepAccess(bid, 'sizes')
   const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {})
   const videoBidderParams = deepAccess(bid, 'params.video', {})
   const computedParams = {}
 
-  if (Array.isArray(videoAdUnitParams.playerSize)) {
+  if (bidSizes) {
+    const sizes = (Array.isArray(bidSizes[0])) ? bidSizes[0] : bidSizes
+    computedParams.w = sizes[0]
+    computedParams.h = sizes[1]
+  } else if (Array.isArray(videoAdUnitParams.playerSize)) {
     const sizes = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize
     computedParams.w = sizes[0]
     computedParams.h = sizes[1]
@@ -282,6 +365,28 @@ function _buildVideoRequestObj(bid) {
     }
   })
   return videoObj
+}
+
+function _getBidFloors(bid) {
+  const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
+    currency: 'USD',
+    mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
+    size: '*'
+  }) : {}
+  const floorModuleValue = parseFloat(floorInfo.floor)
+  if (!isNaN(floorModuleValue)) {
+    return floorModuleValue
+  }
+  const paramValue = parseFloat(getBidIdParameter('bidfloor', bid.params))
+  return !isNaN(paramValue) ? paramValue : undefined
+}
+
+function isValidIgBid(igBid) {
+  return !isEmptyStr(igBid.impid) && isArray(igBid.igbuyer) && igBid.igbuyer.length
+}
+
+function isValidIgBuyer(igBuyer) {
+  return !isEmptyStr(igBuyer.igdomain)
 }
 
 registerBidder(spec)
