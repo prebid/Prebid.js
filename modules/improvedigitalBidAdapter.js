@@ -130,7 +130,7 @@ const convertBidFloorCurrency = (imp) => {
   try {
     const bidFloor = convertCurrency(
       imp.bidfloor,
-      imp.bidfloorcur.toUpperCase(),
+      imp.bidfloorcur,
       DEFAULT_CURRENCY,
       false,
     );
@@ -160,7 +160,7 @@ export const CONVERTER = ortbConverter({
       imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || DEFAULT_CURRENCY;
     }
 
-    if (imp.bidfloor && imp.bidfloorcur && imp.bidfloorcur.toUpperCase() !== DEFAULT_CURRENCY) {
+    if (imp.bidfloor && imp.bidfloorcur && imp.bidfloorcur !== DEFAULT_CURRENCY) {
       convertBidFloorCurrency(imp);
     }
     const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
