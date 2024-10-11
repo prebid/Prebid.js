@@ -58,6 +58,15 @@ export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
 }
 // Function to get Response
 export const getBannerResponse = (bidResponse, mediaType) => {
+  return formatResponse(bidResponse, mediaType);
+}
+// Function to get NATIVE Response
+export const getNativeResponse = (bidResponse, bidRequest, mediaType) => {
+  const assets = JSON.parse(JSON.parse(bidRequest.data)[0].imp[0].native.request).assets;
+  return formatResponse(bidResponse, mediaType, assets);
+}
+// Function to format response
+const formatResponse = (bidResponse, mediaType, assets) => {
   let responseArray = [];
   if (bidResponse) {
     try {
@@ -81,6 +90,18 @@ export const getBannerResponse = (bidResponse, mediaType) => {
           response.ttl = 300;
           response.dealId = bidReq.dealId;
           response.mediaType = mediaType;
+          if (mediaType == 'native') {
+            let nativeResp = JSON.parse(bidReq.adm).native;
+            let nativeData = {
+              clickUrl: nativeResp.link.url,
+              impressionTrackers: nativeResp.imptrackers
+            };
+            nativeResp.assets.forEach(asst => {
+              let data = getNativeAssestData(asst, assets);
+              nativeData[data.key] = data.value;
+            });
+            response.native = nativeData;
+          }
           responseArray.push(response);
         });
       }
@@ -90,78 +111,18 @@ export const getBannerResponse = (bidResponse, mediaType) => {
   }
   return responseArray;
 }
-// Function to get NATIVE Response
-export const getNativeResponse = (bidResponse, bidRequest, mediaType) => {
-  let responseArray = [];
-  const assets = JSON.parse(JSON.parse(bidRequest.data)[0].imp[0].native.request).assets;
-  if (bidResponse) {
-    try {
-      let bidResp = deepAccess(bidResponse, 'body.seatbid', []);
-      if (bidResp && bidResp[0] && bidResp[0].bid) {
-        bidResp[0].bid.forEach(bidReq => {
-          let response = {};
-          response.requestId = bidReq.impid;
-          response.cpm = bidReq.price;
-          response.width = bidReq.w;
-          response.height = bidReq.h;
-          response.ad = bidReq.adm;
-          response.meta = {
-            advertiserDomains: bidReq.adomain,
-            primaryCatId: bidReq.cat || [],
-            attr: bidReq.attr || []
-          };
-          response.creativeId = bidReq.crid;
-          response.netRevenue = false;
-          response.currency = 'USD';
-          response.ttl = 300;
-          response.dealId = bidReq.dealId;
-          response.mediaType = mediaType;
-          let nativeResp = JSON.parse(bidReq.adm).native;
-          let nativeData = {
-            clickUrl: nativeResp.link.url,
-            impressionTrackers: nativeResp.imptrackers
-          };
-          nativeResp.assets.forEach(asst => {
-            let data = getNativeAssestData(asst, assets);
-            nativeData[data.key] = data.value;
-          });
-          response.native = nativeData;
-          responseArray.push(response);
-        })
-      }
-    } catch (e) {
-      logError(e);
-    }
-  }
-  return responseArray;
-}
 // Function to get imp based on Media Type
 const getImpDetails = (bidReq) => {
-  if (bidReq.mediaTypes.native) {
-    return getNativeImpDetails(bidReq);
-  } else if (bidReq.mediaTypes.banner) {
-    return getBannerImpDetails(bidReq);
-  }
-}
-// Function to get imp
-const getBannerImpDetails = (bidReq) => {
   let imp = {};
   if (bidReq) {
     imp.id = bidReq.bidId;
     imp.bidfloor = getFloorPrice(bidReq);
-    imp.banner = getBannerDetails(bidReq);
-  }
-  return imp;
-}
-// Function to get native imp
-const getNativeImpDetails = (bidReq) => {
-  let imp = {};
-  if (bidReq) {
-    imp.id = bidReq.bidId;
-    imp.bidfloor = getFloorPrice(bidReq);
-    // imp.native = getNativeDetails(bidReq);
-    let assets = { assets: NATIVE_ASSETS };
-    imp.native = { request: JSON.stringify(assets) };
+    if (bidReq.mediaTypes.native) {
+      let assets = { assets: NATIVE_ASSETS };
+      imp.native = { request: JSON.stringify(assets) };
+    } else if (bidReq.mediaTypes.banner) {
+      imp.banner = getBannerDetails(bidReq);
+    }
   }
   return imp;
 }
