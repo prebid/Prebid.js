@@ -134,10 +134,8 @@ const convertBidFloorCurrency = (imp) => {
       DEFAULT_CURRENCY,
       false,
     );
-    if (typeof bidFloor === 'number' && !isNaN(bidFloor)) {
-      imp.bidfloor = bidFloor;
-      imp.bidfloorcur = DEFAULT_CURRENCY;
-    }
+    imp.bidfloor = bidFloor;
+    imp.bidfloorcur = DEFAULT_CURRENCY;
   } catch (err) {
     logWarn(`Failed to convert bid floor to ${DEFAULT_CURRENCY}. Passing floor price in its original currency.`, err);
   }

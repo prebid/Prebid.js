@@ -360,7 +360,11 @@ describe('Improve Digital Adapter Tests', function () {
       getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
         convertCurrency: (cpm, from, to) => {
           const conversionKeys = { 'EUR-USD': 1.75 };
-          return cpm * conversionKeys[`${from}-${to}`];
+          const conversionRate = conversionKeys[`${from}-${to}`];
+          if (!conversionRate) {
+            throw new Error(`No conversion rate found for ${from}-${to}`);
+          }
+          return cpm * conversionRate;
         }
       });
       const bidRequest = deepClone(simpleBidRequest);
