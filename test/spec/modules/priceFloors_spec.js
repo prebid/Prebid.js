@@ -2431,7 +2431,6 @@ describe('setting null as rule value', () => {
     expect(isFloorsDataValid(data)).to.to.equal(true);
   });
 
-
   it('getFloor should not return numeric value if null set as value', function () {
     const bidRequest = { ...basicBidRequest, getFloor };
     const basicFloorConfig = {

@@ -831,7 +831,7 @@ export function setOrtbImpBidFloor(imp, bidRequest, context) {
         currency: context.currency || config.getConfig('currency.adServerCurrency') || 'USD',
         mediaType: context.mediaType || '*',
         size: '*'
-      }));
+      }) || {});
     } catch (e) {
       logWarn('Cannot compute floor for bid', bidRequest);
       return;

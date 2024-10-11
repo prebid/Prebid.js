@@ -346,7 +346,7 @@ function appendImpObject(bid, openRtbObject) {
     const impObject = {
       id: bid.bidId,
       secure: isSecure(bid),
-      bidfloor: getFloorModuleData(bid).floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
+      bidfloor: getFloorModuleData(bid)?.floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
     };
 
     if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === BANNER || mediaTypeMode === '*')) {
