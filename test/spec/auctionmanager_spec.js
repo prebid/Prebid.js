@@ -842,6 +842,13 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
+    it('resolves .requestsDone', async () => {
+      const auction = auctionManager.createAuction({adUnits});
+      stubCallAdapters.reset();
+      auction.callBids();
+      await auction.requestsDone;
+    })
+
     describe('stale auctions', () => {
       let clock, auction;
       beforeEach(() => {
