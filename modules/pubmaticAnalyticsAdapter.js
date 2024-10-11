@@ -302,10 +302,6 @@ function getFloorsCommonField (floorData) {
   }
 }
 
-function getFloorRule(floorResponseData) {
-  return floorResponseData ? floorResponseData.floorRuleValue : undefined;
-}
-
 function getFloorType(floorResponseData) {
   return floorResponseData ? (floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
 }
@@ -553,14 +549,11 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     if (floorType !== undefined) {
       pixelURL += '&ft=' + enc(floorType);
     }
-    const floorValue = getFloorValue(floorData.floorResponseData);
-    if (floorValue !== undefined) {
-      pixelURL += '&fv=' + enc(floorValue);
-    }
-  	const floorRule = getFloorRule(floorData.floorResponseData);
-    if (floorRule !== undefined) {
-      pixelURL += '&frv=' + enc(floorRule);
-    }
+    const floorRuleValue = winningBid?.bidResponse?.floorData?.floorRuleValue;
+    (floorRuleValue !== undefined) && (pixelURL += '&frv=' + enc(floorRuleValue));
+
+    const floorValue = winningBid?.bidResponse?.floorData?.floorValue;
+    (floorValue !== undefined) && (pixelURL += '&fv=' + enc(floorValue));
   }
   pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
 
