@@ -219,14 +219,6 @@ describe('Aniview Bid Adapter', function () {
 
       expect(bidRequest[0].url).to.equal(DEV_ENDPOINT);
     });
-
-    it('should mock `site` for dev mode if enabled', function () {
-      videoBidRequest.bids[0].params.dev = { mockSite: true };
-
-      const bidRequests = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
-
-      expect(bidRequests[0].data.site.page).to.equal('https://example.com');
-    });
   });
 
   describe('interpretResponse', function () {

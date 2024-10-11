@@ -60,12 +60,6 @@ const converter = ortbConverter({
 
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const shouldMockSite = !!bidderRequest.bids?.[0]?.params?.dev?.mockSite;
-
-    // For local testing
-    if (shouldMockSite && request.site) {
-      request.site.page = 'https://example.com';
-    }
 
     mergeDeep(request, {
       ext: {
@@ -163,28 +157,31 @@ export const spec = {
     }
 
     const response = converter.fromORTB({ response: body, request: data });
-    const bid = response.bids[0];
-    const replacements = {
-      auctionPrice: bid.cpm,
-      auctionId: bid.requestId,
-      auctionBidId: bidResponse.impid,
-      auctionImpId: bidResponse.impid,
-      auctionSeatId: bid.seatBidId,
-      auctionAdId: bid.adId,
-    };
-    const bidAdmWithReplacedMacros = replaceMacros(bidResponse.adm, replacements);
 
-    if (bid.mediaType === VIDEO) {
-      bid.vastXml = bidAdmWithReplacedMacros;
+    return response.bids.map(bid => {
+      const replacements = {
+        auctionPrice: bid.cpm,
+        auctionId: bid.requestId,
+        auctionBidId: bidResponse.impid,
+        auctionImpId: bidResponse.impid,
+        auctionSeatId: bid.seatBidId,
+        auctionAdId: bid.adId,
+      };
 
-      if (bidResponse?.nurl) {
-        bid.vastUrl = replaceMacros(bidResponse.nurl, replacements);
+      const bidAdmWithReplacedMacros = replaceMacros(bidResponse.adm, replacements);
+
+      if (bid.mediaType === VIDEO) {
+        bid.vastXml = bidAdmWithReplacedMacros;
+
+        if (bidResponse?.nurl) {
+          bid.vastUrl = replaceMacros(bidResponse.nurl, replacements);
+        }
+      } else {
+        bid.ad = bidAdmWithReplacedMacros;
       }
-    } else {
-      bid.ad = bidAdmWithReplacedMacros;
-    }
 
-    return response.bids;
+      return bid;
+    });
   },
 
   getUserSyncs(syncOptions, serverResponses) {
