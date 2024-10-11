@@ -293,6 +293,14 @@ export const spec = {
       })
     }
 
+    // Add GPP params
+    if (bidderRequest.gppConsent) {
+      params.unshift({
+        key: 'ntv_gpp_consent',
+        value: bidderRequest.gppConsent.gppString,
+      })
+    }
+
     // Add USP params
     if (bidderRequest.uspConsent) {
       // Put on the beginning of the qs param array
