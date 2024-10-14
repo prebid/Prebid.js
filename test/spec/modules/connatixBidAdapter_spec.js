@@ -8,8 +8,8 @@ import {
   _getMinSize as connatixGetMinSize,
   _getViewability as connatixGetViewability,
   _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
-  saveOnAllStorages,
-  readFromAllStorages,
+  saveOnAllStorages as connatixSaveOnAllStorages,
+  readFromAllStorages as connatixReadFromAllStorages,
   storage,
   spec
 } from '../../../modules/connatixBidAdapter.js';
@@ -964,7 +964,7 @@ describe('connatixBidAdapter', function () {
       if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT || event.data.type === IDENTITY_PROVIDER_RESOLVED_EVENT) {
         const response = event.data;
         if (response.data) {
-          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
         }
       }
     }
@@ -1003,7 +1003,7 @@ describe('connatixBidAdapter', function () {
       storage.getCookie.returns(JSON.stringify(mockData));
       storage.getDataFromLocalStorage.returns(JSON.stringify(mockData));
 
-      const retrievedData = readFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY);
+      const retrievedData = connatixReadFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY);
       expect(retrievedData).to.deep.equal(mockData);
     });
 

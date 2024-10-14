@@ -188,7 +188,7 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
-function saveOnAllStorages(name, value, expirationTimeMs) {
+export function saveOnAllStorages(name, value, expirationTimeMs) {
   const date = new Date();
   date.setTime(date.getTime() + expirationTimeMs);
   const expires = `expires=${date.toUTCString()}`;
@@ -197,7 +197,7 @@ function saveOnAllStorages(name, value, expirationTimeMs) {
   cnxIdsValues = value;
 }
 
-function readFromAllStorages(name) {
+export function readFromAllStorages(name) {
   const fromCookie = storage.getCookie(name);
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
 
