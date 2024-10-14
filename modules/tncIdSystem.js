@@ -11,10 +11,9 @@ const waitTNCScript = (tncNS) => {
     var tnc = window[tncNS];
     if (!tnc) reject(new Error('No TNC Object'));
     if (tnc.tncid) resolve(tnc.tncid);
-    tnc.ready(() => {
-      tnc = window[tncNS];
-      if (tnc.tncid) resolve(tnc.tncid);
-      else tnc.on('data-sent', () => resolve(tnc.tncid));
+    tnc.ready(async () => {
+      let tncid = await tnc.getTNCID('prebid');
+      resolve(tncid);
     });
   });
 }
@@ -32,7 +31,6 @@ const tncCallback = function (cb) {
     tncNS = '__tncPbjs';
     promiseArray.push(loadRemoteScript());
   }
-
   return Promise.all(promiseArray).then(() => waitTNCScript(tncNS)).then(cb).catch(() => cb());
 }
 
