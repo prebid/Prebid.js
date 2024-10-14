@@ -578,6 +578,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
     }
     cancel = defer();
     return GreedyPromise.race([promise, cancel.promise])
+      .catch(() => logWarn(`${MODULE_NAME} - cancelled promise`))
       .finally(initMetrics.startTiming('userId.total'))
   }
 
