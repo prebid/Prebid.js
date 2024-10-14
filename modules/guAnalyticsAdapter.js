@@ -131,6 +131,16 @@ function logEvents(events) {
   log('commercial', `Prebid.js events: ${logMsg}`, events);
 }
 
+analyticsAdapter.ajaxCall = function ajaxCall(data) {
+  const url = `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`;
+  const callback = (data) => logEvents(JSON.parse(data).hb_ev);
+  const options = {
+    method: 'POST',
+    contentType: 'text/plain; charset=utf-8'
+  };
+  ajax(url, callback(data), data, options);
+};
+
 function trackBidWon(args) {
   const event = {ev: 'bidwon'};
   setSafely(event, 'aid', args.auctionId);
