@@ -128,7 +128,7 @@ describe('AdsInteractiveBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://bntb.adsintreactive.com/pbjs');
+      expect(serverRequest.url).to.equal('https://bntb.adsinteractive.com/pbjs');
     });
 
     it('Returns general data valid', function () {
