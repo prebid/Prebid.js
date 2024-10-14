@@ -233,7 +233,7 @@ describe('kimberliteBidAdapter', function () {
           },
         ];
 
-        if(currency) {
+        if (currency) {
           expectedBids[0].currency = expectedBids[1].currency = bidderResponse.body.cur = currency;
         }
 
