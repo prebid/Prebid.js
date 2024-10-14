@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { isStr, deepAccess } from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -19,10 +19,6 @@ const METADATA_KEY = 'adn.metaData';
 const METADATA_KEY_SEPARATOR = '@@@';
 
 export const misc = {
-  getUnixTimestamp: function (addDays, asMinutes) {
-    const multiplication = addDays / (asMinutes ? 1440 : 1);
-    return Date.now() + (addDays && addDays > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
-  }
 };
 
 const storageTool = (function () {
@@ -50,11 +46,11 @@ const storageTool = (function () {
       if (datum.key === 'voidAuIds' && Array.isArray(datum.value)) {
         return true;
       }
-      return datum.key && datum.value && datum.exp && datum.exp > misc.getUnixTimestamp() && (!network || network === datum.network);
+      return datum.key && datum.value && datum.exp && datum.exp > getUnixTimestampFromNow() && (!network || network === datum.network);
     }) : [];
     const voidAuIdsEntry = filteredEntries.find(entry => entry.key === 'voidAuIds');
     if (voidAuIdsEntry) {
-      const now = misc.getUnixTimestamp();
+      const now = getUnixTimestampFromNow();
       voidAuIdsEntry.value = voidAuIdsEntry.value.filter(voidAuId => voidAuId.auId && voidAuId.exp > now);
       if (!voidAuIdsEntry.value.length) {
         filteredEntries = filteredEntries.filter(entry => entry.key !== 'voidAuIds');
@@ -73,7 +69,7 @@ const storageTool = (function () {
       const notNewExistingAuIds = currentVoidAuIds.filter(auIdObj => {
         return newAuIds.indexOf(auIdObj.value) < -1;
       }) || [];
-      const oneDayFromNow = misc.getUnixTimestamp(1);
+      const oneDayFromNow = getUnixTimestampFromNow(1);
       const apiIdsArray = newAuIds.map(auId => {
         return { exp: oneDayFromNow, auId: auId };
       }) || [];
@@ -86,7 +82,7 @@ const storageTool = (function () {
       if (key !== 'voidAuIds') {
         metaAsObj[key + METADATA_KEY_SEPARATOR + network] = {
           value: apiRespMetadata[key],
-          exp: misc.getUnixTimestamp(100),
+          exp: getUnixTimestampFromNow(100),
           network: network
         }
       }
@@ -130,31 +126,6 @@ const storageTool = (function () {
     return (meta && meta.usi) ? meta.usi : false
   }
 
-  const getSegmentsFromOrtb = function (ortb2) {
-    const userData = deepAccess(ortb2, 'user.data');
-    let segments = [];
-    if (userData) {
-      userData.forEach(userdat => {
-        if (userdat.segment) {
-          segments.push(...userdat.segment.map((segment) => {
-            if (isStr(segment)) return segment;
-            if (isStr(segment.id)) return segment.id;
-          }).filter((seg) => !!seg));
-        }
-      });
-    }
-    return segments
-  }
-
-  const getKvsFromOrtb = function (ortb2) {
-    const siteData = deepAccess(ortb2, 'site.ext.data');
-    if (siteData) {
-      return siteData
-    } else {
-      return null
-    }
-  }
-
   return {
     refreshStorage: function (bidderRequest) {
       const ortb2 = bidderRequest.ortb2 || {};
@@ -171,23 +142,71 @@ const storageTool = (function () {
           return voidAuId.auId;
         });
       }
-      metaInternal.segments = getSegmentsFromOrtb(ortb2);
-      metaInternal.kv = getKvsFromOrtb(ortb2);
     },
     saveToStorage: function (serverData, network) {
       setMetaInternal(serverData, network);
     },
     getUrlRelatedData: function () {
       // getting the URL information is theoretically not network-specific
-      const { segments, kv, usi, voidAuIdsArray } = metaInternal;
-      return { segments, kv, usi, voidAuIdsArray };
+      const { usi, voidAuIdsArray } = metaInternal;
+      return { usi, voidAuIdsArray };
     },
     getPayloadRelatedData: function (network) {
       // getting the payload data should be network-specific
-      const { segments, kv, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData } = getMetaDataFromLocalStorage(network).reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
+      const { segments, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData } = getMetaDataFromLocalStorage(network).reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
       return payloadRelatedData;
     }
   };
+})();
+
+const targetingTool = (function() {
+  const getSegmentsFromOrtb = function(bidderRequest) {
+    const userData = deepAccess(bidderRequest.ortb2 || {}, 'user.data');
+    let segments = [];
+    if (userData) {
+      userData.forEach(userdat => {
+        if (userdat.segment) {
+          segments.push(...userdat.segment.map((segment) => {
+            if (isStr(segment)) return segment;
+            if (isStr(segment.id)) return segment.id;
+          }).filter((seg) => !!seg));
+        }
+      });
+    }
+    return segments
+  };
+
+  const getKvsFromOrtb = function(bidderRequest) {
+    return deepAccess(bidderRequest.ortb2 || {}, 'site.ext.data');
+  };
+
+  return {
+    addSegmentsToUrlData: function (validBids, bidderRequest, existingUrlRelatedData) {
+      let segments = getSegmentsFromOrtb(bidderRequest || {});
+
+      for (let i = 0; i < validBids.length; i++) {
+        const bid = validBids[i];
+        const targeting = bid.params.targeting || {};
+        if (Array.isArray(targeting.segments)) {
+          segments = segments.concat(targeting.segments);
+          delete bid.params.targeting.segments;
+        }
+      }
+
+      existingUrlRelatedData.segments = segments;
+    },
+    mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
+      const kv = getKvsFromOrtb(bidderRequest || {});
+      if (isEmpty(kv)) {
+        return;
+      }
+      if (bidTargeting.kv && !Array.isArray(bidTargeting.kv)) {
+        bidTargeting.kv = convertObjectToArray(bidTargeting.kv);
+      }
+      bidTargeting.kv = bidTargeting.kv || [];
+      bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(kv));
+    }
+  }
 })();
 
 const validateBidType = function (bidTypeOption) {
@@ -227,11 +246,13 @@ export const spec = {
     storageTool.refreshStorage(bidderRequest);
 
     const urlRelatedMetaData = storageTool.getUrlRelatedData();
+    targetingTool.addSegmentsToUrlData(validBidRequests, bidderRequest, urlRelatedMetaData);
     if (urlRelatedMetaData.segments.length > 0) queryParamsAndValues.push('segments=' + urlRelatedMetaData.segments.join(','));
     if (urlRelatedMetaData.usi) queryParamsAndValues.push('userId=' + urlRelatedMetaData.usi);
 
     const bidderConfig = config.getConfig();
     if (bidderConfig.useCookie === false) queryParamsAndValues.push('noCookies=true');
+    if (bidderConfig.advertiserTransparency === true) queryParamsAndValues.push('advertiserTransparency=true');
     if (bidderConfig.maxDeals > 0) queryParamsAndValues.push('ds=' + Math.min(bidderConfig.maxDeals, MAXIMUM_DEALS_LIMIT));
 
     const bidRequests = {};
@@ -254,16 +275,23 @@ export const spec = {
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
+
+      const refererInfo = bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo : {};
+      if (refererInfo.page) {
+        networks[network].context = bidderRequest.refererInfo.page;
+      }
+      if (refererInfo.canonicalUrl) {
+        networks[network].canonical = bidderRequest.refererInfo.canonicalUrl;
+      }
 
       const payloadRelatedData = storageTool.getPayloadRelatedData(bid.params.network);
       if (Object.keys(payloadRelatedData).length > 0) {
         networks[network].metaData = payloadRelatedData;
       }
 
-      const targeting = bid.params.targeting || {};
-      if (urlRelatedMetaData.kv) targeting.kv = urlRelatedMetaData.kv;
-      const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.params.targetId || bid.bidId };
+      const bidTargeting = {...bid.params.targeting || {}};
+      targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest);
+      const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: bid.params.targetId || bid.bidId };
       const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
       if (maxDeals > 0) {
         adUnit.maxDeals = maxDeals;

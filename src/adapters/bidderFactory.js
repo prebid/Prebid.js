@@ -296,7 +296,7 @@ export function newBidder(spec) {
         onPaapi: (paapiConfig) => {
           const bidRequest = bidRequestMap[paapiConfig.bidId];
           if (bidRequest) {
-            addComponentAuction(bidRequest, paapiConfig.config);
+            addPaapiConfig(bidRequest, paapiConfig);
           } else {
             logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
           }
@@ -323,6 +323,8 @@ export function newBidder(spec) {
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
+            bid.deferBilling = bidRequest.deferBilling;
+            bid.deferRendering = bid.deferBilling && (bid.deferRendering ?? typeof spec.onBidBillable !== 'function');
             const prebidBid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
@@ -361,17 +363,7 @@ export function newBidder(spec) {
   }
 }
 
-// Transition from 'fledge' to 'paapi'
-// TODO: remove this in prebid 9
-const PAAPI_RESPONSE_PROPS = ['paapiAuctionConfigs', 'fledgeAuctionConfigs'];
-const RESPONSE_PROPS = ['bids'].concat(PAAPI_RESPONSE_PROPS);
-function getPaapiConfigs(adapterResponse) {
-  const [paapi, fledge] = PAAPI_RESPONSE_PROPS.map(prop => adapterResponse[prop]);
-  if (paapi != null && fledge != null) {
-    throw new Error(`Adapter response should use ${PAAPI_RESPONSE_PROPS[0]} over ${PAAPI_RESPONSE_PROPS[1]}, not both`);
-  }
-  return paapi ?? fledge;
-}
+const RESPONSE_PROPS = ['bids', 'paapi']
 
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
@@ -437,12 +429,12 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       // adapters can reply with:
       // a single bid
       // an array of bids
-      // a BidderAuctionResponse object ({bids: [*], paapiAuctionConfigs: [*]})
+      // a BidderAuctionResponse object
 
       let bids, paapiConfigs;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
-        paapiConfigs = getPaapiConfigs(response);
+        paapiConfigs = response.paapi;
       } else {
         bids = response;
       }
@@ -548,8 +540,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
-}, 'addComponentAuction');
+export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
+}, 'addPaapiConfig');
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {

@@ -8,7 +8,7 @@ Anonymised’s Real-time Data Provider automatically obtains segment IDs from th
  - Build the anonymisedRtd module into the Prebid.js package with:
 
  ```bash
- gulp build --modules=anonymisedRtdProvider,...
+ gulp build --modules=rtdModule,anonymisedRtdProvider,...
  ```
 
  - Use `setConfig` to instruct Prebid.js to initilaize the anonymisedRtdProvider module, as specified below.
@@ -24,7 +24,7 @@ Anonymised’s Real-time Data Provider automatically obtains segment IDs from th
          waitForIt: true,
          params: {
            cohortStorageKey: "cohort_ids",
-           bidders: ["smartadserver", "appnexus"],
+           bidders: ["appnexus", "onetag", "pubmatic", "smartadserver", ...],
            segtax: 1000
          }
        }

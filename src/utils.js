@@ -1,11 +1,12 @@
 import {config} from './config.js';
 import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
-import { EVENTS, S2S } from './constants.js';
+import {EVENTS} from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
+import { default as deepAccess } from 'dlv/index.js';
 
-export { default as deepAccess } from 'dlv/index.js';
+export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 
 var tStr = 'String';
@@ -41,6 +42,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
+  canAccessWindowTop,
   getWindowLocation,
   insertUserSyncIframe,
   insertElement,
@@ -129,37 +131,55 @@ export function transformAdServerTargetingObj(targeting) {
 }
 
 /**
+ * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of width, height tuples `[[300, 250]]` or '[[300,250], [970,90]]'
+ */
+export function sizesToSizeTuples(sizes) {
+  if (typeof sizes === 'string') {
+    // multiple sizes will be comma-separated
+    return sizes
+      .split(/\s*,\s*/)
+      .map(sz => sz.match(/^(\d+)x(\d+)$/i))
+      .filter(match => match)
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+  } else if (Array.isArray(sizes)) {
+    if (isValidGPTSingleSize(sizes)) {
+      return [sizes]
+    }
+    return sizes.filter(isValidGPTSingleSize);
+  }
+  return [];
+}
+
+/**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
  * @param  {(Array.<number[]>|Array.<number>)} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {Array.<string>}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
 export function parseSizesInput(sizeObj) {
-  if (typeof sizeObj === 'string') {
-    // multiple sizes will be comma-separated
-    return sizeObj.split(',').filter(sz => sz.match(/^(\d)+x(\d)+$/i))
-  } else if (typeof sizeObj === 'object') {
-    if (sizeObj.length === 2 && typeof sizeObj[0] === 'number' && typeof sizeObj[1] === 'number') {
-      return [parseGPTSingleSizeArray(sizeObj)];
-    } else {
-      return sizeObj.map(parseGPTSingleSizeArray)
-    }
-  }
-  return [];
+  return sizesToSizeTuples(sizeObj).map(sizeTupleToSizeString);
+}
+
+export function sizeTupleToSizeString(size) {
+  return size[0] + 'x' + size[1]
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into an AppNexus style string, (i.e. 300x250)
 export function parseGPTSingleSizeArray(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return singleSize[0] + 'x' + singleSize[1];
+    return sizeTupleToSizeString(singleSize);
   }
+}
+
+export function sizeTupleToRtbSize(size) {
+  return {w: size[0], h: size[1]};
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return {w: singleSize[0], h: singleSize[1]};
+    return sizeTupleToRtbSize(singleSize)
   }
 }
 
@@ -178,6 +198,16 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
+}
+
+export function canAccessWindowTop() {
+  try {
+    if (internal.getWindowTop().location.href) {
+      return true;
+    }
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
@@ -353,7 +383,8 @@ export function isEmptyStr(str) {
  * Iterate object with the function
  * falls back to es5 `forEach`
  * @param {Array|Object} object
- * @param {Function(value, key, object)} fn
+ * @param {Function} fn - The function to execute for each element. It receives three arguments: value, key, and the original object.
+ * @returns {void}
  */
 export function _each(object, fn) {
   if (isFn(object?.forEach)) return object.forEach(fn, this);
@@ -368,7 +399,7 @@ export function contains(a, obj) {
  * Map an array or object into another array
  * given a function
  * @param {Array|Object} object
- * @param {Function(value, key, object)} callback
+ * @param {Function} callback - The function to execute for each element. It receives three arguments: value, key, and the original object.
  * @return {Array}
  */
 export function _map(object, callback) {
@@ -443,12 +474,6 @@ export function triggerPixel(url, done, timeout) {
   img.src = url;
 }
 
-export function callBurl({ source, burl }) {
-  if (source === S2S.SRC && burl) {
-    internal.triggerPixel(burl);
-  }
-}
-
 /**
  * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
  * (though could be for other purposes)
@@ -471,7 +496,6 @@ export function insertHtmlIntoIframe(htmlCode) {
 /**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
@@ -620,6 +644,33 @@ export function inIframe() {
   }
 }
 
+/**
+ * https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+ */
+export function isSafeFrameWindow() {
+  if (!inIframe()) {
+    return false;
+  }
+
+  const ws = internal.getWindowSelf();
+  return !!(ws.$sf && ws.$sf.ext);
+}
+
+/**
+ * Returns the result of calling the function $sf.ext.geom() if it exists
+ * @see https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf — 5.4 Function $sf.ext.geom
+ * @returns {Object | undefined} geometric information about the container
+ */
+export function getSafeframeGeometry() {
+  try {
+    const ws = getWindowSelf();
+    return (typeof ws.$sf.ext.geom === 'function') ? ws.$sf.ext.geom() : undefined;
+  } catch (e) {
+    logError('Error getting SafeFrame geometry', e);
+    return undefined;
+  }
+}
+
 export function isSafariBrowser() {
   return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
@@ -653,6 +704,33 @@ export function getPerformanceNow() {
 }
 
 /**
+ * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * This function uses the deprecated `Performance.timing` API and should be removed in future.
+ * It has not been updated yet because it is still used in some modules.
+ * @deprecated
+ * @param {Window} w The window object used to perform the api call. default to window.self
+ * @returns {number}
+ */
+export function getDomLoadingDuration(w) {
+  let domLoadingDuration = -1;
+
+  w = w || getWindowSelf();
+
+  const performance = w.performance;
+
+  if (w.performance?.timing) {
+    if (w.performance.timing.navigationStart > 0) {
+      const val = performance.timing.domLoading - performance.timing.navigationStart;
+      if (val > 0) {
+        domLoadingDuration = val;
+      }
+    }
+  }
+
+  return domLoadingDuration;
+}
+
+/**
  * When the deviceAccess flag config option is false, no cookies should be read or set
  * @returns {boolean}
  */
@@ -664,6 +742,7 @@ export function hasDeviceAccess() {
  * @returns {(boolean|undefined)}
  */
 export function checkCookieSupport() {
+  // eslint-disable-next-line prebid/no-member
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }
@@ -696,7 +775,6 @@ export function delayExecution(func, numRequiredCalls) {
 
 /**
  * https://stackoverflow.com/a/34890276/428704
- * @export
  * @param {Array} xs
  * @param {string} key
  * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
@@ -912,9 +990,9 @@ export function buildUrl(obj) {
  * This function deeply compares two objects checking for their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
- * @param checkTypes {boolean} if set, two objects with identical properties but different constructors will *not*
- * be considered equivalent.
- * @returns {boolean}
+ * @param {Object} [options] - Options for comparison.
+ * @param {boolean} [options.checkTypes=false] - If set, two objects with identical properties but different constructors will *not* be considered equivalent.
+ * @returns {boolean} - Returns `true` if the objects are equivalent, `false` otherwise.
  */
 export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   if (obj1 === obj2) return true;
@@ -1026,6 +1104,14 @@ export function safeJSONParse(data) {
   } catch (e) {}
 }
 
+export function safeJSONEncode(data) {
+  try {
+    return JSON.stringify(data);
+  } catch (e) {
+    return '';
+  }
+}
+
 /**
  * Returns a memoized version of `fn`.
  *
@@ -1048,8 +1134,35 @@ export function memoize(fn, key = function (arg) { return arg; }) {
 }
 
 /**
+ * Returns a Unix timestamp for given time value and unit.
+ * @param {number} timeValue numeric value, defaults to 0 (which means now)
+ * @param {string} timeUnit defaults to days (or 'd'), use 'm' for minutes. Any parameter that isn't 'd' or 'm' will return Date.now().
+ * @returns {number}
+ */
+export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
+  const acceptableUnits = ['m', 'd'];
+  if (acceptableUnits.indexOf(timeUnit) < 0) {
+    return Date.now();
+  }
+  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
+  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
+}
+
+/**
+ * Converts given object into an array, so {key: 1, anotherKey: 'fred', third: ['fred']} is turned
+ * into [{key: 1}, {anotherKey: 'fred'}, {third: ['fred']}]
+ * @param {Object} obj the object
+ * @returns {Array}
+ */
+export function convertObjectToArray(obj) {
+  return Object.keys(obj).map(key => {
+    return {[key]: obj[key]};
+  });
+}
+
+/**
  * Sets dataset attributes on a script
- * @param {Script} script
+ * @param {HTMLScriptElement} script
  * @param {object} attributes
  */
 export function setScriptAttributes(script, attributes) {
@@ -1107,5 +1220,89 @@ export function cloneEventArguments(args) {
     );
   } catch (e) {
     return args;
+  }
+}
+
+/**
+ * Checks if an object has non-serializable properties.
+ * Non-serializable properties are functions and RegExp objects.
+ *
+ * @param {Object} obj - The object to check.
+ * @param {Set} checkedObjects - A set of properties that have already been checked.
+ * @returns {boolean} - Returns true if the object has non-serializable properties, false otherwise.
+ */
+export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
+  for (const key in obj) {
+    const value = obj[key];
+    const type = typeof value;
+
+    if (
+      value === undefined ||
+      type === 'function' ||
+      type === 'symbol' ||
+      value instanceof RegExp ||
+      value instanceof Map ||
+      value instanceof Set ||
+      value instanceof Date ||
+      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+    ) {
+      return true;
+    }
+    if (value !== null && type === 'object' && value.constructor === Object) {
+      if (checkedObjects.has(value)) {
+        // circular reference, means we have a non-serializable property
+        return true;
+      }
+      checkedObjects.add(value);
+      if (hasNonSerializableProperty(value, checkedObjects)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Returns the value of a nested property in an array of objects.
+ *
+ * @param {Array} collection - Array of objects.
+ * @param {String} key - Key of nested property.
+ * @returns {any, undefined} - Value of nested property.
+ */
+export function setOnAny(collection, key) {
+  for (let i = 0, result; i < collection.length; i++) {
+    result = deepAccess(collection[i], key);
+    if (result) {
+      return result;
+    }
+  }
+  return undefined;
+}
+
+export function extractDomainFromHost(pageHost) {
+  let domain = null;
+  try {
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+  } catch (e) {
+    domain = null;
+  }
+  return domain;
+}
+
+export function triggerNurlWithCpm(bid, cpm) {
+  if (isStr(bid.nurl) && bid.nurl !== '') {
+    bid.nurl = bid.nurl.replace(
+      /\${AUCTION_PRICE}/,
+      cpm
+    );
+    triggerPixel(bid.nurl);
   }
 }

@@ -13,10 +13,22 @@ import 'modules/nativeRendering.js';
 
 import {expect} from 'chai';
 
-import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
+import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS} from 'src/constants.js';
+import {getBidToRender} from '../../../src/adRendering.js';
 
 describe('secureCreatives', () => {
   let sandbox;
+
+  function getBidToRenderHook(next, adId) {
+    // make sure that bids can be retrieved asynchronously
+    next(adId, new Promise((resolve) => setTimeout(resolve)))
+  }
+  before(() => {
+    getBidToRender.before(getBidToRenderHook);
+  });
+  after(() => {
+    getBidToRender.getHooks({hook: getBidToRenderHook}).remove()
+  });
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -28,6 +40,10 @@ describe('secureCreatives', () => {
 
   function makeEvent(ev) {
     return Object.assign({origin: 'mock-origin', ports: []}, ev)
+  }
+
+  function receive(ev) {
+    return Promise.resolve(receiveMessage(ev));
   }
 
   describe('getReplier', () => {
@@ -153,17 +169,17 @@ describe('secureCreatives', () => {
           data: JSON.stringify(data),
         });
 
-        receiveMessage(ev);
+        return receive(ev).then(() => {
+          sinon.assert.neverCalledWith(spyLogWarn, warning);
+          sinon.assert.calledOnce(spyAddWinningBid);
+          sinon.assert.calledWith(spyAddWinningBid, adResponse);
+          sinon.assert.calledOnce(adResponse.renderer.render);
+          sinon.assert.calledWith(adResponse.renderer.render, adResponse);
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
 
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(spyAddWinningBid, adResponse);
-        sinon.assert.calledOnce(adResponse.renderer.render);
-        sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
-
-        expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
+          expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
+        });
       });
 
       it('should allow stale rendering without config', function () {
@@ -180,29 +196,23 @@ describe('secureCreatives', () => {
           data: JSON.stringify(data)
         });
 
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(spyAddWinningBid, adResponse);
-        sinon.assert.calledOnce(adResponse.renderer.render);
-        sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
-
-        expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
-
-        resetHistories(adResponse.renderer.render);
-
-        receiveMessage(ev);
-
-        sinon.assert.calledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(spyAddWinningBid, adResponse);
-        sinon.assert.calledOnce(adResponse.renderer.render);
-        sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-        sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
+        return receive(ev).then(() => {
+          sinon.assert.neverCalledWith(spyLogWarn, warning);
+          sinon.assert.calledOnce(spyAddWinningBid);
+          sinon.assert.calledWith(spyAddWinningBid, adResponse);
+          sinon.assert.calledOnce(adResponse.renderer.render);
+          sinon.assert.calledWith(adResponse.renderer.render, adResponse);
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
+          expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
+          resetHistories(adResponse.renderer.render);
+          return receive(ev);
+        }).then(() => {
+          sinon.assert.calledWith(spyLogWarn, warning);
+          sinon.assert.calledOnce(adResponse.renderer.render);
+          sinon.assert.calledWith(adResponse.renderer.render, adResponse);
+          sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
+        });
       });
 
       it('should stop stale rendering with config', function () {
@@ -221,29 +231,27 @@ describe('secureCreatives', () => {
           data: JSON.stringify(data)
         });
 
-        receiveMessage(ev);
+        return receive(ev).then(() => {
+          sinon.assert.neverCalledWith(spyLogWarn, warning);
+          sinon.assert.calledOnce(spyAddWinningBid);
+          sinon.assert.calledWith(spyAddWinningBid, adResponse);
+          sinon.assert.calledOnce(adResponse.renderer.render);
+          sinon.assert.calledWith(adResponse.renderer.render, adResponse);
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
 
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(spyAddWinningBid, adResponse);
-        sinon.assert.calledOnce(adResponse.renderer.render);
-        sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
+          expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
 
-        expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
-
-        resetHistories(adResponse.renderer.render);
-
-        receiveMessage(ev);
-
-        sinon.assert.calledWith(spyLogWarn, warning);
-        sinon.assert.notCalled(spyAddWinningBid);
-        sinon.assert.notCalled(adResponse.renderer.render);
-        sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
-        sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
-
-        configObj.setConfig({'auctionOptions': {}});
+          resetHistories(adResponse.renderer.render);
+          return receive(ev)
+        }).then(() => {
+          sinon.assert.calledWith(spyLogWarn, warning);
+          sinon.assert.notCalled(spyAddWinningBid);
+          sinon.assert.notCalled(adResponse.renderer.render);
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
+          configObj.setConfig({'auctionOptions': {}});
+        });
       });
 
       it('should emit AD_RENDER_FAILED if requested missing adId', () => {
@@ -253,11 +261,12 @@ describe('secureCreatives', () => {
             adId: 'missing'
           })
         });
-        receiveMessage(ev);
-        sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_FAILED, sinon.match({
-          reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
-          adId: 'missing'
-        }));
+        return receive(ev).then(() => {
+          sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_FAILED, sinon.match({
+            reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+            adId: 'missing'
+          }));
+        });
       });
 
       it('should emit AD_RENDER_FAILED if creative can\'t be sent to rendering frame', () => {
@@ -271,11 +280,12 @@ describe('secureCreatives', () => {
             adId: bidId
           })
         });
-        receiveMessage(ev)
-        sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_FAILED, sinon.match({
-          reason: AD_RENDER_FAILED_REASON.EXCEPTION,
-          adId: bidId
-        }));
+        return receive(ev).then(() => {
+          sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_FAILED, sinon.match({
+            reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+            adId: bidId
+          }));
+        })
       });
 
       it('should include renderers in responses', () => {
@@ -287,8 +297,9 @@ describe('secureCreatives', () => {
           },
           data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
         });
-        receiveMessage(ev);
-        sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => JSON.parse(ob).renderer === 'mock-renderer'));
+        return receive(ev).then(() => {
+          sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => JSON.parse(ob).renderer === 'mock-renderer'));
+        });
       });
 
       if (FEATURES.NATIVE) {
@@ -318,23 +329,24 @@ describe('secureCreatives', () => {
             },
             data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
           })
-          receiveMessage(ev);
-          sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
-            const data = JSON.parse(ob);
-            ['width', 'height'].forEach(prop => expect(data[prop]).to.not.exist);
-            const native = data.native;
-            sinon.assert.match(native, {
-              ortb: bid.native.ortb,
-              adTemplate: bid.native.adTemplate,
-              rendererUrl: bid.native.rendererUrl,
-            })
-            expect(Object.fromEntries(native.assets.map(({key, value}) => [key, value]))).to.eql({
-              adTemplate: bid.native.adTemplate,
-              rendererUrl: bid.native.rendererUrl,
-              body: 'vbody'
-            });
-            return true;
-          }))
+          return receive(ev).then(() => {
+            sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
+              const data = JSON.parse(ob);
+              ['width', 'height'].forEach(prop => expect(data[prop]).to.not.exist);
+              const native = data.native;
+              sinon.assert.match(native, {
+                ortb: bid.native.ortb,
+                adTemplate: bid.native.adTemplate,
+                rendererUrl: bid.native.rendererUrl,
+              })
+              expect(Object.fromEntries(native.assets.map(({key, value}) => [key, value]))).to.eql({
+                adTemplate: bid.native.adTemplate,
+                rendererUrl: bid.native.rendererUrl,
+                body: 'vbody'
+              });
+              return true;
+            }))
+          });
         })
       }
     });
@@ -361,16 +373,16 @@ describe('secureCreatives', () => {
           origin: 'any origin'
         });
 
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubGetAllAssetsMessage);
-        sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
-        sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
+        return receive(ev).then(() => {
+          sinon.assert.neverCalledWith(spyLogWarn, warning);
+          sinon.assert.calledOnce(stubGetAllAssetsMessage);
+          sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
+          sinon.assert.calledOnce(ev.source.postMessage);
+          sinon.assert.notCalled(stubFireNativeTrackers);
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          sinon.assert.calledOnce(spyAddWinningBid);
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
+        });
       });
 
       it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
@@ -391,12 +403,60 @@ describe('secureCreatives', () => {
           origin: 'any origin'
         });
 
-        receiveMessage(ev);
-        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-
-        receiveMessage(ev);
-        stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
+        return receive(ev).then(() => {
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          return receive(ev);
+        }).then(() => {
+          stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
+        });
       });
+
+      describe('resizing', () => {
+        let container, slot;
+        before(() => {
+          const [gtag, atag] = [window.googletag, window.apntag];
+          delete window.googletag;
+          delete window.apntag;
+          after(() => {
+            window.googletag = gtag;
+            window.apntag = atag;
+          })
+        })
+        beforeEach(() => {
+          pushBidResponseToAuction({
+            adUnitCode: 'mock-au'
+          });
+          container = document.createElement('div');
+          container.id = 'mock-au';
+          slot = document.createElement('div');
+          container.appendChild(slot);
+          document.body.appendChild(container)
+        });
+        afterEach(() => {
+          if (container) {
+            document.body.removeChild(container);
+          }
+        })
+        it('should handle resize request', () => {
+          const ev = makeEvent({
+            data: JSON.stringify({
+              adId: bidId,
+              message: 'Prebid Native',
+              action: 'resizeNativeHeight',
+              width: 123,
+              height: 321
+            }),
+            source: {
+              postMessage: sinon.stub()
+            },
+            origin: 'any origin'
+          });
+          return receive(ev).then(() => {
+            expect(slot.style.width).to.eql('123px');
+            expect(slot.style.height).to.eql('321px');
+          });
+        })
+      })
     });
 
     describe('Prebid Event', () => {
@@ -422,13 +482,14 @@ describe('secureCreatives', () => {
                 },
               })
             });
-            receiveMessage(event);
-            expect(stubEmit.calledWith(EVENTS.AD_RENDER_FAILED, {
-              adId: bidId,
-              bid: adResponse,
-              reason: 'Fail reason',
-              message: 'Fail message'
-            })).to.equal(shouldEmit);
+            return receive(event).then(() => {
+              expect(stubEmit.calledWith(EVENTS.AD_RENDER_FAILED, {
+                adId: bidId,
+                bid: adResponse,
+                reason: 'Fail reason',
+                message: 'Fail message'
+              })).to.equal(shouldEmit);
+            });
           });
 
           it(`should${shouldEmit ? ' ' : ' not '}emit AD_RENDER_SUCCEEDED`, () => {
@@ -439,12 +500,13 @@ describe('secureCreatives', () => {
                 adId: bidId,
               })
             });
-            receiveMessage(event);
-            expect(stubEmit.calledWith(EVENTS.AD_RENDER_SUCCEEDED, {
-              adId: bidId,
-              bid: adResponse,
-              doc: null
-            })).to.equal(shouldEmit);
+            return receive(event).then(() => {
+              expect(stubEmit.calledWith(EVENTS.AD_RENDER_SUCCEEDED, {
+                adId: bidId,
+                bid: adResponse,
+                doc: null
+              })).to.equal(shouldEmit);
+            });
           });
         });
       });

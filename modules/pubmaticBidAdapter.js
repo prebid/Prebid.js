@@ -31,7 +31,7 @@ const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
-const MSG_VIDEO_PLACEMENT_MISSING = 'Video.Placement param missing';
+const MSG_VIDEO_PLCMT_MISSING = 'Video.plcmt param missing';
 
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
@@ -72,6 +72,10 @@ const VIDEO_CUSTOM_PARAMS = {
 const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
   'IMAGE': 3
+}
+
+const BANNER_CUSTOM_PARAMS = {
+  'battr': DATA_TYPES.ARRAY
 }
 
 const NET_REVENUE = true;
@@ -557,6 +561,14 @@ function _createBannerRequest(bid) {
     }
     bannerObj.pos = 0;
     bannerObj.topframe = inIframe() ? 0 : 1;
+
+    // Adding Banner custom params
+    const bannerCustomParams = {...deepAccess(bid, 'ortb2Imp.banner')};
+    for (let key in BANNER_CUSTOM_PARAMS) {
+      if (bannerCustomParams.hasOwnProperty(key)) {
+        bannerObj[key] = _checkParamDataType(key, bannerCustomParams[key], BANNER_CUSTOM_PARAMS[key]);
+      }
+    }
   } else {
     logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
@@ -566,8 +578,8 @@ function _createBannerRequest(bid) {
 
 export function checkVideoPlacement(videoData, adUnitCode) {
   // Check for video.placement property. If property is missing display log message.
-  if (FEATURES.VIDEO && !deepAccess(videoData, 'placement')) {
-    logWarn(MSG_VIDEO_PLACEMENT_MISSING + ' for ' + adUnitCode);
+  if (FEATURES.VIDEO && !deepAccess(videoData, 'plcmt')) {
+    logWarn(MSG_VIDEO_PLCMT_MISSING + ' for ' + adUnitCode);
   };
 }
 
@@ -669,7 +681,7 @@ function _createImpressionObject(bid, bidderRequest) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
-  var isFledgeEnabled = bidderRequest?.fledgeEnabled;
+  var isFledgeEnabled = bidderRequest?.paapi?.enabled;
 
   impObj = {
     id: bid.bidId,
@@ -679,7 +691,10 @@ function _createImpressionObject(bid, bidderRequest) {
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
     },
-    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY,
+    displaymanager: 'Prebid.js',
+    displaymanagerver: '$prebid.version$', // prebid version
+    pmp: bid.ortb2Imp?.pmp || undefined
   };
 
   _addPMPDealsInImpression(impObj, bid);
@@ -1098,7 +1113,6 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -1423,7 +1437,7 @@ export const spec = {
         });
         return {
           bids: bidResponses,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         }
       }
     } catch (error) {

@@ -9,12 +9,13 @@ import {
   logError,
   logMessage,
   logWarn,
-  parseSizesInput
+  parseSizesInput,
+  sizeTupleToRtbSize,
+  sizesToSizeTuples
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
@@ -220,19 +221,6 @@ export const spec = {
 
     hasSynced = true;
     return allUserSyncs;
-  },
-  onBidWon: bid => {
-    const bidString = JSON.stringify(bid);
-    spec.sendWinningsToServer(bidString);
-  },
-  sendWinningsToServer: data => {
-    let mutation = `mutation {createWin(input: {win: {eventData: "${window.btoa(data)}"}}) {win {createTime } } }`;
-    let dataToSend = JSON.stringify({ query: mutation });
-
-    ajax('https://analytics.adxpremium.services/graphql', null, dataToSend, {
-      contentType: 'application/json',
-      method: 'POST'
-    });
   }
 };
 
@@ -285,16 +273,8 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   let bannerSizes = [];
 
   if (bannerParams && bannerParams.sizes) {
-    const sizes = parseSizesInput(bannerParams.sizes);
-
     // get banner sizes in form [{ w: <int>, h: <int> }, ...]
-    const format = sizes.map(size => {
-      const [ width, height ] = size.split('x');
-      const w = parseInt(width, 10);
-      const h = parseInt(height, 10);
-      return { w, h };
-    });
-
+    const format = sizesToSizeTuples(bannerParams.sizes).map(sizeTupleToRtbSize);
     bannerSizes = format;
   }
 
@@ -469,9 +449,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
   }
 
-  // TODO: bidRequest.fpd is not the right place for pbadslot - who's filling that in, if anyone?
-  // is this meant to be bidRequest.ortb2Imp.ext.data.pbadslot?
-  const pbAdSlot = deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+  const pbAdSlot = deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   if (typeof pbAdSlot === 'string' && pbAdSlot) {
     deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
   }

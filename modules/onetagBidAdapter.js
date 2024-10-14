@@ -93,7 +93,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = navigator.connection || navigator.webkitConnection;
   payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
   payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
-  payload.fledgeEnabled = Boolean(bidderRequest && bidderRequest.fledgeEnabled)
+  payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -156,7 +156,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      fledgeAuctionConfigs,
+      paapi: fledgeAuctionConfigs,
     }
   } else {
     return bids;
@@ -291,6 +291,7 @@ function setGeneralInfo(bidRequest) {
   this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
+  this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
   if (params.pubClick) {
     this['click'] = params.pubClick;
   }

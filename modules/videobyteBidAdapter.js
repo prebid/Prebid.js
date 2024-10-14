@@ -19,6 +19,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -190,16 +191,6 @@ function buildRequestData(bidRequest, bidderRequest) {
       video[param] = videoParams[param];
     }
   });
-
-  // Placement Inference Rules:
-  // - If no placement is defined then default to 1 (In Stream)
-  video.placement = video.placement || 2;
-
-  // - If product is instream (for instream context) then override placement to 1
-  if (params.context === 'instream') {
-    video.startdelay = video.startdelay || 0;
-    video.placement = 1;
-  }
 
   // bid floor
   const bidFloorRequest = {

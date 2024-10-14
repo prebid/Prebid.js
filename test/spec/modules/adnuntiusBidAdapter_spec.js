@@ -6,13 +6,14 @@ import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
+import {getUnixTimestampFromNow} from 'src/utils.js';
 
 describe('adnuntiusBidAdapter', function () {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const usi = utils.generateUUID()
 
-  const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: misc.getUnixTimestamp() }, { exp: misc.getUnixTimestamp(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: misc.getUnixTimestamp(1) }, { key: 'valid', value: 'also-valid', exp: misc.getUnixTimestamp(1) }, { key: 'expired', value: 'fwefew', exp: misc.getUnixTimestamp() }, { key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: misc.getUnixTimestamp(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp() }]
+  const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: getUnixTimestampFromNow() }, { exp: getUnixTimestampFromNow(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: getUnixTimestampFromNow(1) }, { key: 'valid', value: 'also-valid', exp: getUnixTimestampFromNow(1) }, { key: 'expired', value: 'fwefew', exp: getUnixTimestampFromNow() }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: getUnixTimestampFromNow(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow() }]
   let storage;
 
   // need this to make the restore work correctly -- something to do with stubbing static prototype methods
@@ -474,7 +475,12 @@ describe('adnuntiusBidAdapter', function () {
         return 'overridden-value';
       });
 
-      const request = spec.buildRequests(bidderRequests, {});
+      const request = spec.buildRequests(bidderRequests, {
+        refererInfo: {
+          canonicalUrl: 'https://canonical.com/page.html',
+          page: 'https://canonical.com/something-else.html'
+        }
+      });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       const bid = request[0].bid[0]
@@ -482,7 +488,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url');
       expect(request[0].url).to.equal(ENDPOINT_URL.replace('format=prebid', 'format=prebid&so=overridden-value'));
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}]}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}],"context":"https://canonical.com/something-else.html","canonical":"https://canonical.com/page.html"}');
     });
 
     it('Test requests with no local storage', function () {
@@ -505,7 +511,7 @@ describe('adnuntiusBidAdapter', function () {
     });
 
     it('Test request changes for voided au ids', function () {
-      storage.setDataInLocalStorage('adn.metaData', JSON.stringify([{ key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: misc.getUnixTimestamp(1) }, { auId: '0000000000000023', exp: misc.getUnixTimestamp(1) }] }]));
+      storage.setDataInLocalStorage('adn.metaData', JSON.stringify([{ key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: getUnixTimestampFromNow(1) }, { auId: '0000000000000023', exp: getUnixTimestampFromNow(1) }] }]));
       const bRequests = bidderRequests.concat([{
         bidId: 'adn-11118b6bc',
         bidder: 'adnuntius',
@@ -566,7 +572,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0].url).to.equal(ENDPOINT_URL_VIDEO);
     });
 
-    it('should pass segments if available in config', function () {
+    it('should pass segments if available in config and merge from targeting', function () {
       const ortb2 = {
         user: {
           data: [{
@@ -580,11 +586,23 @@ describe('adnuntiusBidAdapter', function () {
         }
       };
 
+      bidderRequests[0].params.targeting = {
+        segments: ['merge-this', 'and-this']
+      };
+
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
-      expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
+      expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS.replace('segment3', 'segment3,merge-this,and-this'));
+
+      delete bidderRequests[0].params.targeting;
     });
+
+    function countMatches(actualArray, expectedValue) {
+      return actualArray.filter(val => {
+        return JSON.stringify(val) === JSON.stringify(expectedValue);
+      }).length;
+    }
 
     it('should pass site data ext as key values to ad server', function () {
       const ortb2 = {
@@ -592,23 +610,89 @@ describe('adnuntiusBidAdapter', function () {
           ext: {
             data: {
               '12345': 'true',
-              '45678': 'true'
+              '45678': 'true',
+              '9090': 'should-be-retained'
             }
           }
         }
       };
-
+      bidderRequests[0].params.targeting = {
+        kv: {
+          'merge': ['this'],
+          '9090': ['take it over']
+        }
+      };
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       const data = JSON.parse(request[0].data);
-      expect(data.adUnits[0].kv).to.have.property('12345');
-      expect(data.adUnits[0].kv['12345']).to.equal('true');
-      expect(data.adUnits[0].kv).to.have.property('45678');
-      expect(data.adUnits[0].kv['45678']).to.equal('true');
+      expect(countMatches(data.adUnits[0].kv, {'9090': ['take it over']})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'merge': ['this']})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
+      expect(data.adUnits[0].kv.length).to.equal(5);
+
+      delete bidderRequests[0].params.targeting;
     });
 
-    it('should skip passing site data ext if missing', function () {
+    it('should pass site data ext as key values to ad server with targeting in different format', function () {
+      const ortb2 = {
+        site: {
+          ext: {
+            data: {
+              '12345': 'true',
+              '45678': 'true',
+              '9090': 'should-be-retained'
+            }
+          }
+        }
+      };
+      bidderRequests[0].params.targeting = {
+        kv: [
+          {'merge': ['this']},
+          {'9090': ['take it over']}
+        ]
+      };
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      const data = JSON.parse(request[0].data);
+      expect(countMatches(data.adUnits[0].kv, {'9090': ['take it over']})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'merge': ['this']})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
+      expect(data.adUnits[0].kv.length).to.equal(5);
+
+      delete bidderRequests[0].params.targeting;
+    });
+
+    it('should pass site data ext as key values to ad server even if no kv targeting specified in params.targeting', function () {
+      const ortb2 = {
+        site: {
+          ext: {
+            data: {
+              '12345': 'true',
+              '45678': 'true',
+              '9090': 'should-be-retained'
+            }
+          }
+        }
+      };
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      const data = JSON.parse(request[0].data);
+      expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
+      expect(data.adUnits[0].kv.length).to.equal(3);
+
+      delete bidderRequests[0].params.targeting;
+    });
+
+    it('should skip passing site ext if missing', function () {
       const ortb2 = {
         site: {
           ext: {
@@ -616,9 +700,27 @@ describe('adnuntiusBidAdapter', function () {
         }
       };
 
+      delete bidderRequests[0].params.targeting;
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
+      const data = JSON.parse(request[0].data);
+      expect(data.adUnits[0]).to.not.have.property('kv');
+    });
+
+    it('should skip passing site ext data if missing', function () {
+      const ortb2 = {
+        site: {
+          ext: {
+            data: {}
+          }
+        }
+      };
+
+      delete bidderRequests[0].params.targeting;
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url');
       const data = JSON.parse(request[0].data);
       expect(data.adUnits[0]).to.not.have.property('kv');
     });
@@ -820,14 +922,15 @@ describe('adnuntiusBidAdapter', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
-          useCookie: false
+          useCookie: false,
+          advertiserTransparency: true
         }
       });
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
-      expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE);
+      expect(request[0].url).to.equal(ENDPOINT_URL_NOCOOKIE + '&advertiserTransparency=true');
     });
   });
 
@@ -925,7 +1028,9 @@ describe('adnuntiusBidAdapter', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
-          maxDeals: 2
+          maxDeals: 2,
+          useCookie: 'ignore-this',
+          advertiserTransparency: 'ignore-this-as-well'
         }
       });
 
@@ -1012,30 +1117,30 @@ describe('adnuntiusBidAdapter', function () {
       const usiEntry = results.find(entry => entry.key === 'usi' && entry.network === 'some-network-id');
       expect(usiEntry.key).to.equal('usi');
       expect(usiEntry.value).to.equal('from-api-server dude');
-      expect(usiEntry.exp).to.be.greaterThan(misc.getUnixTimestamp(90));
+      expect(usiEntry.exp).to.be.greaterThan(getUnixTimestampFromNow(90));
       expect(usiEntry.network).to.equal('some-network-id')
 
       const voidAuIdsEntry = results.find(entry => entry.key === 'voidAuIds');
       expect(voidAuIdsEntry.key).to.equal('voidAuIds');
       expect(voidAuIdsEntry.exp).to.equal(undefined);
       expect(voidAuIdsEntry.value[0].auId).to.equal('00000000000abcde');
-      expect(voidAuIdsEntry.value[0].exp).to.be.greaterThan(misc.getUnixTimestamp());
-      expect(voidAuIdsEntry.value[0].exp).to.be.lessThan(misc.getUnixTimestamp(2));
+      expect(voidAuIdsEntry.value[0].exp).to.be.greaterThan(getUnixTimestampFromNow());
+      expect(voidAuIdsEntry.value[0].exp).to.be.lessThan(getUnixTimestampFromNow(2));
       expect(voidAuIdsEntry.value[1].auId).to.equal('00000000000fffff');
-      expect(voidAuIdsEntry.value[1].exp).to.be.greaterThan(misc.getUnixTimestamp());
-      expect(voidAuIdsEntry.value[1].exp).to.be.lessThan(misc.getUnixTimestamp(2));
+      expect(voidAuIdsEntry.value[1].exp).to.be.greaterThan(getUnixTimestampFromNow());
+      expect(voidAuIdsEntry.value[1].exp).to.be.lessThan(getUnixTimestampFromNow(2));
 
       const validEntry = results.find(entry => entry.key === 'valid');
       expect(validEntry.key).to.equal('valid');
       expect(validEntry.value).to.equal('also-valid');
-      expect(validEntry.exp).to.be.greaterThan(misc.getUnixTimestamp());
-      expect(validEntry.exp).to.be.lessThan(misc.getUnixTimestamp(2));
+      expect(validEntry.exp).to.be.greaterThan(getUnixTimestampFromNow());
+      expect(validEntry.exp).to.be.lessThan(getUnixTimestampFromNow(2));
 
       const randomApiEntry = results.find(entry => entry.key === 'randomApiKey');
       expect(randomApiEntry.key).to.equal('randomApiKey');
       expect(randomApiEntry.value).to.equal('randomApiValue');
       expect(randomApiEntry.network).to.equal('some-network-id');
-      expect(randomApiEntry.exp).to.be.greaterThan(misc.getUnixTimestamp(90));
+      expect(randomApiEntry.exp).to.be.greaterThan(getUnixTimestampFromNow(90));
     });
 
     it('should not process valid response when passed alt bidder that is an adndeal', function () {

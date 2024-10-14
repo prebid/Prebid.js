@@ -47,6 +47,7 @@ let preloadStatus = 0;
  * @param {string} scriptURL The script URL to preload
  */
 function pageInitStepPreloadScript(scriptURL) {
+  // TODO: this bypasses adLoader
   const linkElement = document.createElement('link');
   linkElement.rel = 'preload';
   linkElement.as = 'script';

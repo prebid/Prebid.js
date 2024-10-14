@@ -30,12 +30,12 @@ describe('stvAdapter', function() {
     });
 
     it('should return false when required params are not passed', function() {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'someIncorrectParam': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -277,7 +277,7 @@ describe('stvAdapter', function() {
         'width': '300',
         'height': '250',
         'type': 'sspHTML',
-        'tag': '<!-- test creative -->',
+        'adTag': '<!-- test creative -->',
         'requestId': '220ed41385952a',
         'currency': 'EUR',
         'ttl': 60,
@@ -338,7 +338,7 @@ describe('stvAdapter', function() {
         }
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[0]));
       expect(result[0].meta.advertiserDomains.length).to.equal(1);
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
@@ -358,7 +358,7 @@ describe('stvAdapter', function() {
         }
       }];
       let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[1]));
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 

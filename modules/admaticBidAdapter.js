@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
+import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,7 +12,7 @@ import { Renderer } from '../src/Renderer.js';
  */
 
 export const OPENRTB = {
-  NATIVE: {
+  N: {
     IMAGE_TYPE: {
       ICON: 1,
       MAIN: 3,
@@ -40,7 +41,8 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 1281,
   aliases: [
-    {code: 'pixad', gvlid: 1281}
+    {code: 'pixad', gvlid: 1281},
+    {code: 'monetixads', gvlid: 1281}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -72,7 +74,6 @@ export const spec = {
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
-    const currency = config.getConfig('currency.adServerCurrency') || 'TRY';
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -87,7 +88,6 @@ export const spec = {
       },
       imp: bids,
       ext: {
-        cur: currency,
         bidder: bidderName
       },
       schain: {},
@@ -101,6 +101,10 @@ export const spec = {
       at: 1,
       tmax: parseInt(tmax)
     };
+
+    if (config.getConfig('currency.adServerCurrency')) {
+      payload.ext.cur = config.getConfig('currency.adServerCurrency');
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -140,11 +144,14 @@ export const spec = {
 
     if (payload) {
       switch (bidderName) {
+        case 'monetixads':
+          SYNC_URL = 'https://static.cdn.monetixads.com/sync.html';
+          break;
         case 'pixad':
           SYNC_URL = 'https://static.cdn.pixad.com.tr/sync.html';
           break;
         default:
-          SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
+          SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
           break;
       }
 
@@ -155,26 +162,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      let params = {};
-
-      if (gdprConsent) {
-        if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params['gdpr'] = Number(gdprConsent.gdprApplies);
-        }
-        if (typeof gdprConsent.consentString === 'string') {
-          params['gdpr_consent'] = gdprConsent.consentString;
-        }
-      }
-
-      if (uspConsent) {
-        params['us_privacy'] = encodeURIComponent(uspConsent);
-      }
-
-      if (gppConsent?.gppString) {
-        params['gpp'] = gppConsent.gppString;
-        params['gpp_sid'] = gppConsent.applicableSections?.toString();
-      }
-
+      let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       hasSynced = true;
@@ -203,7 +191,7 @@ export const spec = {
             cpm: bid.price,
             width: bid.width,
             height: bid.height,
-            currency: body.cur || 'TRY',
+            currency: body.cur,
             netRevenue: true,
             creativeId: bid.creative_id,
             meta: {
@@ -428,30 +416,30 @@ function interpretNativeAd(adm) {
   };
   native.assets.forEach(asset => {
     switch (asset.id) {
-      case OPENRTB.NATIVE.ASSET_ID.TITLE:
+      case OPENRTB.N.ASSET_ID.TITLE:
         result.title = asset.title.text;
         break;
-      case OPENRTB.NATIVE.ASSET_ID.IMAGE:
+      case OPENRTB.N.ASSET_ID.IMAGE:
         result.image = {
           url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
-      case OPENRTB.NATIVE.ASSET_ID.ICON:
+      case OPENRTB.N.ASSET_ID.ICON:
         result.icon = {
           url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
-      case OPENRTB.NATIVE.ASSET_ID.BODY:
+      case OPENRTB.N.ASSET_ID.BODY:
         result.body = asset.data.value;
         break;
-      case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
+      case OPENRTB.N.ASSET_ID.SPONSORED:
         result.sponsoredBy = asset.data.value;
         break;
-      case OPENRTB.NATIVE.ASSET_ID.CTA:
+      case OPENRTB.N.ASSET_ID.CTA:
         result.cta = asset.data.value;
         break;
     }

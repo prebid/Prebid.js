@@ -66,7 +66,6 @@
  */
 
 import {
-  callBurl,
   deepAccess,
   generateUUID,
   getValue,
@@ -82,7 +81,7 @@ import {
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
-import {getCacheUrl, store} from './videoCache.js';
+import {batchAndStore} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
@@ -94,7 +93,7 @@ import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
 import adapterManager from './adapterManager.js';
-import { EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, S2S, TARGETING_KEYS } from './constants.js';
+import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
@@ -370,11 +369,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
-    const winningAd = adUnits.find(adUnit => adUnit.adUnitId === winningBid.adUnitId);
     _winningBids = _winningBids.concat(winningBid);
-    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
-    if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
+    if (!winningBid.deferBilling) {
+      adapterManager.triggerBilling(winningBid)
+    }
   }
 
   function setBidTargeting(bid) {
@@ -421,7 +420,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
  * @param {function(String): void} reject a function that, when called, rejects `bid` with the given reason.
  */
 export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
-  this.dispatch.call(null, adUnitCode, bid);
+  if (!isValidPrice(bid)) {
+    reject(REJECTION_REASON.PRICE_TOO_HIGH)
+  } else {
+    this.dispatch.call(null, adUnitCode, bid);
+  }
 }, 'addBidResponse');
 
 /**
@@ -576,68 +579,10 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   }
 }
 
-const _storeInCache = (batch) => {
-  store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
-    cacheIds.forEach((cacheId, i) => {
-      const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
-      if (error) {
-        logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-      } else {
-        if (cacheId.uuid === '') {
-          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
-        } else {
-          bidResponse.videoCacheKey = cacheId.uuid;
-          if (!bidResponse.vastUrl) {
-            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
-          }
-          addBidToAuction(auctionInstance, bidResponse);
-          afterBidAdded();
-        }
-      }
-    });
-  });
-};
-
-const storeInCache = FEATURES.VIDEO ? _storeInCache : () => {};
-
-let batchSize, batchTimeout;
-config.getConfig('cache', (cacheConfig) => {
-  batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
-    ? cacheConfig.cache.batchSize
-    : 1;
-  batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
-    ? cacheConfig.cache.batchTimeout
-    : 0;
-});
-
-export const batchingCache = (timeout = setTimeout, cache = storeInCache) => {
-  let batches = [[]];
-  let debouncing = false;
-  const noTimeout = cb => cb();
-
-  return function(auctionInstance, bidResponse, afterBidAdded) {
-    const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
-    if (batches[batches.length - 1].length >= batchSize) {
-      batches.push([]);
-    }
-
-    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
-
-    if (!debouncing) {
-      debouncing = true;
-      batchFunc(() => {
-        batches.forEach(cache);
-        batches = [[]];
-        debouncing = false;
-      }, batchTimeout);
-    }
-  }
-};
-
-const batchAndStore = batchingCache();
-
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+  if (FEATURES.VIDEO) {
+    batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+  }
 }, 'callPrebidCache');
 
 /**
@@ -973,4 +918,18 @@ function groupByPlacement(bidsByPlacement, bid) {
   if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
   bidsByPlacement[bid.adUnitCode].bids.push(bid);
   return bidsByPlacement;
+}
+
+/**
+ * isValidPrice is price validation function
+ * which checks if price from bid response
+ * is not higher than top limit set in config
+ * @type {Function}
+ * @param bid
+ * @returns {boolean}
+ */
+function isValidPrice(bid) {
+  const maxBidValue = config.getConfig('maxBid');
+  if (!maxBidValue || !bid.cpm) return true;
+  return maxBidValue >= Number(bid.cpm);
 }
