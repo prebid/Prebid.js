@@ -149,7 +149,13 @@ describe('docereeadmanager', function () {
         mobile: 'XXXXXXXXXX',
       }
       bid = {...bid, params: {...bid.params, placementId: 'DOC-19-1'}}
-      const payload = getPayload(bid, data);
+      const buildRequests = {
+        gdprConsent: {
+          consentString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+          gdprApplies: false
+        }
+      }
+      const payload = getPayload(bid, data, buildRequests);
       const payloadData = payload.data;
       expect(payloadData).to.have.all.keys(
         'userid',
@@ -174,7 +180,8 @@ describe('docereeadmanager', function () {
         'dob',
         'userconsent',
         'mobile',
-        'pageurl'
+        'pageurl',
+        'consent'
       );
       expect(payloadData.userid).to.equal('Xx.xxx.xxxxxx');
       expect(payloadData.email).to.equal('xxxx@mail.com');
@@ -199,6 +206,8 @@ describe('docereeadmanager', function () {
       expect(payloadData.mobile).to.equal('XXXXXXXXXX');
       expect(payloadData.adunit).to.equal('DOC-19-1');
       expect(payloadData.pageurl).to.equal('xxxxxx.com/xxxx');
+      expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
+      expect(payloadData.consent.gdpr).to.equal(0);
     })
   })
 });

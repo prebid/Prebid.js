@@ -102,7 +102,10 @@ const PBS_CONVERTER = ortbConverter({
         transactionId: context.adUnit.transactionId,
         adUnitId: context.adUnit.adUnitId,
         auctionId: context.bidderRequest.auctionId,
-      }), bidResponse),
+      }), bidResponse, {
+        deferRendering: !!context.adUnit.deferBilling,
+        deferBilling: !!context.adUnit.deferBilling
+      }),
       adUnit: context.adUnit.code
     };
   },

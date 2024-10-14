@@ -29,12 +29,15 @@ var adUnits = [
         code: 'banner-ad',
         mediaTypes: {
             banner: {
-                sizes: [[300, 250], [728, 90]],
+                sizes: [[300, 250]]
             }
         },
-        bids: [
-            {}
-        ]
+        bids: [{
+            bidder: 'ssp_geniee',
+            params: {
+                zoneId: 1573195
+            }
+        }]
     },
 ];
 ```
