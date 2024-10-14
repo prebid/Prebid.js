@@ -49,14 +49,6 @@ const converter = ortbConverter({
     }
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
-    const req = buildRequest(imps, bidderRequest, context);
-    // delete user agent from oRTB, we'll get it from the header
-    (req?.device?.ua) && delete req.device['ua'];
-    // 'sua' is 2.6 standard, we operate with 2.5
-    (req?.device?.sua) && delete req.device['sua'];
-    return req;
-  },
 
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
@@ -132,7 +124,7 @@ export const spec = {
         });
       });
     }
-    logInfo(`found urls to sync:`, syncs);
+
     return syncs;
   },
 
