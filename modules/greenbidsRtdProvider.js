@@ -85,6 +85,7 @@ function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbids
 
 function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
   const isFilteringForced = getParameterByName('greenbids_force_filtering');
+  const isFilteringDisabled = getParameterByName('greenbids_disabled_filtering');
   adUnits.forEach((adUnit) => {
     const matchingAdUnit = findMatchingAdUnit(responseAdUnits, adUnit.code);
     if (matchingAdUnit) {
@@ -96,7 +97,7 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
       if (isFilteringForced) {
         adUnit.bids = [];
         logInfo('Greenbids Rtd: filtering flag detected, forcing filtering of Rtd module.');
-      } else if (!matchingAdUnit.isExploration) {
+      } else if (!matchingAdUnit.isExploration & !isFilteringDisabled) {
         removeFalseBidders(adUnit, matchingAdUnit);
       }
     }
