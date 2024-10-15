@@ -71,18 +71,8 @@ function toPayload(bidRequest, bidderRequest) {
   }
 
   const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
-  if (bidRequest.params.test) {
-    payload.test = bidRequest.params.test;
-  }
-  if (bidRequest.params.placement) {
-    payload.placement = bidRequest.params.placement;
-  }
-  if (bidRequest.params.formats) {
-    payload.formats = bidRequest.params.formats;
-  }
-  if (bidRequest.params.isInternal) {
-    payload.is_internal = bidRequest.params.isInternal;
-  }
+  payload.params = bidRequest.params;
+
   if (bidRequest.ortb2?.device?.ext?.cdep) {
     payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
   }
