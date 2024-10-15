@@ -42,6 +42,8 @@ config.getConfig('rubicon', config => {
 
 const GVLID = 52;
 
+let impIdMap = {};
+
 var sizeMap = {
   1: '468x60',
   2: '728x90',
@@ -212,6 +214,14 @@ export const converter = ortbConverter({
 
     setBidFloors(bidRequest, imp);
 
+    // ensure unique imp IDs for twin adunits
+    let adUnitCode = imp.id;
+    let i = 2;
+    while (Object.keys(impIdMap).indexOf(imp.id) > -1) {
+      imp.id = adUnitCode + i++;
+    }
+    impIdMap[imp.id] = adUnitCode;
+
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -302,6 +312,7 @@ export const spec = {
 
     if (filteredRequests && filteredRequests.length) {
       const data = converter.toORTB({bidRequests: filteredRequests, bidderRequest});
+      resetImpIdMap();
 
       filteredHttpRequest.push({
         method: 'POST',
@@ -1152,6 +1163,7 @@ function bidType(bid, log = false) {
 }
 
 export const resetRubiConf = () => rubiConf = {};
+export const resetImpIdMap = () => impIdMap = {};
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
