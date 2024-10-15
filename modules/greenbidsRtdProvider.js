@@ -1,4 +1,4 @@
-import { logError, logInfo, logWarn, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
+import { logError, logInfo, logWarn, logMessage, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
@@ -95,7 +95,7 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
         isExploration: matchingAdUnit.isExploration
       });
       if (matchingAdUnit.isExploration || isFilteringDisabled) {
-        logWarn('Greenbids Rtd: either exploration traffic, or disabled filtering flag detected');
+        logMessage('Greenbids Rtd: either exploration traffic, or disabled filtering flag detected');
       } else if (isFilteringForced) {
         adUnit.bids = [];
         logInfo('Greenbids Rtd: filtering flag detected, forcing filtering of Rtd module.');
