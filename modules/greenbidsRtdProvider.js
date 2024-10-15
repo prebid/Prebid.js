@@ -95,9 +95,8 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
         isExploration: matchingAdUnit.isExploration
       });
       if (matchingAdUnit.isExploration || isFilteringDisabled) {
-        return;
-      }
-      if (isFilteringForced) {
+        logWarn('Greenbids Rtd: either exploration traffic, or disabled filtering flag detected');
+      } else if (isFilteringForced) {
         adUnit.bids = [];
         logInfo('Greenbids Rtd: filtering flag detected, forcing filtering of Rtd module.');
       } else {
