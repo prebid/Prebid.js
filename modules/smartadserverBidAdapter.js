@@ -6,7 +6,6 @@ import {
   isEmpty,
   isFn,
   isInteger,
-  isPlainObject,
   logError
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -176,7 +175,7 @@ export const spec = {
    * Makes server requests from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests an array of bids
-   * @param {BidderRequest} bidderRequest bidder request object
+   * @param {BidRequest} bidderRequest bidder request object
    * @return {ServerRequest[]} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -332,18 +331,22 @@ export const spec = {
    * @param {string} mediaType Bid media type
    * @return {number} Floor price
    */
-  getBidFloor: function (bid, currency, mediaType) {
-    if (!isFn(bid.getFloor)) {
-      return DEFAULT_FLOOR;
+  getBidFloor: (bid, currency, mediaType) => {
+    const floors = [];
+
+    if (isFn(bid.getFloor)) {
+      (deepAccess(bid, `mediaTypes.${mediaType}.${mediaType === BANNER ? 'sizes' : 'playerSize'}`) || []).forEach(size => {
+        const floor = bid.getFloor({
+          currency: currency || 'USD',
+          mediaType,
+          size
+        }).floor;
+
+        floors.push(!isNaN(floor) ? floor : DEFAULT_FLOOR);
+      });
     }
 
-    const floor = bid.getFloor({
-      currency: currency || 'USD',
-      mediaType,
-      size: '*'
-    });
-
-    return isPlainObject(floor) && !isNaN(floor.floor) ? floor.floor : DEFAULT_FLOOR;
+    return floors.length ? Math.min(...floors) : DEFAULT_FLOOR;
   },
 
   /**
