@@ -47,7 +47,7 @@ pbjs.setConfig({
           domain: 'your-domain.com',
           identityType: 'simpleid'|'compositeid'|'hashedid'|'dap-signature:1.0.0',
           identityValue: '<user hid>',
-          segtax: 501,
+          segtax: 708,
           dapEntropyUrl: 'https://sym-dist.symitri.net/dapentropy.js',
           dapEntropyTimeout: 1500,
           pixelUrl: '<see your Symitri account rep>',
@@ -80,7 +80,7 @@ Use 'hashedid' to pass in single already hashed id. Use 'compositeid' to pass in
 }
 |
 | identityValue | String | This is optional field to pass user hid. Will be used only if identityType is hid | |
-| segtax | Integer | The taxonomy for Symitri | The value should be 501 |
+| segtax | Integer | The taxonomy for Symitri | The value should be 708 |
 | dapEntropyUrl | String | URL to dap entropy script | Optional if the script is directly included on the webpage. Contact your Symitri account rep for more details |
 | dapEntropyTimeout | Integer | Maximum time allotted for the entropy calculation to happen | |
 | pixelUrl | String | Pixel URL provided by Symitri which will be triggered when bid matching with Symitri dealid wins and creative gets rendered | |

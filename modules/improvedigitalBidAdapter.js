@@ -12,6 +12,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
  */
 // eslint-disable-next-line no-restricted-imports
 import {loadExternalScript} from '../src/adloader.js';
+import { MODULE_TYPE_BIDDER } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -396,7 +397,7 @@ const ID_RAZR = {
       ns.q.push(data);
 
       if (!ns.loaded) {
-        loadExternalScript(ID_RAZR.RENDERER_URL, BIDDER_CODE);
+        loadExternalScript(ID_RAZR.RENDERER_URL, MODULE_TYPE_BIDDER, BIDDER_CODE);
       }
     });
 

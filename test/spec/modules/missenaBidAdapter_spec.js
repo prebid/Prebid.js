@@ -29,6 +29,12 @@ describe('Missena Adapter', function () {
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
+    schain: {
+      validation: 'strict',
+      config: {
+        ver: '1.0',
+      },
+    },
     getFloor: (inputParams) => {
       if (inputParams.mediaType === BANNER) {
         return {
@@ -58,6 +64,7 @@ describe('Missena Adapter', function () {
       consentString: consentString,
       gdprApplies: true,
     },
+    uspConsent: 'IDO',
     refererInfo: {
       topmostLocation: REFERRER,
       canonicalUrl: 'https://canonical',
@@ -99,6 +106,14 @@ describe('Missena Adapter', function () {
     const request = requests[0];
     const payload = JSON.parse(request.data);
     const payloadNoFloor = JSON.parse(requests[1].data);
+
+    it('should contain uspConsent', function () {
+      expect(payload.us_privacy).to.equal('IDO');
+    });
+
+    it('should contain schain', function () {
+      expect(payload.schain.config.ver).to.equal('1.0');
+    });
 
     it('should return as many server requests as bidder requests', function () {
       expect(requests.length).to.equal(2);
