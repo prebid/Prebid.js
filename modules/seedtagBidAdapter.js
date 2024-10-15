@@ -10,6 +10,8 @@ import { _map, isArray, triggerPixel } from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').bidderRequest} bidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
 const BIDDER_CODE = 'seedtag';
@@ -37,6 +39,22 @@ const deviceConnection = {
   MOBILE: 'mobile',
   UNKNOWN: 'unknown',
 };
+
+export const BIDFLOOR_CURRENCY = 'USD'
+
+function getBidFloor(bidRequest) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: BIDFLOOR_CURRENCY,
+      mediaType: '*',
+      size: '*'
+    });
+  }
+
+  return floorInfo.floor;
+}
 
 const getConnectionType = () => {
   const connection =
@@ -131,6 +149,11 @@ function buildBidRequest(validBidRequest) {
 
   if (hasVideoMediaType(validBidRequest)) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
+  }
+
+  const bidFloor = getBidFloor(validBidRequest)
+  if (bidFloor) {
+    bidRequest.bidFloor = bidFloor;
   }
 
   return bidRequest;
@@ -271,7 +294,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests an array of bids
+   * @param {bidderRequest} bidderRequest an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
@@ -285,7 +309,8 @@ export const spec = {
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),
-      user: { topics: [], eids: [] }
+      user: { topics: [], eids: [] },
+      site: {}
     };
 
     if (payload.cmp) {
@@ -337,6 +362,18 @@ export const spec = {
       payload.sua = bidderRequest.ortb2.device.sua
     }
 
+    if (bidderRequest.ortb2?.site?.cat) {
+      payload.site.cat = bidderRequest.ortb2.site.cat
+    }
+
+    if (bidderRequest.ortb2?.site?.cattax) {
+      payload.site.cattax = bidderRequest.ortb2.site.cattax
+    }
+
+    if (bidderRequest.ortb2?.site?.pagecat) {
+      payload.site.pagecat = bidderRequest.ortb2.site.pagecat
+    }
+
     const payloadString = JSON.stringify(payload);
 
     return {
@@ -382,7 +419,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {TimedOutBid} data Containing timeout specific data
    */
   onTimeout(data) {
     const url = getTimeoutUrl(data);
@@ -391,7 +428,7 @@ export const spec = {
 
   /**
    * Function to call when the adapter wins the auction
-   * @param {bid} Bid information received from the server
+   * @param {Bid} bid The bid information received from the server
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {
