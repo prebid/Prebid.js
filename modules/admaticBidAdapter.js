@@ -41,8 +41,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 1281,
   aliases: [
+    {code: 'admaticde', gvlid: 1281},
     {code: 'pixad', gvlid: 1281},
-    {code: 'monetixads', gvlid: 1281}
+    {code: 'monetixads', gvlid: 1281},
+    {code: 'netaddiction', gvlid: 1281}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -144,11 +146,17 @@ export const spec = {
 
     if (payload) {
       switch (bidderName) {
+        case 'netaddiction':
+          SYNC_URL = 'https://static.cdn.netaddiction.tech/netaddiction/sync.html';
+          break;
         case 'monetixads':
-          SYNC_URL = 'https://static.cdn.monetixads.com/sync.html';
+          SYNC_URL = 'https://static.cdn.monetixads.com/monetixads/sync.html';
           break;
         case 'pixad':
           SYNC_URL = 'https://static.cdn.pixad.com.tr/sync.html';
+          break;
+        case 'admaticde':
+          SYNC_URL = 'https://static.cdn.admatic.de/admaticde/sync.html';
           break;
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
