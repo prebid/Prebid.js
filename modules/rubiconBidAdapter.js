@@ -1187,7 +1187,7 @@ export function determineRubiconVideoSizeId(bid) {
 }
 
 /**
- * @param {PrebidConfig} config
+ * @param {Object} config
  * @returns {{ranges: {ranges: Object[]}}}
  */
 export function getPriceGranularity(config) {
@@ -1236,7 +1236,6 @@ export function hasValidVideoParams(bid) {
 /**
  * Make sure the required params are present
  * @param {Object} schain
- * @param {boolean}
  */
 export function hasValidSupplyChainParams(schain) {
   let isValid = false;
