@@ -8,7 +8,7 @@ const BIDDER_CODE = 'viant';
 const ENDPOINT = 'https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder'
 const ADAPTER_VERSION = '2.0.0';
 
-const DEFAULT_BID_TTL = 300;
+const DEFAULT_BID_TTL = 500;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 
