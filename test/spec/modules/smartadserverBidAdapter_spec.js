@@ -1468,7 +1468,7 @@ describe('Smart bid adapter tests', function () {
         expect(spec.getBidFloor(bid, undefined, BANNER)).to.deep.eq(1.2);
       });
 
-      it('should return handle not number from floor module', () => {
+      it('should handle not number returned by floor module', () => {
         bid.mediaTypes.banner.sizes.push([30, 60]);
         expect(spec.getBidFloor(bid, 'DKK', BANNER)).to.deep.eq(0);
       });
