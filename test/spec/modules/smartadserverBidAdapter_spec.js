@@ -1428,49 +1428,53 @@ describe('Smart bid adapter tests', function () {
             }
           },
           getFloor: (data) => {
-            if (data.mediaType === BANNER) {
-              if (data.size[0] === 300 && data.size[1] === 250) {
-                return { floor: 1.2 };
-              } else if (data.size[0] === 300 && data.size[1] === 600) {
-                return { floor: 1.4 };
-              } else if (data.size[0] === 30 && data.size[1] === 60) {
-                return 'string';
+            if (data.currency === 'USD') {
+              if (data.mediaType === BANNER) {
+                if (data.size[0] === 300 && data.size[1] === 250) {
+                  return { floor: 1.2 };
+                } else if (data.size[0] === 300 && data.size[1] === 600) {
+                  return { floor: 1.4 };
+                } else if (data.size[0] === 30 && data.size[1] === 60) {
+                  return 'string';
+                } else {
+                  return { floor: 1.0 };
+                }
+              } else if (data.mediaType === VIDEO) {
+                if (data.size[0] === 640 && data.size[1] === 480) {
+                  return { floor: 2.3 };
+                } else {
+                  return { floor: 2.1 };
+                }
               } else {
-                return { floor: 1.0 };
-              }
-            } else if (data.mediaType === VIDEO) {
-              if (data.size[0] === 640 && data.size[1] === 480) {
-                return { floor: 2.3 };
-              } else {
-                return { floor: 2.1 };
+                return {};
               }
             } else {
-              return {};
+              return undefined;
             }
           }
         };
       });
 
       it('should return lowest floor from specified ones', () => {
-        expect(spec.getBidFloor(bid, 'DKK', BANNER)).to.deep.eq(1.2);
+        expect(spec.getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.2);
       });
 
       it('should return default floor for media type whatever size', () => {
         bid.mediaTypes.banner.sizes.push([300, 400]);
-        expect(spec.getBidFloor(bid, 'DKK', BANNER)).to.deep.eq(1.0);
+        expect(spec.getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.0);
       });
 
       it('should return default floor', () => {
-        expect(spec.getBidFloor(bid, 'DKK', VIDEO)).to.deep.eq(0);
+        expect(spec.getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(0);
       });
 
-      it('should return default floor when currency not passed', () => {
+      it('should return floor when currency not passed', () => {
         expect(spec.getBidFloor(bid, undefined, BANNER)).to.deep.eq(1.2);
       });
 
       it('should return DEFAULT_FLOOR in case of not a number value from floor module', () => {
         bid.mediaTypes.banner.sizes.push([30, 60]);
-        expect(spec.getBidFloor(bid, 'DKK', BANNER)).to.deep.eq(0);
+        expect(spec.getBidFloor(bid, 'USD', BANNER)).to.deep.eq(0);
       });
 
       it('should return proper video floor', () => {
@@ -1481,7 +1485,7 @@ describe('Smart bid adapter tests', function () {
             ]
           }
         };
-        expect(spec.getBidFloor(bid, 'DKK', VIDEO)).to.deep.eq(2.3);
+        expect(spec.getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(2.3);
       });
 
       it('should return default video floor', () => {
@@ -1492,7 +1496,7 @@ describe('Smart bid adapter tests', function () {
             ]
           }
         };
-        expect(spec.getBidFloor(bid, 'DKK', VIDEO)).to.deep.eq(2.1);
+        expect(spec.getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(2.1);
       });
 
       it('should return DEFAULT_FLOOR for not supported media type', () => {
