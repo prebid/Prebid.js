@@ -16,7 +16,6 @@ import {
 import adapterManager from '../../../src/adapterManager.js';
 import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
-import { getStorageManager } from '../../../src/storageManager.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -568,6 +567,7 @@ describe('connatixBidAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest;
+    let setCookieStub, setDataInLocalStorageStub;
     let bidderRequest = {
       refererInfo: {
         canonicalUrl: '',
@@ -596,9 +596,20 @@ describe('connatixBidAdapter', function () {
     };
 
     this.beforeEach(function () {
+      const mockIdentityProviderData = { mockKey: 'mockValue' };
+      const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
+      setCookieStub = sinon.stub(storage, 'setCookie');
+      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+      connatixSaveOnAllStorages('test_ids_cnx', mockIdentityProviderData, CNX_IDS_EXPIRY);
+
       bid = mockBidRequest();
       serverRequest = spec.buildRequests([bid], bidderRequest);
     })
+
+    this.afterEach(function() {
+      setCookieStub.restore();
+      setDataInLocalStorageStub.restore();
+    });
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -626,6 +637,7 @@ describe('connatixBidAdapter', function () {
       expect(serverRequest.data.uspConsent).to.equal(bidderRequest.uspConsent);
       expect(serverRequest.data.gppConsent).to.equal(bidderRequest.gppConsent);
       expect(serverRequest.data.ortb2).to.equal(bidderRequest.ortb2);
+      expect(serverRequest.data.identityProviderData).to.deep.equal({ mockKey: 'mockValue' });
     });
   });
 
