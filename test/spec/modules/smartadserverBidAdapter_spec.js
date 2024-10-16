@@ -1494,6 +1494,10 @@ describe('Smart bid adapter tests', function () {
         };
         expect(spec.getBidFloor(bid, 'DKK', VIDEO)).to.deep.eq(2.1);
       });
+
+      it('should return DEFAULT_FLOOR for not supported media type', () => {
+        expect(spec.getBidFloor(bid, 'USD', 'test')).to.deep.eq(0);
+      });
     });
   });
 
