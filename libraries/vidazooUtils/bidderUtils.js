@@ -466,7 +466,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
 
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-    const bidderTimeout = config.getConfig('bidderTimeout');
+    const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
 
     const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
 

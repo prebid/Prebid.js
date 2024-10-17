@@ -98,7 +98,8 @@ export const spec = {
     {code: 'monetix'},
     {code: 'hyperbrainz'},
     {code: 'voisetech'},
-    {code: 'global_sun'}
+    {code: 'global_sun'},
+    {code: 'rxnetwork'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -114,7 +115,9 @@ export const spec = {
       !isNaN(Number(bidRequest.params.zoneId)) &&
       bidRequest.params.zoneId > 0 &&
       bidRequest.mediaTypes &&
-      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video || (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native)));
+      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video ||
+        (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native))
+      );
   },
 
   /**

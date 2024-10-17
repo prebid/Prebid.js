@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
-import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
+import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from '../../../libraries/liveIntentId/idSystem.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 
 const PUBLISHER_ID = '89899';
