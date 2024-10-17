@@ -54,13 +54,10 @@ describe('permutiveIdSystem', () => {
 
     it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
       const cleanup = setWindowPermutive()
-      const result = permutiveIdSubmodule.getId({params: {ajaxTimeout: 20}})
+      const result = permutiveIdSubmodule.getId({params: {ajaxTimeout: 50}})
       expect(result).not.to.be.undefined
       expect(result.id).to.be.undefined
       expect(result.callback).not.to.be.undefined
-      let r
-      result.callback((a) => r = a)
-      await sleep(25)
       const expected = {
         'id5id': {
           'uid': '0',
@@ -72,6 +69,7 @@ describe('permutiveIdSystem', () => {
           }
         }
       }
+      const r = await new Promise(result.callback)
       expect(r).to.deep.equal(expected)
       cleanup()
     })
@@ -86,23 +84,13 @@ const setWindowPermutive = () => {
     setTimeout(() => f(), 5)
   })
 
-  deepSetValue(window, 'permutive.addon', (name) => {
-    if (name === 'identityManager') {
-      return {
-        prebid: {
-          onReady: (f) => {
-            setTimeout(() => f(sdkUserIdData()), 5)
-          }
-        }
-      }
-    }
+  deepSetValue(window, 'permutive.addons.identity_manager.prebid.onReady', (f) => {
+    setTimeout(() => f(sdkUserIdData()), 5)
   })
 
   // Cleanup
   return () => window.permutive = backup
 }
-
-const sleep = (timeMs) => new Promise(resolve => setTimeout(resolve, timeMs));
 
 const sdkUserIdData = () => ({
   'id5id': {
@@ -117,20 +105,22 @@ const sdkUserIdData = () => ({
 })
 
 const getUserIdData = () => ({
-  'id5id': {
-    'userId': {
-      'uid': '0',
-      'linkType': 0,
-      'ext': {
-        'abTestingControlGroup': false,
+  'providers': {
+    'id5id': {
+      'userId': {
+        'uid': '0',
         'linkType': 0,
-        'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+        'ext': {
+          'abTestingControlGroup': false,
+          'linkType': 0,
+          'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+        }
       }
-    }
-  },
-  'fooid': {
-    'userId': {
-      'id': '1'
+    },
+    'fooid': {
+      'userId': {
+        'id': '1'
+      }
     }
   }
 })

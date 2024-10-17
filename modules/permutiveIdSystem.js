@@ -25,9 +25,9 @@ const logger = prefixLog('[PermutiveID]')
 const readFromSdkLocalStorage = () => {
   const data = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_ID_DATA_STORAGE_KEY))
   const id = {}
-  if (data && typeof data === 'object') {
+  if (data && typeof data === 'object' && 'providers' in data && typeof data.providers === 'object') {
     const now = Date.now()
-    for (const [idName, value] of Object.entries(data)) {
+    for (const [idName, value] of Object.entries(data.providers)) {
       if (PRIMARY_IDS.includes(idName) && value.userId) {
         if (!value.expiryTime || value.expiryTime > now) {
           id[idName] = value.userId
@@ -57,21 +57,19 @@ const waitAndRetrieveFromSdk = (timeoutMs) =>
         logger.logInfo('timeout expired waiting for SDK - attempting read from local storage again')
         resolve(readFromSdkLocalStorage())
       }, timeoutMs)
-      if (window.permutive) {
-        window.permutive.ready(() => makeSafe(() => {
-          logger.logInfo('Permutive SDK is ready')
-          const sdkIdentityManagerApi = window.permutive.addon('identityManager')
-          if (sdkIdentityManagerApi && 'prebid' in sdkIdentityManagerApi && 'onReady' in sdkIdentityManagerApi.prebid) {
-            sdkIdentityManagerApi.prebid.onReady((ids) => {
-              logger.logInfo('Permutive SDK has provided ids')
-              resolve(ids)
-              clearTimeout(fallback)
-            })
-          } else {
-            logger.logError('Permutive SDK initialised but identity manager prebid api not present')
-          }
-        }))
-      }
+      return window?.permutive?.ready(() => makeSafe(() => {
+        logger.logInfo('Permutive SDK is ready')
+        const onReady = makeSafe(() => window.permutive.addons.identity_manager.prebid.onReady)
+        if (typeof onReady === 'function') {
+          onReady((ids) => {
+            logger.logInfo('Permutive SDK has provided ids')
+            resolve(ids)
+            clearTimeout(fallback)
+          })
+        } else {
+          logger.logError('Permutive SDK initialised but identity manager prebid api not present')
+        }
+      }))
     }
   )
 
