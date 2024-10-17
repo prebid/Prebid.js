@@ -131,7 +131,7 @@ export function getPayload(bid, userData, bidderRequest) {
     dob: dob || '',
     userconsent: 1,
     mobile: mobile || '',
-    pageurl: publisherUrl || getPageUrl()  || ''
+    pageurl: publisherUrl || getPageUrl() || ''
   };
 
   try {
