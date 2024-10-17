@@ -6,7 +6,7 @@ This module adds rewarded interest advertising token to the user ID module
 
 ### Prebid Params
 
-```
+```javascript
 pbjs.setConfig({
     userSync: {
         userIds: [{
@@ -18,6 +18,6 @@ pbjs.setConfig({
 
 ## Parameter Descriptions for the `usersync` Configuration Section
 
-| Param under usersync.userIds[] | Scope | Type | Description | Example                                                             |
-| --- | --- | --- | --- |---------------------------------------------------------------------|
-| name | Required | String | The name of this module. | `"rewardedInterestId"`                                              |
+| Param under usersync.userIds[] | Scope    | Type   | Description              | Example                |
+|--------------------------------|----------|--------|--------------------------|------------------------|
+| name                           | Required | String | The name of this module. | `"rewardedInterestId"` |

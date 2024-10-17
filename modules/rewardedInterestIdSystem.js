@@ -28,8 +28,8 @@
  * @return {Promise<string>}
  */
 
-import { submodule } from '../src/hook.js';
-import { logError } from '../src/utils.js';
+import {submodule} from '../src/hook.js';
+import {logError} from '../src/utils.js';
 
 export const MODULE_NAME = 'rewardedInterestId';
 export const SOURCE = 'rewardedinterest.com';
@@ -41,7 +41,7 @@ export const SOURCE = 'rewardedinterest.com';
  */
 export function getRewardedInterestApi() {
   if (window.__riApi && window.__riApi.getIdentityToken) {
-    return window.__riApi
+    return window.__riApi;
   }
 }
 
@@ -61,7 +61,7 @@ export function watchRewardedInterestApi(callback) {
       },
       set: value => {
         window.__rewardedInterestApi = value;
-        callback(value)
+        callback(value);
       },
       configurable: true,
     }
@@ -75,7 +75,7 @@ export function watchRewardedInterestApi(callback) {
  */
 export function getRewardedInterestId(rewardedInterestApi, callback) {
   rewardedInterestApi.getIdentityToken().then(callback).catch(error => {
-    callback()
+    callback();
     logError(`${MODULE_NAME} module: ID fetch encountered an error`, error);
   });
 }
@@ -118,13 +118,13 @@ export const rewardedInterestIdSubmodule = {
         if (api) {
           getRewardedInterestId(api, cb);
         } else if (document.readyState === 'complete') {
-          apiNotAvailable(cb)
+          apiNotAvailable(cb);
         } else {
-          watchRewardedInterestApi(api => getRewardedInterestId(api, cb))
+          watchRewardedInterestApi(api => getRewardedInterestId(api, cb));
           // Ensure that cb is called when API is not available
           window.addEventListener('load', () => {
             if (!getRewardedInterestApi()) {
-              apiNotAvailable(cb)
+              apiNotAvailable(cb);
             }
           })
         }

@@ -1,8 +1,8 @@
 import sinon from 'sinon';
-import { expect } from 'chai';
+import {expect} from 'chai';
 import * as utils from 'src/utils.js';
-import { attachIdSystem } from 'modules/userId';
-import { createEidsArray } from 'modules/userId/eids';
+import {attachIdSystem} from 'modules/userId';
+import {createEidsArray} from 'modules/userId/eids';
 import {
   MODULE_NAME,
   SOURCE,
@@ -19,11 +19,11 @@ describe('rewardedInterestIdSystem', () => {
     getApiVersion: () => '1.0',
     getIdentityToken: () => Promise.resolve(mockUserId)
   };
-  let mockReadySate = 'complete';
-  const logErrorSpy = sinon.spy(utils, 'logError');
-  const callbackSpy = sinon.spy();
   const errorApiNotFound = `${MODULE_NAME} module: Rewarded Interest API not found`;
   const errorIdFetch = `${MODULE_NAME} module: ID fetch encountered an error`;
+  let mockReadySate = 'complete';
+  let logErrorSpy;
+  let callbackSpy;
 
   before(() => {
     Object.defineProperty(document, 'readyState', {
@@ -33,11 +33,15 @@ describe('rewardedInterestIdSystem', () => {
     });
   });
 
+  beforeEach(() => {
+    logErrorSpy = sinon.spy(utils, 'logError');
+    callbackSpy = sinon.spy();
+  });
+
   afterEach(() => {
     mockReadySate = 'complete';
     delete window.__riApi;
-    logErrorSpy.reset();
-    callbackSpy.reset();
+    logErrorSpy.restore();
   });
 
   describe('getRewardedInterestApi', () => {
@@ -48,28 +52,28 @@ describe('rewardedInterestIdSystem', () => {
       window.__riApi.getIdentityToken = mockApi.getIdentityToken;
       expect(getRewardedInterestApi()).to.deep.equal(window.__riApi);
     });
-  })
+  });
 
   describe('watchRewardedInterestApi', () => {
     it('should execute callback when __riApi is set', () => {
       watchRewardedInterestApi(callbackSpy);
       expect(window.__riApi).to.be.undefined;
-      window.__riApi = mockApi
+      window.__riApi = mockApi;
       expect(callbackSpy.calledOnceWithExactly(mockApi)).to.be.true;
       expect(getRewardedInterestApi()).to.deep.equal(mockApi);
     });
-  })
+  });
 
   describe('getRewardedInterestId', () => {
     it('should get id from API and pass it to callback', async () => {
-      await getRewardedInterestId(mockApi, callbackSpy)
+      await getRewardedInterestId(mockApi, callbackSpy);
       expect(callbackSpy.calledOnceWithExactly(mockUserId)).to.be.true;
     });
-  })
+  });
 
   describe('apiNotAvailable', () => {
     it('should call callback without ID and log error', () => {
-      apiNotAvailable(callbackSpy)
+      apiNotAvailable(callbackSpy);
       expect(callbackSpy.calledOnceWithExactly()).to.be.true;
       expect(logErrorSpy.calledOnceWithExactly(errorApiNotFound)).to.be.true;
     });
@@ -134,7 +138,7 @@ describe('rewardedInterestIdSystem', () => {
       await window.__riApi.getIdentityToken().catch(() => {});
       expect(callbackSpy.calledOnceWithExactly()).to.be.true;
       expect(logErrorSpy.calledOnceWithExactly(errorIdFetch, error)).to.be.true;
-    })
+    });
 
     it('API is set before getId, getIdentityToken return user ID', async () => {
       window.__riApi = mockApi;
@@ -142,7 +146,7 @@ describe('rewardedInterestIdSystem', () => {
       idResponse.callback(callbackSpy);
       await mockApi.getIdentityToken();
       expect(callbackSpy.calledOnceWithExactly(mockUserId)).to.be.true;
-    })
+    });
 
     it('API is set after getId, getIdentityToken return user ID', async () => {
       mockReadySate = 'loading';
@@ -152,8 +156,8 @@ describe('rewardedInterestIdSystem', () => {
       window.dispatchEvent(new Event('load'));
       await window.__riApi.getIdentityToken().catch(() => {});
       expect(callbackSpy.calledOnceWithExactly(mockUserId)).to.be.true;
-    })
-  })
+    });
+  });
 
   describe('rewardedInterestIdSubmodule.eids', () => {
     it('should expose the eids of the submodule', () => {
@@ -181,6 +185,6 @@ describe('rewardedInterestIdSystem', () => {
           atype: 3,
         }]
       });
-    })
-  })
+    });
+  });
 });
