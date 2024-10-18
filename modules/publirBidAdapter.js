@@ -41,6 +41,8 @@ export const spec = {
 
     const generalObject = validBidRequests[0];
     combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest, ADAPTER_VERSION);
+    combinedRequestsObject.params.publisher_id = generalObject.params.pubId;
+    combinedRequestsObject.params.user_cookie = getLocalStorage('_publir_prebid_creative');
     combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
     combinedRequestsObject.bids.timestamp = timestamp();
 
@@ -134,5 +136,13 @@ export const spec = {
     }
   },
 };
+
+function getLocalStorage(cookieObjName) {
+  if (storage.localStorageIsEnabled()) {
+    const lstData = storage.getDataFromLocalStorage(cookieObjName);
+    return lstData;
+  }
+  return '';
+}
 
 registerBidder(spec);
