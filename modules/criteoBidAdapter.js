@@ -278,10 +278,10 @@ export const spec = {
         if (response.optout) {
           deleteFromAllStorages(BUNDLE_COOKIE_NAME);
 
-          saveOnAllStorages(OPTOUT_COOKIE_NAME, true, OPTOUT_RETENTION_TIME_HOUR);
+          saveOnAllStorages(OPTOUT_COOKIE_NAME, true, OPTOUT_RETENTION_TIME_HOUR, refererInfo.domain);
         } else {
           if (response.bundle) {
-            saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR);
+            saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR, refererInfo.domain);
           }
 
           if (response.callbacks) {
@@ -428,12 +428,29 @@ function readFromAllStorages(name) {
   return fromCookie || fromLocalStorage || undefined;
 }
 
-function saveOnAllStorages(name, value, expirationTimeHours) {
+function saveOnAllStorages(name, value, expirationTimeHours, domain) {
   const date = new Date();
   date.setTime(date.getTime() + (expirationTimeHours * 60 * 60 * 1000));
   const expires = `expires=${date.toUTCString()}`;
 
-  storage.setCookie(name, value, expires);
+  const subDomains = domain.split('.');
+  for (let i = 0; i < subDomains.length; ++i) {
+    // Try to write the cookie on this subdomain (we want it to be stored only on the TLD+1)
+    const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
+
+    try {
+      storage.setCookie(name, value, expires, null, '.' + domain);
+
+      // Try to read the cookie to check if we wrote it
+      const check = storage.getCookie(name);
+      if (check && check === value) {
+        break;
+      }
+    } catch (error) {
+
+    }
+  }
+
   storage.setDataInLocalStorage(name, value);
 }
 
