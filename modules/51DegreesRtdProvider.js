@@ -277,7 +277,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
         logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
         callback();
       });
-    });
+    }, document, {crossOrigin: 'anonymous'});
   } catch (error) {
     // In case of an error, log it and continue
     logError(error);
