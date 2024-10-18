@@ -76,7 +76,8 @@ export const spec = {
     }
 
     if (!bid.params.networkId && !bid.params.publisherId) {
-      logError('The networkId or publisherId is required');
+      // publisherId is deprecated but is still accepted for now for retrocompatibility purpose.
+      logError('The networkId is required');
       return false;
     }
 
