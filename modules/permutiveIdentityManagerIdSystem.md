@@ -7,13 +7,13 @@ enabled. See Permutive's user documentation for more information on Identity Man
 
 ## Building Prebid.js with Permutive Identity Manager Support
 
-Prebid.js must be built with the `permutiveIdSystem` module in order for Permutive's Identity Manager to be able to
+Prebid.js must be built with the `permutiveIdentityManagerIdSystem` module in order for Permutive's Identity Manager to be able to
 activate relevant user identities to Prebid.
 
-To build Prebid.js with the `permutiveIdSystem` module included:
+To build Prebid.js with the `permutiveIdentityManagerIdSystem` module included:
 
 ```
-gulp build --modules=userId,permutiveIdSystem
+gulp build --modules=userId,permutiveIdentityManagerIdSystem
 ```
 
 ## Prebid configuration
@@ -30,13 +30,13 @@ pbjs.setConfig({
   userSync: {
     userIds: [
       {
-        name: 'permutiveId',
+        name: 'permutiveIdentityManagerId',
         params: {
           ajaxTimeout: 90
         },
         storage: {
           type: 'html5',
-          name: 'permutiveId',
+          name: 'permutiveIdentityManagerId',
           refreshInSeconds: 5
         }
       }

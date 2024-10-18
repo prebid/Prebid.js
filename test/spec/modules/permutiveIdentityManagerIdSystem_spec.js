@@ -1,9 +1,9 @@
-import { permutiveIdSubmodule, storage } from 'modules/permutiveIdSystem'
+import { permutiveIdentityManagerIdSubmodule, storage } from 'modules/permutiveIdentityManagerIdSystem'
 import { deepSetValue } from 'src/utils.js'
 
 const STORAGE_KEY = 'permutive-prebid-id'
 
-describe('permutiveIdSystem', () => {
+describe('permutiveIdentityManagerIdSystem', () => {
   afterEach(() => {
     storage.removeDataFromLocalStorage(STORAGE_KEY)
   })
@@ -20,7 +20,7 @@ describe('permutiveIdSystem', () => {
           }
         }
       }
-      const result = permutiveIdSubmodule.decode(input)
+      const result = permutiveIdentityManagerIdSubmodule.decode(input)
       expect(result).to.be.equal(input)
     })
   })
@@ -29,7 +29,7 @@ describe('permutiveIdSystem', () => {
     it('returns relevant IDs from localStorage and does not return unexpected IDs', () => {
       const data = getUserIdData()
       storage.setDataInLocalStorage(STORAGE_KEY, JSON.stringify(data))
-      const result = permutiveIdSubmodule.getId({})
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
       const expected = {
         'id': {
           'id5id': {
@@ -48,13 +48,13 @@ describe('permutiveIdSystem', () => {
 
     it('returns undefined if no relevant IDs are found in localStorage', () => {
       storage.setDataInLocalStorage(STORAGE_KEY, '{}')
-      const result = permutiveIdSubmodule.getId({})
+      const result = permutiveIdentityManagerIdSubmodule.getId({})
       expect(result).to.be.undefined
     })
 
     it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
       const cleanup = setWindowPermutive()
-      const result = permutiveIdSubmodule.getId({params: {ajaxTimeout: 50}})
+      const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 50}})
       expect(result).not.to.be.undefined
       expect(result.id).to.be.undefined
       expect(result.callback).not.to.be.undefined

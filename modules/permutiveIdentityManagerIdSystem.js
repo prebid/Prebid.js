@@ -9,7 +9,7 @@ import {prefixLog, safeJSONParse} from '../src/utils.js'
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
-const MODULE_NAME = 'permutiveId'
+const MODULE_NAME = 'permutiveIdentityManagerId'
 const PERMUTIVE_ID_DATA_STORAGE_KEY = 'permutive-prebid-id'
 
 const ID5_DOMAIN = 'id5-sync.com'
@@ -74,7 +74,7 @@ const waitAndRetrieveFromSdk = (timeoutMs) =>
   )
 
 /** @type {Submodule} */
-export const permutiveIdSubmodule = {
+export const permutiveIdentityManagerIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -148,4 +148,4 @@ export const permutiveIdSubmodule = {
   }
 }
 
-submodule('userId', permutiveIdSubmodule)
+submodule('userId', permutiveIdentityManagerIdSubmodule)
