@@ -70,10 +70,20 @@ export const spec = {
   },
 };
 
+export function getPageUrl() {
+  let url = '';
+  try {
+    url = window.location.href;
+  } catch (error) {
+  }
+  return url;
+}
+
 export function getPayload(bid, userData, bidderRequest) {
   if (!userData || !bid) {
     return false;
   }
+
   const { bidId, params } = bid;
   const { placementId, publisherUrl } = params;
   const {
@@ -121,7 +131,7 @@ export function getPayload(bid, userData, bidderRequest) {
     dob: dob || '',
     userconsent: 1,
     mobile: mobile || '',
-    pageurl: publisherUrl || ''
+    pageurl: publisherUrl || getPageUrl() || ''
   };
 
   try {
