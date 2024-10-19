@@ -38,6 +38,7 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
 
     deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
+    imp.ext.sparteo.params.adUnitCode = bidRequest.adUnitCode;
 
     return imp;
   },
