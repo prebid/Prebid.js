@@ -97,6 +97,16 @@ export const DEFAULT_PROCESSORS = {
         if (bid.adomain) {
           bidResponse.meta.advertiserDomains = bid.adomain;
         }
+        if (bid.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
+        }
+        if (bid.cat) {
+          bidResponse.meta.primaryCatId = bid.cat[0];
+          bidResponse.meta.secondaryCatIds = bid.cat.slice(1);
+        }
+        if (bid.attr) {
+          bidResponse.meta.attr = bid.attr;
+        }
       }
     }
   }

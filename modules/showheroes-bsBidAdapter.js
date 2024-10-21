@@ -1,16 +1,22 @@
 import {
   deepAccess,
-  getBidIdParameter,
   getWindowTop,
   triggerPixel,
   logInfo,
-  logError
+  logError, getBidIdParameter
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/4222 for details on linting exception
+ * ShowHeroes only imports after winning a bid
+ * Also see https://github.com/prebid/Prebid.js/issues/11656
+ */
+// eslint-disable-next-line no-restricted-imports
 import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_BIDDER } from '../src/activities/modules.js';
 
 const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
@@ -29,8 +35,11 @@ function getEnvURLs(isStage) {
   }
 }
 
+const GVLID = 111;
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['showheroesBs'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function(bid) {
@@ -330,7 +339,7 @@ function createOutstreamEmbedCode(bid) {
 
   const fragment = window.document.createDocumentFragment();
 
-  let script = loadExternalScript(urls.pubTag, 'outstream', function () {
+  let script = loadExternalScript(urls.pubTag, MODULE_TYPE_BIDDER, 'showheroes-bs', function () {
     window.ShowheroesTag = this;
   });
   script.setAttribute('data-player-host', urls.vlHost);

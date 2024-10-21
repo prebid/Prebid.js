@@ -1,7 +1,9 @@
 import { expect } from 'chai';
+import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from '../../../src/utils';
+import {BANNER} from '../../../src/mediaTypes';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
@@ -33,12 +35,19 @@ describe('dspxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
-        'someIncorrectParam': 0
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      const invalidBid = {
+        bidId: '30b31c1838de1e',
+        bidder: 'dspx',
+        mediaTypes: {
+          [BANNER]: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          someIncorrectParam: 0
+        }
+      }
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -77,7 +86,26 @@ describe('dspxAdapter', function () {
         'sharedid': {
           'id': '01EXPPGZ9C8NKG1MTXVHV98505',
           'third': '01EXPPGZ9C8NKG1MTXVHV98505'
-        }
+        },
+        'pubProvidedId': [{
+          'source': 'puburl2.com',
+          'uids': [{
+            'id': 'pubid2'
+          }, {
+            'id': 'pubid2-123'
+          }]
+        }, {
+          'source': 'puburl.com',
+          'uids': [{
+            'id': 'pubid1',
+            'atype': 1,
+            'ext': {
+              'stype': 'ppuid'
+            }
+          }]
+        }],
+        'euid': {},
+        'tdid': 'tdid_ID',
       },
       'crumbs': {
         'pubcid': 'e09ab6a3-ae74-4f01-b2e8-81b141d6dc61'
@@ -228,12 +256,54 @@ describe('dspxAdapter', function () {
       }
     };
 
+    // With ortb2
+    var bidderRequestWithORTB = {
+      refererInfo: {
+        referer: 'some_referrer.net'
+      },
+      gdprConsent: {
+        consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        vendorData: {someData: 'value'},
+        gdprApplies: true
+      },
+      ortb2: {
+        source: {},
+        site: {
+          domain: 'buyer',
+          publisher: {
+            domain: 'buyer'
+          },
+          page: 'http://buyer/schain.php?ver=8.5.0-pre:latest-dev-build&pbjs_debug=true',
+          ref: 'http://buyer/pbjsv/',
+          content: {
+            id: 'contentID',
+            episode: 1,
+            title: 'contentTitle',
+            series: 'contentSeries',
+            season: 'contentSeason 3',
+            artist: 'contentArtist',
+            genre: 'rock',
+            isrc: 'contentIsrc',
+            url: 'https://content-url.com/',
+            context: 1,
+            keywords: 'kw1,kw2,keqword 3',
+            livestream: 0,
+            cat: [
+              'IAB1-1',
+              'IAB1-2',
+              'IAB2-10'
+            ]
+          }
+        },
+      }
+    };
+
     var request1 = spec.buildRequests([bidRequests[0]], bidderRequest)[0];
     it('sends bid request to our endpoint via GET', function () {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
       let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&did_netid=123&did_id5=ID5-ZHMOcvSShIBZiIth_yYh9odjNFxVEmMQ_i5TArPfWw!ID5*dtrjfV5mPLasyya5TW2IE9oVzQZwx7xRPGyAYS4hcWkAAOoxoFef4bIoREpQys8x&did_id5_linktype=2&did_uid2=456&did_sharedid=01EXPPGZ9C8NKG1MTXVHV98505&did_pubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61&did_cpubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61&schain%5Bver%5D=1.0&schain%5Bcomplete%5D=1&schain%5Bnodes%5D%5B0%5D%5Basi%5D=example.com&schain%5Bnodes%5D%5B0%5D%5Bsid%5D=0&schain%5Bnodes%5D%5B0%5D%5Bhp%5D=1&schain%5Bnodes%5D%5B0%5D%5Brid%5D=bidrequestid&schain%5Bnodes%5D%5B0%5D%5Bdomain%5D=example.com&auctionId=1d1a030790a475&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a475&pbcode=testDiv1&media_types%5Bbanner%5D=300x250&schain%5Bver%5D=1.0&schain%5Bcomplete%5D=1&schain%5Bnodes%5D%5B0%5D%5Basi%5D=example.com&schain%5Bnodes%5D%5B0%5D%5Bsid%5D=0&schain%5Bnodes%5D%5B0%5D%5Bhp%5D=1&schain%5Bnodes%5D%5B0%5D%5Brid%5D=bidrequestid&schain%5Bnodes%5D%5B0%5D%5Bdomain%5D=example.com&did_netid=123&did_id5=ID5-ZHMOcvSShIBZiIth_yYh9odjNFxVEmMQ_i5TArPfWw!ID5*dtrjfV5mPLasyya5TW2IE9oVzQZwx7xRPGyAYS4hcWkAAOoxoFef4bIoREpQys8x&did_id5_linktype=2&did_uid2=456&did_sharedid=01EXPPGZ9C8NKG1MTXVHV98505&did_pubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61&did_tdid=tdid_ID&did_ppuid=1%3Apuburl.com%3Apubid1&did_cpubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
@@ -281,6 +351,14 @@ describe('dspxAdapter', function () {
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=107&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&pfilter%5Btest%5D=1&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bmimes%5D%5B0%5D=video%2Fmp4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
+    var request7 = spec.buildRequests([bidRequests[5]], bidderRequestWithORTB)[0];
+    it('ortb2 iab_content test', function () {
+      expect(request7.method).to.equal('GET');
+      expect(request7.url).to.equal('http://localhost');
+      let data = request7.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=107&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&pfilter%5Btest%5D=1&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&pfilter%5Biab_content%5D=cat%3AIAB1-1%7CIAB1-2%7CIAB2-10%2Cepisode%3A1%2Ccontext%3A1%2Cid%3AcontentID%2Ctitle%3AcontentTitle%2Cseries%3AcontentSeries%2Cseason%3AcontentSeason%25203%2Cartist%3AcontentArtist%2Cgenre%3Arock%2Cisrc%3AcontentIsrc%2Curl%3Ahttps%253A%252F%252Fcontent-url.com%252F%2Ckeywords%3Akw1%252Ckw2%252Ckeqword%25203&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bmimes%5D%5B0%5D=video%2Fmp4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
+    });
+
     // bidfloor tests
     const getFloorResponse = {currency: 'EUR', floor: 5};
     let testBidRequest = deepClone(bidRequests[1]);
@@ -318,6 +396,109 @@ describe('dspxAdapter', function () {
       };
       floorRequest = spec.buildRequests([testBidRequest], bidderRequestWithoutGdpr)[0];
       expect(floorRequest.data).to.contain('floorprice%5D=0.35');
+    });
+  });
+
+  describe('google topics handling', () => {
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    const REQPARAMS = {
+      refererInfo: {
+        referer: 'some_referrer.net'
+      },
+      gdprConsent: {
+        consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        vendorData: {someData: 'value'},
+        gdprApplies: true
+      }
+    };
+
+    const defaultRequest = {
+      'bidder': 'dspx',
+      'params': {
+        'placement': '6682',
+        'pfilter': {
+          'floorprice': 1000000,
+          'private_auction': 0,
+          'geo': {
+            'country': 'DE'
+          }
+        },
+        'bcat': 'IAB2,IAB4',
+        'dvt': 'desktop'
+      },
+      'sizes': [
+        [300, 250]
+      ],
+      'bidId': '30b31c1838de1e1',
+      'bidderRequestId': '22edbae2733bf61',
+      'auctionId': '1d1a030790a475',
+      'adUnitCode': 'testDiv1',
+    };
+
+    it('does pass segtax, segclass, segments for google topics data', () => {
+      const GOOGLE_TOPICS_DATA = {
+        ortb2: {
+          user: {
+            data: [
+              {
+                ext: {
+                  segtax: 600,
+                  segclass: 'v1',
+                },
+                segment: [
+                  {id: '717'}, {id: '808'},
+                ]
+              }
+            ]
+          },
+        },
+      }
+      config.setConfig(GOOGLE_TOPICS_DATA);
+      const request = spec.buildRequests([defaultRequest], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA })[0];
+      expect(request.data).to.contain('segtx=600&segcl=v1&segs=717%2C808');
+    });
+
+    it('does not pass topics params for invalid topics data', () => {
+      const INVALID_TOPICS_DATA = {
+        ortb2: {
+          user: {
+            data: [
+              {
+                segment: []
+              },
+              {
+                segment: [{id: ''}]
+              },
+              {
+                segment: [{id: null}]
+              },
+              {
+                segment: [{id: 'dummy'}, {id: '123'}]
+              },
+              {
+                ext: {
+                  segtax: 600,
+                  segclass: 'v1',
+                },
+                segment: [
+                  {
+                    name: 'dummy'
+                  }
+                ]
+              },
+            ]
+          }
+        }
+      };
+
+      config.setConfig(INVALID_TOPICS_DATA);
+      let request = spec.buildRequests([defaultRequest], { ...REQPARAMS, ...INVALID_TOPICS_DATA })[0];
+      expect(request.data).to.not.contain('segtax');
+      expect(request.data).to.not.contain('segclass');
+      expect(request.data).to.not.contain('segments');
     });
   });
 
@@ -427,7 +608,7 @@ describe('dspxAdapter', function () {
         }
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[0]));
       expect(result[0].meta.advertiserDomains.length).to.equal(1);
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
@@ -447,7 +628,7 @@ describe('dspxAdapter', function () {
         }
       }];
       let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[1]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[1]));
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
@@ -466,7 +647,7 @@ describe('dspxAdapter', function () {
         }
       }];
       let result = spec.interpretResponse(serverVideoResponseVastUrl, bidRequest[0]);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[2]));
+      expect(Object.keys(result[0])).to.include.members(Object.keys(expectedResponse[2]));
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 

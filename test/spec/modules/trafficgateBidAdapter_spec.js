@@ -9,9 +9,11 @@ import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
+import 'modules/paapi.js';
+
 import {deepClone} from 'src/utils.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
@@ -193,9 +195,9 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
-          videoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
       describe('and request config uses both host and platform', () => {
@@ -250,10 +252,10 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
-          delete videoBidWithMediaType.params;
-          videoBidWithMediaType.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
+          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaType);
+          delete invalidVideoBidWithMediaTypes.params;
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
     });
@@ -999,12 +1001,11 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            userIdAsEids: userIdAsEids
           }];
           // enrich bid request with userId key/value
-
+          mockBidderRequest.ortb2 = {user: {ext: {eids: userIdAsEids}}}
           const request = spec.buildRequests(bidRequestsWithUserId, mockBidderRequest);
-          expect(request[0].data.user.ext.eids).to.equal(userIdAsEids);
+          expect(request[0].data.user.ext.eids).to.eql(userIdAsEids);
         });
 
         it(`when no user ids are available, it should not send any extended ids`, function () {
@@ -1017,7 +1018,9 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, {
             ...mockBidderRequest,
-            fledgeEnabled: true
+            paapi: {
+              enabled: true
+            }
           });
           expect(request[0].data.imp[0].ext.ae).to.equal(2);
         });

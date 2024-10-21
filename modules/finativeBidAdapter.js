@@ -3,7 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {NATIVE} from '../src/mediaTypes.js';
-import {_map, deepAccess, deepSetValue, isEmpty} from '../src/utils.js';
+import {_map, deepSetValue, isEmpty, setOnAny} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
@@ -222,15 +222,6 @@ function parseNative(bid) {
   });
 
   return result;
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

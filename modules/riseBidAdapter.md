@@ -27,7 +27,6 @@ The adapter supports Video(instream).
 | `rtbDomain` | optional | String |  Sets the seller end point  | "www.test.com"
 | `is_wrapper` | private | Boolean |  Please don't use unless your account manager asked you to  | false
 
-
 # Test Parameters
 ```javascript
 var adUnits = [

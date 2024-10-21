@@ -1,7 +1,6 @@
 import {
   buildUrl,
-  deepAccess,
-  getBidIdParameter,
+  deepAccess, getBidIdParameter,
   getValue,
   isArray,
   logInfo,
@@ -12,6 +11,12 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
 
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.beop.io/bid';
@@ -24,11 +29,11 @@ export const spec = {
   gvlid: TCF_VENDOR_ID,
   aliases: ['bp'],
   /**
-    * Test if the bid request is valid.
-    *
-    * @param {bid} : The Bid params
-    * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
-    */
+   * Test if the bid request is valid.
+   *
+   * @param {Bid} bid The Bid params
+   * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
+   */
   isBidRequestValid: function(bid) {
     const id = bid.params.accountId || bid.params.networkId;
     if (id === null || typeof id === 'undefined') {
@@ -40,12 +45,12 @@ export const spec = {
     return bid.mediaTypes.banner !== null && typeof bid.mediaTypes.banner !== 'undefined';
   },
   /**
-    * Create a BeOp server request from a list of BidRequest
-    *
-    * @param {validBidRequests[], ...} : The array of validated bidRequests
-    * @param {... , bidderRequest} : Common params for each bidRequests
-    * @return ServerRequest Info describing the request to the BeOp's server
-    */
+   * Create a BeOp server request from a list of BidRequest
+   *
+   * @param {validBidRequests} validBidRequests The array of validated bidRequests
+   * @param {BidderRequest} bidderRequest Common params for each bidRequests
+   * @return ServerRequest Info describing the request to the BeOp's server
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     const firstPartyData = bidderRequest.ortb2 || {};
@@ -63,8 +68,7 @@ export const spec = {
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
       pid: firstSlot.pid,
-      psegs: psegs,
-      bpsegs: (userBpSegs.concat(siteBpSegs)).map(item => item.toString()),
+      bpsegs: (userBpSegs.concat(siteBpSegs, psegs)).map(item => item.toString()),
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
@@ -73,6 +77,7 @@ export const spec = {
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
+      eids: firstSlot.eids,
     };
 
     const payloadString = JSON.stringify(payloadObject);
@@ -160,6 +165,7 @@ function beOpRequestSlotsMaker(bid) {
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
+    eids: bid.userIdAsEids,
   }
 }
 

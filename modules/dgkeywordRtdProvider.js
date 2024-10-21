@@ -6,11 +6,14 @@
  * @module modules/dgkeywordProvider
  * @requires module:modules/realTimeData
  */
-
-import {logMessage, deepSetValue, logError, logInfo, mergeDeep} from '../src/utils.js';
+import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /**
  * get keywords from api server. and set keywords.
@@ -57,19 +60,11 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
             if (Object.keys(keywords).length > 0) {
               const targetBidKeys = {};
               for (let bid of setKeywordTargetBidders) {
-                // set keywords to params
-                bid.params.keywords = keywords;
+                // set keywords to ortb2Imp
+                deepSetValue(bid, 'ortb2Imp.ext.data.keywords', convertKeywordsToString(keywords));
                 if (!targetBidKeys[bid.bidder]) {
                   targetBidKeys[bid.bidder] = true;
                 }
-              }
-
-              if (!reqBidsConfigObj._ignoreSetOrtb2) {
-                // set keywrods to ortb2
-                let addOrtb2 = {};
-                deepSetValue(addOrtb2, 'site.keywords', keywords);
-                deepSetValue(addOrtb2, 'user.keywords', keywords);
-                mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, Object.fromEntries(Object.keys(targetBidKeys).map(bidder => [bidder, addOrtb2])));
               }
             }
           }
@@ -106,6 +101,8 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
 
 export function readFpidFromLocalStrage() {
   try {
+    // TODO: use storageManager
+    // eslint-disable-next-line prebid/no-global
     const fpid = window.localStorage.getItem('ope_fpid');
     if (fpid) {
       return fpid;
@@ -156,4 +153,37 @@ function init(moduleConfig) {
 function registerSubModule() {
   submodule('realTimeData', dgkeywordSubmodule);
 }
+
+// keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
+export function convertKeywordsToString(keywords) {
+  let result = '';
+  Object.keys(keywords).forEach(key => {
+    // if 'text' or ''
+    if (isStr(keywords[key])) {
+      if (keywords[key] !== '') {
+        result += `${key}=${keywords[key]},`
+      } else {
+        result += `${key},`;
+      }
+    } else if (isArray(keywords[key])) {
+      let isValSet = false
+      keywords[key].forEach(val => {
+        if (isStr(val) && val) {
+          result += `${key}=${val},`
+          isValSet = true
+        }
+      });
+      if (!isValSet) {
+        result += `${key},`
+      }
+    } else {
+      result += `${key},`
+    }
+  });
+
+  // remove last trailing comma
+  result = result.substring(0, result.length - 1);
+  return result;
+}
+
 registerSubModule();
