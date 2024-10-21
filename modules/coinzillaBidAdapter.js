@@ -33,12 +33,28 @@ export const spec = {
       const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
       const width = sizes.split('x')[0];
       const height = sizes.split('x')[1];
+      let installed_wallet = '';
+      if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
+        installed_wallet = "ETH";
+      }
+      if ((typeof window.cardano !== 'undefined')) {
+        installed_wallet = "ADA";
+      }
+      if ((typeof window.BinanceChain !== 'undefined')) {
+        installed_wallet = "BNB";
+      }
+      if ((typeof window.solana !== 'undefined')) {
+        installed_wallet = "SOL";
+      }
+      if ((typeof window.tron !== 'undefined')) {
+        installed_wallet = "TRX";
+      }
       const payload = {
         placementId: bidRequest.params.placementId,
         width: width,
         height: height,
         bidId: bidRequest.bidId,
-        // TODO: is 'page' the right value here?
+        wd: installed_wallet,
         referer: bidderRequest.refererInfo.page,
       };
       return {
