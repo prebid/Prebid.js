@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "8.49.7-S2S-1925",
+  "version": "8.49.84",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
