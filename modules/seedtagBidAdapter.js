@@ -128,7 +128,6 @@ function buildBidRequest(validBidRequest) {
   const bidRequest = {
     id: validBidRequest.bidId,
     transactionId: validBidRequest.ortb2Imp?.ext?.tid,
-    gpid: validBidRequest.ortb2Imp?.ext?.gpid,
     sizes: validBidRequest.sizes,
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
@@ -294,8 +293,7 @@ export const spec = {
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),
-      user: { topics: [], eids: [] },
-      site: {}
+      user: { topics: [], eids: [] }
     };
 
     if (payload.cmp) {
@@ -341,22 +339,6 @@ export const spec = {
 
     if (bidderRequest.ortb2?.badv) {
       payload.badv = bidderRequest.ortb2?.badv
-    }
-
-    if (bidderRequest.ortb2?.device?.sua) {
-      payload.sua = bidderRequest.ortb2.device.sua
-    }
-
-    if (bidderRequest.ortb2?.site?.cat) {
-      payload.site.cat = bidderRequest.ortb2.site.cat
-    }
-
-    if (bidderRequest.ortb2?.site?.cattax) {
-      payload.site.cattax = bidderRequest.ortb2.site.cattax
-    }
-
-    if (bidderRequest.ortb2?.site?.pagecat) {
-      payload.site.pagecat = bidderRequest.ortb2.site.pagecat
     }
 
     const payloadString = JSON.stringify(payload);

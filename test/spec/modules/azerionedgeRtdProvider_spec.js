@@ -8,17 +8,11 @@ describe('Azerion Edge RTD submodule', function () {
     { id: '1', visits: 123 },
     { id: '2', visits: 456 },
   ];
-  const IMPROVEDIGITAL_GVLID = '253';
+
   const key = 'publisher123';
   const bidders = ['appnexus', 'improvedigital'];
   const process = { key: 'value' };
   const dataProvider = { name: 'azerionedge', waitForIt: true };
-  const userConsent = {gdpr: {gdprApplies: 'gdpr-applies', consentString: 'consent-string'}, usp: 'usp'};
-
-  const resetAll = () => {
-    window.azerionPublisherAudiences.resetHistory();
-    loadExternalScript.resetHistory();
-  }
 
   let reqBidsConfigObj;
   let storageStub;
@@ -39,11 +33,7 @@ describe('Azerion Edge RTD submodule', function () {
     let returned;
 
     beforeEach(function () {
-      returned = azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, userConsent);
-    });
-
-    it('should have the correct gvlid', () => {
-      expect(azerionedgeRTD.azerionedgeSubmodule.gvlid).to.equal(IMPROVEDIGITAL_GVLID);
+      returned = azerionedgeRTD.azerionedgeSubmodule.init(dataProvider);
     });
 
     it('should return true', function () {
@@ -59,21 +49,18 @@ describe('Azerion Edge RTD submodule', function () {
       expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
     });
 
-    [
-      ['gdprApplies', userConsent.gdpr.gdprApplies],
-      ['gdprConsent', userConsent.gdpr.consentString],
-      ['uspConsent', userConsent.usp],
-    ].forEach(([key, value]) => {
-      it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
-        expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
-      });
+    it('should call azerionPublisherAudiencesStub with empty configuration', function () {
+      expect(window.azerionPublisherAudiences.args[0][0]).to.deep.equal({});
     });
 
     describe('with key', function () {
       beforeEach(function () {
-        resetAll();
-        const config = { ...dataProvider, params: { key } };
-        returned = azerionedgeRTD.azerionedgeSubmodule.init(config, userConsent);
+        window.azerionPublisherAudiences.resetHistory();
+        loadExternalScript.resetHistory();
+        returned = azerionedgeRTD.azerionedgeSubmodule.init({
+          ...dataProvider,
+          params: { key },
+        });
       });
 
       it('should return true', function () {
@@ -88,24 +75,22 @@ describe('Azerion Edge RTD submodule', function () {
 
     describe('with process configuration', function () {
       beforeEach(function () {
-        resetAll();
-        const config = { ...dataProvider, params: { process } };
-        returned = azerionedgeRTD.azerionedgeSubmodule.init(config, userConsent);
+        window.azerionPublisherAudiences.resetHistory();
+        loadExternalScript.resetHistory();
+        returned = azerionedgeRTD.azerionedgeSubmodule.init({
+          ...dataProvider,
+          params: { process },
+        });
       });
 
       it('should return true', function () {
         expect(returned).to.equal(true);
       });
 
-      [
-        ['gdprApplies', userConsent.gdpr.gdprApplies],
-        ['gdprConsent', userConsent.gdpr.consentString],
-        ['uspConsent', userConsent.usp],
-        ...Object.entries(process),
-      ].forEach(([key, value]) => {
-        it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
-          expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
-        });
+      it('should call azerionPublisherAudiencesStub with process configuration', function () {
+        expect(window.azerionPublisherAudiences.args[0][0]).to.deep.equal(
+          process
+        );
       });
     });
   });
@@ -126,7 +111,7 @@ describe('Azerion Edge RTD submodule', function () {
         );
       });
 
-      it('does not apply audiences to bidders', function () {
+      it('does not run apply audiences to bidders', function () {
         expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.equal({});
       });
 

@@ -1,4 +1,4 @@
-import {_internal as videoCache} from 'src/videoCache.js';
+import * as videoCache from 'src/videoCache.js';
 
 /**
  * Function which can be called from unit tests to stub out the video cache.

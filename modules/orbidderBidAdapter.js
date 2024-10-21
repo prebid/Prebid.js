@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -92,9 +93,6 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.page || '';
       }
-      if (bidRequest?.mediaTypes?.video) {
-        delete bidRequest.mediaTypes.video;
-      }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
@@ -103,7 +101,7 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
-          v: 'v' + '$prebid.version$',
+          v: getGlobal().version,
           pageUrl: referer,
           ...bidRequest // get all data provided by bid request
         }

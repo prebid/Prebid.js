@@ -6,10 +6,7 @@ import {
   logError,
   deepAccess,
   isInteger,
-  logWarn,
-  getBidIdParameter,
-  isEmptyStr,
-  mergeDeep
+  logWarn, getBidIdParameter, isEmptyStr
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
@@ -17,18 +14,35 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
-import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
 const ORTB_VIDEO_PARAMS = {
-  ...COMMON_ORTB_VIDEO_PARAMS,
+  'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
+  'minduration': (value) => isInteger(value),
+  'maxduration': (value) => isInteger(value),
+  'protocols': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 10),
+  'w': (value) => isInteger(value),
+  'h': (value) => isInteger(value),
+  'startdelay': (value) => isInteger(value),
   'placement': (value) => isInteger(value) && value >= 1 && value <= 5,
-  'plcmt': (value) => isInteger(value) && value >= 1 && value <= 4,
+  'linearity': (value) => [1, 2].indexOf(value) !== -1,
+  'skip': (value) => [0, 1].indexOf(value) !== -1,
+  'skipmin': (value) => isInteger(value),
+  'skipafter': (value) => isInteger(value),
+  'sequence': (value) => isInteger(value),
+  'battr': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 17),
+  'maxextended': (value) => isInteger(value),
+  'minbitrate': (value) => isInteger(value),
+  'maxbitrate': (value) => isInteger(value),
+  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
+  'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
+  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
   'delivery': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 3),
   'pos': (value) => isInteger(value) && value >= 1 && value <= 7,
+  'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 }
 
 const REQUIRED_VIDEO_PARAMS = {
@@ -125,7 +139,7 @@ export const spec = {
         }
 
         const auctionEnvironment = bid?.ortb2Imp?.ext?.ae
-        if (bidderRequest.paapi?.enabled && isInteger(auctionEnvironment)) {
+        if (bidderRequest.fledgeEnabled && isInteger(auctionEnvironment)) {
           imp.ext = imp.ext || {}
           imp.ext.ae = auctionEnvironment
         } else {
@@ -181,12 +195,6 @@ export const spec = {
       if (bidderRequest.gppConsent) {
         deepSetValue(sovrnBidReq, 'regs.gpp', bidderRequest.gppConsent.gppString);
         deepSetValue(sovrnBidReq, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
-      }
-
-      // if present, merge device object from ortb2 into `sovrnBidReq.device`
-      if (bidderRequest?.ortb2?.device) {
-        sovrnBidReq.device = sovrnBidReq.device || {};
-        mergeDeep(sovrnBidReq.device, bidderRequest.ortb2.device);
       }
 
       if (eids) {
@@ -280,7 +288,7 @@ export const spec = {
         })
         return {
           bids,
-          paapi: fledgeAuctionConfigs,
+          fledgeAuctionConfigs,
         }
       }
       return bids

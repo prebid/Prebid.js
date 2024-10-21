@@ -6,16 +6,13 @@ import {
 } from '../libraries/video/constants/events.js';
 // missing events: , AD_BREAK_START, , AD_BREAK_END, VIEWABLE, BUFFER, CAST, PLAYLIST_COMPLETE, RENDITION_UPDATE, PLAY_ATTEMPT_FAILED, AUTOSTART_BLOCKED
 import {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
 } from '../libraries/video/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
-/**
- * @typedef {import('../libraries/video/shared/state.js').State} State
- */
 
 /*
 Plugins of interest:
@@ -149,9 +146,8 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
-    // update: cannot infer instream ever, always need declarations
     if (player.src()) {
-      video.plcmt = PLCMT.ACCOMPANYING_CONTENT;
+      video.placement = PLACEMENT.INSTREAM;
     }
 
     // Placement according to IQG Guidelines 4.2.8

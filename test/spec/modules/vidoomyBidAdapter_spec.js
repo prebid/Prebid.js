@@ -44,9 +44,9 @@ describe('vidoomyBidAdapter', function() {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      let bid = Object.assign({}, bid);
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when mediaType is video with INSTREAM context and lacks playerSize property', function () {

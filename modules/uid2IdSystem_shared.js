@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ajax } from '../src/ajax.js';
 import { cyrb53Hash } from '../src/utils.js';
 
@@ -7,22 +8,12 @@ function isValidIdentity(identity) {
   return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
 }
 
-// Helper function to prepend message
-function prependMessage(message) {
-  return `UID2 shared library - ${message}`;
-}
-
-// Wrapper function for logInfo
-function logInfoWrapper(logInfo, ...args) {
-  logInfo(prependMessage(args[0]), ...args.slice(1));
-}
-
 // This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
 export class Uid2ApiClient {
   constructor(opts, clientId, logInfo, logWarn) {
     this._baseUrl = opts.baseUrl;
     this._clientVersion = clientId;
-    this._logInfo = (...args) => logInfoWrapper(logInfo, ...args);
+    this._logInfo = logInfo;
     this._logWarn = logWarn;
   }
 
@@ -45,7 +36,7 @@ export class Uid2ApiClient {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
       return response;
-    } else { return prependMessage(`Response didn't contain a valid status`); }
+    } else { return `Response didn't contain a valid status`; }
   }
   callRefreshApi(refreshDetails) {
     const url = this._baseUrl + '/v2/token/refresh';
@@ -63,7 +54,7 @@ export class Uid2ApiClient {
             this._logInfo('No response decryption key available, assuming unencrypted JSON');
             const response = JSON.parse(responseText);
             const result = this.ResponseToRefreshResult(response);
-            if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
+            if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
           } else {
             this._logInfo('Decrypting refresh API response');
             const encodeResp = this.createArrayBuffer(atob(responseText));
@@ -79,12 +70,12 @@ export class Uid2ApiClient {
                 this._logInfo('Decrypted to:', decryptedResponse);
                 const response = JSON.parse(decryptedResponse);
                 const result = this.ResponseToRefreshResult(response);
-                if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
-              }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
-            }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
+                if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+              }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
+            }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
           }
         } catch (_err) {
-          rejectPromise(prependMessage(responseText));
+          rejectPromise(responseText);
         }
       },
       error: (error, xhr) => {
@@ -92,9 +83,9 @@ export class Uid2ApiClient {
           this._logInfo('Error status, assuming unencrypted JSON');
           const response = JSON.parse(xhr.responseText);
           const result = this.ResponseToRefreshResult(response);
-          if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
+          if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
         } catch (_e) {
-          rejectPromise(prependMessage(error));
+          rejectPromise(error)
         }
       }
     }, refreshDetails.refresh_token, { method: 'POST',
@@ -109,7 +100,7 @@ export class Uid2StorageManager {
     this._storage = storage;
     this._preferLocalStorage = preferLocalStorage;
     this._storageName = storageName;
-    this._logInfo = (...args) => logInfoWrapper(logInfo, ...args);
+    this._logInfo = logInfo;
   }
   readCookie(cookieName) {
     return this._storage.cookiesAreEnabled() ? this._storage.getCookie(cookieName) : null;
@@ -196,15 +187,11 @@ if (FEATURES.UID2_CSTG) {
   clientSideTokenGenerator = {
     isCSTGOptionsValid(maybeOpts, _logWarn) {
       if (typeof maybeOpts !== 'object' || maybeOpts === null) {
-        _logWarn('CSTG is not being used, but is included in the Prebid.js bundle. You can reduce the bundle size by passing "--disable UID2_CSTG" to the Prebid.js build.');
+        _logWarn('CSTG opts must be an object');
         return false;
       }
 
       const opts = maybeOpts;
-      if (!opts.serverPublicKey && !opts.subscriptionId) {
-        _logWarn('CSTG has been enabled but its parameters have not been set.');
-        return false;
-      }
       if (typeof opts.serverPublicKey !== 'string') {
         _logWarn('CSTG opts.serverPublicKey must be a string');
         return false;
@@ -402,7 +389,8 @@ if (FEATURES.UID2_CSTG) {
       this._baseUrl = opts.baseUrl;
       this._serverPublicKey = opts.cstg.serverPublicKey;
       this._subscriptionId = opts.cstg.subscriptionId;
-      this._logInfo = (...args) => logInfoWrapper(logInfo, ...args);
+      this._optoutCheck = opts.cstg.optoutCheck;
+      this._logInfo = logInfo;
       this._logWarn = logWarn;
     }
 
@@ -459,7 +447,8 @@ if (FEATURES.UID2_CSTG) {
     }
 
     async generateToken(cstgIdentity) {
-      const request = await this.generateCstgRequest(cstgIdentity);
+      const requestIdentity = await this.generateCstgRequest(cstgIdentity);
+      const request = { optout_check: this._optoutCheck, ...requestIdentity };
       this._logInfo('Building CSTG request for', request);
       const box = await UID2CstgBox.build(
         this.stripPublicKeyPrefix(this._serverPublicKey)
@@ -522,11 +511,11 @@ if (FEATURES.UID2_CSTG) {
                 // A 200 should always be a success response.
                 // Something has gone wrong.
                 rejectPromise(
-                  prependMessage(`API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`)
+                  `API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`
                 );
               }
             } catch (err) {
-              rejectPromise(prependMessage(err));
+              rejectPromise(err);
             }
           },
           error: (error, xhr) => {
@@ -534,32 +523,32 @@ if (FEATURES.UID2_CSTG) {
               if (xhr.status === 400) {
                 const response = JSON.parse(xhr.responseText);
                 if (this.isCstgApiClientErrorResponse(response)) {
-                  rejectPromise(prependMessage(`Client error: ${response.message}`));
+                  rejectPromise(`Client error: ${response.message}`);
                 } else {
                   // A 400 should always be a client error.
                   // Something has gone wrong.
                   rejectPromise(
-                    prependMessage(`UID2 API error: Response body was invalid for HTTP status 400: ${xhr.responseText}`)
+                    `API error: Response body was invalid for HTTP status 400: ${xhr.responseText}`
                   );
                 }
               } else if (xhr.status === 403) {
                 const response = JSON.parse(xhr.responseText);
                 if (this.isCstgApiForbiddenResponse(xhr)) {
-                  rejectPromise(prependMessage(`Forbidden: ${response.message}`));
+                  rejectPromise(`Forbidden: ${response.message}`);
                 } else {
                   // A 403 should always be a forbidden response.
                   // Something has gone wrong.
                   rejectPromise(
-                    prependMessage(`UID2 API error: Response body was invalid for HTTP status 403: ${xhr.responseText}`)
+                    `API error: Response body was invalid for HTTP status 403: ${xhr.responseText}`
                   );
                 }
               } else {
                 rejectPromise(
-                  prependMessage(`UID2 API error: Unexpected HTTP status ${xhr.status}: ${error}`)
+                  `API error: Unexpected HTTP status ${xhr.status}: ${error}`
                 );
               }
             } catch (_e) {
-              rejectPromise(prependMessage(error));
+              rejectPromise(error);
             }
           },
         },
@@ -688,45 +677,43 @@ if (FEATURES.UID2_CSTG) {
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
-  const logInfo = (...args) => logInfoWrapper(_logInfo, ...args);
-
   let suppliedToken = null;
   const preferLocalStorage = (config.storage !== 'cookie');
-  const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, logInfo);
-  logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
+  const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
+  _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
   const isCstgEnabled =
   clientSideTokenGenerator &&
   clientSideTokenGenerator.isCSTGOptionsValid(config.cstg, _logWarn);
   if (isCstgEnabled) {
-    logInfo(`Module is using client-side token generation.`);
+    _logInfo(`Module is using client-side token generation.`);
     // Ignores config.paramToken and config.serverCookieName if any is provided
     suppliedToken = null;
   } else if (config.paramToken) {
     suppliedToken = config.paramToken;
-    logInfo('Read token from params', suppliedToken);
+    _logInfo('Read token from params', suppliedToken);
   } else if (config.serverCookieName) {
     suppliedToken = storageManager.readProvidedCookie(config.serverCookieName);
-    logInfo('Read token from server-supplied cookie', suppliedToken);
+    _logInfo('Read token from server-supplied cookie', suppliedToken);
   }
   let storedTokens = storageManager.getStoredValueWithFallback();
-  logInfo('Loaded module-stored tokens:', storedTokens);
+  _logInfo('Loaded module-stored tokens:', storedTokens);
 
   if (storedTokens && typeof storedTokens === 'string') {
     // Stored value is a plain token - if no token is supplied, just use the stored value.
 
     if (!suppliedToken && !isCstgEnabled) {
-      logInfo('Returning legacy cookie value.');
+      _logInfo('Returning legacy cookie value.');
       return { id: storedTokens };
     }
     // Otherwise, ignore the legacy value - it should get over-written later anyway.
-    logInfo('Discarding superseded legacy cookie.');
+    _logInfo('Discarding superseded legacy cookie.');
     storedTokens = null;
   }
 
   if (suppliedToken && storedTokens) {
     if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
-      logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
+      _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
       // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
       storedTokens = null;
     }
@@ -735,16 +722,16 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   if (FEATURES.UID2_CSTG && isCstgEnabled) {
     const cstgIdentity = clientSideTokenGenerator.getValidIdentity(config.cstg, _logWarn);
     if (cstgIdentity) {
-      if (storedTokens && clientSideTokenGenerator.isStoredTokenInvalid(cstgIdentity, storedTokens, logInfo, _logWarn)) {
+      if (storedTokens && clientSideTokenGenerator.isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn)) {
         storedTokens = null;
       }
 
       if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
-        const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, storageManager, logInfo, _logWarn);
-        logInfo('Generate token using CSTG');
+        const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, storageManager, _logInfo, _logWarn);
+        _logInfo('Generate token using CSTG');
         return { callback: (cb) => {
           promise.then((result) => {
-            logInfo('Token generation responded, passing the new token on.', result);
+            _logInfo('Token generation responded, passing the new token on.', result);
             cb(result);
           });
         } };
@@ -754,25 +741,25 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
 
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
-  logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
   if ((!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires)) {
-    logInfo('Newest available token is expired and not refreshable.');
+    _logInfo('Newest available token is expired and not refreshable.');
     return { id: null };
   }
   if (Date.now() > newestAvailableToken.identity_expires) {
-    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
-    logInfo('Token is expired but can be refreshed, attempting refresh.');
+    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+    _logInfo('Token is expired but can be refreshed, attempting refresh.');
     return { callback: (cb) => {
       promise.then((result) => {
-        logInfo('Refresh reponded, passing the updated token on.', result);
+        _logInfo('Refresh reponded, passing the updated token on.', result);
         cb(result);
       });
     } };
   }
   // If should refresh (but don't need to), refresh in the background.
   if (Date.now() > newestAvailableToken.refresh_from) {
-    logInfo(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    _logInfo(`Refreshing token in background with low priority.`);
+    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
   }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,

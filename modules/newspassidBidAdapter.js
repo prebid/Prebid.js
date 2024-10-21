@@ -1,5 +1,4 @@
 import {
-  deepClone,
   logInfo,
   logError,
   deepAccess,
@@ -34,12 +33,12 @@ export const spec = {
   },
   loadConfiguredData(bid) {
     if (this.propertyBag.config) { return; }
-    this.propertyBag.config = deepClone(this.config_defaults);
+    this.propertyBag.config = JSON.parse(JSON.stringify(this.config_defaults));
     let bidder = bid.bidder || 'newspassid';
     this.propertyBag.config.logId = bidder.toUpperCase();
     this.propertyBag.config.bidder = bidder;
     let bidderConfig = config.getConfig(bidder) || {};
-    logInfo('got bidderConfig: ', deepClone(bidderConfig));
+    logInfo('got bidderConfig: ', JSON.parse(JSON.stringify(bidderConfig)));
     let arrGetParams = this.getGetParametersAsObject();
     if (bidderConfig.endpointOverride) {
       if (bidderConfig.endpointOverride.origin) {
@@ -132,7 +131,7 @@ export const spec = {
   buildRequests(validBidRequests, bidderRequest) {
     this.loadConfiguredData(validBidRequests[0]);
     this.propertyBag.buildRequestsStart = new Date().getTime();
-    logInfo(`buildRequests time: ${this.propertyBag.buildRequestsStart} v ${NEWSPASSVERSION} validBidRequests`, deepClone(validBidRequests), 'bidderRequest', deepClone(bidderRequest));
+    logInfo(`buildRequests time: ${this.propertyBag.buildRequestsStart} v ${NEWSPASSVERSION} validBidRequests`, JSON.parse(JSON.stringify(validBidRequests)), 'bidderRequest', JSON.parse(JSON.stringify(bidderRequest)));
     if (this.blockTheRequest()) {
       return [];
     }
@@ -282,7 +281,7 @@ export const spec = {
         data: JSON.stringify(npRequest),
         bidderRequest: bidderRequest
       };
-      logInfo('buildRequests request data for single = ', deepClone(npRequest));
+      logInfo('buildRequests request data for single = ', JSON.parse(JSON.stringify(npRequest)));
       this.propertyBag.buildRequestsEnd = new Date().getTime();
       logInfo(`buildRequests going to return for single at time ${this.propertyBag.buildRequestsEnd} (took ${this.propertyBag.buildRequestsEnd - this.propertyBag.buildRequestsStart}ms): `, ret);
       return ret;
@@ -310,7 +309,7 @@ export const spec = {
     if (request && request.bidderRequest && request.bidderRequest.bids) { this.loadConfiguredData(request.bidderRequest.bids[0]); }
     let startTime = new Date().getTime();
     logInfo(`interpretResponse time: ${startTime}. buildRequests done -> interpretResponse start was ${startTime - this.propertyBag.buildRequestsEnd}ms`);
-    logInfo(`serverResponse, request`, deepClone(serverResponse), deepClone(request));
+    logInfo(`serverResponse, request`, JSON.parse(JSON.stringify(serverResponse)), JSON.parse(JSON.stringify(request)));
     serverResponse = serverResponse.body || {};
     let aucId = serverResponse.id; // this will be correct for single requests and non-single
     if (!serverResponse.hasOwnProperty('seatbid')) {
@@ -464,6 +463,10 @@ export const spec = {
       let id5id = deepAccess(bidRequest.userId, 'id5id.uid');
       if (id5id) {
         ret['id5id'] = id5id;
+      }
+      let parrableId = deepAccess(bidRequest.userId, 'parrableId.eid');
+      if (parrableId) {
+        ret['parrableId'] = parrableId;
       }
       let sharedid = deepAccess(bidRequest.userId, 'sharedid.id');
       if (sharedid) {

@@ -383,6 +383,7 @@ describe('pubGENIUS adapter', () => {
         w: 200,
         h: 100,
         startdelay: -1,
+        placement: 1,
         skip: 1,
         skipafter: 1,
         playbackmethod: [3, 4],

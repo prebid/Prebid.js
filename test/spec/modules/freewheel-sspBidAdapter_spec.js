@@ -41,12 +41,12 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         wrong: 'missing zone id'
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
@@ -73,12 +73,12 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         wrong: 'missing zone id'
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

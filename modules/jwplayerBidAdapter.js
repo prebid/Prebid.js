@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { isArray, isFn, deepAccess, deepSetValue, getDNT, logError, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'jwplayer';
 const BASE_URL = 'https://vpb-server.jwplayer.com/';

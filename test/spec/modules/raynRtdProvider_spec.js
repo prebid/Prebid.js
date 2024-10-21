@@ -152,7 +152,6 @@ describe('rayn RTD Submodule', function () {
         2: ['71', '313'],
         4: ['33', '145', '712']
       };
-      TEST_SEGMENTS['103015'] = ['agdv23', 'avscg3'];
 
       const bidderOrtb2 = {};
       const bidders = RTD_CONFIG.dataProviders[0].params.bidders;
@@ -174,9 +173,6 @@ describe('rayn RTD Submodule', function () {
         });
         TEST_SEGMENTS['4']['3'].forEach((id) => {
           expect(ortb2.user.data[0].segment.find(segment => segment.id === id)).to.exist;
-        });
-        TEST_SEGMENTS['103015'].forEach((id) => {
-          expect(ortb2.user.data[1].segment.find(segment => segment.id === id)).to.exist;
         });
       });
     });
@@ -222,27 +218,6 @@ describe('rayn RTD Submodule', function () {
           enabled: false,
         },
       };
-
-      const reqBidsConfigObj = { ortb2Fragments: { bidder: {} } };
-
-      raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
-
-      expect(callbackSpy.calledOnce).to.be.true;
-      expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from localStorage: ${JSON.stringify(testSegments)}`);
-
-      logMessageSpy.restore();
-    });
-
-    it('should update reqBidsConfigObj and execute callback using persona segment from localStorage', function () {
-      const callbackSpy = sinon.spy();
-      const logMessageSpy = sinon.spy(utils, 'logMessage');
-      const testSegments = {
-        103015: ['agdv23', 'avscg3']
-      };
-
-      getDataFromLocalStorageStub
-        .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
-        .returns(JSON.stringify(testSegments));
 
       const reqBidsConfigObj = { ortb2Fragments: { bidder: {} } };
 

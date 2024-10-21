@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd';
 import { spec } from 'modules/ccxBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -40,7 +39,6 @@ describe('ccxAdapter', function () {
       transactionId: 'aefddd38-cfa0-48ab-8bdd-325de4bab5f9'
     }
   ];
-
   describe('isBidRequestValid', function () {
     it('Valid bid requests', function () {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
@@ -77,7 +75,6 @@ describe('ccxAdapter', function () {
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.true;
     });
   });
-
   describe('buildRequests', function () {
     it('No valid bids', function () {
       expect(spec.buildRequests([])).to.be.undefined;
@@ -176,7 +173,6 @@ describe('ccxAdapter', function () {
 
       expect(data.imp).to.deep.have.same.members(imps);
     });
-
     it('Valid bid request - sizes old style', function () {
       let bidsClone = utils.deepClone(bids);
       delete (bidsClone[0].mediaTypes);
@@ -222,7 +218,6 @@ describe('ccxAdapter', function () {
 
       expect(data.imp).to.deep.have.same.members(imps);
     });
-
     it('Valid bid request - sizes old style - no media type', function () {
       let bidsClone = utils.deepClone(bids);
       delete (bidsClone[0].mediaTypes);
@@ -390,7 +385,6 @@ describe('ccxAdapter', function () {
       expect(spec.interpretResponse({})).to.be.empty;
     });
   });
-
   describe('getUserSyncs', function () {
     it('Valid syncs - all', function () {
       let syncOptions = {
@@ -440,7 +434,6 @@ describe('ccxAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.be.empty;
     });
   });
-
   describe('mediaTypesVideoParams', function () {
     it('Valid video mediaTypes', function () {
       let bids = [
@@ -493,80 +486,6 @@ describe('ccxAdapter', function () {
       let data = JSON.parse(response.data);
 
       expect(data.imp).to.deep.have.same.members(imps);
-    });
-  });
-
-  describe('FLEDGE', function () {
-    it('should properly build a request when FLEDGE is enabled', function () {
-      let bidderRequest = {
-        paapi: {
-          enabled: true
-        }
-      };
-      let bids = [
-        {
-          adUnitCode: 'banner',
-          auctionId: '0b9de793-8eda-481e-a548-aaaaaaaaaaa1',
-          bidId: '2e56e1af51ccc1',
-          bidder: 'ccx',
-          bidderRequestId: '17e7b9f58accc1',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            }
-          },
-          params: {
-            placementId: 609
-          },
-          sizes: [[300, 250]],
-          transactionId: 'befddd38-cfa0-48ab-8bdd-bbbbbbbbbbb1',
-          ortb2Imp: {
-            ext: {
-              ae: 1
-            }
-          }
-        }
-      ];
-
-      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
-      let data = JSON.parse(ortbRequest.data);
-      expect(data.imp[0].ext.ae).to.equal(1);
-    });
-
-    it('should properly build a request when FLEDGE is disabled', function () {
-      let bidderRequest = {
-        paapi: {
-          enabled: false
-        }
-      };
-      let bids = [
-        {
-          adUnitCode: 'banner',
-          auctionId: '0b9de793-8eda-481e-a548-aaaaaaaaaaa2',
-          bidId: '2e56e1af51ccc2',
-          bidder: 'ccx',
-          bidderRequestId: '17e7b9f58accc2',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            }
-          },
-          params: {
-            placementId: 610
-          },
-          sizes: [[300, 250]],
-          transactionId: 'befddd38-cfa0-48ab-8bdd-bbbbbbbbbbb2',
-          ortb2Imp: {
-            ext: {
-              ae: 1
-            }
-          }
-        }
-      ];
-
-      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
-      let data = JSON.parse(ortbRequest.data);
-      expect(data.imp[0].ext.ae).to.be.undefined;
     });
   });
 });

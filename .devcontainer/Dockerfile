@@ -1,4 +1,4 @@
-ARG VARIANT="20"
+ARG VARIANT="12"
 FROM mcr.microsoft.com/vscode/devcontainers/javascript-node:${VARIANT}
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor > /usr/share/keyrings/yarn-archive-keyring.gpg

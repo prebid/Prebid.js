@@ -1,4 +1,4 @@
-import { timestamp, logInfo } from '../src/utils.js';
+import { timestamp, logInfo, getWindowTop } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, STATUS } from '../src/constants.js';
@@ -171,7 +171,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     timeouts: getTimeouts(sentRequests.gdpr, sentRequests.auctionIds),
     bidAdUnits: getbidAdUnits(),
     rf: getAdRenderFailed(sentRequests.auctionIds),
-    ext: initOptions.ext
+    rcv: getAdblockerRecovered()
   };
 
   if (events.requests.length == 0 &&
@@ -184,6 +184,12 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
 };
+
+function getAdblockerRecovered() {
+  try {
+    return getWindowTop().I12C && getWindowTop().I12C.Morph === 1;
+  } catch (e) {}
+}
 
 function getSentRequests() {
   var sentRequests = [];

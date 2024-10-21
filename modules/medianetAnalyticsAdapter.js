@@ -36,7 +36,8 @@ const PRICE_GRANULARITY = {
 };
 
 const MEDIANET_BIDDER_CODE = 'medianet';
-const PREBID_VERSION = '$prebid.version$'
+// eslint-disable-next-line no-undef
+const PREBID_VERSION = getGlobal().version;
 const ERROR_CONFIG_JSON_PARSE = 'analytics_config_parse_fail';
 const ERROR_CONFIG_FETCH = 'analytics_config_ajax_fail';
 const ERROR_WINNING_BID_ABSENT = 'winning_bid_absent';

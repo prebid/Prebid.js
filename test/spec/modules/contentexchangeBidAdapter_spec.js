@@ -3,19 +3,9 @@ import { spec } from '../../../modules/contentexchangeBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'contentexchange';
+const bidder = 'contentexchange'
 
 describe('ContentexchangeBidAdapter', function () {
-  const userIdAsEids = [{
-    source: 'test.org',
-    uids: [{
-      id: '01**********',
-      atype: 1,
-      ext: {
-        third: '01***********'
-      }
-    }]
-  }];
   const bids = [
     {
       bidId: getUniqueIdentifierStr(),
@@ -26,9 +16,9 @@ describe('ContentexchangeBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner'
-      },
-      userIdAsEids
+        placementId: 'test',
+        adFormat: BANNER
+      }
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -41,9 +31,9 @@ describe('ContentexchangeBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testVideo'
-      },
-      userIdAsEids
+        placementId: 'test',
+        adFormat: VIDEO
+      }
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -65,9 +55,9 @@ describe('ContentexchangeBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testNative'
-      },
-      userIdAsEids
+        placementId: 'test',
+        adFormat: NATIVE
+      }
     }
   ];
 
@@ -80,26 +70,15 @@ describe('ContentexchangeBidAdapter', function () {
       }
     },
     params: {
-
+      adFormat: BANNER
     }
   }
 
   const bidderRequest = {
     uspConsent: '1---',
-    gdprConsent: {
-      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
-      vendorData: {}
-    },
+    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     refererInfo: {
-      referer: 'https://test.com',
-      page: 'https://test.com'
-    },
-    ortb2: {
-      device: {
-        w: 1512,
-        h: 982,
-        language: 'en-UK'
-      }
+      referer: 'https://test.com'
     },
     timeout: 500
   };
@@ -153,7 +132,7 @@ describe('ContentexchangeBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       expect(data.coppa).to.be.a('number');
-      expect(data.gdpr).to.be.a('object');
+      expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
       expect(data.placements).to.have.lengthOf(3);
@@ -163,62 +142,11 @@ describe('ContentexchangeBidAdapter', function () {
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
         const placement = placements[i];
-        expect(placement.placementId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
+        expect(placement.placementId).to.be.equal('test');
         expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
         expect(placement.bidId).to.be.a('string');
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
-        expect(placement.type).to.exist.and.to.equal('publisher');
-        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
-
-        if (placement.adFormat === BANNER) {
-          expect(placement.sizes).to.be.an('array');
-        }
-        switch (placement.adFormat) {
-          case BANNER:
-            expect(placement.sizes).to.be.an('array');
-            break;
-          case VIDEO:
-            expect(placement.playerSize).to.be.an('array');
-            expect(placement.minduration).to.be.an('number');
-            expect(placement.maxduration).to.be.an('number');
-            break;
-          case NATIVE:
-            expect(placement.native).to.be.an('object');
-            break;
-        }
-      }
-    });
-
-    it('Returns valid endpoints', function () {
-      const bids = [
-        {
-          bidId: getUniqueIdentifierStr(),
-          bidder: bidder,
-          mediaTypes: {
-            [BANNER]: {
-              sizes: [[300, 250]]
-            }
-          },
-          params: {
-            endpointId: 'testBanner',
-          },
-          userIdAsEids
-        }
-      ];
-
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-
-      const { placements } = serverRequest.data;
-      for (let i = 0, len = placements.length; i < len; i++) {
-        const placement = placements[i];
-        expect(placement.endpointId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
-        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
-        expect(placement.bidId).to.be.a('string');
-        expect(placement.schain).to.be.an('object');
-        expect(placement.bidfloor).to.exist.and.to.equal(0);
-        expect(placement.type).to.exist.and.to.equal('network');
-        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
@@ -244,10 +172,8 @@ describe('ContentexchangeBidAdapter', function () {
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest.data;
       expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('object');
-      expect(data.gdpr).to.have.property('consentString');
-      expect(data.gdpr).to.not.have.property('vendorData');
-      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
     });
@@ -262,38 +188,12 @@ describe('ContentexchangeBidAdapter', function () {
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
     });
-  });
 
-  describe('gpp consent', function () {
-    it('bidderRequest.gppConsent', () => {
-      bidderRequest.gppConsent = {
-        gppString: 'abc123',
-        applicableSections: [8]
-      };
-
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
+    it('Returns empty data if no valid requests are passed', function () {
+      serverRequest = spec.buildRequests([], bidderRequest);
       let data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.property('gpp');
-      expect(data).to.have.property('gpp_sid');
-
-      delete bidderRequest.gppConsent;
-    })
-
-    it('bidderRequest.ortb2.regs.gpp', () => {
-      bidderRequest.ortb2 = bidderRequest.ortb2 || {};
-      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
-      bidderRequest.ortb2.regs.gpp = 'abc123';
-      bidderRequest.ortb2.regs.gpp_sid = [8];
-
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.property('gpp');
-      expect(data).to.have.property('gpp_sid');
-
-      bidderRequest.ortb2;
-    })
+      expect(data.placements).to.be.an('array').that.is.empty;
+    });
   });
 
   describe('interpretResponse', function () {
@@ -472,7 +372,6 @@ describe('ContentexchangeBidAdapter', function () {
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
-
   describe('getUserSyncs', function() {
     it('Should return array of objects with proper sync config , include GDPR', function() {
       const syncData = spec.getUserSyncs({}, {}, {
@@ -496,18 +395,6 @@ describe('ContentexchangeBidAdapter', function () {
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://sync2.adnetwork.agency/image?pbjs=1&ccpa_consent=1---&coppa=0')
-    });
-    it('Should return array of objects with proper sync config , include GPP', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
-        gppString: 'abc123',
-        applicableSections: [8]
-      });
-      expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://sync2.adnetwork.agency/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
     });
   });
 });

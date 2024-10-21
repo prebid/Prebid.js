@@ -226,7 +226,7 @@ export const adapter = {
       'options': {
         'contentType': 'application/json'
       },
-      'protectedAudienceEnabled': bidderRequest.paapi?.enabled
+      'protectedAudienceEnabled': bidderRequest.fledgeEnabled
     }, validBidRequests, bidderRequest);
   },
 
@@ -261,7 +261,7 @@ export const adapter = {
 
     return {
       bids,
-      paapi: fledgeAuctionConfigs
+      fledgeAuctionConfigs
     };
   }
 };

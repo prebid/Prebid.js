@@ -286,19 +286,19 @@ describe('RetailSpot Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.sizes;
+      let bid = Object.assign({}, bid);
+      delete bid.size;
 
-      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         'placement': 0
       };
-      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

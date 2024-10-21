@@ -281,7 +281,7 @@ function isOWPubmaticBid(adapterName) {
   })
 }
 
-function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid, e) {
+function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     adUnit.bids[bidId].forEach(function(bid) {
@@ -290,16 +290,6 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid, e) {
         return;
       }
       const pg = window.parseFloat(Number(bid.bidResponse?.adserverTargeting?.hb_pb || bid.bidResponse?.adserverTargeting?.pwtpb).toFixed(BID_PRECISION));
-
-      const prebidBidsReceived = e?.bidsReceived;
-      if (isArray(prebidBidsReceived) && prebidBidsReceived.length > 0) {
-        prebidBidsReceived.forEach(function(iBid) {
-          if (iBid.adId === bid.adId) {
-            bid.bidderCode = iBid.bidderCode;
-          }
-        });
-      }
-
       partnerBids.push({
         'pn': adapterName,
         'bc': bid.bidderCode || bid.bidder,
@@ -401,7 +391,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
-  outputObj['pbv'] = '$prebid.version$' || '-1';
+  outputObj['pbv'] = getGlobal()?.version || '-1';
 
   if (floorData && floorFetchStatus) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
@@ -417,7 +407,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'au': origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
-      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId), e),
+      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
       'fskp': floorData && floorFetchStatus ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
       'sid': generateUUID()
     };
@@ -499,7 +489,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&origbidid=' + enc(winningBid?.bidResponse?.partnerImpId || winningBid?.bidResponse?.prebidBidId || winningBid.bidId);
   pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
-  pg && (pixelURL += '&pb=' + enc(pg));
+  pixelURL += '&pb=' + enc(pg);
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
   pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x' +
@@ -569,8 +559,7 @@ function bidResponseHandler(args) {
     logWarn(LOG_PRE_FIX + 'Got null requestId in bidResponseHandler');
     return;
   }
-  let requestId = args.originalRequestId || args.requestId;
-  let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId][0];
+  let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId][0];
   if (!bid) {
     logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
     return;
@@ -578,9 +567,7 @@ function bidResponseHandler(args) {
 
   if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
     bid = copyRequiredBidDetails(args);
-    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId].push(bid);
-  } else if (args.originalRequestId) {
-    bid.bidId = args.requestId;
+    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid);
   }
 
   if (args.floorData) {
@@ -611,7 +598,7 @@ function bidRejectedHandler(args) {
 function bidderDoneHandler(args) {
   cache.auctions[args.auctionId].bidderDonePendingCount--;
   args.bids.forEach(bid => {
-    let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.originalRequestId || bid.requestId];
+    let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.requestId];
     if (typeof bid.serverResponseTimeMs !== 'undefined') {
       cachedBid.serverLatencyTimeMs = bid.serverResponseTimeMs;
     }
@@ -626,7 +613,7 @@ function bidderDoneHandler(args) {
 
 function bidWonHandler(args) {
   let auctionCache = cache.auctions[args.auctionId];
-  auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.originalRequestId || args.requestId;
+  auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
   auctionCache.adUnitCodes[args.adUnitCode].bidWonAdId = args.adId;
   executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
 }
@@ -644,7 +631,7 @@ function bidTimeoutHandler(args) {
   // db = 0 and t = 1 means bidder did  respond with a bid but post timeout
   args.forEach(badBid => {
     let auctionCache = cache.auctions[badBid.auctionId];
-    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.originalRequestId || badBid.requestId ][0];
+    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.requestId ][0];
     if (bid) {
       bid.status = ERROR;
       bid.error = {

@@ -114,12 +114,11 @@ export const spec = {
 
     let computedEndpointUrl = ENDPOINT_URL;
 
-    if (bidderRequest.paapi?.enabled) {
-      const fromConfig = config.getConfig('paapiConfig') || config.getConfig('fledgeConfig') || { sellerTimeout: 500 };
-      const fledgeConfig = {
+    if (bidderRequest.fledgeEnabled) {
+      const fledgeConfig = config.getConfig('fledgeConfig') || {
         seller: FLEDGE_SELLER_URL,
         decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
-        ...fromConfig
+        sellerTimeout: 500
       };
       mergeDeep(request, { ext: { fledge_config: fledgeConfig } });
       computedEndpointUrl = FLEDGE_ENDPOINT_URL;
@@ -166,6 +165,7 @@ export const spec = {
   interpretResponse: function (serverResponse, originalRequest) {
     let bids;
 
+    const fledgeInterestGroupBuyers = config.getConfig('fledgeConfig.interestGroupBuyers') || [];
     const responseBody = serverResponse.body;
     let fledgeAuctionConfigs = null;
 
@@ -173,35 +173,24 @@ export const spec = {
       // we have fledge response
       // mimic the original response ([{},...])
       bids = this.interpretOrtbResponse({ body: responseBody.seatbid[0]?.bid }, originalRequest);
-      const paapiAdapterConfig = config.getConfig('paapiConfig') || config.getConfig('fledgeConfig') || {};
-      const fledgeInterestGroupBuyers = paapiAdapterConfig.interestGroupBuyers || [];
-      // values from the response.ext are the most important
-      const {
-        decisionLogicUrl = paapiAdapterConfig.decisionLogicUrl || paapiAdapterConfig.decisionLogicURL ||
-          FLEDGE_DECISION_LOGIC_URL,
-        seller = paapiAdapterConfig.seller || FLEDGE_SELLER_URL,
-        sellerTimeout = 500
-      } = responseBody.ext;
 
-      const fledgeConfig = {
-        seller,
-        decisionLogicUrl,
-        decisionLogicURL: decisionLogicUrl,
-        sellerTimeout
-      };
-      // fledgeConfig settings are more important; other paapiAdapterConfig settings are facultative
-      mergeDeep(fledgeConfig, paapiAdapterConfig, fledgeConfig);
+      const seller = responseBody.ext.seller;
+      const decisionLogicUrl = responseBody.ext.decisionLogicUrl;
+      const sellerTimeout = 'sellerTimeout' in responseBody.ext ? { sellerTimeout: responseBody.ext.sellerTimeout } : {};
       responseBody.ext.igbid.forEach((igbid) => {
-        const perBuyerSignals = {...fledgeConfig.perBuyerSignals}; // may come from paapiAdapterConfig
+        const perBuyerSignals = {};
         igbid.igbuyer.forEach(buyerItem => {
           perBuyerSignals[buyerItem.igdomain] = buyerItem.buyersignal
         });
         fledgeAuctionConfigs = fledgeAuctionConfigs || {};
-        fledgeAuctionConfigs[igbid.impid] = mergeDeep({}, fledgeConfig,
+        fledgeAuctionConfigs[igbid.impid] = mergeDeep(
           {
-            interestGroupBuyers: [...new Set([...fledgeInterestGroupBuyers, ...Object.keys(perBuyerSignals)])],
+            seller,
+            decisionLogicUrl,
+            interestGroupBuyers: [...fledgeInterestGroupBuyers, ...Object.keys(perBuyerSignals)],
             perBuyerSignals,
-          }
+          },
+          sellerTimeout
         );
       });
     } else {
@@ -220,7 +209,7 @@ export const spec = {
       logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
         bids,
-        paapi: fledgeAuctionConfigs,
+        fledgeAuctionConfigs,
       }
     }
     return bids;
@@ -261,7 +250,7 @@ function mapImpression(slot, bidderRequest) {
     imp.bidfloor = bidfloor;
   }
 
-  if (bidderRequest.paapi?.enabled) {
+  if (bidderRequest.fledgeEnabled) {
     imp.ext = imp.ext || {};
     imp.ext.ae = slot?.ortb2Imp?.ext?.ae
   } else {

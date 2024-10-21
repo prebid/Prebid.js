@@ -1,11 +1,9 @@
 import {
   ERROR_EXCEPTION,
-  EVENT_AD_RENDER_FAILED,
-  EVENT_AD_RENDER_SUCCEEDED,
+  EVENT_AD_RENDER_FAILED, EVENT_AD_RENDER_SUCCEEDED,
   MESSAGE_EVENT,
   MESSAGE_REQUEST,
-  MESSAGE_RESPONSE,
-  PB_LOCATOR
+  MESSAGE_RESPONSE
 } from './constants.js';
 
 const mkFrame = (() => {
@@ -26,27 +24,14 @@ const mkFrame = (() => {
   };
 })();
 
-function isPrebidWindow(win) {
-  return !!win.frames[PB_LOCATOR];
-}
-
 export function renderer(win) {
-  let target = win.parent;
-  try {
-    while (target !== win.top && !isPrebidWindow(target)) {
-      target = target.parent;
-    }
-    if (!isPrebidWindow(target)) target = win.parent;
-  } catch (e) {
-  }
-
   return function ({adId, pubUrl, clickUrl}) {
     const pubDomain = new URL(pubUrl, window.location).origin;
 
     function sendMessage(type, payload, responseListener) {
       const channel = new MessageChannel();
       channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, [channel.port2]);
+      win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, [channel.port2]);
     }
 
     function onError(e) {
@@ -92,7 +77,7 @@ export function renderer(win) {
           W.Promise.resolve(W.render(data, {sendMessage, mkFrame}, win)).then(
             () => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}),
             onError
-          );
+          )
         });
         win.document.body.appendChild(renderer);
       }

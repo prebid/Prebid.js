@@ -1,354 +1,208 @@
+import { deepAccess, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {
-  getGptSlotInfoForAdUnitCode, getGptSlotForAdUnitCode
-} from '../libraries/gptUtils/gptUtils.js';
-import { getDeviceType, getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
-import { sendBeacon } from '../src/ajax.js'
 import { EVENTS } from '../src/constants.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
-import {
-  deepAccess, parseSizesInput, getWindowLocation, buildUrl, cyrb53Hash
-} from '../src/utils.js';
-
-let initOptions;
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const adapterCode = 'pubxai';
-const pubxaiAnalyticsVersion = 'v2.1.0';
+const pubxaiAnalyticsVersion = 'v1.2.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
-const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
 
-/**
- * The sendCache is a global cache object which tracks the pending sends
- * back to pubx.ai. The data may be removed from this cache, post send.
- */
-export const sendCache = new Proxy(
-  {},
-  {
-    get: (target, name) => {
-      if (!target.hasOwnProperty(name)) {
-        target[name] = [];
-      }
-      return target[name];
-    },
+let initOptions;
+let auctionTimestamp;
+let auctionCache = [];
+let events = {
+  bids: [],
+  floorDetail: {},
+  pageDetail: {},
+  deviceDetail: {}
+};
+
+function getStorage() {
+  try {
+    return window.top['sessionStorage'];
+  } catch (e) {
+    return null;
   }
-);
-
-/**
- * auctionCache is a global cache object which stores all auction histories
- * for the session. When getting a key from the auction cache, any
- * information already known about the auction or associated data (floor
- * data configured by prebid, browser data, user data etc) is added to
- * the cache automatically.
- */
-export const auctionCache = new Proxy(
-  {},
-  {
-    get: (target, name) => {
-      if (!target.hasOwnProperty(name)) {
-        target[name] = {
-          bids: [],
-          auctionDetail: {
-            refreshRank: Object.keys(target).length,
-            auctionId: name,
-          },
-          floorDetail: {},
-          pageDetail: {
-            host: getWindowLocation().host,
-            path: getWindowLocation().pathname,
-            search: getWindowLocation().search,
-          },
-          deviceDetail: {
-            platform: navigator.platform,
-            deviceType: getDeviceType(),
-            deviceOS: getOS(),
-            browser: getBrowser(),
-          },
-          userDetail: {
-            userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),
-          },
-          consentDetail: {
-            consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
-          },
-          pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
-          extraData: JSON.parse(storage.getDataFromLocalStorage('pubx:extraData')) || {},
-          initOptions: {
-            ...initOptions,
-            auctionId: name, // back-compat
-          },
-          sendAs: [],
-        };
-      }
-      return target[name];
-    },
-  }
-);
-
-/**
- * Fetch extra ad server data for a specific ad slot (bid)
- * @param {object} bid an output from extractBid
- * @returns {object} key value pairs from the adserver
- */
-const getAdServerDataForBid = (bid) => {
-  const gptSlot = getGptSlotForAdUnitCode(bid);
-  if (gptSlot) {
-    return Object.fromEntries(
-      gptSlot
-        .getTargetingKeys()
-        .filter(
-          (key) =>
-            key.startsWith('pubx-') ||
-            (key.startsWith('hb_') && (key.match(/_/g) || []).length === 1)
-        )
-        .map((key) => [key, gptSlot.getTargeting(key)])
-    );
-  }
-  return {}; // TODO: support more ad servers
-};
-
-/**
- * extracts and derives valuable data from a prebid bidder bidResponse object
- * @param {object} bidResponse a prebid bidder bidResponse (see
- * https://docs.prebid.org/dev-docs/publisher-api-reference/getBidResponses.html)
- * @returns {object}
- */
-const extractBid = (bidResponse) => {
-  return {
-    adUnitCode: bidResponse.adUnitCode,
-    gptSlotCode:
-      getGptSlotInfoForAdUnitCode(bidResponse.adUnitCode).gptSlot || null,
-    auctionId: bidResponse.auctionId,
-    bidderCode: bidResponse.bidder,
-    cpm: bidResponse.cpm,
-    creativeId: bidResponse.creativeId,
-    dealId: bidResponse.dealId,
-    currency: bidResponse.currency,
-    floorData: bidResponse.floorData,
-    mediaType: bidResponse.mediaType,
-    netRevenue: bidResponse.netRevenue,
-    requestTimestamp: bidResponse.requestTimestamp,
-    responseTimestamp: bidResponse.responseTimestamp,
-    status: bidResponse.status,
-    sizes: parseSizesInput(bidResponse.size).toString(),
-    statusMessage: bidResponse.statusMessage,
-    timeToRespond: bidResponse.timeToRespond,
-    transactionId: bidResponse.transactionId,
-    bidId: bidResponse.bidId || bidResponse.requestId,
-    placementId: bidResponse.params
-      ? deepAccess(bidResponse, 'params.0.placementId')
-      : null,
-    source: bidResponse.source || 'null',
-  };
-};
-
-/**
- * Track the events emitted by prebid and handle each case. See https://docs.prebid.org/dev-docs/publisher-api-reference/getEvents.html for more info
- * @param {object} event the prebid event emmitted
- * @param {string} event.eventType the type of the event
- * @param {object} event.args the arguments of the emitted event
- */
-const track = ({ eventType, args }) => {
-  switch (eventType) {
-    // handle invalid bids, and remove them from the adUnit cache
-    case EVENTS.BID_TIMEOUT:
-      args.map(extractBid).forEach((bid) => {
-        bid.bidType = 3;
-        auctionCache[bid.auctionId].bids.push(bid);
-      });
-      break;
-    // handle valid bid responses and record them as part of an auction
-    case EVENTS.BID_RESPONSE:
-      const bid = Object.assign(extractBid(args), { bidType: 2 });
-      auctionCache[bid.auctionId].bids.push(bid);
-      break;
-    case EVENTS.BID_REJECTED:
-      const rejectedBid = Object.assign(extractBid(args), { bidType: 1 });
-      auctionCache[rejectedBid.auctionId].bids.push(rejectedBid);
-      break;
-    // capture extra information from the auction, and if there were no bids
-    // (and so no chance of a win) send the auction
-    case EVENTS.AUCTION_END:
-      Object.assign(
-        auctionCache[args.auctionId].floorDetail,
-        args.adUnits
-          .map((i) => i?.bids.length && i.bids[0]?.floorData)
-          .find((i) => i) || {}
-      );
-      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
-        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
-        .find((i) => i);
-      Object.assign(auctionCache[args.auctionId].auctionDetail, {
-        adUnitCodes: args.adUnits.map((i) => i.code),
-        timestamp: args.timestamp,
-      });
-      if (
-        auctionCache[args.auctionId].bids.every((bid) => [1, 3].includes(bid.bidType))
-      ) {
-        prepareSend(args.auctionId);
-      }
-      break;
-    // send the prebid winning bid back to pubx
-    case EVENTS.BID_WON:
-      const winningBid = extractBid(args);
-      const floorDetail = auctionCache[winningBid.auctionId].floorDetail;
-      Object.assign(winningBid, {
-        floorProvider: floorDetail?.floorProvider || null,
-        floorFetchStatus: floorDetail?.fetchStatus || null,
-        floorLocation: floorDetail?.location || null,
-        floorModelVersion: floorDetail?.modelVersion || null,
-        floorSkipRate: floorDetail?.skipRate || 0,
-        isFloorSkipped: floorDetail?.skipped || false,
-        isWinningBid: true,
-        renderedSize: args.size,
-        bidType: 4,
-      });
-      winningBid.adServerData = getAdServerDataForBid(winningBid);
-      auctionCache[winningBid.auctionId].winningBid = winningBid;
-      prepareSend(winningBid.auctionId);
-      break;
-    // do nothing
-    default:
-      break;
-  }
-};
-
-/**
- * If true, send data back to pubxai
- * @param {string} auctionId
- * @param {number} samplingRate
- * @returns {boolean}
- */
-const shouldFireEventRequest = (auctionId, samplingRate = 1) => {
-  return parseInt(cyrb53Hash(auctionId)) % samplingRate === 0;
-};
-
-/**
- * prepare the payload for sending auction data back to pubx.ai
- * @param {string} auctionId the auction to send
- */
-const prepareSend = (auctionId) => {
-  const auctionData = Object.assign({}, auctionCache[auctionId]);
-  if (!shouldFireEventRequest(auctionId, initOptions.samplingRate)) {
-    return;
-  }
-  [
-    {
-      path: winningBidPath,
-      requiredKeys: [
-        'winningBid',
-        'pageDetail',
-        'deviceDetail',
-        'floorDetail',
-        'auctionDetail',
-        'userDetail',
-        'consentDetail',
-        'pmacDetail',
-        'extraData',
-        'initOptions',
-      ],
-      eventType: 'win',
-    },
-    {
-      path: auctionPath,
-      requiredKeys: [
-        'bids',
-        'pageDetail',
-        'deviceDetail',
-        'floorDetail',
-        'auctionDetail',
-        'userDetail',
-        'consentDetail',
-        'pmacDetail',
-        'extraData',
-        'initOptions',
-      ],
-      eventType: 'auction',
-    },
-  ].forEach(({ path, requiredKeys, eventType }) => {
-    const data = Object.fromEntries(
-      requiredKeys.map((key) => [key, auctionData[key]])
-    );
-    if (
-      auctionCache[auctionId].sendAs.includes(eventType) ||
-      !requiredKeys.every((key) => !!auctionData[key])
-    ) {
-      return;
-    }
-    const pubxaiAnalyticsRequestUrl = buildUrl({
-      protocol: 'https',
-      hostname:
-        (auctionData.initOptions && auctionData.initOptions.hostName) ||
-        defaultHost,
-      pathname: path,
-      search: {
-        auctionTimestamp: auctionData.auctionDetail.timestamp,
-        pubxaiAnalyticsVersion: pubxaiAnalyticsVersion,
-        prebidVersion: '$prebid.version$',
-        pubxId: initOptions.pubxId,
-      },
-    });
-    sendCache[pubxaiAnalyticsRequestUrl].push(data);
-    auctionCache[auctionId].sendAs.push(eventType);
-  });
-};
-
-const send = () => {
-  const toBlob = (d) => new Blob([JSON.stringify(d)], { type: 'text/json' });
-
-  Object.entries(sendCache).forEach(([requestUrl, events]) => {
-    let payloadStart = 0;
-
-    events.forEach((event, index, arr) => {
-      const payload = arr.slice(payloadStart, index + 2);
-      const payloadTooLarge = toBlob(payload).size > 65536;
-
-      if (payloadTooLarge || index + 1 === arr.length) {
-        sendBeacon(
-          requestUrl,
-          toBlob(payloadTooLarge ? payload.slice(0, -1) : payload)
-        );
-        payloadStart = index;
-      }
-    });
-
-    events.splice(0);
-  });
-};
-
-// register event listener to send logs when user leaves page
-if (document.visibilityState) {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      send();
-    }
-  });
 }
 
-// declare the analytics adapter
-var pubxaiAnalyticsAdapter = Object.assign(
-  adapter({
+var pubxaiAnalyticsAdapter = Object.assign(adapter(
+  {
     emptyUrl,
-    analyticsType,
-  }),
-  { track }
-);
+    analyticsType
+  }), {
+  track({ eventType, args }) {
+    if (typeof args !== 'undefined') {
+      if (eventType === EVENTS.BID_TIMEOUT) {
+        args.forEach(item => { mapBidResponse(item, 'timeout'); });
+      } else if (eventType === EVENTS.AUCTION_INIT) {
+        events.auctionInit = args;
+        events.floorDetail = {};
+        events.bids = [];
+        const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
+        if (typeof floorData !== 'undefined') {
+          Object.assign(events.floorDetail, floorData);
+        }
+        auctionTimestamp = args.timestamp;
+      } else if (eventType === EVENTS.BID_RESPONSE) {
+        mapBidResponse(args, 'response');
+      } else if (eventType === EVENTS.BID_WON) {
+        send({
+          winningBid: mapBidResponse(args, 'bidwon')
+        }, 'bidwon');
+      }
+    }
+    if (eventType === EVENTS.AUCTION_END) {
+      send(events, 'auctionEnd');
+    }
+  }
+});
 
-pubxaiAnalyticsAdapter.originEnableAnalytics =
-  pubxaiAnalyticsAdapter.enableAnalytics;
-pubxaiAnalyticsAdapter.enableAnalytics = (config) => {
+function mapBidResponse(bidResponse, status) {
+  if (typeof bidResponse !== 'undefined') {
+    let bid = {
+      adUnitCode: bidResponse.adUnitCode,
+      gptSlotCode: getGptSlotInfoForAdUnitCode(bidResponse.adUnitCode).gptSlot || null,
+      auctionId: bidResponse.auctionId,
+      bidderCode: bidResponse.bidder,
+      cpm: bidResponse.cpm,
+      creativeId: bidResponse.creativeId,
+      currency: bidResponse.currency,
+      floorData: bidResponse.floorData,
+      mediaType: bidResponse.mediaType,
+      netRevenue: bidResponse.netRevenue,
+      requestTimestamp: bidResponse.requestTimestamp,
+      responseTimestamp: bidResponse.responseTimestamp,
+      status: bidResponse.status,
+      statusMessage: bidResponse.statusMessage,
+      timeToRespond: bidResponse.timeToRespond,
+      transactionId: bidResponse.transactionId
+    };
+    if (status !== 'bidwon') {
+      Object.assign(bid, {
+        bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
+        renderStatus: status === 'timeout' ? 3 : 2,
+        sizes: parseSizesInput(bidResponse.size).toString(),
+      });
+      events.bids.push(bid);
+    } else {
+      Object.assign(bid, {
+        bidId: bidResponse.requestId,
+        floorProvider: events.floorDetail?.floorProvider || null,
+        floorFetchStatus: events.floorDetail?.fetchStatus || null,
+        floorLocation: events.floorDetail?.location || null,
+        floorModelVersion: events.floorDetail?.modelVersion || null,
+        floorSkipRate: events.floorDetail?.skipRate || 0,
+        isFloorSkipped: events.floorDetail?.skipped || false,
+        isWinningBid: true,
+        placementId: bidResponse.params ? deepAccess(bidResponse, 'params.0.placementId') : null,
+        renderedSize: bidResponse.size,
+        renderStatus: 4
+      });
+      return bid;
+    }
+  }
+}
+
+export function getDeviceType() {
+  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
+    return 'tablet';
+  }
+  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
+    return 'mobile';
+  }
+  return 'desktop';
+}
+
+export function getBrowser() {
+  if (/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)) return 'Chrome';
+  else if (navigator.userAgent.match('CriOS')) return 'Chrome';
+  else if (/Firefox/.test(navigator.userAgent)) return 'Firefox';
+  else if (/Edg/.test(navigator.userAgent)) return 'Microsoft Edge';
+  else if (/Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor)) return 'Safari';
+  else if (/Trident/.test(navigator.userAgent) || /MSIE/.test(navigator.userAgent)) return 'Internet Explorer';
+  else return 'Others';
+}
+
+export function getOS() {
+  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
+  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
+  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
+  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
+  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
+  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
+  return 'Others';
+}
+
+// add sampling rate
+pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
+  return (Math.floor((Math.random() * samplingRate + 1)) === parseInt(samplingRate));
+};
+
+function send(data, status) {
+  if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
+    let location = getWindowLocation();
+    const storage = getStorage();
+    data.initOptions = initOptions;
+    data.pageDetail = {};
+    Object.assign(data.pageDetail, {
+      host: location.host,
+      path: location.pathname,
+      search: location.search
+    });
+    if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
+      data.pageDetail.adUnits = data.auctionInit.adUnitCodes;
+      data.initOptions.auctionId = data.auctionInit.auctionId;
+      delete data.auctionInit;
+
+      data.pmcDetail = {};
+      Object.assign(data.pmcDetail, {
+        bidDensity: storage ? storage.getItem('pbx:dpbid') : null,
+        maxBid: storage ? storage.getItem('pbx:mxbid') : null,
+        auctionId: storage ? storage.getItem('pbx:aucid') : null,
+      });
+    }
+    data.deviceDetail = {};
+    Object.assign(data.deviceDetail, {
+      platform: navigator.platform,
+      deviceType: getDeviceType(),
+      deviceOS: getOS(),
+      browser: getBrowser()
+    });
+
+    let pubxaiAnalyticsRequestUrl = buildUrl({
+      protocol: 'https',
+      hostname: (initOptions && initOptions.hostName) || defaultHost,
+      pathname: status == 'bidwon' ? winningBidPath : auctionPath,
+      search: {
+        auctionTimestamp: auctionTimestamp,
+        pubxaiAnalyticsVersion: pubxaiAnalyticsVersion,
+        prebidVersion: getGlobal().version
+      }
+    });
+    if (status == 'bidwon') {
+      ajax(pubxaiAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/json' });
+    } else if (status == 'auctionEnd' && auctionCache.indexOf(data.initOptions.auctionId) === -1) {
+      ajax(pubxaiAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/json' });
+      auctionCache.push(data.initOptions.auctionId);
+    }
+  }
+}
+
+pubxaiAnalyticsAdapter.originEnableAnalytics = pubxaiAnalyticsAdapter.enableAnalytics;
+pubxaiAnalyticsAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   pubxaiAnalyticsAdapter.originEnableAnalytics(config);
 };
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pubxaiAnalyticsAdapter,
-  code: adapterCode,
+  code: 'pubxai'
 });
 
 export default pubxaiAnalyticsAdapter;

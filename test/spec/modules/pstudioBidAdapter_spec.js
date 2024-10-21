@@ -18,7 +18,7 @@ describe('PStudioAdapter', function () {
     bidder: 'pstudio',
     params: {
       pubid: '258c2a8d-d2ad-4c31-a2a5-e63001186456',
-      adtagid: 'aae1aabb-6699-4b5a-9c3f-9ed034b1932c',
+      floorPrice: 1.15,
     },
     adUnitCode: 'test-div-1',
     mediaTypes: {
@@ -38,7 +38,7 @@ describe('PStudioAdapter', function () {
     bidder: 'pstudio',
     params: {
       pubid: '258c2a8d-d2ad-4c31-a2a5-e63001186456',
-      adtagid: '34833639-f17c-40bc-9c4b-222b1b7459c7',
+      floorPrice: 1.15,
     },
     adUnitCode: 'test-div-1',
     mediaTypes: {
@@ -197,7 +197,7 @@ describe('PStudioAdapter', function () {
     it('should return false when publisher id not found', function () {
       const localBid = deepClone(bannerBid);
       delete localBid.params.pubid;
-      delete localBid.params.adtagid;
+      delete localBid.params.floorPrice;
 
       expect(spec.isBidRequestValid(localBid)).to.equal(false);
     });
@@ -232,7 +232,7 @@ describe('PStudioAdapter', function () {
 
     it('should properly map ids in request payload', function () {
       expect(bannerPayload.id).to.equal(bannerBid.bidId);
-      expect(bannerPayload.adtagid).to.equal(bannerBid.params.adtagid);
+      expect(bannerPayload.adtagid).to.equal(bannerBid.adUnitCode);
     });
 
     it('should properly map banner mediaType in request payload', function () {
@@ -266,7 +266,7 @@ describe('PStudioAdapter', function () {
 
     it('should properly set required bidder params in request payload', function () {
       expect(bannerPayload.pubid).to.equal(bannerBid.params.pubid);
-      expect(bannerPayload.adtagid).to.equal(bannerBid.params.adtagid);
+      expect(bannerPayload.floor_price).to.equal(bannerBid.params.floorPrice);
     });
 
     it('should omit optional bidder params or first-party data from bid request if they are not provided', function () {

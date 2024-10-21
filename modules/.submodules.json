@@ -6,6 +6,7 @@
       "adtelligentIdSystem",
       "adqueryIdSystem",
       "amxIdSystem",
+      "britepoolIdSystem",
       "connectIdSystem",
       "czechAdIdSystem",
       "criteoIdSystem",
@@ -36,6 +37,7 @@
       "novatiqIdSystem",
       "oneKeyIdSystem",
       "operaadsIdSystem",
+      "parrableIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
@@ -43,24 +45,22 @@
       "tapadIdSystem",
       "teadsIdSystem",
       "tncIdSystem",
-      "utiqIdSystem",
+      "utiqSystem",
       "utiqMtpIdSystem",
       "uid2IdSystem",
       "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
-      "zeotapIdPlusIdSystem",
-      "yandexIdSystem"
+      "zeotapIdPlusIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
-      "dfpAdpod"
+      "dfpAdServerVideo"
     ],
     "rtdModule": [
       "1plusXRtdProvider",
       "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
-      "adagioRtdProvider",
       "adlooxRtdProvider",
       "adnuntiusRtdProvider",
       "airgridRtdProvider",
@@ -80,7 +80,6 @@
       "greenbidsRtdProvider",
       "growthCodeRtdProvider",
       "hadronRtdProvider",
-      "humansecurityRtdProvider",
       "iasRtdProvider",
       "idWardRtdProvider",
       "imRtdProvider",
@@ -88,7 +87,6 @@
       "jwplayerRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
-      "mobianRtdProvider",
       "neuwoRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
@@ -99,10 +97,8 @@
       "reconciliationRtdProvider",
       "relevadRtdProvider",
       "sirdataRtdProvider",
-      "symitriDapRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider",
-      "wurflRtdProvider"
+      "weboramaRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
@@ -113,8 +109,7 @@
       "videojsVideoProvider"
     ],
     "paapi": [
-      "paapiForGpt",
-      "topLevelPaapi"
+      "fledgeForGpt"
     ]
   }
 }

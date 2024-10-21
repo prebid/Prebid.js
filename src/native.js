@@ -15,8 +15,6 @@ import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS} from './constants.js';
 import {NATIVE} from './mediaTypes.js';
-import {getRenderingData} from './adRendering.js';
-import {getCreativeRendererSource} from './creativeRenderers.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -436,24 +434,11 @@ export function getNativeRenderingData(bid, adUnit, keys) {
 }
 
 function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
-  const msg = {
+  return {
     message: 'assetResponse',
     adId: data.adId,
+    ...getNativeRenderingData(adObject, index.getAdUnit(adObject), keys)
   };
-  let renderData = getRenderingData(adObject).native;
-  if (renderData) {
-    // if we have native rendering data (set up by the nativeRendering module)
-    // include it in full ("all assets") together with the renderer.
-    // this is to allow PUC to use dynamic renderers without requiring changes in creative setup
-    msg.native = Object.assign({}, renderData);
-    msg.renderer = getCreativeRendererSource(adObject);
-    if (keys != null) {
-      renderData.assets = renderData.assets.filter(({key}) => keys.includes(key))
-    }
-  } else {
-    renderData = getNativeRenderingData(adObject, index.getAdUnit(adObject), keys);
-  }
-  return Object.assign(msg, renderData);
 }
 
 const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(NATIVE_KEYS).map(([k, v]) => [v, k]));

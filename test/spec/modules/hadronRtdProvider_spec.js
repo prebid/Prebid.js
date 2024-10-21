@@ -1,5 +1,7 @@
+// TODO: this and hadronRtdProvider_spec are a copy-paste of each other
+
 import {config} from 'src/config.js';
-import {HADRONID_LOCAL_NAME, RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, hadronSubmodule, storage} from 'modules/hadronRtdProvider.js';
+import {HALOID_LOCAL_NAME, RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, hadronSubmodule, storage} from 'modules/hadronRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
@@ -735,7 +737,7 @@ describe('hadronRtdProvider', function() {
         }
       };
 
-      getDataFromLocalStorageStub.withArgs(HADRONID_LOCAL_NAME).returns('testHadronId1');
+      getDataFromLocalStorageStub.withArgs(HALOID_LOCAL_NAME).returns('testHadronId1');
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
 
       let request = server.requests[0];

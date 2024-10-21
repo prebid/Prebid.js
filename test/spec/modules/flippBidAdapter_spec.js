@@ -99,14 +99,6 @@ describe('flippAdapter', function () {
                 'requestId': '237f4d1a293f99',
                 'cpm': 1.11,
                 'creative': 'Returned from server',
-              },
-              'contents': {
-                'data': {
-                  'customData': {
-                    'compactHeight': 600,
-                    'standardHeight': 1800
-                  }
-                }
               }
             }]
           },
@@ -122,7 +114,7 @@ describe('flippAdapter', function () {
           cpm: 1.11,
           netRevenue: true,
           width: 300,
-          height: 1800,
+          height: 600,
           creativeId: 262838368,
           ttl: 30,
           ad: 'Returned from server',

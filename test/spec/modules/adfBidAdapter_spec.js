@@ -321,14 +321,17 @@ describe('Adf adapter', function () {
       let validBidRequests = [{
         bidId: 'bidId',
         params: {},
-        userIdAsEids: [
-          { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
-          { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
-        ]
+        userIdAsEids: createEidsArray({
+          tdid: 'TTD_ID_FROM_USER_ID_MODULE',
+          pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
+        })
       }];
 
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data);
-      assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids);
+      assert.deepEqual(request.user.ext.eids, [
+        { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
+        { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
+      ]);
     });
 
     it('should send currency if defined', function () {
@@ -423,18 +426,6 @@ describe('Adf adapter', function () {
         let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
         for (let i = 0; i < 3; i++) {
           assert.equal(imps[i].tagid, validBidRequests[i].params.mid);
-        }
-      });
-
-      it('should add first party data', function () {
-        let validBidRequests = [
-          { bidId: 'bidId', params: { mid: 1000 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { data: { some: 'value' } } } },
-          { bidId: 'bidId2', params: { mid: 1001 }, mediaTypes: { video: {} }, ortb2Imp: { ext: { data: { some: 'value', another: 1 } } } },
-          { bidId: 'bidId3', params: { mid: 1002 }, mediaTypes: { video: {} }, ortb2Imp: { ext: {} } }
-        ];
-        let imps = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
-        for (let i = 0; i < 3; i++) {
-          assert.deepEqual(imps[i].ext.data, validBidRequests[i].ortb2Imp.ext.data);
         }
       });
 

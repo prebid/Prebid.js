@@ -1,8 +1,7 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {spec} from 'modules/iqxBidAdapter.js';
+import {spec, getBidFloor} from 'modules/iqxBidAdapter.js';
 import {deepClone} from 'src/utils';
-import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
 
 const ENDPOINT = 'https://pbjs.iqzonertb.live';
 
@@ -102,6 +101,7 @@ describe('iqxBidAdapter', () => {
       expect(request).to.have.property('consentString').and.to.equal('');
       expect(request).to.have.property('userEids').and.to.deep.equal([]);
       expect(request).to.have.property('usPrivacy').and.to.equal('');
+      expect(request).to.have.property('coppa').and.to.equal(0);
       expect(request).to.have.property('sizes').and.to.deep.equal(['300x250', '300x200']);
       expect(request).to.have.property('ext').and.to.deep.equal({});
       expect(request).to.have.property('env').and.to.deep.equal({
@@ -212,6 +212,14 @@ describe('iqxBidAdapter', () => {
       };
       const request = JSON.parse(spec.buildRequests([defaultRequest], bidderRequest).data)[0];
       expect(request).to.have.property('usPrivacy').and.equals('1YA-');
+    });
+
+    it('should build request with coppa 1', function () {
+      config.setConfig({
+        coppa: true
+      });
+      const request = JSON.parse(spec.buildRequests([defaultRequest], {}).data)[0];
+      expect(request).to.have.property('coppa').and.equals(1);
     });
 
     it('should build request with extended ids', function () {

@@ -1,6 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const DEFAULT_CURRENCY = 'USD';
 const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'battr', 'deals'];
@@ -57,6 +58,13 @@ export const spec = {
         url: 'https://bh.contextweb.com/visitormatch/prebid'
       }];
     }
+  },
+  transformBidParams: function(params) {
+    return convertTypes({
+      'cf': 'string',
+      'cp': 'number',
+      'ct': 'number'
+    }, params);
   }
 };
 

@@ -68,10 +68,6 @@ pbjs.setConfig({
                 bidder: 'undertone',
                 iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html',
                 expiry: 7 // Configurable expiry days
-            },{
-                bidder: 'vidazoo',
-                iframeURL: 'https://static.vidazoo.com/topics_api/topics_frame.html',
-                expiry: 7 // Configurable expiry days
             }]
         }
         ....

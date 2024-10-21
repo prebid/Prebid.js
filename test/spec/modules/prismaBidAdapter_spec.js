@@ -3,7 +3,7 @@ import {spec} from 'modules/prismaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { requestBidsHook } from 'modules/consentManagementTcf.js';
+import { requestBidsHook } from 'modules/consentManagement.js';
 
 describe('Prisma bid adapter tests', function () {
   const DISPLAY_BID_REQUEST = [{

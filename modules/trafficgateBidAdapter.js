@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {deepAccess, mergeDeep} from '../src/utils.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'trafficgate';
 const URL = 'https://[HOST].bc-plugin.com/prebidjs'
@@ -12,6 +13,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
+  transformBidParams,
   isBannerBid
 };
 
@@ -85,6 +87,14 @@ const converter = ortbConverter({
     }
   }
 });
+
+function transformBidParams(params, isOpenRtb) {
+  return convertTypes({
+    'customFloor': 'number',
+    'placementId': 'number',
+    'host': 'string'
+  }, params);
+}
 
 function isBidRequestValid(bidRequest) {
   const isValid = bidRequest.params.placementId && bidRequest.params.host;

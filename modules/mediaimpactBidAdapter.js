@@ -115,12 +115,12 @@ export const spec = {
       creativeId: ad.creativeId,
       netRevenue: ad.netRevenue,
       currency: ad.currency,
-      winNotification: ad.winNotification,
-      meta: {}
-    };
+      winNotification: ad.winNotification
+    }
 
-    if (ad.meta) {
-      bidObject.meta = ad.meta;
+    bidObject.meta = {};
+    if (ad.adomain && ad.adomain.length > 0) {
+      bidObject.meta.advertiserDomains = ad.adomain;
     }
 
     return bidObject;

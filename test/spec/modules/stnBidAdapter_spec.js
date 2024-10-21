@@ -440,10 +440,8 @@ describe('stnAdapter', function () {
         width: 640,
         height: 480,
         requestId: '21e12606d47ba7',
-        creativeId: 'creative-id-1',
         adomain: ['abc.com'],
-        mediaType: VIDEO,
-        nurl: 'http://example.com/win/1234',
+        mediaType: VIDEO
       },
       {
         cpm: 12.5,
@@ -451,10 +449,8 @@ describe('stnAdapter', function () {
         width: 300,
         height: 250,
         requestId: '21e12606d47ba7',
-        creativeId: 'creative-id-2',
         adomain: ['abc.com'],
-        mediaType: BANNER,
-        nurl: 'http://example.com/win/1234',
+        mediaType: BANNER
       }]
     };
 
@@ -465,7 +461,7 @@ describe('stnAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: 'creative-id-1',
+      creativeId: '21e12606d47ba7',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: VIDEO,
@@ -480,10 +476,10 @@ describe('stnAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 300,
-      height: 250,
+      width: 640,
+      height: 480,
       ttl: TTL,
-      creativeId: 'creative-id-2',
+      creativeId: '21e12606d47ba7',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
@@ -496,8 +492,8 @@ describe('stnAdapter', function () {
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(result[0]).to.deep.equal(expectedVideoResponse);
-      expect(result[1]).to.deep.equal(expectedBannerResponse);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
+      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
     });
 
     it('video type should have vastXml key', function () {

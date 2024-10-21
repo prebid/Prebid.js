@@ -34,7 +34,7 @@ const localPbjsRef = getGlobal()
  * Keep track of bid data by keys
  * @returns {Object} - Map of bid data that can be referenced by multiple keys
  */
-export function BidDataMap() {
+export const BidDataMap = () => {
   const referenceMap = {}
   const bids = []
 

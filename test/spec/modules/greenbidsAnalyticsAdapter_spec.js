@@ -7,7 +7,7 @@ import {
   generateUUID
 } from '../../../src/utils.js';
 import * as utils from 'src/utils.js';
-import { expect } from 'chai';
+import {expect} from 'chai';
 import sinon from 'sinon';
 
 const events = require('src/events');
@@ -65,17 +65,17 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       greenbidsAnalyticsAdapter.disableAnalytics();
     });
 
-    describe('#getCachedAuction()', function () {
-      const existing = { timeoutBids: [{}] };
+    describe('#getCachedAuction()', function() {
+      const existing = {timeoutBids: [{}]};
       greenbidsAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
 
-      it('should get the existing cached object if it exists', function () {
+      it('should get the existing cached object if it exists', function() {
         const result = greenbidsAnalyticsAdapter.getCachedAuction('test_auction_id');
 
         expect(result).to.equal(existing);
       });
 
-      it('should create a new object and store it in the cache on cache miss', function () {
+      it('should create a new object and store it in the cache on cache miss', function() {
         const result = greenbidsAnalyticsAdapter.getCachedAuction('no_such_id');
 
         expect(result).to.deep.include({
@@ -84,7 +84,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       });
     });
 
-    describe('when formatting JSON payload sent to backend', function () {
+    describe('when formatting JSON payload sent to backend', function() {
       const receivedBids = [
         {
           auctionId: auctionId,
@@ -106,8 +106,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           timeToRespond: 100,
           cpm: 0.08,
           currency: 'USD',
-          ad: '<html>fake ad2</html>',
-          params: {'placement ID': 12784}
+          ad: '<html>fake ad2</html>'
         },
         {
           auctionId: auctionId,
@@ -150,16 +149,16 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
         });
       }
 
-      describe('#createCommonMessage', function () {
-        it('should correctly serialize some common fields', function () {
+      describe('#createCommonMessage', function() {
+        it('should correctly serialize some common fields', function() {
           const message = greenbidsAnalyticsAdapter.createCommonMessage(auctionId);
 
           assertHavingRequiredMessageFields(message);
         });
       });
 
-      describe('#serializeBidResponse', function () {
-        it('should handle BID properly with timeout false and hasBid true', function () {
+      describe('#serializeBidResponse', function() {
+        it('should handle BID properly with timeout false and hasBid true', function() {
           const result = greenbidsAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID);
 
           expect(result).to.include({
@@ -169,7 +168,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           });
         });
 
-        it('should handle NO_BID properly and set hasBid to false', function () {
+        it('should handle NO_BID properly and set hasBid to false', function() {
           const result = greenbidsAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID);
 
           expect(result).to.include({
@@ -179,7 +178,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           });
         });
 
-        it('should handle TIMEOUT properly and set isTimeout to true', function () {
+        it('should handle TIMEOUT properly and set isTimeout to true', function() {
           const result = greenbidsAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT);
 
           expect(result).to.include({
@@ -190,8 +189,8 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
         });
       });
 
-      describe('#addBidResponseToMessage()', function () {
-        it('should add a bid response in the output message, grouped by adunit_id and bidder', function () {
+      describe('#addBidResponseToMessage()', function() {
+        it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
           const message = {
             adUnits: [
               {
@@ -209,15 +208,14 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                 bidder: 'greenbids',
                 isTimeout: false,
                 hasBid: false,
-                params: {}
               }
             ]
           });
         });
       });
 
-      describe('#createBidMessage()', function () {
-        it('should format auction message sent to the backend', function () {
+      describe('#createBidMessage()', function() {
+        it('should format auction message sent to the backend', function() {
           const args = {
             auctionId: auctionId,
             timestamp: 1234567890,
@@ -260,9 +258,10 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             noBids: noBids
           };
 
-          sinon.stub(greenbidsAnalyticsAdapter, 'getCachedAuction').returns({ timeoutBids: timeoutBids });
+          sinon.stub(greenbidsAnalyticsAdapter, 'getCachedAuction').returns({timeoutBids: timeoutBids});
           const result = greenbidsAnalyticsAdapter.createBidMessage(args, timeoutBids);
           greenbidsAnalyticsAdapter.getCachedAuction.restore();
+
           assertHavingRequiredMessageFields(result);
           expect(result).to.deep.include({
             auctionElapsed: 100,
@@ -279,18 +278,12 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                   {
                     bidder: 'greenbids',
                     isTimeout: false,
-                    hasBid: true,
-                    params: {},
-                    cpm: 0.1,
-                    currency: 'USD',
+                    hasBid: true
                   },
                   {
                     bidder: 'greenbidsx',
                     isTimeout: false,
-                    hasBid: true,
-                    params: { 'placement ID': 12784 },
-                    cpm: 0.08,
-                    currency: 'USD',
+                    hasBid: true
                   }
                 ]
               },
@@ -319,10 +312,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                   {
                     bidder: 'greenbids',
                     isTimeout: true,
-                    hasBid: true,
-                    cpm: 0.09,
-                    currency: 'USD',
-                    params: {}
+                    hasBid: true
                   }
                 ]
               }
@@ -331,8 +321,8 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
         });
       });
 
-      describe('#handleBidTimeout()', function () {
-        it('should cached the timeout bid as BID_TIMEOUT event was triggered', function () {
+      describe('#handleBidTimeout()', function() {
+        it('should cached the timeout bid as BID_TIMEOUT event was triggered', function() {
           greenbidsAnalyticsAdapter.cachedAuctions['test_timeout_auction_id'] = { 'timeoutBids': [] };
           const args = [{
             auctionId: 'test_timeout_auction_id',
@@ -379,28 +369,28 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       events.getEvents.restore();
     });
 
-    it('should call handleAuctionInit as AUCTION_INIT trigger event', function () {
+    it('should call handleAuctionInit as AUCTION_INIT trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleAuctionInit');
-      events.emit(constants.EVENTS.AUCTION_INIT, { auctionId: 'auctionId' });
+      events.emit(constants.EVENTS.AUCTION_INIT, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleAuctionInit, 1);
       greenbidsAnalyticsAdapter.handleAuctionInit.restore();
     });
 
-    it('should call handleBidTimeout as BID_TIMEOUT trigger event', function () {
+    it('should call handleBidTimeout as BID_TIMEOUT trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleBidTimeout');
-      events.emit(constants.EVENTS.BID_TIMEOUT, { auctionId: 'auctionId' });
+      events.emit(constants.EVENTS.BID_TIMEOUT, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleBidTimeout, 1);
       greenbidsAnalyticsAdapter.handleBidTimeout.restore();
     });
 
-    it('should call handleAuctionEnd as AUCTION_END trigger event', function () {
+    it('should call handleAuctionEnd as AUCTION_END trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleAuctionEnd');
-      events.emit(constants.EVENTS.AUCTION_END, { auctionId: 'auctionId' });
+      events.emit(constants.EVENTS.AUCTION_END, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleAuctionEnd, 1);
       greenbidsAnalyticsAdapter.handleAuctionEnd.restore();
     });
 
-    it('should call handleBillable as BILLABLE_EVENT trigger event', function () {
+    it('should call handleBillable as BILLABLE_EVENT trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleBillable');
       events.emit(constants.EVENTS.BILLABLE_EVENT, {
         type: 'auction',
@@ -413,34 +403,34 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
     });
   });
 
-  describe('isSampled', function () {
-    it('should return true for invalid sampling rates', function () {
+  describe('isSampled', function() {
+    it('should return true for invalid sampling rates', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', -1, 0.0)).to.be.true;
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 1.2, 0.0)).to.be.true;
     });
 
-    it('should return determinist falsevalue for valid sampling rate given the predifined id and rate', function () {
+    it('should return determinist falsevalue for valid sampling rate given the predifined id and rate', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.false;
     });
 
-    it('should return determinist true value for valid sampling rate given the predifined id and rate', function () {
+    it('should return determinist true value for valid sampling rate given the predifined id and rate', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.9999, 0.0)).to.be.true;
     });
 
-    it('should return determinist true value for valid sampling rate given the predifined id and rate when we split to non exploration first', function () {
+    it('should return determinist true value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.9999, 0.0, 1.0)).to.be.true;
     });
 
-    it('should return determinist false value for valid sampling rate given the predifined id and rate when we split to non exploration first', function () {
+    it('should return determinist false value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0, 1.0)).to.be.false;
     });
   });
 
-  describe('isSampled when analytic isforced', function () {
+  describe('isSampled when analytic isforced', function() {
     before(() => {
       sinon.stub(utils, 'getParameterByName').callsFake(par => par === 'greenbids_force_sampling' ? true : undefined);
     });
-    it('should return determinist true when sampling flag activated', function () {
+    it('should return determinist true when sampling flag activated', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.true;
     });
     after(() => {

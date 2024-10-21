@@ -19,7 +19,7 @@ import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.2.1';
+const ADAPTER_VERSION = '1.2.0';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -270,7 +270,6 @@ function outstreamRender(bid) {
       height: bid.height,
       vastXml: bid.vastXml,
       mediaType: bid.mediaType,
-      placementId: bid.placementId,
     });
   });
 }

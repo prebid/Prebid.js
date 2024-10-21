@@ -417,7 +417,6 @@ function populateVideoParams(params, bid) {
   const maxDuration = deepAccess(bid, `mediaTypes.video.maxduration`);
   const minDuration = deepAccess(bid, `mediaTypes.video.minduration`);
   const placement = deepAccess(bid, `mediaTypes.video.placement`);
-  const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
   const playbackMethod = getPlaybackMethod(bid);
   const skip = deepAccess(bid, `mediaTypes.video.skip`);
 
@@ -436,9 +435,7 @@ function populateVideoParams(params, bid) {
   if (placement) {
     params.placement = placement;
   }
-  if (plcmt) {
-    params.plcmt = plcmt;
-  }
+
   if (playbackMethod) {
     params.playbackMethod = playbackMethod;
   }

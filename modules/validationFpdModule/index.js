@@ -13,8 +13,8 @@ let optout;
 
 /**
  * Check if data passed is empty
- * @param {*} data to test against
- * @returns {Boolean} is data empty
+ * @param {*} value to test against
+ * @returns {Boolean} is value empty
  */
 function isEmptyData(data) {
   let check = true;
@@ -30,10 +30,10 @@ function isEmptyData(data) {
 
 /**
  * Check if required keys exist in data object
- * @param {Object} obj data object
- * @param {Array} required array of required keys
- * @param {String} parent object path (for printing warning)
- * @param {Number} i index of object value in the data array (for printing warning)
+ * @param {Object} data object
+ * @param {Array} array of required keys
+ * @param {String} object path (for printing warning)
+ * @param {Number} index of object value in the data array (for printing warning)
  * @returns {Boolean} is requirements fulfilled
  */
 function getRequiredData(obj, required, parent, i) {
@@ -51,8 +51,8 @@ function getRequiredData(obj, required, parent, i) {
 
 /**
  * Check if data type is valid
- * @param {*} data value to test against
- * @param {Object} mapping object containing type definition and if should be array bool
+ * @param {*} value to test against
+ * @param {Object} object containing type definition and if should be array bool
  * @returns {Boolean} is type fulfilled
  */
 function typeValidation(data, mapping) {
@@ -77,10 +77,10 @@ function typeValidation(data, mapping) {
 
 /**
  * Validates ortb2 data arrays and filters out invalid data
- * @param {Array} arr ortb2 data array
- * @param {Object} child object defining child type and if array
- * @param {String} path config path of data array
- * @param {String} parent parent path for logging warnings
+ * @param {Array} ortb2 data array
+ * @param {Object} object defining child type and if array
+ * @param {String} config path of data array
+ * @param {String} parent path for logging warnings
  * @returns {Array} validated/filtered data
  */
 export function filterArrayData(arr, child, path, parent) {
@@ -136,9 +136,9 @@ export function filterArrayData(arr, child, path, parent) {
 
 /**
  * Validates ortb2 object and filters out invalid data
- * @param {Object} fpd ortb2 object
- * @param {String} path config path of data array
- * @param {String} parent parent path for logging warnings
+ * @param {Object} ortb2 object
+ * @param {String} config path of data array
+ * @param {String} parent path for logging warnings
  * @returns {Object} validated/filtered data
  */
 export function validateFpd(fpd, path = '', parent = '') {
@@ -190,8 +190,6 @@ export function validateFpd(fpd, path = '', parent = '') {
 
 /**
  * Run validation on global and bidder config data for ortb2
- * @param {Object} data global and bidder config data
- * @returns {Object} validated data
  */
 function runValidations(data) {
   return {
@@ -202,9 +200,6 @@ function runValidations(data) {
 
 /**
  * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
- * @param {Object} fpdConf configuration object
- * @param {Object} data ortb2 data
- * @returns {Object} processed data
  */
 export function processFpd(fpdConf, data) {
   // Checks for existsnece of pubcid optout cookie/storage
@@ -215,11 +210,11 @@ export function processFpd(fpdConf, data) {
   return (!fpdConf.skipValidations) ? runValidations(data) : data;
 }
 
-/** @type {{name: string, queue: number, processFpd: function}} */
+/** @type {firstPartyDataSubmodule} */
 export const validationSubmodule = {
   name: 'validation',
   queue: 1,
   processFpd
 }
 
-submodule('firstPartyData', validationSubmodule);
+submodule('firstPartyData', validationSubmodule)

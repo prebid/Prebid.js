@@ -7,7 +7,6 @@ import {
   ACTIVITY_TRANSMIT_TID,
   ACTIVITY_TRANSMIT_UFPD
 } from './activities.js';
-import { scrubIPv4, scrubIPv6 } from '../utils/ipUtils.js';
 
 export const ORTB_UFPD_PATHS = [
   'data',
@@ -22,8 +21,6 @@ export const ORTB_UFPD_PATHS = [
 ].map(f => `user.${f}`).concat('device.ext.cdep');
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
 export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
-export const ORTB_IPV4_PATHS = ['device.ip']
-export const ORTB_IPV6_PATHS = ['device.ipv6']
 
 /**
  * @typedef TransformationRuleDef
@@ -158,22 +155,6 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
       get(val) {
         return Math.round((val + Number.EPSILON) * 100) / 100;
-      }
-    },
-    {
-      name: ACTIVITY_TRANSMIT_PRECISE_GEO,
-      paths: ORTB_IPV4_PATHS,
-      applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
-      get(val) {
-        return scrubIPv4(val);
-      }
-    },
-    {
-      name: ACTIVITY_TRANSMIT_PRECISE_GEO,
-      paths: ORTB_IPV6_PATHS,
-      applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
-      get(val) {
-        return scrubIPv6(val);
       }
     },
     {

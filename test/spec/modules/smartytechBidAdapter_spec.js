@@ -204,11 +204,7 @@ function mockResponseData(requestData) {
       creativeId: `creative-id-${index}`,
       cpm: Math.floor(Math.random() * 100),
       currency: `UAH-${rndIndex}`,
-      mediaType: mediaType,
-      meta: {
-        primaryCatId: 'IAB2-2',
-        secondaryCatIds: ['IAB2-14', 'IAB2-6']
-      }
+      mediaType: mediaType
     };
   });
   return {

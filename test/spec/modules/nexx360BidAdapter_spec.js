@@ -3,7 +3,6 @@ import {
   spec, storage, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
 import { sandbox } from 'sinon';
-import { getAmxId } from '../../../modules/nexx360BidAdapter';
 
 const instreamResponse = {
   'id': '2be64380-ba0c-405a-ab53-51f51c7bde51',
@@ -221,7 +220,7 @@ describe('Nexx360 bid adapter tests', function () {
     after(function () {
       sandbox.restore()
     });
-  });
+  })
 
   describe('getNexx360LocalStorage enabled', function () {
     before(function () {
@@ -236,37 +235,7 @@ describe('Nexx360 bid adapter tests', function () {
     after(function () {
       sandbox.restore()
     });
-  });
-
-  describe('getAmxId() with localStorage enabled and data not set', function() {
-    before(function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => null);
-    });
-    it('We test if we get the amxId', function() {
-      const output = getAmxId();
-      expect(output).to.be.eql(false);
-    });
-    after(function () {
-      sandbox.restore()
-    });
-  });
-
-  describe('getAmxId() with localStorage enabled and data set', function() {
-    before(function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => 'abcdef');
-    });
-    it('We test if we get the amxId', function() {
-      const output = getAmxId();
-      expect(output).to.be.eql('abcdef');
-    });
-    after(function () {
-      sandbox.restore()
-    });
-  });
+  })
 
   describe('buildRequests()', function() {
     before(function () {
@@ -405,7 +374,7 @@ describe('Nexx360 bid adapter tests', function () {
         expect(requestContent.imp[1].tagid).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.adUnitCode).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.divId).to.be.eql('div-2-abcd');
-        expect(requestContent.ext.bidderVersion).to.be.eql('4.2');
+        expect(requestContent.ext.bidderVersion).to.be.eql('4.0');
         expect(requestContent.ext.source).to.be.eql('prebid.js');
       });
 

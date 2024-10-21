@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {deepSetValue} from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {deepAccess} from 'src/utils';
 // load modules that register ORTB processors
@@ -9,7 +8,7 @@ import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
-import 'modules/consentManagementTcf.js';
+import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.js'
@@ -441,13 +440,6 @@ describe('Conversant adapter tests', function() {
     expect(payload.site.content).to.have.property('title');
   });
 
-  it('Verify currency', () => {
-    const bidderRequest = { timeout: 9999, ortb2: {cur: ['EUR']} };
-    const request = spec.buildRequests(bidRequests, bidderRequest);
-    const payload = request.data;
-    expect(payload.cur).deep.equal(['USD']);
-  })
-
   it('Verify supply chain data', () => {
     const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
@@ -473,7 +465,7 @@ describe('Conversant adapter tests', function() {
 
     before(() => {
       request = spec.buildRequests(bidRequests, {});
-      response = spec.interpretResponse(bidResponses, request).bids;
+      response = spec.interpretResponse(bidResponses, request);
     });
 
     it('Banner', function() {
@@ -560,10 +552,16 @@ describe('Conversant adapter tests', function() {
       // clone bidRequests
       let requests = utils.deepClone(bidRequests);
 
+      const uid = {pubcid: '112233', idl_env: '334455'};
       const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
 
+      // add pubcid to every entry
+      requests.forEach((unit) => {
+        Object.assign(unit, {userId: uid});
+        Object.assign(unit, {userIdAsEids: eidArray});
+      });
       //  construct http post payload
-      const payload = spec.buildRequests(requests, {ortb2: {user: {ext: {eids: eidArray}}}}).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
         {source: 'pubcid.org', uids: [{id: '112233', atype: 1}]},
         {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}

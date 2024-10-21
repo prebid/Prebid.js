@@ -12,8 +12,6 @@
 import {ajaxBuilder} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
-import {logError, logWarn} from './utils.js';
-import {addBidToAuction} from './auction.js';
 
 /**
  * Might be useful to be configurable in the future
@@ -41,7 +39,7 @@ const ttlBufferInSeconds = 15;
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param {string} uri The URI where the VAST content can be found.
- * @param {(string|string[])} impTrackerURLs An impression tracker URL for the delivery of the video ad
+ * @param {string} impUrl An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
 function wrapURI(uri, impTrackerURLs) {
@@ -67,9 +65,7 @@ function wrapURI(uri, impTrackerURLs) {
  * the bid can't be converted cleanly.
  *
  * @param {CacheableBid} bid
- * @param {Object} [options] - Options object.
- * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`.
- * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
+ * @param index
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
@@ -161,73 +157,3 @@ export function store(bids, done, getAjax = ajaxBuilder) {
 export function getCacheUrl(id) {
   return `${config.getConfig('cache.url')}?uuid=${id}`;
 }
-
-export const _internal = {
-  store
-}
-
-export function storeBatch(batch) {
-  const bids = batch.map(entry => entry.bidResponse)
-  function err(msg) {
-    logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids)
-  }
-  _internal.store(bids, function (error, cacheIds) {
-    if (error) {
-      err(error)
-    } else if (batch.length !== cacheIds.length) {
-      logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`)
-    } else {
-      cacheIds.forEach((cacheId, i) => {
-        const {auctionInstance, bidResponse, afterBidAdded} = batch[i];
-        if (cacheId.uuid === '') {
-          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
-        } else {
-          bidResponse.videoCacheKey = cacheId.uuid;
-          if (!bidResponse.vastUrl) {
-            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
-          }
-          addBidToAuction(auctionInstance, bidResponse);
-          afterBidAdded();
-        }
-      });
-    }
-  });
-};
-
-let batchSize, batchTimeout;
-if (FEATURES.VIDEO) {
-  config.getConfig('cache', (cacheConfig) => {
-    batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
-      ? cacheConfig.cache.batchSize
-      : 1;
-    batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
-      ? cacheConfig.cache.batchTimeout
-      : 0;
-  });
-}
-
-export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
-  let batches = [[]];
-  let debouncing = false;
-  const noTimeout = cb => cb();
-
-  return function (auctionInstance, bidResponse, afterBidAdded) {
-    const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
-    if (batches[batches.length - 1].length >= batchSize) {
-      batches.push([]);
-    }
-
-    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
-
-    if (!debouncing) {
-      debouncing = true;
-      batchFunc(() => {
-        batches.forEach(cache);
-        batches = [[]];
-        debouncing = false;
-      }, batchTimeout);
-    }
-  };
-};
-
-export const batchAndStore = batchingCache();

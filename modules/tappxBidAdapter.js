@@ -6,6 +6,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseDomain } from '../src/refererDetection.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -332,8 +333,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
     banner.api = api;
 
-    const formatArr = bannerMediaType.sizes.map(size => ({w: size[0], h: size[1]}))
-    banner.format = Object.assign({}, formatArr);
+    let format = {};
+    format[0] = {};
+    format[0].w = w;
+    format[0].h = h;
+    banner.format = format;
 
     imp.banner = banner;
   }
@@ -494,7 +498,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = 'v' + '$prebid.version$';
+  let pbjsv = (getGlobal().version !== null) ? encodeURIComponent(getGlobal().version) : -1;
 
   return {
     method: 'POST',

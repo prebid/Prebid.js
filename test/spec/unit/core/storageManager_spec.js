@@ -26,15 +26,15 @@ describe('storage manager', function() {
     hook.ready();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     resetData();
   });
 
-  afterEach(function () {
+  afterEach(function() {
     config.resetConfig();
   })
 
-  it('should allow to set cookie for core modules without checking gdpr enforcements', function () {
+  it('should allow to set cookie for core modules without checking gdpr enforcements', function() {
     const coreStorage = getCoreStorageManager();
     let date = new Date();
     date.setTime(date.getTime() + (24 * 60 * 60 * 1000));
@@ -43,7 +43,7 @@ describe('storage manager', function() {
     expect(coreStorage.getCookie('hello')).to.equal('world');
   });
 
-  it('should add done callbacks to storageCallbacks array', function () {
+  it('should add done callbacks to storageCallbacks array', function() {
     let noop = sinon.spy();
     const coreStorage = newStorageManager();
 
@@ -55,15 +55,11 @@ describe('storage manager', function() {
     coreStorage.getDataFromLocalStorage('foo', noop);
     coreStorage.removeDataFromLocalStorage('foo', noop);
     coreStorage.hasLocalStorage(noop);
-    coreStorage.setDataInSessionStorage('foo', 'bar', noop);
-    coreStorage.getDataFromSessionStorage('foo', noop);
-    coreStorage.removeDataFromSessionStorage('foo', noop);
-    coreStorage.hasSessionStorage(noop);
 
-    expect(storageCallbacks.length).to.equal(12);
+    expect(storageCallbacks.length).to.equal(8);
   });
 
-  it('should allow bidder to access device if gdpr enforcement module is not included', function () {
+  it('should allow bidder to access device if gdpr enforcement module is not included', function() {
     let deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
     const storage = newStorageManager();
     storage.setCookie('foo1', 'baz1');
@@ -91,16 +87,12 @@ describe('storage manager', function() {
       }));
     });
 
-    ['Local', 'Session'].forEach(type => {
-      describe(`${type} storage`, () => {
-        it('should deny access if activity is denied', () => {
-          isAllowed.returns(false);
-          const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
-          mgr[`setDataIn${type}Storage`]('testKey', 'val');
-          expect(mgr[`getDataFrom${type}Storage`]('testKey')).to.not.exist;
-        });
-      })
-    })
+    it('should deny access if activity is denied', () => {
+      isAllowed.returns(false);
+      const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
+      mgr.setDataInLocalStorage('testKey', 'val');
+      expect(mgr.getDataFromLocalStorage('testKey')).to.not.exist;
+    });
 
     it('should use bidder aliases when possible', () => {
       adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () => ({})}, 'mockBidder');
@@ -111,66 +103,57 @@ describe('storage manager', function() {
         [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockAlias'
       }))
     })
-  });
+  })
 
-  ['localStorage', 'sessionStorage'].forEach(storage => {
-    const Storage = storage.charAt(0).toUpperCase() + storage.substring(1);
+  describe('localstorage forbidden access in 3rd-party context', function() {
+    let errorLogSpy;
+    let originalLocalStorage;
+    const localStorageMock = { get: () => { throw Error } };
 
-    describe(`${storage} forbidden access in 3rd-party context`, function () {
-      let errorLogSpy;
-      let originalStorage;
-      const storageMock = {
-        get: () => {
-          throw Error
-        }
-      };
-
-      beforeEach(function () {
-        originalStorage = window[storage];
-        Object.defineProperty(window, storage, storageMock);
-        errorLogSpy = sinon.spy(utils, 'logError');
-      });
-
-      afterEach(function () {
-        Object.defineProperty(window, storage, {get: () => originalStorage});
-        errorLogSpy.restore();
-      })
-
-      it('should not throw if storage is not accessible when setting/getting/removing', function () {
-        const coreStorage = newStorageManager();
-
-        coreStorage[`setDataIn${Storage}`]('key', 'value');
-        const val = coreStorage[`getDataFrom${Storage}`]('key');
-        coreStorage[`removeDataFrom${Storage}`]('key');
-
-        expect(val).to.be.null;
-        sinon.assert.calledThrice(errorLogSpy);
-      });
+    beforeEach(function() {
+      originalLocalStorage = window.localStorage;
+      Object.defineProperty(window, 'localStorage', localStorageMock);
+      errorLogSpy = sinon.spy(utils, 'logError');
     });
-  });
 
-  ['localStorage', 'sessionStorage'].forEach(storage => {
-    describe(`${storage} is enabled`, function () {
-      let store;
-      beforeEach(function () {
-        store = window[storage];
-        store.clear();
-      });
+    afterEach(function() {
+      Object.defineProperty(window, 'localStorage', { get: () => originalLocalStorage });
+      errorLogSpy.restore();
+    })
 
-      afterEach(function () {
-        store.clear();
-      })
+    it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
+      const coreStorage = newStorageManager();
 
-      it('should remove side-effect after checking', function () {
-        const storageMgr = newStorageManager();
+      coreStorage.setDataInLocalStorage('key', 'value');
+      const val = coreStorage.getDataFromLocalStorage('key');
+      coreStorage.removeDataFromLocalStorage('key');
 
-        store.setItem('unrelated', 'dummy');
-        const val = storageMgr[`${storage}IsEnabled`]();
+      expect(val).to.be.null;
+      sinon.assert.calledThrice(errorLogSpy);
+    })
+  })
 
-        expect(val).to.be.true;
-        expect(store.length).to.be.eq(1);
-        expect(store.getItem('unrelated')).to.be.eq('dummy');
-      });
+  describe('localstorage is enabled', function() {
+    let localStorage;
+
+    beforeEach(function() {
+      localStorage = window.localStorage;
+      localStorage.clear();
+    });
+
+    afterEach(function() {
+      localStorage.clear();
+    })
+
+    it('should remove side-effect after checking', function () {
+      const storage = newStorageManager();
+
+      localStorage.setItem('unrelated', 'dummy');
+      const val = storage.localStorageIsEnabled();
+
+      expect(val).to.be.true;
+      expect(localStorage.length).to.be.eq(1);
+      expect(localStorage.getItem('unrelated')).to.be.eq('dummy');
     });
   });
 

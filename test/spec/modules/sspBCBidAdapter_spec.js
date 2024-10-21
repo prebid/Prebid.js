@@ -303,7 +303,7 @@ describe('SSPBC adapter', function () {
             'price': 1,
             'adid': 'lxHWkB7OnZeso3QiN1N4',
             'nurl': '',
-            'adm': '<html>AD_CODE1</html>',
+            'adm': 'AD CODE 1',
             'adomain': ['adomain.pl'],
             'cid': 'BZ4gAg21T5nNtxlUCDSW',
             'crid': 'lxHWkB7OnZeso3QiN1N4',
@@ -319,7 +319,7 @@ describe('SSPBC adapter', function () {
             'siteid': '8816',
             'slotid': '005',
             'price': 2,
-            'adm': '<html>AD_CODE2</html>',
+            'adm': 'AD CODE 2',
             'cid': '57744',
             'crid': '858252',
             'w': 300,
@@ -343,64 +343,7 @@ describe('SSPBC adapter', function () {
             'price': 1,
             'adid': 'lxHWkB7OnZeso3QiN1N4',
             'nurl': '',
-            'adm': '<html>AD_CODE</html>',
-            'adomain': ['adomain.pl'],
-            'cid': 'BZ4gAg21T5nNtxlUCDSW',
-            'crid': 'lxHWkB7OnZeso3QiN1N4',
-            'w': 728,
-            'h': 90,
-          }],
-          'seat': 'dsp1',
-          'group': 0
-        }],
-        'cur': 'PLN'
-      }
-    };
-
-    const serverResponsePaapi = {
-      'body': {
-        'id': bidderRequestId,
-        'seatbid': [{
-          'bid': [{
-            'id': '3347324c-6889-46d2-a800-ae78a5214c06',
-            'impid': '003',
-            'siteid': '8816',
-            'slotid': '003',
-            'price': 1,
-            'adid': 'lxHWkB7OnZeso3QiN1N4',
-            'nurl': '',
-            'adm': '<html>AD_CODE</html>',
-            'adomain': ['adomain.pl'],
-            'cid': 'BZ4gAg21T5nNtxlUCDSW',
-            'crid': 'lxHWkB7OnZeso3QiN1N4',
-            'w': 728,
-            'h': 90,
-          }],
-          'seat': 'dsp1',
-          'group': 0
-        }],
-        'cur': 'PLN',
-        'ext': {
-          'paapi': [
-            { 'config_data': 'config value' },
-          ]
-        },
-      }
-    };
-
-    const serverResponseIncorrect = {
-      'body': {
-        'id': bidderRequestId,
-        'seatbid': [{
-          'bid': [{
-            'id': '3347324c-6889-46d2-a800-ae78a5214c06',
-            'impid': '003',
-            'siteid': '8816',
-            'slotid': '003',
-            'price': 1,
-            'adid': 'lxHWkB7OnZeso3QiN1N4',
-            'nurl': '',
-            'adm': 'THIS_IS_NOT_AN_AD',
+            'adm': 'AD CODE 1',
             'adomain': ['adomain.pl'],
             'cid': 'BZ4gAg21T5nNtxlUCDSW',
             'crid': 'lxHWkB7OnZeso3QiN1N4',
@@ -423,7 +366,7 @@ describe('SSPBC adapter', function () {
             'price': 1,
             'adid': 'lxHWkB7OnZeso3QiN1N4',
             'nurl': '',
-            'adm': '<html>AD_CODE</html>',
+            'adm': 'AD CODE 1',
             'adomain': ['adomain.pl'],
             'cid': 'BZ4gAg21T5nNtxlUCDSW',
             'crid': 'lxHWkB7OnZeso3QiN1N4',
@@ -515,8 +458,6 @@ describe('SSPBC adapter', function () {
       serverResponse,
       serverResponseOneCode,
       serverResponseSingle,
-      serverResponseIncorrect,
-      serverResponsePaapi,
       serverResponseVideo,
       serverResponseNative,
       emptyResponse
@@ -652,7 +593,7 @@ describe('SSPBC adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseIncorrect, serverResponsePaapi, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
+    const { bid_OneCode, bid_video, bid_native, bids, emptyResponse, serverResponse, serverResponseOneCode, serverResponseSingle, serverResponseVideo, serverResponseNative, bidRequest, bidRequestOneCode, bidRequestSingle, bidRequestVideo, bidRequestNative } = prepareTestData();
     const request = spec.buildRequests(bids, bidRequest);
     const requestSingle = spec.buildRequests([bids[0]], bidRequestSingle);
     const requestOneCode = spec.buildRequests([bid_OneCode], bidRequestOneCode);
@@ -691,11 +632,15 @@ describe('SSPBC adapter', function () {
       expect(resultPartial.length).to.equal(1);
     });
 
-    it('should not alter HTML from response', function () {
+    it('banner ad code should contain required variables', function () {
       let resultSingle = spec.interpretResponse(serverResponseSingle, requestSingle);
       let adcode = resultSingle[0].ad;
-
-      expect(adcode).to.be.equal(serverResponseSingle.body.seatbid[0].bid[0].adm);
+      expect(adcode).to.be.a('string');
+      expect(adcode).to.contain('window.rekid');
+      expect(adcode).to.contain('window.mcad');
+      expect(adcode).to.contain('window.tcString');
+      expect(adcode).to.contain('window.page');
+      expect(adcode).to.contain('window.requestPVID');
     });
 
     it('should create a correct video bid', function () {
@@ -720,19 +665,6 @@ describe('SSPBC adapter', function () {
       let nativeBid = resultNative[0];
       expect(nativeBid).to.have.keys('cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native', 'vurls');
       expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers', 'clickTrackers');
-    });
-
-    it('should reject responses that are not HTML, VATS/VPAID or native', function () {
-      let resultIncorrect = spec.interpretResponse(serverResponseIncorrect, requestSingle);
-
-      expect(resultIncorrect.length).to.equal(0);
-    });
-
-    it('should response with fledge auction configs', function () {
-      const { bids, fledgeAuctionConfigs } = spec.interpretResponse(serverResponsePaapi, requestSingle);
-
-      expect(bids.length).to.equal(1);
-      expect(fledgeAuctionConfigs.length).to.equal(1);
     });
   });
 
@@ -764,25 +696,6 @@ describe('SSPBC adapter', function () {
 
       let notificationPayload = spec.onBidWon(bid);
       expect(notificationPayload).to.have.property('event').that.equals('bidWon');
-      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
-      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
-      expect(notificationPayload).to.have.property('siteId').that.is.an('array');
-      expect(notificationPayload).to.have.property('slotId').that.is.an('array');
-    });
-  });
-
-  describe('onBidBillable', function () {
-    it('should generate no notification if bid is undefined', function () {
-      let notificationPayload = spec.onBidBillable();
-      expect(notificationPayload).to.be.undefined;
-    });
-
-    it('should generate notification with event name and request/adUnit data, if correct bid is provided. Should also contain site/slot data as arrays.', function () {
-      const { bids } = prepareTestData();
-      let bid = bids[0];
-
-      let notificationPayload = spec.onBidBillable(bid);
-      expect(notificationPayload).to.have.property('event').that.equals('bidBillable');
       expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
       expect(notificationPayload).to.have.property('siteId').that.is.an('array');

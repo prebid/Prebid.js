@@ -5,6 +5,8 @@ import {
   logMessage,
   triggerPixel,
 } from '../src/utils.js';
+import * as events from '../src/events.js';
+import { EVENTS } from '../src/constants.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -16,6 +18,8 @@ const COOKIE_SYNC_ENDPOINT = 'https://null.holid.io/sync.html'
 const TIME_TO_LIVE = 300
 const TMAX = 500
 let wurlMap = {}
+
+events.on(EVENTS.BID_WON, bidWonHandler)
 
 export const spec = {
   code: BIDDER_CODE,
@@ -116,15 +120,6 @@ export const spec = {
 
     return syncs
   },
-
-  onBidWon(bid) {
-    const wurl = getWurl(bid.requestId)
-    if (wurl) {
-      logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`)
-      triggerPixel(wurl)
-      removeWurl(bid.requestId)
-    }
-  }
 }
 
 function getImp(bid) {
@@ -178,6 +173,15 @@ function removeWurl(requestId) {
 function getWurl(requestId) {
   if (isStr(requestId)) {
     return wurlMap[requestId]
+  }
+}
+
+function bidWonHandler(bid) {
+  const wurl = getWurl(bid.requestId)
+  if (wurl) {
+    logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`)
+    triggerPixel(wurl)
+    removeWurl(bid.requestId)
   }
 }
 

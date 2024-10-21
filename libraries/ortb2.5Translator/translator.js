@@ -1,12 +1,10 @@
 import {deepAccess, deepSetValue, logError} from '../../src/utils.js';
 
 export const EXT_PROMOTIONS = [
-  'device.sua',
   'source.schain',
   'regs.gdpr',
   'regs.us_privacy',
   'regs.gpp',
-  'regs.gpp_sid',
   'user.consent',
   'user.eids'
 ];

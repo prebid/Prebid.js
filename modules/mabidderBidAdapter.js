@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'mabidder';
@@ -38,7 +39,7 @@ export const spec = {
       url: baseUrl,
       method: 'POST',
       data: {
-        v: 'v' + '$prebid.version$',
+        v: getGlobal().version,
         bids: bids,
         url: bidderRequest.refererInfo.page || '',
         referer: bidderRequest.refererInfo.ref || '',

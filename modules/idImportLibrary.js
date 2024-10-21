@@ -1,19 +1,15 @@
+import { logInfo, logError } from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
 import MD5 from 'crypto-js/md5.js';
-import { ACTIVITY_ENRICH_UFPD } from '../src/activities/activities.js';
-import { activityParams } from '../src/activities/activityParams.js';
-import { MODULE_TYPE_PREBID } from '../src/activities/modules.js';
-import { isActivityAllowed } from '../src/activities/rules.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { logError, logInfo } from '../src/utils.js';
 
 let email;
 let conf;
 const LOG_PRE_FIX = 'ID-Library: ';
 const CONF_DEFAULT_OBSERVER_DEBOUNCE_MS = 250;
-export const CONF_DEFAULT_FULL_BODY_SCAN = false;
-export const CONF_DEFAULT_INPUT_SCAN = false;
+const CONF_DEFAULT_FULL_BODY_SCAN = false;
+const CONF_DEFAULT_INPUT_SCAN = false;
 const OBSERVER_CONFIG = {
   subtree: true,
   attributes: true,
@@ -159,7 +155,7 @@ function handleTargetElement() {
 
   const targetElement = document.getElementById(conf.target);
   if (targetElement) {
-    email = targetElement.textContent;
+    email = targetElement.innerText;
 
     if (!email) {
       _logInfo('Finding the email with observer');
@@ -259,10 +255,6 @@ export function setConfig(config) {
   }
   if (!config.url) {
     _logError('The required url is not configured');
-    return;
-  }
-  if (!isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_PREBID, 'idImportLibrary'))) {
-    _logError('Permission for id import was denied by CMP');
     return;
   }
   if (typeof config.debounce !== 'number') {

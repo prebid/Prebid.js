@@ -28,9 +28,9 @@ describe('gammaBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      let bid = Object.assign({}, bid);
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when params not passed correctly', () => {

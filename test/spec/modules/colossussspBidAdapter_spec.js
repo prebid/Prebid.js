@@ -257,6 +257,7 @@ describe('ColossussspAdapter', function () {
   describe('buildRequests with user ids', function () {
     var clonedBid = JSON.parse(JSON.stringify(bid));
     clonedBid.userId = {}
+    clonedBid.userId.britepoolid = 'britepoolid123';
     clonedBid.userId.idl_env = 'idl_env123';
     clonedBid.userId.tdid = 'tdid123';
     clonedBid.userId.id5id = { uid: 'id5id123' };
@@ -302,11 +303,11 @@ describe('ColossussspAdapter', function () {
         let placement = placements[i];
         expect(placement).to.have.property('eids')
         expect(placement.eids).to.be.an('array')
-        expect(placement.eids.length).to.be.equal(7)
+        expect(placement.eids.length).to.be.equal(8)
         for (let index in placement.eids) {
           let v = placement.eids[index];
           expect(v).to.have.all.keys('source', 'uids')
-          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com'])
+          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'britepool.com', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com'])
           expect(v.uids).to.be.an('array');
           expect(v.uids.length).to.be.equal(1)
           expect(v.uids[0]).to.have.property('id')

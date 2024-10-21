@@ -107,9 +107,9 @@ describe('omsBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      let bid = Object.assign({}, bid);
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
@@ -410,67 +410,11 @@ describe('omsBidAdapter', function () {
   });
 
   describe('getUserSyncs ', () => {
-    const syncOptions = { iframeEnabled: true };
-    const userSyncUrlIframe = 'https://rt.marphezis.com/sync?dpid=0';
+    let syncOptions = {iframeEnabled: true, pixelEnabled: true};
 
-    it('returns empty syncs arr when syncOptions.iframeEnabled is false', () => {
-      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.be.empty;
-    });
-
-    it('returns syncs arr when syncOptions.iframeEnabled is true', () => {
-      expect(spec.getUserSyncs(syncOptions, {}, undefined, undefined)).to.deep.equal([{
-        type: 'iframe',
-        url: userSyncUrlIframe
-      }]);
-    });
-
-    it('should pass gdpr param when gdprConsent.gdprApplies type is boolean', () => {
-      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: true }, undefined)).to.deep.equal([{
-        type: 'iframe',
-        url: `${userSyncUrlIframe}&gdpr=1`
-      }]);
-      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: false }, undefined)).to.deep.equal([{
-        type: 'iframe',
-        url: `${userSyncUrlIframe}&gdpr=0`
-      }]);
-    });
-
-    it('should pass gdpr_consent param when gdprConsent.consentString type is string', () => {
-      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: false, consentString: 'test' }, undefined)).to.deep.equal([{
-        type: 'iframe',
-        url: `${userSyncUrlIframe}&gdpr=0&gdpr_consent=test`
-      }]);
-    });
-
-    it('should pass no params when gdprConsent.consentString and gdprConsent.gdprApplies types dont match', () => {
-      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: 'true', consentString: 1 }, undefined)).to.deep.equal([{
-        type: 'iframe',
-        url: `${userSyncUrlIframe}`
-      }]);
-    });
-
-    it('should pass us_privacy param when uspConsent is defined', function () {
-      expect(spec.getUserSyncs(syncOptions, {}, undefined, 'test')).to.deep.equal([{
-        type: 'iframe', url: `${userSyncUrlIframe}&us_privacy=test`
-      }]);
-    });
-
-    it('should pass gpp and gpp_sid params when gppConsent.gppString is defined', function () {
-      expect(spec.getUserSyncs(syncOptions, {}, {}, undefined, {
-        gppString: 'test',
-        applicableSections: [1, 2]
-      })).to.deep.equal([{
-        type: 'iframe', url: `${userSyncUrlIframe}&gpp=test&gpp_sid=1,2`
-      }]);
-    });
-
-    it('should pass all params correctly', function () {
-      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: false, consentString: 'test' }, 'test', {
-        gppString: 'test',
-        applicableSections: []
-      })).to.deep.equal([{
-        type: 'iframe', url: `${userSyncUrlIframe}&gdpr=0&gdpr_consent=test&us_privacy=test&gpp=test&gpp_sid=`
-      }]);
+    it('should not return', () => {
+      let returnStatement = spec.getUserSyncs(syncOptions, []);
+      expect(returnStatement).to.be.empty;
     });
   });
 });

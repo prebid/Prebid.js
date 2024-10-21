@@ -1,21 +1,11 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/pubCircleBidAdapter.js';
+import { spec } from '../../../modules/pubCircleBidAdapter';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'pubcircle';
+const bidder = 'pubcircle'
 
 describe('PubCircleBidAdapter', function () {
-  const userIdAsEids = [{
-    source: 'test.org',
-    uids: [{
-      id: '01**********',
-      atype: 1,
-      ext: {
-        third: '01***********'
-      }
-    }]
-  }];
   const bids = [
     {
       bidId: getUniqueIdentifierStr(),
@@ -26,9 +16,8 @@ describe('PubCircleBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner'
-      },
-      userIdAsEids
+        placementId: 'testBanner',
+      }
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -41,9 +30,8 @@ describe('PubCircleBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testVideo'
-      },
-      userIdAsEids
+        placementId: 'testVideo',
+      }
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -65,9 +53,8 @@ describe('PubCircleBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testNative'
-      },
-      userIdAsEids
+        placementId: 'testNative',
+      }
     }
   ];
 
@@ -86,20 +73,9 @@ describe('PubCircleBidAdapter', function () {
 
   const bidderRequest = {
     uspConsent: '1---',
-    gdprConsent: {
-      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
-      vendorData: {}
-    },
+    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     refererInfo: {
-      referer: 'https://test.com',
-      page: 'https://test.com'
-    },
-    ortb2: {
-      device: {
-        w: 1512,
-        h: 982,
-        language: 'en-UK'
-      }
+      referer: 'https://test.com'
     },
     timeout: 500
   };
@@ -153,7 +129,7 @@ describe('PubCircleBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       expect(data.coppa).to.be.a('number');
-      expect(data.gdpr).to.be.a('object');
+      expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
       expect(data.placements).to.have.lengthOf(3);
@@ -169,7 +145,6 @@ describe('PubCircleBidAdapter', function () {
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.type).to.exist.and.to.equal('publisher');
-        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
@@ -195,10 +170,8 @@ describe('PubCircleBidAdapter', function () {
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest.data;
       expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('object');
-      expect(data.gdpr).to.have.property('consentString');
-      expect(data.gdpr).to.not.have.property('vendorData');
-      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
     });
@@ -213,38 +186,12 @@ describe('PubCircleBidAdapter', function () {
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
     });
-  });
 
-  describe('gpp consent', function () {
-    it('bidderRequest.gppConsent', () => {
-      bidderRequest.gppConsent = {
-        gppString: 'abc123',
-        applicableSections: [8]
-      };
-
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
+    it('Returns empty data if no valid requests are passed', function () {
+      serverRequest = spec.buildRequests([], bidderRequest);
       let data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.property('gpp');
-      expect(data).to.have.property('gpp_sid');
-
-      delete bidderRequest.gppConsent;
-    })
-
-    it('bidderRequest.ortb2.regs.gpp', () => {
-      bidderRequest.ortb2 = bidderRequest.ortb2 || {};
-      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
-      bidderRequest.ortb2.regs.gpp = 'abc123';
-      bidderRequest.ortb2.regs.gpp_sid = [8];
-
-      let serverRequest = spec.buildRequests(bids, bidderRequest);
-      let data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data).to.have.property('gpp');
-      expect(data).to.have.property('gpp_sid');
-
-      bidderRequest.ortb2;
-    })
+      expect(data.placements).to.be.an('array').that.is.empty;
+    });
   });
 
   describe('interpretResponse', function () {
@@ -447,18 +394,6 @@ describe('PubCircleBidAdapter', function () {
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://cs.pubcircle.ai/image?pbjs=1&ccpa_consent=1---&coppa=0')
-    });
-    it('Should return array of objects with proper sync config , include GPP', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
-        gppString: 'abc123',
-        applicableSections: [8]
-      });
-      expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('image')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.pubcircle.ai/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
     });
   });
 });

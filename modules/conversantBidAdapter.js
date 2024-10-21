@@ -60,7 +60,6 @@ const converter = ortbConverter({
   request: function (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     request.at = 1;
-    request.cur = ['USD'];
     if (context.bidRequests) {
       const bidRequest = context.bidRequests[0];
       setSiteId(bidRequest, request);
@@ -96,7 +95,7 @@ const converter = ortbConverter({
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-    return response;
+    return response.bids;
   },
   overrides: {
     imp: {
@@ -177,8 +176,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    const ortbBids = converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
-    return ortbBids;
+    return converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
   },
 
   /**

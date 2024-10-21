@@ -3,7 +3,7 @@
 ```
 Module Name: OMS Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: devsupport@onlinemediasolutions.com
+Maintainer: alexandruc@onlinemediasolutions.com
 ```
 
 # Description

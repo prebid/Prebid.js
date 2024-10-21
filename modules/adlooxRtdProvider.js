@@ -106,7 +106,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
   // buildUrl creates PHP style multi-parameters and includes undefined... (╯°□°)╯ ┻━┻
   const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), { search: {
-    'v': 'pbjs-v' + '$prebid.version$',
+    'v': `pbjs-${getGlobal().version}`,
     'c': config.params.clientid,
     'p': config.params.platformid,
     't': config.params.tagid,

@@ -1,8 +1,7 @@
 import { parseSizesInput, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
-import { OUTSTREAM } from '../src/video.js';
-import { Renderer } from '../src/Renderer.js';
+import { BANNER } from '../src/mediaTypes.js'
+
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -16,7 +15,7 @@ const CREATIVE_TTL = 300;
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -27,9 +26,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid.params.placementId);
   },
-  hasTypeVideo(bid) {
-    return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
-  },
+
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -40,29 +37,17 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
-      let mdType = 0;
-      if (bidRequest.mediaTypes[BANNER]) {
-        mdType = 1;
-      } else {
-        mdType = 2;
-      }
+
       const requestParams = {
         _vzPlacementId: bidRequest.params.placementId,
         sizes: sizes,
         _slotBidId: bidRequest.bidId,
+        // TODO: is 'page' the right value here?
         _rqsrc: bidderRequest.refererInfo.page,
-        mChannel: mdType
       };
-      let payload;
-      if (mdType === 1) { // BANNER
-        payload = {
-          q: encodeURI(JSON.stringify(requestParams))
-        };
-      } else { // VIDEO or other types
-        payload = {
-          q: encodeURI(JSON.stringify(requestParams)),
-          bidderRequestData: encodeURI(JSON.stringify(bidderRequest))
-        };
+
+      const payload = {
+        q: encodeURI(JSON.stringify(requestParams))
       }
 
       return {
@@ -79,81 +64,30 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bidderRequest) {
+  interpretResponse: function (serverResponse) {
     const response = serverResponse.body;
     const bids = [];
     if (isEmpty(response)) {
       return bids;
     }
-    let decodedBidderRequestData;
-    if (typeof bidderRequest.data.bidderRequestData === 'string') {
-      decodedBidderRequestData = JSON.parse(decodeURI(bidderRequest.data.bidderRequestData));
-    } else {
-      decodedBidderRequestData = bidderRequest.data.bidderRequestData;
-    }
     const responseBid = {
       requestId: response.slotBidId,
-      cpm: response.cpm > 0 ? response.cpm : 0,
+      cpm: response.cpm,
       currency: response.currency || DEFAULT_CURRENCY,
       adType: response.adType || '1',
       settings: response.settings,
-      width: response.adWidth || 300,
-      height: response.adHeight || 250,
+      width: response.adWidth,
+      height: response.adHeight,
       ttl: CREATIVE_TTL,
       creativeId: response.creativeId || 0,
       netRevenue: response.netRevenue || false,
-      mediaType: response.mediaType || BANNER,
       meta: {
-        mediaType: response.mediaType,
+        mediaType: response.mediaType || BANNER,
         advertiserDomains: response.advertiserDomains || []
       },
-
+      ad: response.ad
     };
-    if (response.mediaType === BANNER) {
-      responseBid.ad = response.ad || '';
-    } else if (response.mediaType === VIDEO) {
-      let context, adUnitCode;
-      for (let i = 0; i < decodedBidderRequestData.bids.length; i++) {
-        const item = decodedBidderRequestData.bids[i];
-        if (item.bidId === response.slotBidId) {
-          context = item.mediaTypes.video.context;
-          adUnitCode = item.adUnitCode;
-          break;
-        }
-      }
-      if (context === OUTSTREAM) {
-        responseBid.vastXml = response.ad || '';
-        if (response.rUrl) {
-          responseBid.renderer = createRenderer({ ...response, adUnitCode });
-        }
-      }
-    }
     bids.push(responseBid);
-    function createRenderer(bid, rendererOptions = {}) {
-      const renderer = Renderer.install({
-        id: bid.slotBidId,
-        url: bid.rUrl,
-        config: rendererOptions,
-        adUnitCode: bid.adUnitCode,
-        loaded: false
-      });
-      try {
-        renderer.setRender(({ renderer, width, height, vastXml, adUnitCode }) => {
-          renderer.push(() => {
-            window.onetag.Player.init({
-              ...bid,
-              width,
-              height,
-              vastXml,
-              nodeId: adUnitCode,
-              config: renderer.getConfig()
-            });
-          });
-        });
-      } catch (e) {
-      }
-      return renderer;
-    }
     return bids;
   }
 

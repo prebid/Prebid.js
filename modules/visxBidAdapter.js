@@ -1,11 +1,10 @@
-import {deepAccess, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel} from '../src/utils.js';
+import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
@@ -33,7 +32,7 @@ const LOG_ERROR_MESS = {
   onlyVideoInstream: `Only video ${VIDEO_INSTREAM} supported`,
   videoMissing: 'Bid request videoType property is missing - '
 };
-const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN', 'CHF', 'SEK'];
+const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const _bidResponseTimeLogged = [];
 export const spec = {
@@ -60,17 +59,11 @@ export const spec = {
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
 
-    let request;
     let reqId;
     let payloadSchain;
     let payloadUserId;
     let payloadUserEids;
     let timeout;
-    let payloadDevice;
-    let payloadSite;
-    let payloadRegs;
-    let payloadContent;
-    let payloadUser;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -87,7 +80,9 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
+
       const { params: { uid }, schain, userId, userIdAsEids } = bid;
+
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }
@@ -98,7 +93,6 @@ export const spec = {
       if (!payloadUserId && userId) {
         payloadUserId = userId;
       }
-
       auids.push(uid);
     });
 
@@ -106,7 +100,10 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        payload.u = bidderRequest.refererInfo.page;
+      }
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -114,42 +111,6 @@ export const spec = {
         payload.gdpr_applies =
             (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
               ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
-      }
-
-      const { ortb2 } = bidderRequest;
-      const { device, site, regs, content } = ortb2;
-      const userOrtb2 = ortb2.user;
-      let user;
-      let userReq;
-      const vads = _getUserId();
-      if (payloadUserEids || payload.gdpr_consent || vads) {
-        user = {
-          ext: {
-            ...(payloadUserEids && { eids: payloadUserEids }),
-            ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
-            ...(vads && { vads })
-          }
-        };
-      }
-      if (user) {
-        userReq = mergeDeep(user, userOrtb2);
-      } else {
-        userReq = userOrtb2;
-      }
-      if (device) {
-        payloadDevice = device;
-      }
-      if (site) {
-        payloadSite = site;
-      }
-      if (regs) {
-        payloadRegs = regs;
-      }
-      if (content) {
-        payloadContent = content;
-      }
-      if (userReq) {
-        payloadUser = userReq;
       }
     }
 
@@ -162,25 +123,29 @@ export const spec = {
       }
     };
 
-    if (payloadRegs === undefined) {
-      payloadRegs = ('gdpr_applies' in payload) && {
-        ext: {
-          gdpr: payload.gdpr_applies
-        }
-      };
-    }
+    const vads = _getUserId();
+    const user = {
+      ext: {
+        ...(payloadUserEids && { eids: payloadUserEids }),
+        ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
+        ...(vads && { vads })
+      }
+    };
+    const regs = ('gdpr_applies' in payload) && {
+      ext: {
+        gdpr: payload.gdpr_applies
+      }
+    };
 
-    request = {
+    const request = {
       id: reqId,
       imp,
       tmax,
       cur: [currency],
       source,
-      ...(payloadUser && { user: payloadUser }),
-      ...(payloadRegs && {regs: payloadRegs}),
-      ...(payloadDevice && { device: payloadDevice }),
-      ...(payloadSite && { site: payloadSite }),
-      ...(payloadContent && { content: payloadContent }),
+      site: { page: payload.u },
+      ...(Object.keys(user.ext).length && { user }),
+      ...(regs && { regs })
     };
 
     return {
@@ -205,7 +170,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(getBidFromResponse(respItem, LOG_ERROR_MESS), bidsMap, currency, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses);
       });
     }
     if (errorMessage) logError(errorMessage);
@@ -275,7 +240,13 @@ function makeBanner(bannerParams) {
   if (bannerSizes) {
     const sizes = parseSizesInput(bannerSizes);
     if (sizes.length) {
-      const format = sizesToSizeTuples(bannerSizes).map(sizeTupleToRtbSize);
+      const format = sizes.map(size => {
+        const [ width, height ] = size.split('x');
+        const w = parseInt(width, 10);
+        const h = parseInt(height, 10);
+        return { w, h };
+      });
+
       return { format };
     }
   }
@@ -313,6 +284,17 @@ function buildImpObject(bid) {
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
   }
+}
+
+function _getBidFromResponse(respItem) {
+  if (!respItem) {
+    logError(LOG_ERROR_MESS.emptySeatbid);
+  } else if (!respItem.bid) {
+    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
+  } else if (!respItem.bid[0]) {
+    logError(LOG_ERROR_MESS.noBid);
+  }
+  return respItem && respItem.bid && respItem.bid[0];
 }
 
 function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {

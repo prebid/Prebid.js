@@ -1,4 +1,4 @@
-import {setOrtbAdditionalConsent} from '../../../modules/consentManagementTcf.js';
+import {setOrtbAdditionalConsent} from '../../../modules/consentManagement.js';
 
 describe('pbjs -> ortb addtlConsent', () => {
   it('sets ConsentedProvidersSettings', () => {

@@ -124,7 +124,7 @@ describe('Adot Adapter', function () {
 
     it('should build request (video)', function () {
       const bidderRequestId = 'bidderRequestId';
-      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { video: { playerSize: [[300, 250]], minduration: 1, maxduration: 2, api: 'api', linearity: 'linearity', mimes: [], plcmt: '1', playbackmethod: 'playbackmethod', protocols: 'protocol', startdelay: 'startdelay' } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
+      const validBidRequests = [{ bidderRequestId, mediaTypes: {} }, { bidderRequestId, bidId: 'bidId', mediaTypes: { video: { playerSize: [[300, 250]], minduration: 1, maxduration: 2, api: 'api', linearity: 'linearity', mimes: [], placement: 'placement', playbackmethod: 'playbackmethod', protocols: 'protocol', startdelay: 'startdelay' } }, params: { placementId: 'placementId', adUnitCode: 200 } }];
       const bidderRequest = { position: 2, refererInfo: { page: 'http://localhost.com', domain: 'localhost.com' }, gdprConsent: { consentString: 'consentString', gdprApplies: true }, userId: { pubProvidedId: 'userId' }, schain: { ver: '1.0' } };
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -144,7 +144,7 @@ describe('Adot Adapter', function () {
             maxduration: 2,
             mimes: [],
             minduration: 1,
-            placement: '1',
+            placement: 'placement',
             playbackmethod: 'playbackmethod',
             pos: 0,
             protocols: 'protocol',

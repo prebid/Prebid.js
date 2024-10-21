@@ -115,11 +115,6 @@ describe('RelaidoAdapter', function () {
         }]
       }
     };
-    window.RelaidoPlayer = {
-      renderAd: function() {
-        return null;
-      }
-    };
   });
 
   afterEach(() => {
@@ -572,22 +567,6 @@ describe('RelaidoAdapter', function () {
       expect(query.bid_id).to.equal('2ed93003f7bb99');
       expect(query.ad_unit_code).to.equal('test');
       expect(query.ref).to.include(window.location.href);
-    });
-  });
-
-  describe('spec.outstreamRender', function () {
-    it('Should to pass a Bid to renderAd', function () {
-      const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
-      const response = bidResponses[0];
-      sinon.spy(window.RelaidoPlayer, 'renderAd');
-      response.renderer.render(response);
-      const renderCall = window.RelaidoPlayer.renderAd.getCall(0);
-      const arg = renderCall.args[0];
-      expect(arg.width).to.equal(640);
-      expect(arg.height).to.equal(360);
-      expect(arg.vastXml).to.equal('<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>');
-      expect(arg.mediaType).to.equal(VIDEO);
-      expect(arg.placementId).to.equal(100000);
     });
   });
 });

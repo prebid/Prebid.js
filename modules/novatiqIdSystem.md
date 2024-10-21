@@ -19,11 +19,12 @@ pbjs.setConfig({
       name: 'novatiq',
       params: {
         // change to the Partner Number you received from Novatiq
-        sourceid: '1a3'
+        sourceid '1a3'            
+        }
       }
     }],
     // 50ms maximum auction delay, applies to all userId modules
-    auctionDelay: 50
+    auctionDelay: 50             
   }
 });
 ```

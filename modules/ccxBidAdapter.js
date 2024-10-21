@@ -65,7 +65,7 @@ function _validateSizes (sizeObj, type) {
   return true
 }
 
-function _buildBid (bid, bidderRequest) {
+function _buildBid (bid) {
   let placement = {}
   placement.id = bid.bidId
   placement.secure = 1
@@ -104,10 +104,6 @@ function _buildBid (bid, bidderRequest) {
   }
 
   placement.ext = {'pid': bid.params.placementId}
-
-  if (bidderRequest.paapi?.enabled) {
-    placement.ext.ae = bid?.ortb2Imp?.ext?.ae
-  }
 
   return placement
 }
@@ -201,7 +197,7 @@ export const spec = {
       }
 
       _each(validBidRequests, function (bid) {
-        requestBody.imp.push(_buildBid(bid, bidderRequest))
+        requestBody.imp.push(_buildBid(bid))
       })
       // Return the server request
       return {

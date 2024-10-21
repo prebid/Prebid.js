@@ -419,6 +419,8 @@ export function _getPlatform(context = window) {
  * @return {object} firstPartyData - Data object containing first party information
  */
 function loadOrCreateFirstPartyData() {
+  var localStorageEnabled;
+
   var FIRST_PARTY_KEY = '_iiq_fdata';
   var tryParse = function (data) {
     try {
@@ -429,14 +431,19 @@ function loadOrCreateFirstPartyData() {
   };
   var readData = function (key) {
     if (hasLocalStorage()) {
-      // TODO FIX RULES VIOLATION
-      // eslint-disable-next-line prebid/no-global
       return window.localStorage.getItem(key);
     }
     return null;
   };
-  // TODO FIX RULES VIOLATION - USE STORAGE MANAGER
   var hasLocalStorage = function () {
+    if (typeof localStorageEnabled != 'undefined') { return localStorageEnabled; } else {
+      try {
+        localStorageEnabled = !!window.localStorage;
+        return localStorageEnabled;
+      } catch (e) {
+        localStorageEnabled = false;
+      }
+    }
     return false;
   };
   var generateGUID = function () {
@@ -450,8 +457,6 @@ function loadOrCreateFirstPartyData() {
   var storeData = function (key, value) {
     try {
       if (hasLocalStorage()) {
-        // TODO FIX RULES VIOLATION
-        // eslint-disable-next-line prebid/no-global
         window.localStorage.setItem(key, value);
       }
     } catch (error) {

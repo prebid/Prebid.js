@@ -3,6 +3,7 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 /**
  * Analytics adapter from adxcg.com
@@ -122,7 +123,7 @@ function send (data) {
       ats: adxcgAnalyticsAdapter.context.auctionTimestamp,
       aav: adxcgAnalyticsVersion,
       iob: intersectionObserverAvailable(window) ? '1' : '0',
-      pbv: '$prebid.version$',
+      pbv: getGlobal().version,
       sz: window.screen.width + 'x' + window.screen.height
     }
   });

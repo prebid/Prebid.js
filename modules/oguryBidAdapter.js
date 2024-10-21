@@ -1,7 +1,7 @@
 'use strict';
 
 import {BANNER} from '../src/mediaTypes.js';
-import {getWindowSelf, getWindowTop, isFn, logWarn, deepAccess} from '../src/utils.js';
+import {getWindowSelf, getWindowTop, isFn, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ajax} from '../src/ajax.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
@@ -12,7 +12,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.7.0';
+const ADAPTER_VERSION = '1.6.0';
 
 function getClientWidth() {
   const documentElementClientWidth = window.top.document.documentElement.clientWidth
@@ -46,16 +46,14 @@ function isBidRequestValid(bid) {
   return (isValidSizes && isValidAdUnitId && isValidAssetKey);
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   const consent = (gdprConsent && gdprConsent.consentString) || '';
-  const gpp = (gppConsent && gppConsent.gppString) || '';
-  const gppSid = (gppConsent && gppConsent.applicableSections && gppConsent.applicableSections.toString()) || '';
 
   if (syncOptions.iframeEnabled) {
     return [
       {
         type: 'iframe',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync.html?gdpr_consent=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync.html?gdpr_consent=${consent}&source=prebid`
       }
     ];
   }
@@ -64,15 +62,15 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     return [
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${consent}&source=prebid`
       },
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${consent}&source=prebid`
       },
       {
         type: 'image',
-        url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${consent}&source=prebid&gpp=${gpp}&gpp_sid=${gppSid}`
+        url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${consent}&source=prebid`
       }
     ];
   }
@@ -87,7 +85,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     at: 1,
     regs: {
       ext: {
-        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
       },
     },
     site: {
@@ -114,12 +112,6 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
     openRtbBidRequestBanner.user.ext.consent = bidderRequest.gdprConsent.consentString
   }
-  if (bidderRequest.gppConsent && bidderRequest.gppConsent.gppString) {
-    openRtbBidRequestBanner.regs.ext.gpp = bidderRequest.gppConsent.gppString
-  }
-  if (bidderRequest.gppConsent && bidderRequest.gppConsent.applicableSections) {
-    openRtbBidRequestBanner.regs.ext.gpp_sid = bidderRequest.gppConsent.applicableSections
-  }
 
   validBidRequests.forEach((bidRequest) => {
     const sizes = getAdUnitSizes(bidRequest)
@@ -137,8 +129,6 @@ function buildRequests(validBidRequests, bidderRequest) {
         openRtbBidRequestBanner.user.ext.eids = bidRequest.userIdAsEids
       }
 
-      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
-
       openRtbBidRequestBanner.imp.push({
         id: bidRequest.bidId,
         tagid: bidRequest.params.adUnitId,
@@ -148,7 +138,6 @@ function buildRequests(validBidRequests, bidderRequest) {
         },
         ext: {
           ...bidRequest.params,
-          ...(gpid && {gpid}),
           timeSpentOnPage: document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0
         }
       });

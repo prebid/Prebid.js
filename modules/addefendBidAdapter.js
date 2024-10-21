@@ -1,4 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'addefend';
 
@@ -16,7 +17,7 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let bid = {
-      v: 'v' + '$prebid.version$',
+      v: getGlobal().version,
       auctionId: false,
       pageId: false,
       gdpr_applies: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true',

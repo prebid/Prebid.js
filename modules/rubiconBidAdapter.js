@@ -22,7 +22,6 @@ import {
   _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
-import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -220,9 +219,9 @@ export const converter = ortbConverter({
     const {bidRequest} = context;
 
     let [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
-    // 0 by default to avoid undefined size
-    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth || 0;
-    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight || 0;
+
+    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth;
+    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
@@ -737,7 +736,7 @@ export const spec = {
     });
 
     if (fledgeAuctionConfigs) {
-      return { bids, paapi: fledgeAuctionConfigs };
+      return { bids, fledgeAuctionConfigs };
     } else {
       return bids;
     }
@@ -745,7 +744,26 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
+      let params = {};
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params['gdpr'] = Number(gdprConsent.gdprApplies);
+        }
+        if (typeof gdprConsent.consentString === 'string') {
+          params['gdpr_consent'] = gdprConsent.consentString;
+        }
+      }
+
+      if (uspConsent) {
+        params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      if (gppConsent?.gppString) {
+        params['gpp'] = gppConsent.gppString;
+        params['gpp_sid'] = gppConsent.applicableSections?.toString();
+      }
+
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       hasSynced = true;

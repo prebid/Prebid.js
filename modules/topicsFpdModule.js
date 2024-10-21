@@ -21,6 +21,35 @@ export function reset() {
   iframeLoadedURL = [];
 }
 
+const bidderIframeList = {
+  maxTopicCaller: 4,
+  bidders: [{
+    bidder: 'pubmatic',
+    iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+  }, {
+    bidder: 'rtbhouse',
+    iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
+  }, {
+    bidder: 'openx',
+    iframeURL: 'https://pa.openx.net/topics_frame.html'
+  }, {
+    bidder: 'improvedigital',
+    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
+  }, {
+    bidder: 'onetag',
+    iframeURL: 'https://onetag-sys.com/static/topicsapi.html'
+  }, {
+    bidder: 'taboola',
+    iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html'
+  }, {
+    bidder: 'discovery',
+    iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
+  }, {
+    bidder: 'undertone',
+    iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
+  }]
+}
+
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
 export const topicStorageName = 'prebid:topics';
 export const lastUpdated = 'lastUpdated';
@@ -129,8 +158,8 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
  */
 export function getCachedTopics() {
   let cachedTopicData = [];
-  const topics = config.getConfig('userSync.topics');
-  const bidderList = topics?.bidders || [];
+  const topics = config.getConfig('userSync.topics') || bidderIframeList;
+  const bidderList = topics.bidders || [];
   let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
@@ -169,8 +198,7 @@ export function receiveMessage(evt) {
 
 /**
 Function to store Topics data received from iframe in storage(name: "prebid:topics")
- * @param {string} bidder
- * @param {object} topics
+ * @param {Topics} topics
  */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
@@ -212,7 +240,7 @@ function listenMessagesFromTopicIframe() {
  */
 export function loadTopicsForBidders(doc = document) {
   if (!isTopicsSupported(doc)) return;
-  const topics = config.getConfig('userSync.topics');
+  const topics = config.getConfig('userSync.topics') || bidderIframeList;
 
   if (topics) {
     listenMessagesFromTopicIframe();

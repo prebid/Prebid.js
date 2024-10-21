@@ -67,7 +67,7 @@ pbjs.setConfig({
                     enabled: true,
                 },
                 sfbxLiteDataConf: { // sfbx-lite site-centric configuration, *omit if not needed*
-                    enabled: true,
+                    enabled: true, 
                 },
             }
         },
@@ -215,7 +215,7 @@ A better look on the `Object` type
 ```javascript
 sendToBidders: {
     appnexus: true,           // send profile to appnexus on all ad units
-    pubmatic: ['adUnitCode1'],// send profile to pubmatic on this ad units
+    pubmatic: ['adUnitCode1'],// send profile to pubmatic on this ad units 
 }
 ```
 
@@ -253,7 +253,7 @@ To be possible customize the way we send data to bidders via this callback:
 sendToBidders: function(bid, adUnitCode, data, metadata){
     if (bid.bidder == 'other'){
         /* use bid object to store data based on this specific logic, like in the example below */
-
+       
         bid.params = bid.params || {};
         bid.params['some_specific_key'] = data;
 
@@ -374,7 +374,7 @@ pbjs.que.push(function () {
                         sendToBidders: true,      // override param.sendToBidders. default is true
                         defaultProfile: {            // optional, used if nothing is found
                             webo_cs: [...],        // wam custom segments
-                            webo_audiences: [...], // wam audiences
+                            webo_audiences: [...], // wam audiences 
                         },
                         enabled: true,
                     },
@@ -485,18 +485,18 @@ pbjs.que.push(function () {
                 params: {
                     weboCtxConf: {
                         token: "to-be-defined", // mandatory
-                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits
+                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
                         sendToBidders: ['appnexus',...], // overide, send to only some bidders
                         enabled: true,
                     },
                     weboUserDataConf: {
                         accountId: 12345,           // recommended
-                        setPrebidTargeting: ['adUnitCode2',...], // set target only on certain adunits
+                        setPrebidTargeting: ['adUnitCode2',...], // set target only on certain adunits 
                         sendToBidders: ['rubicon',...], // overide, send to only some bidders
                         enabled: true,
                     },
                     sfbxLiteDataConf: {
-                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits
+                        setPrebidTargeting: ['adUnitCode3',...], // set target only on certain adunits 
                         sendToBidders: ['smartadserver',...], // overide, send to only some bidders
                         enabled: true,
                     }
@@ -546,15 +546,15 @@ pbjs.que.push(function () {
                     },
                     weboUserDataConf: {
                         accountId: 12345,           // recommended
-                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits
+                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
                         sendToBidders: { // send to only some bidders and adunits
-                            'appnexus': true,               // all adunits for appnexus
+                            'appnexus': true,               // all adunits for appnexus 
                             'pubmatic': ['adUnitCode1',...] // some adunits for pubmatic
                             // other bidders will be ignored
                         },
                         defaultProfile: {           // optional
-                            webo_cs: ['Red'],       // using label
-                            webo_audiences: [12345] // using id
+                            webo_cs: ['Red'],
+                            webo_audiences: ['bam']
                         },
                         localStorageProfileKey: 'webo_wam2gam_entry', // default
                         enabled: true,

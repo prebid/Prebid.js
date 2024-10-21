@@ -35,26 +35,26 @@ describe('slimcutBidAdapter', function() {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('should return false when placementId is not valid (letters)', function() {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         'placementId': 'ABCD'
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false when placementId < 0', function() {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         'placementId': -1
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return false when required params are not passed', function() {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
   describe('buildRequests', function() {

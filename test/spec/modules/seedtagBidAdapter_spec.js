@@ -38,7 +38,6 @@ function getSlotConfigs(mediaTypes, params) {
     ortb2Imp: {
       ext: {
         tid: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
-        gpid: 'some-gpid'
       }
     },
     adUnitCode: adUnitCode,
@@ -301,7 +300,6 @@ describe('Seedtag Adapter', function () {
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
 
       expect(data.bidRequests[0].adUnitCode).to.equal(adUnitCode);
-      expect(data.bidRequests[0].gpid).to.equal('some-gpid');
     });
 
     describe('GDPR params', function () {
@@ -627,88 +625,6 @@ describe('Seedtag Adapter', function () {
         const data = JSON.parse(request.data);
         expect(data.bcat).to.be.undefined;
         expect(data.badv).to.be.undefined;
-      });
-    });
-
-    describe('Site params', function () {
-      it('should add cat param to payload when bidderRequest has ortb2 site cat info', function () {
-        const siteCategories = ['1217', 'bsr004', '692']
-        var ortb2 = {
-          site: {
-            cat: siteCategories
-          }
-        }
-        bidderRequest['ortb2'] = ortb2
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.site.cat).to.deep.equal(siteCategories);
-      });
-
-      it('should add pagecat param to payload when bidderRequest has ortb2 site pagecat info', function () {
-        const pageCategories = ['1217', 'bsr004', '692']
-        var ortb2 = {
-          site: {
-            pagecat: pageCategories
-          }
-        }
-        bidderRequest['ortb2'] = ortb2
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.site.pagecat).to.deep.equal(pageCategories);
-      });
-
-      it('should add cattac param to payload when bidderRequest has ortb2 site cattax info', function () {
-        const taxonomy = 6
-        var ortb2 = {
-          site: {
-            cattax: taxonomy
-          }
-        }
-        bidderRequest['ortb2'] = ortb2
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.site.cattax).to.equal(taxonomy);
-      });
-
-      it('should not add site params to payload when bidderRequest does not have ortb2 site info', function () {
-        var ortb2 = {}
-        bidderRequest['ortb2'] = ortb2
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.site.cattax).to.be.undefined;
-        expect(data.site.cat).to.be.undefined;
-        expect(data.site.pagecat).to.be.undefined;
-      });
-    });
-
-    describe('device.sua param', function () {
-      it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
-        const sua = 1
-        var ortb2 = {
-          device: {
-            sua: sua
-          }
-        }
-        bidderRequest['ortb2'] = ortb2
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.sua).to.equal(sua);
-      });
-
-      it('should not add device.sua param to payload when bidderRequest does not have ortb2 device.sua info', function () {
-        var ortb2 = {
-          device: {}
-        }
-        bidderRequest['ortb2'] = ortb2
-
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.sua).to.be.undefined;
       });
     });
   })

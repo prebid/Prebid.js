@@ -1,4 +1,4 @@
-import {isStr, logError, isFn, deepAccess} from '../src/utils.js';
+import {isStr, logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
@@ -13,7 +13,7 @@ const ALIASES = [
   {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
   {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
   {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
-  'rtbstack'
+  {code: 'admixerwl', endpoint: 'https://inv-nets-adxwl.admixer.com/adxwlprebid.aspx'},
 ];
 export const spec = {
   code: BIDDER_CODE,
@@ -23,8 +23,8 @@ export const spec = {
    * Determines whether or not the given bid request is valid.
    */
   isBidRequestValid: function (bid) {
-    return bid.bidder === 'rtbstack'
-      ? !!bid.params.tagId
+    return bid.bidder === 'admixerwl'
+      ? !!bid.params.clientId && !!bid.params.endpointId
       : !!bid.params.zone;
   },
   /**
@@ -51,12 +51,8 @@ export const spec = {
     };
     let endpointUrl;
     if (bidderRequest) {
-      // checks if there is specified any endpointUrl in bidder config
-      endpointUrl = config.getConfig('bidderURL');
-      if (!endpointUrl && bidderRequest.bidderCode === 'rtbstack') {
-        logError('The bidderUrl config is required for RTB Stack bids. Please set it with setBidderConfig() for "rtbstack".');
-        return;
-      }
+      const {bidderCode} = bidderRequest;
+      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
       // TODO: is 'page' the right value here?
       if (bidderRequest.refererInfo?.page) {
         payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
@@ -71,22 +67,22 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;
       }
+      let bidFloor = getBidFloor(bidderRequest);
+      if (bidFloor) {
+        payload.bidFloor = bidFloor;
+      }
     }
     validRequest.forEach((bid) => {
       let imp = {};
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
       imp.ortb2 && delete imp.ortb2;
-      let bidFloor = getBidFloor(bid);
-      if (bidFloor) {
-        imp.bidFloor = bidFloor;
-      }
       payload.imps.push(imp);
     });
 
     let urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
     return {
       method: 'POST',
-      url: urlForRequest,
+      url: bidderRequest.bidderCode === 'admixerwl' ? `${urlForRequest}?client=${payload.imps[0]?.params?.clientId}` : urlForRequest,
       data: payload,
     };
   },
@@ -117,16 +113,10 @@ export const spec = {
     return pixels;
   }
 };
-
 function getEndpointUrl(code) {
   return find(ALIASES, (val) => val.code === code)?.endpoint || ENDPOINT_URL;
 }
-
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidFloor', 0);
-  }
-
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
@@ -138,5 +128,4 @@ function getBidFloor(bid) {
     return 0;
   }
 }
-
 registerBidder(spec);

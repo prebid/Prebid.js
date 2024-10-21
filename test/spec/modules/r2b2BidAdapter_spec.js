@@ -420,7 +420,7 @@ describe('R2B2 adapter', function () {
           ],
         },
       ];
-      bidderRequest.ortb2 = {user: {ext: {eids: eidsArray}}}
+      bids[0].userIdAsEids = eidsArray;
       let requests = spec.buildRequests(bids, bidderRequest);
       let request = requests[0];
       let eids = request.data.user.ext.eids;

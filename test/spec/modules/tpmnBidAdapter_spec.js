@@ -4,7 +4,7 @@ import { generateUUID } from '../../../src/utils.js';
 import { expect } from 'chai';
 import * as utils from 'src/utils';
 import * as sinon from 'sinon';
-import 'modules/consentManagementTcf.js';
+import 'modules/consentManagement.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 

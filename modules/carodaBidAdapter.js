@@ -8,8 +8,7 @@ import {
   deepSetValue,
   logError,
   mergeDeep,
-  sizeTupleToRtbSize,
-  sizesToSizeTuples
+  parseSizesInput
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 
@@ -196,7 +195,13 @@ function getImps (validBidRequests, common) {
     };
     const bannerParams = deepAccess(bid, 'mediaTypes.banner');
     if (bannerParams && bannerParams.sizes) {
-      const format = sizesToSizeTuples(bannerParams.sizes).map(sizeTupleToRtbSize);
+      const sizes = parseSizesInput(bannerParams.sizes);
+      const format = sizes.map(size => {
+        const [width, height] = size.split('x');
+        const w = parseInt(width, 10);
+        const h = parseInt(height, 10);
+        return { w, h };
+      });
       imp.banner = {
         format
       };

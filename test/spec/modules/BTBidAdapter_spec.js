@@ -7,10 +7,11 @@ import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagementTcf.js';
+import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
-import 'modules/tcfControl.js';
+import 'modules/enrichmentFpdModule.js';
+import 'modules/gdprEnforcement.js';
 import 'modules/gppControl_usnat.js';
 import 'modules/schain.js';
 

@@ -252,42 +252,18 @@ describe('config API', function () {
     expect(configResult.native).to.be.equal('high');
   });
 
-  Object.entries({
-    'using setConfig': {
-      setter: () => config.setConfig,
-      getter: () => config.getConfig
-    },
-    'using setBidderConfig': {
-      setter: () => (config) => setBidderConfig({bidders: ['mockBidder'], config}),
-      getter: () => (option) => config.runWithBidder('mockBidder', () => config.getConfig(option))
-    }
-  }).forEach(([t, {getter, setter}]) => {
-    describe(t, () => {
-      let getConfig, setConfig;
-      beforeEach(() => {
-        getConfig = getter();
-        setConfig = setter();
-      });
-      it('sets priceGranularity and customPriceBucket', function () {
-        const goodConfig = {
-          'buckets': [{
-            'max': 3,
-            'increment': 0.01,
-            'cap': true
-          }]
-        };
-        setConfig({ priceGranularity: goodConfig });
-        expect(getConfig('priceGranularity')).to.be.equal('custom');
-        expect(getConfig('customPriceBucket')).to.eql(goodConfig);
-      });
-    });
+  it('sets priceGranularity and customPriceBucket', function () {
+    const goodConfig = {
+      'buckets': [{
+        'max': 3,
+        'increment': 0.01,
+        'cap': true
+      }]
+    };
+    setConfig({ priceGranularity: goodConfig });
+    expect(getConfig('priceGranularity')).to.be.equal('custom');
+    expect(getConfig('customPriceBucket')).to.equal(goodConfig);
   });
-
-  it('does not force defaults for bidder config', () => {
-    config.setConfig({bidderSequence: 'fixed'});
-    config.setBidderConfig({bidders: ['mockBidder'], config: {other: 'config'}})
-    expect(config.runWithBidder('mockBidder', () => config.getConfig('bidderSequence'))).to.eql('fixed');
-  })
 
   it('sets deviceAccess', function () {
     // When the deviceAccess flag config option is not set, cookies may be read and set

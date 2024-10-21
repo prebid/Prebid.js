@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 const BIDDER_CODE = 'cpmstar';
 
@@ -12,18 +12,15 @@ const ENDPOINT_PRODUCTION = 'https://server.cpmstar.com/view.aspx';
 
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_NET_REVENUE = true;
 
-export const converter = ortbConverter({
-  context: {
-    ttl: DEFAULT_TTL,
-    netRevenue: DEFAULT_NET_REVENUE
-  }
-});
+function fixedEncodeURIComponent(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    return '%' + c.charCodeAt(0).toString(16);
+  });
+}
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 1317,
   supportedMediaTypes: [BANNER, VIDEO],
   pageID: Math.floor(Math.random() * 10e6),
 
@@ -46,30 +43,22 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     var requests = [];
+    // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
 
     for (var i = 0; i < validBidRequests.length; i++) {
       var bidRequest = validBidRequests[i];
-      const referer = bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : bidderRequest.refererInfo.domain;
-      const e = utils.getBidIdParameter('endpoint', bidRequest.params);
-      const ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
-      const url = new URL(ENDPOINT);
-      const body = {};
-      const mediaType = spec.getMediaType(bidRequest);
-      const playerSize = spec.getPlayerSize(bidRequest);
-      url.searchParams.set('media', mediaType);
-      if (mediaType == VIDEO) {
-        url.searchParams.set('fv', 0);
-        if (playerSize) {
-          url.searchParams.set('w', playerSize?.[0]);
-          url.searchParams.set('h', playerSize?.[1]);
-        }
-      }
-      url.searchParams.set('json', 'c_b');
-      url.searchParams.set('mv', 1);
-      url.searchParams.set('poolid', utils.getBidIdParameter('placementId', bidRequest.params));
-      url.searchParams.set('reachedTop', bidderRequest.refererInfo.reachedTop);
-      url.searchParams.set('requestid', bidRequest.bidId);
-      url.searchParams.set('referer', referer);
+      var referer = bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : bidderRequest.refererInfo.domain;
+      referer = encodeURIComponent(referer);
+      var e = getBidIdParameter('endpoint', bidRequest.params);
+      var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
+      var mediaType = spec.getMediaType(bidRequest);
+      var playerSize = spec.getPlayerSize(bidRequest);
+      var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
+      var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
+        '&json=c_b&mv=1&poolid=' + getBidIdParameter('placementId', bidRequest.params) +
+        '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
+        '&requestid=' + bidRequest.bidId +
+        '&referer=' + encodeURIComponent(referer);
 
       if (bidRequest.schain && bidRequest.schain.nodes) {
         var schain = bidRequest.schain;
@@ -78,49 +67,45 @@ export const spec = {
         for (var i2 = 0; i2 < schain.nodes.length; i2++) {
           var node = schain.nodes[i2];
           schainString += '!' +
-            (node.asi || '') + ',' +
-            (node.sid || '') + ',' +
-            (node.hp || '') + ',' +
-            (node.rid || '') + ',' +
-            (node.name || '') + ',' +
-            (node.domain || '');
+            fixedEncodeURIComponent(node.asi || '') + ',' +
+            fixedEncodeURIComponent(node.sid || '') + ',' +
+            fixedEncodeURIComponent(node.hp || '') + ',' +
+            fixedEncodeURIComponent(node.rid || '') + ',' +
+            fixedEncodeURIComponent(node.name || '') + ',' +
+            fixedEncodeURIComponent(node.domain || '');
         }
-        url.searchParams.set('schain', schainString);
+        url += '&schain=' + schainString;
       }
 
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString != null) {
-          url.searchParams.set('gdpr_consent', bidderRequest.gdprConsent.consentString);
+          url += '&gdpr_consent=' + bidderRequest.gdprConsent.consentString;
         }
         if (bidderRequest.gdprConsent.gdprApplies != null) {
-          url.searchParams.set('gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+          url += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
         }
       }
 
       if (bidderRequest.uspConsent != null) {
-        url.searchParams.set('us_privacy', bidderRequest.uspConsent);
+        url += '&us_privacy=' + bidderRequest.uspConsent;
       }
 
       if (config.getConfig('coppa')) {
-        url.searchParams.set('tfcd', (config.getConfig('coppa') ? 1 : 0));
+        url += '&tfcd=' + (config.getConfig('coppa') ? 1 : 0);
       }
 
+      let body = {};
       let adUnitCode = bidRequest.adUnitCode;
       if (adUnitCode) {
         body.adUnitCode = adUnitCode;
       }
       if (mediaType == VIDEO) {
         body.video = utils.deepAccess(bidRequest, 'mediaTypes.video');
-      } else if (mediaType == BANNER) {
-        body.banner = utils.deepAccess(bidRequest, 'mediaTypes.banner');
       }
-
-      const ortb = converter.toORTB({ bidderRequest, bidRequests: [bidRequest] });
-      Object.assign(body, ortb);
 
       requests.push({
         method: 'POST',
-        url: url.toString(),
+        url: url,
         bidRequest: bidRequest,
         data: body
       });
@@ -159,7 +144,7 @@ export const spec = {
         width: rawBid.width || 0,
         height: rawBid.height || 0,
         currency: rawBid.currency ? rawBid.currency : DEFAULT_CURRENCY,
-        netRevenue: rawBid.netRevenue ? rawBid.netRevenue : DEFAULT_NET_REVENUE,
+        netRevenue: rawBid.netRevenue ? rawBid.netRevenue : true,
         ttl: rawBid.ttl ? rawBid.ttl : DEFAULT_TTL,
         creativeId: rawBid.creativeid || 0,
         meta: {
@@ -206,5 +191,4 @@ export const spec = {
   }
 
 };
-
 registerBidder(spec);

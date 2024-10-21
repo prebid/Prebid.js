@@ -1,4 +1,4 @@
-import { generateUUID, getParameterByName, logError, logInfo, parseUrl, deepClone, hasNonSerializableProperty } from '../src/utils.js'
+import { generateUUID, getParameterByName, logError, logInfo, parseUrl } from '../src/utils.js'
 import { ajaxBuilder } from '../src/ajax.js'
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import adapterManager from '../src/adapterManager.js'
@@ -192,10 +192,10 @@ function handleEvent(eventType, eventArgs) {
     return
   }
 
-  if (eventArgs) {
-    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
-  } else {
-    eventArgs = {}
+  try {
+    eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {}
+  } catch (e) {
+    // keep eventArgs as is
   }
 
   const pmEvent = {}

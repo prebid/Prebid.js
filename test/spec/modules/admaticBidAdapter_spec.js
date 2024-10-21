@@ -802,7 +802,6 @@ describe('admaticBidAdapter', () => {
             'price': 0.01,
             'type': 'banner',
             'bidder': 'admatic',
-            'currency': 'TRY',
             'mime_type': {
               'name': 'backfill',
               'force': false
@@ -817,7 +816,6 @@ describe('admaticBidAdapter', () => {
             'width': 300,
             'height': 250,
             'price': 0.01,
-            'currency': 'TRY',
             'type': 'video',
             'mime_type': {
               'name': 'backfill',
@@ -834,7 +832,6 @@ describe('admaticBidAdapter', () => {
             'width': 1,
             'height': 1,
             'price': 0.01,
-            'currency': 'TRY',
             'type': 'native',
             'mime_type': {
               'name': 'backfill',
@@ -846,7 +843,6 @@ describe('admaticBidAdapter', () => {
             'iurl': 'https://www.admatic.com.tr'
           }
         ],
-        'cur': 'TRY',
         'queryId': 'cdnbh24rlv0hhkpfpln0',
         'status': true
       }};
@@ -857,9 +853,9 @@ describe('admaticBidAdapter', () => {
           cpm: 0.01,
           width: 300,
           height: 250,
+          currency: 'TRY',
           mediaType: 'banner',
           netRevenue: true,
-          currency: 'TRY',
           ad: '<div></div>',
           creativeId: '374',
           meta: {
@@ -877,9 +873,9 @@ describe('admaticBidAdapter', () => {
           cpm: 0.01,
           width: 300,
           height: 250,
+          currency: 'TRY',
           mediaType: 'video',
           netRevenue: true,
-          currency: 'TRY',
           vastXml: '<VAST></VAST>',
           creativeId: '3741',
           meta: {
@@ -897,9 +893,9 @@ describe('admaticBidAdapter', () => {
           cpm: 0.01,
           width: 1,
           height: 1,
+          currency: 'TRY',
           mediaType: 'native',
           netRevenue: true,
-          currency: 'TRY',
           native: {
             'clickUrl': 'https://www.admatic.com.tr',
             'impressionTrackers': ['https://www.admatic.com.tr'],
@@ -1148,8 +1144,7 @@ describe('admaticBidAdapter', () => {
       let bids = { body: {
         data: [],
         'queryId': 'cdnbh24rlv0hhkpfpln0',
-        'status': true,
-        'cur': 'TRY'
+        'status': true
       }};
 
       let result = spec.interpretResponse(bids, {data: request});

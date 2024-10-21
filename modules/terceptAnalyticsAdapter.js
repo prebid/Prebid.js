@@ -3,6 +3,7 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -123,7 +124,7 @@ function send(data, status) {
     search: {
       auctionTimestamp: auctionTimestamp,
       terceptAnalyticsVersion: terceptAnalyticsVersion,
-      prebidVersion: 'v' + '$prebid.version$'
+      prebidVersion: getGlobal().version
     }
   });
 

@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 import { deepAccess, parseSizesInput, isArray } from '../src/utils.js';
 
 const BIDDER_CODE = 'programmatica';

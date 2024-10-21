@@ -1,4 +1,4 @@
-import { deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
+import { logMessage, deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -80,9 +80,18 @@ export const spec = {
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
+
     let winTop = window;
     let location;
-    location = bidderRequest?.refererInfo ?? null;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
+    try {
+      location = new URL(bidderRequest.refererInfo.page)
+      winTop = window.top;
+    } catch (e) {
+      location = winTop.location;
+      logMessage(e);
+    };
+
     let bids = [];
     for (let bidRequest of validBidRequests) {
       let impObject = prepareImpObject(bidRequest);
@@ -96,8 +105,8 @@ export const spec = {
           language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
-          page: location?.page,
-          host: location?.domain
+          page: location.pathname,
+          host: location.host
         },
         source: {
           tid: bidderRequest?.ortb2?.source?.tid,
@@ -323,7 +332,7 @@ const parseSizes = (bid, mediaType) => {
 
 const addVideoParameters = (bidRequest) => {
   let videoObj = {};
-  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
+  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
 
   for (let param of supportParamsList) {
     if (bidRequest.mediaTypes.video[param] !== undefined) {

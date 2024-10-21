@@ -13,13 +13,14 @@ import {
   isPlainObject,
   logError,
   logInfo,
-  logWarn
+  logWarn,
+  safeJSONParse
 } from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
+import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {GreedyPromise} from '../src/utils/promise.js';
 import {loadExternalScript} from '../src/adloader.js';
@@ -33,11 +34,17 @@ import {loadExternalScript} from '../src/adloader.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
+const NB_EXP_DAYS = 30;
 export const ID5_STORAGE_NAME = 'id5id';
+export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
+const LOCAL_STORAGE = 'html5';
 const LOG_PREFIX = 'User ID - ID5 submodule: ';
 const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 const ID5_DOMAIN = 'id5-sync.com';
-const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
+
+// order the legacy cookie names in reverse priority order so the last
+// cookie in the array is the most preferred to use
+const LEGACY_COOKIE_NAMES = ['pbjs-id5id', 'id5id.1st', 'id5id'];
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
@@ -127,13 +134,12 @@ export const id5IdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    let universalUid, publisherTrueLinkId;
+    let universalUid;
     let ext = {};
 
     if (value && typeof value.universal_uid === 'string') {
       universalUid = value.universal_uid;
       ext = value.ext || ext;
-      publisherTrueLinkId = value.publisherTrueLinkId;
     } else {
       return undefined;
     }
@@ -150,12 +156,6 @@ export const id5IdSubmodule = {
         uid: ext.euid.uids[0].id,
         source: ext.euid.source,
         ext: {provider: ID5_DOMAIN}
-      };
-    }
-
-    if (publisherTrueLinkId) {
-      responseObj.trueLinkId = {
-        uid: publisherTrueLinkId,
       };
     }
 
@@ -223,7 +223,7 @@ export const id5IdSubmodule = {
    * @param {SubmoduleConfig} config
    * @param {ConsentData|undefined} consentData
    * @param {Object} cacheIdObj - existing id, if any
-   * @return {IdResponse} A response object that contains id.
+   * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
   extendId(config, consentData, cacheIdObj) {
     if (!hasWriteConsentToLocalStorage(consentData)) {
@@ -231,13 +231,12 @@ export const id5IdSubmodule = {
       return cacheIdObj;
     }
 
+    const partnerId = validateConfig(config) ? config.params.partner : 0;
+    incrementNb(partnerId);
+
     logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
-    if (cacheIdObj) {
-      cacheIdObj.nbPage = incrementNb(cacheIdObj)
-    }
     return cacheIdObj;
   },
-  primaryIds: ['id5id', 'trueLinkId'],
   eids: {
     'id5id': {
       getValue: function (data) {
@@ -264,22 +263,7 @@ export const id5IdSubmodule = {
           return data.ext;
         }
       }
-    },
-    'trueLinkId': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return TRUE_LINK_SOURCE;
-      },
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
     }
-
   }
 };
 
@@ -394,10 +378,8 @@ export class IdFetchFlow {
     const params = this.submoduleConfig.params;
     const hasGdpr = (this.gdprConsentData && typeof this.gdprConsentData.gdprApplies === 'boolean' && this.gdprConsentData.gdprApplies) ? 1 : 0;
     const referer = getRefererInfo();
-    const signature = this.cacheIdObj ? this.cacheIdObj.signature : undefined;
-    const nbPage = incrementNb(this.cacheIdObj);
-    const trueLinkInfo = window.id5Bootstrap ? window.id5Bootstrap.getTrueLinkInfo() : {booted: false};
-
+    const signature = (this.cacheIdObj && this.cacheIdObj.signature) ? this.cacheIdObj.signature : getLegacyCookieSignature();
+    const nbPage = incrementAndResetNb(params.partner);
     const data = {
       'partner': params.partner,
       'gdpr': hasGdpr,
@@ -410,8 +392,7 @@ export class IdFetchFlow {
       'u': referer.stack[0] || window.location.href,
       'v': '$prebid.version$',
       'storage': this.submoduleConfig.storage,
-      'localStorage': storage.localStorageIsEnabled() ? 1 : 0,
-      'true_link': trueLinkInfo
+      'localStorage': storage.localStorageIsEnabled() ? 1 : 0
     };
 
     // pass in optional data, but only if populated
@@ -449,9 +430,7 @@ export class IdFetchFlow {
   #processFetchCallResponse(fetchCallResponse) {
     try {
       if (fetchCallResponse.privacy) {
-        if (window.id5Bootstrap && window.id5Bootstrap.setPrivacy) {
-          window.id5Bootstrap.setPrivacy(fetchCallResponse.privacy);
-        }
+        storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(fetchCallResponse.privacy), NB_EXP_DAYS);
       }
     } catch (error) {
       logError(LOG_PREFIX + 'Error while writing privacy info into local storage.', error);
@@ -499,19 +478,89 @@ function validateConfig(config) {
     logError(LOG_PREFIX + 'storage required to be set');
     return false;
   }
+
+  // in a future release, we may return false if storage type or name are not set as required
+  if (config.storage.type !== LOCAL_STORAGE) {
+    logWarn(LOG_PREFIX + `storage type recommended to be '${LOCAL_STORAGE}'. In a future release this may become a strict requirement`);
+  }
+  // in a future release, we may return false if storage type or name are not set as required
   if (config.storage.name !== ID5_STORAGE_NAME) {
-    logWarn(LOG_PREFIX + `storage name recommended to be '${ID5_STORAGE_NAME}'.`);
+    logWarn(LOG_PREFIX + `storage name recommended to be '${ID5_STORAGE_NAME}'. In a future release this may become a strict requirement`);
   }
 
   return true;
 }
 
-function incrementNb(cachedObj) {
-  if (cachedObj && cachedObj.nbPage !== undefined) {
-    return cachedObj.nbPage + 1;
-  } else {
-    return 1;
+export function expDaysStr(expDays) {
+  return (new Date(Date.now() + (1000 * 60 * 60 * 24 * expDays))).toUTCString();
+}
+
+export function nbCacheName(partnerId) {
+  return `${ID5_STORAGE_NAME}_${partnerId}_nb`;
+}
+
+export function storeNbInCache(partnerId, nb) {
+  storeInLocalStorage(nbCacheName(partnerId), nb, NB_EXP_DAYS);
+}
+
+export function getNbFromCache(partnerId) {
+  let cacheNb = getFromLocalStorage(nbCacheName(partnerId));
+  return (cacheNb) ? parseInt(cacheNb) : 0;
+}
+
+function incrementNb(partnerId) {
+  const nb = (getNbFromCache(partnerId) + 1);
+  storeNbInCache(partnerId, nb);
+  return nb;
+}
+
+function incrementAndResetNb(partnerId) {
+  const result = incrementNb(partnerId);
+  storeNbInCache(partnerId, 0);
+  return result;
+}
+
+function getLegacyCookieSignature() {
+  let legacyStoredValue;
+  LEGACY_COOKIE_NAMES.forEach(function (cookie) {
+    if (storage.getCookie(cookie)) {
+      legacyStoredValue = safeJSONParse(storage.getCookie(cookie)) || legacyStoredValue;
+    }
+  });
+  return (legacyStoredValue && legacyStoredValue.signature) || '';
+}
+
+/**
+ * This will make sure we check for expiration before accessing local storage
+ * @param {string} key
+ */
+export function getFromLocalStorage(key) {
+  const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
+  // empty string means no expiration set
+  if (storedValueExp === '') {
+    return storage.getDataFromLocalStorage(key);
+  } else if (storedValueExp) {
+    if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
+      return storage.getDataFromLocalStorage(key);
+    }
   }
+  // if we got here, then we have an expired item or we didn't set an
+  // expiration initially somehow, so we need to remove the item from the
+  // local storage
+  storage.removeDataFromLocalStorage(key);
+  return null;
+}
+
+/**
+ * Ensure that we always set an expiration in local storage since
+ * by default it's not required
+ * @param {string} key
+ * @param {any} value
+ * @param {number} expDays
+ */
+export function storeInLocalStorage(key, value, expDays) {
+  storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
+  storage.setDataInLocalStorage(`${key}`, value);
 }
 
 /**

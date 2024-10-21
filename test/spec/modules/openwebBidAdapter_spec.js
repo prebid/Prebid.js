@@ -25,8 +25,7 @@ describe('openwebAdapter', function () {
       'adUnitCode': 'adunit-code',
       'sizes': [['640', '480']],
       'params': {
-        'org': 'jdye8weeyirk00000001',
-        'placementId': '123'
+        'org': 'jdye8weeyirk00000001'
       }
     };
 
@@ -34,20 +33,11 @@ describe('openwebAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when org param is not found', function () {
+    it('should return false when required params are not found', function () {
       const newBid = Object.assign({}, bid);
       delete newBid.params;
       newBid.params = {
         'org': null
-      };
-      expect(spec.isBidRequestValid(newBid)).to.equal(false);
-    });
-
-    it('should return false when placementId param is not found', function () {
-      const newBid = Object.assign({}, bid);
-      delete newBid.params;
-      newBid.params = {
-        'placementId': null
       };
       expect(spec.isBidRequestValid(newBid)).to.equal(false);
     });
@@ -60,8 +50,7 @@ describe('openwebAdapter', function () {
         'adUnitCode': 'adunit-code',
         'sizes': [[640, 480]],
         'params': {
-          'org': 'jdye8weeyirk00000001',
-          'placementId': '123'
+          'org': 'jdye8weeyirk00000001'
         },
         'bidId': '299ffc8cca0b87',
         'loop': 1,
@@ -114,13 +103,15 @@ describe('openwebAdapter', function () {
     const bidderRequest = {
       bidderCode: 'openweb',
     }
+    const placementId = '12345678';
     const api = [1, 2];
     const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
     const protocols = [2, 3, 5, 6];
 
     it('sends the placementId to ENDPOINT via POST', function () {
+      bidRequests[0].params.placementId = placementId;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[0].placementId).to.equal('123');
+      expect(request.data.bids[0].placementId).to.equal(placementId);
     });
 
     it('sends the plcmt to ENDPOINT via POST', function () {
@@ -449,8 +440,6 @@ describe('openwebAdapter', function () {
         width: 640,
         height: 480,
         requestId: '21e12606d47ba7',
-        creativeId: 'creative-id-1',
-        nurl: 'http://example.com/win/1234',
         adomain: ['abc.com'],
         mediaType: VIDEO
       },
@@ -460,8 +449,6 @@ describe('openwebAdapter', function () {
         width: 300,
         height: 250,
         requestId: '21e12606d47ba7',
-        creativeId: 'creative-id-2',
-        nurl: 'http://example.com/win/1234',
         adomain: ['abc.com'],
         mediaType: BANNER
       }]
@@ -474,7 +461,7 @@ describe('openwebAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: 'creative-id-1',
+      creativeId: '21e12606d47ba7',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: VIDEO,
@@ -489,10 +476,10 @@ describe('openwebAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 300,
-      height: 250,
+      width: 640,
+      height: 480,
       ttl: TTL,
-      creativeId: 'creative-id-2',
+      creativeId: '21e12606d47ba7',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
@@ -505,8 +492,8 @@ describe('openwebAdapter', function () {
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(result[0]).to.deep.equal(expectedVideoResponse);
-      expect(result[1]).to.deep.equal(expectedBannerResponse);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
+      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
     });
 
     it('video type should have vastXml key', function () {

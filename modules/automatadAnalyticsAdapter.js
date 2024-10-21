@@ -18,8 +18,6 @@ var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null
 
 const prettyLog = (level, text, isGroup = false, cb = () => {}) => {
   if (self.isLoggingEnabled === undefined) {
-    // TODO FIX THIS RULES VIOLATION
-    // eslint-disable-next-line prebid/no-global
     if (window.localStorage.getItem('__aggLoggingEnabled')) {
       self.isLoggingEnabled = true
     } else {

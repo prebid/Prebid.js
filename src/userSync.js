@@ -25,7 +25,7 @@ export const USERSYNC_DEFAULT_CONFIG = {
   },
   syncsPerBidder: 5,
   syncDelay: 3000,
-  auctionDelay: 500
+  auctionDelay: 0
 };
 
 // Set userSync default values

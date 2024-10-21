@@ -31,8 +31,7 @@ var adUnits = [
         params: {
           // id of test publisher
           pubid: '22430f9d-9610-432c-aabe-6134256f11af',
-          // id of test adtag id
-          adtagid: '6f3173b9-5623-4a4f-8c62-2b1d24ceb4e6',
+          floorPrice: 1.25,
         },
       },
     ],
@@ -54,8 +53,7 @@ var adUnits = [
         params: {
           // id of test publisher
           pubid: '22430f9d-9610-432c-aabe-6134256f11af',
-          // id of test adtag id
-          adtagid: '097c601f-ad09-495b-b70b-d9cf6f1edbc1',
+          floorPrice: 1.25,
         },
       },
     ],
@@ -81,7 +79,7 @@ var adUnits = [
         bidder: 'pstudio',
         params: {
           pubid: '22430f9d-9610-432c-aabe-6134256f11af', // required
-          adtagid: 'b9be4c35-3c12-4fa9-96ba-34b90276208c', // required
+          floorPrice: 1.15, // required
           bcat: ['IAB1-1', 'IAB1-3'], // optional
           badv: ['nike.com'], // optional
           bapp: ['com.foo.mygame'], // optional
@@ -123,7 +121,7 @@ var videoAdUnits = [
         bidder: 'pstudio',
         params: {
           pubid: '22430f9d-9610-432c-aabe-6134256f11af',
-          adtagid: '46e348cf-b79d-43e5-81bc-5954cdf15d7e',
+          floorPrice: 1.25,
           badv: ['adidas.com'],
         },
       },

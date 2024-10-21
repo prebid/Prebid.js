@@ -1,51 +1,10 @@
-import {deepAccess, isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
+import {deepAccess, logError} from './utils.js';
 import {config} from '../src/config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
-
-/**
- * List of OpenRTB 2.x video object properties with simple validators.
- * Not included: `companionad`, `durfloors`, `ext`
- * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
- */
-export const ORTB_VIDEO_PARAMS = new Map([
-  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-  [ 'minduration', isInteger ],
-  [ 'maxduration', isInteger ],
-  [ 'startdelay', isInteger ],
-  [ 'maxseq', isInteger ],
-  [ 'poddur', isInteger ],
-  [ 'protocols', isArrayOfNums ],
-  [ 'w', isInteger ],
-  [ 'h', isInteger ],
-  [ 'podid', isStr ],
-  [ 'podseq', isInteger ],
-  [ 'rqddurs', isArrayOfNums ],
-  [ 'placement', isInteger ], // deprecated, see plcmt
-  [ 'plcmt', isInteger ],
-  [ 'linearity', isInteger ],
-  [ 'skip', value => [1, 0].includes(value) ],
-  [ 'skipmin', isInteger ],
-  [ 'skipafter', isInteger ],
-  [ 'sequence', isInteger ], // deprecated
-  [ 'slotinpod', isInteger ],
-  [ 'mincpmpersec', isNumber ],
-  [ 'battr', isArrayOfNums ],
-  [ 'maxextended', isInteger ],
-  [ 'minbitrate', isInteger ],
-  [ 'maxbitrate', isInteger ],
-  [ 'boxingallowed', isInteger ],
-  [ 'playbackmethod', isArrayOfNums ],
-  [ 'playbackend', isInteger ],
-  [ 'delivery', isArrayOfNums ],
-  [ 'pos', isInteger ],
-  [ 'api', isArrayOfNums ],
-  [ 'companiontype', isArrayOfNums ],
-  [ 'poddedupe', isArrayOfNums ]
-]);
 
 export function fillVideoDefaults(adUnit) {
   const video = adUnit?.mediaTypes?.video;
@@ -59,42 +18,6 @@ export function fillVideoDefaults(adUnit) {
 }
 
 /**
- * validateOrtbVideoFields mutates the `adUnit.mediaTypes.video` object by removing invalid ortb properties (default).
- * The onInvalidParam callback can be used to handle invalid properties differently.
- * Other properties are ignored and kept as is.
- *
- * @param {Object} adUnit - The adUnit object.
- * @param {Function} onInvalidParam - The callback function to be called with key, value, and adUnit.
- * @returns {void}
- */
-export function validateOrtbVideoFields(adUnit, onInvalidParam) {
-  const videoParams = adUnit?.mediaTypes?.video;
-
-  if (!isPlainObject(videoParams)) {
-    logWarn(`validateOrtbVideoFields: videoParams must be an object.`);
-    return;
-  }
-
-  if (videoParams != null) {
-    Object.entries(videoParams)
-      .forEach(([key, value]) => {
-        if (!ORTB_VIDEO_PARAMS.has(key)) {
-          return
-        }
-        const isValid = ORTB_VIDEO_PARAMS.get(key)(value);
-        if (!isValid) {
-          if (typeof onInvalidParam === 'function') {
-            onInvalidParam(key, value, adUnit);
-          } else {
-            delete videoParams[key];
-            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
-          }
-        }
-      });
-  }
-}
-
-/**
  * @typedef {object} VideoBid
  * @property {string} adId id of the bid
  */
@@ -102,8 +25,7 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam) {
 /**
  * Validate that the assets required for video context are present on the bid
  * @param {VideoBid} bid Video bid to validate
- * @param {Object} [options] - Options object
- * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`
+ * @param index
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/precisoBidAdapter.js';
-// simport { config } from '../../../src/config.js';
+import { config } from '../../../src/config.js';
 
 const DEFAULT_PRICE = 1
 const DEFAULT_CURRENCY = 'USD'
@@ -10,10 +10,8 @@ const BIDDER_CODE = 'preciso';
 
 describe('PrecisoAdapter', function () {
   let bid = {
-    precisoBid: true,
     bidId: '23fhj33i987f',
     bidder: 'preciso',
-    buyerUid: 'testuid',
     mediaTypes: {
       banner: {
         sizes: [[DEFAULT_BANNER_WIDTH, DEFAULT_BANNER_HEIGHT]]
@@ -24,33 +22,15 @@ describe('PrecisoAdapter', function () {
       sourceid: '0',
       publisherId: '0',
       mediaType: 'banner',
-      region: 'IND'
+      region: 'prebid-eu'
 
     },
     userId: {
       pubcid: '12355454test'
 
     },
-    user: {
-      geo: {
-        region: 'IND',
-      }
-    },
-    ortb2: {
-      device: {
-        w: 1920,
-        h: 166,
-        dnt: 0,
-      },
-      site: {
-        domain: 'localHost'
-      },
-      source: {
-        tid: 'eaff09b-a1ab-4ec6-a81e-c5a75bc1dde3'
-      }
-
-    }
-
+    geo: 'NA',
+    city: 'Asia,delhi'
   };
 
   describe('isBidRequestValid', function () {
@@ -79,17 +59,43 @@ describe('PrecisoAdapter', function () {
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
-      expect(data).to.be.an('object');
-      expect(data.device).to.be.a('object');
-      expect(data.user).to.be.a('object');
-      expect(data.source).to.be.a('object');
-      expect(data.site).to.be.a('object');
+      // expect(data).to.be.an('object');
+
+      // expect(data).to.have.all.keys('bidId', 'imp', 'site', 'deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
+
+      expect(data.deviceWidth).to.be.a('number');
+      expect(data.deviceHeight).to.be.a('number');
+      expect(data.coppa).to.be.a('number');
+      expect(data.language).to.be.a('string');
+      // expect(data.secure).to.be.within(0, 1);
+      expect(data.host).to.be.a('string');
+      expect(data.page).to.be.a('string');
+
+      expect(data.city).to.be.a('string');
+      expect(data.geo).to.be.a('object');
+      // expect(data.userId).to.be.a('string');
+      // expect(data.imp).to.be.a('object');
     });
-    it('Returns empty data if no valid requests are passed', function () {
-      delete bid.ortb2.device;
-      serverRequest = spec.buildRequests([bid]);
-      let data = serverRequest.data;
-      expect(data.device).to.be.undefined;
+    // it('Returns empty data if no valid requests are passed', function () {
+    /// serverRequest = spec.buildRequests([]);
+    // let data = serverRequest.data;
+    // expect(data.imp).to.be.an('array').that.is.empty;
+    // });
+  });
+
+  describe('with COPPA', function () {
+    beforeEach(function () {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+    });
+    afterEach(function () {
+      config.getConfig.restore();
+    });
+
+    it('should send the Coppa "required" flag set to "1" in the request', function () {
+      let serverRequest = spec.buildRequests([bid]);
+      expect(serverRequest.data.coppa).to.equal(1);
     });
   });
 
@@ -141,8 +147,7 @@ describe('PrecisoAdapter', function () {
   describe('getUserSyncs', function () {
     const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4';
     const syncOptions = {
-      iframeEnabled: true,
-      spec: true
+      iframeEnabled: true
     };
     let userSync = spec.getUserSyncs(syncOptions);
     it('Returns valid URL and type', function () {

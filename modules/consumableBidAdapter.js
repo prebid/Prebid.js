@@ -61,8 +61,7 @@ export const spec = {
       source: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
-      }],
-      lang: bidderRequest.ortb2.device.language,
+      }]
     }, validBidRequests[0].params);
 
     if (bidderRequest && bidderRequest.gdprConsent) {

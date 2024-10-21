@@ -3,9 +3,6 @@ import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepClone} from '../../../src/utils';
-import 'modules/consentManagementTcf.js';
-import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -365,7 +362,7 @@ describe('PulsePoint Adapter Tests', function () {
     const bidderRequestGdpr = {
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gdpr_data'
+        consentString: 'serialized_gpdr_data'
       }
     };
     const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(Object.assign({}, bidderRequest, bidderRequestGdpr)));
@@ -375,7 +372,7 @@ describe('PulsePoint Adapter Tests', function () {
     // user object
     expect(ortbRequest.user).to.not.equal(null);
     expect(ortbRequest.user.ext).to.not.equal(null);
-    expect(ortbRequest.user.ext.consent).to.equal('serialized_gdpr_data');
+    expect(ortbRequest.user.ext.consent).to.equal('serialized_gpdr_data');
     // regs object
     expect(ortbRequest.regs).to.not.equal(null);
     expect(ortbRequest.regs.ext).to.not.equal(null);
@@ -487,33 +484,22 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify common id parameters', function () {
     const bidRequests = deepClone(slotConfigs);
-    const eids = [
-      {
-        source: 'pubcid.org',
-        uids: [{
-          id: 'userid_pubcid'
-        }]
-      }, {
-        source: 'adserver.org',
-        uids: [{
-          id: 'userid_ttd',
-          ext: {
-            rtiPartner: 'TDID'
-          }
-        }]
-      }
-    ];
-    const br = {
-      ...bidderRequest,
-      ortb2: {
-        user: {
-          ext: {
-            eids
-          }
+    bidRequests[0].userIdAsEids = [{
+      source: 'pubcid.org',
+      uids: [{
+        id: 'userid_pubcid'
+      }]
+    }, {
+      source: 'adserver.org',
+      uids: [{
+        id: 'userid_ttd',
+        ext: {
+          rtiPartner: 'TDID'
         }
-      }
+      }]
     }
-    const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(br));
+    ];
+    const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
     expect(request).to.be.not.null;
     expect(request.data).to.be.not.null;
     const ortbRequest = request.data;
@@ -521,7 +507,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user).to.not.be.undefined;
     expect(ortbRequest.user.ext).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.deep.equal(eids);
+    expect(ortbRequest.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
   });
 
   it('Verify user level first party data', function () {
@@ -532,7 +518,7 @@ describe('PulsePoint Adapter Tests', function () {
       },
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gdpr_data'
+        consentString: 'serialized_gpdr_data'
       },
       ortb2: {
         user: {
@@ -559,7 +545,7 @@ describe('PulsePoint Adapter Tests', function () {
           registered: true,
           interests: ['cars']
         },
-        consent: 'serialized_gdpr_data'
+        consent: 'serialized_gpdr_data'
       }
     });
   });

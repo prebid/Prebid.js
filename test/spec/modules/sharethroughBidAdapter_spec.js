@@ -4,7 +4,6 @@ import * as sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
-import { deepSetValue } from '../../../src/utils';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 
@@ -39,8 +38,19 @@ describe('sharethrough adapter spec', function () {
       expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
     });
 
+    it('should return false if req has wrong bidder code', function () {
+      const invalidBidRequest = {
+        bidder: 'notSharethrough',
+        params: {
+          pkey: 'abc123',
+        },
+      };
+      expect(spec.isBidRequestValid(invalidBidRequest)).to.eql(false);
+    });
+
     it('should return true if req is correct', function () {
       const validBidRequest = {
+        bidder: 'sharethrough',
         params: {
           pkey: 'abc123',
         },
@@ -75,7 +85,6 @@ describe('sharethrough adapter spec', function () {
           mediaTypes: {
             banner: {
               pos: 1,
-              battr: [6, 7],
             },
           },
           ortb2Imp: {
@@ -217,7 +226,7 @@ describe('sharethrough adapter spec', function () {
             video: {
               pos: 3,
               skip: 1,
-              linearity: 1,
+              linearity: 0,
               minduration: 10,
               maxduration: 30,
               playbackmethod: [1],
@@ -229,12 +238,9 @@ describe('sharethrough adapter spec', function () {
               skipmin: 10,
               skipafter: 20,
               delivery: 1,
-              battr: [13, 14],
               companiontype: 'companion type',
               companionad: 'companion ad',
               context: 'instream',
-              placement: 1,
-              plcmt: 1,
             },
           },
           getFloor: () => ({ currency: 'USD', floor: 42 }),
@@ -339,41 +345,6 @@ describe('sharethrough adapter spec', function () {
           const openRtbReq = spec.buildRequests([bidRequests[1]], bidderRequest)[0].data;
 
           expect(openRtbReq.user.ext.eids).to.deep.equal([]);
-        });
-
-        it('should add ORTB2 device data to the request', () => {
-          const bidderRequestWithOrtb2Device = {
-            ...bidderRequest,
-            ...{
-              ortb2: {
-                device: {
-                  w: 980,
-                  h: 1720,
-                  dnt: 0,
-                  ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
-                  language: 'en',
-                  devicetype: 1,
-                  make: 'Apple',
-                  model: 'iPhone 12 Pro Max',
-                  os: 'iOS',
-                  osv: '17.4',
-                },
-              },
-            },
-          };
-
-          const [request] = spec.buildRequests(bidRequests, bidderRequestWithOrtb2Device);
-
-          expect(request.data.device.w).to.equal(bidderRequestWithOrtb2Device.ortb2.device.w);
-          expect(request.data.device.h).to.equal(bidderRequestWithOrtb2Device.ortb2.device.h);
-          expect(request.data.device.dnt).to.equal(bidderRequestWithOrtb2Device.ortb2.device.dnt);
-          expect(request.data.device.ua).to.equal(bidderRequestWithOrtb2Device.ortb2.device.ua);
-          expect(request.data.device.language).to.equal(bidderRequestWithOrtb2Device.ortb2.device.language);
-          expect(request.data.device.devicetype).to.equal(bidderRequestWithOrtb2Device.ortb2.device.devicetype);
-          expect(request.data.device.make).to.equal(bidderRequestWithOrtb2Device.ortb2.device.make);
-          expect(request.data.device.model).to.equal(bidderRequestWithOrtb2Device.ortb2.device.model);
-          expect(request.data.device.os).to.equal(bidderRequestWithOrtb2Device.ortb2.device.os);
-          expect(request.data.device.osv).to.equal(bidderRequestWithOrtb2Device.ortb2.device.osv);
         });
       });
 
@@ -553,58 +524,8 @@ describe('sharethrough adapter spec', function () {
           ]);
         });
 
-        it('should correctly harvest battr values for banner if present in mediaTypes.banner of impression and battr is not defined in ortb2Imp.banner', () => {
-          // assemble
-          const EXPECTED_BATTR_VALUES = [6, 7];
-
-          // act
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
-          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
-
-          // assert
-          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
-        });
-
-        it('should not include battr values for banner if NOT present in mediaTypes.banner of impression and battr is not defined in ortb2Imp.banner', () => {
-          // assemble
-          delete bidRequests[0].mediaTypes.banner.battr;
-
-          // act
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
-
-          // assert
-          expect(builtRequest.data.imp[0].banner.battr).to.be.undefined;
-        });
-
-        it('should prefer battr values from mediaTypes.banner over ortb2Imp.banner', () => {
-          // assemble
-          deepSetValue(bidRequests[0], 'ortb2Imp.banner.battr', [1, 2, 3]);
-          const EXPECTED_BATTR_VALUES = [6, 7]; // values from mediaTypes.banner
-
-          // act
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
-          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
-
-          // assert
-          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
-        });
-
-        it('should use battr values from ortb2Imp.banner if mediaTypes.banner.battr is not present', () => {
-          // assemble
-          delete bidRequests[0].mediaTypes.banner.battr;
-          const EXPECTED_BATTR_VALUES = [1, 2, 3];
-          deepSetValue(bidRequests[0], 'ortb2Imp.banner.battr', EXPECTED_BATTR_VALUES);
-
-          // act
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
-          const ACTUAL_BATTR_VALUES = builtRequest.data.imp[0].banner.battr
-
-          // assert
-          expect(ACTUAL_BATTR_VALUES).to.deep.equal(EXPECTED_BATTR_VALUES);
-        });
-
         it('should default to pos 0 if not provided', () => {
-          delete bidRequests[0].mediaTypes.banner.pos;
+          delete bidRequests[0].mediaTypes;
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
 
           const bannerImp = builtRequest.data.imp[0].banner;
@@ -620,7 +541,7 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.pos).to.equal(3);
           expect(videoImp.topframe).to.equal(1);
           expect(videoImp.skip).to.equal(1);
-          expect(videoImp.linearity).to.equal(1);
+          expect(videoImp.linearity).to.equal(0);
           expect(videoImp.minduration).to.equal(10);
           expect(videoImp.maxduration).to.equal(30);
           expect(videoImp.playbackmethod).to.deep.equal([1]);
@@ -634,60 +555,50 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.skipafter).to.equal(20);
           expect(videoImp.placement).to.equal(1);
           expect(videoImp.delivery).to.equal(1);
-          expect(videoImp.battr).to.deep.equal([13, 14]);
           expect(videoImp.companiontype).to.equal('companion type');
           expect(videoImp.companionad).to.equal('companion ad');
         });
 
-        it('should set defaults in some circumstances if no value provided', () => {
+        it('should set defaults if no value provided', () => {
           delete bidRequests[1].mediaTypes.video.pos;
+          delete bidRequests[1].mediaTypes.video.skip;
+          delete bidRequests[1].mediaTypes.video.linearity;
+          delete bidRequests[1].mediaTypes.video.minduration;
+          delete bidRequests[1].mediaTypes.video.maxduration;
+          delete bidRequests[1].mediaTypes.video.playbackmethod;
+          delete bidRequests[1].mediaTypes.video.api;
+          delete bidRequests[1].mediaTypes.video.mimes;
+          delete bidRequests[1].mediaTypes.video.protocols;
           delete bidRequests[1].mediaTypes.video.playerSize;
+          delete bidRequests[1].mediaTypes.video.startdelay;
+          delete bidRequests[1].mediaTypes.video.skipmin;
+          delete bidRequests[1].mediaTypes.video.skipafter;
+          delete bidRequests[1].mediaTypes.video.placement;
+          delete bidRequests[1].mediaTypes.video.delivery;
+          delete bidRequests[1].mediaTypes.video.companiontype;
+          delete bidRequests[1].mediaTypes.video.companionad;
 
           const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
 
           const videoImp = builtRequest.data.imp[0].video;
           expect(videoImp.pos).to.equal(0);
+          expect(videoImp.skip).to.equal(0);
+          expect(videoImp.linearity).to.equal(1);
+          expect(videoImp.minduration).to.equal(5);
+          expect(videoImp.maxduration).to.equal(60);
+          expect(videoImp.playbackmethod).to.deep.equal([2]);
+          expect(videoImp.api).to.deep.equal([2]);
+          expect(videoImp.mimes).to.deep.equal(['video/mp4']);
+          expect(videoImp.protocols).to.deep.equal([2, 3, 5, 6, 7, 8]);
           expect(videoImp.w).to.equal(640);
           expect(videoImp.h).to.equal(360);
-        });
-
-        it('should not set values in some circumstances when non-valid values are supplied', () => {
-          // arrange
-          bidRequests[1].mediaTypes.video.api = 1; // non-array value, will not be used
-          bidRequests[1].mediaTypes.video.battr = undefined; // non-array value, will not be used
-          bidRequests[1].mediaTypes.video.mimes = 'video/3gpp'; // non-array value, will not be used
-          bidRequests[1].mediaTypes.video.playbackmethod = null; // non-array value, will not be used
-          bidRequests[1].mediaTypes.video.protocols = []; // empty array, will not be used
-
-          // act
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
-          const videoImp = builtRequest.data.imp[0].video;
-
-          // assert
-          expect(videoImp.api).to.be.undefined;
-          expect(videoImp.battr).to.be.undefined;
-          expect(videoImp.mimes).to.be.undefined;
-          expect(videoImp.playbackmethod).to.be.undefined;
-          expect(videoImp.protocols).to.be.undefined;
-        });
-
-        it('should not set a property if no corresponding property is detected on mediaTypes.video', () => {
-          // arrange
-          const propertiesToConsider = [
-            'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
-          ]
-
-          // act
-          propertiesToConsider.forEach(propertyToConsider => {
-            delete bidRequests[1].mediaTypes.video[propertyToConsider];
-          });
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
-          const videoImp = builtRequest.data.imp[0].video;
-
-          // assert
-          propertiesToConsider.forEach(propertyToConsider => {
-            expect(videoImp[propertyToConsider]).to.be.undefined;
-          });
+          expect(videoImp.startdelay).to.equal(0);
+          expect(videoImp.skipmin).to.equal(0);
+          expect(videoImp.skipafter).to.equal(0);
+          expect(videoImp.placement).to.equal(1);
+          expect(videoImp.delivery).to.be.undefined;
+          expect(videoImp.companiontype).to.be.undefined;
+          expect(videoImp.companionad).to.be.undefined;
         });
 
         describe('outstream', () => {
@@ -699,6 +610,36 @@ describe('sharethrough adapter spec', function () {
             const videoImp = builtRequest.data.imp[0].video;
 
             expect(videoImp.placement).to.equal(3);
+          });
+
+          it('should default placement to 4 if not provided', () => {
+            bidRequests[1].mediaTypes.video.context = 'outstream';
+
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            expect(videoImp.placement).to.equal(4);
+          });
+
+          it('should not override "placement" value if "plcmt" prop is present', () => {
+            // ASSEMBLE
+            const ARBITRARY_PLACEMENT_VALUE = 99;
+            const ARBITRARY_PLCMT_VALUE = 100;
+
+            bidRequests[1].mediaTypes.video.context = 'instream';
+            bidRequests[1].mediaTypes.video.placement = ARBITRARY_PLACEMENT_VALUE;
+
+            // adding "plcmt" property - this should prevent "placement" prop
+            // from getting overridden to 1
+            bidRequests[1].mediaTypes.video['plcmt'] = ARBITRARY_PLCMT_VALUE;
+
+            // ACT
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            // ASSERT
+            expect(videoImp.placement).to.equal(ARBITRARY_PLACEMENT_VALUE);
+            expect(videoImp.plcmt).to.equal(ARBITRARY_PLCMT_VALUE);
           });
         });
       });
@@ -814,7 +755,7 @@ describe('sharethrough adapter spec', function () {
           const EXPECTED_AE_VALUE = 1;
 
           // ACT
-          bidderRequest.paapi = {enabled: true};
+          bidderRequest['fledgeEnabled'] = true;
           const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
           const ACTUAL_AE_VALUE = builtRequests[0].data.imp[0].ext.ae;
 

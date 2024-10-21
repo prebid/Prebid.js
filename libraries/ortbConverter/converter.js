@@ -117,7 +117,7 @@ export function ortbConverter({
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`')
       }
       function augmentContext(ctx, extraParams = {}) {
-        return Object.assign(ctx, {ortbRequest: request}, extraParams);
+        return Object.assign(ctx, {ortbRequest: request}, extraParams, ctx);
       }
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));
       const bidResponses = (response.seatbid || []).flatMap(seatbid =>

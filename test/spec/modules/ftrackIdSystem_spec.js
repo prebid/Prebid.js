@@ -3,10 +3,10 @@ import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import { loadExternalScript } from 'src/adloader.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
+import { init, setSubmoduleRegistry } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
-import 'src/prebid.js';
+let expect = require('chai').expect;
 
 let server;
 
@@ -380,10 +380,10 @@ describe('FTRACK ID System', () => {
           }
         });
 
-        return getGlobal().getUserIdsAsync().then(ids => {
-          expect(ids.ftrackId).to.deep.equal({
+        getGlobal().getUserIdsAsync().then(ids => {
+          expect(ids).to.deep.equal({
             uid: 'device_test_id',
-            ext: {
+            ftrackId: {
               HHID: 'household_test_id',
               DeviceID: 'device_test_id',
               SingleDeviceID: 'single_device_test_id'
@@ -557,41 +557,6 @@ describe('FTRACK ID System', () => {
           }]);
         });
       });
-    });
-  });
-  describe('eid', () => {
-    before(() => {
-      attachIdSystem(ftrackIdSubmodule);
-    });
-    it('should return the correct EID schema', () => {
-      // This is the schema returned from the ftrack decode() method
-      expect(createEidsArray({
-        ftrackId: {
-          uid: 'test-device-id',
-          ext: {
-            DeviceID: 'test-device-id',
-            SingleDeviceID: 'test-single-device-id',
-            HHID: 'test-household-id'
-          }
-        },
-        foo: {
-          bar: 'baz'
-        },
-        lorem: {
-          ipsum: ''
-        }
-      })).to.deep.equal([{
-        source: 'flashtalking.com',
-        uids: [{
-          atype: 1,
-          id: 'test-device-id',
-          ext: {
-            DeviceID: 'test-device-id',
-            SingleDeviceID: 'test-single-device-id',
-            HHID: 'test-household-id'
-          }
-        }]
-      }]);
     });
   })
 });

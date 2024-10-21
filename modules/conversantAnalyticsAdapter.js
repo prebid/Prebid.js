@@ -1,6 +1,7 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
 import {logInfo, logWarn, logError, logMessage, deepAccess, isInteger} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
@@ -514,7 +515,7 @@ cnvrHelper.createPayload = function(payloadType, auctionId, timestamp) {
     cnvrSampleRate: initOptions.cnvr_sample_rate,
     auction: {
       auctionId: auctionId,
-      preBidVersion: '$prebid.version$',
+      preBidVersion: getGlobal().version,
       sid: initOptions.site_id,
       auctionTimestamp: timestamp
     },

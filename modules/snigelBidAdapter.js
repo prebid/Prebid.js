@@ -2,7 +2,8 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'snigel';
@@ -45,7 +46,7 @@ export const spec = {
         gdprConsent: gdprApplies === true ? hasFullGdprConsent(deepAccess(bidderRequest, 'gdprConsent')) : false,
         cur: getCurrencies(),
         test: getTestFlag(),
-        version: 'v' + '$prebid.version$',
+        version: getGlobal().version,
         gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || deepAccess(bidderRequest, 'ortb2.regs.gpp'),
         gpp_sid:
           deepAccess(bidderRequest, 'gppConsent.applicableSections') || deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'),

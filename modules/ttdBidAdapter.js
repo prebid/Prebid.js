@@ -2,8 +2,7 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { isNumber } from '../src/utils.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import {isNumber} from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -14,11 +13,10 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2024.07.26';
+const BIDADAPTERVERSION = 'TTD-PREBID-2023.09.05';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
-const BIDDER_ENDPOINT_HTTP2 = 'https://d2.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
 
 const MEDIA_TYPE = {
@@ -100,6 +98,33 @@ function getDevice(firstPartyData) {
 
   return device;
 };
+
+function getConnectionType() {
+  const connection = navigator.connection || navigator.webkitConnection;
+  if (!connection) {
+    return 0;
+  }
+  switch (connection.type) {
+    case 'ethernet':
+      return 1;
+    case 'wifi':
+      return 2;
+    case 'cellular':
+      switch (connection.effectiveType) {
+        case 'slow-2g':
+        case '2g':
+          return 4;
+        case '3g':
+          return 5;
+        case '4g':
+          return 6;
+        default:
+          return 3;
+      }
+    default:
+      return 0;
+  }
+}
 
 function getUser(bidderRequest, firstPartyData) {
   let user = {};
@@ -216,7 +241,7 @@ function banner(bid) {
     },
     optionalParams);
 
-  const battr = utils.deepAccess(bid, 'ortb2Imp.banner.battr');
+  const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
   if (battr) {
     banner.battr = battr;
   }
@@ -293,20 +318,13 @@ function video(bid) {
       video.maxbitrate = maxbitrate;
     }
 
-    const battr = utils.deepAccess(bid, 'ortb2Imp.video.battr');
+    const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
     if (battr) {
       video.battr = battr;
     }
 
     return video;
   }
-}
-
-function selectEndpoint(params) {
-  if (params.useHttp2) {
-    return BIDDER_ENDPOINT_HTTP2;
-  }
-  return BIDDER_ENDPOINT;
 }
 
 export const spec = {
@@ -425,7 +443,7 @@ export const spec = {
       topLevel.pmp = firstPartyData.pmp
     }
 
-    let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
+    let url = BIDDER_ENDPOINT + bidderRequest.bids[0].params.supplySourceId;
 
     let serverRequest = {
       method: 'POST',

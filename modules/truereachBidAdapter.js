@@ -11,7 +11,7 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   isBidRequestValid: function (bidRequest) {
-    return (bidRequest.params.site_id &&
+    return (bidRequest.params.site_id && bidRequest.params.bidfloor &&
     deepAccess(bidRequest, 'mediaTypes.banner') && (deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
   },
 
@@ -116,6 +116,8 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     adH = adSizes[0][1];
   }
 
+  let bidFloor = Number(0);
+
   let domain = window.location.host;
   let page = window.location.host + window.location.pathname + location.search + location.hash;
 
@@ -127,7 +129,8 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
         banner: {
           w: adW,
           h: adH
-        }
+        },
+        bidfloor: bidFloor
       }
     ],
     site: {

@@ -167,8 +167,7 @@ describe('triplelift adapter', function () {
             video: {
               context: 'instream',
               playerSize: [640, 480],
-              playbackmethod: 5,
-              plcmt: 1
+              playbackmethod: 5
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -308,8 +307,7 @@ describe('triplelift adapter', function () {
             video: {
               context: 'instream',
               playerSize: [640, 480],
-              playbackmethod: [1, 2, 3],
-              plcmt: 1
+              playbackmethod: [1, 2, 3]
             },
             banner: {
               sizes: [
@@ -526,8 +524,7 @@ describe('triplelift adapter', function () {
           mediaTypes: {
             video: {
               context: 'outstream',
-              playerSize: [640, 480],
-              plcmt: 4
+              playerSize: [640, 480]
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -556,7 +553,7 @@ describe('triplelift adapter', function () {
             video: {
               context: 'outstream',
               playerSize: [640, 480],
-              plcmt: 3
+              placement: 6
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -640,12 +637,12 @@ describe('triplelift adapter', function () {
       expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[1].video.plcmt).to.equal(1);
+      expect(payload.imp[1].video.placement).to.equal(1);
       // banner and outstream video
       expect(payload.imp[2]).to.have.property('video');
       expect(payload.imp[2]).to.have.property('banner');
       expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream'});
+      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // banner and incomplete video
       expect(payload.imp[3]).to.not.have.property('video');
       expect(payload.imp[3]).to.have.property('banner');
@@ -658,24 +655,21 @@ describe('triplelift adapter', function () {
       expect(payload.imp[5]).to.not.have.property('banner');
       expect(payload.imp[5]).to.have.property('video');
       expect(payload.imp[5].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[5].video.plcmt).to.equal(1);
+      expect(payload.imp[5].video.placement).to.equal(1);
       // banner and outream video and native
       expect(payload.imp[6]).to.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream'});
+      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // outstream video only
       expect(payload.imp[7]).to.have.property('video');
       expect(payload.imp[7]).to.not.have.property('banner');
-      expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream'});
+      expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // banner and incomplete outstream (missing size); video request is permitted so banner can still monetize
       expect(payload.imp[8]).to.have.property('video');
       expect(payload.imp[8]).to.have.property('banner');
       expect(payload.imp[8].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream'});
-      // outstream new plcmt value
-      expect(payload.imp[13]).to.have.property('video');
-      expect(payload.imp[13].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'plcmt': 3});
+      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream', 'placement': 3});
     });
 
     it('should check for valid outstream placement values', function () {
@@ -700,12 +694,12 @@ describe('triplelift adapter', function () {
       expect(payload.imp[12]).to.not.have.property('banner');
       expect(payload.imp[12]).to.have.property('video');
       expect(payload.imp[12].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[12].video.plcmt).to.equal(4);
+      expect(payload.imp[12].video.placement).to.equal(3);
       // outstream video; invalid placement
       expect(payload.imp[13]).to.not.have.property('banner');
       expect(payload.imp[13]).to.have.property('video');
       expect(payload.imp[13].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[13].video.plcmt).to.equal(3);
+      expect(payload.imp[13].video.placement).to.equal(3);
     });
 
     it('should add tid to imp.ext if transactionId exists', function() {
@@ -874,7 +868,7 @@ describe('triplelift adapter', function () {
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
     it('should pass fledge signal when Triplelift is eligible for fledge', function() {
-      bidderRequest.paapi = {enabled: true};
+      bidderRequest.fledgeEnabled = true;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.match(/(\?|&)fledge=true/);
@@ -1411,11 +1405,11 @@ describe('triplelift adapter', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
 
       expect(result).to.have.property('bids');
-      expect(result).to.have.property('paapi');
-      expect(result.paapi.length).to.equal(2);
-      expect(result.paapi[0].bidId).to.equal('30b31c1838de1e');
-      expect(result.paapi[1].bidId).to.equal('73edc0ba8de203');
-      expect(result.paapi[0].config).to.deep.equal(
+      expect(result).to.have.property('fledgeAuctionConfigs');
+      expect(result.fledgeAuctionConfigs.length).to.equal(2);
+      expect(result.fledgeAuctionConfigs[0].bidId).to.equal('30b31c1838de1e');
+      expect(result.fledgeAuctionConfigs[1].bidId).to.equal('73edc0ba8de203');
+      expect(result.fledgeAuctionConfigs[0].config).to.deep.equal(
         {
           'seller': 'https://3lift.com',
           'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
@@ -1423,7 +1417,7 @@ describe('triplelift adapter', function () {
           'perBuyerSignals': { 'https://some_buyer.com': { 'a': 1 } }
         }
       );
-      expect(result.paapi[1].config).to.deep.equal(
+      expect(result.fledgeAuctionConfigs[1].config).to.deep.equal(
         {
           'seller': 'https://3lift.com',
           'decisionLogicUrl': 'https://3lift.com/decision_logic.js',

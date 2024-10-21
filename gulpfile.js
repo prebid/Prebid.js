@@ -147,17 +147,6 @@ function makeVerbose(config = webpackConfig) {
   });
 }
 
-function prebidSource(webpackCfg) {
-  var externalModules = helpers.getArgModules();
-
-  const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
-
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(webpackCfg, webpack));
-}
-
 function makeDevpackPkg(config = webpackConfig) {
   return function() {
     var cloned = _.cloneDeep(config);
@@ -174,7 +163,14 @@ function makeDevpackPkg(config = webpackConfig) {
       .filter((use) => use.loader === 'babel-loader')
       .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
 
-    return prebidSource(cloned)
+    var externalModules = helpers.getArgModules();
+
+    const analyticsSources = helpers.getAnalyticsSources();
+    const moduleSources = helpers.getModulePaths(externalModules);
+
+    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+      .pipe(helpers.nameModules(externalModules))
+      .pipe(webpackStream(cloned, webpack))
       .pipe(gulp.dest('build/dev'))
       .pipe(connect.reload());
   }
@@ -187,7 +183,14 @@ function makeWebpackPkg(config = webpackConfig) {
   }
 
   return function buildBundle() {
-    return prebidSource(cloned)
+    var externalModules = helpers.getArgModules();
+
+    const analyticsSources = helpers.getAnalyticsSources();
+    const moduleSources = helpers.getModulePaths(externalModules);
+
+    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+      .pipe(helpers.nameModules(externalModules))
+      .pipe(webpackStream(cloned, webpack))
       .pipe(gulp.dest('build/dist'));
   }
 }
@@ -410,9 +413,7 @@ function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
-  const child = fork('./karmaRunner.js', null, {
-    env: Object.assign({}, options.env, process.env)
-  });
+  const child = fork('./karmaRunner.js');
   child.on('exit', (exitCode) => {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
@@ -425,15 +426,7 @@ function runKarma(options, done) {
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
-  runKarma({
-    coverage: true,
-    browserstack: false,
-    watch: false,
-    file: argv.file,
-    env: {
-      NODE_OPTIONS: '--max-old-space-size=8096'
-    }
-  }, done);
+  runKarma({coverage: true, browserstack: false, watch: false, file: argv.file}, done);
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished

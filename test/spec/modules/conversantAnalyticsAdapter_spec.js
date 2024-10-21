@@ -14,7 +14,7 @@ describe('Conversant analytics adapter tests', function() {
   let clock; // clock stub from sinon to mock our cache cleanup interval
   let logInfoStub;
 
-  const PREBID_VERSION = '$prebid.version$';
+  const PREBID_VERSION = '1.2';
   const SITE_ID = 108060;
 
   let requests;

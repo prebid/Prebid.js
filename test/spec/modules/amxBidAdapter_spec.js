@@ -442,6 +442,7 @@ describe('AmxBidAdapter', () => {
     it('will collect & forward RTI user IDs', () => {
       const randomRTI = `greatRTI${Math.floor(Math.random() * 100)}`;
       const userId = {
+        britepoolid: 'sample-britepool',
         criteoId: 'sample-criteo',
         digitrustid: { data: { id: 'sample-digitrust' } },
         id5id: { uid: 'sample-id5' },
@@ -580,55 +581,6 @@ describe('AmxBidAdapter', () => {
     it('will handle a nobid response', () => {
       const parsed = spec.interpretResponse({ body: '' }, baseRequest);
       expect(parsed).to.eql([]);
-    });
-
-    it('will read an bidderCode override from bid.ext.prebid.meta', () => {
-      const currentConfig = config.getConfig();
-      config.setConfig({
-        ...currentConfig,
-        bidderSettings: {
-          amx: {
-            allowAlternateBidderCodes: true
-          }
-        }
-      });
-
-      const parsed = spec.interpretResponse(
-        { body: {
-          ...sampleServerResponse,
-          r: {
-            [sampleRequestId]: [{
-              ...sampleServerResponse.r[sampleRequestId][0],
-              b: [{
-                ...sampleServerResponse.r[sampleRequestId][0].b[0],
-                ext: {
-                  bc: 'amx-pmp',
-                  ds: 'example',
-                }
-              }]
-            }]
-          }}},
-        baseRequest
-      );
-
-      config.setConfig(currentConfig);
-      expect(parsed.length).to.equal(1); // we removed one
-
-      // we should have display, video, display
-      expect(parsed[0]).to.deep.equal({
-        ...baseBidResponse,
-        meta: {
-          ...baseBidResponse.meta,
-          mediaType: BANNER,
-          demandSource: 'example'
-        },
-        mediaType: BANNER,
-        bidderCode: 'amx-pmp',
-        width: 300,
-        height: 600, // from the bid itself
-        ttl: 90,
-        ad: sampleDisplayAd,
-      });
     });
 
     it('can parse a display ad', () => {

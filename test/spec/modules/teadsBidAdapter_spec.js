@@ -44,47 +44,47 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should return false when pageId is not valid (letters)', function() {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         'placementId': 1234,
         'pageId': 'ABCD'
       };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when placementId is not valid (letters)', function() {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         'placementId': 'FCP',
         'pageId': 1234
       };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when placementId < 0 or pageId < 0', function() {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         'placementId': -1,
         'pageId': -1
       };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function() {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      let bid = Object.assign({}, bid);
+      delete bid.params;
 
-      invalidBid.params = {
+      bid.params = {
         'placementId': 0
       };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
@@ -140,59 +140,6 @@ describe('teadsBidAdapter', () => {
 
       expect(payload.us_privacy).to.exist;
       expect(payload.us_privacy).to.equal(usPrivacy);
-    });
-
-    it('should send GPP values to endpoint when available and valid', function () {
-      let consentString = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
-      let applicableSectionIds = [7, 8];
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'gppConsent': {
-          'gppString': consentString,
-          'applicableSections': applicableSectionIds
-        }
-      };
-
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.gpp).to.exist;
-      expect(payload.gpp.consentString).to.equal(consentString);
-      expect(payload.gpp.applicableSectionIds).to.have.members(applicableSectionIds);
-    });
-
-    it('should send default GPP values to endpoint when available but invalid', function () {
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'gppConsent': {
-          'gppString': undefined,
-          'applicableSections': ['a']
-        }
-      };
-
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.gpp).to.exist;
-      expect(payload.gpp.consentString).to.equal('');
-      expect(payload.gpp.applicableSectionIds).to.have.members([]);
-    });
-
-    it('should not set the GPP object in the request sent to the endpoint when not present', function () {
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000
-      };
-
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.gpp).to.not.exist;
     });
 
     it('should send GDPR to endpoint', function() {

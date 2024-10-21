@@ -4,6 +4,7 @@ import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 /**
@@ -25,6 +26,7 @@ const HOST_GETTERS = {
   janet: () => 'ghb.bidder.jmgads.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
+  copper6: () => 'ghb.app.copper6.com',
   indicue: () => 'ghb.console.indicue.com',
 }
 const getUri = function (bidderCode) {
@@ -47,6 +49,7 @@ export const spec = {
     { code: 'selectmedia', gvlid: 775 },
     { code: 'ocm', gvlid: 1148 },
     '9dotsmedia',
+    'copper6',
     'indicue',
   ],
   supportedMediaTypes: [VIDEO, BANNER],
@@ -135,6 +138,11 @@ export const spec = {
     return bids;
   },
 
+  transformBidParams(params) {
+    return convertTypes({
+      'aid': 'number',
+    }, params);
+  }
 };
 
 function parseRTBResponse(serverResponse, adapterRequest) {

@@ -1,7 +1,5 @@
 import {gdprDataHandler} from '../../../src/adapterManager.js';
-import {enrichFPDHook} from '../../../modules/consentManagementTcf.js';
-import {config} from 'src/config.js';
-import 'src/prebid.js';
+import {enrichFPDHook} from '../../../modules/consentManagement.js';
 
 describe('GDPR FPD enrichment', () => {
   let sandbox, consent;
@@ -14,9 +12,9 @@ describe('GDPR FPD enrichment', () => {
     sandbox.restore();
   })
 
-  function callHook(ortb2 = {}) {
+  function callHook() {
     let result;
-    enrichFPDHook((res) => { result = res }, Promise.resolve(ortb2));
+    enrichFPDHook((res) => { result = res }, Promise.resolve({}));
     return result;
   }
 
@@ -34,7 +32,7 @@ describe('GDPR FPD enrichment', () => {
     })
   });
 
-  it('sets user.ext.consent, but not regs.ext.gdpr, if gdprApplies is not a boolean', () => {
+  it('sets user.ext.consent, but not regs.ext.gdpr, if gpdrApplies is not a boolean', () => {
     consent = {consentString: 'mock-consent'};
     return callHook().then(ortb2 => {
       expect(ortb2).to.eql({
@@ -45,25 +43,5 @@ describe('GDPR FPD enrichment', () => {
         }
       })
     })
-  });
-
-  describe('dsa', () => {
-    describe('when dsaPlaform is set', () => {
-      beforeEach(() => {
-        config.setConfig({
-          consentManagement: {
-            gdpr: {
-              dsaPlatform: true
-            }
-          }
-        });
-      });
-
-      it('sets dsarequired', () => {
-        return callHook().then(ortb2 => {
-          expect(ortb2.regs.ext.dsa.dsarequired).to.equal(3);
-        });
-      });
-    });
   });
 });

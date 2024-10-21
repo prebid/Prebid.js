@@ -4,16 +4,18 @@ import {
   deepSetValue,
   getUniqueIdentifierStr,
   isArray,
+  isFn,
   logWarn,
+  parseSizesInput,
+  parseUrl,
   formatQS
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
-import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
+import {find, includes} from '../src/polyfill.js';
 
-const ADAPTER_VERSION = '1.21';
+const ADAPTER_VERSION = '1.20';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -24,7 +26,7 @@ export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/l
 export const SYNC_IFRAME_ENDPOINT = 'https://sync.bfmio.com/sync_iframe';
 export const SYNC_IMAGE_ENDPOINT = 'https://sync.bfmio.com/syncb';
 
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'plcmt', 'skip', 'skipmin', 'skipafter'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'skip', 'skipmin', 'skipafter'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export const SUPPORTED_USER_IDS = [
@@ -220,6 +222,69 @@ function createRenderer(bidRequest) {
   return renderer;
 }
 
+function getFirstSize(sizes) {
+  return (sizes && sizes.length) ? sizes[0] : { w: undefined, h: undefined };
+}
+
+function parseSizes(sizes) {
+  return parseSizesInput(sizes).map(size => {
+    let [ width, height ] = size.split('x');
+    return {
+      w: parseInt(width, 10) || undefined,
+      h: parseInt(height, 10) || undefined
+    };
+  });
+}
+
+function getVideoSizes(bid) {
+  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+}
+
+function getBannerSizes(bid) {
+  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+}
+
+function getOsVersion() {
+  let clientStrings = [
+    { s: 'Android', r: /Android/ },
+    { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
+    { s: 'Mac OS X', r: /Mac OS X/ },
+    { s: 'Mac OS', r: /(MacPPC|MacIntel|Mac_PowerPC|Macintosh)/ },
+    { s: 'Linux', r: /(Linux|X11)/ },
+    { s: 'Windows 10', r: /(Windows 10.0|Windows NT 10.0)/ },
+    { s: 'Windows 8.1', r: /(Windows 8.1|Windows NT 6.3)/ },
+    { s: 'Windows 8', r: /(Windows 8|Windows NT 6.2)/ },
+    { s: 'Windows 7', r: /(Windows 7|Windows NT 6.1)/ },
+    { s: 'Windows Vista', r: /Windows NT 6.0/ },
+    { s: 'Windows Server 2003', r: /Windows NT 5.2/ },
+    { s: 'Windows XP', r: /(Windows NT 5.1|Windows XP)/ },
+    { s: 'UNIX', r: /UNIX/ },
+    { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
+  ];
+  let cs = find(clientStrings, cs => cs.r.test(navigator.userAgent));
+  return cs ? cs.s : 'unknown';
+}
+
+function isMobile() {
+  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
+}
+
+function isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
+}
+
+function getDoNotTrack() {
+  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNoTrack === '1' || navigator.doNotTrack === 'yes';
+}
+
+function isVideoBid(bid) {
+  return deepAccess(bid, 'mediaTypes.video');
+}
+
+function isBannerBid(bid) {
+  return deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+}
+
 function getVideoBidParam(bid, key) {
   return deepAccess(bid, 'params.video.' + key) || deepAccess(bid, 'params.' + key);
 }
@@ -233,12 +298,26 @@ function getPlayerBidParam(bid, key, defaultValue) {
   return param === undefined ? defaultValue : param;
 }
 
+function getBannerBidFloor(bid) {
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: CURRENCY, mediaType: 'banner', size: '*' }) : {};
+  return floorInfo.floor || getBannerBidParam(bid, 'bidfloor');
+}
+
+function getVideoBidFloor(bid) {
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: CURRENCY, mediaType: 'video', size: '*' }) : {};
+  return floorInfo.floor || getVideoBidParam(bid, 'bidfloor');
+}
+
 function isVideoBidValid(bid) {
   return isVideoBid(bid) && getVideoBidParam(bid, 'appId') && getVideoBidParam(bid, 'bidfloor');
 }
 
 function isBannerBidValid(bid) {
   return isBannerBid(bid) && getBannerBidParam(bid, 'appId') && getBannerBidParam(bid, 'bidfloor');
+}
+
+function getTopWindowLocation(bidderRequest) {
+  return parseUrl(bidderRequest?.refererInfo?.page, { decodeSearchAsString: true });
 }
 
 function getEids(bid) {
@@ -268,10 +347,26 @@ function formatEid(id, source, rtiPartner, atype) {
   };
 }
 
+function getVideoTargetingParams(bid) {
+  const result = {};
+  const excludeProps = ['playerSize', 'context', 'w', 'h'];
+  Object.keys(Object(bid.mediaTypes.video))
+    .filter(key => !includes(excludeProps, key))
+    .forEach(key => {
+      result[ key ] = bid.mediaTypes.video[ key ];
+    });
+  Object.keys(Object(bid.params.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.params.video[ key ];
+    });
+  return result;
+}
+
 function createVideoRequestData(bid, bidderRequest) {
   let sizes = getVideoSizes(bid);
   let firstSize = getFirstSize(sizes);
-  let video = getVideoTargetingParams(bid, VIDEO_TARGETING);
+  let video = getVideoTargetingParams(bid);
   let appId = getVideoBidParam(bid, 'appId');
   let bidfloor = getVideoBidFloor(bid);
   let tagid = getVideoBidParam(bid, 'tagid');

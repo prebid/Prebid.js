@@ -104,6 +104,9 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid12345',
     params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '300x250',
       adzoneid: '77'
     }
   }, {
@@ -115,6 +118,9 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid23456',
     params: {
+      cp: 'p10000',
+      ct: 't20000',
+      cf: '728x90',
       adzoneid: '77'
     }
   }];
@@ -154,7 +160,8 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     nativeOrtbRequest,
     params: {
-
+      cp: 'p10000',
+      ct: 't10000',
       adzoneid: '77'
     }
   }];
@@ -175,6 +182,8 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       }
     },
     params: {
+      cp: 'p10000',
+      ct: 't10000',
       adzoneid: '77'
     }
   }];
@@ -187,6 +196,9 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid12345',
     params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '1x1',
       adzoneid: '77',
       extra_key1: 'extra_val1',
       extra_key2: 12345,
@@ -207,6 +219,9 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
     bidId: 'bid12345',
     params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '1x1',
       adzoneid: '77',
       bcat: ['IAB-1', 'IAB-20'],
       battr: [1, 2, 3],
@@ -244,15 +259,18 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     // site object
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site.publisher).to.not.equal(null);
+    // expect(ortbRequest.site.publisher.id).to.equal('p10000');
     expect(ortbRequest.site.page).to.equal('https://publisher.com/home');
     expect(ortbRequest.imp).to.have.lengthOf(2);
     // device object
     expect(ortbRequest.device).to.not.equal(null);
     expect(ortbRequest.device.ua).to.equal(navigator.userAgent);
     // slot 1
+    // expect(ortbRequest.imp[0].tagid).to.equal('t10000');
     expect(ortbRequest.imp[0].banner).to.not.equal(null);
     expect(ortbRequest.imp[0].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }, { 'w': 160, 'h': 600 }]);
     // slot 2
+    // expect(ortbRequest.imp[1].tagid).to.equal('t20000');
     expect(ortbRequest.imp[1].banner).to.not.equal(null);
     expect(ortbRequest.imp[1].banner.format).to.deep.eq([{ 'w': 728, 'h': 90 }]);
   });
@@ -459,7 +477,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       },
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gdpr_data'
+        consentString: 'serialized_gpdr_data'
       },
       ortb2: {
         user: {
@@ -518,6 +536,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       page: 'http://pub.com/news',
       ref: 'http://google.com',
       publisher: {
+        // id: 'p10000',
         domain: 'pub.com'
       }
     });
@@ -533,6 +552,8 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       },
       bidId: 'bid12345',
       params: {
+        cp: 'p10000',
+        ct: 't10000',
         adzoneid: '77',
         extra_key1: 'extra_val1',
         extra_key2: 12345

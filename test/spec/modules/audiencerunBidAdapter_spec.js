@@ -60,22 +60,22 @@ describe('AudienceRun bid adapter tests', function () {
     });
 
     it('should return true when zoneId is valid', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         zoneId: '12345abcde',
       };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
+      let bid = Object.assign({}, bid);
+      delete bid.params;
 
-      invalidBid.params = {};
+      bid.params = {};
 
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

@@ -188,12 +188,10 @@ let _dataProviders = [];
 let _userConsent;
 
 /**
- * Register a Real-Time Data (RTD) submodule.
+ * Register a RTD submodule.
  *
- * @param {Object} submodule The RTD submodule to register.
- * @param {string} submodule.name The name of the RTD submodule.
- * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
- * @returns {function(): void} A de-registration function that will unregister the module when called.
+ * @param {RtdSubmodule} submodule
+ * @returns {function()} a de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);

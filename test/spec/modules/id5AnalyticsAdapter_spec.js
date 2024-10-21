@@ -102,7 +102,7 @@ describe('ID5 analytics adapter', () => {
       server.respond();
 
       // Why 3? 1: config, 2: tcfEnforcement, 3: auctionEnd
-      // tcfEnforcement? yes, tcfControl module emits in reaction to auctionEnd
+      // tcfEnforcement? yes, gdprEnforcement module emits in reaction to auctionEnd
       expect(server.requests).to.have.length(3);
 
       const body1 = JSON.parse(server.requests[1].requestBody);

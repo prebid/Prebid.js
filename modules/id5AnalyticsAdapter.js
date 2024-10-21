@@ -4,6 +4,7 @@ import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { logInfo, logError } from '../src/utils.js';
 import * as events from '../src/events.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const {
   AUCTION_END,
@@ -32,7 +33,7 @@ const FLUSH_EVENTS = [
 
 const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
 const TZ = new Date().getTimezoneOffset();
-const PBJS_VERSION = 'v' + '$prebid.version$';
+const PBJS_VERSION = getGlobal().version;
 const ID5_REDACTED = '__ID5_REDACTED__';
 const isArray = Array.isArray;
 

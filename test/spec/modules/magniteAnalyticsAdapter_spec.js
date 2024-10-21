@@ -1758,31 +1758,15 @@ describe('magnite analytics adapter', function () {
       });
     });
     describe('cookieless', () => {
-      afterEach(() => {
-        magniteAdapter.disableAnalytics();
-      })
-      it('should not add cookieless and preserve original rule name', () => {
-        // Set the confs
-        config.setConfig({
-          rubicon: {
-            wrapperName: '1001_general',
-            wrapperFamily: 'general',
-            rule_name: 'desktop-magnite.com',
+      beforeEach(() => {
+        magniteAdapter.enableAnalytics({
+          options: {
+            cookieles: undefined
           }
         });
-        performStandardAuction();
-
-        expect(server.requests.length).to.equal(1);
-        let request = server.requests[0];
-
-        expect(request.url).to.match(/\/\/localhost:9999\/event/);
-
-        let message = JSON.parse(request.requestBody);
-        expect(message.wrapper).to.deep.equal({
-          name: '1001_general',
-          family: 'general',
-          rule: 'desktop-magnite.com',
-        });
+      })
+      afterEach(() => {
+        magniteAdapter.disableAnalytics();
       })
       it('should add sufix _cookieless to the wrapper.rule if ortb2.device.ext.cdep start with "treatment" or  "control_2"', () => {
         // Set the confs

@@ -26,30 +26,30 @@ describe('fluctAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {};
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return true when dfpUnitCode is not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         tagId: '10000:100000001',
         groupId: '1000000002',
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when groupId is not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         dfpUnitCode: '/1000/dfp_unit_code',
         tagId: '10000:100000001',
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

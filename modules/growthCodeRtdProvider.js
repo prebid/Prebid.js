@@ -75,7 +75,7 @@ function callServer(configParams, items, expiresAt, userConsent) {
     storage.removeDataFromLocalStorage(RTD_EXPIRE_KEY, null)
   }
   if ((items === null) && (isNaN(expiresAt))) {
-    let gcid = storage.getDataFromLocalStorage('gcid')
+    let gcid = localStorage.getItem('gcid')
 
     let url = configParams.url ? configParams.url : ENDPOINT_URL;
     url = tryAppendQueryString(url, 'pid', configParams.pid);

@@ -14,15 +14,12 @@ import {
   legacyPropertiesToOrtbNative,
   fireImpressionTrackers,
   fireClickTrackers,
-  setNativeResponseProperties, getNativeRenderingData,
+  setNativeResponseProperties,
 } from 'src/native.js';
 import { NATIVE_KEYS } from 'src/constants.js';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import {auctionManager} from '../../src/auctionManager.js';
-import {getRenderingData} from '../../src/adRendering.js';
-import {getCreativeRendererSource} from '../../src/creativeRenderers.js';
-import {deepClone} from '../../src/utils.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -183,7 +180,6 @@ const bidWithUndefinedFields = {
 };
 
 describe('native.js', function () {
-  let sandbox;
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
 
@@ -192,13 +188,13 @@ describe('native.js', function () {
   }
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
-    triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
-    insertHtmlIntoIframeStub = sandbox.stub(utils, 'insertHtmlIntoIframe');
+    triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    insertHtmlIntoIframeStub = sinon.stub(utils, 'insertHtmlIntoIframe');
   });
 
   afterEach(function () {
-    sandbox.restore();
+    utils.triggerPixel.restore();
+    utils.insertHtmlIntoIframe.restore();
   });
 
   it('gets native targeting keys', function () {
@@ -386,227 +382,171 @@ describe('native.js', function () {
       }))
     });
 
-    Object.entries({
-      'returns native data': {
-        renderDataHook(next, bidResponse) {
-          next.bail({
-            native: getNativeRenderingData(bidResponse, adUnit)
-          });
-        },
-        renderSourceHook(next) {
-          next.bail('mock-native-renderer');
-        },
-        withRenderer: true
-      },
-      'does not return native data': {
-        renderDataHook(next) {
-          next.bail({})
-        },
-        renderSourceHook(next) {
-          next.bail('mock-display-renderer');
-        },
-        withRenderer: false
-      }
-    }).forEach(([t, {renderDataHook, renderSourceHook, withRenderer}]) => {
-      describe(`when getRenderingData ${t}`, () => {
-        before(() => {
-          getRenderingData.before(renderDataHook, 100);
-          getCreativeRendererSource.before(renderSourceHook, 100);
-        });
-        after(() => {
-          getRenderingData.getHooks({hook: renderDataHook}).remove();
-          getCreativeRendererSource.getHooks({hook: renderSourceHook}).remove();
-        });
+    it('creates native asset message', function () {
+      const messageRequest = {
+        message: 'Prebid Native',
+        action: 'assetRequest',
+        adId: '123',
+        assets: ['hb_native_body', 'hb_native_image', 'hb_native_linkurl'],
+      };
 
-        function checkRenderer(message) {
-          if (withRenderer) {
-            expect(message.renderer).to.eql('mock-native-renderer')
-            Object.entries(message).forEach(([key, val]) => {
-              if (!['native', 'adId', 'message', 'assets', 'renderer'].includes(key)) {
-                expect(message.native[key]).to.eql(val);
-              }
-            })
-            message.assets.forEach(asset => {
-              expect(message.native.assets).to.contain(asset);
-            })
-          } else {
-            expect(message.renderer).to.not.exist;
-            expect(message.native).to.not.exist;
-          }
-        }
+      const message = getAssetMessage(messageRequest, bid);
 
-        it('creates native asset message', function () {
-          const messageRequest = {
-            message: 'Prebid Native',
-            action: 'assetRequest',
-            adId: '123',
-            assets: ['hb_native_body', 'hb_native_image', 'hb_native_linkurl'],
-          };
-
-          const message = getAssetMessage(messageRequest, bid);
-
-          expect(message.assets.length).to.equal(3);
-          expect(message.assets).to.deep.include({
-            key: 'body',
-            value: bid.native.body,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'image',
-            value: bid.native.image.url,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'clickUrl',
-            value: bid.native.clickUrl,
-          });
-          checkRenderer(message);
-        });
-
-        it('creates native all asset message', function () {
-          const messageRequest = {
-            message: 'Prebid Native',
-            action: 'allAssetRequest',
-            adId: '123',
-          };
-
-          const message = getAllAssetsMessage(messageRequest, bid);
-
-          expect(message.assets.length).to.equal(10);
-          expect(message.assets).to.deep.include({
-            key: 'body',
-            value: bid.native.body,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'image',
-            value: bid.native.image.url,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'clickUrl',
-            value: bid.native.clickUrl,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'title',
-            value: bid.native.title,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'icon',
-            value: bid.native.icon.url,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'cta',
-            value: bid.native.cta,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'sponsoredBy',
-            value: bid.native.sponsoredBy,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'foo',
-            value: bid.native.ext.foo,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'baz',
-            value: bid.native.ext.baz,
-          });
-          checkRenderer(message);
-        });
-
-        it('creates native all asset message with only defined fields', function () {
-          const messageRequest = {
-            message: 'Prebid Native',
-            action: 'allAssetRequest',
-            adId: '123',
-          };
-
-          const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
-
-          expect(message.assets.length).to.equal(4);
-          expect(message.assets).to.deep.include({
-            key: 'clickUrl',
-            value: bid.native.clickUrl,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'title',
-            value: bid.native.title,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'sponsoredBy',
-            value: bid.native.sponsoredBy,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'foo',
-            value: bid.native.ext.foo,
-          });
-          checkRenderer(message);
-        });
-
-        it('creates native all asset message with complete format', function () {
-          const messageRequest = {
-            message: 'Prebid Native',
-            action: 'allAssetRequest',
-            adId: '123',
-          };
-
-          const message = getAllAssetsMessage(messageRequest, completeNativeBid);
-
-          expect(message.assets.length).to.equal(10);
-          expect(message.assets).to.deep.include({
-            key: 'body',
-            value: bid.native.body,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'image',
-            value: bid.native.image.url,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'clickUrl',
-            value: bid.native.clickUrl,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'title',
-            value: bid.native.title,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'icon',
-            value: bid.native.icon.url,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'cta',
-            value: bid.native.cta,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'sponsoredBy',
-            value: bid.native.sponsoredBy,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'privacyLink',
-            value: ortbBid.native.ortb.privacy,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'foo',
-            value: bid.native.ext.foo,
-          });
-          expect(message.assets).to.deep.include({
-            key: 'baz',
-            value: bid.native.ext.baz,
-          });
-          checkRenderer(message);
-        });
-
-        it('if necessary, adds ortb response when the request was in ortb', () => {
-          const messageRequest = {
-            message: 'Prebid Native',
-            action: 'allAssetRequest',
-            adId: '123',
-          };
-          adUnit = {mediaTypes: {native: {ortb: ortbRequest}}, nativeOrtbRequest: ortbRequest}
-          const message = getAllAssetsMessage(messageRequest, bid);
-          const expected = toOrtbNativeResponse(bid.native, ortbRequest)
-          expect(message.ortb).to.eql(expected);
-          checkRenderer(message);
-        });
+      expect(message.assets.length).to.equal(3);
+      expect(message.assets).to.deep.include({
+        key: 'body',
+        value: bid.native.body,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'image',
+        value: bid.native.image.url,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'clickUrl',
+        value: bid.native.clickUrl,
       });
     });
-  });
+
+    it('creates native all asset message', function () {
+      const messageRequest = {
+        message: 'Prebid Native',
+        action: 'allAssetRequest',
+        adId: '123',
+      };
+
+      const message = getAllAssetsMessage(messageRequest, bid);
+
+      expect(message.assets.length).to.equal(10);
+      expect(message.assets).to.deep.include({
+        key: 'body',
+        value: bid.native.body,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'image',
+        value: bid.native.image.url,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'clickUrl',
+        value: bid.native.clickUrl,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'title',
+        value: bid.native.title,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'icon',
+        value: bid.native.icon.url,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'cta',
+        value: bid.native.cta,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'sponsoredBy',
+        value: bid.native.sponsoredBy,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'foo',
+        value: bid.native.ext.foo,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'baz',
+        value: bid.native.ext.baz,
+      });
+    });
+
+    it('creates native all asset message with only defined fields', function () {
+      const messageRequest = {
+        message: 'Prebid Native',
+        action: 'allAssetRequest',
+        adId: '123',
+      };
+
+      const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
+
+      expect(message.assets.length).to.equal(4);
+      expect(message.assets).to.deep.include({
+        key: 'clickUrl',
+        value: bid.native.clickUrl,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'title',
+        value: bid.native.title,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'sponsoredBy',
+        value: bid.native.sponsoredBy,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'foo',
+        value: bid.native.ext.foo,
+      });
+    });
+
+    it('creates native all asset message with complete format', function () {
+      const messageRequest = {
+        message: 'Prebid Native',
+        action: 'allAssetRequest',
+        adId: '123',
+      };
+
+      const message = getAllAssetsMessage(messageRequest, completeNativeBid);
+
+      expect(message.assets.length).to.equal(10);
+      expect(message.assets).to.deep.include({
+        key: 'body',
+        value: bid.native.body,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'image',
+        value: bid.native.image.url,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'clickUrl',
+        value: bid.native.clickUrl,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'title',
+        value: bid.native.title,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'icon',
+        value: bid.native.icon.url,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'cta',
+        value: bid.native.cta,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'sponsoredBy',
+        value: bid.native.sponsoredBy,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'privacyLink',
+        value: ortbBid.native.ortb.privacy,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'foo',
+        value: bid.native.ext.foo,
+      });
+      expect(message.assets).to.deep.include({
+        key: 'baz',
+        value: bid.native.ext.baz,
+      });
+    });
+
+    it('if necessary, adds ortb response when the request was in ortb', () => {
+      const messageRequest = {
+        message: 'Prebid Native',
+        action: 'allAssetRequest',
+        adId: '123',
+      };
+      adUnit = {mediaTypes: {native: {ortb: ortbRequest}}, nativeOrtbRequest: ortbRequest}
+      const message = getAllAssetsMessage(messageRequest, bid);
+      const expected = toOrtbNativeResponse(bid.native, ortbRequest)
+      expect(message.ortb).to.eql(expected);
+    })
+  })
 
   const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
     title: 'vtitle',

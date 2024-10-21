@@ -24,7 +24,7 @@ const SUBMODULE_NAME = 'hadron';
 const AU_GVLID = 561;
 const HADRON_ID_DEFAULT_URL = 'https://id.hadron.ad.gt/api/v1/hadronid?_it=prebid';
 const HADRON_SEGMENT_URL = 'https://id.hadron.ad.gt/api/v1/rtd';
-export const HADRONID_LOCAL_NAME = 'auHadronId';
+export const HALOID_LOCAL_NAME = 'auHadronId';
 export const RTD_LOCAL_NAME = 'auHadronRtd';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 
@@ -132,6 +132,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else {
+    // TODO: this and haloRtdProvider are a copy-paste of each other
     if (isPlainObject(rtd.ortb2)) {
       mergeLazy(bidConfig.ortb2Fragments?.global, rtd.ortb2);
     }
@@ -164,9 +165,9 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     }
   }
 
-  const userIds = {};
+  const userIds = typeof getGlobal().getUserIds === 'function' ? (getGlobal()).getUserIds() : {};
 
-  let hadronId = storage.getDataFromLocalStorage(HADRONID_LOCAL_NAME);
+  let hadronId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
   if (isStr(hadronId)) {
     if (typeof getGlobal().refreshUserIds === 'function') {
       (getGlobal()).refreshUserIds({submoduleNames: 'hadronId'});

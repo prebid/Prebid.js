@@ -4,6 +4,7 @@ import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
@@ -17,7 +18,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  transformBidParams
 };
 
 registerBidder(spec);
@@ -80,6 +82,11 @@ const converter = ortbConverter({
       bidResponse.meta.advertiserId = bid.ext.buyer_id;
       bidResponse.meta.brandId = bid.ext.brand_id;
     }
+    const {ortbResponse} = context;
+    if (ortbResponse.ext && ortbResponse.ext.paf) {
+      bidResponse.meta.paf = Object.assign({}, ortbResponse.ext.paf);
+      bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
+    }
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
@@ -109,10 +116,10 @@ const converter = ortbConverter({
       });
       return {
         bids: response.bids,
-        paapi: fledgeAuctionConfigs,
+        fledgeAuctionConfigs,
       }
     } else {
-      return response
+      return response.bids
     }
   },
   overrides: {
@@ -137,11 +144,21 @@ const converter = ortbConverter({
             bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
           }
           orig(imp, bidRequest, context);
+          if (imp.video && videoParams?.context === 'outstream') {
+            imp.video.placement = imp.video.placement || 4;
+          }
         }
       }
     }
   }
 });
+
+function transformBidParams(params, isOpenRtb) {
+  return convertTypes({
+    'unit': 'string',
+    'customFloor': 'number'
+  }, params);
+}
 
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||

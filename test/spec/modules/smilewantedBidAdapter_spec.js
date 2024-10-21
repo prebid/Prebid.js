@@ -76,49 +76,6 @@ const DISPLAY_REQUEST_WITH_POSITION_TYPE = [{
   },
 }];
 
-const SCHAIN = {
-  'ver': '1.0',
-  'complete': 1,
-  'nodes': [
-    {
-      'asi': 'exchange1.com',
-      'sid': '1234',
-      'hp': 1,
-      'rid': 'bid-request-1',
-      'name': 'publisher',
-      'domain': 'publisher.com'
-    },
-    {
-      'asi': 'exchange2.com',
-      'sid': 'abcd',
-      'hp': 1,
-      'rid': 'bid-request-2',
-      'name': 'intermediary',
-      'domain': 'intermediary.com'
-    }
-  ]
-};
-
-const DISPLAY_REQUEST_WITH_SCHAIN = [{
-  adUnitCode: 'sw_300x250',
-  bidId: '12345',
-  sizes: [
-    [300, 250],
-    [300, 200]
-  ],
-  bidder: 'smilewanted',
-  params: {
-    zoneId: 1,
-  },
-  requestId: 'request_abcd1234',
-  ortb2Imp: {
-    ext: {
-      tid: 'trans_abcd1234',
-    }
-  },
-  schain: SCHAIN,
-}];
-
 const BID_RESPONSE_DISPLAY = {
   body: {
     cpm: 3,
@@ -623,21 +580,8 @@ describe('smilewantedBidAdapterTests', function () {
     expect(requestContent).to.have.property('positionType').and.to.equal('infeed');
   });
 
-  it('SmileWanted - Verify if schain is well passed', function () {
-    const request = spec.buildRequests(DISPLAY_REQUEST_WITH_SCHAIN, {});
-    const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.have.property('schain').and.to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com,!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com,');
-  });
-
-  it('SmileWanted - Verify user sync - empty data', function () {
-    let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, null);
-    expect(syncs).to.have.lengthOf(1);
-    expect(syncs[0].type).to.equal('iframe');
-    expect(syncs[0].url).to.equal('https://csync.smilewanted.com');
-  });
-
   it('SmileWanted - Verify user sync', function () {
-    let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
+    var syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {
       consentString: 'foo'
     }, '1NYN');
     expect(syncs).to.have.lengthOf(1);

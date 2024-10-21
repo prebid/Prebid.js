@@ -1,6 +1,6 @@
-import {setConsentConfig} from 'modules/consentManagementTcf.js';
+import {setConsentConfig} from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
-import {coreStorage, startAuctionHook} from 'modules/userId/index.js';
+import {coreStorage, requestBidsHook} from 'modules/userId/index.js';
 
 const msIn12Hours = 60 * 60 * 12 * 1000;
 const expireCookieDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
@@ -19,7 +19,7 @@ export const runAuction = async () => {
     bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
   }];
   return new Promise(function(resolve) {
-    startAuctionHook(function() {
+    requestBidsHook(function() {
       resolve(adUnits[0].bids[0]);
     }, {adUnits});
   });

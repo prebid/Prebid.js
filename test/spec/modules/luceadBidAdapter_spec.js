@@ -28,7 +28,6 @@ describe('Lucead Adapter', () => {
         bidder: 'lucead',
         params: {
           placementId: '1',
-          region: 'eu',
         },
       };
     });
@@ -40,10 +39,7 @@ describe('Lucead Adapter', () => {
 
   describe('onBidWon', function () {
     let sandbox;
-    const bids = [
-      { foo: 'bar', creativeId: 'ssp:improve' },
-      { foo: 'bar', creativeId: '123:456' },
-    ];
+    const bid = { foo: 'bar', creativeId: 'ssp:improve' };
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
@@ -51,11 +47,8 @@ describe('Lucead Adapter', () => {
 
     it('should trigger impression pixel', function () {
       sandbox.spy(ajax, 'fetch');
-
-      for (const bid of bids) {
-        spec.onBidWon(bid);
-        expect(ajax?.fetch?.args[0][0]).to.match(/report\/impression$/);
-      }
+      spec.onBidWon(bid);
+      expect(ajax.fetch.args[0][0]).to.match(/report\/impression$/);
     });
 
     afterEach(function () {
@@ -84,62 +77,49 @@ describe('Lucead Adapter', () => {
 
     it('should have a post method', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.method).to.equal('POST');
+      expect(request[0].method).to.equal('POST');
     });
 
     it('should contains a request id equals to the bid id', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(JSON.parse(request.data).bid_requests[0].bid_id).to.equal(bidRequests[0].bidId);
+      expect(JSON.parse(request[0].data).bid_id).to.equal(bidRequests[0].bidId);
     });
 
-    it('should have an url that contains sra keyword', function () {
+    it('should have an url that contains sub keyword', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.contain('/prebid/sra');
+      expect(request[0].url).to.match(/sub/);
     });
   });
 
   describe('interpretResponse', function () {
-    const serverResponseBody = {
-      'request_id': '17548f887fb722',
-      'bids': [
-        {
-          'bid_id': '2d663fdd390b49',
-          'ad': '\u003chtml lang="en"\u003e\u003cbody style="margin:0;background-color:#FFF"\u003e\u003ciframe src="urn:uuid:fb81a0f9-b83a-4f27-8676-26760d090f1c" style="width:300px;height:250px;border:none" seamless \u003e\u003c/iframe\u003e\u003c/body\u003e\u003c/html\u003e',
-          'size': {
-            'width': 300,
-            'height': 250
-          },
-          'ad_id': '1',
-          'ig_id': '1',
-          'cpm': 1,
-          'currency': 'EUR',
-          'time': 0,
-          'ssp': '',
-          'placement_id': '1',
-          'is_pa': true
-        }
-      ]
+    const serverResponse = {
+      body: {
+        'bid_id': '2daf899fbe4c52',
+        'request_id': '13aaa3df18bfe4',
+        'ad': 'Ad',
+        'ad_id': '3890677904',
+        'cpm': 3.02,
+        'currency': 'USD',
+        'time': 1707257712095,
+        'size': {'width': 300, 'height': 250},
+      }
     };
 
-    const serverResponse = {body: serverResponseBody};
-
-    const bidRequest = {
-      data: JSON.stringify({
-        'request_id': '17548f887fb722',
-        'domain': 'lucead.com',
-        'bid_requests': [{
-          'bid_id': '2d663fdd390b49',
-          'sizes': [[300, 250], [300, 150]],
-          'media_types': {'banner': {'sizes': [[300, 250], [300, 150]]}},
-          'placement_id': '1'
-        }],
-      }),
-    };
+    const bidRequest = {data: JSON.stringify({
+      'request_id': '13aaa3df18bfe4',
+      'domain': '7cdb-2a02-8429-e4a0-1701-bc69-d51c-86e-b279.ngrok-free.app',
+      'bid_id': '2daf899fbe4c52',
+      'sizes': [[300, 250]],
+      'media_types': {'banner': {'sizes': [[300, 250]]}},
+      'fledge_enabled': true,
+      'enable_contextual': true,
+      'enable_pa': true,
+      'params': {'placementId': '1'},
+    })};
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest);
 
-      // noinspection JSCheckFunctionSignatures
       expect(Object.keys(result.bids[0])).to.have.members([
         'requestId',
         'cpm',
@@ -155,7 +135,7 @@ describe('Lucead Adapter', () => {
     });
 
     it('should return bid empty response', function () {
-      const serverResponse = {body: {bids: [{cpm: 0}]}};
+      const serverResponse = {body: {cpm: 0}};
       const bidRequest = {data: '{}'};
       const result = spec.interpretResponse(serverResponse, bidRequest);
       expect(result.bids[0].ad).to.be.equal('');
@@ -174,11 +154,18 @@ describe('Lucead Adapter', () => {
       expect(Object.keys(result.bids[0].meta)).to.include.members(['advertiserDomains']);
     });
 
-    it('should support enable_pa = false', function () {
-      serverResponse.body.enable_pa = false;
-      const result = spec.interpretResponse(serverResponse, bidRequest);
-      expect(result).to.be.an('array');
-      expect(result[0].cpm).to.be.greaterThan(0);
+    it('should support disabled contextual bids', function () {
+      const serverResponseWithDisabledContectual = deepClone(serverResponse);
+      serverResponseWithDisabledContectual.body.enable_contextual = false;
+      const result = spec.interpretResponse(serverResponseWithDisabledContectual, bidRequest);
+      expect(result.bids).to.be.null;
+    });
+
+    it('should support disabled Protected Audience', function () {
+      const serverResponseWithEnablePaFalse = deepClone(serverResponse);
+      serverResponseWithEnablePaFalse.body.enable_pa = false;
+      const result = spec.interpretResponse(serverResponseWithEnablePaFalse, bidRequest);
+      expect(result.fledgeAuctionConfigs).to.be.undefined;
     });
   });
 });

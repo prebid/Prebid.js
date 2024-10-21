@@ -4,7 +4,6 @@ import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'smarthub'
-const bidderAlias = 'markapp'
 
 describe('SmartHubBidAdapter', function () {
   const bids = [
@@ -27,29 +26,12 @@ describe('SmartHubBidAdapter', function () {
     },
     {
       bidId: getUniqueIdentifierStr(),
-      bidder: bidderAlias,
-      mediaTypes: {
-        [BANNER]: {
-          sizes: [[400, 350]]
-        }
-      },
-      params: {
-        seat: 'testSeat',
-        token: 'testBanner',
-        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
-        minBidfloor: 9,
-        pos: 1,
-      }
-    },
-    {
-      bidId: getUniqueIdentifierStr(),
       bidder: bidder,
       mediaTypes: {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
           maxduration: 60,
-          plcmt: 1,
         }
       },
       params: {
@@ -106,9 +88,7 @@ describe('SmartHubBidAdapter', function () {
 
   const bidderRequest = {
     uspConsent: '1---',
-    gdprConsent: {
-      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw'
-    },
+    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     refererInfo: {
       page: 'https://test.com'
     },
@@ -125,7 +105,7 @@ describe('SmartHubBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let [serverRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
+    let [serverRequest] = spec.buildRequests(bids, bidderRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -139,11 +119,7 @@ describe('SmartHubBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(`https://prebid.smart-hub.io/pbjs?partnerName=testname`);
-    });
-
-    it('Returns valid URL if alias', function () {
-      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.smart-hub.io/pbjs`);
+      expect(serverRequest.url).to.equal('https://testname-prebid.smart-hub.io/pbjs');
     });
 
     it('Returns general data valid', function () {
@@ -168,7 +144,7 @@ describe('SmartHubBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       expect(data.coppa).to.be.a('number');
-      expect(data.gdpr.consentString).to.be.a('string');
+      expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
       expect(data.placements).to.have.lengthOf(3);
@@ -200,7 +176,6 @@ describe('SmartHubBidAdapter', function () {
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
-            expect(placement.plcmt).to.be.an('number');
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -214,8 +189,8 @@ describe('SmartHubBidAdapter', function () {
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest[0].data;
       expect(data.gdpr).to.exist;
-      expect(data.gdpr.consentString).to.be.a('string');
-      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
     });

@@ -46,7 +46,7 @@ export const spec = {
     if (fledgeAuctionConfigs.length) {
       return {
         bids,
-        paapi: fledgeAuctionConfigs,
+        fledgeAuctionConfigs,
       };
     }
 
@@ -74,7 +74,7 @@ function newBidRequest(bidRequest, bidderRequest) {
     mediaTypes: bidRequest.mediaTypes,
   }
 
-  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
   if (fledgeEnabled) {
     const ae = deepAccess(bidRequest, 'ortb2Imp.ext.ae');
     if (ae) {

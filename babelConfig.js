@@ -26,7 +26,7 @@ module.exports = function (options = {}) {
       const plugins = [
         [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
         [useLocal('@babel/plugin-transform-runtime')],
-        [useLocal('@babel/plugin-proposal-private-methods')],
+          [useLocal('@babel/plugin-proposal-private-methods')],
       ];
       if (options.codeCoverage) {
         plugins.push([useLocal('babel-plugin-istanbul')])

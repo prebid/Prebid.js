@@ -79,7 +79,7 @@ describe('LoganBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'wPlayer', 'hPlayer', 'schain', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'plcmt', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'bidfloor');
+      expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'wPlayer', 'hPlayer', 'schain', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'bidfloor');
       expect(placement.adFormat).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
       expect(placement.hPlayer).to.equal(playerSize[1]);

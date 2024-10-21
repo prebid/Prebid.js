@@ -1,6 +1,6 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
+import {parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -212,7 +212,7 @@ function getLcuid() {
 }
 
 function encodedParamValue(value) {
-  const requiredStringify = typeof deepClone(value) === 'object';
+  const requiredStringify = typeof JSON.parse(JSON.stringify(value)) === 'object';
   return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 

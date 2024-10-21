@@ -39,12 +39,12 @@ describe('Admaru Adapter', function () {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         wrong: 'missing pub_id or adspace_id'
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

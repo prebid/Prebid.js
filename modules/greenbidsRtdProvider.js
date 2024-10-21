@@ -1,11 +1,11 @@
-import { logError, logInfo, logWarn, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
+import { logError, deepClone, generateUUID, deepSetValue, deepAccess } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
-const MODULE_VERSION = '2.0.1';
+const MODULE_VERSION = '2.0.0';
 const ENDPOINT = 'https://t.greenbids.ai';
 
 const rtdOptions = {};
@@ -46,7 +46,6 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 function createPromise(reqBidsConfigObj, greenbidsId) {
   return new Promise((resolve) => {
     const timeoutId = setTimeout(() => {
-      logWarn('GreenbidsRtdProvider: Greenbids API timeout, skipping shaping');
       resolve(reqBidsConfigObj);
     }, rtdOptions.timeout);
     ajax(
@@ -58,7 +57,6 @@ function createPromise(reqBidsConfigObj, greenbidsId) {
         },
         error: () => {
           clearTimeout(timeoutId);
-          logWarn('GreenbidsRtdProvider: Greenbids API response error, skipping shaping');
           resolve(reqBidsConfigObj);
         },
       },
@@ -75,16 +73,11 @@ function createPromise(reqBidsConfigObj, greenbidsId) {
 
 function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbidsId) {
   clearTimeout(timeoutId);
-  try {
-    const responseAdUnits = JSON.parse(response);
-    updateAdUnitsBasedOnResponse(reqBidsConfigObj.adUnits, responseAdUnits, greenbidsId);
-  } catch (e) {
-    logWarn('GreenbidsRtdProvider: Greenbids API response parsing error, skipping shaping');
-  }
+  const responseAdUnits = JSON.parse(response);
+  updateAdUnitsBasedOnResponse(reqBidsConfigObj.adUnits, responseAdUnits, greenbidsId);
 }
 
 function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
-  const isFilteringForced = getParameterByName('greenbids_force_filtering');
   adUnits.forEach((adUnit) => {
     const matchingAdUnit = findMatchingAdUnit(responseAdUnits, adUnit.code);
     if (matchingAdUnit) {
@@ -93,10 +86,7 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
         keptInAuction: matchingAdUnit.bidders,
         isExploration: matchingAdUnit.isExploration
       });
-      if (isFilteringForced) {
-        adUnit.bids = [];
-        logInfo('Greenbids Rtd: filtering flag detected, forcing filtering of Rtd module.');
-      } else if (!matchingAdUnit.isExploration) {
+      if (!matchingAdUnit.isExploration) {
         removeFalseBidders(adUnit, matchingAdUnit);
       }
     }

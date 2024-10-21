@@ -1,54 +1,26 @@
 import {
   _each,
+  createTrackPixelHtml,
+  deepAccess,
   isStr,
   getBidIdParameter,
   triggerPixel,
   logWarn,
-  deepSetValue,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'setupad';
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
-const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io/api/adapter-analytics?';
+const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io/api/adapter-analytics';
 const GVLID = 1241;
 const TIME_TO_LIVE = 360;
-export const biddersCreativeIds = {}; // export only for tests
-const NET_REVENUE = true;
-const TEST_REQUEST = 0; // used only for testing
+const biddersCreativeIds = {};
 
-const converter = ortbConverter({
-  context: {
-    netRevenue: NET_REVENUE,
-    ttl: TIME_TO_LIVE,
-  },
-  imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    deepSetValue(
-      imp,
-      'ext.prebid.storedrequest.id',
-      getBidIdParameter('placement_id', bidRequest.params)
-    );
-    return imp;
-  },
-  request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
-    deepSetValue(request, 'test', TEST_REQUEST);
-    deepSetValue(
-      request,
-      'ext.prebid.storedrequest.id',
-      getBidIdParameter(
-        'account_id',
-        bidderRequest.bids.find((bid) => bid.hasOwnProperty('params')).params
-      )
-    );
-    deepSetValue(request, 'setupad', 'adapter');
-    return request;
-  },
-});
+function getEids(bidRequest) {
+  if (deepAccess(bidRequest, 'userIdAsEids')) return bidRequest.userIdAsEids;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -56,26 +28,101 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
-    return !!(
-      bid.params.placement_id &&
-      isStr(bid.params.placement_id) &&
-      bid.params.account_id &&
-      isStr(bid.params.account_id)
-    );
+    return !!(bid.params.placement_id && isStr(bid.params.placement_id));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const data = converter.toORTB({ validBidRequests, bidderRequest });
+    const requests = [];
 
-    return {
-      method: 'POST',
-      url: ENDPOINT,
-      data,
-      options: {
-        contentType: 'text/plain',
-        withCredentials: true,
-      },
-    };
+    _each(validBidRequests, function (bid) {
+      const id = getBidIdParameter('placement_id', bid.params);
+      const accountId = getBidIdParameter('account_id', bid.params);
+      const auctionId = bid.auctionId;
+      const bidId = bid.bidId;
+      const eids = getEids(bid) || undefined;
+      let sizes = bid.sizes;
+      if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
+
+      const site = {
+        page: bidderRequest?.refererInfo?.page,
+        ref: bidderRequest?.refererInfo?.ref,
+        domain: bidderRequest?.refererInfo?.domain,
+      };
+      const device = {
+        w: bidderRequest?.ortb2?.device?.w,
+        h: bidderRequest?.ortb2?.device?.h,
+      };
+
+      const payload = {
+        id: bid?.bidderRequestId,
+        ext: {
+          prebid: {
+            storedrequest: {
+              id: accountId || 'default',
+            },
+          },
+        },
+        user: { ext: { eids } },
+        device,
+        site,
+        imp: [],
+      };
+
+      const imp = {
+        id: bid.adUnitCode,
+        ext: {
+          prebid: {
+            storedrequest: { id },
+          },
+        },
+      };
+
+      if (deepAccess(bid, 'mediaTypes.banner')) {
+        imp.banner = {
+          format: (sizes || []).map((s) => {
+            return { w: s[0], h: s[1] };
+          }),
+        };
+      }
+
+      payload.imp.push(imp);
+
+      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+      const uspConsent = bidderRequest && bidderRequest.uspConsent;
+
+      if (gdprConsent || uspConsent) {
+        payload.regs = { ext: {} };
+
+        if (uspConsent) payload.regs.ext.us_privacy = uspConsent;
+
+        if (gdprConsent) {
+          if (typeof gdprConsent.gdprApplies !== 'undefined') {
+            payload.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+          }
+
+          if (typeof gdprConsent.consentString !== 'undefined') {
+            payload.user.ext.consent = gdprConsent.consentString;
+          }
+        }
+      }
+      const params = bid.params;
+
+      requests.push({
+        method: 'POST',
+        url: ENDPOINT,
+        data: JSON.stringify(payload),
+        options: {
+          contentType: 'text/plain',
+          withCredentials: true,
+        },
+
+        bidId,
+        params,
+        auctionId,
+      });
+    });
+
+    return requests;
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
@@ -89,22 +136,40 @@ export const spec = {
       return [];
     }
 
-    // set a seat for creativeId for triggerPixel url
-    _each(serverResponse.body.seatbid, (res) => {
+    const serverBody = serverResponse.body;
+    const bidResponses = [];
+
+    _each(serverBody.seatbid, (res) => {
       _each(res.bid, (bid) => {
-        biddersCreativeIds[bid.crid] = res.seat;
+        const requestId = bidRequest.bidId;
+        const params = bidRequest.params;
+        const { ad, adUrl } = getAd(bid);
+
+        const bidResponse = {
+          requestId,
+          params,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.id,
+          currency: serverBody.cur,
+          netRevenue: true,
+          ttl: TIME_TO_LIVE,
+          meta: {
+            advertiserDomains: bid.adomain || [],
+          },
+        };
+
+        // set a seat for creativeId for triggerPixel url
+        biddersCreativeIds[bidResponse.creativeId] = res.seat;
+
+        bidResponse.ad = ad;
+        bidResponse.adUrl = adUrl;
+        bidResponses.push(bidResponse);
       });
     });
 
-    // used for a test case "should update biddersCreativeIds correctly" to return early and not throw ORTB error
-    if (serverResponse.testCase === 1) return;
-
-    const bids = converter.fromORTB({
-      response: serverResponse.body,
-      request: bidRequest.data,
-    }).bids;
-
-    return bids;
+    return bidResponses;
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
@@ -160,23 +225,17 @@ export const spec = {
 
     if (!placementIds) return;
 
+    let extraBidParams = '';
+
     // find the winning bidder by using creativeId as identification
     if (biddersCreativeIds.hasOwnProperty(bid.creativeId) && biddersCreativeIds[bid.creativeId]) {
       bidder = biddersCreativeIds[bid.creativeId];
     }
 
-    const queryParams = [];
-    queryParams.push(`event=bidWon`);
-    queryParams.push('bidder=' + bidder);
-    queryParams.push('placementIds=' + placementIds);
-    queryParams.push('auctionId=' + auctionId);
-    queryParams.push('cpm=' + bid.originalCpm);
-    queryParams.push('currency=' + bid.originalCurrency);
-    queryParams.push('timestamp=' + Date.now());
+    // Add extra parameters
+    extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
 
-    const strQueryParams = queryParams.join('&');
-
-    const url = REPORT_ENDPOINT + strQueryParams;
+    const url = `${REPORT_ENDPOINT}?event=bidWon&bidder=${bidder}&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${Date.now()}`;
     triggerPixel(url);
   },
 };
@@ -189,6 +248,24 @@ function getBidders(serverResponse) {
   if (bidders.length) {
     return encodeURIComponent(JSON.stringify([...new Set(bidders)]));
   }
+}
+
+function getAd(bid) {
+  let ad, adUrl;
+
+  switch (deepAccess(bid, 'ext.prebid.type')) {
+    default:
+      if (bid.adm && bid.nurl) {
+        ad = bid.adm;
+        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
+      } else if (bid.adm) {
+        ad = bid.adm;
+      } else if (bid.nurl) {
+        adUrl = bid.nurl;
+      }
+  }
+
+  return { ad, adUrl };
 }
 
 registerBidder(spec);

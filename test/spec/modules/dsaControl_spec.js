@@ -108,5 +108,6 @@ describe('DSA transparency', () => {
         })
       })
     })
+    it('should accept bids regardless of dsa when "required" any other value')
   });
 });

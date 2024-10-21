@@ -12,7 +12,6 @@ import {
   updateBidderConfig,
 } from 'modules/1plusXRtdProvider';
 import {deepClone} from '../../../src/utils.js';
-import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from 'src/storageManager.js';
 
 describe('1plusXRtdProvider', () => {
   // Fake server config
@@ -127,7 +126,6 @@ describe('1plusXRtdProvider', () => {
     const customerId = 'test';
     const timeout = 1000;
     const bidders = ['appnexus'];
-    const fpidStorageType = STORAGE_TYPE_LOCALSTORAGE
 
     it('Throws an error if no customerId is specified', () => {
       const moduleConfig = { params: { timeout, bidders } };
@@ -143,14 +141,13 @@ describe('1plusXRtdProvider', () => {
       expect(() => extractConfig(moduleConfig, reqBidsConfigEmpty)).to.throw();
     })
     it('Returns an object containing the parameters specified', () => {
-      const moduleConfig = { params: { customerId, timeout, bidders, fpidStorageType } };
-      const expectedKeys = ['customerId', 'timeout', 'bidders', 'fpidStorageType']
+      const moduleConfig = { params: { customerId, timeout, bidders } };
+      const expectedKeys = ['customerId', 'timeout', 'bidders']
       const extractedConfig = extractConfig(moduleConfig, reqBidsConfigObj);
       expect(extractedConfig).to.be.an('object').and.to.have.all.keys(expectedKeys);
       expect(extractedConfig.customerId).to.equal(customerId);
       expect(extractedConfig.timeout).to.equal(timeout);
       expect(extractedConfig.bidders).to.deep.equal(bidders);
-      expect(extractedConfig.fpidStorageType).to.equal(fpidStorageType)
     })
     /* 1plusX RTD module may only use bidders that are both specified in :
         - the bid request configuration
@@ -168,20 +165,6 @@ describe('1plusXRtdProvider', () => {
       const bidders = ['rubicon'];
       const moduleConfig = { params: { customerId, timeout, bidders } };
       expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
-    })
-    it('Throws an error if wrong fpidStorageType is provided', () => {
-      const moduleConfig = { params: { customerId, timeout, bidders, fpidStorageType: 'bogus' } };
-      expect(() => extractConfig(moduleConfig, reqBidsConfigObj).to.throw())
-    })
-    it('Defaults fpidStorageType to localStorage', () => {
-      const moduleConfig = { params: { customerId, timeout, bidders } };
-      const extractedConfig = extractConfig(moduleConfig, reqBidsConfigObj);
-      expect(extractedConfig.fpidStorageType).to.equal(STORAGE_TYPE_LOCALSTORAGE)
-    })
-    it('Correctly instantiates fpidStorageType to cookie store if instructed', () => {
-      const moduleConfig = { params: { customerId, timeout, bidders, fpidStorageType: STORAGE_TYPE_COOKIES } };
-      const extractedConfig = extractConfig(moduleConfig, reqBidsConfigObj);
-      expect(extractedConfig.fpidStorageType).to.equal(STORAGE_TYPE_COOKIES)
     })
   })
 
@@ -298,6 +281,17 @@ describe('1plusXRtdProvider', () => {
           assert(failed, 'Should be throwing an exception')
         }
       }
+    })
+  })
+
+  describe('extractFpid', () => {
+    it('correctly extracts an ope fpid if present', () => {
+      window.localStorage.setItem('ope_fpid', 'oneplusx_test_key')
+      const id1 = extractFpid()
+      window.localStorage.removeItem('ope_fpid')
+      const id2 = extractFpid()
+      expect(id1).to.equal('oneplusx_test_key')
+      expect(id2).to.equal(null)
     })
   })
 

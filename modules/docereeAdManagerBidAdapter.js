@@ -20,12 +20,12 @@ export const spec = {
     }
     return true;
   },
-  buildRequests: (validBidRequests, bidderRequest) => {
+  buildRequests: (validBidRequests) => {
     const serverRequests = [];
     const { data } = config.getConfig('docereeadmanager.user') || {};
 
     validBidRequests.forEach(function (validBidRequest) {
-      const payload = getPayload(validBidRequest, data, bidderRequest);
+      const payload = getPayload(validBidRequest, data);
 
       if (!payload) {
         return;
@@ -70,20 +70,20 @@ export const spec = {
   },
 };
 
-export function getPayload(bid, userData, bidderRequest) {
+function getPayload(bid, userData) {
   if (!userData || !bid) {
     return false;
   }
+
   const { bidId, params } = bid;
-  const { placementId, publisherUrl } = params;
+  const { placementId } = params;
   const {
     userid,
     email,
     firstname,
     lastname,
-    hcpid,
-    dob,
     specialization,
+    hcpid,
     gender,
     city,
     state,
@@ -94,12 +94,11 @@ export function getPayload(bid, userData, bidderRequest) {
     hashedmobile,
     country,
     organization,
-    platformUid,
-    mobile
+    dob,
   } = userData;
 
   const data = {
-    userid: platformUid || userid || '',
+    userid: userid || '',
     email: email || '',
     firstname: firstname || '',
     lastname: lastname || '',
@@ -120,22 +119,7 @@ export function getPayload(bid, userData, bidderRequest) {
     organization: organization || '',
     dob: dob || '',
     userconsent: 1,
-    mobile: mobile || '',
-    pageurl: publisherUrl || ''
   };
-
-  try {
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      const { gdprApplies, consentString } = bidderRequest.gdprConsent;
-      data['consent'] = {
-        'gdpr': gdprApplies ? 1 : 0,
-        'gdprstr': consentString || '',
-      }
-    }
-  } catch (error) {
-
-  }
-
   return {
     data,
   };

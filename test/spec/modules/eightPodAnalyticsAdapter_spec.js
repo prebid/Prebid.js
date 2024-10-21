@@ -1,4 +1,4 @@
-import analyticsAdapter, { storage, queue, trackEvent } from 'modules/eightPodAnalyticsAdapter.js';
+import analyticsAdapter, { storage, queue, context, trackEvent } from 'modules/eightPodAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import eightPodAnalytics from 'modules/eightPodAnalyticsAdapter.js';
@@ -45,12 +45,11 @@ describe('eightPodAnalyticAdapter', function() {
     it('should subscribe on messageEvents', function() {
       getDataFromLocalStorageStub.returns(JSON.stringify([]));
       sandbox.spy(eightPodAnalytics, 'eventSubscribe');
-      sandbox.spy(eightPodAnalytics, 'getEventFromLocalStorage');
 
       analyticsAdapter.setupPage();
 
-      sandbox.assert.callCount(analyticsAdapter.eventSubscribe, 0);
-      sandbox.assert.callCount(analyticsAdapter.getEventFromLocalStorage, 1);
+      sandbox.assert.callCount(analyticsAdapter.eventSubscribe, 1);
+      sandbox.assert.callCount(addEventListenerSpy, 1);
     });
 
     it('should receive saved events list', function() {
@@ -68,7 +67,6 @@ describe('eightPodAnalyticAdapter', function() {
 
     beforeEach(function() {
       setupPageStub = sandbox.stub(eightPodAnalytics, 'setupPage');
-      eightPodAnalytics.resetContext();
     });
 
     afterEach(function() {
@@ -81,18 +79,16 @@ describe('eightPodAnalyticAdapter', function() {
       })
 
       sandbox.assert.callCount(setupPageStub, 0);
-      expect(analyticsAdapter.getContext()).to.deep.equal({})
+      expect(context).to.deep.equal(undefined)
     });
 
     it('should call setup page and get context', function() {
       eightPodAnalytics.track({
         eventType: BID_WON,
         args: {
-          adUnitCode: 'adUnitCode',
           bidder: 'eightPod',
           creativeId: 'creativeId',
           seatBidId: 'seatBidId',
-          cid: 'campaignId',
           params: [
             {
               publisherId: 'publisherId',
@@ -103,27 +99,23 @@ describe('eightPodAnalyticAdapter', function() {
       })
 
       sandbox.assert.callCount(setupPageStub, 1);
-      expect(analyticsAdapter.getContext()).to.deep.equal({
-        adUnitCode: {
-          bidId: 'seatBidId',
-          campaignId: 'campaignId',
-          placementId: 'placementId',
-          publisherId: 'publisherId',
-          variantId: 'creativeId'
-        }
+      expect(context).to.deep.equal({
+        bidId: 'seatBidId',
+        campaignId: 'campaignId',
+        placementId: 'placementId',
+        publisherId: 'publisherId',
+        variantId: 'creativeId'
       })
     });
   });
 
   describe('trackEvent', function() {
     let getContextStub, getTimeStub;
-    const adUnitCode = 'adUnitCode';
 
     beforeEach(function() {
       getContextStub = sandbox.stub(eightPodAnalytics, 'getContext');
       getTimeStub = sandbox.stub(Date.prototype, 'getTime').returns(1234);
       eightPodAnalytics.resetQueue();
-      eightPodAnalytics.resetContext();
     });
 
     afterEach(function() {
@@ -132,7 +124,7 @@ describe('eightPodAnalyticAdapter', function() {
     });
 
     it('should add event to the queue', function() {
-      getContextStub.returns({adUnitCode: {}});
+      getContextStub.returns({});
 
       const event1 = {
         detail: {
@@ -177,10 +169,9 @@ describe('eightPodAnalyticAdapter', function() {
           value: 2
         }
       }
-
-      trackEvent(event1, adUnitCode)
+      trackEvent(event1)
       expect(queue).to.deep.equal([result1]);
-      trackEvent(event2, adUnitCode);
+      trackEvent(event2);
       expect(queue).to.deep.equal([result1, result2]);
     });
   });

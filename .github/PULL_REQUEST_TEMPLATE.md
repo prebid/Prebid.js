@@ -41,7 +41,7 @@ For any user facing change, submit a link to a PR on the docs repo at https://gi
 }
 ```
 
-Be sure to test the integration with your adserver using the [Hello World](https://github.com/prebid/Prebid.js/blob/master/integrationExamples/gpt/hello_world.html) sample page. -->
+Be sure to test the integration with your adserver using the [Hello World](/integrationExamples/gpt/hello_world.html) sample page. -->
 
 
 ## Other information

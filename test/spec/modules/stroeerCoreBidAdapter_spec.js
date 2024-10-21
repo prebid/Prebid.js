@@ -169,17 +169,16 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupSingleWindow(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    let singleWin = null
-    singleWin = createWindow('http://www.xyz.com/', {
-      parent: singleWin, top: singleWin, frameElement: createElement(undefined, 304), placementElements: placementElements
+    const win = createWindow('http://www.xyz.com/', {
+      parent: win, top: win, frameElement: createElement(undefined, 304), placementElements: placementElements
     });
 
-    singleWin.innerHeight = 200;
+    win.innerHeight = 200;
 
-    sandBox.stub(utils, 'getWindowSelf').returns(singleWin);
-    sandBox.stub(utils, 'getWindowTop').returns(singleWin);
+    sandBox.stub(utils, 'getWindowSelf').returns(win);
+    sandBox.stub(utils, 'getWindowTop').returns(win);
 
-    return singleWin;
+    return win;
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
@@ -408,6 +407,7 @@ describe('stroeerCore bid adapter', function () {
           'timeout': expectedTimeout,
           'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
+          'ssl': false,
           'url': 'https://www.example.com/monkey/index.html',
           'bids': [{
             'sid': 'NDA=',

@@ -48,7 +48,7 @@ const SUA_ATTRIBUTES = [
 
 const CERBERUS = Object.freeze({
   KEY: 'krg_crb',
-  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}&gpp={GPP_STRING}&gpp_sid={GPP_SID}',
+  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}&gpp={GPP_STRING}&gpp_sid={GPP_SID}',
   SYNC_COUNT: 5,
   PAGE_VIEW_ID: 'pageViewId',
   PAGE_VIEW_TIMESTAMP: 'pageViewTimestamp',
@@ -95,13 +95,16 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
-    ext: getExtensions(firstBidRequest.ortb2, bidderRequest?.refererInfo)
+    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent)
   });
 
-  // Add site.cat if it exists
-  if (firstBidRequest.ortb2?.site?.cat != null) {
-    krakenParams.site = { cat: firstBidRequest.ortb2.site.cat };
+  // Add full ortb2 object as backup
+  if (firstBidRequest.ortb2) {
+    const siteCat = firstBidRequest.ortb2.site?.cat;
+    if (siteCat != null) {
+      krakenParams.site = { cat: siteCat };
+    }
+    krakenParams.ext = { ortb2: firstBidRequest.ortb2 };
   }
 
   // Add schain
@@ -183,10 +186,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.page = page;
   }
 
-  if (krakenParams.ext && Object.keys(krakenParams.ext).length === 0) {
-    delete krakenParams.ext;
-  }
-
   return Object.assign({}, bidderRequest, {
     method: BIDDER.REQUEST_METHOD,
     url: `https://${BIDDER.HOST}${BIDDER.REQUEST_ENDPOINT}`,
@@ -251,7 +250,7 @@ function interpretResponse(response, bidRequest) {
   if (fledgeAuctionConfigs.length > 0) {
     return {
       bids: bidResponses,
-      paapi: fledgeAuctionConfigs
+      fledgeAuctionConfigs
     }
   } else {
     return bidResponses;
@@ -274,16 +273,19 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
     return syncs;
   }
   if (syncOptions.iframeEnabled && seed && clientId) {
-    syncs.push({
-      type: 'iframe',
-      url: CERBERUS.SYNC_URL.replace('{UUID}', clientId)
-        .replace('{SEED}', seed)
-        .replace('{GDPR}', gdpr)
-        .replace('{GDPR_CONSENT}', gdprConsentString)
-        .replace('{US_PRIVACY}', usPrivacy || '')
-        .replace('{GPP_STRING}', gppString)
-        .replace('{GPP_SID}', gppApplicableSections)
-    })
+    for (let i = 0; i < CERBERUS.SYNC_COUNT; i++) {
+      syncs.push({
+        type: 'iframe',
+        url: CERBERUS.SYNC_URL.replace('{UUID}', clientId)
+          .replace('{SEED}', seed)
+          .replace('{INDEX}', i)
+          .replace('{GDPR}', gdpr)
+          .replace('{GDPR_CONSENT}', gdprConsentString)
+          .replace('{US_PRIVACY}', usPrivacy || '')
+          .replace('{GPP_STRING}', gppString)
+          .replace('{GPP_SID}', gppApplicableSections)
+      });
+    }
   }
   return syncs;
 }
@@ -296,13 +298,6 @@ function onTimeout(timeoutData) {
   timeoutData.forEach((bid) => {
     sendTimeoutData(bid.auctionId, bid.timeout);
   });
-}
-
-function getExtensions(ortb2, refererInfo) {
-  const ext = {};
-  if (ortb2) ext.ortb2 = ortb2;
-  if (refererInfo) ext.refererInfo = refererInfo;
-  return ext;
 }
 
 function _generateRandomUUID() {

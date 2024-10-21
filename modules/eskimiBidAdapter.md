@@ -48,35 +48,6 @@ Banner and video formats are supported.
 
 Where:
 
-* `placementId` - Placement ID of the ad unit (required)
-* `bcat`, `badv`, `bapp`, `battr` - ORTB blocking parameters as specified by OpenRTB 2.5
+* placementId - Placement ID of the ad unit (required)
+* bcat, badv, bapp, battr - ORTB blocking parameters as specified by OpenRTB 2.5
 
-# ## Configuration
-
-Eskimi recommends the UserSync configuration below. Without it, the Eskimi adapter will not able to perform user syncs, which lowers match rate and reduces monetization.
-
-```javascript
-pbjs.setConfig({
-   userSync: {
-       filterSettings: {
-           iframe: {
-               bidders: ['eskimi'], 
-               filter: 'include'
-           }
-       }, 
-       syncDelay: 6000
- }});
-```
-
-### Bidder Settings
-
-The Eskimi bid adapter uses browser local storage. Since Prebid.js 7.x, the access to it must be explicitly set.
-
-```js
-// https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html
-pbjs.bidderSettings = {
-    eskimi: {
-        storageAllowed: true
-    }
-}
-```

@@ -1,9 +1,9 @@
 import {
   deepAccess,
   deepClone,
+  deepEqual,
   delayExecution,
-  mergeDeep,
-  hasNonSerializableProperty
+  mergeDeep
 } from '../../src/utils.js';
 
 /**
@@ -22,9 +22,9 @@ Object.assign(BidInterceptor.prototype, {
   },
   serializeConfig(ruleDefs) {
     const isSerializable = (ruleDef, i) => {
-      const serializable = !hasNonSerializableProperty(ruleDef);
+      const serializable = deepEqual(ruleDef, JSON.parse(JSON.stringify(ruleDef)), {checkTypes: true});
       if (!serializable && !deepAccess(ruleDef, 'options.suppressWarnings')) {
-        this.logger.logWarn(`Bid interceptor rule definition #${i + 1} contains non-serializable properties and will be lost after a refresh. Rule definition: `, ruleDef);
+        this.logger.logWarn(`Bid interceptor rule definition #${i + 1} is not serializable and will be lost after a refresh. Rule definition: `, ruleDef);
       }
       return serializable;
     }
@@ -152,17 +152,10 @@ Object.assign(BidInterceptor.prototype, {
   },
 
   paapiReplacer(paapiDef, ruleNo) {
-    function wrap(configs = []) {
-      return configs.map(config => {
-        return Object.keys(config).some(k => !['config', 'igb'].includes(k))
-          ? {config}
-          : config
-      });
-    }
     if (Array.isArray(paapiDef)) {
-      return () => wrap(paapiDef);
+      return () => paapiDef;
     } else if (typeof paapiDef === 'function') {
-      return (...args) => wrap(paapiDef(...args))
+      return paapiDef
     } else {
       this.logger.logError(`Invalid 'paapi' definition for debug bid interceptor (in rule #${ruleNo})`);
     }

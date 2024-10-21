@@ -5,7 +5,7 @@ import { ajaxBuilder } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
-import { deepClone, hasNonSerializableProperty, generateUUID, logInfo } from '../src/utils.js';
+import { generateUUID, logInfo } from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
@@ -133,12 +133,7 @@ function flush() {
 }
 
 function handleEvent(eventType, eventArgs) {
-  if (eventArgs) {
-    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
-  } else {
-    eventArgs = {}
-  }
-
+  eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
   let invisiblyEvent = {};
 
   switch (eventType) {

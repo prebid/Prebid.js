@@ -1,17 +1,35 @@
-import { generateUUID, deepSetValue, deepAccess, isArray, isFn, isPlainObject, logError, logWarn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { COMMON_ORTB_VIDEO_PARAMS, formatResponse } from '../libraries/deepintentUtils/index.js';
+import { generateUUID, deepSetValue, deepAccess, isArray, isInteger, logError, logWarn } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
 const DI_M_V = '1.0.0';
 export const ORTB_VIDEO_PARAMS = {
-  ...COMMON_ORTB_VIDEO_PARAMS,
-  'plcmt': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
+  'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
+  'minduration': (value) => isInteger(value),
+  'maxduration': (value) => isInteger(value),
+  'protocols': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 10),
+  'w': (value) => isInteger(value),
+  'h': (value) => isInteger(value),
+  'startdelay': (value) => isInteger(value),
+  'placement': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
+  'linearity': (value) => [1, 2].indexOf(value) !== -1,
+  'skip': (value) => [0, 1].indexOf(value) !== -1,
+  'skipmin': (value) => isInteger(value),
+  'skipafter': (value) => isInteger(value),
+  'sequence': (value) => isInteger(value),
+  'battr': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 17),
+  'maxextended': (value) => isInteger(value),
+  'minbitrate': (value) => isInteger(value),
+  'maxbitrate': (value) => isInteger(value),
+  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
+  'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
+  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
   'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
   'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
+  'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 };
 export const spec = {
   code: BIDDER_CODE,
@@ -137,13 +155,29 @@ function clean(obj) {
   }
 }
 
+function formatResponse(bid) {
+  return {
+    requestId: bid && bid.impid ? bid.impid : undefined,
+    cpm: bid && bid.price ? bid.price : 0.0,
+    width: bid && bid.w ? bid.w : 0,
+    height: bid && bid.h ? bid.h : 0,
+    ad: bid && bid.adm ? bid.adm : '',
+    meta: {
+      advertiserDomains: bid && bid.adomain ? bid.adomain : []
+    },
+    creativeId: bid && bid.crid ? bid.crid : undefined,
+    netRevenue: false,
+    currency: bid && bid.cur ? bid.cur : 'USD',
+    ttl: 300,
+    dealId: bid && bid.dealId ? bid.dealId : undefined
+  }
+}
+
 function buildImpression(bid) {
   let impression = {};
-  const floor = getFloor(bid);
   impression = {
     id: bid.bidId,
     tagid: bid.params.tagId || '',
-    ...(!isNaN(floor) && { bidfloor: floor }),
     secure: window.location.protocol === 'https:' ? 1 : 0,
     displaymanager: 'di_prebid',
     displaymanagerver: DI_M_V,
@@ -156,23 +190,6 @@ function buildImpression(bid) {
     impression['video'] = _buildVideo(bid);
   }
   return impression;
-}
-
-function getFloor(bidRequest) {
-  if (!isFn(bidRequest.getFloor)) {
-    return bidRequest.params?.bidfloor;
-  }
-
-  let floor = bidRequest.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
 }
 
 function _buildVideo(bid) {

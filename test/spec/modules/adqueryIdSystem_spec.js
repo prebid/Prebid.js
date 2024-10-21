@@ -1,9 +1,6 @@
 import {adqueryIdSubmodule, storage} from 'modules/adqueryIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
 
 const config = {
   storage: {
@@ -61,23 +58,4 @@ describe('AdqueryIdSystem', function () {
       expect(callbackSpy.lastCall.lastArg).to.deep.equal('testqid');
     });
   });
-  describe('eid', () => {
-    before(() => {
-      attachIdSystem(adqueryIdSubmodule);
-    });
-    it('qid', function() {
-      const userId = {
-        qid: 'some-random-id-value'
-      };
-      const newEids = createEidsArray(userId);
-      expect(newEids.length).to.equal(1);
-      expect(newEids[0]).to.deep.equal({
-        source: 'adquery.io',
-        uids: [{
-          id: 'some-random-id-value',
-          atype: 1
-        }]
-      });
-    });
-  })
 });

@@ -73,10 +73,11 @@ export function newAuctionManager() {
   auctionManager.addWinningBid = function(bid) {
     const metrics = useMetrics(bid.metrics);
     metrics.checkpoint('bidWon');
-    metrics.timeBetween('auctionEnd', 'bidWon', 'adserver.pending');
-    metrics.timeBetween('requestBids', 'bidWon', 'adserver.e2e');
+    metrics.timeBetween('auctionEnd', 'bidWon', 'render.pending');
+    metrics.timeBetween('requestBids', 'bidWon', 'render.e2e');
     const auction = getAuction(bid.auctionId);
     if (auction) {
+      bid.status = BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
     } else {
       logWarn(`Auction not found when adding winning bid`);

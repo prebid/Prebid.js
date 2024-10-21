@@ -301,6 +301,10 @@ describe('microadBidAdapter', () => {
         userId: {novatiq: {snowflake: 'novatiq-sample'}},
         expected: {aids: JSON.stringify([{type: 10, id: 'novatiq-sample'}])}
       },
+      'Parrable ID': {
+        userId: {parrableId: {eid: 'parrable-sample'}},
+        expected: {aids: JSON.stringify([{type: 11, id: 'parrable-sample'}])}
+      },
       'AudienceOne User ID': {
         userId: {dacId: {id: 'audience-one-sample'}},
         expected: {aids: JSON.stringify([{type: 12, id: 'audience-one-sample'}])}

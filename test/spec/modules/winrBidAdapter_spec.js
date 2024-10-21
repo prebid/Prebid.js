@@ -93,22 +93,22 @@ describe('WinrAdapter', function () {
     });
 
     it('should return false when mediaType is not banner', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.mediaTypes;
-      invalidBid.mediaTypes = {
+      let bid = Object.assign({}, bid);
+      delete bid.mediaTypes;
+      bid.mediaTypes = {
         'video': {}
       };
-      expect(getMediaTypeFromBid(invalidBid)).to.not.equal('banner');
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(getMediaTypeFromBid(bid)).to.not.equal('banner');
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
         'placementId': 0
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

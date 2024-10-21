@@ -1,7 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import {getStorageManager} from 'src/storageManager.js';
 import {spec} from 'modules/seedingAllianceBidAdapter.js';
+import { NATIVE } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('SeedingAlliance adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -11,14 +12,6 @@ describe('SeedingAlliance adapter', function () {
       'adUnitId': '1hq8'
     }
   };
-
-  let validBidRequests = [{
-    bidId: 'bidId',
-    params: {},
-    mediaType: {
-      native: {}
-    }
-  }];
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
@@ -33,6 +26,11 @@ describe('SeedingAlliance adapter', function () {
 
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: {}
+      }];
+
       let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
 
       assert.equal(request.method, 'POST');
@@ -41,96 +39,64 @@ describe('SeedingAlliance adapter', function () {
 
     it('should have default request structure', function () {
       let keys = 'site,cur,imp,regs'.split(',');
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: {}
+      }];
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
       let data = Object.keys(request);
 
-      assert.includeDeepMembers(data, keys);
+      assert.deepEqual(keys, data);
     });
 
     it('Verify the site url', function () {
       let siteUrl = 'https://www.yourdomain.tld/your-directory/';
-      validBidRequests[0].params.url = siteUrl;
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: {
+          url: siteUrl
+        }
+      }];
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
       assert.equal(request.site.page, siteUrl);
     });
-  });
 
-  describe('check user ID functionality', function () {
-    let storage = getStorageManager({ bidderCode: 'seedingAlliance' });
-    let localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-    let getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-    const bidRequests = [{
-      bidId: 'bidId',
-      params: {}
-    }];
-    const bidderRequest = {
-      refererInfo: { referer: 'page' },
-      gdprConsent: 'CP0j9IAP0j9IAAGABCENAYEgAP_gAAAAAAYgIxBVBCpNDWFAMHBVAJIgCYAU1sARIAQAABCAAyAFAAOA8IAA0QECEAQAAAACAAAAgVABAAAAAABEAACAAAAEAQFkAAQQgAAIAAAAAAEQQgBQAAgAAAAAEAAIgAABAwQAkACQIYLEBUCAhIAgCgAAAIgBgICAAgMACEAYAAAAAAIAAIBAAgIEMIAAAAECAQAAAFhIEoACAAKgAcgA-AEAAMgAaABEACYAG8APwAhIBDAESAJYATQAw4B9gH6ARQAjQBKQC5gF6AMUAbQA3ACdgFDgLzAYMAw0BmYDVwGsgOCAcmA8cCEMELQQuCAAgGQgQMHQKAAKgAcgA-AEAAMgAaABEACYAG8AP0AhgCJAEsAJoAYYA0YB9gH6ARQAiwBIgCUgFzAL0AYoA2gBuAEXgJkATsAocBeYDBgGGgMqAZYAzMBpoDVwHFgOTAeOBC0cAHAAQABcAKACEAF0AMEAZCQgFABMADeARQAlIBcwDFAG0AeOBCgCFpAAGAAgBggEMyUAwABAAHAAPgBEACZAIYAiQB-AFzAMUAi8BeYEISQAMAC4DLAIZlIEAAFQAOQAfACAAGQANAAiABMACkAH6AQwBEgDRgH4AfoBFgCRAEpALmAYoA2gBuAEXgJ2AUOAvMBhoDLAGsgOCAcmA8cCEIELQIZlAAoAFwB9gLoAYIBAwtADAL0AzMB44AAA.f_wAAAAAAAAA'
-    }
-    let request;
-
-    before(function () {
-      storage.removeDataFromLocalStorage('nativendo_id');
-      const localStorageData = {
-        nativendo_id: '123'
-      };
-
-      getDataFromLocalStorageStub.callsFake(function (key) {
-        return localStorageData[key];
-      });
-    });
-
-    it('should return an empty array if local storage is not enabled', function () {
-      localStorageIsEnabledStub.returns(false);
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        seedingAlliance: {
-          storageAllowed: false
+    it('Verify native asset ids', function () {
+      let validBidRequests = [{
+        bidId: 'bidId',
+        params: {},
+        nativeParams: {
+          body: {
+            required: true,
+            len: 350
+          },
+          image: {
+            required: true
+          },
+          title: {
+            required: true
+          },
+          sponsoredBy: {
+            required: true
+          },
+          cta: {
+            required: true
+          },
+          icon: {
+            required: true
+          }
         }
-      };
+      }];
 
-      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
-      expect(request.user.ext.eids).to.be.an('array').that.is.empty;
-    });
+      let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
 
-    it('should return an empty array if local storage is enabled but storageAllowed is false', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        seedingAlliance: {
-          storageAllowed: false
-        }
-      };
-      localStorageIsEnabledStub.returns(true);
-
-      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
-      expect(request.user.ext.eids).to.be.an('array').that.is.empty;
-    });
-
-    it('should return a non empty array if local storage is enabled and storageAllowed is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        seedingAlliance: {
-          storageAllowed: true
-        }
-      };
-      localStorageIsEnabledStub.returns(true);
-
-      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
-      expect(request.user.ext.eids).to.be.an('array').that.is.not.empty;
-    });
-
-    it('should return an array containing the nativendoUserEid', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        seedingAlliance: {
-          storageAllowed: true
-        }
-      };
-      localStorageIsEnabledStub.returns(true);
-
-      let nativendoUserEid = { source: 'nativendo.de', uids: [{ id: '123', atype: 1 }] };
-      storage.setDataInLocalStorage('nativendo_id', '123');
-
-      request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
-
-      expect(request.user.ext.eids).to.deep.include(nativendoUserEid);
+      assert.equal(assets[0].id, 1);
+      assert.equal(assets[1].id, 3);
+      assert.equal(assets[2].id, 0);
+      assert.equal(assets[3].id, 2);
+      assert.equal(assets[4].id, 4);
+      assert.equal(assets[5].id, 5);
     });
   });
 
@@ -138,24 +104,23 @@ describe('SeedingAlliance adapter', function () {
     const goodNativeResponse = {
       body: {
         cur: 'EUR',
-        id: 'bidid1',
+        id: '4b516b80-886e-4ec0-82ae-9209e6d625fb',
         seatbid: [
           {
           	seat: 'seedingAlliance',
           	bid: [{
-              adm: JSON.stringify({
-                native: {
-                  assets: [
-                    {id: 0, title: {text: 'this is a title'}},
-                    {id: 1, img: {url: 'https://domain.for/img.jpg'}},
-                  ],
-                  imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
-                  link: {
-                    clicktrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
-                    url: 'https://domain.for/ad/'
-                  }
-                }
-              }),
+              adm: {
+            	native: {
+            		assets: [
+            			{id: 0, title: {text: 'this is a title'}}
+            		],
+            		imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
+            		link: {
+            			clicktrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
+            			url: 'https://domain.for/ad/'
+            		}
+            	}
+              },
               impid: 1,
               price: 0.55
             }]
@@ -167,7 +132,7 @@ describe('SeedingAlliance adapter', function () {
     const goodBannerResponse = {
       body: {
         cur: 'EUR',
-        id: 'bidid1',
+        id: 'b4516b80-886e-4ec0-82ae-9209e6d625fb',
         seatbid: [
           {
           	seat: 'seedingAlliance',
@@ -185,18 +150,18 @@ describe('SeedingAlliance adapter', function () {
 
     const badResponse = { body: {
       cur: 'EUR',
-      id: 'bidid1',
+      id: '4b516b80-886e-4ec0-82ae-9209e6d625fb',
       seatbid: []
     }};
 
     const bidNativeRequest = {
       data: {},
-      bidRequests: [{bidId: '1', nativeParams: {title: {required: true, len: 800}, image: {required: true, sizes: [300, 250]}}}]
+      bidRequests: [{bidId: 'bidId1', nativeParams: {title: {required: true, len: 800}}}]
     };
 
     const bidBannerRequest = {
       data: {},
-      bidRequests: [{bidId: '1', sizes: [300, 250]}]
+      bidRequests: [{bidId: 'bidId1', sizes: [300, 250]}]
     };
 
     it('should return null if body is missing or empty', function () {

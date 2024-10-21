@@ -227,6 +227,7 @@ function buildVideoRequest(bidRequest, bidderRequest) {
     maxbitrate: deepAccess(bidRequest, 'mediaTypes.video.maxbitrate'),
     delivery: deepAccess(bidRequest, 'mediaTypes.video.delivery'),
     linearity: deepAccess(bidRequest, 'mediaTypes.video.linearity'),
+    placement: deepAccess(bidRequest, 'mediaTypes.video.placement'),
     skip: deepAccess(bidRequest, 'mediaTypes.video.skip'),
     skipafter: deepAccess(bidRequest, 'mediaTypes.video.skipafter')
   };

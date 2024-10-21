@@ -19,11 +19,7 @@ export const spec = {
     Array.isArray(bid.mediaTypes?.banner?.sizes)),
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    if (!validBidRequests || !bidderRequest) {
-      return;
-    }
-
-    const {publisherId, siteId} = validBidRequests[0].params;
+    const {publisherId, placementId, siteId} = validBidRequests[0].params;
 
     const payload = {
       id: bidderRequest.bidderRequestId,
@@ -32,7 +28,7 @@ export const spec = {
         banner: {format: extractSizes(bidRequest)},
         ext: {
           opsco: {
-            placementId: bidRequest.params.placementId,
+            placementId: placementId,
             publisherId: publisherId,
           }
         }

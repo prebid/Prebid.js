@@ -7,7 +7,6 @@ const VERSION = '3.6';
 const BAD_WORD_STEP = 0.1;
 const BAD_WORD_MIN = 0.2;
 const ADHASH_BIDDER_CODE = 'adhash';
-const storage = getStorageManager({ bidderCode: ADHASH_BIDDER_CODE });
 
 /**
  * Function that checks the page where the ads are being served for brand safety.
@@ -121,7 +120,7 @@ function brandSafety(badWords, maxScore) {
       .replaceAll(/\s\s+/g, ' ')
       .toLowerCase()
       .trim();
-    const content = window.top.document.body.textContent.toLowerCase();
+    const content = window.top.document.body.innerText.toLowerCase();
     // \p{L} matches a single unicode code point in the category 'letter'. Matches any kind of letter from any language.
     const regexp = new RegExp('[\\p{L}]+', 'gu');
     const wordsMatched = content.match(regexp);
@@ -172,6 +171,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
+    const storage = getStorageManager({ bidderCode: ADHASH_BIDDER_CODE });
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
     const body = document.body;
@@ -199,11 +199,9 @@ export const spec = {
         position: validBidRequests[i].adUnitCode
       };
       let recentAds = [];
-      let recentAdsPrebid = [];
       if (storage.localStorageIsEnabled()) {
         const prefix = validBidRequests[i].params.prefix || 'adHash';
         recentAds = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAds') || '[]');
-        recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
       }
 
       // Needed for the ad density calculation
@@ -239,7 +237,6 @@ export const spec = {
           blockedCreatives: [],
           currentTimestamp: (new Date().getTime() / 1000) | 0,
           recentAds: recentAds,
-          recentAdsPrebid: recentAdsPrebid,
           GDPRApplies: gdprConsent ? gdprConsent.gdprApplies : null,
           GDPR: gdprConsent ? gdprConsent.consentString : null,
           servedAdsCount: window.adsCount,
@@ -264,19 +261,6 @@ export const spec = {
       !brandSafety(responseBody.badWords, responseBody.maxScore)
     ) {
       return [];
-    }
-
-    if (storage.localStorageIsEnabled()) {
-      const prefix = request.bidRequest.params.prefix || 'adHash';
-      let recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
-      recentAdsPrebid.push([
-        (new Date().getTime() / 1000) | 0,
-        responseBody.creatives[0].advertiserId,
-        responseBody.creatives[0].budgetId,
-        responseBody.creatives[0].expectedHashes.length ? responseBody.creatives[0].expectedHashes[0] : '',
-      ]);
-      let recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
-      storage.setDataInLocalStorage(prefix + 'recentAdsPrebid', recentAdsPrebidFinal);
     }
 
     const publisherURL = JSON.stringify(request.bidRequest.params.platformURL);

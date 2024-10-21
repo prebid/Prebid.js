@@ -1,4 +1,4 @@
-import {deepClone, logError, getParameterByName, logMessage} from '../src/utils.js';
+import {deepClone, logError, getParameterByName} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
@@ -26,7 +26,8 @@ const {
   AD_RENDER_SUCCEEDED
 } = EVENTS;
 function log (msg) {
-  logMessage(`%cNoBid Analytics ${VERSION}: ${msg}`);
+  // eslint-disable-next-line no-console
+  console.log(`%cNoBid Analytics ${VERSION}`, 'padding: 2px 8px 2px 8px; background-color:#f50057; color: white', msg);
 }
 function isJson (str) {
   return str && str.startsWith('{') && str.endsWith('}');
@@ -240,7 +241,7 @@ window.nobidCarbonizer = {
       adunit.bids = allowedBidders;
     }
     for (const adunit of adunits) {
-      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = deepClone(adunit);
+      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = JSON.parse(JSON.stringify(adunit));
     };
     if (this.isActive()) {
       // 5% of the time do not block;

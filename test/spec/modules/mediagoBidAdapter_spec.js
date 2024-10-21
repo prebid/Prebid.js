@@ -3,11 +3,14 @@ import {
   spec,
   getPmgUID,
   storage,
+  getPageTitle,
+  getPageDescription,
+  getPageKeywords,
+  getConnectionDownLink,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
   getCurrentTimeToUTCString
 } from 'modules/mediagoBidAdapter.js';
-import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
 import * as utils from 'src/utils.js';
 
 describe('mediago:BidAdapterTests', function () {
@@ -257,43 +260,43 @@ describe('mediago:BidAdapterTests', function () {
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
   });
-});
 
-describe('mediago: getUserSyncs', function() {
-  const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
-  const IFRAME_ENABLED = {
-    iframeEnabled: true,
-    pixelEnabled: false,
-  };
-  const IFRAME_DISABLED = {
-    iframeEnabled: false,
-    pixelEnabled: false,
-  };
-  const GDPR_CONSENT = {
-    consentString: 'gdprConsentString',
-    gdprApplies: true
-  };
-  const USP_CONSENT = {
-    consentString: 'uspConsentString'
-  }
-
-  let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
-  syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
-  const expectedIframeSyncs = [
-    {
-      type: 'iframe',
-      url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+  describe('mediago: getUserSyncs', function() {
+    const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
+    const IFRAME_ENABLED = {
+      iframeEnabled: true,
+      pixelEnabled: false,
+    };
+    const IFRAME_DISABLED = {
+      iframeEnabled: false,
+      pixelEnabled: false,
+    };
+    const GDPR_CONSENT = {
+      consentString: 'gdprConsentString',
+      gdprApplies: true
+    };
+    const USP_CONSENT = {
+      consentString: 'uspConsentString'
     }
-  ];
 
-  it('should return nothing if iframe is disabled', () => {
-    const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
-    expect(userSyncs).to.be.undefined;
-  });
+    let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
+    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
+    const expectedIframeSyncs = [
+      {
+        type: 'iframe',
+        url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+      }
+    ];
 
-  it('should do userSyncs if iframe is enabled', () => {
-    const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
-    expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+    it('should return nothing if iframe is disabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.be.undefined;
+    });
+
+    it('should do userSyncs if iframe is enabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+    });
   });
 });
 

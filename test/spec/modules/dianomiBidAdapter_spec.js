@@ -250,20 +250,23 @@ describe('Dianomi adapter', () => {
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          userIdAsEids: [
-            {
-              source: 'adserver.org',
-              uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }],
-            },
-            { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] },
-          ],
+          userIdAsEids: createEidsArray({
+            tdid: 'TTD_ID_FROM_USER_ID_MODULE',
+            pubcid: 'pubCommonId_FROM_USER_ID_MODULE',
+          }),
         },
       ];
 
       let request = JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       );
-      assert.deepEqual(request.user.ext.eids, validBidRequests[0].userIdAsEids);
+      assert.deepEqual(request.user.ext.eids, [
+        {
+          source: 'adserver.org',
+          uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }],
+        },
+        { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] },
+      ]);
     });
 
     it('should send currency if defined', () => {

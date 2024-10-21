@@ -44,5 +44,6 @@ pbjs.setConfig({
 
 At least one of the submodules must be included in order to successfully run the corresponding above operations.
 
+enrichmentFpdModule
 validationFpdModule
 topicsFpdModule

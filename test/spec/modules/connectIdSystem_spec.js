@@ -549,28 +549,24 @@ describe('Yahoo ConnectID Submodule', () => {
           expect(result.callback).to.be.a('function');
         });
 
-        function mockOptout(value) {
-          getLocalStorageStub.callsFake((key) => {
-            if (key === 'connectIdOptOut') return value;
-          })
-        }
-
         it('returns an undefined if the Yahoo specific opt-out key is present in local storage', () => {
-          mockOptout('1');
+          localStorage.setItem('connectIdOptOut', '1');
           expect(invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
           }, consentData)).to.be.undefined;
+          localStorage.removeItem('connectIdOptOut');
         });
 
         it('returns an object with the callback function if the correct params are passed and Yahoo opt-out value is not "1"', () => {
-          mockOptout('true');
+          localStorage.setItem('connectIdOptOut', 'true');
           let result = invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
           }, consentData);
           expect(result).to.be.an('object').that.has.all.keys('callback');
           expect(result.callback).to.be.a('function');
+          localStorage.removeItem('connectIdOptOut');
         });
 
         it('Makes an ajax GET request to the production API endpoint with pixelId and he query params', () => {
@@ -808,25 +804,6 @@ describe('Yahoo ConnectID Submodule', () => {
         });
       });
     });
-    describe('userHasOptedOut()', () => {
-      it('should return a function', () => {
-        expect(connectIdSubmodule.userHasOptedOut).to.be.a('function');
-      });
-
-      it('should return false when local storage key has not been set function', () => {
-        expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
-      });
-
-      it('should return true when local storage key has been set to "1"', () => {
-        getLocalStorageStub.returns('1');
-        expect(connectIdSubmodule.userHasOptedOut()).to.be.true;
-      });
-
-      it('should return false when local storage key has not been set to "1"', () => {
-        getLocalStorageStub.returns('hello');
-        expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
-      });
-    });
   });
 
   describe('decode()', () => {
@@ -905,6 +882,30 @@ describe('Yahoo ConnectID Submodule', () => {
       expect(connectIdSubmodule.isEUConsentRequired({
         gdprApplies: true
       })).to.be.true;
+    });
+  });
+
+  describe('userHasOptedOut()', () => {
+    afterEach(() => {
+      localStorage.removeItem('connectIdOptOut');
+    });
+
+    it('should return a function', () => {
+      expect(connectIdSubmodule.userHasOptedOut).to.be.a('function');
+    });
+
+    it('should return false when local storage key has not been set function', () => {
+      expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
+    });
+
+    it('should return true when local storage key has been set to "1"', () => {
+      localStorage.setItem('connectIdOptOut', '1');
+      expect(connectIdSubmodule.userHasOptedOut()).to.be.true;
+    });
+
+    it('should return false when local storage key has not been set to "1"', () => {
+      localStorage.setItem('connectIdOptOut', 'hello');
+      expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
     });
   });
 });

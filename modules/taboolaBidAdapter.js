@@ -64,7 +64,6 @@ export const userData = {
         return tblaId;
       }
     }
-    return undefined;
   },
   getCookieDataByKey(cookieData, key) {
     if (!cookieData) {
@@ -79,7 +78,6 @@ export const userData = {
     if (hasLocalStorage() && localStorageIsEnabled()) {
       return getDataFromLocalStorage(STORAGE_KEY);
     }
-    return undefined;
   },
   getFromTRC() {
     return window.TRC ? window.TRC.user_id : 0;
@@ -115,9 +113,6 @@ const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
     bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
-    if (bid.ext && bid.ext.dchain) {
-      deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
-    }
     return bidResponse
   }
 });
@@ -206,7 +201,7 @@ export const spec = {
     if (fledgeAuctionConfigs.length) {
       return {
         bids,
-        paapi: fledgeAuctionConfigs,
+        fledgeAuctionConfigs,
       };
     }
     return bids;
@@ -276,38 +271,35 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
 function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
-  deepSetValue(data, 'device.ua', navigator.userAgent);
-  const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
-  if (data.user == undefined) {
-    data.user = {
-      buyeruid: 0,
-      ext: {}
-    }
+  const device = {ua: navigator.userAgent};
+  let user = {
+    buyeruid: userData.getUserId(gdprConsent, uspConsent),
+    ext: {}
+  };
+  if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.user) {
+    user.data = bidderRequest.ortb2.user.data;
   }
-  if (extractedUserId && extractedUserId !== 0) {
-    deepSetValue(data, 'user.buyeruid', extractedUserId);
-  }
-  if (data.regs?.ext == undefined) {
-    data.regs = {
-      ext: {}
-    }
-  }
-  deepSetValue(data, 'regs.coppa', 0);
+  const regs = {
+    coppa: 0,
+    ext: {}
+  };
+
   if (gdprConsent.gdprApplies) {
-    deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-    deepSetValue(data, 'regs.ext.gdpr', 1);
+    user.ext.consent = bidderRequest.gdprConsent.consentString;
+    regs.ext.gdpr = 1;
   }
+
   if (uspConsent) {
-    deepSetValue(data, 'regs.ext.us_privacy', uspConsent);
+    regs.ext.us_privacy = uspConsent;
   }
 
   if (bidderRequest.ortb2?.regs?.gpp) {
-    deepSetValue(data, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp);
-    deepSetValue(data, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+    regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
   if (config.getConfig('coppa')) {
-    deepSetValue(data, 'regs.coppa', 1);
+    regs.coppa = 1;
   }
 
   const ortb2 = bidderRequest.ortb2 || {
@@ -316,14 +308,16 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
     wlang: []
   };
 
-  deepSetValue(data, 'source.fd', 1);
-
   data.id = bidderRequest.bidderRequestId;
   data.site = site;
+  data.device = device;
+  data.source = {fd: 1};
   data.tmax = (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout);
   data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
   data.badv = ortb2.badv || bidRequest.params.badv || [];
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
+  data.user = user;
+  data.regs = regs;
   deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
   deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
 }

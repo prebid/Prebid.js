@@ -29,8 +29,8 @@
       function updateUID2GuiElements() {
         console.log('Updating displayed values.');
         const uid2  = pbjs.getUserIds().uid2;
-        document.querySelector('#uid2TargetedAdvertisingReady').innerText = uid2 && !uid2.optout ? 'yes' : 'no';
-        document.querySelector('#uid2AdvertisingToken').innerText  = uid2 && !uid2.optout ? String(uid2.id) : uid2 && uid2.optout ? 'Optout' : '';
+        document.querySelector('#uid2TargetedAdvertisingReady').innerText = uid2 ? 'yes' : 'no';
+        document.querySelector('#uid2AdvertisingToken').innerText  = uid2 ? String(uid2.id) : '';
         if (!uid2) {
           document.querySelector('#uid2LoginForm').style['display'] = 'block';
           document.querySelector('#uid2ClearStorageForm').style['display'] = 'none';;

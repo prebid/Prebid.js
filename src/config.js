@@ -36,9 +36,8 @@ const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
-const DEFAULT_MAXBID_VALUE = 5000
 
-const DEFAULT_IFRAMES_CONFIG = {};
+const DEFAULT_TIMEOUTBUFFER = 400;
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';
@@ -60,148 +59,6 @@ const GRANULARITY_OPTIONS = {
 
 const ALL_TOPICS = '*';
 
-function attachProperties(config, useDefaultValues = true) {
-  const values = useDefaultValues ? {
-    priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
-    customPriceBucket: {},
-    mediaTypePriceGranularity: {},
-    bidderSequence: DEFAULT_BIDDER_SEQUENCE,
-    auctionOptions: {}
-  } : {}
-
-  function getProp(name) {
-    return values[name];
-  }
-
-  function setProp(name, val) {
-    if (!values.hasOwnProperty(name)) {
-      Object.defineProperty(config, name, {enumerable: true});
-    }
-    values[name] = val;
-  }
-
-  const props = {
-    publisherDomain: {
-      set(val) {
-        if (val != null) {
-          logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
-        }
-        setProp('publisherDomain', val);
-      }
-    },
-    priceGranularity: {
-      set(val) {
-        if (validatePriceGranularity(val)) {
-          if (typeof val === 'string') {
-            setProp('priceGranularity', (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM);
-          } else if (isPlainObject(val)) {
-            setProp('customPriceBucket', val);
-            setProp('priceGranularity', GRANULARITY_OPTIONS.CUSTOM)
-            logMessage('Using custom price granularity');
-          }
-        }
-      }
-    },
-    customPriceBucket: {},
-    mediaTypePriceGranularity: {
-      set(val) {
-        val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
-          if (validatePriceGranularity(val[item])) {
-            if (typeof val === 'string') {
-              aggregate[item] = (hasGranularity(val[item])) ? val[item] : getProp('priceGranularity');
-            } else if (isPlainObject(val)) {
-              aggregate[item] = val[item];
-              logMessage(`Using custom price granularity for ${item}`);
-            }
-          } else {
-            logWarn(`Invalid price granularity for media type: ${item}`);
-          }
-          return aggregate;
-        }, {}));
-      }
-    },
-    bidderSequence: {
-      set(val) {
-        if (VALID_ORDERS[val]) {
-          setProp('bidderSequence', val);
-        } else {
-          logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
-        }
-      }
-    },
-    auctionOptions: {
-      set(val) {
-        if (validateauctionOptions(val)) {
-          setProp('auctionOptions', val);
-        }
-      }
-    }
-  }
-
-  Object.defineProperties(config, Object.fromEntries(
-    Object.entries(props)
-      .map(([k, def]) => [k, Object.assign({
-        get: getProp.bind(null, k),
-        set: setProp.bind(null, k),
-        enumerable: values.hasOwnProperty(k),
-        configurable: !values.hasOwnProperty(k)
-      }, def)])
-  ));
-
-  return config;
-
-  function hasGranularity(val) {
-    return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
-  }
-
-  function validatePriceGranularity(val) {
-    if (!val) {
-      logError('Prebid Error: no value passed to `setPriceGranularity()`');
-      return false;
-    }
-    if (typeof val === 'string') {
-      if (!hasGranularity(val)) {
-        logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
-      }
-    } else if (isPlainObject(val)) {
-      if (!isValidPriceConfig(val)) {
-        logError('Invalid custom price value passed to `setPriceGranularity()`');
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function validateauctionOptions(val) {
-    if (!isPlainObject(val)) {
-      logWarn('Auction Options must be an object')
-      return false
-    }
-
-    for (let k of Object.keys(val)) {
-      if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
-        logWarn(`Auction Options given an incorrect param: ${k}`)
-        return false
-      }
-      if (k === 'secondaryBidders') {
-        if (!isArray(val[k])) {
-          logWarn(`Auction Options ${k} must be of type Array`);
-          return false
-        } else if (!val[k].every(isStr)) {
-          logWarn(`Auction Options ${k} must be only string`);
-          return false
-        }
-      } else if (k === 'suppressStaleRender') {
-        if (!isBoolean(val[k])) {
-          logWarn(`Auction Options ${k} must be of type boolean`);
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-}
-
 export function newConfig() {
   let listeners = [];
   let defaults;
@@ -212,7 +69,79 @@ export function newConfig() {
   function resetConfig() {
     defaults = {};
 
-    let newConfig = attachProperties({
+    function getProp(name) {
+      return props[name].val;
+    }
+
+    function setProp(name, val) {
+      props[name].val = val;
+    }
+
+    const props = {
+      publisherDomain: {
+        set(val) {
+          if (val != null) {
+            logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
+          }
+          setProp('publisherDomain', val);
+        }
+      },
+      priceGranularity: {
+        val: GRANULARITY_OPTIONS.MEDIUM,
+        set(val) {
+          if (validatePriceGranularity(val)) {
+            if (typeof val === 'string') {
+              setProp('priceGranularity', (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM);
+            } else if (isPlainObject(val)) {
+              setProp('customPriceBucket', val);
+              setProp('priceGranularity', GRANULARITY_OPTIONS.CUSTOM)
+              logMessage('Using custom price granularity');
+            }
+          }
+        }
+      },
+      customPriceBucket: {
+        val: {},
+        set() {}
+      },
+      mediaTypePriceGranularity: {
+        val: {},
+        set(val) {
+          val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
+            if (validatePriceGranularity(val[item])) {
+              if (typeof val === 'string') {
+                aggregate[item] = (hasGranularity(val[item])) ? val[item] : getProp('priceGranularity');
+              } else if (isPlainObject(val)) {
+                aggregate[item] = val[item];
+                logMessage(`Using custom price granularity for ${item}`);
+              }
+            } else {
+              logWarn(`Invalid price granularity for media type: ${item}`);
+            }
+            return aggregate;
+          }, {}));
+        }
+      },
+      bidderSequence: {
+        val: DEFAULT_BIDDER_SEQUENCE,
+        set(val) {
+          if (VALID_ORDERS[val]) {
+            setProp('bidderSequence', val);
+          } else {
+            logWarn(`Invalid order: ${val}. Bidder Sequence was not set.`);
+          }
+        }
+      },
+      auctionOptions: {
+        val: {},
+        set(val) {
+          if (validateauctionOptions(val)) {
+            setProp('auctionOptions', val);
+          }
+        }
+      }
+    }
+    let newConfig = {
       // `debug` is equivalent to legacy `pbjs.logging` property
       debug: DEFAULT_DEBUG,
       bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
@@ -225,17 +154,22 @@ export function newConfig() {
        */
       deviceAccess: DEFAULT_DEVICE_ACCESS,
 
+      // timeout buffer to adjust for bidder CDN latency
+      timeoutBuffer: DEFAULT_TIMEOUTBUFFER,
       disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
 
       // default max nested iframes for referer detection
       maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
+    };
 
-      // default max bid
-      maxBid: DEFAULT_MAXBID_VALUE,
-      userSync: {
-        topics: DEFAULT_IFRAMES_CONFIG
-      }
-    });
+    Object.defineProperties(newConfig,
+      Object.fromEntries(Object.entries(props)
+        .map(([k, def]) => [k, Object.assign({
+          get: getProp.bind(null, k),
+          set: setProp.bind(null, k),
+          enumerable: true,
+        }, def)]))
+    );
 
     if (config) {
       callSubscribers(
@@ -251,6 +185,57 @@ export function newConfig() {
 
     config = newConfig;
     bidderConfig = {};
+
+    function hasGranularity(val) {
+      return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
+    }
+
+    function validatePriceGranularity(val) {
+      if (!val) {
+        logError('Prebid Error: no value passed to `setPriceGranularity()`');
+        return false;
+      }
+      if (typeof val === 'string') {
+        if (!hasGranularity(val)) {
+          logWarn('Prebid Warning: setPriceGranularity was called with invalid setting, using `medium` as default.');
+        }
+      } else if (isPlainObject(val)) {
+        if (!isValidPriceConfig(val)) {
+          logError('Invalid custom price value passed to `setPriceGranularity()`');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function validateauctionOptions(val) {
+      if (!isPlainObject(val)) {
+        logWarn('Auction Options must be an object')
+        return false
+      }
+
+      for (let k of Object.keys(val)) {
+        if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
+          logWarn(`Auction Options given an incorrect param: ${k}`)
+          return false
+        }
+        if (k === 'secondaryBidders') {
+          if (!isArray(val[k])) {
+            logWarn(`Auction Options ${k} must be of type Array`);
+            return false
+          } else if (!val[k].every(isStr)) {
+            logWarn(`Auction Options ${k} must be only string`);
+            return false
+          }
+        } else if (k === 'suppressStaleRender') {
+          if (!isBoolean(val[k])) {
+            logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
+        }
+      }
+      return true;
+    }
   }
 
   /**
@@ -461,14 +446,14 @@ export function newConfig() {
       check(config);
       config.bidders.forEach(bidder => {
         if (!bidderConfig[bidder]) {
-          bidderConfig[bidder] = attachProperties({}, false);
+          bidderConfig[bidder] = {};
         }
         Object.keys(config.config).forEach(topic => {
           let option = config.config[topic];
-          const currentConfig = bidderConfig[bidder][topic];
-          if (isPlainObject(option) && (currentConfig == null || isPlainObject(currentConfig))) {
+
+          if (isPlainObject(option)) {
             const func = mergeFlag ? mergeDeep : Object.assign;
-            bidderConfig[bidder][topic] = func({}, currentConfig || {}, option);
+            bidderConfig[bidder][topic] = func({}, bidderConfig[bidder][topic] || {}, option);
           } else {
             bidderConfig[bidder][topic] = option;
           }

@@ -417,7 +417,7 @@ export const spec = {
   // INITIATE USER SYNCING
   getUserSyncs: function(options, rtbResponse, gdprConsent) {
     const syncs = [];
-    let bidResponse = rtbResponse?.[0]?.body ?? null;
+    let bidResponse = rtbResponse[0].body;
     let scope = this;
 
     // LISTEN FOR SYNC DATA FROM IFRAME TYPE SYNC

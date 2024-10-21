@@ -79,6 +79,23 @@ provided to the module when the user gives the relevant permissions on the publi
 As Prebid.js utilizes TCF vendor consent for the RTD module to load, the module needs to be labeled
 within the Vendor Exceptions.
 
+### Instructions
+
+If the Prebid GDPR enforcement is enabled, the module should be labeled
+as exception, as shown below:
+
+```js
+[
+  {
+    purpose: 'storage',
+    enforcePurpose: true,
+    enforceVendor: true,
+    vendorExceptions: ["azerionedge"]
+  },
+  ...
+]
+```
+
 ## Testing
 
 To view an example:

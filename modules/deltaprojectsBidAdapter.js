@@ -8,8 +8,7 @@ import {
   isFn,
   isNumber,
   logError,
-  logWarn,
-  setOnAny
+  logWarn
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 
@@ -231,6 +230,16 @@ export function getBidFloor(bid, mediaType, size, currency) {
     const bidFloor = bid.getFloor({currency: bidFloorCurrency, mediaType: mediaType, size: size});
     if (isNumber(bidFloor.floor)) {
       return bidFloor;
+    }
+  }
+}
+
+/** -- Helper methods -- */
+function setOnAny(collection, key) {
+  for (let i = 0, result; i < collection.length; i++) {
+    result = deepAccess(collection[i], key);
+    if (result) {
+      return result;
     }
   }
 }

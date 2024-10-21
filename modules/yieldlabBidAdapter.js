@@ -201,7 +201,7 @@ export const spec = {
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
           meta: {
-            advertiserDomains: [(matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'],
+            advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a',
           },
         };
 

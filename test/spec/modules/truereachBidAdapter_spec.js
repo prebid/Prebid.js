@@ -12,6 +12,7 @@ describe('truereachBidAdapterTests', function () {
       bidder: 'truereach',
       params: {
         site_id: '0142010a-8400-1b01-72cb-a553b9000009',
+        bidfloor: 0.1
       }
     })).to.equal(true);
   });
@@ -26,7 +27,8 @@ describe('truereachBidAdapterTests', function () {
       },
       bidder: 'truereach',
       params: {
-        site_id: '0142010a-8400-1b01-72cb-a553b9000009'
+        site_id: '0142010a-8400-1b01-72cb-a553b9000009',
+        bidfloor: 0.1
       },
       sizes: [[300, 250]]
     }];
@@ -38,6 +40,7 @@ describe('truereachBidAdapterTests', function () {
     expect(req_data.imp[0].id).to.equal('34ce3f3b15190a');
     expect(req_data.imp[0].banner.w).to.equal(300);
     expect(req_data.imp[0].banner.h).to.equal(250);
+    expect(req_data.imp[0].bidfloor).to.equal(0);
   });
 
   it('validate_response_params', function () {

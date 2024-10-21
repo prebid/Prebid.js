@@ -376,7 +376,7 @@ describe('CleanmedianetAdapter', () => {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
 
       bidRequestWithVideo.params.video = {
-        plcmt: 1,
+        placement: 1,
         minduration: 1,
       }
 
@@ -395,7 +395,7 @@ describe('CleanmedianetAdapter', () => {
 
       expect(response.data.imp[0].video.mimes).to.equal(bidRequestWithVideo.mediaTypes.video.mimes);
       expect(response.data.imp[0].video.skip).to.not.exist;
-      expect(response.data.imp[0].video.plcmt).to.equal(1);
+      expect(response.data.imp[0].video.placement).to.equal(1);
       expect(response.data.imp[0].video.minduration).to.equal(1);
       expect(response.data.imp[0].video.playbackmethod).to.equal(1);
       expect(response.data.imp[0].video.startdelay).to.equal(1);
@@ -405,7 +405,7 @@ describe('CleanmedianetAdapter', () => {
           playerSize: [302, 252],
           mimes: ['video/mpeg'],
           skip: 1,
-          plcmt: 1,
+          placement: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -428,7 +428,7 @@ describe('CleanmedianetAdapter', () => {
           context: 'instream',
           mimes: ['video/mpeg'],
           skip: 1,
-          plcmt: 1,
+          placement: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -457,7 +457,7 @@ describe('CleanmedianetAdapter', () => {
         context: 'instream',
         mimes: ['video/mpeg'],
         skip: 1,
-        plcmt: 1,
+        placement: 1,
         minduration: 1,
         playbackmethod: 1,
         startdelay: 1,
