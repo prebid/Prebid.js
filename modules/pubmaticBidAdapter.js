@@ -1297,6 +1297,11 @@ export const spec = {
       }
     }
 
+    // if present, merge device object from ortb2 into `payload.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(payload.device, bidderRequest.ortb2.device);
+    }
+
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
       _allowedIabCategoriesValidation(payload, acatParams);
