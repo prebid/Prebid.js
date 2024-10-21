@@ -219,6 +219,10 @@ export function deferRendering(bidResponse, renderFn) {
   if (!bidResponse.deferRendering) {
     renderIfDeferred(bidResponse);
   }
+  markWinner(bidResponse);
+}
+
+export function markWinner(bidResponse) {
   if (!WINNERS.has(bidResponse)) {
     WINNERS.add(bidResponse);
     markWinningBid(bidResponse);
