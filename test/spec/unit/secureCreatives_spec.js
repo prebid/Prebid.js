@@ -411,6 +411,21 @@ describe('secureCreatives', () => {
         });
       });
 
+      it('should fire BID_WON when no asset is requested', () => {
+        pushBidResponseToAuction({});
+        const data = {
+          adId: bidId,
+          message: 'Prebid Native',
+        };
+
+        const ev = makeEvent({
+          data: JSON.stringify(data),
+        });
+        return receive(ev).then(() => {
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        });
+      })
+
       describe('resizing', () => {
         let container, slot;
         before(() => {
