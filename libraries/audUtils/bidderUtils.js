@@ -5,6 +5,15 @@ import {
   logError
 } from '../../src/utils.js';
 
+// Declare native assets
+const NATIVE_ASSETS = [
+  { id: 1, required: 1, title: { len: 100 } }, // Title
+  { id: 2, required: 1, img: { type: 3, w: 300, h: 250 } }, // Main image
+  { id: 3, required: 0, data: { type: 1, len: 140 } }, // Body
+  { id: 4, required: 1, data: { type: 2 } }, // Sponsored by
+  { id: 5, required: 1, icon: { w: 50, h: 50 } }, // Icon
+  { id: 6, required: 1, data: { type: 12, len: 15 } } // Call to action
+];
 // Function to get Request
 export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
   let request = [];
@@ -34,6 +43,7 @@ export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
     if (bidderRequest?.uspConsent) {
       deepSetValue(req, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
+    req.MediaType = getMediaType(bidReq);
     request.push(req);
   });
   // Return the array of request
@@ -48,6 +58,15 @@ export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
 }
 // Function to get Response
 export const getBannerResponse = (bidResponse, mediaType) => {
+  return formatResponse(bidResponse, mediaType);
+}
+// Function to get NATIVE Response
+export const getNativeResponse = (bidResponse, bidRequest, mediaType) => {
+  const assets = JSON.parse(JSON.parse(bidRequest.data)[0].imp[0].native.request).assets;
+  return formatResponse(bidResponse, mediaType, assets);
+}
+// Function to format response
+const formatResponse = (bidResponse, mediaType, assets) => {
   let responseArray = [];
   if (bidResponse) {
     try {
@@ -61,7 +80,9 @@ export const getBannerResponse = (bidResponse, mediaType) => {
           response.height = bidReq.h;
           response.ad = bidReq.adm;
           response.meta = {
-            advertiserDomains: bidReq.adomain
+            advertiserDomains: bidReq.adomain,
+            primaryCatId: bidReq.cat || [],
+            attr: bidReq.attr || []
           };
           response.creativeId = bidReq.crid;
           response.netRevenue = false;
@@ -69,6 +90,18 @@ export const getBannerResponse = (bidResponse, mediaType) => {
           response.ttl = 300;
           response.dealId = bidReq.dealId;
           response.mediaType = mediaType;
+          if (mediaType == 'native') {
+            let nativeResp = JSON.parse(bidReq.adm).native;
+            let nativeData = {
+              clickUrl: nativeResp.link.url,
+              impressionTrackers: nativeResp.imptrackers
+            };
+            nativeResp.assets.forEach(asst => {
+              let data = getNativeAssestData(asst, assets);
+              nativeData[data.key] = data.value;
+            });
+            response.native = nativeData;
+          }
           responseArray.push(response);
         });
       }
@@ -78,13 +111,18 @@ export const getBannerResponse = (bidResponse, mediaType) => {
   }
   return responseArray;
 }
-// Function to get imp
+// Function to get imp based on Media Type
 const getImpDetails = (bidReq) => {
   let imp = {};
   if (bidReq) {
     imp.id = bidReq.bidId;
     imp.bidfloor = getFloorPrice(bidReq);
-    imp.banner = getBannerDetails(bidReq);
+    if (bidReq.mediaTypes.native) {
+      let assets = { assets: NATIVE_ASSETS };
+      imp.native = { request: JSON.stringify(assets) };
+    } else if (bidReq.mediaTypes.banner) {
+      imp.banner = getBannerDetails(bidReq);
+    }
   }
   return imp;
 }
@@ -136,4 +174,65 @@ const getUserDetails = (bidReq) => {
     user.customdata = '';
   }
   return user;
+}
+// Function to get asset data for response
+const getNativeAssestData = (params, assets) => {
+  let response = {};
+  if (params.title) {
+    response.key = 'title';
+    response.value = params.title.text;
+  }
+  if (params.data) {
+    response.key = getAssetData(params.id, assets);
+    response.value = params.data.value;
+  }
+  if (params.img) {
+    response.key = getAssetImageDataType(params.id, assets);
+    response.value = {
+      url: params.img.url,
+      height: params.img.h,
+      width: params.img.w
+    }
+  }
+  return response;
+}
+// Function to get asset data types based on id
+const getAssetData = (paramId, asset) => {
+  let resp = '';
+  for (let i = 0; i < asset.length; i++) {
+    if (asset[i].id == paramId) {
+      switch (asset[i].data.type) {
+        case 1 : resp = 'sponsored';
+          break;
+        case 2 : resp = 'desc';
+          break;
+        case 12 : resp = 'cta';
+          break;
+      }
+    }
+  }
+  return resp;
+}
+// Function to get image type based on the id
+const getAssetImageDataType = (paramId, asset) => {
+  let resp = '';
+  for (let i = 0; i < asset.length; i++) {
+    if (asset[i].id == paramId) {
+      switch (asset[i].img.type) {
+        case 1 : resp = 'icon';
+          break;
+        case 3 : resp = 'image';
+          break;
+      }
+    }
+  }
+  return resp;
+}
+// Function to get Media Type
+const getMediaType = (bidReq) => {
+  if (bidReq.mediaTypes.native) {
+    return 'native';
+  } else if (bidReq.mediaTypes.banner) {
+    return 'banner';
+  }
 }

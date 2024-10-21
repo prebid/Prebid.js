@@ -11,7 +11,7 @@ let REFERER = '';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 108,
-  aliases: ['ra'],
+  aliases: [{code: 'ra', gvlid: 108}],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***

@@ -5,6 +5,7 @@ import {
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
@@ -67,7 +68,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   logger.logMessage('url', url.toString());
 
   try {
-    loadExternalScript(url.toString(), MODULE_NAME, () => {
+    loadExternalScript(url.toString(), MODULE_TYPE_RTD, MODULE_NAME, () => {
       logger.logMessage('script injected');
       window.WURFLPromises.complete.then((res) => {
         logger.logMessage('received data', res);
