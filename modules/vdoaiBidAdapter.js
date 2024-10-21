@@ -29,6 +29,7 @@ function getFrameNesting() {
 
 /**
  * Returns information about the page needed by the server in an object to be converted in JSON
+ *
  * @returns {{location: *, referrer: (*|string), stack: (*|Array.<String>), numIframes: (*|Number), wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
 function getPageInfo(bidderRequest) {
