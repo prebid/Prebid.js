@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -10,6 +10,7 @@ const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
 const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 
+const GVLID = 1218
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
 
@@ -132,7 +133,7 @@ function getRegs(bidderRequest) {
 }
 
 function setPrebidRequestEnvironment(payload) {
-  const __navigator = JSON.parse(JSON.stringify(recur(navigator)));
+  const __navigator = deepClone(recur(navigator));
   delete __navigator.plugins;
   deepSetValue(payload, 'environment.ri', getRefererInfo());
   deepSetValue(payload, 'environment.hl', window.history.length);
@@ -232,6 +233,7 @@ function hasValidParameters(bidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function(bidRequest) {
     logInfo('bid: ', bidRequest);

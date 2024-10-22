@@ -14,9 +14,11 @@ import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
 const BIDDER_CODE = 'missena';
@@ -43,6 +45,62 @@ function getFloor(bidRequest) {
   }
 }
 
+/* Helper function that converts the prebid data to the payload expected by our servers */
+function toPayload(bidRequest, bidderRequest) {
+  const payload = {
+    adunit: bidRequest.adUnitCode,
+    ik: window.msna_ik,
+    request_id: bidRequest.bidId,
+    timeout: bidderRequest.timeout,
+  };
+
+  if (bidderRequest && bidderRequest.refererInfo) {
+    // TODO: is 'topmostLocation' the right value here?
+    payload.referer = bidderRequest.refererInfo.topmostLocation;
+    payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
+  }
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    payload.consent_string = bidderRequest.gdprConsent.consentString;
+    payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
+  }
+
+  if (bidderRequest && bidderRequest.uspConsent) {
+    payload.us_privacy = bidderRequest.uspConsent;
+  }
+
+  const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
+  if (bidRequest.params.test) {
+    payload.test = bidRequest.params.test;
+  }
+  if (bidRequest.params.placement) {
+    payload.placement = bidRequest.params.placement;
+  }
+  if (bidRequest.params.formats) {
+    payload.formats = bidRequest.params.formats;
+  }
+  if (bidRequest.params.isInternal) {
+    payload.is_internal = bidRequest.params.isInternal;
+  }
+  if (bidRequest.ortb2?.device?.ext?.cdep) {
+    payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
+  }
+  payload.userEids = bidRequest.userIdAsEids || [];
+  payload.version = '$prebid.version$';
+
+  const bidFloor = getFloor(bidRequest);
+  payload.floor = bidFloor?.floor;
+  payload.floor_currency = bidFloor?.currency;
+  payload.currency = config.getConfig('currency.adServerCurrency') || 'EUR';
+  payload.schain = bidRequest.schain;
+
+  return {
+    method: 'POST',
+    url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
+    data: JSON.stringify(payload),
+  };
+}
+
 export const spec = {
   aliases: ['msna'],
   code: BIDDER_CODE,
@@ -62,7 +120,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {Array<BidRequest>} validBidRequests
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -78,54 +137,9 @@ export const spec = {
       return [];
     }
 
-    return validBidRequests.map((bidRequest) => {
-      const payload = {
-        adunit: bidRequest.adUnitCode,
-        ik: window.msna_ik,
-        request_id: bidRequest.bidId,
-        timeout: bidderRequest.timeout,
-      };
-
-      if (bidderRequest && bidderRequest.refererInfo) {
-        // TODO: is 'topmostLocation' the right value here?
-        payload.referer = bidderRequest.refererInfo.topmostLocation;
-        payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
-      }
-
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.consent_string = bidderRequest.gdprConsent.consentString;
-        payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
-      }
-      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
-      if (bidRequest.params.test) {
-        payload.test = bidRequest.params.test;
-      }
-      if (bidRequest.params.placement) {
-        payload.placement = bidRequest.params.placement;
-      }
-      if (bidRequest.params.formats) {
-        payload.formats = bidRequest.params.formats;
-      }
-      if (bidRequest.params.isInternal) {
-        payload.is_internal = bidRequest.params.isInternal;
-      }
-      if (bidRequest.ortb2?.device?.ext?.cdep) {
-        payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
-      }
-      payload.userEids = bidRequest.userIdAsEids || [];
-      payload.version = '$prebid.version$';
-
-      const bidFloor = getFloor(bidRequest);
-      payload.floor = bidFloor?.floor;
-      payload.floor_currency = bidFloor?.currency;
-      payload.currency = config.getConfig('currency.adServerCurrency') || 'EUR';
-
-      return {
-        method: 'POST',
-        url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
-        data: JSON.stringify(payload),
-      };
-    });
+    return validBidRequests.map((bidRequest) =>
+      toPayload(bidRequest, bidderRequest),
+    );
   },
 
   /**
@@ -170,7 +184,7 @@ export const spec = {
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {TimedOutBid} timeoutData - Containing timeout specific data
    */
   onTimeout: function onTimeout(timeoutData) {
     logInfo('Missena - Timeout from adapter', timeoutData);
@@ -178,7 +192,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function (bid) {
     const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;

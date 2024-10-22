@@ -6,16 +6,14 @@ import {
   isNumber,
   generateUUID,
   isEmpty,
-  isFn,
-  isPlainObject,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pstudio';
 const ENDPOINT = 'https://exchange.pstudio.tadex.id/prebid-bid'
 const TIME_TO_LIVE = 300;
-// in case that the publisher limits number of user syncs, thisse syncs will be discarded from the end of the list
-// so more improtant syncing calls should be at the start of the list
+// in case that the publisher limits number of user syncs, these syncs will be discarded from the end of the list
+// so more important syncing calls should be at the start of the list
 const USER_SYNCS = [
   // PARTNER_UID is a partner user id
   {
@@ -40,6 +38,7 @@ const VIDEO_PARAMS = [
   'protocols',
   'startdelay',
   'placement',
+  'plcmt',
   'skip',
   'skipafter',
   'minbitrate',
@@ -58,7 +57,7 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     const params = bid.params || {};
-    return !!params.pubid && !!params.floorPrice && isVideoRequestValid(bid);
+    return !!params.pubid && !!params.adtagid && isVideoRequestValid(bid);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -144,7 +143,7 @@ function buildRequestData(bid, bidderRequest) {
 
 function buildBaseObject(bid, bidderRequest) {
   const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
-  const { pubid, bcat, badv, bapp } = bid.params;
+  const { pubid, adtagid, bcat, badv, bapp } = bid.params;
   const { userId } = bid;
   const uid2Token = userId?.uid2?.id;
 
@@ -167,8 +166,7 @@ function buildBaseObject(bid, bidderRequest) {
   return {
     id: bid.bidId,
     pubid,
-    floor_price: getBidFloor(bid),
-    adtagid: bid.adUnitCode,
+    adtagid: adtagid,
     ...(bcat && { bcat }),
     ...(badv && { badv }),
     ...(bapp && { bapp }),
@@ -416,7 +414,7 @@ function validateSizes(sizes) {
   );
 }
 
-function getBidFloor(bid) {
+/* function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.floorPrice ? bid.params.floorPrice : null;
   }
@@ -430,6 +428,6 @@ function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
-}
+} */
 
 registerBidder(spec);

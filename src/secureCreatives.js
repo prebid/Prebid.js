@@ -7,7 +7,7 @@ import {getAllAssetsMessage, getAssetMessage} from './native.js';
 import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {find, includes} from './polyfill.js';
-import {getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender, markWinningBid} from './adRendering.js';
+import {deferRendering, getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
@@ -103,19 +103,15 @@ function handleNativeRequest(reply, data, adObject) {
     return;
   }
 
-  if (adObject.status !== BID_STATUS.RENDERED) {
-    markWinningBid(adObject);
-  }
-
   switch (data.action) {
     case 'assetRequest':
-      reply(getAssetMessage(data, adObject));
+      deferRendering(adObject, () => reply(getAssetMessage(data, adObject)));
       break;
     case 'allAssetRequest':
-      reply(getAllAssetsMessage(data, adObject));
+      deferRendering(adObject, () => reply(getAllAssetsMessage(data, adObject)));
       break;
     default:
-      handleNativeMessage(data, adObject, {resizeFn: getResizer(adObject)})
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)})
   }
 }
 
@@ -144,7 +140,7 @@ export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
       elementStyle.width = getDimension(width)
       elementStyle.height = getDimension(height);
     } else {
-      logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
+      logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
   });
 

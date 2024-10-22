@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * This module adds uid2 ID support to the User ID module
  * The {@link module:modules/userId} module is required.

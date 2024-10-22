@@ -128,8 +128,8 @@ export const spec = {
       id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
-      site: params.site ? params.site : {},
-      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
+      site: {...bidderRequest?.ortb2?.site, ...params?.site},
+      device: {...bidderRequest?.ortb2?.device, ...params?.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -146,6 +146,18 @@ export const spec = {
     payload.device.language = navigator.language;
     payload.device.w = screen.width;
     payload.device.h = screen.height;
+
+    if (bidderRequest.ortb2?.user?.geo && bidderRequest.ortb2?.device?.geo) {
+      payload.device.geo = { ...payload.device.geo, ...bidderRequest.ortb2?.device.geo };
+      payload.user.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+    } else {
+      if (bidderRequest.ortb2?.user?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+      }
+      if (bidderRequest.ortb2?.device?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.device.geo };
+      }
+    }
 
     if (bidderRequest?.ortb2?.device?.sua) {
       payload.device.sua = bidderRequest.ortb2.device.sua;
@@ -177,6 +189,14 @@ export const spec = {
 
     if (bidderRequest?.timeout) {
       payload.tmax = bidderRequest.timeout;
+    }
+
+    if (bidderRequest?.ortb2?.bcat) {
+      payload.bcat = bidderRequest.ortb2.bcat;
+    }
+
+    if (bidderRequest?.ortb2?.badv) {
+      payload.badv = bidderRequest.ortb2.badv;
     }
 
     provideEids(validBidRequests[0], payload);
