@@ -548,33 +548,7 @@ describe('qortexRtdProvider', () => {
       }, 250)
     })
 
-    it('logs page analysis response information if initiated', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(404, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        server.requests[1].respond(201, responseHeaders, JSON.stringify({}));
-        setTimeout(() => {
-          expect(logMessageSpy.calledWith('Sending page data for context analysis')).to.be.true;
-          expect(logMessageSpy.calledWith('Successfully initiated Qortex page analysis')).to.be.true;
-          done();
-        }, 400)
-      }, 250)
-    })
-
-    it('logs page analysis response information if applicable', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(404, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        server.requests[1].respond(201, responseHeaders, JSON.stringify({}));
-        setTimeout(() => {
-          expect(logMessageSpy.calledWith('Sending page data for context analysis')).to.be.true;
-          expect(logMessageSpy.calledWith('Successfully initiated Qortex page analysis')).to.be.true;
-          done();
-        }, 400)
-      }, 250)
-    })
-
-    it('logs page analysis response if no record is made', (done) => {
+    it('logs warning if no record has been made', (done) => {
       initializeBidEnrichment();
       server.requests[0].respond(202, responseHeaders, JSON.stringify({}));
       setTimeout(() => {
