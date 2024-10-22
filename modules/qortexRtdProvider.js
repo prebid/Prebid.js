@@ -100,7 +100,7 @@ export function getContext () {
       const callbacks = {
         success(text, data) {
           const responseStatus = data.status;
-          let result;
+          let result = null;
           if (responseStatus === 200) {
             qortexSessionInfo.pageAnalysisData.contextRetrieved = true
             result = JSON.parse(data.response)?.content;
