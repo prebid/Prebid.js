@@ -80,6 +80,7 @@ export const spec = {
       let urlParams = ``;
       urlParams = tryAppendQueryString(urlParams, 'id', id);
       urlParams = tryAppendQueryString(urlParams, 'posall', 'SSPLOC');// not reaquired
+      urlParams = tryAppendQueryString(urlParams, 'sdktype', '0');
 
       // remove the trailing "&"
       if (urlParams.lastIndexOf('&') === urlParams.length - 1) {
