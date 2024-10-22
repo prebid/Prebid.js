@@ -97,6 +97,7 @@
       "reconciliationRtdProvider",
       "relevadRtdProvider",
       "sirdataRtdProvider",
+      "symitriDapRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider"
     ],
