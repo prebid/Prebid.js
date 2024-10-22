@@ -275,7 +275,14 @@ export const spec = {
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
+
+      const refererInfo = bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo : {};
+      if (refererInfo.page) {
+        networks[network].context = bidderRequest.refererInfo.page;
+      }
+      if (refererInfo.canonicalUrl) {
+        networks[network].canonical = bidderRequest.refererInfo.canonicalUrl;
+      }
 
       const payloadRelatedData = storageTool.getPayloadRelatedData(bid.params.network);
       if (Object.keys(payloadRelatedData).length > 0) {

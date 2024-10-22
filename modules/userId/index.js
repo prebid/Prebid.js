@@ -4,63 +4,47 @@
  */
 
 /**
- * @interface Submodule
+ * @typedef Submodule
+ * @property {string} name - used to link submodule with config
+ * @property {decode} decode
+ * @property {getId} getId
+ * @property {Object} eids
+ * @property {number} [gvlid] - vendor ID
+ * @property {extendId} [extendId]
+ * @property {function} [domainOverride] - use a predefined domain override for cookies or provide your own
+ * @property {function(): string} [findRootDomain] - returns the root domain
  */
 
 /**
- * @function
- * @summary performs action to obtain id and return a value in the callback's response argument.
- *  If IdResponse#id is defined, then it will be written to the current active storage.
- *  If IdResponse#callback is defined, then it'll called at the end of auction.
- *  It's permissible to return neither, one, or both fields.
- * @name Submodule#getId
+ * Performs action to obtain id and return a value in the callback's response argument.
+ * If IdResponse#id is defined, then it will be written to the current active storage.
+ * If IdResponse#callback is defined, then it'll called at the end of auction.
+ * It's permissible to return neither, one, or both fields.
+ * @callback getId
  * @param {SubmoduleConfig} config
- * @param {ConsentData|undefined} consentData
- * @param {(Object|undefined)} cacheIdObj
- * @return {(IdResponse|undefined)} A response object that contains id and/or callback.
+ * @param {ConsentData|undefined} [consentData]
+ * @param {Object|undefined} [cacheIdObj]
+ * @returns {IdResponse|undefined} A response object that contains id and/or callback.
  */
 
 /**
- * @function
- * @summary Similar to Submodule#getId, this optional method returns response to for id that exists already.
- *  If IdResponse#id is defined, then it will be written to the current active storage even if it exists already.
- *  If IdResponse#callback is defined, then it'll called at the end of auction.
- *  It's permissible to return neither, one, or both fields.
- * @name Submodule#extendId
+ * Similar to `getId`, this optional method returns response to for id that exists already.
+ * If IdResponse#id is defined, then it will be written to the current active storage even if it exists already.
+ * If IdResponse#callback is defined, then it'll called at the end of auction.
+ * It's permissible to return neither, one, or both fields.
+ * @callback extendId
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {Object} storedId - existing id, if any
- * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
+ * @returns {IdResponse|function(callback:function)} A response object that contains id and/or callback.
  */
 
 /**
- * @function
- * @summary decode a stored value for passing to bid requests
- * @name Submodule#decode
+ * Decode a stored value for passing to bid requests
+ * @callback decode
  * @param {Object|string} value
- * @param {SubmoduleConfig|undefined} config
- * @return {(Object|undefined)}
- */
-
-/**
- * @property
- * @summary used to link submodule with config
- * @name Submodule#name
- * @type {string}
- */
-
-/**
- * @property
- * @summary use a predefined domain override for cookies or provide your own
- * @name Submodule#domainOverride
- * @type {(undefined|function)}
- */
-
-/**
- * @function
- * @summary Returns the root domain
- * @name Submodule#findRootDomain
- * @returns {string}
+ * @param {SubmoduleConfig|undefined} [config]
+ * @returns {Object|undefined}
  */
 
 /**
@@ -69,6 +53,7 @@
  * @property {(SubmoduleStorage|undefined)} storage - browser storage config
  * @property {(SubmoduleParams|undefined)} params - params config for use by the submodule.getId function
  * @property {(Object|undefined)} value - if not empty, this value is added to bid requests for access in adapters
+ * @property {string[]} [enabledStorageTypes]
  */
 
 /**
@@ -111,6 +96,7 @@
  * @property {(Object|undefined)} idObj - cache decoded id value (this is copied to every adUnit bid)
  * @property {(function|undefined)} callback - holds reference to submodule.getId() result if it returned a function. Will be set to undefined after callback executes
  * @property {StorageManager} storageMgr
+ * @property {string[]} [enabledStorageTypes]
  */
 
 /**
@@ -122,8 +108,8 @@
 
 /**
  * @typedef {Object} IdResponse
- * @property {(Object|undefined)} id - id data
- * @property {(function|undefined)} callback - function that will return an id
+ * @property {Object} [id] - id data
+ * @property {function} [callback] - function that will return an id
  */
 
 /**
@@ -737,7 +723,7 @@ function getUserIdsAsEidBySource(sourceName) {
  * Sample use case is exposing this function to ESP
  */
 function getEncryptedEidsForSource(source, encrypt, customFunction) {
-  return initIdSystem().then(() => {
+  return retryOnCancel().then(() => {
     let eidsSignals = {};
 
     if (isFn(customFunction)) {
@@ -796,6 +782,23 @@ function registerSignalSources() {
   }
 }
 
+function retryOnCancel(initParams) {
+  return initIdSystem(initParams).then(
+    () => getUserIds(),
+    (e) => {
+      if (e === INIT_CANCELED) {
+        // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
+        // of canceling the previous init, before the refresh logic has had a chance to run.
+        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
+        return Promise.resolve().then(getUserIdsAsync)
+      } else {
+        logError('Error initializing userId', e)
+        return GreedyPromise.reject(e)
+      }
+    }
+  );
+}
+
 /**
  * Force (re)initialization of ID submodules.
  *
@@ -807,12 +810,12 @@ function registerSignalSources() {
  * @param callback? called when the refresh is complete
  */
 function refreshUserIds({submoduleNames} = {}, callback) {
-  return initIdSystem({refresh: true, submoduleNames})
-    .then(() => {
+  return retryOnCancel({refresh: true, submoduleNames})
+    .then((userIds) => {
       if (callback && isFn(callback)) {
         callback();
       }
-      return getUserIds();
+      return userIds;
     });
 }
 
@@ -828,20 +831,7 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  */
 
 function getUserIdsAsync() {
-  return initIdSystem().then(
-    () => getUserIds(),
-    (e) => {
-      if (e === INIT_CANCELED) {
-        // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
-        // of canceling the previous init, before the refresh logic has had a chance to run.
-        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
-        return Promise.resolve().then(getUserIdsAsync)
-      } else {
-        logError('Error initializing userId', e)
-        return GreedyPromise.reject(e)
-      }
-    }
-  );
+  return retryOnCancel();
 }
 
 export function getConsentHash() {
