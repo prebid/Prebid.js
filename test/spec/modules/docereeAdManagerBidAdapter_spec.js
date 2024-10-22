@@ -126,7 +126,6 @@ describe('docereeadmanager', function () {
     });
   });
 
-
   describe('getPageUrl', function () {
     let sandbox;
     // Set up a sandbox before each test to safely stub or mock objects
