@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec, getPayload, getPageUrl } from '../../../modules/docereeAdManagerBidAdapter.js';
 import { config } from '../../../src/config.js';
 
@@ -125,35 +126,47 @@ describe('docereeadmanager', function () {
     });
   });
 
+
   describe('getPageUrl', function () {
+    let sandbox;
+    // Set up a sandbox before each test to safely stub or mock objects
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    // Restore the original behavior after each test
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    // Test 1: Should return the current page URL when window.location.href is available
     it('should return the current page URL when window.location.href is available', function () {
-      // Mock the window location object
       const mockUrl = 'https://example.com/test';
-      sinon.stub(window, 'location').value({ href: mockUrl });
+
+      // Stub window.location.href to return a mock URL
+      sandbox.stub(window.location, 'href').value(mockUrl);
 
       const result = getPageUrl();
       expect(result).to.equal(mockUrl);
-
-      window.location.restore(); // Restore original window.location after the test
     });
 
+    // Test 2: Should return an empty string when an error occurs (window object is unavailable)
     it('should return an empty string when there is an error (window is unavailable)', function () {
-      // Temporarily override the window object to simulate an error
-      const originalWindow = global.window;
-      global.window = undefined;
+      // Simulate an error when accessing window.location.href by throwing an error
+      const stub = sandbox.stub(window.location, 'href');
+      stub.get(() => { throw new Error('Simulated Error'); });
+
       const result = getPageUrl();
       expect(result).to.equal('');
-      // Restore the original window object after the test
-      global.window = originalWindow;
     });
 
+    // Test 3: Should return an empty string if window.location.href is empty
     it('should return an empty string if window.location.href is empty', function () {
-      // Mock the window location object with an empty string
-      sinon.stub(window, 'location').value({ href: '' });
+      // Stub window.location.href to return an empty string
+      sandbox.stub(window.location, 'href').value('');
+
       const result = getPageUrl();
       expect(result).to.equal('');
-
-      window.location.restore(); // Restore original window.location after the test
     });
   });
 
