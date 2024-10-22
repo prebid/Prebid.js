@@ -11,6 +11,7 @@ import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -91,8 +92,10 @@ function toPayload(bidRequest, bidderRequest) {
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
-  payload.currency = config.getConfig('currency.adServerCurrency') || 'EUR';
+  payload.currency = config.getConfig('currency.adServerCurrency');
   payload.schain = bidRequest.schain;
+  payload.coppa = config.getConfig('coppa') === true ? 1 : 0;
+  payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
 
   return {
     method: 'POST',
