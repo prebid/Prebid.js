@@ -125,47 +125,40 @@ describe('docereeadmanager', function () {
     });
   });
 
+  describe('getPageUrl', function () {
+    it('should return the current page URL when window.location.href is available', function () {
+      // Mock the window location object
+      const mockUrl = 'https://example.com/test';
+      sinon.stub(window, 'location').value({ href: mockUrl });
 
-describe('getPageUrl', function () {
-  it('should return the current page URL when window.location.href is available', function () {
-    // Mock the window location object
-    const mockUrl = 'https://example.com/test';
-    sinon.stub(window, 'location').value({ href: mockUrl });
+      const result = getPageUrl();
+      expect(result).to.equal(mockUrl);
 
-    const result = getPageUrl();
-    expect(result).to.equal(mockUrl);
+      window.location.restore(); // Restore original window.location after the test
+    });
 
-    window.location.restore(); // Restore original window.location after the test
+    it('should return an empty string when there is an error (window is unavailable)', function () {
+      // Temporarily override the window object to simulate an error
+      const originalWindow = global.window;
+      global.window = undefined;
+      const result = getPageUrl();
+      expect(result).to.equal('');
+      // Restore the original window object after the test
+      global.window = originalWindow;
+    });
+
+    it('should return an empty string if window.location.href is empty', function () {
+      // Mock the window location object with an empty string
+      sinon.stub(window, 'location').value({ href: '' });
+      const result = getPageUrl();
+      expect(result).to.equal('');
+
+      window.location.restore(); // Restore original window.location after the test
+    });
   });
 
-  it('should return an empty string when there is an error (window is unavailable)', function () {
-    // Temporarily override the window object to simulate an error
-    const originalWindow = global.window;
-    global.window = undefined;
-
-    const result = getPageUrl();
-    expect(result).to.equal('');
-
-    // Restore the original window object after the test
-    global.window = originalWindow;
-  });
-
-  it('should return an empty string if window.location.href is empty', function () {
-    // Mock the window location object with an empty string
-    sinon.stub(window, 'location').value({ href: '' });
-
-    const result = getPageUrl();
-    expect(result).to.equal('');
-
-    window.location.restore(); // Restore original window.location after the test
-  });
-});
-
-
-
-
-  describe('payload', function() {
-    it('should return payload with the correct data', function() {
+  describe('payload', function () {
+    it('should return payload with the correct data', function () {
       const data = {
         userId: 'xxxxx',
         email: 'xxxx@mail.com',
@@ -187,7 +180,7 @@ describe('getPageUrl', function () {
         platformUid: 'Xx.xxx.xxxxxx',
         mobile: 'XXXXXXXXXX',
       }
-      bid = {...bid, params: {...bid.params, placementId: 'DOC-19-1'}}
+      bid = { ...bid, params: { ...bid.params, placementId: 'DOC-19-1' } }
       const buildRequests = {
         gdprConsent: {
           consentString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
