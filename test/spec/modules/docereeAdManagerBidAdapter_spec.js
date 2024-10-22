@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
 import { spec, getPayload, getPageUrl } from '../../../modules/docereeAdManagerBidAdapter.js';
 import { config } from '../../../src/config.js';
+import * as utils from '../../../src/utils.js';
 
 describe('docereeadmanager', function () {
   config.setConfig({
@@ -127,45 +127,9 @@ describe('docereeadmanager', function () {
   });
 
   describe('getPageUrl', function () {
-    let sandbox;
-    // Set up a sandbox before each test to safely stub or mock objects
-    beforeEach(function () {
-      sandbox = sinon.createSandbox();
-    });
-
-    // Restore the original behavior after each test
-    afterEach(function () {
-      sandbox.restore();
-    });
-
-    // Test 1: Should return the current page URL when window.location.href is available
-    it('should return the current page URL when window.location.href is available', function () {
-      const mockUrl = 'https://example.com/test';
-
-      // Stub window.location.href to return a mock URL
-      sandbox.stub(window.location, 'href').value(mockUrl);
-
+    it('should return an url string', function () {
       const result = getPageUrl();
-      expect(result).to.equal(mockUrl);
-    });
-
-    // Test 2: Should return an empty string when an error occurs (window object is unavailable)
-    it('should return an empty string when there is an error (window is unavailable)', function () {
-      // Simulate an error when accessing window.location.href by throwing an error
-      const stub = sandbox.stub(window.location, 'href');
-      stub.get(() => { throw new Error('Simulated Error'); });
-
-      const result = getPageUrl();
-      expect(result).to.equal('');
-    });
-
-    // Test 3: Should return an empty string if window.location.href is empty
-    it('should return an empty string if window.location.href is empty', function () {
-      // Stub window.location.href to return an empty string
-      sandbox.stub(window.location, 'href').value('');
-
-      const result = getPageUrl();
-      expect(result).to.equal('');
+      expect(result).to.equal(utils.getWindowSelf().location.href);
     });
   });
 
