@@ -104,9 +104,6 @@ export function getContext () {
           if (responseStatus === 200) {
             qortexSessionInfo.pageAnalysisData.contextRetrieved = true
             result = JSON.parse(data.response)?.content;
-          } else if (responseStatus === 202) {
-            qortexSessionInfo.pageAnalysisData.analysisInProgress = true;
-            result = null;
           }
           resolve(result);
         },
@@ -139,34 +136,6 @@ export function getGroupConfig () {
       }
     }
     ajax(qortexSessionInfo.groupConfigUrl, callbacks)
-  })
-}
-
-/**
- * Initiates page analysis from Qortex
- * @returns {Promise}
- */
-export function initiatePageAnalysis () {
-  qortexSessionInfo.indexData = generateIndexData();
-  logMessage('Sending page data for context analysis');
-  return new Promise((resolve, reject) => {
-    const callbacks = {
-      success(text, data) {
-        const responseStatus = data.status;
-        let resultMessage;
-        if (responseStatus === 201) {
-          qortexSessionInfo.pageAnalysisData.indexRequested = true;
-          resultMessage = 'Successfully initiated Qortex page analysis';
-        } else {
-          resultMessage = 'No index record created at this time'
-        }
-        resolve(resultMessage);
-      },
-      error(e, x) {
-        reject(new Error(x.status));
-      }
-    }
-    ajax(qortexSessionInfo.pageAnalyisUrl, callbacks, JSON.stringify(qortexSessionInfo.indexData), {contentType: 'application/json'})
   })
 }
 
@@ -231,6 +200,7 @@ export function generateAnalyticsHostUrl(qortexUrlBase) {
 /**
  * Updates bidder configs with the response from Qortex context services
  * @param {Object} reqBidsConfig Bid request configuration object
+ * @param {string[]} bidders Bidders specified in module's configuration
  */
 export function addContextToRequests (reqBidsConfig) {
   if (qortexSessionInfo.currentSiteContext === null) {
@@ -303,22 +273,12 @@ export function initializeBidEnrichment() {
           logWarn('Contexual record is not yet complete at this time')
         }
       })
-      .catch(e => {
+      .catch((e) => {
         const errorStatus = e.message;
-        logWarn('Returned error status code: ' + errorStatus);
-        if (errorStatus == 404) {
-          initiatePageAnalysis()
-            .then(message => {
-              logMessage(message)
-            })
-            .catch(e => {
-              logWarn(e);
-            })
-        }
-      });
+        logWarn('Returned error status code: ' + errorStatus)
+      })
   }
 }
-
 /**
  * Helper function to set initial values when they are obtained by init
  * @param {Object} config module config obtained during init
@@ -332,16 +292,13 @@ export function initializeModuleData(config) {
   qortexSessionInfo.impressionIds = new Set();
   qortexSessionInfo.currentSiteContext = null;
   qortexSessionInfo.pageAnalysisData = {
-    analysisInProgress: false,
-    indexRequested: false,
     contextRetrieved: false,
     contextAdded: {}
   };
   qortexSessionInfo.sessionId = generateSessionId();
   qortexSessionInfo.groupId = groupId;
-  qortexSessionInfo.groupConfigUrl = `${qortexUrlBase}/api/v1/prebid/group/configs/${groupId}/${windowUrl}`
-  qortexSessionInfo.contextUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/lookup`
-  qortexSessionInfo.pageAnalyisUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/index`;
+  qortexSessionInfo.groupConfigUrl = `${qortexUrlBase}/api/v1/prebid/group/configs/${groupId}/${windowUrl}`;
+  qortexSessionInfo.contextUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/lookup`;
   qortexSessionInfo.analyticsUrl = generateAnalyticsHostUrl(qortexUrlBase);
   return qortexSessionInfo;
 }
@@ -358,20 +315,6 @@ export function setContextData(value) {
 
 export function setGroupConfigData(value) {
   qortexSessionInfo.groupConfig = value
-}
-
-/**
- * Creates page index data for Qortex analysis
- * @returns {Object} page index object
- */
-function generateIndexData () {
-  return {
-    pageUrl: document.location.href,
-    title: document.title,
-    text: Array.from(document.body.querySelectorAll('h1,h2,h3,h4,h5,h6,p')).reduce((acc, elm) => acc.concat(elm.textContent.trim()), []).join(' ').replaceAll(/\r?\n\s{2,}/gi, ' ').substr(0, 5000),
-    meta: Array.from(document.getElementsByTagName('meta')).reduce((acc, curr) => { const attr = curr.attributes; if (attr.length > 1) { acc[curr.attributes[0].value] = curr.attributes[1].value } return acc }, {}),
-    videos: Array.from(document.getElementsByTagName('video')).reduce((acc, curr) => { const src = curr?.src; if (src != '') { acc.push(src) } return acc }, [])
-  }
 }
 
 function generateSessionId() {
