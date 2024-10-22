@@ -1,5 +1,3 @@
-import { deepAccess } from './utils.js';
-
 let adUnits = {};
 export function reset() {
   adUnits = {}
@@ -54,7 +52,7 @@ export function incrementBidderWinsCounter(adunit, bidderCode) {
  * @returns {number} current adunit count
  */
 export function getRequestsCounter(adunit) {
-  return deepAccess(adUnits, `${adunit}.requestsCounter`) || 0;
+  return adUnits?.[adunit]?.requestsCounter || 0;
 }
 
 /**
@@ -64,7 +62,7 @@ export function getRequestsCounter(adunit) {
  * @returns {number} current adunit bidder requests count
  */
 export function getBidderRequestsCounter(adunit, bidder) {
-  return deepAccess(adUnits, `${adunit}.bidders.${bidder}.requestsCounter`) || 0;
+  return adUnits?.[adunit]?.bidders?.[bidder]?.requestsCounter || 0;
 }
 
 /**
@@ -74,5 +72,5 @@ export function getBidderRequestsCounter(adunit, bidder) {
  * @returns {number} current adunit bidder requests count
  */
 export function getBidderWinsCounter(adunit, bidder) {
-  return deepAccess(adUnits, `${adunit}.bidders.${bidder}.winsCounter`) || 0;
+  return adUnits?.[adunit]?.bidders?.[bidder]?.winsCounter || 0;
 }
