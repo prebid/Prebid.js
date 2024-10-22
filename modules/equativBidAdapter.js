@@ -1,6 +1,7 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, deepSetValue, isFn, mergeDeep } from '../src/utils.js';
 
 /**
@@ -8,8 +9,13 @@ import { deepAccess, deepSetValue, isFn, mergeDeep } from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
+const BIDDER_CODE = 'equativ';
+const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
+const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
+const PID_COOKIE_NAME = 'eqt_pid';
+
 export const spec = {
-  code: 'equativ',
+  code: BIDDER_CODE,
   gvlid: 45,
   supportedMediaTypes: [BANNER],
 
@@ -73,24 +79,24 @@ export const spec = {
 
   /**
    * @param syncOptions
-   * @param serverResponse
    * @returns {{type: string, url: string}[]}
    */
-  // getUserSyncs: (syncOptions, serverResponse) => {
-  //   if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
-  //     return [
-  //       {
-  //         type: 'iframe',
-  //         url: serverResponses[0].body.cSyncUrl,
-  //       },
-  //     ];
-  //   }
-  //   return (syncOptions.pixelEnabled && serverResponse.body?.dspPixels)
-  //     ? serverResponse.body.dspPixels.map((pixel) => ({
-  //       type: 'image',
-  //       url: pixel,
-  //     })) : [];
-  // },
+  getUserSyncs: (syncOptions) => {
+    if (syncOptions.iframeEnabled) {
+      window.addEventListener('message', function handler(event) {
+        if (event.origin === COOKIE_SYNC_ORIGIN && event.data.pid) {
+          const exp = new Date();
+          exp.setTime(Date.now() + 31536000000); // in a year
+          storage.setCookie(PID_COOKIE_NAME, event.data.pid, exp.toUTCString());
+          this.removeEventListener('message', handler);
+        }
+      });
+
+      return [{ type: 'iframe', url: COOKIE_SYNC_URL }];
+    }
+
+    return [];
+  }
 };
 
 export const converter = ortbConverter({
@@ -146,8 +152,15 @@ export const converter = ortbConverter({
       deepSetValue(req, 'site.publisher.id', bid.params.networkId);
     }
 
+    const pid = storage.getCookie(PID_COOKIE_NAME);
+    if (pid) {
+      deepSetValue(req, 'user.buyeruid', pid);
+    }
+
     return req;
   },
 });
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 registerBidder(spec);
