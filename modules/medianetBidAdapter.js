@@ -180,6 +180,7 @@ function extParams(bidRequest, bidderRequests) {
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
   const uspApplies = !!(uspConsent);
   const coppaApplies = !!(config.getConfig('coppa'));
+  const vcoords = getViewportCoordinates();
   return Object.assign({},
     { customer_id: params.cid },
     { prebid_version: 'v' + '$prebid.version$' },
@@ -191,8 +192,27 @@ function extParams(bidRequest, bidderRequests) {
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
     getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
-    !isEmpty(sChain) && {schain: sChain}
+    !isEmpty(sChain) && {schain: sChain},
+    {vcoords: vcoords}
   );
+}
+
+function getViewportCoordinates() {
+  let top = -1;
+  let bottom = -1;
+  let left = -1;
+  let right = -1;
+  try {
+    const windowTop = getWindowTop();
+    top = windowTop.scrollY;
+    bottom = top + windowTop.innerHeight
+    left = windowTop.scrollX;
+    right = left + windowTop.innerWidth
+  } catch (e) {}
+  return {
+    top_left: { x: left, y: top },
+    bottom_right: { x: right, y: bottom }
+  }
 }
 
 function slotParams(bidRequest, bidderRequests) {
@@ -319,12 +339,12 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
 function normalizeCoordinates(coordinates) {
   return {
     top_left: {
-      x: coordinates.top_left.x + window.pageXOffset,
-      y: coordinates.top_left.y + window.pageYOffset,
+      x: coordinates.top_left.x + window.scrollX,
+      y: coordinates.top_left.y + window.scrollY,
     },
     bottom_right: {
-      x: coordinates.bottom_right.x + window.pageXOffset,
-      y: coordinates.bottom_right.y + window.pageYOffset,
+      x: coordinates.bottom_right.x + window.scrollX,
+      y: coordinates.bottom_right.y + window.scrollY,
     }
   }
 }
