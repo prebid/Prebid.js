@@ -350,9 +350,10 @@ registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});
 export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook(fn, reqBidsConfigObj) {
   const hookConfig = {
     reqBidsConfigObj,
-    auctionStarted: false,
+    context: this,
     nextFn: fn,
-    context: this
+    haveExited: false,
+    timer: null
   };
 
   if (!currencyRatesLoaded && auctionDelay > 0) {
