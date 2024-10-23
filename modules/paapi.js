@@ -215,7 +215,7 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
   const hasDeferredConfigs = Object.keys(deferredConfigs).length > 0;
 
   if (moduleConfig.parallel && hasDeferredConfigs && newConfigs.length > 0) {
-    logWarn(`Received PAAPI configs after PAAPI auctions were already started in parallel with their contextual auction`, newConfigs)
+    logError(`Received PAAPI configs after PAAPI auctions were already started in parallel with their contextual auction`, newConfigs)
   }
 
   newConfigs.forEach(({adUnitCode, config}) => {
