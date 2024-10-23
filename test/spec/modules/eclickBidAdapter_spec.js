@@ -3,19 +3,19 @@ import {
   spec,
   ENDPOINT,
   BIDDER_CODE,
-} from '../../../modules/eclickadsBidAdapter.js';
+} from '../../../modules/eclickBidAdapter.js';
 import { NATIVE, BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { deepClone } from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 
-describe('eclickadsBidAdapter', () => {
+describe('eclickBidAdapter', () => {
   const bidItem = {
     bidder: BIDDER_CODE,
     params: {
       zid: '7096',
     },
   };
-  const eclickadsBidderConfigData = {
+  const eclickBidderConfigData = {
     orig_aid: 'xqf7zdmg7the65ac.1718271138.des',
     fosp_aid: '1013000403',
     fosp_uid: '7aab24a4663258a2c1d76a08b20f7e6e',
@@ -63,7 +63,7 @@ describe('eclickadsBidAdapter', () => {
         page: 'https://page.example.com/here.html',
         ref: 'https://ref.example.com',
         ext: {
-          data: eclickadsBidderConfigData,
+          data: eclickBidderConfigData,
         },
       },
     },
@@ -99,7 +99,7 @@ describe('eclickadsBidAdapter', () => {
       expect(request.method).to.be.exist;
       expect(request.method).equal('POST');
       expect(request.url).to.be.exist;
-      expect(request.url).equal(ENDPOINT + eclickadsBidderConfigData.fosp_uid);
+      expect(request.url).equal(ENDPOINT + eclickBidderConfigData.fosp_uid);
     });
     it('should return valid data format if bid array is valid', () => {
       expect(_data).to.be.an('object');
@@ -147,7 +147,7 @@ describe('eclickadsBidAdapter', () => {
       expect(_data.imp).to.have.lengthOf(bidList.length);
     });
 
-    it('have to contain required params and correct format for sending to EClickAds', () => {
+    it('have to contain required params and correct format for sending to eClick', () => {
       const item = _data.imp[0];
       expect(item.zid).to.be.an('string');
     });
@@ -167,7 +167,7 @@ describe('eclickadsBidAdapter', () => {
           netRevenue: true,
           currency: ['VND'],
           cpm: 0.1844,
-          ad: 'eclickads_ad_p',
+          ad: 'eclick_ad_p',
         },
       ],
     };
@@ -207,8 +207,8 @@ describe('eclickadsBidAdapter', () => {
       expect(offer.ttl).to.be.an('number');
       expect(offer.cpm).to.be.an('number').greaterThan(0);
       expect(offer.adserverTargeting).to.be.an('object');
-      expect(offer.adserverTargeting['hb_ad_eclickads']).to.be.an('string').that
-        .is.not.empty;
+      expect(offer.adserverTargeting['hb_ad_eclick']).to.be.an('string').that.is
+        .not.empty;
     });
   });
 });
