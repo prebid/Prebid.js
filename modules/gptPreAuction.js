@@ -194,9 +194,9 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
       let adserverSlot = deepAccess(context, 'data.adserver.adslot');
       let result;
       if (customPreAuction) {
-        result = customPreAuction(adUnit, adserverSlot, adUnitPaths[adUnit.code]);
+        result = customPreAuction(adUnit, adserverSlot, adUnitPaths?.[adUnit.code]);
       } else if (useDefaultPreAuction) {
-        result = defaultPreAuction(adUnit, adserverSlot, adUnitPaths[adUnit.code]);
+        result = defaultPreAuction(adUnit, adserverSlot, adUnitPaths?.[adUnit.code]);
       }
       if (result) {
         context.gpid = context.data.pbadslot = result;

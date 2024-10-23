@@ -487,6 +487,16 @@ describe('GPT pre-auction module', () => {
       sinon.assert.calledWith(customPreAuction, adUnit, '/12345/slot', adUnit.code);
     });
 
+    it('should not choke if gpt is not available', () => {
+      config.setConfig({
+        gptPreAuction: {
+          enabled: true
+        }
+      });
+      sandbox.stub(window, 'googletag').value(null);
+      makeBidRequestsHook(sinon.stub(), [{}]);
+    })
+
     it('should use useDefaultPreAuction logic', () => {
       config.setConfig({
         gptPreAuction: {
