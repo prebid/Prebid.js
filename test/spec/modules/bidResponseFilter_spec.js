@@ -5,7 +5,7 @@ import {
   BID_CATEGORY_REJECTION_REASON,
   init,
   MODULE_NAME
-} from '../../../modules/bidResponseFilter';
+  , reset} from '../../../modules/bidResponseFilter';
 import {config} from '../../../src/config';
 import {addBidResponse} from '../../../src/auction.js';
 
@@ -21,6 +21,7 @@ describe('bidResponseFilter', () => {
   });
   afterEach(() => {
     config.resetConfig();
+    reset();
   })
 
   describe('enable/disable', () => {
@@ -32,9 +33,7 @@ describe('bidResponseFilter', () => {
     });
 
     it('should not run if not configured', () => {
-      config.setConfig({
-        bidResponseFilter: null
-      })
+      reset();
       addBidResponse.call({dispatch}, 'au', {}, reject);
       sinon.assert.notCalled(reject);
       sinon.assert.called(dispatch);
