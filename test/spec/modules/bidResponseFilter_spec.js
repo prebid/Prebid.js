@@ -7,7 +7,7 @@ import {
   MODULE_NAME
 } from '../../../modules/bidResponseFilter';
 import {config} from '../../../src/config';
-import {addBidResponse} from "../../../src/auction.js";
+import {addBidResponse} from '../../../src/auction.js';
 
 describe('bidResponseFilter', () => {
   let mockAuctionIndex
