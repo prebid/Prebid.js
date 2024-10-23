@@ -551,6 +551,7 @@ describe('currency', function () {
       requestBidsHook(continueAuction, reqBidsConfigObj);
       clock.tick(1000);
       expect(delayedAuctions.length).to.deep.equal(1);
+      expect(continueAuction.notCalled).to.be.true;
       expect(delayedAuctions[0].timer).to.not.be.undefined;
     });
 
