@@ -3,7 +3,6 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
-  generateUUID,
   getParameterByName,
   isNumber,
   logError,
@@ -30,6 +29,7 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+import {continueAuction as continueAuctionNative, resumeDelayedAuctions} from '../src/auction.js';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -436,20 +436,10 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
  * @summary This is the function which will be called to exit our module and continue the auction.
  */
 export function continueAuction(hookConfig) {
-  // only run if hasExited
-  if (!hookConfig.hasExited) {
-    // if this current auction is still fetching, remove it from the _delayedAuctions
-    _delayedAuctions = _delayedAuctions.filter(auctionConfig => auctionConfig.timer !== hookConfig.timer);
-
-    // We need to know the auctionId at this time. So we will use the passed in one or generate and set it ourselves
-    hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || generateUUID();
-
+  continueAuctionNative(hookConfig, _delayedAuctions, () => {
     // now we do what we need to with adUnits and save the data object to be used for getFloor and enforcement calls
     _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits, hookConfig.reqBidsConfigObj.auctionId);
-
-    hookConfig.nextFn.apply(hookConfig.context, [hookConfig.reqBidsConfigObj]);
-    hookConfig.hasExited = true;
-  }
+  })
 }
 
 function validateSchemaFields(fields) {
@@ -595,19 +585,6 @@ export const requestBidsHook = timedAuctionHook('priceFloors', function requestB
 });
 
 /**
- * @summary If an auction was queued to be delayed (waiting for a fetch) then this function will resume
- * those delayed auctions when delay is hit or success return or fail return
- */
-function resumeDelayedAuctions() {
-  _delayedAuctions.forEach(auctionConfig => {
-    // clear the timeout
-    clearTimeout(auctionConfig.timer);
-    continueAuction(auctionConfig);
-  });
-  _delayedAuctions = [];
-}
-
-/**
  * This function handles the ajax response which comes from the user set URL to fetch floors data from
  * @param {object} fetchResponse The floors data response which came back from the url configured in config.floors
  */
@@ -631,7 +608,7 @@ export function handleFetchResponse(fetchResponse) {
   }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions();
+  resumeDelayedAuctions(_delayedAuctions, continueAuction);
 }
 
 function handleFetchError(status) {
@@ -640,7 +617,7 @@ function handleFetchError(status) {
   logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions();
+  resumeDelayedAuctions(_delayedAuctions, continueAuction);
 }
 
 /**
