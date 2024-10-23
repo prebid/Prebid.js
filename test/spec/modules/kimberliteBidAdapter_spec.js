@@ -1,4 +1,4 @@
-import { spec, ENDPOINT_URL } from 'modules/kimberliteBidAdapter.js';
+import { spec, ENDPOINT_URL, expandAuctionMacros } from 'modules/kimberliteBidAdapter.js';
 import { assert } from 'chai';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
@@ -144,100 +144,117 @@ describe('kimberliteBidAdapter', function () {
     let bidderResponse, bidderRequest, bidRequest, expectedBids;
 
     const requestId = '07fba8b0-8812-4dc6-b91e-4a525d81729c';
-    const bannerAdm = '<a href="http://test.landing.com">landing</a>';
-    const videoAdm = '<VAST version="3.0">test vast</VAST>';
+    const bannerAdm = '<a href="http://test.landing.com?p=${AUCTION_PRICE}&c=${AUCTION_CURRENCY}">landing</a>';
+    const videoAdm = '<VAST version="3.0"><Impression>http://video-test.landing.com?p=${AUCTION_PRICE}&c=${AUCTION_CURRENCY}</Impression>test vast</VAST>';
+    const nurl = 'http://nurl.landing.com?p=${AUCTION_PRICE}&c=${AUCTION_CURRENCY}';
+    const nurlPixel = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${nurl}"></div>`;
 
-    beforeEach(function () {
-      bidderResponse = {
-        body: {
-          id: requestId,
-          seatbid: [{
-            bid: [
-              {
-                crid: 1,
-                impid: 1,
-                price: 1,
-                adm: bannerAdm
+    const currencies = [
+      undefined,
+      'USD'
+    ];
+
+    currencies.forEach(function(currency) {
+      beforeEach(function () {
+        bidderResponse = {
+          body: {
+            id: requestId,
+            seatbid: [{
+              bid: [
+                {
+                  crid: 1,
+                  impid: 1,
+                  price: 1,
+                  adm: bannerAdm,
+                  nurl: nurl
+                },
+                {
+                  crid: 2,
+                  impid: 2,
+                  price: 1,
+                  adm: videoAdm
+                }
+              ]
+            }]
+          }
+        };
+
+        bidderRequest = {
+          refererInfo: {
+            domain: 'example.com',
+            page: 'https://www.example.com/test.html',
+          },
+          bids: [
+            {
+              bidId: 1,
+              mediaTypes: {
+                banner: {sizes: sizes}
               },
-              {
-                crid: 2,
-                impid: 2,
-                price: 1,
-                adm: videoAdm
+              params: {
+                placementId: 'test-placement'
               }
-            ]
-          }]
-        }
-      };
-
-      bidderRequest = {
-        refererInfo: {
-          domain: 'example.com',
-          page: 'https://www.example.com/test.html',
-        },
-        bids: [
-          {
-            bidId: 1,
-            mediaTypes: {
-              banner: {sizes: sizes}
             },
-            params: {
-              placementId: 'test-placement'
+            {
+              bidId: 2,
+              mediaTypes: {
+                video: {
+                  mimes: ['video/mp4']
+                }
+              },
+              params: {
+                placementId: 'test-placement'
+              }
             }
+          ]
+        };
+
+        expectedBids = [
+          {
+            mediaType: 'banner',
+            requestId: 1,
+            cpm: 1,
+            creative_id: 1,
+            creativeId: 1,
+            ttl: 300,
+            netRevenue: true,
+            ad: bannerAdm + nurlPixel,
+            meta: {}
           },
           {
-            bidId: 2,
-            mediaTypes: {
-              video: {
-                mimes: ['video/mp4']
-              }
-            },
-            params: {
-              placementId: 'test-placement'
-            }
-          }
-        ]
-      };
+            mediaType: 'video',
+            requestId: 2,
+            cpm: 1,
+            creative_id: 2,
+            creativeId: 2,
+            ttl: 300,
+            netRevenue: true,
+            vastXml: videoAdm,
+            meta: {}
+          },
+        ];
 
-      expectedBids = [
-        {
-          mediaType: 'banner',
-          requestId: 1,
-          cpm: 1,
-          creative_id: 1,
-          creativeId: 1,
-          ttl: 300,
-          netRevenue: true,
-          ad: bannerAdm,
-          meta: {}
-        },
-        {
-          mediaType: 'video',
-          requestId: 2,
-          cpm: 1,
-          creative_id: 2,
-          creativeId: 2,
-          ttl: 300,
-          netRevenue: true,
-          vastXml: videoAdm,
-          meta: {}
-        },
-      ];
+        if (currency) {
+          expectedBids[0].currency = expectedBids[1].currency = bidderResponse.body.cur = currency;
+        }
 
-      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-    });
+        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      });
 
-    it('pass on valid request', function () {
-      const bids = spec.interpretResponse(bidderResponse, bidRequest);
-      assert.deepEqual(bids[0], expectedBids[0]);
-      if (FEATURES.VIDEO) {
-        assert.deepEqual(bids[1], expectedBids[1]);
-      }
-    });
+      it('pass on valid request', function () {
+        const bids = spec.interpretResponse(bidderResponse, bidRequest);
+        expectedBids[0].ad = expandAuctionMacros(expectedBids[0].ad, expectedBids[0].cpm, bidderResponse.body.cur);
+        assert.deepEqual(bids[0], expectedBids[0]);
+        if (FEATURES.VIDEO) {
+          expectedBids[1].vastXml =
+            expandAuctionMacros(expectedBids[1].vastXml, expectedBids[1].cpm, bidderResponse.body.cur);
+          assert.deepEqual(bids[1], expectedBids[1]);
+        }
+      });
 
-    it('fails on empty response', function () {
-      const bids = spec.interpretResponse({body: ''}, bidRequest);
-      assert.empty(bids);
+      it('fails on empty response', function () {
+        const bids = spec.interpretResponse({body: ''}, bidRequest);
+        assert.empty(bids);
+      });
     });
   });
 });
