@@ -873,7 +873,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     const tests = [
       {
         title: 'test - 1',
-        bidderRequest: {bidderRequestId: 'mock-uuid'},
+        bidderRequest: {bidderRequestId: 'mock-uuid', timeout: 1200},
         bidRequests: [
           {
             adUnitCode: 'test-div',
@@ -936,6 +936,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           impSize: 2,
           requestSize: 1,
           domain: 'example.com',
+          tmax: 1200,
         },
       },
     ];
@@ -948,6 +949,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         const requestData = JSON.parse(request[0].data);
         expect(requestData.id).to.equal(expected.id);
+        expect(requestData.tmax).to.equal(expected.tmax);
         expect(requestData?.imp?.length).to.equal(expected.impSize);
       });
     };
