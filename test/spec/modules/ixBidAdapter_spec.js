@@ -2510,6 +2510,19 @@ describe('IndexexchangeAdapter', function () {
         expect(payload.device.sua.mobile).to.equal(0)
       });
 
+      it('should set device ip if available in fpd', function () {
+        const ortb2 = {
+          device: {
+            ip: '1.2.3.4',
+            ipv6: 'somefunkystring'
+          }};
+
+        const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+        const payload = extractPayload(request);
+        expect(payload.device.ip).to.equal('1.2.3.4')
+        expect(payload.device.ipv6).to.equal('somefunkystring')
+      });
+
       it('should not set device sua if not available in fpd', function () {
         const ortb2 = {
           device: {}};
