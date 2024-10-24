@@ -125,20 +125,20 @@ const converter = ortbConverter({
       deepSetValue(request, 'ext.localStorage.nexx360Id', nexx360LocalStorage.nexx360Id);
     }
     const amxId = getAmxId();
-    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId());
+    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId);
     deepSetValue(request, 'ext.version', '$prebid.version$');
     deepSetValue(request, 'ext.source', 'prebid.js');
     deepSetValue(request, 'ext.pageViewId', PAGE_VIEW_ID);
     deepSetValue(request, 'ext.bidderVersion', BIDDER_VERSION);
     deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || 'USD']);
     if (!request.user) request.user = {};
-    if (getAmxId()) {
+    if (amxId) {
       if (!request.user.ext) request.user.ext = {};
       if (!request.user.ext.eids) request.user.ext.eids = [];
       request.user.ext.eids.push({
         source: 'amxdt.net',
         uids: [{
-          id: `${getAmxId()}`,
+          id: amxId,
           atype: 1
         }]
       });
