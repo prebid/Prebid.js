@@ -232,21 +232,21 @@ describe('qortexRtdProvider', () => {
       dispatchEvent(new CustomEvent('qortex-rtd', validImpressionEvent));
       dispatchEvent(new CustomEvent('qortex-rtd', validImpressionEvent));
       expect(billableEvents.length).to.be.equal(1);
-      expect(logWarnSpy.calledWith('Recieved invalid billable event due to duplicate uid: qx-impression')).to.be.ok;
+      expect(logWarnSpy.calledWith('Received invalid billable event due to duplicate uid: qx-impression')).to.be.ok;
     })
 
     it('will not allow events with missing uid', () => {
       loadScriptTag(config);
       dispatchEvent(new CustomEvent('qortex-rtd', missingIdImpressionEvent));
       expect(billableEvents.length).to.be.equal(0);
-      expect(logWarnSpy.calledWith('Recieved invalid billable event due to missing uid: qx-impression')).to.be.ok;
+      expect(logWarnSpy.calledWith('Received invalid billable event due to missing uid: qx-impression')).to.be.ok;
     })
 
     it('will not allow events with unavailable type', () => {
       loadScriptTag(config);
       dispatchEvent(new CustomEvent('qortex-rtd', invalidTypeQortexEvent));
       expect(billableEvents.length).to.be.equal(0);
-      expect(logWarnSpy.calledWith('Recieved invalid billable event: invalid-type')).to.be.ok;
+      expect(logWarnSpy.calledWith('Received invalid billable event: invalid-type')).to.be.ok;
     })
   })
 
@@ -332,7 +332,7 @@ describe('qortexRtdProvider', () => {
       expect(request.url).to.be.eql('https://events.qortex.ai/api/v1/player-event');
       server.requests[0].respond(200, responseHeaders, JSON.stringify({}));
       setTimeout(() => {
-        expect(logMessageSpy.calledWith('Qortex anyalitics event sent')).to.be.true
+        expect(logMessageSpy.calledWith('Qortex analytics event sent')).to.be.true
         done();
       }, 200)
     })
@@ -543,7 +543,7 @@ describe('qortexRtdProvider', () => {
       initializeBidEnrichment();
       server.requests[0].respond(200, responseHeaders, contextResponse);
       setTimeout(() => {
-        expect(logMessageSpy.calledWith('Contextual record recieved from Qortex API')).to.be.true;
+        expect(logMessageSpy.calledWith('Contextual record Received from Qortex API')).to.be.true;
         done()
       }, 250)
     })

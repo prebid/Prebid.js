@@ -244,17 +244,17 @@ export function loadScriptTag(config) {
       case 'qx-impression':
         const {uid} = e.detail;
         if (!uid || qortexSessionInfo.impressionIds.has(uid)) {
-          logWarn(`Recieved invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
+          logWarn(`Received invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
           return;
         } else {
-          logMessage('Recieved billable event: qx-impression')
+          logMessage('Received billable event: qx-impression')
           qortexSessionInfo.impressionIds.add(uid)
           billableEvent.transactionId = e.detail.uid;
           events.emit(EVENTS.BILLABLE_EVENT, billableEvent);
           break;
         }
       default:
-        logWarn(`Recieved invalid billable event: ${e.detail?.type}`)
+        logWarn(`Received invalid billable event: ${e.detail?.type}`)
     }
   })
 
@@ -266,7 +266,7 @@ export function initializeBidEnrichment() {
     getContext()
       .then(contextData => {
         if (qortexSessionInfo.pageAnalysisData.contextRetrieved) {
-          logMessage('Contextual record recieved from Qortex API')
+          logMessage('Contextual record Received from Qortex API')
           setContextData(contextData)
         } else {
           logWarn('Contexual record is not yet complete at this time')
