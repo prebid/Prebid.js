@@ -132,13 +132,13 @@ const converter = ortbConverter({
     deepSetValue(request, 'ext.bidderVersion', BIDDER_VERSION);
     deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || 'USD']);
     if (!request.user) request.user = {};
-    if (getAmxId()) {
+    if (amxId) {
       if (!request.user.ext) request.user.ext = {};
       if (!request.user.ext.eids) request.user.ext.eids = [];
       request.user.ext.eids.push({
         source: 'amxdt.net',
         uids: [{
-          id: `${getAmxId()}`,
+          id: amxId,
           atype: 1
         }]
       });
