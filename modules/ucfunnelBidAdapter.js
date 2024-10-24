@@ -235,7 +235,7 @@ function getFloor(bid, size, mediaTypes) {
       mediaType: getMediaType(mediaTypes),
       size: (size) ? [ size[0], size[1] ] : '*',
     });
-    if (bidFloor.currency === CURRENCY) {
+    if (bidFloor?.currency === CURRENCY) {
       return bidFloor.floor;
     }
   }

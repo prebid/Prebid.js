@@ -163,7 +163,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
 function buildOpenRtbImpObject(validBidRequest) {
   const sizes = getSizes(validBidRequest);
   const mainSize = sizes[0];
-  const floorInfo = getFloorInfo(validBidRequest, mainSize);
+  const floorInfo = getFloorInfo(validBidRequest, mainSize) || {};
 
   return {
     id: validBidRequest.bidId,

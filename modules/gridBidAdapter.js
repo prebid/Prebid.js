@@ -7,7 +7,8 @@ import {
   mergeDeep,
   logWarn,
   isNumber,
-  isStr
+  isStr,
+  isPlainObject
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -508,7 +509,7 @@ function _getFloor (mediaTypes, bid) {
       size: bid.sizes.map(([w, h]) => ({w, h}))
     });
 
-    if (typeof floorInfo === 'object' &&
+    if (isPlainObject(floorInfo) &&
       floorInfo.currency === 'USD' &&
       !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(floor, parseFloat(floorInfo.floor));

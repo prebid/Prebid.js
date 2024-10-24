@@ -270,6 +270,10 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
     }
   }
 
+  if (floorInfo.floorRuleValue === null) {
+    return null;
+  }
+
   if (floorInfo.matchingFloor) {
     return {
       floor: roundUp(floorInfo.matchingFloor, 4),
@@ -467,7 +471,7 @@ function isValidRule(key, floor, numFields, delimiter) {
   if (typeof key !== 'string' || key.split(delimiter).length !== numFields) {
     return false;
   }
-  return typeof floor === 'number';
+  return typeof floor === 'number' || floor === null;
 }
 
 function validateRules(floorsData, numFields, delimiter) {
@@ -827,7 +831,7 @@ export function setOrtbImpBidFloor(imp, bidRequest, context) {
         currency: context.currency || config.getConfig('currency.adServerCurrency') || 'USD',
         mediaType: context.mediaType || '*',
         size: '*'
-      }));
+      }) || {});
     } catch (e) {
       logWarn('Cannot compute floor for bid', bidRequest);
       return;

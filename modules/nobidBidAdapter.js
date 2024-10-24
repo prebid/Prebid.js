@@ -231,7 +231,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     return adunits;
   }
   function getFloor (bid) {
-    if (bid && typeof bid.getFloor === 'function' && bid.getFloor().floor) {
+    if (bid && typeof bid.getFloor === 'function' && bid.getFloor()?.floor) {
       return bid.getFloor().floor;
     }
     return null;

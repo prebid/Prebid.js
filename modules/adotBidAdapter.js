@@ -618,7 +618,7 @@ function getFloor(adUnit, size, mediaType, currency) {
 
   const floorResult = adUnit.getFloor({ currency, mediaType, size });
 
-  return floorResult.currency === currency ? floorResult.floor : 0;
+  return floorResult?.currency === currency ? floorResult?.floor : 0;
 }
 
 /**

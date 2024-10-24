@@ -565,7 +565,7 @@ export function parseFloorPriceData(bidRequest) {
         size,
       })
       // Save the data and track the sizes
-      mediaTypeFloorPriceData[sizeToString(size)] = priceFloorData.floor
+      mediaTypeFloorPriceData[sizeToString(size)] = priceFloorData?.floor
       sizeOptions.add(size)
     })
     bidRequestFloorPriceData[mediaType] = mediaTypeFloorPriceData
@@ -573,7 +573,7 @@ export function parseFloorPriceData(bidRequest) {
     // Get floor price of current media type with a wildcard size
     const sizeWildcardFloor = getSizeWildcardPrice(bidRequest, mediaType)
     // Save the wildcard floor price if it was retrieved successfully
-    if (sizeWildcardFloor.floor > 0) {
+    if (sizeWildcardFloor?.floor > 0) {
       mediaTypeFloorPriceData['*'] = sizeWildcardFloor.floor
     }
   })

@@ -51,7 +51,7 @@ export function getBidFloor(bid) {
       mediaType: '*',
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (err) {
     logError(err);
     return 0;

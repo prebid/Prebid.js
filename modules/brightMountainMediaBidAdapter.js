@@ -1,4 +1,4 @@
-import { generateUUID, deepAccess, logWarn, deepSetValue } from '../src/utils.js';
+import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -224,7 +224,7 @@ function getFloor(bid, size) {
       size: size,
     });
 
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+    if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
       return parseFloat(floorInfo.floor);
     }
   }

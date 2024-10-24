@@ -5,7 +5,8 @@ import {
   isEmpty,
   contains,
   isInteger,
-  getBidIdParameter
+  getBidIdParameter,
+  isPlainObject
 } from '../../src/utils.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
@@ -19,7 +20,7 @@ export function getFloor(bid, mediaType) {
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
+  return isPlainObject(floorResult) && floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
 }
 
 export function getSizesArray(bid, mediaType) {

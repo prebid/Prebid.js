@@ -1,4 +1,4 @@
-import {deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput} from '../../src/utils.js';
+import {deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput, isPlainObject} from '../../src/utils.js';
 import {getAdUnitSizes} from '../sizeUtils/sizeUtils.js';
 import {findIndex} from '../../src/polyfill.js';
 
@@ -13,7 +13,7 @@ export function getBidFloor(bid, currency = 'USD') {
     size: '*'
   });
 
-  if (typeof floor === 'object' && !isNaN(floor.floor) && floor.currency === currency) {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === currency) {
     return floor.floor;
   }
 
