@@ -58,10 +58,11 @@ pbjs.setConfig({
 
 - If this parameter is omitted, the RTD module will default to updating  `ortb2.site.content` on *all* bid adapters being used on the page
 
+#### `enableBidEnrichment` - optional
+- This optional parameter allows a publisher to opt-in to the features of the RTD module that use our API to enrich bids with first party data for contextuality. Enabling this feature will allow this module to interact with the Qortex AI contextuality server for indexing and analysis. Please use caution when adding this module to pages that may contain personal user data or proprietary information.
+
 #### `tagConfig` - optional
 - This optional parameter is an object containing the config settings that could be usedto initialize the Qortex integration on your page. A preconfigured object for this step will be provided to you by the Qortex team.
 
 - If this parameter is not present, the Qortex integration can still be configured and loaded manually on your page outside of prebid. The RTD module will continue to initialize and operate as normal.
-
-#### `enableBidEnrichment` - optional
-- This optional parameter allows a publisher to opt-in to the features of the RTD module that use our API to enrich bids with first party data for contextuality. Enabling this feature will allow this module to interact with the Qortex AI contextuality server for indexing and analysis. Please use caution when adding this module to pages that may contain personal user data or proprietary information. 
+ 
