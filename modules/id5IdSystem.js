@@ -467,7 +467,7 @@ async function loadExternalModule(url) {
       resolve();
     } else {
       try {
-        loadExternalScript(url, 'id5', resolve);
+        loadExternalScript(url, MODULE_TYPE_UID, 'id5', resolve);
       } catch (error) {
         reject(error);
       }

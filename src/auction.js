@@ -66,7 +66,6 @@
  */
 
 import {
-  callBurl,
   deepAccess,
   generateUUID,
   getValue,
@@ -150,6 +149,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   const _timeout = cbTimeout;
   const _timelyRequests = new Set();
   const done = defer();
+  const requestsDone = defer();
   let _bidsRejected = [];
   let _callback = callback;
   let _bidderRequests = [];
@@ -320,6 +320,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             }
           }
         }, _timeout, onTimelyResponse, ortb2Fragments);
+        requestsDone.resolve();
       }
     };
 
@@ -370,11 +371,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
-    const winningAd = adUnits.find(adUnit => adUnit.adUnitId === winningBid.adUnitId);
     _winningBids = _winningBids.concat(winningBid);
-    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
-    if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
+    if (!winningBid.deferBilling) {
+      adapterManager.triggerBilling(winningBid)
+    }
   }
 
   function setBidTargeting(bid) {
@@ -408,7 +409,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getNonBids: () => _nonBids,
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
-    end: done.promise
+    end: done.promise,
+    requestsDone: requestsDone.promise
   };
 }
 

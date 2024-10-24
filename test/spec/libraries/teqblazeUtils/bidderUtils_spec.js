@@ -142,6 +142,7 @@ describe('TeqBlazeBidderUtils', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
+        'device',
         'language',
         'secure',
         'host',
@@ -267,6 +268,27 @@ describe('TeqBlazeBidderUtils', function () {
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
+    });
+
+    it('Handles ORTB2 device data', function () {
+      const ortb2Device = {
+        w: 980,
+        h: 1720,
+        dnt: 0,
+        ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+        language: 'en',
+        devicetype: 1,
+        make: 'Apple',
+        model: 'iPhone 12 Pro Max',
+        os: 'iOS',
+        osv: '17.4',
+        ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+      };
+      const _bidderRequest = JSON.parse(JSON.stringify(bidderRequest));
+      _bidderRequest.ortb2.device = ortb2Device;
+      const _request = spec.buildRequests(bids, _bidderRequest);
+
+      expect(_request.data.device).to.deep.equal(ortb2Device);
     });
   });
 

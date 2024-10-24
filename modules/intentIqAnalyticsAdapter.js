@@ -1,23 +1,20 @@
-import { logInfo, logError, getWindowSelf, getWindowTop, getWindowLocation } from '../src/utils.js';
+import {getWindowLocation, getWindowSelf, getWindowTop, logError, logInfo} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { config } from '../src/config.js';
-import { EVENTS } from '../src/constants.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
-import { detectBrowser } from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {ajax} from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {config} from '../src/config.js';
+import {EVENTS} from '../src/constants.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import {detectBrowser} from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, VERSION} from '../libraries/intentIqConstants/intentIqConstants.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://reports.intentiq.com/report';
-const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME });
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
-
-const FIRST_PARTY_KEY = '_iiq_fdata';
-const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-const JSVERSION = 0.2
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
@@ -55,7 +52,7 @@ const PARAMS_NAMES = {
   firstPartyId: 'pcid'
 };
 
-let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
+let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl, analyticsType}), {
   initOptions: {
     lsValueInitialized: false,
     partner: null,
@@ -64,12 +61,15 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
     dataInLs: null,
     eidl: null,
     lsIdsInitialized: false,
-    manualReport: false
+    manualWinReportEnabled: false
   },
-  track({ eventType, args }) {
+  track({eventType, args}) {
     switch (eventType) {
       case BID_WON:
         bidWon(args);
+        break;
+      case BID_REQUESTED:
+        defineGlobalVariableName();
         break;
       default:
         break;
@@ -79,7 +79,8 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
 
 // Events needed
 const {
-  BID_WON
+  BID_WON,
+  BID_REQUESTED
 } = EVENTS;
 
 function readData(key) {
@@ -97,7 +98,6 @@ function readData(key) {
 
 function initLsValues() {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
-  iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY));
   let iiqArr = config.getConfig('userSync.userIds').filter(m => m.name == 'intentIqId');
   if (iiqArr && iiqArr.length > 0) iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
   if (!iiqArr) iiqArr = [];
@@ -112,31 +112,42 @@ function initLsValues() {
   if (iiqArr && iiqArr.length > 0) {
     if (iiqArr[0].params && iiqArr[0].params.partner && !isNaN(iiqArr[0].params.partner)) {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
-
     iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = iiqArr[0].params.manualWinReportEnabled || false
   }
 }
 
 function initReadLsIds() {
-  if (isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.partner) || iiqAnalyticsAnalyticsAdapter.initOptions.partner == -1) return;
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
-    let iData = readData(FIRST_PARTY_DATA_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner)
-    if (iData) {
+    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY));
+    if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
+    }
+    const partnerData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
+    const clientsHints = readData(CLIENT_HINTS_KEY) || '';
+
+    if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
-      let pData = JSON.parse(iData);
+      let pData = JSON.parse(partnerData);
+      iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = pData.terminationCause
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
     }
+
+    iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints = clientsHints
   } catch (e) {
     logError(e)
   }
 }
 
-function bidWon(args) {
-  if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) { initLsValues(); }
+function bidWon(args, isReportExternal) {
+  if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) {
+    initLsValues();
+  }
+
+  if (isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.partner) || iiqAnalyticsAnalyticsAdapter.initOptions.partner == -1) return;
 
   const currentBrowserLowerCase = detectBrowser();
   if (iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList?.includes(currentBrowserLowerCase)) {
@@ -144,12 +155,31 @@ function bidWon(args) {
     return;
   }
 
-  if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) { initReadLsIds(); }
-  if (!iiqAnalyticsAnalyticsAdapter.initOptions.manualReport) {
-    ajax(constructFullUrl(preparePayload(args, true)), undefined, null, { method: 'GET' });
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized && !iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) {
+    initReadLsIds();
+  }
+  if ((isReportExternal && iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled) || (!isReportExternal && !iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled)) {
+    ajax(constructFullUrl(preparePayload(args, true)), undefined, null, {method: 'GET'});
+    logInfo('IIQ ANALYTICS -> BID WON')
+    return true;
+  }
+  return false;
+}
+
+function defineGlobalVariableName() {
+  function reportExternalWin(args) {
+    return bidWon(args, true)
   }
 
-  logInfo('IIQ ANALYTICS -> BID WON')
+  let partnerId = 0
+  const userConfig = config.getConfig('userSync.userIds')
+
+  if (userConfig) {
+    const iiqArr = userConfig.filter(m => m.name == 'intentIqId');
+    if (iiqArr.length) partnerId = iiqArr[0].params.partner
+  }
+
+  window[`intentIqAnalyticsAdapter_${partnerId}`] = {reportExternalWin: reportExternalWin}
 }
 
 function getRandom(start, end) {
@@ -158,11 +188,11 @@ function getRandom(start, end) {
 
 export function preparePayload(data) {
   let result = getDefaultDataObject();
-
+  readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.referrer] = getReferrer();
-
+  result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
   result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup == 'A';
@@ -185,13 +215,27 @@ function fillEidsData(result) {
 }
 
 function fillPrebidEventData(eventData, result) {
-  if (eventData.bidderCode) { result.bidderCode = eventData.bidderCode; }
-  if (eventData.cpm) { result.cpm = eventData.cpm; }
-  if (eventData.currency) { result.currency = eventData.currency; }
-  if (eventData.originalCpm) { result.originalCpm = eventData.originalCpm; }
-  if (eventData.originalCurrency) { result.originalCurrency = eventData.originalCurrency; }
-  if (eventData.status) { result.status = eventData.status; }
-  if (eventData.auctionId) { result.prebidAuctionId = eventData.auctionId; }
+  if (eventData.bidderCode) {
+    result.bidderCode = eventData.bidderCode;
+  }
+  if (eventData.cpm) {
+    result.cpm = eventData.cpm;
+  }
+  if (eventData.currency) {
+    result.currency = eventData.currency;
+  }
+  if (eventData.originalCpm) {
+    result.originalCpm = eventData.originalCpm;
+  }
+  if (eventData.originalCurrency) {
+    result.originalCurrency = eventData.originalCurrency;
+  }
+  if (eventData.status) {
+    result.status = eventData.status;
+  }
+  if (eventData.auctionId) {
+    result.prebidAuctionId = eventData.auctionId;
+  }
 
   result.biddingPlatformId = 1;
   result.partnerAuctionId = 'BW';
@@ -204,7 +248,7 @@ function getDefaultDataObject() {
     'partnerAuctionId': 'BW',
     'reportSource': 'pbjs',
     'abGroup': 'U',
-    'jsversion': JSVERSION,
+    'jsversion': VERSION,
     'partnerId': -1,
     'biddingPlatformId': 1,
     'idls': false,
@@ -222,18 +266,19 @@ function constructFullUrl(data) {
     ((iiqAnalyticsAnalyticsAdapter.initOptions && iiqAnalyticsAnalyticsAdapter.initOptions.fpid)
       ? '&iiqid=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid) : '') +
     '&agid=' + REPORTER_ID +
-    '&jsver=' + JSVERSION +
+    '&jsver=' + VERSION +
     '&vrref=' + getReferrer() +
     '&source=pbjs' +
-    '&payload=' + JSON.stringify(report)
+    '&payload=' + JSON.stringify(report) +
+    '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints
 }
 
 export function getReferrer() {
   try {
     if (getWindowSelf() === getWindowTop()) {
-      return getWindowLocation().href;
+      return encodeURIComponent(getWindowLocation().href);
     } else {
-      return getWindowTop().location.href;
+      return encodeURIComponent(getWindowTop().location.href);
     }
   } catch (error) {
     logError(`Error accessing location: ${error}`);
