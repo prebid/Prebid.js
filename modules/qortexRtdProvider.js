@@ -25,7 +25,7 @@ function init (config) {
       logMessage('Requesting Qortex group configuration')
       getGroupConfig()
         .then(groupConfig => {
-          logMessage(['Recieved response for qortex group config', groupConfig])
+          logMessage(['Received response for qortex group config', groupConfig])
           if (groupConfig?.active === true && groupConfig?.prebidBidEnrichment === true) {
             setGroupConfigData(groupConfig);
             initializeBidEnrichment();
@@ -82,7 +82,7 @@ function onAuctionEndEvent (data, config, t) {
   if (shouldAllowBidEnrichment()) {
     sendAnalyticsEvent('AUCTION', 'AUCTION_END', attachContextAnalytics(data))
       .then(result => {
-        logMessage('Qortex anyalitics event sent')
+        logMessage('Qortex analytics event sent')
       })
       .catch(e => logWarn(e?.message))
   }
@@ -200,7 +200,6 @@ export function generateAnalyticsHostUrl(qortexUrlBase) {
 /**
  * Updates bidder configs with the response from Qortex context services
  * @param {Object} reqBidsConfig Bid request configuration object
- * @param {string[]} bidders Bidders specified in module's configuration
  */
 export function addContextToRequests (reqBidsConfig) {
   if (qortexSessionInfo.currentSiteContext === null) {

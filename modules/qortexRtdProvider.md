@@ -41,13 +41,7 @@ pbjs.setConfig({
                 groupId: 'ABC123', //required
                 bidders: ['qortex', 'adapter2'], //optional (see below)
                 enableBidEnrichment: true, //optional (see below)
-                tagConfig: { // optional, please reach out to your account manager for configuration reccommendation
-                    videoContainer: 'string',
-                    htmlContainer: 'string',
-                    attachToTop: 'string',
-                    esm6Mod: 'string',
-                    continuousLoad: 'string'
-                }
+                tagConfig: { } // optional, please reach out to your account manager for configuration reccommendation
             }
         }]
     }
