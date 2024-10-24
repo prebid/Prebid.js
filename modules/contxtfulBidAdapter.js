@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { _each, buildUrl, isStr, isEmptyStr, logInfo, logError } from '../src/utils.js';
-import * as ajax from '../src/ajax.js';
+import { sendBeacon, ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
 import {
   isBidRequestValid,
@@ -181,11 +181,11 @@ const logEvent = (eventType, data, options = {}) => {
     });
 
     // Try sending a beacon
-    if (ajax.sendBeacon(eventUrl, JSON.stringify(payload))) {
+    if (sendBeacon(eventUrl, JSON.stringify(payload))) {
       logInfo(BIDDER_CODE, `[${eventType}] Logging data sent using Beacon and payload: ${JSON.stringify(data)}`);
     } else {
       // Fallback to using ajax
-      ajax.ajax(eventUrl, null, JSON.stringify(payload), {
+      ajax(eventUrl, null, JSON.stringify(payload), {
         method: 'POST',
         contentType: 'application/json',
         withCredentials: true,
