@@ -38,6 +38,7 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
 
     deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
+    imp.ext.sparteo.params.adUnitCode = bidRequest.adUnitCode;
 
     return imp;
   },
@@ -76,7 +77,8 @@ export const spec = {
     }
 
     if (!bid.params.networkId && !bid.params.publisherId) {
-      logError('The networkId or publisherId is required');
+      // publisherId is deprecated but is still accepted for now for retrocompatibility purpose.
+      logError('The networkId is required');
       return false;
     }
 
