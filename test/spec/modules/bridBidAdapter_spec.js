@@ -138,7 +138,7 @@ describe('Brid Bid Adapter', function() {
 
   it('Test userSync valid sync url for iframe', function () {
     let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
-    expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=brid&gdpr=0&gdpr_consent=anyString')
+    expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=brid&gdpr=0&gdpr_consent=anyString');
     expect(userSync.type).to.be.equal('iframe');
   });
 
