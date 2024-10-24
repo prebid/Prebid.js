@@ -214,21 +214,21 @@ export const eids = {
   },
   'sharethrough': {
     source: 'sharethrough.com',
-    atype: 1,
+    atype: 3,
     getValue: function(data) {
       return data.id;
     }
   },
   'sonobi': {
     source: 'liveintent.sonobi.com',
-    atype: 1,
+    atype: 3,
     getValue: function(data) {
       return data.id;
     }
   },
   'vidazoo': {
     source: 'liveintent.vidazoo.com',
-    atype: 1,
+    atype: 3,
     getValue: function(data) {
       return data.id;
     }
