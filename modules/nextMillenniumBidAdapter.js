@@ -66,6 +66,10 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'site.keywords',
   'site.content.keywords',
   'user.keywords',
+  'bcat',
+  'badv',
+  'wlang',
+  'wlangb',
 ];
 
 export const spec = {
@@ -367,6 +371,8 @@ export function setOrtb2Parameters(postBody, ortb2 = {}) {
     const value = deepAccess(ortb2, parameter);
     if (value) deepSetValue(postBody, parameter, value);
   }
+
+  if (postBody.wlang) delete postBody.wlangb
 }
 
 export function setEids(postBody = {}, bids = []) {
