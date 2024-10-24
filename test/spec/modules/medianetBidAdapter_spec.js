@@ -531,6 +531,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -622,6 +632,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -714,6 +734,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -807,6 +837,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -901,6 +941,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1008,6 +1058,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1104,6 +1164,16 @@ let VALID_BID_REQUEST = [{
         'w': 1000,
         'h': 1000
       },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
+      }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [
@@ -1640,6 +1710,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1747,6 +1827,16 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
+      },
+      'vcoords': {
+        'top_left': {
+          'x': 50,
+          'y': 100
+        },
+        'bottom_right': {
+          'x': 490,
+          'y': 880
+        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1829,6 +1919,10 @@ describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
+    sandbox.stub(window.top, 'innerHeight').value(780)
+    sandbox.stub(window.top, 'innerWidth').value(440)
+    sandbox.stub(window.top, 'scrollY').value(100)
+    sandbox.stub(window.top, 'scrollX').value(50)
   });
 
   afterEach(function () {
