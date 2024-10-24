@@ -123,11 +123,12 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          user: {ext: {consent: 'kjfdniwjnifwenrif3'}},
+          user: {consent: 'kjfdniwjnifwenrif3'},
           regs: {
             gpp: 'DBACNYA~CPXxRfAPXxR',
             gpp_sid: [7],
-            ext: {gdpr: 1, us_privacy: '1---'},
+            gdpr: 1,
+            us_privacy: '1---',
           },
         },
       },
@@ -143,11 +144,11 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          user: {ext: {consent: 'ewtewbefbawyadexv'}},
+          user: {consent: 'ewtewbefbawyadexv'},
           regs: {
             gpp: 'DSFHFHWEUYVDC',
             gpp_sid: [8, 9, 10],
-            ext: {gdpr: 0},
+            gdpr: 0,
           },
         },
       },
@@ -160,7 +161,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          regs: {ext: {gdpr: 0}},
+          regs: {gdpr: 0},
         },
       },
 
@@ -414,16 +415,27 @@ describe('nextMillenniumBidAdapterTests', () => {
         title: 'site.pagecat, site.content.cat and site.content.language',
         data: {
           postBody: {},
-          ortb2: {site: {
-            pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
-          }},
+          ortb2: {
+            bcat: ['IAB1-3', 'IAB1-4'],
+            badv: ['domain1.com', 'domain2.com'],
+            wlang: ['en', 'fr', 'de'],
+            wlangb: ['en', 'fr', 'de'],
+            site: {
+              pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+              content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+            }
+          },
         },
 
-        expected: {site: {
-          pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-          content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
-        }},
+        expected: {
+          bcat: ['IAB1-3', 'IAB1-4'],
+          badv: ['domain1.com', 'domain2.com'],
+          wlang: ['en', 'fr', 'de'],
+          site: {
+            pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+          }
+        },
       },
 
       {
@@ -431,6 +443,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           postBody: {},
           ortb2: {
+            wlangb: ['en', 'fr', 'de'],
             user: {keywords: 'key7,key8,key9'},
             site: {
               keywords: 'key1,key2,key3',
@@ -440,6 +453,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
+          wlangb: ['en', 'fr', 'de'],
           user: {keywords: 'key7,key8,key9'},
           site: {
             keywords: 'key1,key2,key3',
@@ -873,7 +887,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     const tests = [
       {
         title: 'test - 1',
-        bidderRequest: {bidderRequestId: 'mock-uuid'},
+        bidderRequest: {bidderRequestId: 'mock-uuid', timeout: 1200},
         bidRequests: [
           {
             adUnitCode: 'test-div',
@@ -936,6 +950,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           impSize: 2,
           requestSize: 1,
           domain: 'example.com',
+          tmax: 1200,
         },
       },
     ];
@@ -948,6 +963,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         const requestData = JSON.parse(request[0].data);
         expect(requestData.id).to.equal(expected.id);
+        expect(requestData.tmax).to.equal(expected.tmax);
         expect(requestData?.imp?.length).to.equal(expected.impSize);
       });
     };
