@@ -341,10 +341,10 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
   if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) gppConsent = bidderRequest?.ortb2?.regs;
 
   if (gdprConsent || uspConsent || gppConsent) {
-    postBody.regs = { ext: {} };
+    postBody.regs = {};
 
     if (uspConsent) {
-      postBody.regs.ext.us_privacy = uspConsent;
+      postBody.regs.us_privacy = uspConsent;
     };
 
     if (gppConsent) {
@@ -354,14 +354,18 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies !== 'undefined') {
-        postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+        postBody.regs.gdpr = gdprConsent.gdprApplies ? 1 : 0;
       };
 
       if (typeof gdprConsent.consentString !== 'undefined') {
         postBody.user = {
-          ext: { consent: gdprConsent.consentString },
+          consent: gdprConsent.consentString,
         };
       };
+    };
+
+    if (config.getConfig('coppa')) {
+      postBody.regs.coppa = 1;
     };
   };
 };

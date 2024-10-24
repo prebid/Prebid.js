@@ -123,11 +123,12 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          user: {ext: {consent: 'kjfdniwjnifwenrif3'}},
+          user: {consent: 'kjfdniwjnifwenrif3'},
           regs: {
             gpp: 'DBACNYA~CPXxRfAPXxR',
             gpp_sid: [7],
-            ext: {gdpr: 1, us_privacy: '1---'},
+            gdpr: 1,
+            us_privacy: '1---',
           },
         },
       },
@@ -143,11 +144,11 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          user: {ext: {consent: 'ewtewbefbawyadexv'}},
+          user: {consent: 'ewtewbefbawyadexv'},
           regs: {
             gpp: 'DSFHFHWEUYVDC',
             gpp_sid: [8, 9, 10],
-            ext: {gdpr: 0},
+            gdpr: 0,
           },
         },
       },
@@ -160,7 +161,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          regs: {ext: {gdpr: 0}},
+          regs: {gdpr: 0},
         },
       },
 
