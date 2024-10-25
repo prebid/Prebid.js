@@ -1,8 +1,9 @@
 import { BANNER } from '../src/mediaTypes.js';
+import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepAccess, deepSetValue, isFn, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, mergeDeep } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -32,27 +33,6 @@ export const spec = {
       method: 'POST',
       url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
     };
-  },
-
-  /**
-   * @param bidRequest
-   * @returns {number}
-   */
-  getMinFloor: (bidRequest) => {
-    const floors = [];
-
-    if (isFn(bidRequest.getFloor)) {
-      (deepAccess(bidRequest, 'mediaTypes.banner.sizes') || []).forEach(size => {
-        const floor = bidRequest.getFloor({ size }).floor;
-        if (!isNaN(floor)) {
-          floors.push(floor);
-        } else {
-          floors.push(0.0);
-        }
-      });
-    }
-
-    return floors.length ? Math.min(...floors) : 0.0;
   },
 
   /**
@@ -113,8 +93,8 @@ export const converter = ortbConverter({
 
     delete imp.dt;
 
-    imp.bidfloor = imp.bidfloor || spec.getMinFloor(bidRequest);
-    imp.secure = Number(window.location.protocol === 'https:');
+    imp.bidfloor = imp.bidfloor || getBidFloor(bidRequest);
+    imp.secure = 1;
     imp.tagid = bidRequest.adUnitCode;
 
     if (siteId || pageId || formatId) {
