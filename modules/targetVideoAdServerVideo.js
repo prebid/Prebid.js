@@ -34,6 +34,7 @@ export function buildVideoUrl(options) {
   const adUnit = options.adUnit;
   const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
   const allTargetingData = getAllTargetingData(options);
+  const emqsegs = getEmetriqSegments();
   const custParams = options.params.cust_params;
   let iu = options.params.iu;
 
@@ -58,6 +59,10 @@ export function buildVideoUrl(options) {
       urlComponents.search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26');
     }
 
+    if (emqsegs) {
+      urlComponents.search.emqsegs = emqsegs;
+    }
+
     return buildUrl(urlComponents);
   }
 
@@ -70,6 +75,10 @@ export function buildVideoUrl(options) {
 
   if (!isEmpty(custParams)) {
     search.cust_params = Object.entries(custParams).map(([key, value]) => key + '%3D' + value).join('%26');
+  }
+
+  if (emqsegs) {
+    search.emqsegs = emqsegs;
   }
 
   return buildUrl({
@@ -89,6 +98,10 @@ function getAllTargetingData(options) {
   }
 
   return allTargetingData;
+}
+
+function getEmetriqSegments() {
+  return window?._emqsegs;
 }
 
 registerVideoSupport('targetVideo', {
