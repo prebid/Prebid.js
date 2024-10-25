@@ -1,6 +1,6 @@
-import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, isFn, mergeDeep } from '../src/utils.js';
 
 /**
@@ -11,7 +11,7 @@ import { deepAccess, deepSetValue, isFn, mergeDeep } from '../src/utils.js';
 export const spec = {
   code: 'equativ',
   gvlid: 45,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * @param bidRequests
@@ -22,7 +22,8 @@ export const spec = {
     return {
       data: converter.toORTB({ bidderRequest, bidRequests }),
       method: 'POST',
-      url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
+      url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169' // TODO: SADR-6484: temporary URL for testing
+      // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169' // TODO: SADR-6484: original URL to be used after testing
     };
   },
 

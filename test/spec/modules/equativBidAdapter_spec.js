@@ -1,4 +1,4 @@
-import { spec, converter } from 'modules/equativBidAdapter.js';
+import { converter, spec } from 'modules/equativBidAdapter.js';
 
 describe('Equativ bid adapter tests', () => {
   const DEFAULT_BID_REQUESTS = [
@@ -24,6 +24,40 @@ describe('Equativ bid adapter tests', () => {
         },
       },
     },
+    {
+      adUnitCode: 'eqtv_43',
+      bidId: 'efgh5678',
+      mediaTypes: {
+        video: {
+          pos: 3,
+          skip: 1,
+          linearity: 1,
+          minduration: 10,
+          maxduration: 30,
+          minbitrate: 300,
+          maxbitrate: 600,
+          w: 640,
+          h: 480,
+          playbackmethod: [1],
+          api: [3],
+          mimes: ['video/x-flv'],
+          // protocols: [2, 3], // used in older adapter ... including as comment for reference
+          startdelay: 42,
+          battr: [13, 14],
+          placement: 1,
+        },
+      },
+      bidder: 'equativ',
+      params: {
+        networkId: 111,
+      },
+      requestId: 'abcd1234',
+      ortb2Imp: {
+        ext: {
+          tid: 'zsgzgzz',
+        },
+      },
+    }
   ];
 
   const DEFAULT_BIDDER_REQUEST = {
@@ -82,6 +116,37 @@ describe('Equativ bid adapter tests', () => {
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
       });
+    });
+
+    it('should build a video request properly', () => {
+      // ASSEMBLE
+      const videoRequest = DEFAULT_BID_REQUESTS[1];
+      const bidRequests = [
+        { ...videoRequest, params: { siteId: 123 } },
+      ];
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+
+      // ACT
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      // ASSERT
+      const videoObj = request.data.imp[0].video;
+      expect(videoObj).to.have.property('pos').and.to.equal(3);
+      expect(videoObj).to.have.property('skip').and.to.equal(1);
+      expect(videoObj).to.have.property('linearity').and.to.equal(1);
+      expect(videoObj).to.have.property('minduration').and.to.equal(10);
+      expect(videoObj).to.have.property('maxduration').and.to.equal(30);
+      expect(videoObj).to.have.property('minbitrate').and.to.equal(300);
+      expect(videoObj).to.have.property('maxbitrate').and.to.equal(600);
+      expect(videoObj).to.have.property('w').and.to.equal(640);
+      expect(videoObj).to.have.property('h').and.to.equal(480);
+      expect(videoObj).to.have.property('playbackmethod').and.to.deep.equal([1]);
+      expect(videoObj).to.have.property('api').and.to.deep.equal([3]);
+      expect(videoObj).to.have.property('mimes').and.to.deep.equal(['video/x-flv']);
+      // expect(videoObj).to.have.property('protocols').and.to.deep.equal([2, 3]); // used in older adapter ... including as comment for reference
+      expect(videoObj).to.have.property('startdelay').and.to.equal(42);
+      expect(videoObj).to.have.property('battr').and.to.deep.equal([13, 14]);
+      expect(videoObj).to.have.property('placement').and.to.equal(1);
     });
 
     it('should add ext.bidder to imp object when siteId is defined', () => {
