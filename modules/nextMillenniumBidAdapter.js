@@ -16,7 +16,6 @@ import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 import { EVENTS } from '../src/constants.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
@@ -347,9 +346,7 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
     if (uspConsent) {
       postBody.regs.us_privacy = uspConsent;
     };
-
-    if (gppConsent) {
-      postBody.regs.gpp = gppConsent?.gppString || gppConsent?.gpp;
+    д;
       postBody.regs.gpp_sid = bidderRequest.gppConsent?.applicableSections || gppConsent?.gpp_sid;
     };
 
