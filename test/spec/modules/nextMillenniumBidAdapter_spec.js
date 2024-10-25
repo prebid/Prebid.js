@@ -118,7 +118,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             uspConsent: '1---',
             gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
             gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10]}},
+            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 1}},
           },
         },
 
@@ -129,6 +129,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             gpp_sid: [7],
             gdpr: 1,
             us_privacy: '1---',
+            coppa: 1
           },
         },
       },
@@ -139,7 +140,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           postBody: {},
           bidderRequest: {
             gdprConsent: {consentString: 'ewtewbefbawyadexv', gdprApplies: false},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10]}},
+            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 0}},
           },
         },
 
@@ -149,6 +150,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             gpp: 'DSFHFHWEUYVDC',
             gpp_sid: [8, 9, 10],
             gdpr: 0,
+            coppa: 0,
           },
         },
       },

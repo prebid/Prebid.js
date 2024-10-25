@@ -30,7 +30,7 @@ const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdp
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_TAMX = 1500;
+const DEFAULT_TMAX = 1500;
 
 const VIDEO_PARAMS_DEFAULT = {
   api: undefined,
@@ -90,7 +90,7 @@ export const spec = {
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
     const device = getDeviceObj();
-    const tmax = deepAccess(bidderRequest, 'timeout') || DEFAULT_TAMX;
+    const tmax = deepAccess(bidderRequest, 'timeout') || DEFAULT_TMAX;
 
     const postBody = {
       id: bidderRequest?.bidderRequestId,
@@ -365,8 +365,8 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
       };
     };
 
-    if (config.getConfig('coppa')) {
-      postBody.regs.coppa = 1;
+    if (typeof bidderRequest?.ortb2?.regs?.coppa === 'number') {
+      postBody.regs.coppa = bidderRequest?.ortb2?.regs?.coppa;
     };
   };
 };
