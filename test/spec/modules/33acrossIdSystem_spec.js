@@ -904,6 +904,73 @@ describe('33acrossIdSystem', () => {
       });
     });
 
+    context('when a hashed email is present in local storage', () => {
+      it('should call endpoint with the hashed email included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        sinon.stub(storage, 'getDataFromLocalStorage')
+          .withArgs('33acrossIdHm')
+          .returns('33acrossIdHmValue+');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('sha256=33acrossIdHmValue%2B');
+
+        storage.getDataFromLocalStorage.restore();
+      });
+    });
+
+    context('when a hashed email is present in cookie storage', () => {
+      it('should call endpoint with the hashed email included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'cookie' ],
+          storage: {}
+        });
+
+        sinon.stub(storage, 'getCookie')
+          .withArgs('33acrossIdHm')
+          .returns('33acrossIdHmValue');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('sha256=33acrossIdHmValue');
+
+        storage.getCookie.restore();
+      });
+    });
+
+    context('when a hashed email is not present in storage', () => {
+      it('should not call endpoint with the hashed email included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).not.to.contain('sha256=');
+      });
+    });
+
     context('when the partner ID is not given', () => {
       it('should log an error', () => {
         const logErrorSpy = sinon.spy(utils, 'logError');
