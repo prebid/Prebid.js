@@ -84,7 +84,7 @@ function onAuctionEndEvent (data, config, t) {
       .then(result => {
         logMessage('Qortex analytics event sent')
       })
-      .catch(e => logWarn(e?.message))
+      .catch(e => logWarn(e.message))
   }
 }
 
@@ -93,7 +93,7 @@ function onAuctionEndEvent (data, config, t) {
  * @returns {Promise} ortb Content object
  */
 export function getContext () {
-  if (qortexSessionInfo.currentSiteContext === null) {
+  if (!qortexSessionInfo.currentSiteContext) {
     const pageUrlObject = { pageUrl: qortexSessionInfo.indexData?.pageUrl ?? '' }
     logMessage('Requesting new context data');
     return new Promise((resolve, reject) => {
@@ -145,7 +145,7 @@ export function getGroupConfig () {
  */
 export function sendAnalyticsEvent(eventType, subType, data) {
   if (qortexSessionInfo.analyticsUrl !== null) {
-    if (shouldSendAnalytics()) {
+    if (shouldSendAnalytics(data)) {
       const analtyicsEventObject = generateAnalyticsEventObject(eventType, subType, data)
       logMessage('Sending qortex analytics event');
       return new Promise((resolve, reject) => {
@@ -153,8 +153,8 @@ export function sendAnalyticsEvent(eventType, subType, data) {
           success() {
             resolve();
           },
-          error(error) {
-            reject(new Error(error));
+          error(e, x) {
+            reject(new Error('Returned error status code: ' + x.status));
           }
         }
         ajax(qortexSessionInfo.analyticsUrl, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
@@ -183,7 +183,7 @@ export function generateAnalyticsEventObject(eventType, subType, data) {
 }
 
 /**
- * Creates page index data for Qortex analysis
+ * Determines API host for Qortex
  * @param qortexUrlBase api url from config or default
  * @returns {string} Qortex analytics host url
  */
@@ -205,15 +205,19 @@ export function addContextToRequests (reqBidsConfig) {
   if (qortexSessionInfo.currentSiteContext === null) {
     logWarn('No context data received at this time');
   } else {
-    const fragment = { site: {content: qortexSessionInfo.currentSiteContext} }
-    if (qortexSessionInfo.bidderArray?.length > 0) {
-      qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}))
-      saveContextAdded(reqBidsConfig, qortexSessionInfo.bidderArray);
-    } else if (!qortexSessionInfo.bidderArray) {
-      mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment);
-      saveContextAdded(reqBidsConfig);
+    if (checkPercentageOutcome(qortexSessionInfo.groupConfig?.prebidBidEnrichmentPercentage)) {
+      const fragment = { site: {content: qortexSessionInfo.currentSiteContext} }
+      if (qortexSessionInfo.bidderArray?.length > 0) {
+        qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}))
+        saveContextAdded(reqBidsConfig);
+      } else if (!qortexSessionInfo.bidderArray) {
+        mergeDeep(reqBidsConfig.ortb2Fragments.global, fragment);
+        saveContextAdded(reqBidsConfig);
+      } else {
+        logWarn('Config contains an empty bidders array, unable to determine which bids to enrich');
+      }
     } else {
-      logWarn('Config contains an empty bidders array, unable to determine which bids to enrich');
+      saveContextAdded(reqBidsConfig, true);
     }
   }
 }
@@ -273,8 +277,7 @@ export function initializeBidEnrichment() {
         }
       })
       .catch((e) => {
-        const errorStatus = e.message;
-        logWarn('Returned error status code: ' + errorStatus)
+        logWarn('Returned error status code: ' + e.message)
       })
   }
 }
@@ -302,10 +305,13 @@ export function initializeModuleData(config) {
   return qortexSessionInfo;
 }
 
-export function saveContextAdded(reqBids, bidders = null) {
+export function saveContextAdded(reqBids, skipped = false) {
   const id = reqBids.auctionId;
-  const contextBidders = bidders ?? Array.from(new Set(reqBids.adUnits.flatMap(adunit => adunit.bids.map(bid => bid.bidder))))
-  qortexSessionInfo.pageAnalysisData.contextAdded[id] = contextBidders;
+  const contextBidders = qortexSessionInfo.bidderArray ?? Array.from(new Set(reqBids.adUnits.flatMap(adunit => adunit.bids.map(bid => bid.bidder))))
+  qortexSessionInfo.pageAnalysisData.contextAdded[id] = {
+    bidders: contextBidders,
+    contextSkipped: skipped
+  };
 }
 
 export function setContextData(value) {
@@ -316,6 +322,10 @@ export function setGroupConfigData(value) {
   qortexSessionInfo.groupConfig = value
 }
 
+export function getContextAddedEntry (id) {
+  return qortexSessionInfo?.pageAnalysisData?.contextAdded[id]
+}
+
 function generateSessionId() {
   const randomInt = window.crypto.getRandomValues(new Uint32Array(1));
   const currentDateTime = Math.floor(Date.now() / 1000);
@@ -323,21 +333,30 @@ function generateSessionId() {
 }
 
 function attachContextAnalytics (data) {
-  let qxData = {};
-  let qxDataAdded = false;
-  if (qortexSessionInfo?.pageAnalysisData?.contextAdded[data.auctionId]) {
-    qxData = qortexSessionInfo.currentSiteContext;
-    qxDataAdded = true;
+  const contextAddedEntry = getContextAddedEntry(data.auctionId);
+  if (contextAddedEntry) {
+    data.qortexContext = qortexSessionInfo.currentSiteContext ?? {};
+    data.qortexContextBidders = contextAddedEntry?.bidders;
+    data.qortexContextSkipped = contextAddedEntry?.contextSkipped;
+    return data;
+  } else {
+    logMessage(`Auction ${data.auctionId} did not interact with qortex bid enrichment`)
+    return null;
   }
-  data.qortexData = qxData;
-  data.qortexDataAdded = qxDataAdded;
-  return data;
 }
 
-function shouldSendAnalytics() {
-  const analyticsPercentage = qortexSessionInfo.groupConfig?.prebidReportingPercentage ?? 0;
+function checkPercentageOutcome(percentageValue) {
+  const analyticsPercentage = percentageValue ?? 0;
   const randomInt = Math.random().toFixed(5) * 100;
   return analyticsPercentage > randomInt;
+}
+
+function shouldSendAnalytics(data) {
+  if (data) {
+    return checkPercentageOutcome(qortexSessionInfo.groupConfig?.prebidReportingPercentage)
+  } else {
+    return false;
+  }
 }
 
 function shouldAllowBidEnrichment() {
