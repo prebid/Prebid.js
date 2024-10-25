@@ -215,12 +215,7 @@ export const converter = ortbConverter({
     setBidFloors(bidRequest, imp);
 
     // ensure unique imp IDs for twin adunits
-    let adUnitCode = imp.id;
-    let i = 2;
-    while (Object.keys(impIdMap).indexOf(imp.id) > -1) {
-      imp.id = adUnitCode + i++;
-    }
-    impIdMap[imp.id] = adUnitCode;
+    imp.id = impIdMap[imp.id] ? imp.id + impIdMap[imp.id]++ : (impIdMap[imp.id] = 2, imp.id);
 
     return imp;
   },
