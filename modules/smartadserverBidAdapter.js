@@ -4,23 +4,23 @@ import {
   isArray,
   isArrayOfNums,
   isEmpty,
-  isFn,
   isInteger,
   logError
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
-const DEFAULT_FLOOR = 0.0;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -256,7 +256,7 @@ export const spec = {
           if (isSupportedVideoContext) {
             let videoPayload = deepClone(payload);
             spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
-            videoPayload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
+            videoPayload.bidfloor = bid.params.bidfloor || getBidFloor(bid, adServerCurrency, VIDEO);
             bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
           }
         } else {
@@ -264,7 +264,7 @@ export const spec = {
           spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
         }
 
-        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, type);
+        payload.bidfloor = bid.params.bidfloor || getBidFloor(bid, adServerCurrency, type);
         bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
       } else {
         bidRequests.push({});
@@ -324,37 +324,11 @@ export const spec = {
   },
 
   /**
-   * Get floors from Prebid Price Floors module
-   *
-   * @param {object} bid Bid request object
-   * @param {string} currency Ad server currency
-   * @param {string} mediaType Bid media type
-   * @return {number} Floor price
-   */
-  getBidFloor: (bid, currency, mediaType) => {
-    const floors = [];
-
-    if (isFn(bid.getFloor)) {
-      (deepAccess(bid, `mediaTypes.${mediaType}.${mediaType === BANNER ? 'sizes' : 'playerSize'}`) || []).forEach(size => {
-        const floor = bid.getFloor({
-          currency: currency || 'USD',
-          mediaType,
-          size
-        }).floor;
-
-        floors.push(!isNaN(floor) ? floor : DEFAULT_FLOOR);
-      });
-    }
-
-    return floors.length ? Math.min(...floors) : DEFAULT_FLOOR;
-  },
-
-  /**
    * User syncs.
    *
    * @param {*} syncOptions Publisher prebid configuration.
    * @param {*} serverResponses A successful response from the server.
-   * @return {syncs[]} An array of syncs that should be executed.
+   * @return {UserSync[]} An array of syncs that should be executed.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];

@@ -1,3 +1,5 @@
+import { BANNER } from 'src/mediaTypes.js';
+import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
 import { spec, converter } from 'modules/equativBidAdapter.js';
 
 describe('Equativ bid adapter tests', () => {
@@ -238,7 +240,7 @@ describe('Equativ bid adapter tests', () => {
         DEFAULT_BID_REQUESTS,
         DEFAULT_BIDDER_REQUEST
       );
-      expect(request.data.imp[0]).to.have.property('secure').that.within(0, 1);
+      expect(request.data.imp[0]).to.have.property('secure').that.eq(1);
     });
 
     it('should have tagid', () => {
@@ -259,13 +261,13 @@ describe('Equativ bid adapter tests', () => {
     });
   });
 
-  describe('getMinFloor', () => {
+  describe('getBidFloor', () => {
     it('should return floor of 0.0 if floor module not available', () => {
       const bid = {
         ...DEFAULT_BID_REQUESTS[0],
         getFloor: false,
       };
-      expect(spec.getMinFloor(bid)).to.deep.eq(0.0);
+      expect(getBidFloor(bid)).to.deep.eq(0.0);
     });
 
     it('should return floor of 0.0 if mediaTypes not defined', () => {
@@ -273,7 +275,7 @@ describe('Equativ bid adapter tests', () => {
         getFloor: () => ({})
       };
       expect(bid.mediaTypes).to.be.undefined;
-      expect(spec.getMinFloor(bid)).to.deep.eq(0.0);
+      expect(getBidFloor(bid)).to.deep.eq(0.0);
     });
 
     it('should return proper min floor', () => {
@@ -289,7 +291,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       };
-      expect(spec.getMinFloor(bid)).to.deep.eq(1.13);
+      expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.13);
     });
 
     it('should return global media type floor if no rule for size', () => {
@@ -305,7 +307,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       };
-      expect(spec.getMinFloor(bid)).to.deep.eq(0.34);
+      expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(0.34);
     });
 
     it('should return floor of 0 if no rule for size', () => {
@@ -321,7 +323,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       };
-      expect(spec.getMinFloor(bid)).to.deep.eq(0.0);
+      expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(0.0);
     });
   });
 
