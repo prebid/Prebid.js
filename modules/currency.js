@@ -8,7 +8,7 @@ import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {on as onEvent, off as offEvent} from '../src/events.js';
-import {continueAuction as continueAuctionNative, resumeDelayedAuctions} from '../src/auction.js';
+import {continueAuction as continueAuctionNative, resumeDelayedAuctions} from '../libraries/auctionUtils/auctionUtils.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -352,7 +352,7 @@ export const requestBidsHook = timedAuctionHook('currency', function requestBids
     reqBidsConfigObj,
     context: this,
     nextFn: fn,
-    haveExited: false,
+    hasExited: false,
     timer: null
   };
 

@@ -3,7 +3,7 @@ import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
 
-import { getGlobal } from 'src/prebidGlobal.js';
+import {getGlobal} from 'src/prebidGlobal.js';
 
 import {
   setConfig,
@@ -14,10 +14,10 @@ import {
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import * as utils from 'src/utils.js';
-import { EVENTS, STATUS, REJECTION_REASON } from '../../../src/constants.js';
+import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
-import { delayedAuctions, requestBidsHook } from '../../../modules/currency.js';
+import {delayedAuctions, requestBidsHook} from '../../../modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;

@@ -12,7 +12,8 @@ import {
   parseGPTSingleSizeArray,
   parseUrl,
   pick,
-  deepEqual
+  deepEqual,
+  generateUUID
 } from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
@@ -29,7 +30,7 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
-import {continueAuction as continueAuctionNative, resumeDelayedAuctions} from '../src/auction.js';
+import {continueAuction as continueAuctionNative, resumeDelayedAuctions} from '../libraries/auctionUtils/auctionUtils.js';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -437,6 +438,8 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
  */
 export function continueAuction(hookConfig) {
   continueAuctionNative(hookConfig, _delayedAuctions, () => {
+    // We need to know the auctionId at this time. So we will use the passed in one or generate and set it ourselves
+    hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || generateUUID();
     // now we do what we need to with adUnits and save the data object to be used for getFloor and enforcement calls
     _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits, hookConfig.reqBidsConfigObj.auctionId);
   })
@@ -567,7 +570,7 @@ export const requestBidsHook = timedAuctionHook('priceFloors', function requestB
     reqBidsConfigObj,
     context: this,
     nextFn: fn,
-    haveExited: false,
+    hasExited: false,
     timer: null
   };
 
