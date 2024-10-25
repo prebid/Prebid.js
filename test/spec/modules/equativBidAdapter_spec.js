@@ -288,6 +288,25 @@ describe('Equativ bid adapter tests', () => {
 
       getCookieStub.restore();
     });
+
+    it('should pass buyeruid defined in config', () => {
+      const getCookieStub = sinon.stub(storage, 'getCookie');
+      getCookieStub.callsFake(() => undefined);
+
+      const bidRequest = {
+        ...DEFAULT_BIDDER_REQUEST,
+        ortb2: {
+          user: {
+            buyeruid: 'buyeruid-provided-by-publisher'
+          }
+        }
+      };
+      const request = spec.buildRequests([ DEFAULT_BID_REQUESTS[0] ], bidRequest);
+
+      expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
+
+      getCookieStub.restore();
+    });
   });
 
   describe('getMinFloor', () => {

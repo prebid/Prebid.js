@@ -14,6 +14,8 @@ const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
 const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
 const PID_COOKIE_NAME = 'eqt_pid';
 
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 45,
@@ -160,7 +162,5 @@ export const converter = ortbConverter({
     return req;
   },
 });
-
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 registerBidder(spec);
