@@ -5,6 +5,7 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { deepSetValue, safeJSONParse } from '../src/utils.js';
+import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -69,6 +70,18 @@ function getBidRequestData(bidReqConfig, callback, config) {
         deepSetValue(ortb2Site, 'ext.data.mobianTones', tones);
         deepSetValue(ortb2Site, 'ext.data.mobianGenres', genres);
         deepSetValue(ortb2Site, 'ext.data.apValues', apValues);
+
+        setKeyValue('mobianRisk', mobianRisk);
+        setKeyValue('mobianContentCategories', contentCategories);
+        setKeyValue('mobianSentiment', sentiment);
+        setKeyValue('mobianEmotions', emotions);
+        setKeyValue('mobianThemes', themes);
+        setKeyValue('mobianTones', tones);
+        setKeyValue('mobianGenres', genres);
+        setKeyValue('ap_a0', apValues.a0 || []);
+        setKeyValue('ap_a1', apValues.a1 || []);
+        setKeyValue('ap_p0', apValues.p0 || []);
+        setKeyValue('ap_p1', apValues.p1 || []);
 
         resolve(risk);
         callback();
