@@ -1751,7 +1751,7 @@ describe('the price floors module', function () {
         const req = utils.deepClone(bidRequest);
         _floorDataForAuction[req.auctionId] = utils.deepClone(basicFloorConfig);
 
-        expect(guardTids('mock-bidder').bidRequest(req).getFloor({})).to.deep.equal({
+        expect(guardTids({bidderCode: 'mock-bidder'}).bidRequest(req).getFloor({})).to.deep.equal({
           currency: 'USD',
           floor: 1.0
         });
