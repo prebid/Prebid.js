@@ -152,7 +152,7 @@ function handleSupplementalId(key, id, storageConfig) {
 }
 
 /** @type {Submodule} */
-export const thirthyThreeAcrossIdSubmodule = {
+export const thirtyThreeAcrossIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -252,4 +252,4 @@ export const thirthyThreeAcrossIdSubmodule = {
   }
 };
 
-submodule('userId', thirthyThreeAcrossIdSubmodule);
+submodule('userId', thirtyThreeAcrossIdSubmodule);
