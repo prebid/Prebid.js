@@ -217,6 +217,11 @@ export const eids = {
     atype: 3,
     getValue: function(data) {
       return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
     }
   },
   'sonobi': {
@@ -224,6 +229,11 @@ export const eids = {
     atype: 3,
     getValue: function(data) {
       return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
     }
   },
   'vidazoo': {
@@ -231,6 +241,11 @@ export const eids = {
     atype: 3,
     getValue: function(data) {
       return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
     }
   }
 }
