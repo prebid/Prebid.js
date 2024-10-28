@@ -2,10 +2,8 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { DEFAULT_DFP_PARAMS, DFP_ENDPOINT, setGdprConsent } from '../libraries/dfpUtils/dfpUtils.js';
 import { getSignals } from '../libraries/gptUtils/gptUtils.js';
 import { registerVideoSupport } from '../src/adServerManager.js';
-import { gdprDataHandler } from '../src/adapterManager.js';
 import { getPPID } from '../src/adserver.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
@@ -24,6 +22,7 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
+import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -108,13 +107,12 @@ export function buildDfpVideoUrl(options) {
     urlComponents.search,
     derivedParams,
     options.params,
-    { cust_params: encodedCustomParams }
+    { cust_params: encodedCustomParams },
+    gdprParams()
   );
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
-  const gdprConsent = gdprDataHandler.getConsentData();
-  setGdprConsent(gdprConsent, queryParams);
 
   if (!queryParams.ppid) {
     const ppid = getPPID();

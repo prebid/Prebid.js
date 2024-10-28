@@ -36,6 +36,7 @@
       "novatiqIdSystem",
       "oneKeyIdSystem",
       "operaadsIdSystem",
+      "permutiveIdentityManagerIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
@@ -58,6 +59,7 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "51DegreesRtdProvider",
       "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
       "adagioRtdProvider",
@@ -80,6 +82,7 @@
       "greenbidsRtdProvider",
       "growthCodeRtdProvider",
       "hadronRtdProvider",
+      "humansecurityRtdProvider",
       "iasRtdProvider",
       "idWardRtdProvider",
       "imRtdProvider",
@@ -109,7 +112,8 @@
     ],
     "videoModule": [
       "jwplayerVideoProvider",
-      "videojsVideoProvider"
+      "videojsVideoProvider",
+      "adplayerproVideoProvider"
     ],
     "paapi": [
       "paapiForGpt",

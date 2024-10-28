@@ -25,12 +25,23 @@ describe('Mobian RTD Submodule', function () {
     ajaxStub.restore();
   });
 
-  it('should set key-value pairs when server responds with garm_risk', function () {
+  it('should set key-value pairs when server responds with valid data', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
-        garm_risk: 'low',
-        sentiment_positive: true,
-        emotion_joy: true
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          mobianRisk: 'low',
+          mobianSentiment: 'positive',
+          mobianContentCategories: [],
+          mobianEmotions: ['joy'],
+          mobianThemes: [],
+          mobianTones: [],
+          mobianGenres: [],
+          ap: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
+        }
       }));
     });
 
@@ -39,26 +50,42 @@ describe('Mobian RTD Submodule', function () {
         risk: 'low',
         contentCategories: [],
         sentiment: 'positive',
-        emotions: ['joy']
+        emotions: ['joy'],
+        themes: [],
+        tones: [],
+        genres: [],
+        apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'low',
         mobianContentCategories: [],
         mobianSentiment: 'positive',
-        mobianEmotions: ['joy']
+        mobianEmotions: ['joy'],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: [],
+        apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
       });
     });
   });
 
-  it('should handle response with GARM content categories, sentiment, and emotions', function () {
+  it('should handle response with content categories, multiple emotions, and ap values', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
-        garm_risk: 'medium',
-        garm_content_category_arms: true,
-        garm_content_category_crime: true,
-        sentiment_negative: true,
-        emotion_anger: true,
-        emotion_fear: true
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          mobianRisk: 'medium',
+          mobianSentiment: 'negative',
+          mobianContentCategories: ['arms', 'crime'],
+          mobianEmotions: ['anger', 'fear'],
+          mobianThemes: ['conflict', 'international relations'],
+          mobianTones: ['factual', 'serious'],
+          mobianGenres: ['news', 'political_analysis'],
+          ap: { a0: [100], a1: [200, 300], p0: [400, 500], p1: [600] }
+        }
       }));
     });
 
@@ -67,37 +94,41 @@ describe('Mobian RTD Submodule', function () {
         risk: 'medium',
         contentCategories: ['arms', 'crime'],
         sentiment: 'negative',
-        emotions: ['anger', 'fear']
+        emotions: ['anger', 'fear'],
+        themes: ['conflict', 'international relations'],
+        tones: ['factual', 'serious'],
+        genres: ['news', 'political_analysis'],
+        apValues: { a0: [100], a1: [200, 300], p0: [400, 500], p1: [600] }
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'medium',
         mobianContentCategories: ['arms', 'crime'],
         mobianSentiment: 'negative',
-        mobianEmotions: ['anger', 'fear']
+        mobianEmotions: ['anger', 'fear'],
+        mobianThemes: ['conflict', 'international relations'],
+        mobianTones: ['factual', 'serious'],
+        mobianGenres: ['news', 'political_analysis'],
+        apValues: { a0: [100], a1: [200, 300], p0: [400, 500], p1: [600] }
       });
     });
   });
 
-  it('should return unknown risk when garm_risk is not present', function () {
+  it('should return empty object when server responds with has_results: false', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
-        sentiment_neutral: true
+        meta: {
+          url: 'https://example.com',
+          has_results: false
+        },
+        results: {}
       }));
     });
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
-      expect(result).to.deep.equal({
-        risk: 'unknown',
-        contentCategories: [],
-        sentiment: 'neutral',
-        emotions: []
-      });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
-        mobianRisk: 'unknown',
-        mobianContentCategories: [],
-        mobianSentiment: 'neutral',
-        mobianEmotions: []
-      });
+      expect(result).to.deep.equal({});
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.not.have.any.keys(
+        'mobianRisk', 'mobianContentCategories', 'mobianSentiment', 'mobianEmotions', 'mobianThemes', 'mobianTones', 'mobianGenres', 'apValues'
+      );
     });
   });
 
@@ -120,6 +151,124 @@ describe('Mobian RTD Submodule', function () {
 
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
       expect(result).to.deep.equal({});
+    });
+  });
+
+  it('should use default values when fields are missing in the response', function () {
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.success(JSON.stringify({
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          mobianRisk: 'high'
+          // Missing other fields
+        }
+      }));
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
+        risk: 'high',
+        contentCategories: [],
+        sentiment: 'unknown',
+        emotions: [],
+        themes: [],
+        tones: [],
+        genres: [],
+        apValues: {}
+      });
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'high',
+        mobianContentCategories: [],
+        mobianSentiment: 'unknown',
+        mobianEmotions: [],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: [],
+        apValues: {}
+      });
+    });
+  });
+
+  it('should handle response with only ap values', function () {
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.success(JSON.stringify({
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          ap: { a0: [1, 2], a1: [3, 4], p0: [5, 6], p1: [7, 8] }
+        }
+      }));
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
+        risk: 'unknown',
+        contentCategories: [],
+        sentiment: 'unknown',
+        emotions: [],
+        themes: [],
+        tones: [],
+        genres: [],
+        apValues: { a0: [1, 2], a1: [3, 4], p0: [5, 6], p1: [7, 8] }
+      });
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'unknown',
+        mobianContentCategories: [],
+        mobianSentiment: 'unknown',
+        mobianEmotions: [],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: [],
+        apValues: { a0: [1, 2], a1: [3, 4], p0: [5, 6], p1: [7, 8] }
+      });
+    });
+  });
+
+  it('should set key-value pairs when ext object is missing', function () {
+    bidReqConfig = {
+      ortb2Fragments: {
+        global: {
+          site: {}
+        }
+      }
+    };
+
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.success(JSON.stringify({
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          mobianRisk: 'low',
+          mobianSentiment: 'positive',
+          mobianContentCategories: [],
+          mobianEmotions: ['joy'],
+          mobianThemes: [],
+          mobianTones: [],
+          mobianGenres: [],
+          ap: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
+        }
+      }));
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, () => {}, {}).then(() => {
+      expect(bidReqConfig.ortb2Fragments.global.site.ext).to.exist;
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'low',
+        mobianContentCategories: [],
+        mobianSentiment: 'positive',
+        mobianEmotions: ['joy'],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: [],
+        apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
+      });
     });
   });
 });

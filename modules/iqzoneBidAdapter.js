@@ -4,7 +4,7 @@ import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } fro
 
 const BIDDER_CODE = 'iqzone';
 const AD_URL = 'https://smartssp-us-east.iqzone.com/pbjs';
-const SYNC_URL = 'https://cs.smartssp.iqzone.com';
+const SYNC_URL = 'https://cs.iqzone.com';
 
 export const spec = {
   code: BIDDER_CODE,

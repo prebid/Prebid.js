@@ -80,11 +80,6 @@ const converter = ortbConverter({
       bidResponse.meta.advertiserId = bid.ext.buyer_id;
       bidResponse.meta.brandId = bid.ext.brand_id;
     }
-    const {ortbResponse} = context;
-    if (ortbResponse.ext && ortbResponse.ext.paf) {
-      bidResponse.meta.paf = Object.assign({}, ortbResponse.ext.paf);
-      bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
-    }
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
@@ -117,7 +112,7 @@ const converter = ortbConverter({
         paapi: fledgeAuctionConfigs,
       }
     } else {
-      return response.bids
+      return response
     }
   },
   overrides: {
