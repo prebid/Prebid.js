@@ -2,10 +2,16 @@ import {
   appendGptSlots,
   appendPbAdSlot,
   _currentConfig,
-  makeBidRequestsHook
+  makeBidRequestsHook,
+  getAuctionsIdsFromTargeting,
+  getSegments,
+  getSignals,
+  getSignalsArrayByAuctionsIds,
+  getSignalsIntersection
 } from 'modules/gptPreAuction.js';
 import { config } from 'src/config.js';
 import { makeSlot } from '../integration/faker/googletag.js';
+import { taxonomies } from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('GPT pre-auction module', () => {
   let sandbox;
@@ -24,6 +30,87 @@ describe('GPT pre-auction module', () => {
     makeSlot({ code: 'slotCode4', divId: 'div4' }),
     makeSlot({ code: 'slotCode4', divId: 'div5' })
   ];
+
+  const mockTargeting = {'/123456/header-bid-tag-0': {'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus'}}
+
+  const mockAuctionManager = {
+    findBidByAdId(adId) {
+      const bidsMap = {
+        '148018fe5e': {
+          auctionId: mocksAuctions[0].auctionId
+        },
+        '567891011': {
+          auctionId: mocksAuctions[1].auctionId
+        },
+      };
+      return bidsMap[adId];
+    },
+    index: {
+      getAuction({ auctionId }) {
+        return mocksAuctions.find(auction => auction.auctionId === auctionId);
+      }
+    }
+  }
+
+  const mocksAuctions = [
+    {
+      auctionId: '1111',
+      getFPD: () => ({
+        global: {
+          user: {
+            data: [{
+              name: 'dataprovider.com',
+              ext: {
+                segtax: 4
+              },
+              segment: [{
+                id: '1'
+              }, {
+                id: '2'
+              }]
+            }],
+          }
+        }
+      })
+    },
+    {
+      auctionId: '234234',
+      getFPD: () => ({
+        global: {
+          user: {
+            data: [{
+              name: 'dataprovider.com',
+              ext: {
+                segtax: 4
+              },
+              segment: [{
+                id: '2'
+              }]
+            }]
+          }
+        }
+      }),
+    }, {
+      auctionId: '234324234',
+      getFPD: () => ({
+        global: {
+          user: {
+            data: [{
+              name: 'dataprovider.com',
+              ext: {
+                segtax: 4
+              },
+              segment: [{
+                id: '2'
+              }, {
+                id: '3'
+              }]
+            }]
+          }
+        }
+      })
+    },
+  ]
 
   describe('appendPbAdSlot', () => {
     // sets up our document body to test the pbAdSlot dom actions against
@@ -188,7 +275,7 @@ describe('GPT pre-auction module', () => {
         customGptSlotMatching: false,
         customPbAdSlot: false,
         customPreAuction: false,
-        useDefaultPreAuction: false
+        useDefaultPreAuction: true
       });
     });
   });
@@ -452,6 +539,61 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots(testSlots);
       runMakeBidRequests(testAdUnits);
       expect(returnedAdUnits).to.deep.equal(expectedAdUnits);
+    });
+  });
+
+  describe('pps gpt config', () => {
+    it('should parse segments from fpd', () => {
+      const twoSegments = getSegments(mocksAuctions[0].getFPD().global, ['user.data'], 4);
+      expect(JSON.stringify(twoSegments)).to.equal(JSON.stringify(['1', '2']));
+      const zeroSegments = getSegments(mocksAuctions[0].getFPD().global, ['user.data'], 6);
+      expect(zeroSegments).to.length(0);
+    });
+
+    it('should return signals from fpd', () => {
+      const signals = getSignals(mocksAuctions[0].getFPD().global);
+      const expectedSignals = [{ taxonomy: taxonomies[0], values: ['1', '2'] }];
+      expect(signals).to.eql(expectedSignals);
+    });
+
+    it('should properly get auctions ids from targeting', () => {
+      const auctionsIds = getAuctionsIdsFromTargeting(mockTargeting, mockAuctionManager);
+      expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId])
+    });
+
+    it('should filter out adIds that do not map to any auction', () => {
+      const auctionsIds = getAuctionsIdsFromTargeting({
+        ...mockTargeting,
+        'au': {'hb_adid': 'missing'},
+      }, mockAuctionManager);
+      expect(auctionsIds).to.eql([mocksAuctions[0].auctionId, mocksAuctions[1].auctionId]);
+    })
+
+    it('should properly return empty array of auction ids for invalid targeting', () => {
+      let auctionsIds = getAuctionsIdsFromTargeting({}, mockAuctionManager);
+      expect(Array.isArray(auctionsIds)).to.equal(true);
+      expect(auctionsIds).to.length(0);
+      auctionsIds = getAuctionsIdsFromTargeting({'/123456/header-bid-tag-0/bg': {'invalidContent': '123'}}, mockAuctionManager);
+      expect(Array.isArray(auctionsIds)).to.equal(true);
+      expect(auctionsIds).to.length(0);
+    });
+
+    it('should properly get signals from auctions', () => {
+      const signals = getSignalsArrayByAuctionsIds(['1111', '234234', '234324234'], mockAuctionManager.index);
+      const intersection = getSignalsIntersection(signals);
+      const expectedResult = { IAB_AUDIENCE_1_1: { values: ['2'] }, IAB_CONTENT_2_2: { values: [] } };
+      expect(JSON.stringify(intersection)).to.be.equal(JSON.stringify(expectedResult));
+    });
+
+    it('should return empty signals array for empty auctions ids array', () => {
+      const signals = getSignalsArrayByAuctionsIds([], mockAuctionManager.index);
+      expect(Array.isArray(signals)).to.equal(true);
+      expect(signals).to.length(0);
+    });
+
+    it('should return properly formatted object for getSignalsIntersection invoked with empty array', () => {
+      const signals = getSignalsIntersection([]);
+      expect(Object.keys(signals)).to.contain.members(taxonomies);
     });
   });
 });

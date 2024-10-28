@@ -126,7 +126,6 @@ module.exports = {
             })
         );
         const core = path.resolve('./src');
-        const paapiMod = path.resolve('./modules/paapi.js');
 
         return Object.assign(libraries, {
           core: {
@@ -135,16 +134,6 @@ module.exports = {
               return module.resource && module.resource.startsWith(core);
             }
           },
-          paapi: {
-            // fledgeForGpt imports paapi to keep backwards compat for NPM consumers
-            // this makes the paapi module its own chunk, pulled in by both paapi and fledgeForGpt entry points,
-            // to avoid duplication
-            // TODO: remove this in prebid 9
-            name: 'chunk-paapi',
-            test: (module) => {
-              return module.resource === paapiMod;
-            }
-          }
         }, {
           default: false,
           defaultVendors: false

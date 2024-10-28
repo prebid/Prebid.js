@@ -26,6 +26,9 @@ const CALLER_NAME = 'pbjs';
 const GVLID = 58;
 
 const STORAGE_FPID_KEY = '33acrossIdFp';
+const STORAGE_TPID_KEY = '33acrossIdTp';
+const DEFAULT_1PID_SUPPORT = true;
+const DEFAULT_TPID_SUPPORT = true;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -51,7 +54,8 @@ function calculateResponseObj(response) {
 
   return {
     envelope: response.data.envelope,
-    fp: response.data.fp
+    fp: response.data.fp,
+    tp: response.data.tp
   };
 }
 
@@ -86,6 +90,11 @@ function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
   const fp = getStoredValue(STORAGE_FPID_KEY, enabledStorageTypes);
   if (fp) {
     params.fp = encodeURIComponent(fp);
+  }
+
+  const tp = getStoredValue(STORAGE_TPID_KEY, enabledStorageTypes);
+  if (tp) {
+    params.tp = encodeURIComponent(tp);
   }
 
   return params;
@@ -130,10 +139,10 @@ function getStoredValue(key, enabledStorageTypes) {
   return storedValue;
 }
 
-function handleFpId(fpId, storageConfig) {
-  fpId
-    ? storeValue(STORAGE_FPID_KEY, fpId, storageConfig)
-    : deleteFromStorage(STORAGE_FPID_KEY);
+function handleSupplementalId(key, id, storageConfig) {
+  id
+    ? storeValue(key, id, storageConfig)
+    : deleteFromStorage(key);
 }
 
 /** @type {Submodule} */
@@ -166,7 +175,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig }, gdprConsentData) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -179,7 +188,7 @@ export const thirthyThreeAcrossIdSubmodule = {
       return;
     }
 
-    const { pid, storeFpid, apiUrl = API_URL } = params;
+    const { pid, storeFpid = DEFAULT_1PID_SUPPORT, storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL } = params;
 
     return {
       callback(cb) {
@@ -198,7 +207,14 @@ export const thirthyThreeAcrossIdSubmodule = {
             }
 
             if (storeFpid) {
-              handleFpId(responseObj.fp, {
+              handleSupplementalId(STORAGE_FPID_KEY, responseObj.fp, {
+                enabledStorageTypes,
+                expires: storageConfig.expires
+              });
+            }
+
+            if (storeTpid) {
+              handleSupplementalId(STORAGE_TPID_KEY, responseObj.tp, {
                 enabledStorageTypes,
                 expires: storageConfig.expires
               });

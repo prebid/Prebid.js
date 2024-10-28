@@ -33,7 +33,6 @@ export const enrichFPD = hook('sync', (fpd) => {
   return GreedyPromise.all(promArr)
     .then(([ortb2, sua, cdep]) => {
       const ri = dep.getRefererInfo();
-      mergeLegacySetConfigs(ortb2);
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
         const data = getEnrichments(ortb2, ri);
         if (data && Object.keys(data).length > 0) {
@@ -63,17 +62,6 @@ export const enrichFPD = hook('sync', (fpd) => {
       return ortb2;
     });
 });
-
-function mergeLegacySetConfigs(ortb2) {
-  // merge in values from "legacy" setConfig({app, site, device})
-  // TODO: deprecate these eventually
-  ['app', 'site', 'device'].forEach(prop => {
-    const cfg = config.getConfig(prop);
-    if (cfg != null) {
-      ortb2[prop] = mergeDeep({}, cfg, ortb2[prop]);
-    }
-  })
-}
 
 function winFallback(fn) {
   try {
@@ -111,8 +99,13 @@ const ENRICHMENTS = {
   },
   device() {
     return winFallback((win) => {
-      const w = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-      const h = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
+      // screen.width and screen.height are the physical dimensions of the screen
+      const w = win.screen.width;
+      const h = win.screen.height;
+
+      // vpw and vph are the viewport dimensions of the browser window
+      const vpw = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
+      const vph = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
 
       const device = {
         w,
@@ -120,6 +113,10 @@ const ENRICHMENTS = {
         dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
+        ext: {
+          vpw,
+          vph,
+        },
       };
 
       if (win.navigator?.webdriver) {

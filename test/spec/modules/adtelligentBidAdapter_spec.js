@@ -16,7 +16,6 @@ const aliasEP = {
   'janet': 'https://ghb.bidder.jmgads.com/v2/auction/',
   'ocm': 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
   '9dotsmedia': 'https://ghb.platform.audiodots.com/v2/auction/',
-  'copper6': 'https://ghb.app.copper6.com/v2/auction/',
   'indicue': 'https://ghb.console.indicue.com/v2/auction/',
 };
 

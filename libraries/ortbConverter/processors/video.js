@@ -1,34 +1,7 @@
 import {deepAccess, isEmpty, logWarn, mergeDeep, sizesToSizeTuples, sizeTupleToRtbSize} from '../../../src/utils.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 
-// parameters that share the same name & semantics between pbjs adUnits and imp.video
-const ORTB_VIDEO_PARAMS = new Set([
-  'pos',
-  'placement',
-  'plcmt',
-  'api',
-  'mimes',
-  'protocols',
-  'playbackmethod',
-  'minduration',
-  'maxduration',
-  'w',
-  'h',
-  'startdelay',
-  'placement',
-  'linearity',
-  'skip',
-  'skipmin',
-  'skipafter',
-  'minbitrate',
-  'maxbitrate',
-  'delivery',
-  'playbackend'
-]);
-
-const PLACEMENT = {
-  'instream': 1,
-}
+import {ORTB_VIDEO_PARAMS} from '../../../src/video.js';
 
 export function fillVideoImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== VIDEO) return;
@@ -36,6 +9,7 @@ export function fillVideoImp(imp, bidRequest, context) {
   const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
   if (!isEmpty(videoParams)) {
     const video = Object.fromEntries(
+      // Parameters that share the same name & semantics between pbjs adUnits and imp.video
       Object.entries(videoParams)
         .filter(([name]) => ORTB_VIDEO_PARAMS.has(name))
     );
@@ -46,10 +20,7 @@ export function fillVideoImp(imp, bidRequest, context) {
       }
       Object.assign(video, format[0]);
     }
-    const placement = PLACEMENT[videoParams.context];
-    if (placement != null) {
-      video.placement = placement;
-    }
+
     imp.video = mergeDeep(video, imp.video);
   }
 }

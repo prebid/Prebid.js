@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { isStr, deepAccess } from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -19,10 +19,6 @@ const METADATA_KEY = 'adn.metaData';
 const METADATA_KEY_SEPARATOR = '@@@';
 
 export const misc = {
-  getUnixTimestamp: function (addDays, asMinutes) {
-    const multiplication = addDays / (asMinutes ? 1440 : 1);
-    return Date.now() + (addDays && addDays > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
-  }
 };
 
 const storageTool = (function () {
@@ -50,11 +46,11 @@ const storageTool = (function () {
       if (datum.key === 'voidAuIds' && Array.isArray(datum.value)) {
         return true;
       }
-      return datum.key && datum.value && datum.exp && datum.exp > misc.getUnixTimestamp() && (!network || network === datum.network);
+      return datum.key && datum.value && datum.exp && datum.exp > getUnixTimestampFromNow() && (!network || network === datum.network);
     }) : [];
     const voidAuIdsEntry = filteredEntries.find(entry => entry.key === 'voidAuIds');
     if (voidAuIdsEntry) {
-      const now = misc.getUnixTimestamp();
+      const now = getUnixTimestampFromNow();
       voidAuIdsEntry.value = voidAuIdsEntry.value.filter(voidAuId => voidAuId.auId && voidAuId.exp > now);
       if (!voidAuIdsEntry.value.length) {
         filteredEntries = filteredEntries.filter(entry => entry.key !== 'voidAuIds');
@@ -73,7 +69,7 @@ const storageTool = (function () {
       const notNewExistingAuIds = currentVoidAuIds.filter(auIdObj => {
         return newAuIds.indexOf(auIdObj.value) < -1;
       }) || [];
-      const oneDayFromNow = misc.getUnixTimestamp(1);
+      const oneDayFromNow = getUnixTimestampFromNow(1);
       const apiIdsArray = newAuIds.map(auId => {
         return { exp: oneDayFromNow, auId: auId };
       }) || [];
@@ -86,7 +82,7 @@ const storageTool = (function () {
       if (key !== 'voidAuIds') {
         metaAsObj[key + METADATA_KEY_SEPARATOR + network] = {
           value: apiRespMetadata[key],
-          exp: misc.getUnixTimestamp(100),
+          exp: getUnixTimestampFromNow(100),
           network: network
         }
       }
@@ -201,10 +197,14 @@ const targetingTool = (function() {
     },
     mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
       const kv = getKvsFromOrtb(bidderRequest || {});
-      if (!kv) {
+      if (isEmpty(kv)) {
         return;
       }
-      bidTargeting.kv = {...kv, ...bidTargeting.kv};
+      if (bidTargeting.kv && !Array.isArray(bidTargeting.kv)) {
+        bidTargeting.kv = convertObjectToArray(bidTargeting.kv);
+      }
+      bidTargeting.kv = bidTargeting.kv || [];
+      bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(kv));
     }
   }
 })();
@@ -252,6 +252,7 @@ export const spec = {
 
     const bidderConfig = config.getConfig();
     if (bidderConfig.useCookie === false) queryParamsAndValues.push('noCookies=true');
+    if (bidderConfig.advertiserTransparency === true) queryParamsAndValues.push('advertiserTransparency=true');
     if (bidderConfig.maxDeals > 0) queryParamsAndValues.push('ds=' + Math.min(bidderConfig.maxDeals, MAXIMUM_DEALS_LIMIT));
 
     const bidRequests = {};
@@ -274,7 +275,14 @@ export const spec = {
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
+
+      const refererInfo = bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo : {};
+      if (refererInfo.page) {
+        networks[network].context = bidderRequest.refererInfo.page;
+      }
+      if (refererInfo.canonicalUrl) {
+        networks[network].canonical = bidderRequest.refererInfo.canonicalUrl;
+      }
 
       const payloadRelatedData = storageTool.getPayloadRelatedData(bid.params.network);
       if (Object.keys(payloadRelatedData).length > 0) {
