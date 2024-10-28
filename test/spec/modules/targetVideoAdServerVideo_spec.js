@@ -45,10 +45,12 @@ describe('TargetVideo Ad Server Video', function() {
       },
     };
     adUnit = utils.deepClone(AD_UNIT);
+    window._emqsegs = null;
   });
 
   afterEach(() => {
     sandbox.restore();
+    window._emqsegs = null;
   });
 
   it('should return undefined if required properties are missing', () => {
@@ -172,6 +174,52 @@ describe('TargetVideo Ad Server Video', function() {
     expect(url1).to.include('cust_params=targeting_1%3Dfoo%26targeting_2%3Dbar');
     expect(url2).to.include('cust_params=targeting_1%3Dfoo%26targeting_2%3Dbar');
     expect(url3).to.include('cust_params=targeting_1%3Dbaz%26targeting_2%3Dbar');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
+
+  it('should include emqsegs parameter when window._emqsegs is present', () => {
+    const optionsUrl = {
+      params: { ...unitUrl }
+    };
+
+    const optionsId = {
+      params: { ...unitId }
+    };
+
+    window._emqsegs = '1,2,3,4,5';
+
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url1 = buildVideoUrl(Object.assign(optionsUrl, { bid, adUnit }));
+    const url2 = buildVideoUrl(Object.assign(optionsId, { bid, adUnit }));
+
+    expect(url1).to.include('emqsegs=1,2,3,4,5');
+    expect(url2).to.include('emqsegs=1,2,3,4,5');
+
+    getWinningBidsStub.restore();
+    getAllTargetingDataStub.restore();
+  });
+
+  it('should not include emqsegs parameter when window._emqsegs is not present', () => {
+    const optionsUrl = {
+      params: { ...unitUrl }
+    };
+
+    const optionsId = {
+      params: { ...unitId }
+    };
+
+    const getWinningBidsStub = sandbox.stub(targeting, 'getWinningBids').returns([bid]);
+    const getAllTargetingDataStub = sandbox.stub(targeting, 'getAllTargeting').returns(allTargeting);
+
+    const url1 = buildVideoUrl(Object.assign(optionsUrl, { bid, adUnit }));
+    const url2 = buildVideoUrl(Object.assign(optionsId, { bid, adUnit }));
+
+    expect(url1).to.not.include('emqsegs');
+    expect(url2).to.not.include('emqsegs');
 
     getWinningBidsStub.restore();
     getAllTargetingDataStub.restore();
