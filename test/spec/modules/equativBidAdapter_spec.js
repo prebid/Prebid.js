@@ -1,6 +1,16 @@
 import { converter, spec } from 'modules/equativBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 
 describe('Equativ bid adapter tests', () => {
+  let sandBox;
+  beforeEach(() => {
+    sandBox = sinon.createSandbox();
+    sandBox.stub(utils, 'logWarn');
+  });
+  afterEach(() => {
+    sandBox.restore();
+  });
+
   const DEFAULT_BID_REQUESTS = [
     {
       adUnitCode: 'eqtv_42',
@@ -102,6 +112,9 @@ describe('Equativ bid adapter tests', () => {
   // };
 
   describe('buildRequests', () => {
+    // const ENDPOINT = 'https://ssb-global.smartadserver.com/api/bid?callerId=169';
+    const ENDPOINT = 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169';
+
     it('should build correct request using ORTB converter', () => {
       const request = spec.buildRequests(
         DEFAULT_BID_REQUESTS,
@@ -114,7 +127,7 @@ describe('Equativ bid adapter tests', () => {
       expect(request).to.deep.equal({
         data: { ...dataFromConverter, id: request.data.id },
         method: 'POST',
-        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+        url: ENDPOINT, // TODO: SADR-6484: temporary URL for testing - change back to real one when done testing
       });
     });
 
@@ -148,6 +161,27 @@ describe('Equativ bid adapter tests', () => {
       expect(videoObj).to.have.property('battr').and.to.deep.equal([13, 14]);
       expect(videoObj).to.have.property('placement').and.to.equal(1);
     });
+
+    it('should warn about missing required properties', () => {
+      // ASSEMBLE
+      const vidReqWithMissingProps = DEFAULT_BID_REQUESTS.map((req) => {
+        if (req.mediaTypes.video) {
+          delete req.mediaTypes.video.mimes;
+          delete req.placement;
+        }
+        return req;
+      })[1]
+      const bidRequests = [
+        { ...vidReqWithMissingProps, params: { siteId: 123 } },
+      ];
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+
+      // ACT
+      spec.buildRequests(bidRequests, bidderRequest);
+
+      // ASSERT
+      expect(utils.logWarn.called).to.equal(true)
+    })
 
     it('should add ext.bidder to imp object when siteId is defined', () => {
       const bidRequests = [

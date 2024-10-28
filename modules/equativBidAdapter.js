@@ -1,7 +1,9 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isFn, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, isFn, logWarn, mergeDeep } from '../src/utils.js';
+
+const LOG_PREFIX = 'Equativ:';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -145,6 +147,13 @@ export const converter = ortbConverter({
       deepSetValue(req, 'dooh.publisher.id', bid.ortb2.dooh.publisher.id || bid.params.networkId);
     } else {
       deepSetValue(req, 'site.publisher.id', bid.params.networkId);
+    }
+
+    if (bid.mediaTypes.video && !bid.mediaTypes.video.mimes) {
+      logWarn(`${LOG_PREFIX} Property "mimes" is missing from request`, bid);
+    }
+    if (bid.mediaTypes.video && !bid.mediaTypes.video.placement) {
+      logWarn(`${LOG_PREFIX} Property "placement" is missing from request`, bid);
     }
 
     return req;
