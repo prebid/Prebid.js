@@ -74,6 +74,7 @@ describe('Missena Adapter', function () {
       topmostLocation: REFERRER,
       canonicalUrl: 'https://canonical',
     },
+    ortb2: { regs: { coppa: 1 } },
   };
 
   const bids = [bid, bidWithoutFloor];

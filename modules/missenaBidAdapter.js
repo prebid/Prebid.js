@@ -94,7 +94,7 @@ function toPayload(bidRequest, bidderRequest) {
   payload.floor_currency = bidFloor?.currency;
   payload.currency = config.getConfig('currency.adServerCurrency');
   payload.schain = bidRequest.schain;
-  payload.coppa = config.getConfig('coppa') === true ? 1 : 0;
+  payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
 
   return {
