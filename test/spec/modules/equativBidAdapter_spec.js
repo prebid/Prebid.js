@@ -1,6 +1,6 @@
 import { BANNER } from 'src/mediaTypes.js';
 import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
-import { spec, converter } from 'modules/equativBidAdapter.js';
+import { converter, spec, storage } from 'modules/equativBidAdapter.js';
 
 describe('Equativ bid adapter tests', () => {
   const DEFAULT_BID_REQUESTS = [
@@ -259,6 +259,56 @@ describe('Equativ bid adapter tests', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0]).to.not.have.property('dt');
     });
+
+    it('should read and send pid as buyeruid', () => {
+      const cookieData = {
+        'eqt_pid': '7789746781'
+      };
+      const getCookieStub = sinon.stub(storage, 'getCookie');
+      getCookieStub.callsFake(cookieName => cookieData[cookieName]);
+
+      const request = spec.buildRequests(
+        DEFAULT_BID_REQUESTS,
+        DEFAULT_BIDDER_REQUEST
+      );
+
+      expect(request.data.user).to.have.property('buyeruid').that.eq(cookieData['eqt_pid']);
+
+      getCookieStub.restore();
+    });
+
+    it('should not send buyeruid', () => {
+      const getCookieStub = sinon.stub(storage, 'getCookie');
+      getCookieStub.callsFake(() => null);
+
+      const request = spec.buildRequests(
+        DEFAULT_BID_REQUESTS,
+        DEFAULT_BIDDER_REQUEST
+      );
+
+      expect(request.data).to.not.have.property('user');
+
+      getCookieStub.restore();
+    });
+
+    it('should pass buyeruid defined in config', () => {
+      const getCookieStub = sinon.stub(storage, 'getCookie');
+      getCookieStub.callsFake(() => undefined);
+
+      const bidRequest = {
+        ...DEFAULT_BIDDER_REQUEST,
+        ortb2: {
+          user: {
+            buyeruid: 'buyeruid-provided-by-publisher'
+          }
+        }
+      };
+      const request = spec.buildRequests([ DEFAULT_BID_REQUESTS[0] ], bidRequest);
+
+      expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
+
+      getCookieStub.restore();
+    });
   });
 
   describe('getBidFloor', () => {
@@ -327,32 +377,91 @@ describe('Equativ bid adapter tests', () => {
     });
   });
 
-  // describe('getUserSyncs', () => {
-  //   it('should return empty array if no pixel sync not enabled', () => {
-  //     const syncs = spec.getUserSyncs({}, RESPONSE_WITH_DSP_PIXELS);
-  //     expect(syncs).to.deep.equal([]);
-  //   });
+  describe('getUserSyncs', () => {
+    let setCookieStub;
 
-  //   it('should return empty array if no pixels available', () => {
-  //     const syncs = spec.getUserSyncs(
-  //       { pixelEnabled: true },
-  //       SAMPLE_RESPONSE
-  //     );
-  //     expect(syncs).to.deep.equal([]);
-  //   });
+    beforeEach(() => setCookieStub = sinon.stub(storage, 'setCookie'));
 
-  //   it('should register dsp pixels', () => {
-  //     const syncs = spec.getUserSyncs(
-  //       { pixelEnabled: true },
-  //       RESPONSE_WITH_DSP_PIXELS
-  //     );
-  //     expect(syncs).to.have.lengthOf(3);
-  //     expect(syncs[1]).to.deep.equal({
-  //       type: 'image',
-  //       url: '2nd-pixel',
-  //     });
-  //   });
-  // });
+    afterEach(() => setCookieStub.restore());
+
+    it('should return empty array if iframe sync not enabled', () => {
+      const syncs = spec.getUserSyncs({}, SAMPLE_RESPONSE);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should retrieve and save user pid', (done) => {
+      const userSyncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        SAMPLE_RESPONSE
+      );
+
+      window.dispatchEvent(new MessageEvent('message', {
+        data: {
+          pid: '7767825890726'
+        },
+        origin: 'https://apps.smartadserver.com'
+      }));
+
+      const exp = new Date();
+      exp.setTime(Date.now() + 31536000000);
+
+      setTimeout(() => {
+        expect(setCookieStub.calledOnce).to.be.true;
+        expect(setCookieStub.calledWith('eqt_pid', '7767825890726', exp.toUTCString())).to.be.true;
+        done();
+      });
+    });
+
+    it('should not save user pid coming from not origin', (done) => {
+      const userSyncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        SAMPLE_RESPONSE
+      );
+
+      window.dispatchEvent(new MessageEvent('message', {
+        data: {
+          pid: '7767825890726'
+        },
+        origin: 'https://another-origin.com'
+      }));
+
+      setTimeout(() => {
+        expect(setCookieStub.notCalled).to.be.true;
+        done();
+      });
+    });
+
+    it('should not save empty pid', (done) => {
+      const userSyncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        SAMPLE_RESPONSE
+      );
+
+      window.dispatchEvent(new MessageEvent('message', {
+        data: {
+          pid: ''
+        },
+        origin: 'https://apps.smartadserver.com'
+      }));
+
+      setTimeout(() => {
+        expect(setCookieStub.notCalled).to.be.true;
+        done();
+      });
+    });
+
+    it('should return array including iframe cookie sync object', () => {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        SAMPLE_RESPONSE
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0]).to.deep.equal({
+        type: 'iframe',
+        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html'
+      });
+    });
+  });
 
   describe('interpretResponse', () => {
     it('should return data returned by ORTB converter', () => {
