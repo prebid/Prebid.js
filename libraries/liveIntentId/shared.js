@@ -89,6 +89,18 @@ export function composeIdObject(value) {
     delete result.lipb.thetradedesk
   }
 
+  if (value.sharethrough) {
+    result.sharethrough = { 'id': value.sharethrough, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.sonobi) {
+    result.sonobi = { 'id': value.sonobi, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.vidazoo) {
+    result.vidazoo = { 'id': value.vidazoo, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
   return result
 }
 
@@ -198,6 +210,42 @@ export const eids = {
     atype: 1,
     getValue: function(data) {
       return data.id;
+    }
+  },
+  'sharethrough': {
+    source: 'sharethrough.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'sonobi': {
+    source: 'liveintent.sonobi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'vidazoo': {
+    source: 'liveintent.vidazoo.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
     }
   }
 }
