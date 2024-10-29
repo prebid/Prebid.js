@@ -64,16 +64,16 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const ortbObj = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
     adgLogger.logInfo('ortbObj', ortbObj);
-    const {imp, ...otherParams} = ortbObj
+    const {imp, ...rest} = ortbObj
     const requests = imp.map((impObj) => {
       const customParams = impObj?.ext?.params;
       const id = getBidIdParameter('id', customParams);
+      const additionalParams = JSON.parse(JSON.stringify(rest));
 
       // hyperIDが有効ではない場合、パラメータから削除する
       if (!impObj?.ext?.novatiqSyncResponse || impObj?.ext?.novatiqSyncResponse !== 1) {
-        adgLogger.logInfo('novatiqSyncResponse !== 1');
-        if (otherParams?.user?.ext?.eids && Array.isArray(otherParams?.user?.ext?.eids)) {
-          otherParams.user.ext.eids = otherParams?.user?.ext?.eids.filter((eid) => eid?.source !== 'novatiq.com');
+        if (additionalParams?.user?.ext?.eids && Array.isArray(additionalParams?.user?.ext?.eids)) {
+          additionalParams.user.ext.eids = additionalParams?.user?.ext?.eids.filter((eid) => eid?.source !== 'novatiq.com');
         }
       }
 
@@ -97,7 +97,7 @@ export const spec = {
         adapterver: ADGENE_PREBID_VERSION,
         ortb: {
           imp: [impObj],
-          ...otherParams
+          ...additionalParams
         }
       }
 
