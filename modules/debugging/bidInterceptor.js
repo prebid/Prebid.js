@@ -182,7 +182,7 @@ Object.assign(BidInterceptor.prototype, {
     };
   },
   defaultAd(bid, bidResponse) {
-    return `<html><head><style>#ad {width: ${bidResponse.width}px;height: ${bidResponse.height}px;background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width}x${bidResponse.height}</div></div></body></html>`;
+    return `<html><head><style>html, body {height: 100%} #ad {width: ${bidResponse.width == null ? '100%' : bidResponse.width + 'px'};height: ${bidResponse.height == null ? '100%' : bidResponse.height + 'px'};background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width ?? bidResponse.wratio}x${bidResponse.height ?? bidResponse.hratio}</div></div></body></html>`;
   },
   /**
    * Match a candidate bid against all registered rules.
