@@ -26,7 +26,7 @@ const HADRON_ID_DEFAULT_URL = 'https://id.hadron.ad.gt/api/v1/hadronid?_it=prebi
 const HADRON_SEGMENT_URL = 'https://prebid-rtd.audigent.workers.dev'; // https://id.hadron.ad.gt/api/v1/rtd';
 const LS_TAM_KEY = 'auHadronId';
 const RTD_LOCAL_NAME = 'auHadronRtd';
-const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 
 /**
  * @param {string} url
@@ -128,7 +128,7 @@ function paramOrDefault(param, defaultVal, arg) {
  * @param {Object} rtd
  * @param {Object} rtdConfig
  */
-function addRealTimeData(bidConfig, rtd, rtdConfig) {
+export function addRealTimeData(bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else {
