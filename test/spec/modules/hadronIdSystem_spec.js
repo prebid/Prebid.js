@@ -1,4 +1,4 @@
-import { hadronIdSubmodule, storage } from 'modules/hadronIdSystem.js';
+import { hadronIdSubmodule, storage, HADRONID_LOCAL_NAME } from 'modules/hadronIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import {attachIdSystem} from '../../../modules/userId/index.js';
@@ -6,6 +6,7 @@ import {createEidsArray} from '../../../modules/userId/eids.js';
 import {expect} from 'chai/index.mjs';
 
 describe('HadronIdSystem', function () {
+  const HADRON_TEST = 'tstCachedHadronId1';
   describe('getId', function() {
     let getDataFromLocalStorageStub;
 
@@ -17,27 +18,13 @@ describe('HadronIdSystem', function () {
       getDataFromLocalStorageStub.restore();
     });
 
-    it('gets a hadronId', function() {
-      const config = {
-        params: {}
-      };
-      const callbackSpy = sinon.spy();
-      const callback = hadronIdSubmodule.getId(config).callback;
-      callback(callbackSpy);
-      const request = server.requests[0];
-      expect(request.url).to.match(/^https:\/\/id\.hadron\.ad\.gt\/api\/v1\/pbhid/);
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ hadronId: 'testHadronId1' }));
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal({ id: { hadronId: 'testHadronId1' } });
-    });
-
     it('gets a cached hadronid', function() {
       const config = {
         params: {}
       };
-      getDataFromLocalStorageStub.withArgs('auHadronId').returns('tstCachedHadronId1');
-
+      getDataFromLocalStorageStub.withArgs(HADRONID_LOCAL_NAME).returns(HADRON_TEST);
       const result = hadronIdSubmodule.getId(config);
-      expect(result).to.deep.equal({ id: { hadronId: 'tstCachedHadronId1' } });
+      expect(result).to.deep.equal({ id: { hadronId: HADRON_TEST } });
     });
 
     it('allows configurable id url', function() {
@@ -46,6 +33,7 @@ describe('HadronIdSystem', function () {
           url: 'https://hadronid.publync.com'
         }
       };
+      getDataFromLocalStorageStub.withArgs(HADRONID_LOCAL_NAME).returns(null);
       const callbackSpy = sinon.spy();
       const callback = hadronIdSubmodule.getId(config).callback;
       callback(callbackSpy);

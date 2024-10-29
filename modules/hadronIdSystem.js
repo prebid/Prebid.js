@@ -19,6 +19,7 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
+export const HADRONID_LOCAL_NAME = 'auHadronId';
 const MODULE_NAME = 'hadronId';
 const LOG_PREFIX = `[${MODULE_NAME}System]`;
 const LS_TAM_KEY = 'auHadronId';
