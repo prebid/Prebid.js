@@ -55,6 +55,7 @@ describe('Equativ bid adapter tests', () => {
           startdelay: 42,
           battr: [13, 14],
           placement: 1,
+          ext: { rewarded: 1 },
         },
       },
       bidder: 'equativ',
@@ -160,6 +161,7 @@ describe('Equativ bid adapter tests', () => {
       expect(videoObj).to.have.property('startdelay').and.to.equal(42);
       expect(videoObj).to.have.property('battr').and.to.deep.equal([13, 14]);
       expect(videoObj).to.have.property('placement').and.to.equal(1);
+      expect(videoObj).to.have.property('ext').and.to.deep.equal({ rewarded: 1 });
     });
 
     it('should warn about missing required properties', () => {

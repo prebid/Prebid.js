@@ -112,6 +112,12 @@ export const converter = ortbConverter({
     imp.secure = Number(window.location.protocol === 'https:');
     imp.tagid = bidRequest.adUnitCode;
 
+    if (bidRequest.mediaTypes.video && !!bidRequest.mediaTypes.video.ext.rewarded) {
+      mergeDeep(imp.video, {
+        ext: { rewarded: bidRequest.mediaTypes.video.ext.rewarded },
+      })  
+    }
+
     if (siteId || pageId || formatId) {
       const bidder = {};
 
