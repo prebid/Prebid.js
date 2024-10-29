@@ -16,7 +16,7 @@ const adgLogger = prefixLog('Adgeneration: ');
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
-const ADGENE_PREBID_VERSION = '1.6.4.dev';
+const ADGENE_PREBID_VERSION = '1.6.4';
 const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid';
 const URL = 'https://d.socdm.com/adgen/prebid';
 
