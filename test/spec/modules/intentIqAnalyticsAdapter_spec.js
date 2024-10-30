@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
-import * as detectBrowserUtils from '../../../libraries/detectBrowserUtils/detectBrowserUtils';
+import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { EVENTS } from 'src/constants.js';
