@@ -1,4 +1,4 @@
-import {getWindowLocation, getWindowSelf, getWindowTop, logError, logInfo} from '../src/utils.js';
+import {logError, logInfo} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
@@ -6,7 +6,8 @@ import {getStorageManager} from '../src/storageManager.js';
 import {config} from '../src/config.js';
 import {EVENTS} from '../src/constants.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
-import {detectBrowser} from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
+import {appendVrrefAndFui, generateVrrefValue} from '../libraries/intentIqUtils/getRefferer.js';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, VERSION} from '../libraries/intentIqConstants/intentIqConstants.js';
 
 const MODULE_NAME = 'iiqAnalytics'
@@ -191,7 +192,8 @@ export function preparePayload(data) {
   readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
-  result[PARAMS_NAMES.referrer] = getReferrer();
+  result[PARAMS_NAMES.referrer] = generateVrrefValue();
+
   result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
@@ -258,32 +260,21 @@ function getDefaultDataObject() {
 }
 
 function constructFullUrl(data) {
-  let report = []
-  data = btoa(JSON.stringify(data))
-  report.push(data)
-  return defaultUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
+  let report = [];
+  data = btoa(JSON.stringify(data));
+  report.push(data);
+
+  let url = defaultUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
     '&mct=1' +
-    ((iiqAnalyticsAnalyticsAdapter.initOptions && iiqAnalyticsAnalyticsAdapter.initOptions.fpid)
+    ((iiqAnalyticsAnalyticsAdapter.initOptions?.fpid)
       ? '&iiqid=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid) : '') +
     '&agid=' + REPORTER_ID +
     '&jsver=' + VERSION +
-    '&vrref=' + getReferrer() +
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report) +
-    '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints
-}
-
-export function getReferrer() {
-  try {
-    if (getWindowSelf() === getWindowTop()) {
-      return encodeURIComponent(getWindowLocation().href);
-    } else {
-      return encodeURIComponent(getWindowTop().location.href);
-    }
-  } catch (error) {
-    logError(`Error accessing location: ${error}`);
-    return '';
-  }
+    '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints;
+  url = appendVrrefAndFui(url);
+  return url;
 }
 
 iiqAnalyticsAnalyticsAdapter.originEnableAnalytics = iiqAnalyticsAnalyticsAdapter.enableAnalytics;
