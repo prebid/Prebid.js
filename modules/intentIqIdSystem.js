@@ -385,7 +385,7 @@ export const intentIqIdSubmodule = {
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
 
     // Add vrref and fui to the URL
-    url = appendVrrefAndFui(url);
+    url = appendVrrefAndFui(url, configParams.domainName);
 
     const storeFirstPartyData = () => {
       partnerData.eidl = runtimeEids?.eids?.length || -1

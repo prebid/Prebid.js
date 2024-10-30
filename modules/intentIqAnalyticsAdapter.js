@@ -7,7 +7,7 @@ import {config} from '../src/config.js';
 import {EVENTS} from '../src/constants.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
-import {appendVrrefAndFui, generateVrrefValue} from '../libraries/intentIqUtils/getRefferer.js';
+import {appendVrrefAndFui, getReferrer} from '../libraries/intentIqUtils/getRefferer.js';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, VERSION} from '../libraries/intentIqConstants/intentIqConstants.js';
 
 const MODULE_NAME = 'iiqAnalytics'
@@ -62,7 +62,8 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl, analyticsT
     dataInLs: null,
     eidl: null,
     lsIdsInitialized: false,
-    manualWinReportEnabled: false
+    manualWinReportEnabled: false,
+    domainName: null
   },
   track({eventType, args}) {
     switch (eventType) {
@@ -115,7 +116,8 @@ function initLsValues() {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
     }
     iiqAnalyticsAnalyticsAdapter.initOptions.browserBlackList = typeof iiqArr[0].params.browserBlackList === 'string' ? iiqArr[0].params.browserBlackList.toLowerCase() : '';
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = iiqArr[0].params.manualWinReportEnabled || false
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = iiqArr[0].params.manualWinReportEnabled || false;
+    iiqAnalyticsAnalyticsAdapter.initOptions.domainName = iiqArr[0].params.domainName || '';
   }
 }
 
@@ -192,8 +194,7 @@ export function preparePayload(data) {
   readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
-  result[PARAMS_NAMES.referrer] = generateVrrefValue();
-
+  result[PARAMS_NAMES.referrer] = getReferrer();
   result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
@@ -273,7 +274,7 @@ function constructFullUrl(data) {
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report) +
     '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints;
-  url = appendVrrefAndFui(url);
+  url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);
   return url;
 }
 
