@@ -1,9 +1,24 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isFn, logWarn, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, isFn, logError, logWarn, mergeDeep } from '../src/utils.js';
 
 const LOG_PREFIX = 'Equativ:';
+
+/**
+ * Evaluates a bid request for validity.  Returns false if the 
+ * request contains a video media type with no properties, true
+ * otherwise.
+ * @param {*} bidReq - A bid request object to evaluate
+ * @returns boolean 
+ */
+function isValid(bidReq){
+  if (bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}') {
+    return false;
+  } else {
+    return true;
+  }
+}
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -21,6 +36,10 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: (bidRequests, bidderRequest) => {
+    if (bidRequests.filter(isValid).length === 0) {
+      logError(`${LOG_PREFIX} No useful bid requests to process. No request will be sent.`, bidRequests);
+      return undefined
+    }
     return {
       data: converter.toORTB({ bidderRequest, bidRequests }),
       method: 'POST',
@@ -156,10 +175,10 @@ export const converter = ortbConverter({
     }
 
     if (bid.mediaTypes.video && !bid.mediaTypes.video.mimes) {
-      logWarn(`${LOG_PREFIX} Property "mimes" is missing from request`, bid);
+      logWarn(`${LOG_PREFIX} Property "mimes" is missing from request`, bid); // TODO: SADR-6484: message OK?  Should it say something else?
     }
     if (bid.mediaTypes.video && !bid.mediaTypes.video.placement) {
-      logWarn(`${LOG_PREFIX} Property "placement" is missing from request`, bid);
+      logWarn(`${LOG_PREFIX} Property "placement" is missing from request`, bid); // TODO: SADR-6484: message OK?  Should it say something else?
     }
 
     return req;

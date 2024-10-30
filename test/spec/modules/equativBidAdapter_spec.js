@@ -5,6 +5,7 @@ describe('Equativ bid adapter tests', () => {
   let sandBox;
   beforeEach(() => {
     sandBox = sinon.createSandbox();
+    sandBox.stub(utils, 'logError');
     sandBox.stub(utils, 'logWarn');
   });
   afterEach(() => {
@@ -132,7 +133,7 @@ describe('Equativ bid adapter tests', () => {
       });
     });
 
-    it('should build a video request properly', () => {
+    it('should build a video request properly under normal circumstances', () => {
       // ASSEMBLE
       const videoRequest = DEFAULT_BID_REQUESTS[1];
       const bidRequests = [
@@ -164,17 +165,18 @@ describe('Equativ bid adapter tests', () => {
       expect(videoObj).to.have.property('ext').and.to.deep.equal({ rewarded: 1 });
     });
 
-    it('should warn about missing required properties', () => {
+    it('should warn about missing required properties for video requests', () => {
       // ASSEMBLE
-      const vidReqWithMissingProps = DEFAULT_BID_REQUESTS.map((req) => {
+      const missingRequiredVideoRequest = DEFAULT_BID_REQUESTS.map((req) => {
         if (req.mediaTypes.video) {
+          // removing required properties
           delete req.mediaTypes.video.mimes;
-          delete req.placement;
+          delete req.mediaTypes.video.placement;
         }
         return req;
       })[1]
       const bidRequests = [
-        { ...vidReqWithMissingProps, params: { siteId: 123 } },
+        { ...missingRequiredVideoRequest, params: { siteId: 123 } },
       ];
       const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
 
@@ -184,6 +186,38 @@ describe('Equativ bid adapter tests', () => {
       // ASSERT
       expect(utils.logWarn.called).to.equal(true)
     })
+
+    it('should not send a video request when it has an empty body and no other impressions with any media types are defined', () => {
+      // ASSEMBLE
+      const emptyVideoRequest = DEFAULT_BID_REQUESTS.map((req) => {
+        if (req.mediaTypes.video) {
+          // simulating 
+          /*
+              pbjs.addAdUnits([{
+                mediaTypes: {
+                  video: {
+                  }
+                },
+                ...
+              }]);
+          */
+          req.mediaTypes.video = {}
+        }
+        return req;
+      })[1] // just grab the video request - that's all we need for this test
+
+      const bidRequests = [
+        { ...emptyVideoRequest, params: { siteId: 123 } },
+      ];
+      const bidderRequest = { ...DEFAULT_BIDDER_REQUEST, bids: bidRequests };
+
+      // ACT
+      const request = spec.buildRequests([], bidderRequest);
+
+      // ASSERT
+      expect(utils.logError.called).to.equal(true)
+      expect(request).to.be.undefined;
+    });
 
     it('should add ext.bidder to imp object when siteId is defined', () => {
       const bidRequests = [
