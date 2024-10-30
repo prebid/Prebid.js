@@ -39,6 +39,7 @@ export const DEFAULT_PROCESSORS = {
       // sets initial imp to bidRequest.ortb2Imp
       priority: 99,
       fn(imp, bidRequest) {
+        imp.secure = imp.secure || 1;
         mergeDeep(imp, bidRequest.ortb2Imp);
       }
     },

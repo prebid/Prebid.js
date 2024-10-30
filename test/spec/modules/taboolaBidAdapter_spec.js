@@ -180,6 +180,7 @@ describe('Taboola Adapter', function () {
       const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
       const expectedData = {
         'imp': [{
+          'secure': 1,
           'id': res.data.imp[0].id,
           'banner': {
             format: [{
