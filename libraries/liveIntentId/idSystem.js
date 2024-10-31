@@ -11,7 +11,7 @@ import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeIdObject, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend } from './shared.js'
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -92,7 +92,11 @@ function initializeLiveConnect(configParams) {
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     publisherId: publisherId,
-    requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
+    requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides),
+    extraAttributes: {
+      ipv4: configParams.ipv4,
+      ipv6: configParams.ipv6
+    }
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url;
@@ -136,8 +140,10 @@ function initializeLiveConnect(configParams) {
   // The second param is the storage object, LS & Cookie manipulation uses PBJS.
   // The third param is the ajax and pixel object, the AJAX and pixel use PBJS.
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
-  if (configParams.emailHash) {
-    liveConnect.push({ hash: configParams.emailHash });
+
+  const sourceEvent = makeSourceEventToSend(configParams)
+  if (sourceEvent != null) {
+    liveConnect.push(sourceEvent);
   }
   return liveConnect;
 }
