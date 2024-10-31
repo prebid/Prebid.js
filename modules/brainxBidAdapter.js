@@ -120,16 +120,15 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-
     let bidResponses = [];
 
     let serverBody;
-    console.log('serverBody-=======', serverResponse);
+    // console.log('serverBody-=======', serverResponse);
     if ((serverBody = serverResponse.body) && serverBody.seatbid && isArray(serverBody.seatbid)) {
       serverBody.seatbid.forEach((seatbidder) => {
         if (seatbidder.bid && isArray(seatbidder.bid)) {
           bidResponses = seatbidder.bid.map((bid) => buildBidResponse(bid, bidRequest.originalBidRequest, serverBody));
-          console.log('bidResponses-=======', bidResponses);
+          // console.log('bidResponses-=======', bidResponses);
         }
       });
     }
