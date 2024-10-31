@@ -38,6 +38,7 @@ var adUnits = [{
     bidder: 'brianx',
     params: {
       pubId: 'F7B53DBC-85C1-4685-9A06-9CF4B6261FA3',
+      endpoint: 'http://adx-engine-gray.tec-do.cn/bid'
     }
   }]
 }];
