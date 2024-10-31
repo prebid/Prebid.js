@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
+import { config } from 'src/config.js';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
@@ -12,6 +14,9 @@ describe('Missena Adapter', function () {
       storageAllowed: true,
     },
   };
+  let sandbox = sinon.sandbox.create();
+  sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
+  sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
 
   const bidId = 'abc';
   const bid = {
@@ -69,6 +74,7 @@ describe('Missena Adapter', function () {
       topmostLocation: REFERRER,
       canonicalUrl: 'https://canonical',
     },
+    ortb2: { regs: { coppa: 1 } },
   };
 
   const bids = [bid, bidWithoutFloor];
@@ -106,6 +112,15 @@ describe('Missena Adapter', function () {
     const request = requests[0];
     const payload = JSON.parse(request.data);
     const payloadNoFloor = JSON.parse(requests[1].data);
+
+    it('should send disabled autoplay', function () {
+      expect(payload.autoplay).to.equal(0);
+    });
+
+    it('should contain coppa', function () {
+      expect(payload.coppa).to.equal(1);
+    });
+    sandbox.restore();
 
     it('should contain uspConsent', function () {
       expect(payload.us_privacy).to.equal('IDO');
