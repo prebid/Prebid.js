@@ -94,7 +94,7 @@ function onAuctionEndEvent (data, config, t) {
  */
 export function getContext () {
   if (!qortexSessionInfo.currentSiteContext) {
-    const pageUrlObject = { pageUrl: qortexSessionInfo.indexData?.pageUrl ?? '' }
+    const pageUrlObject = { pageUrl: document.location.href ?? '' }
     logMessage('Requesting new context data');
     return new Promise((resolve, reject) => {
       const callbacks = {
@@ -144,26 +144,22 @@ export function getGroupConfig () {
  * @returns {Promise}
  */
 export function sendAnalyticsEvent(eventType, subType, data) {
-  if (qortexSessionInfo.analyticsUrl !== null) {
-    if (shouldSendAnalytics(data)) {
-      const analtyicsEventObject = generateAnalyticsEventObject(eventType, subType, data)
-      logMessage('Sending qortex analytics event');
-      return new Promise((resolve, reject) => {
-        const callbacks = {
-          success() {
-            resolve();
-          },
-          error(e, x) {
-            reject(new Error('Returned error status code: ' + x.status));
-          }
+  if (shouldSendAnalytics(data)) {
+    const analtyicsEventObject = generateAnalyticsEventObject(eventType, subType, data)
+    logMessage('Sending qortex analytics event');
+    return new Promise((resolve, reject) => {
+      const callbacks = {
+        success() {
+          resolve();
+        },
+        error(e, x) {
+          reject(new Error('Returned error status code: ' + x.status));
         }
-        ajax(qortexSessionInfo.analyticsUrl, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
-      })
-    } else {
-      return new Promise((resolve, reject) => reject(new Error('Current request did not meet analytics percentage threshold, cancelling sending event')));
-    }
+      }
+      ajax(qortexSessionInfo.analyticsUrl, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
+    })
   } else {
-    return new Promise((resolve, reject) => reject(new Error('Analytics host not initialized')));
+    return new Promise((resolve, reject) => reject(new Error('Current request did not meet analytics percentage threshold, cancelling sending event')));
   }
 }
 
@@ -267,20 +263,32 @@ export function loadScriptTag(config) {
 
 export function initializeBidEnrichment() {
   if (shouldAllowBidEnrichment()) {
-    getContext()
-      .then(contextData => {
-        if (qortexSessionInfo.pageAnalysisData.contextRetrieved) {
-          logMessage('Contextual record Received from Qortex API')
-          setContextData(contextData)
-        } else {
-          logWarn('Contexual record is not yet complete at this time')
-        }
-      })
-      .catch((e) => {
-        logWarn('Returned error status code: ' + e.message)
-      })
+    requestContextData()
   }
+  addEventListener('message', windowPostMessageReceived);
 }
+
+/**
+ * Call Qortex api for available contextual information about current environment
+ */
+export function requestContextData() {
+  getContext()
+    .then(contextData => {
+      if (qortexSessionInfo.pageAnalysisData.contextRetrieved) {
+        logMessage('Contextual record Received from Qortex API')
+        setContextData(contextData)
+      } else {
+        logWarn('Contexual record is not yet complete at this time')
+      }
+    })
+    .catch((e) => {
+      logWarn('Returned error status code: ' + e.message)
+      if (e.message == 404) {
+        postBidEnrichmentMessage('NO-CONTEXT')
+      }
+    })
+}
+
 /**
  * Helper function to set initial values when they are obtained by init
  * @param {Object} config module config obtained during init
@@ -368,6 +376,23 @@ function shouldAllowBidEnrichment() {
     return false;
   }
   return true
+}
+
+function postBidEnrichmentMessage(msg) {
+  window.postMessage({
+    target: 'CX-BID-ENRICH',
+    message: msg
+  }, window.location.protocol + '//' + window.location.host);
+  logMessage('Message post :: Qortex contextuality has been not been indexed.')
+}
+
+export function windowPostMessageReceived(evt) {
+  const data = evt.data;
+  if (typeof data.target !== 'undefined' && data.target === 'QORTEX-PREBIDJS-RTD-MODULE') {
+    if (data.message === 'CX-BID-ENRICH-INITIALIZED') {
+      requestContextData()
+    }
+  }
 }
 
 export const qortexSubmodule = {
