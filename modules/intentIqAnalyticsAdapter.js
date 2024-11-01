@@ -288,4 +288,8 @@ adapterManager.registerAnalyticsAdapter({
   code: MODULE_NAME
 });
 
+// for tests
+iiqAnalyticsAnalyticsAdapter.constructRequestUrl = function(data) {
+  return constructFullUrl(data);
+};
 export default iiqAnalyticsAnalyticsAdapter;

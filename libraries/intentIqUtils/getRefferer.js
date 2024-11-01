@@ -30,8 +30,8 @@ export function appendVrrefAndFui(url, domainName) {
   if (fullUrl) {
     return (url += '&vrref=' + getRelevantRefferer(domainName, fullUrl));
   }
-  url += '&fui=1';
-  if (domainName) url += '&vrref=' + encodeURIComponent(domainName);
+  url += '&fui=1'; // Full Url Issue
+  url += '&vrref=' + encodeURIComponent(domainName || '');
   return url;
 }
 
@@ -58,6 +58,6 @@ export function isDomainIncluded(fullUrl, domainName) {
     return fullUrl.includes(domainName);
   } catch (error) {
     logError(`Invalid URL provided: ${error}`);
-    return '';
+    return false;
   }
 }

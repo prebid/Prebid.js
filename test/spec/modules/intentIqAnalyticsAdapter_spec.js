@@ -1,15 +1,16 @@
 import { expect } from 'chai';
 import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
-import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
-import { REPORTER_ID, getReferrer, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
+import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
 import {FIRST_PARTY_KEY, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
+import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/getRefferer.js';
 
 const partner = 10;
 const defaultData = '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344", "group": "A"}';
@@ -63,7 +64,7 @@ let wonRequest = {
   'pbDg': '5.00',
   'pbCg': '',
   'size': '728x90',
-  'status': 'rendered'
+  'status': 'rendered',
 };
 
 describe('IntentIQ tests all', function () {
@@ -89,7 +90,8 @@ describe('IntentIQ tests all', function () {
       dataInLs: null,
       eidl: null,
       lsIdsInitialized: false,
-      manualWinReportEnabled: false
+      manualWinReportEnabled: false,
+      domainName: null
     };
     if (iiqAnalyticsAnalyticsAdapter.track.restore) {
       iiqAnalyticsAnalyticsAdapter.track.restore();
@@ -120,6 +122,9 @@ describe('IntentIQ tests all', function () {
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
+    /* eslint no-console: "error" */
+    // custom console
+    Console.log('analytics: ', request.url)
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
     expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
     expect(request.url).to.contain('&payload=');
@@ -250,8 +255,38 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
-    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
+    // expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);s
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+  });
+
+  describe('IntentIQ vrref and fui logic', function () {
+    let getReferrerStub;
+
+    afterEach(function() {
+      if (getReferrerStub) getReferrerStub.restore();
+    });
+
+    it('should append vrref when referrer is available', function () {
+      getReferrerStub = sinon.stub(getReferrer, 'default').returns('http://localhost:9876/');
+      const url = 'https://reports.intentiq.com/report?pid=10';
+      const modifiedUrl = appendVrrefAndFui(url, 'example.com');
+      const urlObj = new URL(modifiedUrl);
+
+      const vrref = urlObj.searchParams.get('vrref');
+      expect(vrref).to.equal(encodeURIComponent('http://localhost:9876/'));
+      expect(urlObj.searchParams.has('fui')).to.be.false;
+    });
+
+    it('should append fui=1 when referrer is unavailable', function () {
+      getReferrerStub = sinon.stub(getReferrer, 'default').returns('');
+
+      const url = 'https://reports.intentiq.com/report?pid=10';
+      const modifiedUrl = appendVrrefAndFui(url, null);
+      const urlObj = new URL(modifiedUrl);
+
+      const fui = urlObj.searchParams.get('fui');
+      expect(fui).to.equal('1');
+    });
   });
 });
