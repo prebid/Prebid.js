@@ -676,21 +676,32 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * Hook is executed before adapters, but after consentManagement. Consent data is requied because
  * this module requires GDPR consent with Purpose #1 to save data locally.
  * The two main actions handled by the hook are:
- * 1. check gdpr consentData and handle submodule initialization.
- * 2. append user id data (loaded from cookied/html or from the getId method) to bids to be accessed in adapters.
+ * 1. check gdpr consentData.
+ * 2. handle submodule initialization.
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
+export const initUserIdHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
   GreedyPromise.race([
     getIds().catch(() => null),
     delay(auctionDelay)
   ]).then(() => {
-    addIdData(reqBidsConfigObj);
-    uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });
+});
+
+/**
+ * Hook is executed before adapters, but after initUserIdHook.
+ * Append user id data (loaded from cookies/html or from the getId method) to bids to be accessed in adapters.
+ * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
+ * @param {function} fn required; The next function in the chain, used by hook.js
+ */
+export const addUserIdHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
+  addIdData(reqBidsConfigObj);
+  uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
+  // calling fn allows prebid to continue processing
+  fn.call(this, reqBidsConfigObj);
 });
 
 /**
@@ -1085,8 +1096,10 @@ function updateEIDConfig(submodules) {
 function updateSubmodules() {
   updateEIDConfig(submoduleRegistry);
   const configs = getValidSubmoduleConfigs(configRegistry);
+  if (!startAuction.getHooks({type: 'before', hook: addUserIdHook}).length) {
+    startAuction.before(addUserIdHook, 100); // use lower priority than initUserIdHook
+  }
   if (!configs.length) {
-    addUserIdHook();
     return;
   }
   // do this to avoid reprocessing submodules
@@ -1111,17 +1124,13 @@ function updateSubmodules() {
     .forEach((sm) => submodules.push(sm));
 
   if (submodules.length) {
-    addUserIdHook();
+    if (!addedUserIdHook) {
+      startAuction.before(initUserIdHook, 101); // use higher priority than dataController / rtd
+      adapterManager.callDataDeletionRequest.before(requestDataDeletion);
+      coreGetPPID.after((next) => next(getPPID()));
+      addedUserIdHook = true;
+    }
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
-  }
-}
-
-function addUserIdHook() {
-  if (!addedUserIdHook) {
-    startAuction.before(startAuctionHook, 100); // use higher priority than dataController / rtd
-    adapterManager.callDataDeletionRequest.before(requestDataDeletion);
-    coreGetPPID.after((next) => next(getPPID()));
-    addedUserIdHook = true;
   }
 }
 
