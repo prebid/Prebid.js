@@ -1086,6 +1086,7 @@ function updateSubmodules() {
   updateEIDConfig(submoduleRegistry);
   const configs = getValidSubmoduleConfigs(configRegistry);
   if (!configs.length) {
+    addUserIdHook();
     return;
   }
   // do this to avoid reprocessing submodules
@@ -1110,13 +1111,17 @@ function updateSubmodules() {
     .forEach((sm) => submodules.push(sm));
 
   if (submodules.length) {
-    if (!addedUserIdHook) {
-      startAuction.before(startAuctionHook, 100) // use higher priority than dataController / rtd
-      adapterManager.callDataDeletionRequest.before(requestDataDeletion);
-      coreGetPPID.after((next) => next(getPPID()));
-      addedUserIdHook = true;
-    }
+    addUserIdHook();
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
+  }
+}
+
+function addUserIdHook() {
+  if (!addedUserIdHook) {
+    startAuction.before(startAuctionHook, 100); // use higher priority than dataController / rtd
+    adapterManager.callDataDeletionRequest.before(requestDataDeletion);
+    coreGetPPID.after((next) => next(getPPID()));
+    addedUserIdHook = true;
   }
 }
 
