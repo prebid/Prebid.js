@@ -369,6 +369,21 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should include ip4,ip6,userAgent if it\'s present', function(done) {
+    liveIntentIdSubmodule.getId({ params: {
+      ...defaultConfigParams,
+      ipv4: 'foov4',
+      ipv6: 'foov6',
+      userAgent: 'boo'
+    }});
+    setTimeout(() => {
+      let request = rpRequests()[0];
+      expect(request.url).to.match(/^https:\/\/rp\.liadm\.com\/j?.*pip=.*&pip6=.*$/)
+      expect(request.requestHeaders['X-LI-Provided-User-Agent']).to.be.eq('boo')
+      done();
+    }, 300);
+  });
+
   it('should send an error when the cookie jar throws an unexpected error', function() {
     getCookieStub.throws('CookieError', 'A message');
     liveIntentIdSubmodule.getId({ params: defaultConfigParams });

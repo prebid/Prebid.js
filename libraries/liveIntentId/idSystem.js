@@ -23,7 +23,7 @@ const EVENTS_TOPIC = 'pre_lips';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const calls = {
-  ajaxGet: (url, onSuccess, onError, timeout) => {
+  ajaxGet: (url, onSuccess, onError, timeout, headers) => {
     ajaxBuilder(timeout)(
       url,
       {
@@ -33,7 +33,8 @@ const calls = {
       undefined,
       {
         method: 'GET',
-        withCredentials: true
+        withCredentials: true,
+        customHeaders: headers
       }
     )
   },
