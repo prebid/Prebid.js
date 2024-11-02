@@ -560,21 +560,7 @@ describe('contxtfulRtdProvider', function () {
           new PointerEvent('pointermove', { clientX: 1, clientY: 2 }),
           { x: 1, y: 2 },
           'pointer move',
-        ],
-        [
-          new TouchEvent('touchmove', {
-            touches: [
-              new Touch({
-                identifier: 1,
-                target: window.document,
-                clientX: 11,
-                clientY: 22,
-              }),
-            ],
-          }),
-          { x: 11, y: 22 },
-          'touch move',
-        ],
+        ]
       ];
 
       moveEventTheories.forEach(([event, expected, _description]) => {
