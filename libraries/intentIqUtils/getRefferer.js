@@ -42,9 +42,10 @@ export function appendVrrefAndFui(url, domainName) {
  * @return {string} The relevant referrer
  */
 export function getRelevantRefferer(domainName, fullUrl) {
-  return encodeURIComponent(
-    domainName && isDomainIncluded(fullUrl, domainName) ? fullUrl : domainName || fullUrl
-  );
+  if (domainName && isDomainIncluded(fullUrl, domainName)) {
+    return fullUrl;
+  }
+  return domainName ? encodeURIComponent(domainName) : fullUrl;
 }
 
 /**

@@ -117,16 +117,16 @@ describe('IntentIQ tests all', function () {
 
   it('IIQ Analytical Adapter bid win report', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876/'});
+    const expectedVrref = encodeURIComponent(getWindowLocationStub().href);
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
-    /* eslint no-console: "error" */
-    // custom console
-    Console.log('analytics: ', request.url)
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
+    expect(request.url).to.contain(`&jsver=${version}`);
+    expect(request.url).to.contain(`&vrref=${expectedVrref}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
@@ -137,13 +137,15 @@ describe('IntentIQ tests all', function () {
 
   it('should handle BID_WON event with group configuration from local storage', function () {
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+    const expectedVrref = encodeURIComponent('http://localhost:9876/');
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
+    expect(request.url).to.contain(`&jsver=${version}`);
+    expect(request.url).to.contain(`&vrref=${expectedVrref}`);
     expect(request.url).to.contain('iiqid=testpcid');
   });
 
@@ -158,9 +160,11 @@ describe('IntentIQ tests all', function () {
     const dataToSend = preparePayload(wonRequest);
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
-    expect(request.url).to.equal(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}&uh=`
+    const expectedUrl = appendVrrefAndFui(
+      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&payload=${payload}&uh=`,
+      iiqAnalyticsAnalyticsAdapter.initOptions.domainName
     );
+    expect(request.url).to.equal(expectedUrl);
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
 
@@ -255,38 +259,60 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
-    // expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);s
+    expect(request.url).to.contain(`&jsver=${version}`);
+    expect(request.url).to.contain(`&vrref=${encodeURIComponent('http://localhost:9876/')}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
 
-  describe('IntentIQ vrref and fui logic', function () {
-    let getReferrerStub;
+  const testCasesVrref = [
+    {
+      description: 'domainName matches window.top.location.href',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: 'http://example.com/page' } },
+      getWindowLocation: { href: 'http://example.com/page' },
+      domainName: 'example.com',
+      expectedVrref: encodeURIComponent('http://example.com/page'),
+      shouldContainFui: false
+    },
+    {
+      description: 'domainName does not match window.top.location.href',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: 'http://anotherdomain.com/page' } },
+      getWindowLocation: { href: 'http://anotherdomain.com/page' },
+      domainName: 'example.com',
+      expectedVrref: encodeURIComponent('example.com'),
+      shouldContainFui: false
+    },
+    {
+      description: 'domainName is missing, only fui=1 is returned',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: '' } },
+      getWindowLocation: { href: '' },
+      domainName: null,
+      expectedVrref: '',
+      shouldContainFui: true
+    }
+  ];
 
-    afterEach(function() {
-      if (getReferrerStub) getReferrerStub.restore();
-    });
+  testCasesVrref.forEach(({ description, getWindowSelf, getWindowTop, getWindowLocation, domainName, expectedVrref, shouldContainFui }) => {
+    it(`should append correct vrref when ${description}`, function () {
+      getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns(getWindowSelf);
+      getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns(getWindowTop);
+      getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns(getWindowLocation);
 
-    it('should append vrref when referrer is available', function () {
-      getReferrerStub = sinon.stub(getReferrer, 'default').returns('http://localhost:9876/');
       const url = 'https://reports.intentiq.com/report?pid=10';
-      const modifiedUrl = appendVrrefAndFui(url, 'example.com');
+      const modifiedUrl = appendVrrefAndFui(url, domainName);
       const urlObj = new URL(modifiedUrl);
 
-      const vrref = urlObj.searchParams.get('vrref');
-      expect(vrref).to.equal(encodeURIComponent('http://localhost:9876/'));
-      expect(urlObj.searchParams.has('fui')).to.be.false;
-    });
-
-    it('should append fui=1 when referrer is unavailable', function () {
-      getReferrerStub = sinon.stub(getReferrer, 'default').returns('');
-
-      const url = 'https://reports.intentiq.com/report?pid=10';
-      const modifiedUrl = appendVrrefAndFui(url, null);
-      const urlObj = new URL(modifiedUrl);
-
+      const vrref = encodeURIComponent(urlObj.searchParams.get('vrref') || '');
       const fui = urlObj.searchParams.get('fui');
-      expect(fui).to.equal('1');
+
+      expect(vrref).to.equal(expectedVrref);
+      expect(urlObj.searchParams.has('fui')).to.equal(shouldContainFui);
+      if (shouldContainFui) {
+        expect(fui).to.equal('1');
+      }
     });
   });
 });
