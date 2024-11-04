@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { createNativeRequest, createBannerRequest, createVideoRequest, parseNative } from '../libraries/braveUtils/index.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
