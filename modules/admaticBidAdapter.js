@@ -4,34 +4,13 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
-
-export const OPENRTB = {
-  N: {
-    IMAGE_TYPE: {
-      ICON: 1,
-      MAIN: 3,
-    },
-    ASSET_ID: {
-      TITLE: 1,
-      IMAGE: 2,
-      ICON: 3,
-      BODY: 4,
-      SPONSORED: 5,
-      CTA: 6
-    },
-    DATA_ASSET_TYPE: {
-      SPONSORED: 1,
-      DESC: 2,
-      CTA_TEXT: 12,
-    },
-  }
-};
 
 let SYNC_URL = '';
 const BIDDER_CODE = 'admatic';
@@ -41,8 +20,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 1281,
   aliases: [
+    {code: 'admaticde', gvlid: 1281},
     {code: 'pixad', gvlid: 1281},
-    {code: 'monetixads', gvlid: 1281}
+    {code: 'monetixads', gvlid: 1281},
+    {code: 'netaddiction', gvlid: 1281}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -144,11 +125,17 @@ export const spec = {
 
     if (payload) {
       switch (bidderName) {
+        case 'netaddiction':
+          SYNC_URL = 'https://static.cdn.netaddiction.tech/netaddiction/sync.html';
+          break;
         case 'monetixads':
-          SYNC_URL = 'https://static.cdn.monetixads.com/sync.html';
+          SYNC_URL = 'https://static.cdn.monetixads.com/monetixads/sync.html';
           break;
         case 'pixad':
           SYNC_URL = 'https://static.cdn.pixad.com.tr/sync.html';
+          break;
+        case 'admaticde':
+          SYNC_URL = 'https://static.cdn.admatic.de/admaticde/sync.html';
           break;
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
@@ -406,45 +393,6 @@ function concatSizes(bid) {
         return acc;
       }, []);
   }
-}
-
-function interpretNativeAd(adm) {
-  const native = JSON.parse(adm).native;
-  const result = {
-    clickUrl: encodeURI(native.link.url),
-    impressionTrackers: native.imptrackers
-  };
-  native.assets.forEach(asset => {
-    switch (asset.id) {
-      case OPENRTB.N.ASSET_ID.TITLE:
-        result.title = asset.title.text;
-        break;
-      case OPENRTB.N.ASSET_ID.IMAGE:
-        result.image = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.N.ASSET_ID.ICON:
-        result.icon = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.N.ASSET_ID.BODY:
-        result.body = asset.data.value;
-        break;
-      case OPENRTB.N.ASSET_ID.SPONSORED:
-        result.sponsoredBy = asset.data.value;
-        break;
-      case OPENRTB.N.ASSET_ID.CTA:
-        result.cta = asset.data.value;
-        break;
-    }
-  });
-  return result;
 }
 
 function _validateId(id) {
