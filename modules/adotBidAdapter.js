@@ -25,6 +25,37 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
  * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp
  */
 
+/**
+ * @typedef {Object} OpenRTBRequest
+ * @property {string} id - Unique request ID
+ * @property {Array<Imp>} imp - List of impression objects
+ * @property {Site} site - Site information
+ * @property {Device} device - Device information
+ * @property {User} user - User information
+ * @property {object} regs - Regulatory data, including GDPR and COPPA
+ * @property {object} ext - Additional extensions, such as custom data for the bid request
+ * @property {number} at - Auction type, typically first-price or second-price
+ */
+
+/**
+ * @typedef {Object} OpenRTBBid
+ * @property {string} impid - ID of the impression this bid relates to
+ * @property {number} price - Bid price for the impression
+ * @property {string} adid - Ad ID for the bid
+ * @property {number} [crid] - Creative ID, if available
+ * @property {string} [dealid] - Deal ID if the bid is part of a private marketplace deal
+ * @property {object} [ext] - Additional bid-specific extensions, such as media type
+ * @property {string} [adm] - Ad markup if it’s directly included in the bid response
+ * @property {string} [nurl] - Notification URL to be called when the bid wins
+ */
+
+/**
+ * @typedef {Object} OpenRTBBidResponse
+ * @property {string} id - ID of the bid response
+ * @property {Array<{bid: Array<OpenRTBBid>}>} seatbid - Array of seat bids, each containing a list of bids
+ * @property {string} cur - Currency in which bid amounts are expressed
+ */
+
 const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
 const GVLID = 272;
