@@ -55,7 +55,7 @@ function extractUserSyncUrls(syncOptions, pixels) {
 }
 
 function isSecure(bid) {
-  return deepAccess(bid, 'params.bidOverride.imp.secure') || deepAccess(bid, 'ortb2Imp.secure') || 1;
+  return deepAccess(bid, 'params.bidOverride.imp.secure') ?? deepAccess(bid, 'ortb2Imp.secure') ?? 1;
 };
 
 function getMediaType(bid) {

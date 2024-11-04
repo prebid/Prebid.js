@@ -150,7 +150,7 @@ function getSupportedEids(bid) {
 }
 
 function isSecure(bid) {
-  return deepAccess(bid, 'params.bidOverride.imp.secure') || bid.ortb2Imp?.secure || 1;
+  return deepAccess(bid, 'params.bidOverride.imp.secure') ?? bid.ortb2Imp?.secure ?? 1;
 };
 
 function getPubIdMode(bid) {

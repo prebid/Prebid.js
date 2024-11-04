@@ -106,7 +106,7 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
 
     imp.tagid = bidRequest.adUnitCode;
-    imp.secure = bidRequest.ortb2Imp?.secure || 1;
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     return imp;
   },
 

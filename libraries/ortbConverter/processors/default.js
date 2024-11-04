@@ -39,7 +39,6 @@ export const DEFAULT_PROCESSORS = {
       // sets initial imp to bidRequest.ortb2Imp
       priority: 99,
       fn(imp, bidRequest) {
-        imp.secure = imp.secure || 1;
         mergeDeep(imp, bidRequest.ortb2Imp);
       }
     },
@@ -61,6 +60,12 @@ export const DEFAULT_PROCESSORS = {
         if (!pbadslot || typeof pbadslot !== 'string') {
           delete imp.ext?.data?.pbadslot;
         }
+      }
+    },
+    secure: {
+      // should set imp.secure to 1 unless publisher has set it
+      fn(imp, bidRequest) {
+        imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
       }
     }
   },

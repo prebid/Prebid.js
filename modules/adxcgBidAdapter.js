@@ -122,7 +122,7 @@ const converter = ortbConverter({
       };
     }
 
-    imp.secure = bidRequest.ortb2Imp?.secure || 1;
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
 
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;

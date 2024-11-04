@@ -119,7 +119,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
     }
     let imp = deepClone(DEFAULT['OpenRTBBidRequestImp']);
     imp.id = bid.bidId;
-    imp.secure = bid.ortb2Imp?.secure || 1;
+    imp.secure = bid.ortb2Imp?.secure ?? 1;
     imp.tagid = bid.adUnitCode;
     imp.ext = {
       rawdata: bid
