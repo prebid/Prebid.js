@@ -6,6 +6,7 @@ import {
   resetUserSync,
   classifiedAsVideo,
   resetRubiConf,
+  resetImpIdMap,
   converter
 } from 'modules/rubiconBidAdapter.js';
 import {config} from 'src/config.js';
@@ -485,6 +486,7 @@ describe('the rubicon adapter', function () {
     utils.logError.restore();
     config.resetConfig();
     resetRubiConf();
+    resetImpIdMap();
     delete $$PREBID_GLOBAL$$.installedModules;
   });
 
@@ -3060,6 +3062,21 @@ describe('the rubicon adapter', function () {
               expect(other).to.be.empty;
             });
           });
+
+          describe('with duplicate adUnitCodes', () => {
+            it('should increment PBS request imp[].id starting at 2', () => {
+              const nativeBidderRequest = addNativeToBidRequest(bidderRequest, {twin: true});
+              const request = converter.toORTB({bidderRequest: nativeBidderRequest, bidRequests: nativeBidderRequest.bids});
+              for (let i = 0; i < nativeBidderRequest.bids.length; i++) {
+                var adUnitCode = nativeBidderRequest.bids[i].adUnitCode;
+                if (i === 0) {
+                  expect(request.imp[i].id).to.equal(adUnitCode);
+                } else {
+                  expect(request.imp[i].id).to.equal(adUnitCode + (i + 1));
+                }
+              }
+            });
+          });
         });
       }
     });
@@ -3997,7 +4014,7 @@ describe('the rubicon adapter', function () {
             let bids = spec.interpretResponse({body: response}, {data: request});
             expect(bids[0].width).to.equal(0);
             expect(bids[0].height).to.equal(0);
-          })
+          });
         });
       }
 
@@ -4545,7 +4562,7 @@ describe('the rubicon adapter', function () {
   });
 });
 
-function addNativeToBidRequest(bidderRequest) {
+function addNativeToBidRequest(bidderRequest, options = {twin: false}) {
   const nativeOrtbRequest = {
     assets: [{
       id: 0,
@@ -4574,27 +4591,30 @@ function addNativeToBidRequest(bidderRequest) {
   bidderRequest.refererInfo = {
     page: 'localhost'
   }
-  bidderRequest.bids[0] = {
-    bidder: 'rubicon',
-    params: {
-      accountId: '14062',
-      siteId: '70608',
-      zoneId: '335918',
-    },
-    adUnitCode: '/19968336/header-bid-tag-0',
-    code: 'div-1',
-    bidId: '2ffb201a808da7',
-    bidderRequestId: '178e34bad3658f',
-    auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-    transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
-    mediaTypes: {
-      native: {
-        ortb: {
-          ...nativeOrtbRequest
+  const numBids = !options.twin ? 1 : 2;
+  for (let i = 0; i < numBids; i++) {
+    bidderRequest.bids[i] = {
+      bidder: 'rubicon',
+      params: {
+        accountId: '14062',
+        siteId: '70608',
+        zoneId: '335918',
+      },
+      adUnitCode: '/19968336/header-bid-tag-0',
+      code: 'div-1',
+      bidId: '2ffb201a808da7',
+      bidderRequestId: '178e34bad3658f',
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+      mediaTypes: {
+        native: {
+          ortb: {
+            ...nativeOrtbRequest
+          }
         }
-      }
-    },
-    nativeOrtbRequest
+      },
+      nativeOrtbRequest
+    }
   }
   return bidderRequest;
 }
