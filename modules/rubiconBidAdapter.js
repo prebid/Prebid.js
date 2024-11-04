@@ -706,7 +706,7 @@ export const spec = {
         }
 
         if (ad.emulated_format) {
-          bid.meta.mediaType = ad.emulated_format
+          bid.meta.mediaType = ad.emulated_format;
         }
 
         if (ad.creative_type === VIDEO) {

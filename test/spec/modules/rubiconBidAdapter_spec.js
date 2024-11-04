@@ -3830,7 +3830,7 @@ describe('the rubicon adapter', function () {
           });
           expect(bids[0].meta.mediaType).to.equal('banner');
           expect(bids[1].meta.mediaType).to.equal('video');
-        })
+        });
 
         describe('singleRequest enabled', function () {
           it('handles bidRequest of type Array and returns associated adUnits', function () {
