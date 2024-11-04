@@ -3,6 +3,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {ortbConverter as OrtbConverter} from '../libraries/ortbConverter/converter.js';
 import {Renderer} from '../src/Renderer.js';
+import {deepAccess, deepSetValue} from '../src/utils.js';
+import {config} from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -10,6 +12,8 @@ import {Renderer} from '../src/Renderer.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/auction.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'adverxo';
@@ -26,6 +30,11 @@ const ORTB_MTYPES = {
   4: NATIVE
 };
 
+const USYNC_TYPES = {
+  IFRAME: 'iframe',
+  REDIRECT: 'image'
+};
+
 const DEFAULT_CURRENCY = 'USD';
 
 const ortbConverter = OrtbConverter({
@@ -38,6 +47,12 @@ const ortbConverter = OrtbConverter({
 
     utils.deepSetValue(request, 'device.ip', 'caller');
     utils.deepSetValue(request, 'ext.avx_add_vast_url', 1);
+
+    const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+
+    if (eids && eids.length) {
+      deepSetValue(request, 'user.ext.eids', eids);
+    }
 
     return request;
   },
@@ -80,6 +95,32 @@ const ortbConverter = OrtbConverter({
     return result;
   }
 });
+
+const userSyncUtils = {
+  buildUsyncParams: function (gdprConsent, uspConsent, gppConsent) {
+    const params = [];
+
+    if (gdprConsent) {
+      params.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+      params.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+    }
+
+    if (config.getConfig('coppa') === true) {
+      params.push('coppa=1');
+    }
+
+    if (uspConsent) {
+      params.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      params.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+      params.push('gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(',')));
+    }
+
+    return params.length ? params.join('&') : '';
+  }
+};
 
 const videoUtils = {
   createOutstreamVideoRenderer: function (bid) {
@@ -247,6 +288,58 @@ export const spec = {
 
       return bid;
     });
+  },
+
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} responses List of server's responses.
+   * @param {*} gdprConsent
+   * @param {*} uspConsent
+   * @param {*} gppConsent
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
+    if (!responses || responses.length === 0 || (!syncOptions.pixelEnabled && !syncOptions.iframeEnabled)) {
+      return [];
+    }
+
+    const privacyParams = userSyncUtils.buildUsyncParams(gdprConsent, uspConsent, gppConsent);
+    const syncType = syncOptions.iframeEnabled ? USYNC_TYPES.IFRAME : USYNC_TYPES.REDIRECT;
+
+    const result = [];
+
+    for (const response of responses) {
+      const syncUrls = response.body?.ext?.avx_usync;
+
+      if (!syncUrls || syncUrls.length === 0) {
+        continue;
+      }
+
+      for (const url of syncUrls) {
+        let finalUrl = url;
+
+        if (!finalUrl.includes('?')) {
+          finalUrl += '?';
+        } else {
+          finalUrl += '&';
+        }
+
+        finalUrl += 'type=' + syncType;
+
+        if (privacyParams.length !== 0) {
+          finalUrl += `&${privacyParams}`;
+        }
+
+        result.push({
+          type: syncType,
+          url: finalUrl
+        });
+      }
+    }
+
+    return result;
   }
 }
 

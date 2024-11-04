@@ -19,6 +19,13 @@ describe('Adverxo Bid Adapter', () => {
       bidId: 'bid-banner',
       bidder: 'adverxo',
       adUnitCode: 'adunit-code',
+      userIdAsEids: [{
+        'source': 'pubcid.org',
+        'uids': [{
+          'atype': 1,
+          'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+        }]
+      }],
       mediaTypes: {banner: {sizes: [[300, 250]]}},
       params: {
         host: 'bid.example.com',
@@ -204,6 +211,13 @@ describe('Adverxo Bid Adapter', () => {
   });
 
   describe('buildRequests', () => {
+    it('should add eids information to the request', function () {
+      const request = spec.buildRequests(bannerBidRequests, bannerBidderRequest)[0];
+
+      expect(request.data.user.ext.eids).to.exist;
+      expect(request.data.user.ext.eids).to.deep.equal(bannerBidRequests[0].userIdAsEids);
+    });
+
     it('should build post request for banner', () => {
       const request = spec.buildRequests(bannerBidRequests, bannerBidderRequest)[0];
 
@@ -557,5 +571,108 @@ describe('Adverxo Bid Adapter', () => {
         expect(bids).to.deep.equal(expectedBids);
       });
     }
+  });
+
+  describe('getUserSyncs', () => {
+    const exampleUrl = 'https://example.com/usync?id=5';
+    const iframeConfig = {iframeEnabled: true};
+
+    const responses = [{
+      body: {ext: {avx_usync: [exampleUrl]}}
+    }];
+
+    const responseWithoutQueryString = [{
+      body: {ext: {avx_usync: ['https://example.com/usync/sf/5']}}
+    }];
+
+    it('should not return empty list if not allowed', function () {
+      expect(spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
+      }, responses, undefined, undefined, undefined)).to.be.empty;
+    });
+
+    it('should not return iframe if not allowed', function () {
+      expect(spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: true
+      }, responses, undefined, undefined, undefined)).to.deep.equal([{
+        type: 'image', url: `${exampleUrl}&type=image`
+      }]);
+    });
+
+    it('should add query string to url when missing', function () {
+      expect(spec.getUserSyncs(iframeConfig, responseWithoutQueryString, undefined, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: `https://example.com/usync/sf/5?type=iframe`
+      }]);
+    });
+
+    it('should not add parameters if not provided', function () {
+      expect(spec.getUserSyncs(iframeConfig, responses, undefined, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe`
+      }]);
+    });
+
+    it('should add GDPR parameters if provided', function () {
+      expect(spec.getUserSyncs(iframeConfig, responses, {gdprApplies: true}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe&gdpr=1&gdpr_consent=`
+      }]);
+
+      expect(spec.getUserSyncs(iframeConfig, responses,
+        {gdprApplies: true, consentString: 'foo?'}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe&gdpr=1&gdpr_consent=foo%3F`
+      }]);
+
+      expect(spec.getUserSyncs(iframeConfig, responses,
+        {gdprApplies: false, consentString: 'bar'}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe&gdpr=0&gdpr_consent=bar`
+      }]);
+    });
+
+    it('should add CCPA parameters if provided', function () {
+      expect(spec.getUserSyncs(iframeConfig, responses, undefined, 'foo?', undefined)).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe&us_privacy=foo%3F`
+      }]);
+    });
+
+    it('should not apply if not gppConsent.gppString', function () {
+      const gppConsent = {gppString: '', applicableSections: [123]};
+      const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
+      expect(result).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe`
+      }]);
+    });
+
+    it('should not apply if not gppConsent.applicableSections', function () {
+      const gppConsent = {gppString: '', applicableSections: undefined};
+      const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
+      expect(result).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe`
+      }]);
+    });
+
+    it('should not apply if empty gppConsent.applicableSections', function () {
+      const gppConsent = {gppString: '', applicableSections: []};
+      const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
+      expect(result).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe`
+      }]);
+    });
+
+    it('should apply if all above are available', function () {
+      const gppConsent = {gppString: 'foo?', applicableSections: [123]};
+      const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
+      expect(result).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe&gpp=foo%3F&gpp_sid=123`
+      }]);
+    });
+
+    it('should support multiple sections', function () {
+      const gppConsent = {gppString: 'foo', applicableSections: [123, 456]};
+      const result = spec.getUserSyncs(iframeConfig, responses, undefined, undefined, gppConsent);
+      expect(result).to.deep.equal([{
+        type: 'iframe', url: `${exampleUrl}&type=iframe&gpp=foo&gpp_sid=123%2C456`
+      }]);
+    });
   });
 });
