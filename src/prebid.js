@@ -41,7 +41,7 @@ import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {insertLocatorFrame, markBidAsRendered, renderAdDirect, renderIfDeferred} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
+import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -100,20 +100,36 @@ function validateSizes(sizes, targLength) {
   return cleanSizes;
 }
 
-export function setBattrForAdUnit(adUnit, mediaType) {
-  const ortb2Imp = adUnit.ortb2Imp || {};
-  const mediaTypes = adUnit.mediaTypes || {};
+// setting mediaTypes to ortb2 corresponding fields and opposite
+export function syncOrtb2(adUnit, mediaType) {
 
-  if (ortb2Imp[mediaType]?.battr && mediaTypes[mediaType]?.battr && (ortb2Imp[mediaType]?.battr !== mediaTypes[mediaType]?.battr)) {
-    logWarn(`Ad unit ${adUnit.code} specifies conflicting ortb2Imp.${mediaType}.battr and mediaTypes.${mediaType}.battr, the latter will be ignored`, adUnit);
+  const ortb2Imp = deepAccess(adUnit, `ortb2Imp.${mediaType}`) || {};
+  const mediaTypes = deepAccess(adUnit, `mediaTypes.${mediaType}`) || {};
+
+  const fields = {
+    'video': ORTB_VIDEO_PARAMS,
+    //@todo params for banner, native
+  }[mediaType];
+
+  if (!fields || !(fields instanceof 'Map')) {
+    return;
   }
 
-  const battr = ortb2Imp[mediaType]?.battr || mediaTypes[mediaType]?.battr;
+  fields.entries().forEach(([key, validator]) => {
+    const mediaTypesFieldValue = mediaTypes[key];
+    const ortbFieldValue = ortb2Imp[key];
 
-  if (battr != null) {
-    deepSetValue(adUnit, `ortb2Imp.${mediaType}.battr`, battr);
-    deepSetValue(adUnit, `mediaTypes.${mediaType}.battr`, battr);
-  }
+    if (mediaTypesFieldValue == undefined && ortbFieldValue == undefined) {
+      return;
+    } else if (mediaTypesFieldValue == undefined) {
+      mediaTypes[key] = ortbFieldValue;
+    } else if (ortbFieldValue == undefined) {
+      ortb2Imp[key] = validator(mediaTypesFieldValue) ? mediaTypesFieldValue : undefined;
+    } else {
+      logWarn(`adUnit ${adUnit.code}: specifies conflicting ortb2Imp.${mediaType}.${key} and mediaTypes.${mediaType}.${key}, the latter will be ignored`, adUnit);
+      mediaTypes[key] = ortbFieldValue;
+    }
+  })
 }
 
 function validateBannerMediaType(adUnit) {
@@ -128,7 +144,7 @@ function validateBannerMediaType(adUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
-  setBattrForAdUnit(validatedAdUnit, 'banner');
+  syncOrtb2(validatedAdUnit, 'banner')
   return validatedAdUnit;
 }
 
@@ -152,7 +168,7 @@ function validateVideoMediaType(adUnit) {
     }
   }
   validateOrtbVideoFields(validatedAdUnit);
-  setBattrForAdUnit(validatedAdUnit, 'video');
+  syncOrtb2(validatedAdUnit, 'video');
   return validatedAdUnit;
 }
 
@@ -202,7 +218,7 @@ function validateNativeMediaType(adUnit) {
     logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.icon.sizes;
   }
-  setBattrForAdUnit(validatedAdUnit, 'native');
+  syncOrtb2(validatedAdUnit, 'native');
   return validatedAdUnit;
 }
 
