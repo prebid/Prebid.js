@@ -26,7 +26,7 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
  */
 
 /**
- * @typedef {Object} OpenRTBRequest
+ * @typedef {Object} OpenRtbRequest
  * @property {string} id - Unique request ID
  * @property {Array<Imp>} imp - List of impression objects
  * @property {Site} site - Site information
@@ -38,7 +38,7 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
  */
 
 /**
- * @typedef {Object} OpenRTBBid
+ * @typedef {Object} OpenRtbBid
  * @property {string} impid - ID of the impression this bid relates to
  * @property {number} price - Bid price for the impression
  * @property {string} adid - Ad ID for the bid
@@ -50,7 +50,7 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
  */
 
 /**
- * @typedef {Object} OpenRTBBidResponse
+ * @typedef {Object} OpenRtbBidResponse
  * @property {string} id - ID of the bid response
  * @property {Array<{bid: Array<OpenRTBBid>}>} seatbid - Array of seat bids, each containing a list of bids
  * @property {string} cur - Currency in which bid amounts are expressed
