@@ -261,6 +261,9 @@ export function loadScriptTag(config) {
   loadExternalScript(src, MODULE_TYPE_RTD, code, undefined, undefined, attr);
 }
 
+/**
+ * Request contextual data about page (after checking for allow) and begin listening for postMessages from publisher
+ */
 export function initializeBidEnrichment() {
   if (shouldAllowBidEnrichment()) {
     requestContextData()
@@ -378,6 +381,10 @@ function shouldAllowBidEnrichment() {
   return true
 }
 
+/**
+ * Passes message out to external page through postMessage method
+ * @param {string} msg message string to be passed to CX-BID-ENRICH target on current page
+ */
 function postBidEnrichmentMessage(msg) {
   window.postMessage({
     target: 'CX-BID-ENRICH',
@@ -386,6 +393,10 @@ function postBidEnrichmentMessage(msg) {
   logMessage('Message post :: Qortex contextuality has been not been indexed.')
 }
 
+/**
+ * Receives messages passed through postMessage method to QORTEX-PREBIDJS-RTD-MODULE on current page
+ * @param {Object} evt data object holding Event information
+ */
 export function windowPostMessageReceived(evt) {
   const data = evt.data;
   if (typeof data.target !== 'undefined' && data.target === 'QORTEX-PREBIDJS-RTD-MODULE') {
