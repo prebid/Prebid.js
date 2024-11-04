@@ -107,6 +107,9 @@ export const DEFAULT_PROCESSORS = {
         if (bid.attr) {
           bidResponse.meta.attr = bid.attr;
         }
+        if (bid.ext?.prebid?.meta?.mediaType) {
+          bidResponse.meta.mediaType = bid.ext.prebid.meta.mediaType;
+        }
       }
     }
   }
