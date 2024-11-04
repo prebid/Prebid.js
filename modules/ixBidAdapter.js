@@ -751,7 +751,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         method: 'POST',
         url: exchangeUrl,
         data: deepClone(r),
-        option: {
+        options: {
           contentType: 'text/plain',
         },
         validBidRequests

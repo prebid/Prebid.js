@@ -2088,7 +2088,7 @@ describe('IndexexchangeAdapter', function () {
     it('request should be made to IX endpoint with POST method and siteId in query param', function () {
       expect(requestMethod).to.equal('POST');
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT + '?s=' + DEFAULT_BANNER_VALID_BID[0].params.siteId);
-      expect(request.option.contentType).to.equal('text/plain')
+      expect(request.options.contentType).to.equal('text/plain')
     });
 
     it('auction type should be set correctly', function () {
