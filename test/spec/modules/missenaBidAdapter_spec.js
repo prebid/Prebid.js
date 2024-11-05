@@ -143,11 +143,11 @@ describe('Missena Adapter', function () {
     });
 
     it('should send placement', function () {
-      expect(payload.placement).to.equal('sticky');
+      expect(payload.params.placement).to.equal('sticky');
     });
 
     it('should send formats', function () {
-      expect(payload.formats).to.eql(['sticky-banner']);
+      expect(payload.params.formats).to.eql(['sticky-banner']);
     });
 
     it('should send referer information to the request', function () {
