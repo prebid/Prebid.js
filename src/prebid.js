@@ -42,6 +42,8 @@ import {allConsent} from './consentHandler.js';
 import {insertLocatorFrame, markBidAsRendered, renderAdDirect, renderIfDeferred} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
+import { ORTB_NATIVE_PARAMS } from './native.js';
+import { ORTB_BANNER_PARAMS } from './banner.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -108,10 +110,11 @@ export function syncOrtb2(adUnit, mediaType) {
 
   const fields = {
     'video': ORTB_VIDEO_PARAMS,
-    //@todo params for banner, native
+    'native': ORTB_NATIVE_PARAMS,
+    'banner': ORTB_BANNER_PARAMS
   }[mediaType];
 
-  if (!fields || !(fields instanceof 'Map')) {
+  if (!fields) {
     return;
   }
 

@@ -23,6 +23,7 @@ import {auctionManager} from '../../src/auctionManager.js';
 import {getRenderingData} from '../../src/adRendering.js';
 import {getCreativeRendererSource} from '../../src/creativeRenderers.js';
 import {deepClone, deepSetValue} from '../../src/utils.js';
+import { syncOrtb2 } from '../../src/prebid.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -1434,5 +1435,47 @@ describe('toOrtbNativeResponse', () => {
         url: 'image-url'
       }
     })
+  })
+
+  it('should sync mediaTypes and ortb2Imp properly', () => {
+    const adUnit = {
+      mediaTypes: {
+        native: {
+          api: [6],
+          battr: [3, 4],
+          fieldToOmit: 'omitted_value'
+        }
+      },
+      ortb2Imp: {
+        native: {
+          request: '{payload: true}',
+          ver: '1.1',
+          battr: [1, 2]
+        }        
+      }
+    };
+
+    const expected = {
+      mediaTypes: {
+        native: {
+          api: [6],
+          request: '{payload: true}',
+          ver: '1.1',
+          fieldToOmit: 'omitted_value',
+          battr: [1, 2],
+        }
+      },
+      ortb2Imp: {
+        native: {
+          api: [6],
+          request: '{payload: true}',
+          ver: '1.1',
+          battr: [1, 2]
+        }        
+      }
+    };
+
+    syncOrtb2(adUnit, 'native');
+    expect(adUnit).to.deep.eql(expected);
   })
 })
