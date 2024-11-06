@@ -11,6 +11,7 @@ import {
   parseUrl,
   triggerPixel,
 } from '../src/utils.js';
+
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
