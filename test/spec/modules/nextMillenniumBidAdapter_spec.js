@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import {
   getImp,
+  getSourceObj,
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
@@ -104,6 +105,112 @@ describe('nextMillenniumBidAdapterTests', () => {
         const {bid, id, mediaTypes, postBody} = data;
         const imp = getImp(bid, id, mediaTypes, postBody);
         expect(imp).to.deep.equal(expected);
+      });
+    }
+  });
+
+  describe('function getSourceObj', () => {
+    const dataTests = [
+      {
+        title: 'schain is empty',
+        validBidRequests: [{}],
+        bidderRequest: {},
+        expected: undefined,
+      },
+
+      {
+        title: 'schain is validBidReequest',
+        bidderRequest: {},
+        validBidRequests: [{
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        }],
+
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.ext.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+    ];
+
+    for (let {title, validBidRequests, bidderRequest, expected} of dataTests) {
+      it(title, () => {
+        const source = getSourceObj(validBidRequests, bidderRequest);
+        expect(source).to.deep.equal(expected);
       });
     }
   });
