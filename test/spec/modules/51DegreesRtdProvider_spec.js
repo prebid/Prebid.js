@@ -160,7 +160,40 @@ describe('51DegreesRtdProvider', function() {
   });
 
   describe('get51DegreesJSURL', function() {
-    let _hev;
+    const hev = {
+      'brands': [
+        {
+          'brand': 'Chromium',
+          'version': '130'
+        },
+        {
+          'brand': 'Google Chrome',
+          'version': '130'
+        },
+        {
+          'brand': 'Not?A_Brand',
+          'version': '99'
+        }
+      ],
+      'fullVersionList': [
+        {
+          'brand': 'Chromium',
+          'version': '130.0.6723.92'
+        },
+        {
+          'brand': 'Google Chrome',
+          'version': '130.0.6723.92'
+        },
+        {
+          'brand': 'Not?A_Brand',
+          'version': '99.0.0.0'
+        }
+      ],
+      'mobile': false,
+      'model': '',
+      'platform': 'macOS',
+      'platformVersion': '14.6.1'
+    };
     const mockWindow = {
       ...window,
       screen: {
@@ -169,15 +202,6 @@ describe('51DegreesRtdProvider', function() {
       },
       devicePixelRatio: 2,
     };
-
-    before(async function () {
-      _hev = await window?.navigator?.userAgentData?.getHighEntropyValues?.([
-        'model',
-        'platform',
-        'platformVersion',
-        'fullVersionList',
-      ]);
-    });
 
     it('returns the cloud URL if the resourceKey is provided', function() {
       const config = {resourceKey: 'TEST_RESOURCE_KEY'};
@@ -212,11 +236,11 @@ describe('51DegreesRtdProvider', function() {
     it('adds high entropy values to the query string, if available', async function () {
       const config = {
         onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
-        hev: _hev,
+        hev,
       };
       expect(get51DegreesJSURL(config, mockWindow)).to.equal(
         `https://example.com/51Degrees.core.js?` +
-        `51D_GetHighEntropyValues=${btoa(JSON.stringify(await _hev))}&` +
+        `51D_GetHighEntropyValues=${btoa(JSON.stringify(hev))}&` +
         `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
         `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
         `51D_PixelRatio=${mockWindow.devicePixelRatio}`
