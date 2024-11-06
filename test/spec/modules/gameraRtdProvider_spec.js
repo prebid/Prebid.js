@@ -144,23 +144,35 @@ describe('gameraRtdProvider', function () {
 
     describe('segment enrichment', function () {
       const mockSegments = {
-        user: [{
-          name: 'gamera.ai',
-          ext: {
-            segtax: 4,
-          },
-          segment: [{ id: 'user-1' }]
-        }],
-        site: [{
-          name: 'gamera.ai',
-          ext: {
-            segtax: 7,
-          },
-          segment: [{ id: 'site-1' }]
-        }],
+        user: {
+          data: [{
+            name: 'gamera.ai',
+            ext: {
+              segtax: 4,
+            },
+            segment: [{ id: 'user-1' }]
+          }]
+        },
+        site: {
+          keywords: 'gamera,article,keywords',
+          content: {
+            data: [{
+              name: 'gamera.ai',
+              ext: {
+                segtax: 7,
+              },
+              segment: [{ id: 'site-1' }]
+            }]
+          }
+        },
         adUnits: {
           'test-div': {
-            key: 'value'
+            key: 'value',
+            ext: {
+              data: {
+                gameraSegment: 'ad-1',
+              }
+            }
           }
         }
       };
@@ -174,27 +186,33 @@ describe('gameraRtdProvider', function () {
       it('should enrich ortb2Fragments with user data', function () {
         subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-        expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.deep.include(mockSegments.user[0]);
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.deep.include(mockSegments.user.data[0]);
 
         // check if existing attributes are not overwritten
         expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
         expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].segment[0].id).to.equal('1');
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.keywords).to.equal('a,b');
+        expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.data.registered).to.equal(true);
       });
 
       it('should enrich ortb2Fragments with site data', function () {
         subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data).to.deep.include(mockSegments.site[0]);
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data).to.deep.include(mockSegments.site.content.data[0]);
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.keywords).to.equal('gamera,article,keywords');
 
         // check if existing attributes are not overwritten
         expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].ext.segtax).to.equal(7);
         expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].segment[0].id).to.equal('687');
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.ext.data.category).to.equal('repair');
+        expect(reqBidsConfigObj.ortb2Fragments.global.site.content.userrating).to.equal('4');
       });
 
       it('should enrich adUnits with segment data', function () {
         subModuleObj.getBidRequestData(reqBidsConfigObj, callback);
 
-        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data).to.deep.include(mockSegments.adUnits['test-div']);
+        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.key).to.equal('value');
+        expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.gameraSegment).to.equal('ad-1');
 
         // check if existing attributes are not overwritten
         expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.data.adUnitSpecificAttribute).to.equal('123');

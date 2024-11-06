@@ -46,9 +46,9 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
 function enrichAuction(reqBidsConfigObj, callback, config, userConsent) {
   try {
-    // segments.user - array of ortb2.user.data objects
-    // segments.site - array of ortb2.site.content.data objects
-    // segments.adUnits - dictionary adUnitCode -> ortb2Imp.ext.data object
+    // segments.user - ortb2.user attributes to be added/updated
+    // segments.site - ortb2.site attributes to be added/updated
+    // segments.adUnits - dictionary adUnitCode -> ortb2Imp attributes to be added/updated
     const segments = window.gamera.getPrebidSegments() || {};
 
     // Initialize ortb2Fragments and its nested objects
@@ -56,24 +56,15 @@ function enrichAuction(reqBidsConfigObj, callback, config, userConsent) {
     reqBidsConfigObj.ortb2Fragments.global = reqBidsConfigObj.ortb2Fragments.global || {};
 
     // Add user-level data
-    if (segments.user && segments.user.length) {
+    if (segments.user && isPlainObject(segments.user)) {
       reqBidsConfigObj.ortb2Fragments.global.user = reqBidsConfigObj.ortb2Fragments.global.user || {};
-      reqBidsConfigObj.ortb2Fragments.global.user.data = reqBidsConfigObj.ortb2Fragments.global.user.data || [];
-
-      segments.user.forEach(userData => {
-        reqBidsConfigObj.ortb2Fragments.global.user.data.push(userData);
-      });
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.global.user, segments.user);
     }
 
     // Add site-level data
-    if (segments.site && segments.site.length) {
+    if (segments.site && isPlainObject(segments.site)) {
       reqBidsConfigObj.ortb2Fragments.global.site = reqBidsConfigObj.ortb2Fragments.global.site || {};
-      reqBidsConfigObj.ortb2Fragments.global.site.content = reqBidsConfigObj.ortb2Fragments.global.site.content || {};
-      reqBidsConfigObj.ortb2Fragments.global.site.content.data = reqBidsConfigObj.ortb2Fragments.global.site.content.data || [];
-
-      segments.site.forEach(siteData => {
-        reqBidsConfigObj.ortb2Fragments.global.site.content.data.push(siteData);
-      });
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.global.site, segments.site);
     }
 
     // Add ad unit level data
@@ -84,13 +75,8 @@ function enrichAuction(reqBidsConfigObj, callback, config, userConsent) {
         return;
       }
 
-      // Initialize ortb2Imp if it doesn't exist
       adUnit.ortb2Imp = adUnit.ortb2Imp || {};
-      adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
-      adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
-
-      // Add gamera-specific data to each ad unit
-      mergeDeep(adUnit.ortb2Imp.ext.data, gameraData);
+      mergeDeep(adUnit.ortb2Imp, gameraData);
     });
   } catch (error) {
     logError(MODULE, 'Error getting segments:', error);

@@ -7,13 +7,13 @@ Maintainer: prebid@gamera.ai
 # Description
 
 RTD provider for Gamera.ai that enriches bid requests with real-time data, by populating the [First Party Data](https://docs.prebid.org/features/firstPartyData.html) attributes.
-The module integrates with Gamera's AI-powered contextual targeting system to provide enhanced bidding capabilities.
+The module integrates with Gamera's AI-powered audience segmentation system to provide enhanced bidding capabilities.
 The Gamera RTD Provider works in conjunction with the Gamera script, which must be available on the page for the module to enrich bid requests. To learn more about the Gamera script, please visit the [Gamera website](https://gamera.ai/).
 
-ORTB2 enrichments that are populated:
- * `ortb2.site.content.data`
- * `ortb2.user.data`
- * `AdUnit.ortb2Imp.ext.data`
+ORTB2 enrichments that gameraRtdProvider can provide:
+ * `ortb2.site`
+ * `ortb2.user`
+ * `AdUnit.ortb2Imp`
 
 # Integration
 
