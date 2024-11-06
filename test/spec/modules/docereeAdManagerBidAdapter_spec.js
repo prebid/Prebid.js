@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { spec, getPayload } from '../../../modules/docereeAdManagerBidAdapter.js';
+import { spec, getPayload, getPageUrl } from '../../../modules/docereeAdManagerBidAdapter.js';
 import { config } from '../../../src/config.js';
+import * as utils from '../../../src/utils.js';
 
 describe('docereeadmanager', function () {
   config.setConfig({
@@ -125,8 +126,15 @@ describe('docereeadmanager', function () {
     });
   });
 
-  describe('payload', function() {
-    it('should return payload with the correct data', function() {
+  describe('getPageUrl', function () {
+    it('should return an url string', function () {
+      const result = getPageUrl();
+      expect(result).to.equal(utils.getWindowSelf().location.href);
+    });
+  });
+
+  describe('payload', function () {
+    it('should return payload with the correct data', function () {
       const data = {
         userId: 'xxxxx',
         email: 'xxxx@mail.com',
@@ -148,7 +156,7 @@ describe('docereeadmanager', function () {
         platformUid: 'Xx.xxx.xxxxxx',
         mobile: 'XXXXXXXXXX',
       }
-      bid = {...bid, params: {...bid.params, placementId: 'DOC-19-1'}}
+      bid = { ...bid, params: { ...bid.params, placementId: 'DOC-19-1' } }
       const buildRequests = {
         gdprConsent: {
           consentString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
@@ -156,6 +164,7 @@ describe('docereeadmanager', function () {
         }
       }
       const payload = getPayload(bid, data, buildRequests);
+
       const payloadData = payload.data;
       expect(payloadData).to.have.all.keys(
         'userid',

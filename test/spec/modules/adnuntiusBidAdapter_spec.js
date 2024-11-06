@@ -50,7 +50,6 @@ describe('adnuntiusBidAdapter', function () {
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
-  const ENDPOINT_URL_VIDEO = `${ENDPOINT_URL_BASE}&userId=${usi}&tt=vast4`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
   const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&userId=${usi}`;
@@ -102,7 +101,66 @@ describe('adnuntiusBidAdapter', function () {
         }
       },
     }
-  ]
+  ];
+
+  const multiBidderInResponse = {
+    bid: [{
+      bidder: 'adnuntius',
+      bidId: '3a602680158a85',
+      params: {
+        auId: '381535',
+        network: '1287',
+        bidType: 'netBid',
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[200, 200]]
+        },
+        video: {
+          playerSize: [200, 200],
+          context: 'instream'
+        }
+      }
+    },
+    {
+      bidder: 'adnuntius',
+      params: {
+        auId: '381535',
+        network: '1287',
+        bidType: 'netBid',
+        targetId: 'fred',
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[200, 200]]
+        },
+        video: {
+          playerSize: [200, 200],
+          context: 'instream'
+        }
+      }
+    }]
+  };
+
+  const multiBidderRequest = [
+    {
+      bidId: 'adn-0000000000000551',
+      bidder: 'adnuntius',
+      params: {
+        auId: '0000000000000551',
+        network: 'adnuntius',
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+          context: 'instream'
+        },
+        banner: {
+          sizes: [[1640, 1480], [1600, 1400]],
+        }
+      },
+    }
+  ];
 
   const singleBidRequest = {
     bid: [
@@ -183,6 +241,131 @@ describe('adnuntiusBidAdapter', function () {
       'renderTemplate': '<a rel="nofollow" target="_top" href="{{{urls.destination.url}}}"><img src="{{{assets.Image.cdnId}}}" width="{{assets.Image.width}}" height="{{assets.Image.height}}" alt=""/></a>'
     }
   ];
+
+  const multiFormatServerResponse = {
+    body: {
+      'adUnits': [
+        {
+          'auId': '0000000000381535',
+          'targetId': '3a602680158a85-video',
+          'vastXml': '<VAST </Ad>\n</VAST>',
+          'matchedAdCount': 1,
+          'responseId': 'adn-rsp-453419729',
+          'ads': [
+            {
+              'cpm': {
+                'amount': 1500.0,
+                'currency': 'NOK'
+              },
+              'bid': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              'grossBid': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              'netBid': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              'cost': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              creativeWidth: 200,
+              creativeHeight: 240,
+              'adId': 'adn-id-615465411',
+              'vastXml': '<Ad </Ad>'
+            }
+          ]
+        },
+        {
+          'auId': '0000000000381535',
+          'targetId': 'fred-video',
+          'vastXml': '<VAST \n</VAST>',
+          'matchedAdCount': 1,
+          'responseId': 'adn-rsp--1809523040',
+          'ads': [
+            {
+              'cpm': {
+                'amount': 1500.0,
+                'currency': 'NOK'
+              },
+              'bid': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              'grossBid': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              'netBid': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              'cost': {
+                'amount': 1.5,
+                'currency': 'NOK'
+              },
+              creativeWidth: 200,
+              creativeHeight: 240,
+              'adId': 'adn-id-344789675',
+              'selectedColumn': '0',
+              'selectedColumnPosition': '0',
+              'vastXml': '<Ad id=\'adn-id-344789675\'></InLine>\n</Ad>',
+            }
+          ]
+        },
+        {
+          'auId': '0000000000381535',
+          'targetId': '3a602680158a85',
+          'html': '\u003C!DOCTYPE html\u003E\n\n\u003C/html\u003E',
+          'matchedAdCount': 0,
+          'responseId': '',
+          'ads': []
+        },
+        {
+          'auId': '0000000000381535',
+          'renderOption': 'DIV',
+          'targetId': 'fred',
+          'html': '\u003C!DOCTYPE html\u003E\n\u003C\u003E\n\u003C/html\u003E',
+          'matchedAdCount': 1,
+          'responseId': 'adn-rsp-1620340740',
+          'ads': [
+            {
+              'destinationUrlEsc': '',
+              'cpm': {
+                'amount': 1250.0,
+                'currency': 'NOK'
+              },
+              creativeWidth: 200,
+              creativeHeight: 240,
+              'bid': {
+                'amount': 1.75,
+                'currency': 'NOK'
+              },
+              'grossBid': {
+                'amount': 1.75,
+                'currency': 'NOK'
+              },
+              'netBid': {
+                'amount': 1.75,
+                'currency': 'NOK'
+              },
+              'cost': {
+                'amount': 1.75,
+                'currency': 'NOK'
+              },
+              'html': '\u003Ca \'\u003E\u003C/script\u003E',
+            }
+          ]
+        }
+      ],
+      'network': '1287',
+      'keywords': []
+    }
+  };
 
   const serverResponse = {
     body: {
@@ -565,11 +748,34 @@ describe('adnuntiusBidAdapter', function () {
     it('Test Video requests', function () {
       const request = spec.buildRequests(videoBidderRequest, {});
       expect(request.length).to.equal(1);
+
+      const data = JSON.parse(request[0].data);
+      expect(data.adUnits.length).to.equal(1);
+      expect(data.adUnits[0].targetId).to.equal('adn-0000000000000551');
+      expect(data.adUnits[0].adType).to.equal('VAST');
+
       expect(request[0]).to.have.property('bid');
       const bid = request[0].bid[0]
       expect(bid).to.have.property('bidId');
       expect(request[0]).to.have.property('url');
-      expect(request[0].url).to.equal(ENDPOINT_URL_VIDEO);
+      expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
+
+    it('Test multiformat requests', function () {
+      const request = spec.buildRequests(multiBidderRequest, {});
+      expect(request.length).to.equal(1);
+      expect(request.data)
+      const data = JSON.parse(request[0].data);
+      expect(data.adUnits.length).to.equal(2);
+      expect(data.adUnits[0].targetId).to.equal('adn-0000000000000551');
+      expect(data.adUnits[0]).not.to.have.property('adType');
+      expect(data.adUnits[1].targetId).to.equal('adn-0000000000000551-video');
+      expect(data.adUnits[1].adType).to.equal('VAST');
+      expect(request[0]).to.have.property('bid');
+      const bid = request[0].bid[0]
+      expect(bid).to.have.property('bidId');
+      expect(request[0]).to.have.property('url');
+      expect(request[0].url).to.equal(ENDPOINT_URL);
     });
 
     it('should pass segments if available in config and merge from targeting', function () {
@@ -960,7 +1166,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(data.adUnits.length).to.equal(1);
       expect(data.adUnits[0].maxDeals).to.equal(5);
     });
-    it('Should allow a minumum of 0 deals.', function () {
+    it('Should allow a minimum of 0 deals.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
       });
@@ -1100,6 +1306,41 @@ describe('adnuntiusBidAdapter', function () {
       expect(randomApiEntry.value).to.equal('randomApiValue');
       expect(randomApiEntry.network).to.equal('some-network-id');
       expect(randomApiEntry.exp).to.be.greaterThan(getUnixTimestampFromNow(90));
+    });
+
+    it('should return valid response when passed valid multiformat server response', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+        config: {
+          bidType: 'netBid',
+          maxDeals: 0
+        }
+      });
+
+      const interpretedResponse = config.runWithBidder('adnuntius', () => spec.interpretResponse(multiFormatServerResponse, multiBidderInResponse));
+      expect(interpretedResponse).to.have.lengthOf(2);
+
+      let ad = multiFormatServerResponse.body.adUnits[0].ads[0];
+      expect(interpretedResponse[0].bidderCode).to.equal('adnuntius');
+      expect(interpretedResponse[0].cpm).to.equal(ad.netBid.amount * 1000);
+      expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
+      expect(interpretedResponse[0].height).to.equal(Number(ad.creativeHeight));
+      expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);
+      expect(interpretedResponse[0].currency).to.equal(ad.bid.currency);
+      expect(interpretedResponse[0].netRevenue).to.equal(false);
+      expect(interpretedResponse[0].ad).to.equal(multiFormatServerResponse.body.adUnits[0].html);
+      expect(interpretedResponse[0].ttl).to.equal(360);
+
+      ad = multiFormatServerResponse.body.adUnits[3].ads[0];
+      expect(interpretedResponse[1].bidderCode).to.equal('adnuntius');
+      expect(interpretedResponse[1].cpm).to.equal(ad.netBid.amount * 1000);
+      expect(interpretedResponse[1].width).to.equal(Number(ad.creativeWidth));
+      expect(interpretedResponse[1].height).to.equal(Number(ad.creativeHeight));
+      expect(interpretedResponse[1].creativeId).to.equal(ad.creativeId);
+      expect(interpretedResponse[1].currency).to.equal(ad.bid.currency);
+      expect(interpretedResponse[1].netRevenue).to.equal(false);
+      expect(interpretedResponse[1].ad).to.equal(multiFormatServerResponse.body.adUnits[3].html);
+      expect(interpretedResponse[1].ttl).to.equal(360);
     });
 
     it('should not process valid response when passed alt bidder that is an adndeal', function () {
