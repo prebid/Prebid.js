@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 // import { config } from 'src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { config } from '../src/config.js';
+// import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'brainx';
 const METHOD = 'POST';
@@ -42,19 +42,9 @@ export const spec = {
   },
   buildRequests(bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidRequests, bidderRequest })
-    const device = config.getConfig('device') || {};
-    // console.log('data-==========', data);
-    // console.log('bidRequests-==========', bidRequests);
-    // console.log('bidderRequest-==========', bidderRequest);
     data.user = {
       buyeruid: generateUUID()
     }
-    data.device.ip = navigator.ip || '202.100.48.46';
-    data.device.os = 'Android'
-    data.device.geo = device.geo || {
-      country: 'HKG'
-    };
-
     return {
       method: METHOD,
       url: `${String(deepAccess(bidRequests[0], 'params.endpoint'))}?token=${String(deepAccess(bidRequests[0], 'params.pubId'))}`,
@@ -63,9 +53,6 @@ export const spec = {
   },
   interpretResponse(response, request) {
     let bids = [];
-    // console.log('response-==========', response);
-    // console.log('request-==========', request);
-    // const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
       response.body.seatbid.forEach(function (bidder) {
         if (isArray(bidder.bid)) {
@@ -107,7 +94,6 @@ export const spec = {
       });
     }
 
-    // console.log('bids-==========', bids);
     return bids;
   },
   // getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) { },
