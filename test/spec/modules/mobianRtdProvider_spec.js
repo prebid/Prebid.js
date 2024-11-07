@@ -39,7 +39,8 @@ describe('Mobian RTD Submodule', function () {
           mobianEmotions: ['joy'],
           mobianThemes: [],
           mobianTones: [],
-          mobianGenres: []
+          mobianGenres: [],
+          ap: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
         }
       }));
     });
@@ -52,7 +53,8 @@ describe('Mobian RTD Submodule', function () {
         emotions: ['joy'],
         themes: [],
         tones: [],
-        genres: []
+        genres: [],
+        apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'low',
@@ -61,12 +63,13 @@ describe('Mobian RTD Submodule', function () {
         mobianEmotions: ['joy'],
         mobianThemes: [],
         mobianTones: [],
-        mobianGenres: []
+        mobianGenres: [],
+        apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
       });
     });
   });
 
-  it('should handle response with content categories and multiple emotions', function () {
+  it('should handle response with content categories, multiple emotions, and ap values', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success(JSON.stringify({
         meta: {
@@ -80,7 +83,8 @@ describe('Mobian RTD Submodule', function () {
           mobianEmotions: ['anger', 'fear'],
           mobianThemes: ['conflict', 'international relations'],
           mobianTones: ['factual', 'serious'],
-          mobianGenres: ['news', 'political_analysis']
+          mobianGenres: ['news', 'political_analysis'],
+          ap: { a0: [100], a1: [200, 300], p0: [400, 500], p1: [600] }
         }
       }));
     });
@@ -93,7 +97,8 @@ describe('Mobian RTD Submodule', function () {
         emotions: ['anger', 'fear'],
         themes: ['conflict', 'international relations'],
         tones: ['factual', 'serious'],
-        genres: ['news', 'political_analysis']
+        genres: ['news', 'political_analysis'],
+        apValues: { a0: [100], a1: [200, 300], p0: [400, 500], p1: [600] }
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'medium',
@@ -102,7 +107,8 @@ describe('Mobian RTD Submodule', function () {
         mobianEmotions: ['anger', 'fear'],
         mobianThemes: ['conflict', 'international relations'],
         mobianTones: ['factual', 'serious'],
-        mobianGenres: ['news', 'political_analysis']
+        mobianGenres: ['news', 'political_analysis'],
+        apValues: { a0: [100], a1: [200, 300], p0: [400, 500], p1: [600] }
       });
     });
   });
@@ -121,7 +127,7 @@ describe('Mobian RTD Submodule', function () {
     return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
       expect(result).to.deep.equal({});
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.not.have.any.keys(
-        'mobianRisk', 'mobianContentCategories', 'mobianSentiment', 'mobianEmotions', 'mobianThemes', 'mobianTones', 'mobianGenres'
+        'mobianRisk', 'mobianContentCategories', 'mobianSentiment', 'mobianEmotions', 'mobianThemes', 'mobianTones', 'mobianGenres', 'apValues'
       );
     });
   });
@@ -171,6 +177,7 @@ describe('Mobian RTD Submodule', function () {
         themes: [],
         tones: [],
         genres: [],
+        apValues: {}
       });
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
         mobianRisk: 'high',
@@ -179,7 +186,88 @@ describe('Mobian RTD Submodule', function () {
         mobianEmotions: [],
         mobianThemes: [],
         mobianTones: [],
-        mobianGenres: []
+        mobianGenres: [],
+        apValues: {}
+      });
+    });
+  });
+
+  it('should handle response with only ap values', function () {
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.success(JSON.stringify({
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          ap: { a0: [1, 2], a1: [3, 4], p0: [5, 6], p1: [7, 8] }
+        }
+      }));
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((result) => {
+      expect(result).to.deep.equal({
+        risk: 'unknown',
+        contentCategories: [],
+        sentiment: 'unknown',
+        emotions: [],
+        themes: [],
+        tones: [],
+        genres: [],
+        apValues: { a0: [1, 2], a1: [3, 4], p0: [5, 6], p1: [7, 8] }
+      });
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'unknown',
+        mobianContentCategories: [],
+        mobianSentiment: 'unknown',
+        mobianEmotions: [],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: [],
+        apValues: { a0: [1, 2], a1: [3, 4], p0: [5, 6], p1: [7, 8] }
+      });
+    });
+  });
+
+  it('should set key-value pairs when ext object is missing', function () {
+    bidReqConfig = {
+      ortb2Fragments: {
+        global: {
+          site: {}
+        }
+      }
+    };
+
+    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      callbacks.success(JSON.stringify({
+        meta: {
+          url: 'https://example.com',
+          has_results: true
+        },
+        results: {
+          mobianRisk: 'low',
+          mobianSentiment: 'positive',
+          mobianContentCategories: [],
+          mobianEmotions: ['joy'],
+          mobianThemes: [],
+          mobianTones: [],
+          mobianGenres: [],
+          ap: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
+        }
+      }));
+    });
+
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, () => {}, {}).then(() => {
+      expect(bidReqConfig.ortb2Fragments.global.site.ext).to.exist;
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.include({
+        mobianRisk: 'low',
+        mobianContentCategories: [],
+        mobianSentiment: 'positive',
+        mobianEmotions: ['joy'],
+        mobianThemes: [],
+        mobianTones: [],
+        mobianGenres: [],
+        apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] }
       });
     });
   });

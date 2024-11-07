@@ -364,7 +364,7 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   let keyValues = {};
   const adUnit = index.getAdUnit(bid);
 
-  const globalSendTargetingKeys = deepAccess(
+  const globalSendTargetingKeys = adUnit?.nativeParams?.ortb == null && deepAccess(
     adUnit,
     `nativeParams.sendTargetingKeys`
   ) !== false;
@@ -806,20 +806,20 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
 export function toLegacyResponse(ortbResponse, ortbRequest) {
   const legacyResponse = {};
   const requestAssets = ortbRequest?.assets || [];
-  legacyResponse.clickUrl = ortbResponse.link.url;
+  legacyResponse.clickUrl = ortbResponse.link?.url;
   legacyResponse.privacyLink = ortbResponse.privacy;
   for (const asset of ortbResponse?.assets || []) {
     const requestAsset = requestAssets.find(reqAsset => asset.id === reqAsset.id);
     if (asset.title) {
       legacyResponse.title = asset.title.text;
     } else if (asset.img) {
-      legacyResponse[requestAsset.img.type === NATIVE_IMAGE_TYPES.MAIN ? 'image' : 'icon'] = {
+      legacyResponse[requestAsset?.img?.type === NATIVE_IMAGE_TYPES.MAIN ? 'image' : 'icon'] = {
         url: asset.img.url,
         width: asset.img.w,
         height: asset.img.h
       };
     } else if (asset.data) {
-      legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset.data.type]]] = asset.data.value;
+      legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset?.data?.type]]] = asset.data.value;
     }
   }
 
