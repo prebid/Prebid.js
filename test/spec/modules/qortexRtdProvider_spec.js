@@ -339,6 +339,17 @@ describe('qortexRtdProvider', () => {
       }, 200)
     })
 
+    it('Logs warning for rate limit', (done) => {
+      saveContextAdded(reqBidsConfig);
+      const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
+      module.onAuctionEndEvent(testData);
+      server.requests[0].respond(429, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(logWarnSpy.calledWith('Returned error status code: 429')).to.be.eql(true);
+        done();
+      }, 200)
+    })
+
     it('will not request context if prebid disable toggle is true', (done) => {
       initializeModuleData(bidEnrichmentDisabledModuleConfig);
       const cb = function () {
@@ -437,10 +448,13 @@ describe('qortexRtdProvider', () => {
         expect(logWarnSpy.called).to.be.false;
       });
       setTimeout(() => {
-        getContext();
-        expect(logMessageSpy.calledWith('Content lookup attempted during rate limit waiting period of 5000ms.')).to.be.true;
-        resetRateLimitTimeout();
-        done();
+        const ctx2 = getContext();
+        ctx2.catch(e => {
+          expect(e.message).to.equal('429');
+          expect(logMessageSpy.calledWith('Content lookup attempted during rate limit waiting period of 5000ms.')).to.be.true;
+          resetRateLimitTimeout();
+          done();
+        })
       }, 200)
     })
   })
