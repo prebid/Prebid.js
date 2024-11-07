@@ -381,7 +381,9 @@ describe('video.js', function () {
             foo: 'omitted_value'
           }
         },
-        ortb2Imp: {}
+        ortb2Imp: {
+          // lack of video field
+        }
       };
 
       const expected1 = {
@@ -412,7 +414,9 @@ describe('video.js', function () {
       expect(adUnit).to.deep.eql(expected1);
 
       const adUnit2 = {
-        mediaTypes: {},
+        mediaTypes: {
+          // lack of video field
+        },
         ortb2Imp: {
           video: {
             minduration: 500,
