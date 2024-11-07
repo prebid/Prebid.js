@@ -357,25 +357,15 @@ describe('ssp_genieeBidAdapter', function () {
         expect(String(request[0].data.apid)).to.have.string(`${bundle}`);
       });
 
-      it('should not include the extuid query when it does not contain the imuid cookie', function () {
-        const stub = sinon.stub(document, 'cookie').get(function () {
-          return '';
-        });
+      it('should not include the extuid query when bid.userId.imuid does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('extuid');
-        stub.restore();
       });
 
-      it('should include an extuid query when it contains an imuid cookie', function () {
+      it('should include an extuid query when bid.userId.imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
-        const stub = sinon.stub(document, 'cookie').get(function () {
-          return `_im_uid.3929=${imuid}`;
-        });
-        const request = spec.buildRequests([BANNER_BID]);
-        expect(String(request[0].data.extuid)).to.have.string(
-          `${`im:${imuid}`}`
-        );
-        stub.restore();
+        const request = spec.buildRequests([{...BANNER_BID, userId: {imuid}}]);
+        expect(String(request[0].data.extuid)).to.have.string(`${`im:${imuid}`}`);
       });
     });
   });
