@@ -4,6 +4,7 @@ import {
   isPlainObject,
   logError,
   mergeDeep,
+  deepClone,
 } from '../src/utils.js';
 
 const MODULE_NAME = 'gamera';
@@ -16,7 +17,6 @@ const MODULE = `${MODULE_NAME}RtdProvider`;
  * @returns {boolean}
  */
 function init(config, userConsent) {
-  // TODO: do we require any configuration params?
   return true;
 }
 
@@ -28,10 +28,7 @@ function init(config, userConsent) {
  * @param {Object} userConsent - User consent data
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  // TODO: do we need any configuration params?
-  // TODO: do we need to handle user consent?
-
-  // Check if gamera.getPrebidSegments is available
+  // Check if window.gamera.getPrebidSegments is available
   if (typeof window.gamera?.getPrebidSegments !== 'function') {
     window.gamera = window.gamera || {};
     window.gamera.cmd = window.gamera.cmd || [];
@@ -44,12 +41,28 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   enrichAuction(reqBidsConfigObj, callback, config, userConsent);
 }
 
+/**
+ * Enriches the auction with user and content segments from Gamera's on-page script
+ * @param {Object} reqBidsConfigObj - The bid request config object
+ * @param {Function} callback - Callback function to execute after data handling
+ * @param {Object} config - Module configuration
+ * @param {Object} userConsent - User consent data
+ */
 function enrichAuction(reqBidsConfigObj, callback, config, userConsent) {
   try {
-    // segments.user - ortb2.user attributes to be added/updated
-    // segments.site - ortb2.site attributes to be added/updated
-    // segments.adUnits - dictionary adUnitCode -> ortb2Imp attributes to be added/updated
-    const segments = window.gamera.getPrebidSegments() || {};
+    /**
+     * @function external:"window.gamera".getPrebidSegments
+     * @description Retrieves user and content segments from Gamera's on-page script
+     * @param {Function|null} onSegmentsUpdateCallback - Callback for segment updates (not used here)
+     * @param {Object} config - Module configuration
+     * @param {Object} userConsent - User consent data
+     * @returns {Object|undefined} segments - The targeting segments object containing:
+     *   @property {Object} [user] - User-level attributes to merge into ortb2.user
+     *   @property {Object} [site] - Site-level attributes to merge into ortb2.site
+     *   @property {Object.<string, Object>} [adUnits] - Ad unit specific attributes, keyed by adUnitCode,
+     *                                                   to merge into each ad unit's ortb2Imp
+     */
+    const segments = window.gamera.getPrebidSegments(null, deepClone(config || {}), deepClone(userConsent || {})) || {};
 
     // Initialize ortb2Fragments and its nested objects
     reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {};
@@ -67,7 +80,7 @@ function enrichAuction(reqBidsConfigObj, callback, config, userConsent) {
       mergeDeep(reqBidsConfigObj.ortb2Fragments.global.site, segments.site);
     }
 
-    // Add ad unit level data
+    // Add adUnit-level data
     const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits || [];
     adUnits.forEach(adUnit => {
       const gameraData = segments.adUnits && segments.adUnits[adUnit.code];

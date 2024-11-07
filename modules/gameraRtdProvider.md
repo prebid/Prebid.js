@@ -2,7 +2,7 @@
 
 Module Name: Gamera Rtd Provider
 Module Type: Rtd Provider
-Maintainer: prebid@gamera.ai
+Maintainer: aleksa@gamera.ai
 
 # Description
 
@@ -48,4 +48,4 @@ The module currently supports basic initialization without required parameters. 
 
 ## Support
 
-For more information or support, please contact prebid@gamera.ai.
+For more information or support, please contact gareth@gamera.ai.
