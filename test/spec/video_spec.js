@@ -449,7 +449,7 @@ describe('video.js', function () {
             linearity: 5,
             w: 100,
             h: 200,
-            foo: 'omitted_value'
+            foo: 'omitted_value',
           }
         }
       };

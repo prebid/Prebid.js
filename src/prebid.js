@@ -123,8 +123,8 @@ export function syncOrtb2(adUnit, mediaType) {
   }
 
   fields.entries().forEach(([key, validator]) => {
-    const mediaTypesFieldValue = deepAccess(adUnit, `mediaTypes.${mediaType}.${key}`) 
-    const ortbFieldValue = deepAccess(adUnit, `ortb2Imp.${mediaType}.${key}`)
+    const mediaTypesFieldValue = deepAccess(adUnit, `mediaTypes.${mediaType}.${key}`);
+    const ortbFieldValue = deepAccess(adUnit, `ortb2Imp.${mediaType}.${key}`);
 
     if (mediaTypesFieldValue == undefined && ortbFieldValue == undefined) {
       // omitting the params if it's not defined on either of sides
