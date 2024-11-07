@@ -3,6 +3,7 @@ import { getTimeoutUrl, spec } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
+import { BIDFLOOR_CURRENCY } from '../../../modules/seedtagBidAdapter.js';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
@@ -253,6 +254,7 @@ describe('Seedtag Adapter', function () {
   });
 
   describe('buildRequests method', function () {
+    const bidFloor = 0.60
     const bidderRequest = {
       refererInfo: { page: 'referer' },
       timeout: 1000,
@@ -280,6 +282,11 @@ describe('Seedtag Adapter', function () {
         mandatoryVideoParams
       ),
     ];
+    validBidRequests[0].getFloor = () => ({
+      currency: BIDFLOOR_CURRENCY,
+      floor: bidFloor
+    })
+
     it('Url params should be correct ', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
@@ -425,6 +432,15 @@ describe('Seedtag Adapter', function () {
         } else {
           expect(bannerBid).to.not.have.property('geom')
         }
+      })
+
+      it('should have bidfloor parameter if available', function() {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        const bidRequests = data.bidRequests;
+
+        expect(bidRequests[0].bidFloor).to.be.equal(bidFloor)
+        expect(bidRequests[1]).not.to.have.property('bidFloor')
       })
     });
 

@@ -10,7 +10,7 @@ const BIDDER_CODE = 'preciso';
 const TESTDOMAIN = 'test.org'
 const bidEndPoint = `https://${TESTDOMAIN}/bid_request/openrtb`;
 
-describe('bidderOperations', function () {
+describe('bidUtils', function () {
   let bid = {
     bidId: '23fhj33i987f',
     bidder: BIDDER_CODE,

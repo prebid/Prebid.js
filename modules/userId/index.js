@@ -22,8 +22,8 @@
  * It's permissible to return neither, one, or both fields.
  * @callback getId
  * @param {SubmoduleConfig} config
- * @param {ConsentData|undefined} consentData
- * @param {Object|undefined} cacheIdObj
+ * @param {ConsentData|undefined} [consentData]
+ * @param {Object|undefined} [cacheIdObj]
  * @returns {IdResponse|undefined} A response object that contains id and/or callback.
  */
 
@@ -43,7 +43,7 @@
  * Decode a stored value for passing to bid requests
  * @callback decode
  * @param {Object|string} value
- * @param {SubmoduleConfig|undefined} config
+ * @param {SubmoduleConfig|undefined} [config]
  * @returns {Object|undefined}
  */
 
@@ -723,7 +723,7 @@ function getUserIdsAsEidBySource(sourceName) {
  * Sample use case is exposing this function to ESP
  */
 function getEncryptedEidsForSource(source, encrypt, customFunction) {
-  return initIdSystem().then(() => {
+  return retryOnCancel().then(() => {
     let eidsSignals = {};
 
     if (isFn(customFunction)) {
@@ -782,6 +782,23 @@ function registerSignalSources() {
   }
 }
 
+function retryOnCancel(initParams) {
+  return initIdSystem(initParams).then(
+    () => getUserIds(),
+    (e) => {
+      if (e === INIT_CANCELED) {
+        // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
+        // of canceling the previous init, before the refresh logic has had a chance to run.
+        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
+        return Promise.resolve().then(getUserIdsAsync)
+      } else {
+        logError('Error initializing userId', e)
+        return GreedyPromise.reject(e)
+      }
+    }
+  );
+}
+
 /**
  * Force (re)initialization of ID submodules.
  *
@@ -793,12 +810,12 @@ function registerSignalSources() {
  * @param callback? called when the refresh is complete
  */
 function refreshUserIds({submoduleNames} = {}, callback) {
-  return initIdSystem({refresh: true, submoduleNames})
-    .then(() => {
+  return retryOnCancel({refresh: true, submoduleNames})
+    .then((userIds) => {
       if (callback && isFn(callback)) {
         callback();
       }
-      return getUserIds();
+      return userIds;
     });
 }
 
@@ -814,20 +831,7 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  */
 
 function getUserIdsAsync() {
-  return initIdSystem().then(
-    () => getUserIds(),
-    (e) => {
-      if (e === INIT_CANCELED) {
-        // there's a pending refresh - because GreedyPromise runs this synchronously, we are now in the middle
-        // of canceling the previous init, before the refresh logic has had a chance to run.
-        // Use a "normal" Promise to clear the stack and let it complete (or this will just recurse infinitely)
-        return Promise.resolve().then(getUserIdsAsync)
-      } else {
-        logError('Error initializing userId', e)
-        return GreedyPromise.reject(e)
-      }
-    }
-  );
+  return retryOnCancel();
 }
 
 export function getConsentHash() {
