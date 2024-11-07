@@ -1,8 +1,8 @@
-import { isArrayOfNums, isInteger, isStr } from "./utils";
+import { isArrayOfNums, isInteger, isStr } from './utils.js';
 
 /**
  * List of OpenRTB 2.x banner object properties with simple validators.
- * Not included: `format`, `ext`
+ * Not included: `ext`
  * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
  */
 export const ORTB_BANNER_PARAMS = new Map([

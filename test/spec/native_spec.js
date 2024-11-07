@@ -1437,45 +1437,159 @@ describe('toOrtbNativeResponse', () => {
     })
   })
 
-  it('should sync mediaTypes and ortb2Imp properly', () => {
-    const adUnit = {
-      mediaTypes: {
-        native: {
-          api: [6],
-          battr: [3, 4],
-          fieldToOmit: 'omitted_value'
-        }
-      },
-      ortb2Imp: {
-        native: {
-          request: '{payload: true}',
-          ver: '1.1',
-          battr: [1, 2]
-        }        
-      }
-    };
+  describe('syncOrtb2', () => {
+    let logWarnSpy;
 
-    const expected = {
-      mediaTypes: {
-        native: {
-          api: [6],
-          request: '{payload: true}',
-          ver: '1.1',
-          fieldToOmit: 'omitted_value',
-          battr: [1, 2],
-        }
-      },
-      ortb2Imp: {
-        native: {
-          api: [6],
-          request: '{payload: true}',
-          ver: '1.1',
-          battr: [1, 2]
-        }        
-      }
-    };
+    beforeEach(function () {
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
 
-    syncOrtb2(adUnit, 'native');
-    expect(adUnit).to.deep.eql(expected);
-  })
+    afterEach(function () {
+      utils.logWarn.restore();
+    });
+
+    it('should properly sync fields if both present', () => {
+      const adUnit = {
+        mediaTypes: {
+          native: {
+            api: [6],
+            battr: [3, 4],
+            maxduration: 'omitted_value' // should be omitted during copying - not part of native obj spec
+          }
+        },
+        ortb2Imp: {
+          native: {
+            request: '{payload: true}',
+            ver: '1.1',
+            battr: [1, 2]
+          }
+        }
+      };
+
+      const expected = {
+        mediaTypes: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1',
+            maxduration: 'omitted_value',
+            battr: [1, 2],
+          }
+        },
+        ortb2Imp: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1',
+            battr: [1, 2]
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'native');
+      expect(adUnit).to.deep.eql(expected);
+
+      assert.ok(logWarnSpy.calledOnce, 'expected warning was logged due to conflicting battr');
+    });
+
+    it('should omit sync if mediaType not present on adUnit', () => {
+      const adUnit = {
+        mediaTypes: {
+          audio: {
+            fieldToOmit: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          audio: {
+            fieldToOmit2: 'omitted_value'
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'native');
+
+      expect(adUnit.ortb2Imp.native).to.be.undefined;
+      expect(adUnit.mediaTypes.native).to.be.undefined;
+    });
+
+    it('should properly sync if mediaTypes is not present on any of side', () => {
+      const adUnit = {
+        mediaTypes: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1',
+          }
+        },
+        ortb2Imp: {}
+      };
+
+      const expected1 = {
+        mediaTypes: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1',
+          }
+        },
+        ortb2Imp: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1',
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'native');
+      expect(adUnit).to.deep.eql(expected1);
+
+      const adUnit2 = {
+        mediaTypes: {},
+        ortb2Imp: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1',
+          }
+        }
+      };
+
+      const expected2 = {
+        mediaTypes: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1',
+          }
+        },
+        ortb2Imp: {
+          native: {
+            api: [6],
+            request: '{payload: true}',
+            ver: '1.1'
+          }
+        }
+      };
+
+      syncOrtb2(adUnit2, 'native');
+      expect(adUnit2).to.deep.eql(expected2);
+    });
+
+    it('should not create empty native object on ortb2Imp if there was nothing to copy', () => {
+      const adUnit2 = {
+        mediaTypes: {
+          native: {
+            noOrtbBannerField1: 'value',
+            noOrtbBannerField2: 'value'
+          }
+        },
+        ortb2Imp: {
+          // lack of native field
+        }
+      };
+      syncOrtb2(adUnit2, 'native');
+      expect(adUnit2.ortb2Imp.native).to.be.undefined
+    });
+  });
 })

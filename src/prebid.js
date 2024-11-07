@@ -102,11 +102,15 @@ function validateSizes(sizes, targLength) {
   return cleanSizes;
 }
 
-// setting mediaTypes to ortb2 corresponding fields and opposite
+// synchronize fields between mediaTypes[mediaType] and ortb2Imp[mediaType]
 export function syncOrtb2(adUnit, mediaType) {
+  const ortb2Imp = deepAccess(adUnit, `ortb2Imp.${mediaType}`);
+  const mediaTypes = deepAccess(adUnit, `mediaTypes.${mediaType}`);
 
-  const ortb2Imp = deepAccess(adUnit, `ortb2Imp.${mediaType}`) || {};
-  const mediaTypes = deepAccess(adUnit, `mediaTypes.${mediaType}`) || {};
+  if (!ortb2Imp && !mediaTypes) {
+    // omitting sync due to not present mediaType
+    return;
+  }
 
   const fields = {
     'video': ORTB_VIDEO_PARAMS,
@@ -119,20 +123,20 @@ export function syncOrtb2(adUnit, mediaType) {
   }
 
   fields.entries().forEach(([key, validator]) => {
-    const mediaTypesFieldValue = mediaTypes[key];
-    const ortbFieldValue = ortb2Imp[key];
+    const mediaTypesFieldValue = deepAccess(adUnit, `mediaTypes.${mediaType}.${key}`) // mediaTypes[key];
+    const ortbFieldValue = deepAccess(adUnit, `ortb2Imp.${mediaType}.${key}`) // ortb2Imp[key];
 
     if (mediaTypesFieldValue == undefined && ortbFieldValue == undefined) {
-      return;
+
     } else if (mediaTypesFieldValue == undefined) {
-      mediaTypes[key] = ortbFieldValue;
+      deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     } else if (ortbFieldValue == undefined) {
-      ortb2Imp[key] = validator(mediaTypesFieldValue) ? mediaTypesFieldValue : undefined;
+      deepSetValue(adUnit, `ortb2Imp.${mediaType}.${key}`, mediaTypesFieldValue);
     } else {
       logWarn(`adUnit ${adUnit.code}: specifies conflicting ortb2Imp.${mediaType}.${key} and mediaTypes.${mediaType}.${key}, the latter will be ignored`, adUnit);
-      mediaTypes[key] = ortbFieldValue;
+      deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     }
-  })
+  });
 }
 
 function validateBannerMediaType(adUnit) {
