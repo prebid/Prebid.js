@@ -1453,7 +1453,7 @@ describe('toOrtbNativeResponse', () => {
         mediaTypes: {
           native: {
             api: [6],
-            battr: [3, 4],
+            battr: [3, 4], // should be overwritten with value from ortb2Imp
             maxduration: 'omitted_value' // should be omitted during copying - not part of native obj spec
           }
         },
@@ -1580,8 +1580,8 @@ describe('toOrtbNativeResponse', () => {
       const adUnit2 = {
         mediaTypes: {
           native: {
-            noOrtbBannerField1: 'value',
-            noOrtbBannerField2: 'value'
+            noOrtbNativeField1: 'value',
+            noOrtbNativeField2: 'value'
           }
         },
         ortb2Imp: {

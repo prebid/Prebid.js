@@ -294,7 +294,7 @@ describe('video.js', function () {
             minduration: 500,
             maxduration: 1000,
             protocols: [1, 2, 3],
-            linearity: 5,
+            linearity: 5, // should be overwritten with value from ortb2Imp
             w: 100,
             h: 200,
             foo: 'omitted_value' // should be omitted during copying - not part of video obj spec

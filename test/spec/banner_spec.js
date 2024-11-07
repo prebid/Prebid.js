@@ -18,7 +18,7 @@ describe('banner', () => {
         mediaTypes: {
           banner: {
             format: [{w: 100, h: 100}],
-            btype: [1, 2, 34],
+            btype: [1, 2, 34], // should be overwritten with value from ortb2Imp
             battr: [3, 4],
             maxduration: 'omitted_value' // should be omitted during copying - not part of banner obj spec
           }
