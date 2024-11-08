@@ -213,7 +213,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
   }
 
   // imuid
-  const imuidQuery = getImuidAsQueryParameter();
+  const imuidQuery = getImuidAsQueryParameter(bid);
   if (imuidQuery) data.extuid = imuidQuery;
 
   // makeUAQuery
@@ -309,20 +309,10 @@ function makeBidResponseAd(innerHTML) {
 }
 
 /**
- * add imuid script tag
- */
-function appendImuidScript() {
-  const scriptEl = document.createElement('script');
-  scriptEl.src = '//dmp.im-apps.net/scripts/im-uid-hook.js?cid=3929';
-  scriptEl.async = true;
-  document.body.appendChild(scriptEl);
-}
-
-/**
  * return imuid strings as query parameters
  */
-function getImuidAsQueryParameter() {
-  const imuid = storage.getCookie('_im_uid.3929');
+function getImuidAsQueryParameter(bid) {
+  const imuid = utils.deepAccess(bid, 'userId.imuid');
   return imuid ? 'im:' + imuid : ''; // To avoid double encoding, not using encodeURIComponent here
 }
 
@@ -403,8 +393,6 @@ export const spec = {
     if (!serverResponse || !serverResponse.body) {
       return bidResponses;
     }
-
-    appendImuidScript();
 
     const zoneId = bidderRequest.bid.params.zoneId;
     let successBid;

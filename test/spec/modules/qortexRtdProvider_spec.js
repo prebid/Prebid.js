@@ -14,7 +14,8 @@ import {
   initializeModuleData,
   setGroupConfigData,
   saveContextAdded,
-  initializeBidEnrichment
+  initializeBidEnrichment,
+  getContextAddedEntry
 } from '../../../modules/qortexRtdProvider';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
@@ -44,6 +45,13 @@ describe('qortexRtdProvider', () => {
     params: {
       groupId: defaultGroupId,
       apiUrl: defaultApiHost,
+      bidders: validBidderArray
+    }
+  }
+  const invalidApiUrlModuleConfig = {
+    params: {
+      groupId: defaultGroupId,
+      apiUrl: 'test123',
       bidders: validBidderArray
     }
   }
@@ -95,6 +103,7 @@ describe('qortexRtdProvider', () => {
     groupId: defaultGroupId,
     active: true,
     prebidBidEnrichment: true,
+    prebidBidEnrichmentPercentage: 100,
     prebidReportingPercentage: 100
   }
   const validGroupConfigResponse = JSON.stringify(validGroupConfigResponseObj);
@@ -106,6 +115,14 @@ describe('qortexRtdProvider', () => {
     PrebidReportingPercentage: 100
   }
   const inactiveGroupConfigResponse = JSON.stringify(inactiveGroupConfigResponseObj);
+
+  const noEnrichmentGroupConfigResponseObj = {
+    groupId: defaultGroupId,
+    active: true,
+    prebidBidEnrichment: true,
+    prebidBidEnrichmentPercentage: 0,
+    prebidReportingPercentage: 100
+  }
 
   const reqBidsConfig = {
     auctionId: '1234',
@@ -281,6 +298,16 @@ describe('qortexRtdProvider', () => {
       server.requests[0].respond(200, responseHeaders, contextResponse);
     })
 
+    it('will log message call callback if context data has already been collected', (done) => {
+      setContextData(contextResponseObj);
+      module.getBidRequestData(reqBidsConfig, callbackSpy);
+      setTimeout(() => {
+        expect(server.requests.length).to.be.eql(0);
+        expect(logMessageSpy.calledWith('Adding Content object from existing context data')).to.be.true;
+        done();
+      }, 250)
+    })
+
     it('will catch and log error and fire callback', (done) => {
       module.getBidRequestData(reqBidsConfig, callbackSpy);
       server.requests[0].respond(404, responseHeaders, JSON.stringify({}));
@@ -301,6 +328,18 @@ describe('qortexRtdProvider', () => {
       }
       module.getBidRequestData(reqBidsConfig, cb);
     })
+
+    it('Logs warning for network error', (done) => {
+      saveContextAdded(reqBidsConfig);
+      const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
+      module.onAuctionEndEvent(testData);
+      server.requests[0].respond(500, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(logWarnSpy.calledWith('Returned error status code: 500')).to.be.eql(true);
+        done();
+      }, 200)
+    })
+
     it('will not request context if prebid disable toggle is true', (done) => {
       initializeModuleData(bidEnrichmentDisabledModuleConfig);
       const cb = function () {
@@ -391,6 +430,27 @@ describe('qortexRtdProvider', () => {
   })
 
   describe('addContextToRequests', () => {
+    let testReqBids;
+    beforeEach(() => {
+      setGroupConfigData(validGroupConfigResponseObj);
+      testReqBids = {
+        auctionId: '1234',
+        adUnits: [{
+          bids: [
+            { bidder: 'qortex' }
+          ]
+        }],
+        ortb2Fragments: {
+          bidder: {},
+          global: {}
+        }
+      }
+    })
+
+    afterEach(() => {
+      setGroupConfigData(null);
+    })
+
     it('logs error if no data was retrieved from get context call', () => {
       initializeModuleData(validModuleConfig);
       addContextToRequests(reqBidsConfig);
@@ -398,6 +458,16 @@ describe('qortexRtdProvider', () => {
       expect(logWarnSpy.calledWith('No context data received at this time')).to.be.ok;
       expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
+    })
+
+    it('saves context added entry with skipped flag if valid request does not meet threshold', () => {
+      initializeModuleData(validModuleConfig);
+      setContextData(contextResponseObj.content);
+      setGroupConfigData(noEnrichmentGroupConfigResponseObj);
+      addContextToRequests(reqBidsConfig);
+      const contextAdded = getContextAddedEntry(reqBidsConfig.auctionId);
+      expect(contextAdded).to.not.be.null;
+      expect(contextAdded.contextSkipped).to.eql(true);
     })
 
     it('adds site.content only to global ortb2 when bidders array is omitted', () => {
