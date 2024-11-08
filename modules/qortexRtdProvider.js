@@ -7,8 +7,11 @@ import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 const DEFAULT_API_URL = 'https://demand.qortex.ai';
+const LOOKUP_RATE_LIMIT = 5000;
+const qortexSessionInfo = {};
 
-const qortexSessionInfo = {}
+let lookupRateLimitTimeout;
+let lookupAttemptDelay;
 
 /**
  * Init if module configuration is valid
@@ -93,7 +96,15 @@ function onAuctionEndEvent (data, config, t) {
  * @returns {Promise} ortb Content object
  */
 export function getContext () {
-  if (!qortexSessionInfo.currentSiteContext) {
+  if (qortexSessionInfo.currentSiteContext) {
+    logMessage('Adding Content object from existing context data');
+    return new Promise((resolve, reject) => resolve(qortexSessionInfo.currentSiteContext));
+  } else if (lookupRateLimitTimeout !== null) {
+    logMessage(`Content lookup attempted during rate limit waiting period of ${LOOKUP_RATE_LIMIT}ms.`);
+    lookupAttemptDelay = true;
+    return new Promise((resolve, reject) => reject(new Error(429)));
+  } else {
+    lookupRateLimitTimeout = setTimeout(resetRateLimitTimeout, LOOKUP_RATE_LIMIT);
     const pageUrlObject = { pageUrl: document.location.href ?? '' }
     logMessage('Requesting new context data');
     return new Promise((resolve, reject) => {
@@ -114,9 +125,20 @@ export function getContext () {
       }
       ajax(qortexSessionInfo.contextUrl, callbacks, JSON.stringify(pageUrlObject), {contentType: 'application/json'})
     })
-  } else {
-    logMessage('Adding Content object from existing context data');
-    return new Promise((resolve, reject) => resolve(qortexSessionInfo.currentSiteContext));
+  }
+}
+
+/**
+ * Resets rate limit timeout for preventing overactive page content lookup
+ * Will re-trigger requestContextData if page lookups had been previously delayed
+ */
+export function resetRateLimitTimeout() {
+  lookupRateLimitTimeout = null;
+  if (lookupAttemptDelay) {
+    lookupAttemptDelay = false;
+    if (!qortexSessionInfo.currentSiteContext) {
+      requestContextData();
+    }
   }
 }
 
@@ -313,6 +335,8 @@ export function initializeModuleData(config) {
   qortexSessionInfo.groupConfigUrl = `${qortexUrlBase}/api/v1/prebid/group/configs/${groupId}/${windowUrl}`;
   qortexSessionInfo.contextUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/lookup`;
   qortexSessionInfo.analyticsUrl = generateAnalyticsHostUrl(qortexUrlBase);
+  lookupRateLimitTimeout = null;
+  lookupAttemptDelay = false;
   return qortexSessionInfo;
 }
 

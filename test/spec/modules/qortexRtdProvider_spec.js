@@ -16,7 +16,8 @@ import {
   saveContextAdded,
   initializeBidEnrichment,
   getContextAddedEntry,
-  windowPostMessageReceived
+  windowPostMessageReceived,
+  resetRateLimitTimeout
 } from '../../../modules/qortexRtdProvider';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
@@ -271,11 +272,13 @@ describe('qortexRtdProvider', () => {
       setGroupConfigData(validGroupConfigResponseObj);
       callbackSpy = sinon.spy();
       server.reset();
+      global.lookupRateLimitTimeout = null;
     })
 
     afterEach(() => {
       initializeModuleData(emptyModuleConfig);
       callbackSpy.resetHistory();
+      global.lookupRateLimitTimeout = null;
     })
 
     it('will call callback immediately if no adunits', () => {
@@ -332,6 +335,17 @@ describe('qortexRtdProvider', () => {
       server.requests[0].respond(500, responseHeaders, JSON.stringify({}));
       setTimeout(() => {
         expect(logWarnSpy.calledWith('Returned error status code: 500')).to.be.eql(true);
+        done();
+      }, 200)
+    })
+
+    it('Logs warning for rate limit', (done) => {
+      saveContextAdded(reqBidsConfig);
+      const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
+      module.onAuctionEndEvent(testData);
+      server.requests[0].respond(429, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(logWarnSpy.calledWith('Returned error status code: 429')).to.be.eql(true);
         done();
       }, 200)
     })
@@ -422,6 +436,26 @@ describe('qortexRtdProvider', () => {
         expect(logWarnSpy.called).to.be.false;
         done();
       });
+    })
+
+    it('request content object after elapsed rate limit timeout if a second content lookup was delayed', (done) => {
+      const ctx = getContext();
+      server.requests[0].respond(202, responseHeaders, JSON.stringify({}))
+      ctx.then(response => {
+        expect(response).to.be.null;
+        expect(logMessageSpy.calledWith('Requesting new context data')).to.be.true;
+        expect(server.requests.length).to.be.eql(1);
+        expect(logWarnSpy.called).to.be.false;
+      });
+      setTimeout(() => {
+        const ctx2 = getContext();
+        ctx2.catch(e => {
+          expect(e.message).to.equal('429');
+          expect(logMessageSpy.calledWith('Content lookup attempted during rate limit waiting period of 5000ms.')).to.be.true;
+          resetRateLimitTimeout();
+          done();
+        })
+      }, 200)
     })
   })
 
