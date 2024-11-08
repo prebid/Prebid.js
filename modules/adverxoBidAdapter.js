@@ -18,6 +18,17 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'adverxo';
 
+const ALIASES = [
+  {code: 'adport'},
+  {code: 'bidsmind'}
+];
+
+const AUCTION_URLS = {
+  adverxo: 'js.pbsadverxo.com',
+  adport: 'diclotrans.com',
+  bidsmind: 'egrevirda.com',
+};
+
 const ENDPOINT_URL_AD_UNIT_PLACEHOLDER = '{AD_UNIT}';
 const ENDPOINT_URL_AUTH_PLACEHOLDER = '{AUTH}';
 const ENDPOINT_URL_HOST_PLACEHOLDER = '{HOST}';
@@ -153,9 +164,11 @@ const videoUtils = {
 };
 
 const adverxoUtils = {
-  buildAuctionUrl: function (host, adUnitId, adUnitAuth) {
+  buildAuctionUrl: function (bidderCode, host, adUnitId, adUnitAuth) {
+    const auctionUrl = host || AUCTION_URLS[bidderCode];
+
     return ENDPOINT_URL
-      .replace(ENDPOINT_URL_HOST_PLACEHOLDER, host)
+      .replace(ENDPOINT_URL_HOST_PLACEHOLDER, auctionUrl)
       .replace(ENDPOINT_URL_AD_UNIT_PLACEHOLDER, adUnitId)
       .replace(ENDPOINT_URL_AUTH_PLACEHOLDER, adUnitAuth);
   },
@@ -200,7 +213,7 @@ const adverxoUtils = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
-  aliases: [],
+  aliases: ALIASES,
 
   /**
    * Determines whether the given bid request is valid.
@@ -221,11 +234,6 @@ export const spec = {
 
     if (!bid.params.auth || typeof bid.params.auth !== 'string') {
       utils.logWarn('Adverxo Bid Adapter: auth bid param is required and must be a string');
-      return false;
-    }
-
-    if (!bid.params.host || typeof bid.params.host !== 'string') {
-      utils.logWarn('Adverxo Bid Adapter: host bid param is required and must be a string');
       return false;
     }
 
@@ -252,7 +260,7 @@ export const spec = {
 
       result.push({
         method: 'POST',
-        url: adverxoUtils.buildAuctionUrl(adUnit.host, adUnit.id, adUnit.auth),
+        url: adverxoUtils.buildAuctionUrl(bidderRequest.bidderCode, adUnit.host, adUnit.id, adUnit.auth),
         data: ortbRequest,
         bids: adUnitBidRequests
       });

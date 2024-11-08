@@ -198,7 +198,7 @@ describe('Adverxo Bid Adapter', () => {
       expect(isValid).to.be.false;
     });
 
-    it('should not validate bid request with missing param(host)', () => {
+    it('should validate bid request with missing param(host)', () => {
       const invalidBid = makeBidRequestWithParams({
         adUnitId: 1,
         auth: 'authExample',
@@ -206,7 +206,7 @@ describe('Adverxo Bid Adapter', () => {
 
       const isValid = spec.isBidRequestValid(invalidBid);
 
-      expect(isValid).to.be.false;
+      expect(isValid).to.be.true;
     });
   });
 
@@ -216,6 +216,52 @@ describe('Adverxo Bid Adapter', () => {
 
       expect(request.data.user.ext.eids).to.exist;
       expect(request.data.user.ext.eids).to.deep.equal(bannerBidRequests[0].userIdAsEids);
+    });
+
+    it('should use correct bidUrl for an alias', () => {
+      const bidRequests = [
+        {
+          bidder: 'bidsmind',
+          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          params: {
+            adUnitId: 1,
+            auth: 'authExample',
+          }
+        },
+      ];
+
+      const bidderRequest = {
+        bidderCode: 'bidsmind',
+        bids: bidRequests,
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://egrevirda.com/pickpbs?id=1&auth=authExample');
+    });
+
+    it('should use correct default bidUrl', () => {
+      const bidRequests = [
+        {
+          bidder: 'adverxo',
+          mediaTypes: {banner: {sizes: [[300, 250]]}},
+          params: {
+            adUnitId: 1,
+            auth: 'authExample',
+          }
+        },
+      ];
+
+      const bidderRequest = {
+        bidderCode: 'adverxo',
+        bids: bidRequests
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://js.pbsadverxo.com/pickpbs?id=1&auth=authExample');
     });
 
     it('should build post request for banner', () => {

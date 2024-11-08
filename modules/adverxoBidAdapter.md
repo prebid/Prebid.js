@@ -15,7 +15,7 @@ Banner, native and video formats are supported.
 
 | Name       | Required? | Description                                                       | Example                                      | Type      |
 |------------|-----------|-------------------------------------------------------------------|----------------------------------------------|-----------|
-| `host`     | Yes       | Ad network host.                                                  | `prebidTest.adverxo.com`                     | `String`  |
+| `host`     | No        | Ad network host.                                                  | `prebidTest.adverxo.com`                     | `String`  |
 | `adUnitId` | Yes       | Unique identifier for the ad unit in Adverxo platform.            | `413`                                        | `Integer` |
 | `auth`     | Yes       | Authentication token provided by Adverxo platform for the AdUnit. | `'61336d75e414c77c367ce5c47c2599ce80a8x32b'` | `String`  |
 
@@ -36,7 +36,7 @@ var adUnits = [
         bids: [{
             bidder: 'adverxo',
             params: {
-                host: 'prebidTest.adverxo.com',
+                host: 'example.com',
                 adUnitId: 1,
                 auth: '61336e753414c77c367deac47c2595ce80a8032b'
             }
@@ -70,7 +70,7 @@ var adUnits = [
         bids: [{
             bidder: 'adverxo',
             params: {
-                host: 'prebidTest.adverxo.com',
+                host: 'example.com',
                 adUnitId: 2,
                 auth: '9a640dfccc3381e71fxc29ffd4a72wabd29g9d86'
             }
@@ -90,7 +90,7 @@ var adUnits = [
         bids: [{
             bidder: 'adverxo',
             params: {
-                host: 'prebidTest.adverxo.com',
+                host: 'example.com',
                 adUnitId: 3,
                 auth: '1ax23d9621f21da28a2eab6f79bd5fbcf4d037c1'
             }
