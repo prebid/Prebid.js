@@ -1,9 +1,23 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import {
-  spec,
-  getBidFloor as connatixGetBidFloor
+  _getBidRequests,
+  _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
+  detectViewability as connatixDetectViewability,
+  getBidFloor as connatixGetBidFloor,
+  _getMinSize as connatixGetMinSize,
+  _getViewability as connatixGetViewability,
+  _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
+  saveOnAllStorages as connatixSaveOnAllStorages,
+  readFromAllStorages as connatixReadFromAllStorages,
+  storage,
+  spec
 } from '../../../modules/connatixBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
+import adapterManager from '../../../src/adapterManager.js';
+import * as ajax from '../../../src/ajax.js';
+import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+
+const BIDDER_CODE = 'connatix';
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -24,6 +38,478 @@ describe('connatixBidAdapter', function () {
     };
   };
 
+  function addVideoToBidMock(bid) {
+    const mediaTypes = {
+      video: {
+        context: 'instream',
+        w: 1280,
+        h: 720,
+        playerSize: [1280, 720],
+        placement: 1,
+        plcmt: 1,
+        api: [1, 2],
+        mimes: ['video/mp4', 'application/javascript'],
+        minduration: 30,
+        maxduration: 60,
+        startdelay: 0,
+      }
+    }
+
+    bid.mediaTypes = mediaTypes;
+  }
+
+  describe('connatixGetMinSize', () => {
+    it('should return the smallest size based on area', () => {
+      const sizes = [
+        { w: 300, h: 250 },
+        { w: 728, h: 90 },
+        { w: 160, h: 600 }
+      ];
+      const result = connatixGetMinSize(sizes);
+      expect(result).to.deep.equal({ w: 728, h: 90 });
+    });
+
+    it('should handle an array with one size', () => {
+      const sizes = [{ w: 300, h: 250 }];
+      const result = connatixGetMinSize(sizes);
+      expect(result).to.deep.equal({ w: 300, h: 250 });
+    });
+
+    it('should handle empty array', () => {
+      const sizes = [];
+      const result = connatixGetMinSize(sizes);
+      expect(result).to.be.undefined;
+    });
+  });
+
+  describe('_isIframe', () => {
+    let querySelectorStub;
+
+    beforeEach(() => {
+      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
+    });
+
+    afterEach(() => {
+      querySelectorStub.restore();
+    });
+
+    it('should return true when window.top.document.querySelector does not throw an error', () => {
+      querySelectorStub.returns({});
+      expect(connatixCanSelectViewabilityContainer()).to.be.true;
+    });
+
+    it('should return false when window.top.document.querySelector throws an error', () => {
+      querySelectorStub.throws(new Error('test error'));
+      expect(connatixCanSelectViewabilityContainer()).to.be.false;
+    });
+  });
+
+  describe('_isViewabilityMeasurable', () => {
+    let querySelectorStub;
+
+    beforeEach(() => {
+      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
+    });
+
+    afterEach(() => {
+      querySelectorStub.restore();
+    });
+
+    it('should return false if the element is null or undefined', () => {
+      expect(connatixIsViewabilityMeasurable(null)).to.be.false;
+      expect(connatixIsViewabilityMeasurable(undefined)).to.be.false;
+    });
+
+    it('should return false if _isIframe returns true', () => {
+      querySelectorStub.throws(new Error('test error'));
+
+      const element = document.createElement('div');
+      expect(connatixIsViewabilityMeasurable(element)).to.be.false;
+    });
+
+    it('should return true if _isIframe returns false', () => {
+      querySelectorStub.returns(document.createElement('div'))
+
+      const element = document.createElement('div');
+      expect(connatixIsViewabilityMeasurable(element)).to.be.true;
+    });
+  });
+
+  describe('_getViewability', () => {
+    let element;
+    let getBoundingClientRectStub;
+    let topWinMock;
+
+    beforeEach(() => {
+      element = document.createElement('div');
+      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+
+      topWinMock = {
+        document: {
+          visibilityState: 'visible'
+        },
+        innerWidth: 800,
+        innerHeight: 600
+      };
+    });
+
+    afterEach(() => {
+      getBoundingClientRectStub.restore();
+    });
+
+    it('should return 0 if the document is not visible', () => {
+      topWinMock.document.visibilityState = 'hidden';
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(0);
+    });
+
+    it('should return 100% if the element is fully in view', () => {
+      const boundingBox = { left: 100, top: 100, right: 300, bottom: 300, width: 200, height: 200 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(100);
+    });
+
+    it('should return the correct percentage if the element is partially in view', () => {
+      const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
+    });
+
+    it('should return 0% if the element is not in view', () => {
+      const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const viewability = connatixGetViewability(element, topWinMock);
+
+      expect(viewability).to.equal(0);
+    });
+
+    it('should use provided width and height if element dimensions are zero', () => {
+      const boundingBox = { left: 100, top: 100, right: 100, bottom: 100, width: 0, height: 0 };
+      getBoundingClientRectStub.returns(boundingBox);
+
+      const dimensions = { w: 200, h: 200 };
+      const viewability = connatixGetViewability(element, topWinMock, dimensions);
+
+      expect(viewability).to.equal(100); // Element fully in view with provided dimensions
+    });
+  });
+
+  describe('detectViewability', () => {
+    let element;
+    let getBoundingClientRectStub;
+    let topWinMock;
+    let querySelectorStub;
+    let getElementByIdStub;
+
+    beforeEach(() => {
+      element = document.createElement('div');
+      getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
+
+      topWinMock = {
+        document: {
+          visibilityState: 'visible'
+        },
+        innerWidth: 800,
+        innerHeight: 600
+      };
+
+      querySelectorStub = sinon.stub(window.top.document, 'querySelector');
+      getElementByIdStub = sinon.stub(document, 'getElementById');
+    });
+
+    afterEach(() => {
+      getBoundingClientRectStub.restore();
+      querySelectorStub.restore();
+      getElementByIdStub.restore();
+    });
+
+    it('should return 100% viewability when the element is fully within view and has a valid viewabilityContainerIdentifier', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#validElement' },
+        adUnitCode: 'adUnitCode123',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]]
+      };
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      querySelectorStub.withArgs('#validElement').returns(element);
+      getElementByIdStub.returns(null);
+
+      const result = connatixDetectViewability(bid);
+
+      // Expected calculation: the element is fully in view, so 100% viewability
+      expect(result).to.equal(100);
+    });
+
+    it('should fall back to using bid sizes and adUnitCode when the viewabilityContainerIdentifier is invalid or was not provided', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#invalidElement' },
+        adUnitCode: 'adUnitCode123',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]]
+      };
+
+      getBoundingClientRectStub.returns({
+        left: 200,
+        top: 100,
+        right: 500,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      querySelectorStub.withArgs('#invalidElement').returns(null);
+      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+
+      const result = connatixDetectViewability(bid);
+
+      expect(result).to.equal(100); // Full viewability
+    });
+
+    it('should use the adUnitCode as a fallback when querying an element fails due to a browser error, and return 100% viewability because adUnitCode container is fully in view', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#invalidElement' },
+        adUnitCode: 'adUnitCode123',
+        sizes: [[300, 250]]
+      };
+
+      // Simulate an error when querying the element
+      querySelectorStub.withArgs('#invalidElement').throws(new Error('Query failed'));
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      // The fallback should use the adUnitCode to find the element
+      getElementByIdStub.withArgs('adUnitCode123').returns(element);
+
+      const result = connatixDetectViewability(bid);
+
+      expect(result).to.equal(100); // Expect the fallback to work and return 100% viewability
+    });
+
+    it('should return null when querying the element by the provided identifier fails and the adUnitCode viewability container is unavailable', () => {
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#invalidElement' },
+        adUnitCode: 'adUnitCode123',
+        sizes: [[300, 250]]
+      };
+
+      // Simulate an error when querying the element
+      querySelectorStub.withArgs('#invalidElement').throws(new Error('Query failed'));
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+
+      const result = connatixDetectViewability(bid);
+
+      expect(result).to.equal(null);
+    });
+  });
+
+  describe('_getBidRequests', function () {
+    let bid;
+
+    // Mock a bid request similar to the one already used in connatixBidAdapter tests
+    function mockBidRequest() {
+      const mediaTypes = {
+        banner: {
+          sizes: [16, 9],
+        }
+      };
+      return {
+        bidId: 'testing',
+        bidder: 'connatix',
+        params: {
+          placementId: '30e91414-545c-4f45-a950-0bec9308ff22',
+          viewabilityContainerIdentifier: 'viewabilityId',
+        },
+        mediaTypes,
+        sizes: [300, 250]
+      };
+    }
+
+    it('should map valid bid requests and include the expected fields', function () {
+      bid = mockBidRequest();
+
+      const result = _getBidRequests([bid]);
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0]).to.have.property('bidId', bid.bidId);
+      expect(result[0]).to.have.property('mediaTypes', bid.mediaTypes);
+      expect(result[0]).to.have.property('sizes', bid.sizes);
+      expect(result[0]).to.have.property('placementId', bid.params.placementId);
+      expect(result[0]).to.have.property('hasViewabilityContainerId', true);
+    });
+
+    it('should set hasViewabilityContainerId to false when viewabilityContainerIdentifier is absent', function () {
+      bid = mockBidRequest();
+      delete bid.params.viewabilityContainerIdentifier;
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.have.property('hasViewabilityContainerId', false);
+    });
+
+    it('should call getBidFloor for each bid and return the correct floor value', function () {
+      bid = mockBidRequest();
+      const floorValue = 5;
+
+      // Mock getFloor method on bid
+      bid.getFloor = function() {
+        return { floor: floorValue };
+      };
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.have.property('floor', floorValue);
+    });
+
+    it('should return floor as 0 if getBidFloor throws an error', function () {
+      bid = mockBidRequest();
+
+      // Mock getFloor method to throw an error
+      bid.getFloor = function() {
+        throw new Error('error');
+      };
+
+      const result = _getBidRequests([bid]);
+
+      expect(result[0]).to.have.property('floor', 0);
+    });
+  });
+
+  describe('onTimeout', function () {
+    let ajaxStub;
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(spec, 'triggerEvent')
+    })
+
+    afterEach(() => {
+      ajaxStub.restore()
+    });
+
+    it('call event if bidder is connatix', () => {
+      const result = spec.onTimeout([{
+        bidder: 'connatix',
+        timeout: 500,
+      }]);
+      expect(ajaxStub.calledOnce).to.equal(true);
+
+      const data = ajaxStub.firstCall.args[0];
+      expect(data.type).to.equal('Timeout');
+      expect(data.timeout).to.equal(500);
+    });
+
+    it('timeout event is not triggered if bidder is not connatix', () => {
+      const result = spec.onTimeout([{
+        bidder: 'otherBidder',
+        timeout: 500,
+      }]);
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
+  });
+
+  describe('onBidWon', function () {
+    let ajaxStub;
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(spec, 'triggerEvent');
+    });
+
+    afterEach(() => {
+      ajaxStub.restore();
+    });
+
+    it('calls triggerEvent with correct data when bidWinData is provided', () => {
+      const bidWinData = {
+        bidder: 'connatix',
+        cpm: 2.5,
+        requestId: 'abc123',
+        bidId: 'dasdas-dsawda-dwaddw-dwdwd',
+        adUnitCode: 'adunit_1',
+        timeToRespond: 300,
+        auctionId: 'auction_456',
+      };
+
+      spec.onBidWon(bidWinData);
+      expect(ajaxStub.calledOnce).to.equal(true);
+
+      const eventData = ajaxStub.firstCall.args[0];
+      expect(eventData.type).to.equal('BidWon');
+      expect(eventData.bestBidBidder).to.equal('connatix');
+      expect(eventData.bestBidPrice).to.equal(2.5);
+      expect(eventData.requestId).to.equal('abc123');
+      expect(eventData.bidId).to.equal('dasdas-dsawda-dwaddw-dwdwd');
+      expect(eventData.adUnitCode).to.equal('adunit_1');
+      expect(eventData.timeToRespond).to.equal(300);
+      expect(eventData.auctionId).to.equal('auction_456');
+    });
+
+    it('does not call triggerEvent if bidWinData is null', () => {
+      spec.onBidWon(null);
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
+
+    it('does not call triggerEvent if bidWinData is undefined', () => {
+      spec.onBidWon(undefined);
+      expect(ajaxStub.notCalled).to.equal(true);
+    });
+  });
+
+  describe('triggerEvent', function () {
+    let ajaxStub;
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(ajax, 'ajax');
+    });
+
+    afterEach(() => {
+      ajaxStub.restore();
+    });
+
+    it('should call ajax with the correct parameters', () => {
+      const data = { type: 'BidWon', bestBidBidder: 'bidder1', bestBidPrice: 1.5, requestId: 'req123', adUnitCode: 'ad123', timeToRespond: 250, auctionId: 'auc123', context: {} };
+      spec.triggerEvent(data);
+
+      expect(ajaxStub.calledOnce).to.equal(true);
+      const [url, _, payload, options] = ajaxStub.firstCall.args;
+      expect(url).to.equal('https://capi.connatix.com/tr/am');
+      expect(payload).to.equal(JSON.stringify(data));
+      expect(options.method).to.equal('POST');
+      expect(options.withCredentials).to.equal(false);
+    });
+  });
+
   describe('isBidRequestValid', function () {
     this.beforeEach(function () {
       bid = mockBidRequest();
@@ -31,10 +517,6 @@ describe('connatixBidAdapter', function () {
 
     it('Should return true if all required fileds are present', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-    it('Should return false if bidder does not correspond', function () {
-      bid.bidder = 'abc';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return false if bidId is missing', function () {
       delete bid.bidId;
@@ -52,7 +534,7 @@ describe('connatixBidAdapter', function () {
       delete bid.mediaTypes;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
-    it('Should return false if banner is missing from mediaTypes ', function () {
+    it('Should return false if both banner and video are missing from mediaTypes', function () {
       delete bid.mediaTypes.banner;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
@@ -68,6 +550,15 @@ describe('connatixBidAdapter', function () {
       bid.mediaTypes.banner.sizes = [];
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
+    it('Should return true if video is set correctly', function () {
+      addVideoToBidMock(bid);
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+    it('Should return false if context is set to adpod on video media type', function() {
+      addVideoToBidMock(bid);
+      bid.mediaTypes.video.context = ADPOD;
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
     it('Should return true if add an extra field was added to the bidRequest', function () {
       bid.params.test = 1;
       expect(spec.isBidRequestValid(bid)).to.be.true;
@@ -76,6 +567,7 @@ describe('connatixBidAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest;
+    let setCookieStub, setDataInLocalStorageStub;
     let bidderRequest = {
       refererInfo: {
         canonicalUrl: '',
@@ -104,9 +596,20 @@ describe('connatixBidAdapter', function () {
     };
 
     this.beforeEach(function () {
+      const mockIdentityProviderData = { mockKey: 'mockValue' };
+      const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
+      setCookieStub = sinon.stub(storage, 'setCookie');
+      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+      connatixSaveOnAllStorages('test_ids_cnx', mockIdentityProviderData, CNX_IDS_EXPIRY);
+
       bid = mockBidRequest();
       serverRequest = spec.buildRequests([bid], bidderRequest);
     })
+
+    this.afterEach(function() {
+      setCookieStub.restore();
+      setDataInLocalStorageStub.restore();
+    });
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -134,6 +637,7 @@ describe('connatixBidAdapter', function () {
       expect(serverRequest.data.uspConsent).to.equal(bidderRequest.uspConsent);
       expect(serverRequest.data.gppConsent).to.equal(bidderRequest.gppConsent);
       expect(serverRequest.data.ortb2).to.equal(bidderRequest.ortb2);
+      expect(serverRequest.data.identityProviderData).to.deep.equal({ mockKey: 'mockValue' });
     });
   });
 
@@ -196,6 +700,30 @@ describe('connatixBidAdapter', function () {
 
       expect(bidResponses[0].cpm).to.equal(firstBidCpm);
       expect(bidResponses[1].cpm).to.equal(secondBidCpm);
+    });
+
+    it('Should contain specific values for banner bids', function () {
+      const adHtml = 'ad html'
+      serverResponse.body.Bids = [ { ...Bid, Ad: adHtml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.vastXml).to.be.undefined;
+      expect(bidResponse.ad).to.equal(adHtml);
+      expect(bidResponse.mediaType).to.equal(BANNER);
+    });
+
+    it('Should contain specific values for video bids', function () {
+      const adVastXml = 'ad vast xml'
+      serverResponse.body.Bids = [ { ...Bid, VastXml: adVastXml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.ad).to.be.undefined;
+      expect(bidResponse.vastXml).to.equal(adVastXml);
+      expect(bidResponse.mediaType).to.equal(VIDEO);
     });
   });
 
@@ -303,6 +831,77 @@ describe('connatixBidAdapter', function () {
     });
   });
 
+  describe('userIdAsEids', function() {
+    let validBidRequests;
+
+    this.beforeEach(function () {
+      bid = mockBidRequest();
+      validBidRequests = [bid];
+    })
+
+    it('Connatix adapter reads EIDs from Prebid user models and adds it to Request', function() {
+      validBidRequests[0].userIdAsEids = [{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'TTD_ID_FROM_USER_ID_MODULE',
+          'atype': 1,
+          'ext': {
+            'stype': 'ppuid',
+            'rtiPartner': 'TDID'
+          }
+        }]
+      },
+      {
+        'source': 'pubserver.org',
+        'uids': [{
+          'id': 'TDID_FROM_USER_ID_MODULE',
+          'atype': 1
+        }]
+      }];
+      let serverRequest = spec.buildRequests(validBidRequests, {});
+      expect(serverRequest.data.userIdList).to.deep.equal(validBidRequests[0].userIdAsEids);
+    });
+  });
+
+  describe('isConnatix', function () {
+    let aliasRegistryStub;
+
+    beforeEach(() => {
+      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry').value({});
+    });
+
+    afterEach(() => {
+      aliasRegistryStub.restore();
+    });
+
+    it('should return false if aliasName is undefined or null', () => {
+      expect(spec.isConnatix(undefined)).to.be.false;
+      expect(spec.isConnatix(null)).to.be.false;
+    });
+
+    it('should return true if aliasName matches BIDDER_CODE', () => {
+      const aliasName = BIDDER_CODE;
+      expect(spec.isConnatix(aliasName)).to.be.true;
+    });
+
+    it('should return true if aliasName is mapped to BIDDER_CODE in aliasRegistry', () => {
+      const aliasName = 'connatixAlias';
+      aliasRegistryStub.value({ 'connatixAlias': BIDDER_CODE });
+      expect(spec.isConnatix(aliasName)).to.be.true;
+    });
+
+    it('should return false if aliasName does not match BIDDER_CODE', () => {
+      const aliasName = 'otherBidder';
+      expect(spec.isConnatix(aliasName)).to.be.false;
+    });
+
+    it('should return false if aliasName is mapped to a different bidder in aliasRegistry', () => {
+      const aliasName = 'someOtherAlias';
+      aliasRegistryStub.value({ 'someOtherAlias': 'otherBidder' });
+      expect(spec.isConnatix(aliasName)).to.be.false;
+    });
+  });
+
   describe('getBidFloor', function () {
     this.beforeEach(function () {
       bid = mockBidRequest();
@@ -350,6 +949,104 @@ describe('connatixBidAdapter', function () {
       };
       const floor = connatixGetBidFloor(bid);
       expect(floor).to.equal(0);
+    });
+  });
+  describe('getUserSyncs with message event listener', function() {
+    const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
+    const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
+    const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
+
+    const mockData = {
+      providerName: 'nonId',
+      data: {
+        supplementalEids: [{ provider: 2, group: 1, eidsList: ['123', '456'] }]
+      }
+    };
+
+    function messageHandler(event) {
+      if (!event.data || event.origin !== 'https://cds.connatix.com') {
+        return;
+      }
+
+      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT) {
+        window.removeEventListener('message', messageHandler);
+        event.stopImmediatePropagation();
+      }
+
+      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT || event.data.type === IDENTITY_PROVIDER_RESOLVED_EVENT) {
+        const response = event.data;
+        if (response.data) {
+          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+        }
+      }
+    }
+
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(storage, 'setCookie');
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(window, 'removeEventListener');
+      sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getCookie');
+      sandbox.stub(storage, 'getDataFromLocalStorage');
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('Should set a cookie and save to local storage when a valid message is received', () => {
+      const fakeEvent = {
+        data: { type: 'cnx_all_identity_providers_resolved', data: mockData },
+        origin: 'https://cds.connatix.com',
+        stopImmediatePropagation: sinon.spy()
+      };
+
+      messageHandler(fakeEvent);
+
+      expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
+      expect(window.removeEventListener.calledWith('message', messageHandler)).to.be.true;
+      expect(storage.setCookie.calledWith(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, JSON.stringify(mockData), sinon.match.string)).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, JSON.stringify(mockData))).to.be.true;
+
+      storage.getCookie.returns(JSON.stringify(mockData));
+      storage.getDataFromLocalStorage.returns(JSON.stringify(mockData));
+
+      const retrievedData = connatixReadFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY);
+      expect(retrievedData).to.deep.equal(mockData);
+    });
+
+    it('Should should not do anything when there is no data in the payload', () => {
+      const fakeEvent = {
+        data: null,
+        origin: 'https://cds.connatix.com',
+        stopImmediatePropagation: sinon.spy()
+      };
+
+      messageHandler(fakeEvent);
+
+      expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
+      expect(window.removeEventListener.notCalled).to.be.true;
+      expect(storage.setCookie.notCalled).to.be.true;
+      expect(storage.setDataInLocalStorage.notCalled).to.be.true;
+    });
+
+    it('Should should not do anything when the origin is invalid', () => {
+      const fakeEvent = {
+        data: { type: 'cnx_all_identity_providers_resolved', data: mockData },
+        origin: 'https://notConnatix.com',
+        stopImmediatePropagation: sinon.spy()
+      };
+
+      messageHandler(fakeEvent);
+
+      expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
+      expect(window.removeEventListener.notCalled).to.be.true;
+      expect(storage.setCookie.notCalled).to.be.true;
+      expect(storage.setDataInLocalStorage.notCalled).to.be.true;
     });
   });
 });

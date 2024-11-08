@@ -107,9 +107,15 @@ const BIDDER_REQUEST = {
     'ref': 'https://www.somereferrer.com'
   },
   'ortb2': {
+    'site': {
+      'content': {
+        'language': 'en'
+      }
+    },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -331,9 +337,11 @@ describe('IlluminBidAdapter', function () {
           gpid: '0123456789',
           cat: [],
           contentData: [],
+          contentLang: 'en',
           isStorageAllowed: true,
           pagecat: [],
-          userData: []
+          userData: [],
+          coppa: 0
         }
       });
     });
@@ -397,9 +405,11 @@ describe('IlluminBidAdapter', function () {
           'ext.param2': 'dolorsitamet',
           cat: [],
           contentData: [],
+          contentLang: 'en',
           isStorageAllowed: true,
           pagecat: [],
-          userData: []
+          userData: [],
+          coppa: 0
         }
       });
     });

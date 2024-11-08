@@ -68,6 +68,10 @@ const NATIVE_ASSET_IMAGE_TYPE = {
   'IMAGE': 3
 }
 
+const BANNER_CUSTOM_PARAMS = {
+  'battr': DATA_TYPES.ARRAY
+}
+
 const NET_REVENUE = true;
 const dealChannelValues = {
   1: 'PMP',
@@ -551,6 +555,14 @@ function _createBannerRequest(bid) {
     }
     bannerObj.pos = 0;
     bannerObj.topframe = inIframe() ? 0 : 1;
+
+    // Adding Banner custom params
+    const bannerCustomParams = {...deepAccess(bid, 'ortb2Imp.banner')};
+    for (let key in BANNER_CUSTOM_PARAMS) {
+      if (bannerCustomParams.hasOwnProperty(key)) {
+        bannerObj[key] = _checkParamDataType(key, bannerCustomParams[key], BANNER_CUSTOM_PARAMS[key]);
+      }
+    }
   } else {
     logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
@@ -675,7 +687,8 @@ function _createImpressionObject(bid, bidderRequest) {
     },
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY,
     displaymanager: 'Prebid.js',
-    displaymanagerver: '$prebid.version$' // prebid version
+    displaymanagerver: '$prebid.version$', // prebid version
+    pmp: bid.ortb2Imp?.pmp || undefined
   };
 
   _addPMPDealsInImpression(impObj, bid);
@@ -1282,6 +1295,11 @@ export const spec = {
       if (user?.geo || device?.geo) {
         payload.user.geo = payload.device.geo = (user?.geo ? { ...payload.user.geo, ...user.geo } : { ...payload.user.geo, ...device.geo });
       }
+    }
+
+    // if present, merge device object from ortb2 into `payload.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(payload.device, bidderRequest.ortb2.device);
     }
 
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {

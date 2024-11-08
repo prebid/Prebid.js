@@ -856,7 +856,8 @@ describe('IndexexchangeAdapter', function () {
         source: 'identityinc.com',
         uids: [
           {
-            id: 'identityid'
+            id: 'identityid',
+            atype: 1
           }
         ]
       }
@@ -1383,8 +1384,14 @@ describe('IndexexchangeAdapter', function () {
 
       it('identity data in impression should have correct format and value (single identity partner)', function () {
         const impression = payload.user.eids;
+        expect(impression).to.be.an('array');
+        expect(impression).to.have.lengthOf(1);
         expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids).to.be.an('array');
+        expect(impression[0].uids).to.have.lengthOf(1);
         expect(impression[0].uids[0].id).to.equal(testCopy.IdentityIp.data.uids[0].id);
+        expect(impression[0].uids[0].atype).to.exist;
+        expect(impression[0].uids[0].atype).to.equal(testCopy.IdentityIp.data.uids[0].atype);
       });
     });
 
@@ -1520,9 +1527,7 @@ describe('IndexexchangeAdapter', function () {
       body: {
         ext: {
           pbjs_allow_all_eids: {
-            test: {
-              activated: false
-            }
+            activated: true
           }
         }
       }
@@ -1537,11 +1542,6 @@ describe('IndexexchangeAdapter', function () {
 
     afterEach(function () {
       delete window.headertag;
-      serverResponse.body.ext.features = {
-        pbjs_allow_all_eids: {
-          activated: false
-        }
-      };
       validIdentityResponse = {}
     });
 
@@ -1555,12 +1555,6 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('IX adapter filters eids from prebid past the maximum eid limit', function () {
-      serverResponse.body.ext.features = {
-        pbjs_allow_all_eids: {
-          activated: true
-        }
-      };
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
       let eid_sent_from_prebid = generateEid(55);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
@@ -1602,12 +1596,6 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       };
-      serverResponse.body.ext.features = {
-        pbjs_allow_all_eids: {
-          activated: true
-        }
-      };
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
       let eid_sent_from_prebid = generateEid(49);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
@@ -1628,15 +1616,21 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.ext.ixdiag.eidLength).to.equal(49);
     });
 
-    it('All incoming eids are from unsupported source with feature toggle off', function () {
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+    it('Has incoming eids with no uid', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = generateEid(20);
+      let eid_sent_from_prebid = [
+        {
+          source: 'catijah.org'
+        },
+        {
+          source: 'bagel.com'
+        }
+      ];
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
       expect(payload.user.eids).to.be.undefined
-      expect(payload.ext.ixdiag.eidLength).to.equal(20);
+      expect(payload.ext.ixdiag.eidLength).to.equal(2);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {

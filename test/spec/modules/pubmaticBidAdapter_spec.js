@@ -2378,6 +2378,40 @@ describe('PubMatic adapter', function () {
         expect(data.device.ext).to.deep.equal(cdepObj);
       });
 
+      it('should pass enriched device data from ortb2 object if present in bidderRequest fpd', function () {
+        const fpdBidderRequest = {
+          auctionId: 'new-auction-id',
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            }
+          },
+        };
+
+        const request = spec.buildRequests(multipleMediaRequests, fpdBidderRequest);
+        const data = JSON.parse(request.data);
+
+        expect(data.device.w).to.equal(fpdBidderRequest.ortb2.device.w);
+        expect(data.device.h).to.equal(fpdBidderRequest.ortb2.device.h);
+        expect(data.device.dnt).to.equal(fpdBidderRequest.ortb2.device.dnt);
+        expect(data.device.ua).to.equal(fpdBidderRequest.ortb2.device.ua);
+        expect(data.device.language).to.equal(fpdBidderRequest.ortb2.device.language);
+        expect(data.device.devicetype).to.equal(fpdBidderRequest.ortb2.device.devicetype);
+        expect(data.device.make).to.equal(fpdBidderRequest.ortb2.device.make);
+        expect(data.device.model).to.equal(fpdBidderRequest.ortb2.device.model);
+        expect(data.device.os).to.equal(fpdBidderRequest.ortb2.device.os);
+        expect(data.device.osv).to.equal(fpdBidderRequest.ortb2.device.osv);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests, {
           auctionId: 'new-auction-id'
@@ -2974,6 +3008,24 @@ describe('PubMatic adapter', function () {
           expect(data.device).to.include.any.keys('connectiontype');
         }
       });
+
+      it('should send imp.pmp in request if pmp json is present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        originalBidRequests[0].ortb2Imp.pmp = {
+          'private_auction': 0,
+          'deals': [{ 'id': '5678' }]
+        }
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.exist.and.to.be.an('object');
+      })
+
+      it('should not send imp.pmp in request if pmp json is not present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.deep.equal(undefined);
+      })
   	});
 
     it('Request params dctr check', function () {
@@ -4084,6 +4136,46 @@ describe('PubMatic adapter', function () {
         })
       });
     }
+
+    describe('Banner Request param battr checking', function() {
+      it('should add battr params to bannerObj if present in ortb2Imp.banner', function() {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let bannerObj = utils.deepClone(originalBidRequests[0].ortb2Imp.banner);
+        originalBidRequests[0].ortb2Imp.banner = Object.assign(bannerObj, {
+          battr: [1, 2]
+        });
+
+        const req = spec.buildRequests(originalBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.exist.and.to.be.an('array');
+        expect(data.imp[0]['banner']['battr'][0]).to.equal(originalBidRequests[0].ortb2Imp.banner['battr'][0]);
+        expect(data.imp[0]['banner']['battr'][1]).to.equal(originalBidRequests[0].ortb2Imp.banner['battr'][1]);
+      });
+
+      it('should not add battr params to bannerObj if not present in ortb2Imp.banner', function() {
+        const req = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.equal(undefined);
+      });
+
+      it('should not add battr params if _checkParamDataType returns undefined (Mismatch data type)', function() {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let bannerObj = utils.deepClone(originalBidRequests[0].ortb2Imp.banner);
+        originalBidRequests[0].ortb2Imp.banner = Object.assign(bannerObj, {
+          battr: 1
+        });
+
+        const req = spec.buildRequests(originalBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.equal(undefined);
+      });
+    });
   });
 
   if (FEATURES.VIDEO) {

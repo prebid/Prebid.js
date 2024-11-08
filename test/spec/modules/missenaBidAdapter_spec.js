@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
+import { config } from 'src/config.js';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
@@ -12,6 +14,9 @@ describe('Missena Adapter', function () {
       storageAllowed: true,
     },
   };
+  let sandbox = sinon.sandbox.create();
+  sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
+  sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
 
   const bidId = 'abc';
   const bid = {
@@ -28,6 +33,12 @@ describe('Missena Adapter', function () {
       apiKey: 'PA-34745704',
       placement: 'sticky',
       formats: ['sticky-banner'],
+    },
+    schain: {
+      validation: 'strict',
+      config: {
+        ver: '1.0',
+      },
     },
     getFloor: (inputParams) => {
       if (inputParams.mediaType === BANNER) {
@@ -58,10 +69,12 @@ describe('Missena Adapter', function () {
       consentString: consentString,
       gdprApplies: true,
     },
+    uspConsent: 'IDO',
     refererInfo: {
       topmostLocation: REFERRER,
       canonicalUrl: 'https://canonical',
     },
+    ortb2: { regs: { coppa: 1 } },
   };
 
   const bids = [bid, bidWithoutFloor];
@@ -100,6 +113,23 @@ describe('Missena Adapter', function () {
     const payload = JSON.parse(request.data);
     const payloadNoFloor = JSON.parse(requests[1].data);
 
+    it('should send disabled autoplay', function () {
+      expect(payload.autoplay).to.equal(0);
+    });
+
+    it('should contain coppa', function () {
+      expect(payload.coppa).to.equal(1);
+    });
+    sandbox.restore();
+
+    it('should contain uspConsent', function () {
+      expect(payload.us_privacy).to.equal('IDO');
+    });
+
+    it('should contain schain', function () {
+      expect(payload.schain.config.ver).to.equal('1.0');
+    });
+
     it('should return as many server requests as bidder requests', function () {
       expect(requests.length).to.equal(2);
     });
@@ -113,11 +143,11 @@ describe('Missena Adapter', function () {
     });
 
     it('should send placement', function () {
-      expect(payload.placement).to.equal('sticky');
+      expect(payload.params.placement).to.equal('sticky');
     });
 
     it('should send formats', function () {
-      expect(payload.formats).to.eql(['sticky-banner']);
+      expect(payload.params.formats).to.eql(['sticky-banner']);
     });
 
     it('should send referer information to the request', function () {
