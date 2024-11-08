@@ -2,7 +2,8 @@ import { isEmpty, parseUrl, isStr, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { createNativeRequest, createBannerRequest, createVideoRequest, parseNative } from '../libraries/braveUtils/index.js';
+import { parseNative } from '../libraries/braveUtils/index.js';
+import { buildRequests, interpretResponse } from '../libraries/bidderUtils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -18,97 +19,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: (bid) => {
-    return !!(bid.params.placementId && bid.params.placementId.toString().length === 32);
-  },
+  isBidRequestValid: (bid) => !!(bid.params.placementId && bid.params.placementId.toString().length === 32),
 
-  buildRequests: (validBidRequests, bidderRequest) => {
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    if (!validBidRequests.length || !bidderRequest) return [];
+  buildRequests: (validBidRequests, bidderRequest) => buildRequests(validBidRequests, bidderRequest, ENDPOINT_URL, DEFAULT_CUR),
 
-    const endpointURL = ENDPOINT_URL.replace('hash', validBidRequests[0].params.placementId);
-
-    let imp = validBidRequests.map((br) => {
-      let impObject = { id: br.bidId, secure: 1 };
-      if (br.mediaTypes.banner) impObject.banner = createBannerRequest(br);
-      else if (br.mediaTypes.video) impObject.video = createVideoRequest(br);
-      else if (br.mediaTypes.native) impObject.native = { id: br.transactionId, ver: '1.2', request: createNativeRequest(br) };
-      return impObject;
-    });
-
-    let page = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-
-    let data = {
-      id: bidderRequest.bidderRequestId,
-      cur: [DEFAULT_CUR],
-      device: { w: screen.width, h: screen.height, language: navigator.language?.split('-')[0], ua: navigator.userAgent },
-      site: { domain: parseUrl(page).hostname, page: page },
-      tmax: bidderRequest.timeout,
-      imp,
-    };
-
-    if (bidderRequest.refererInfo.ref) data.site.ref = bidderRequest.refererInfo.ref;
-
-    if (bidderRequest.gdprConsent) {
-      data['regs'] = {'ext': {'gdpr': bidderRequest.gdprConsent.gdprApplies ? 1 : 0}};
-      data['user'] = {'ext': {'consent': bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''}};
-    }
-
-    if (bidderRequest.uspConsent !== undefined) {
-      if (!data['regs'])data['regs'] = {'ext': {}};
-      data['regs']['ext']['us_privacy'] = bidderRequest.uspConsent;
-    }
-
-    if (config.getConfig('coppa') === true) {
-      if (!data['regs'])data['regs'] = {'coppa': 1};
-      else data['regs']['coppa'] = 1;
-    }
-
-    if (validBidRequests[0].schain) {
-      data['source'] = {'ext': {'schain': validBidRequests[0].schain}};
-    }
-
-    return { method: 'POST', url: endpointURL, data: data };
-  },
-
-  interpretResponse: (serverResponse) => {
-    if (!serverResponse || isEmpty(serverResponse.body)) return [];
-
-    let bids = [];
-    serverResponse.body.seatbid.forEach(response => {
-      response.bid.forEach(bid => {
-        let mediaType = bid.ext && bid.ext.mediaType ? bid.ext.mediaType : 'banner';
-
-        let bidObj = {
-          requestId: bid.impid,
-          cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
-          ttl: 1200,
-          currency: DEFAULT_CUR,
-          netRevenue: true,
-          creativeId: bid.crid,
-          dealId: bid.dealid || null,
-          mediaType: mediaType
-        };
-
-        switch (mediaType) {
-          case 'video':
-            bidObj.vastUrl = bid.adm;
-            break;
-          case 'native':
-            bidObj.native = parseNative(bid.adm);
-            break;
-          default:
-            bidObj.ad = bid.adm;
-        }
-
-        bids.push(bidObj);
-      });
-    });
-
-    return bids;
-  },
+  interpretResponse: (serverResponse) => interpretResponse(serverResponse, DEFAULT_CUR, parseNative),
 
   onBidWon: (bid) => {
     if (isStr(bid.nurl) && bid.nurl !== '') {
