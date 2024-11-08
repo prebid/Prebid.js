@@ -3,7 +3,7 @@ import {
   spec,
   BANNER_ENDPOINT,
 } from 'modules/ssp_genieeBidAdapter.js';
-import { config } from '../../../src/config.js';
+import { config } from 'src/config.js';
 
 describe('ssp_genieeBidAdapter', function () {
   const ZONE_ID = 1234567;
