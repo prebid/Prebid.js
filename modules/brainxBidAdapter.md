@@ -17,7 +17,7 @@ Module that connects to brianx's demand sources
 | Name        | Scope    | Type      | Description                              | Example          |
 | -------     | -------- | ------    | ---------------------------------------  | ---------------- |
 | `pubId`     | required | String    | The Pub Id provided by Brainx Ads.       | `F7B53DBC-85C1-4685-9A06-9CF4B6261FA3`   |
-| `endpoint`  | required | String    | The endpoint provided by Brainx Url.     | `http://adx-engine-gray.tec-do.cn/bid`   |
+| `endpoint`  | Not required | String    | The endpoint provided by Brainx Url.     | `http://adx-engine-gray.tec-do.cn/bid`   |
 
 ## Example
 

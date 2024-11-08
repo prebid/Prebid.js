@@ -9,6 +9,7 @@ const BIDDER_CODE = 'brainx';
 const METHOD = 'POST';
 const TTL = 200;
 const NET_REV = true;
+let ENDPOINT = 'http://adx-engine-gray.tec-do.cn/bid'
 
 const converter = ortbConverter({
   context: {
@@ -42,12 +43,13 @@ export const spec = {
   },
   buildRequests(bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidRequests, bidderRequest })
+    ENDPOINT = String(deepAccess(bidRequests[0], 'params.endpoint')) ? deepAccess(bidRequests[0], 'params.endpoint') : ENDPOINT
     data.user = {
       buyeruid: generateUUID()
     }
     return {
       method: METHOD,
-      url: `${String(deepAccess(bidRequests[0], 'params.endpoint'))}?token=${String(deepAccess(bidRequests[0], 'params.pubId'))}`,
+      url: `${ENDPOINT}?token=${String(deepAccess(bidRequests[0], 'params.pubId'))}`,
       data
     }
   },
