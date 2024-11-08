@@ -88,7 +88,8 @@ export function getAudiences() {
  */
 export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
   const defaultBidders = ['improvedigital'];
-  const bidders = config.params?.bidders || defaultBidders;
+  const configBidders = config.params?.bidders || [];
+  const bidders = [...new Set([...defaultBidders, ...configBidders])];
   bidders.forEach((bidderCode) =>
     mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
       [bidderCode]: {

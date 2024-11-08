@@ -67,7 +67,7 @@ pbjs.setConfig(
 | name | `String` | RTD sub module name | Always "azerionedge" |
 | waitForIt | `Boolean` | Required to ensure that the auction is delayed for the module to respond. | Optional. Defaults to false but recommended to true. |
 | params.key | `String` | Publisher partner specific key | Mandatory. The key is required for the module to work. If you haven't received one, please reach [support@improvedigital.com](support@improvedigital.com) |
-| params.bidders | `Array` | Bidders with which to share segment information | Optional. Defaults to "improvedigital". |
+| params.bidders | `Array` | Bidders with which to share segment information. Improvedigital will always be added. | Optional. Defaults to "improvedigital". |
 | params.process | `Object` | Configuration for the Azerion Edge script. | Optional. Defaults to `{}`. |
 
 ## Context

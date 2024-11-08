@@ -10,7 +10,7 @@ describe('Azerion Edge RTD submodule', function () {
   ];
   const IMPROVEDIGITAL_GVLID = '253';
   const key = 'publisher123';
-  const bidders = ['appnexus', 'improvedigital'];
+  const bidders = ['appnexus'];
   const process = { key: 'value' };
   const dataProvider = { name: 'azerionedge', waitForIt: true };
   const userConsent = {gdpr: {gdprApplies: 'gdpr-applies', consentString: 'consent-string'}, usp: 'usp'};
@@ -174,7 +174,7 @@ describe('Azerion Edge RTD submodule', function () {
       },
     };
 
-    it('for improvedigital by default', function () {
+    it('for improvedigital is always added', function () {
       azerionedgeRTD.setAudiencesToBidders(
         reqBidsConfigObj,
         dataProvider,
@@ -185,7 +185,7 @@ describe('Azerion Edge RTD submodule', function () {
       ).to.deep.equal(expected);
     });
 
-    bidders.forEach((bidder) => {
+    [...bidders, 'improvedigital'].forEach((bidder) => {
       it(`for ${bidder}`, function () {
         const config = { ...dataProvider, params: { bidders } };
         azerionedgeRTD.setAudiencesToBidders(reqBidsConfigObj, config, audiences);
