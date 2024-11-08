@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/mediaimpactBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {joinSizesToString} from 'libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'mediaimpact';
 
@@ -117,7 +118,7 @@ describe('MediaimpactAdapter', function () {
 
   describe('joinSizesToString', function () {
     it('success convert sizes list to string', function () {
-      const sizesStr = spec.joinSizesToString([[300, 250], [300, 600]]);
+      const sizesStr = joinSizesToString([[300, 250], [300, 600]]);
       expect(sizesStr).to.equal('300x250|300x600');
     });
   });
