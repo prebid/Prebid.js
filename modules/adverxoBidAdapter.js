@@ -19,8 +19,8 @@ import {config} from '../src/config.js';
 const BIDDER_CODE = 'adverxo';
 
 const ALIASES = [
-  {code: 'adport'},
-  {code: 'bidsmind'}
+  {code: 'adport', skipPbsAliasing: true},
+  {code: 'bidsmind', skipPbsAliasing: true}
 ];
 
 const AUCTION_URLS = {
