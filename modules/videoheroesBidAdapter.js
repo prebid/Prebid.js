@@ -71,18 +71,50 @@ export const spec = {
     return { method: 'POST', url: endpointURL, data: data };
   },
 
-  interpretResponse: (serverResponse) => {
+    interpretResponse: (serverResponse) => {
     if (!serverResponse || isEmpty(serverResponse.body)) return [];
-    return serverResponse.body.seatbid.flatMap((response) => response.bid.map((bid) => {
-      const bidObj = { requestId: bid.impid, cpm: bid.price, width: bid.w, height: bid.h, ttl: 1200, currency: DEFAULT_CUR, netRevenue: true, creativeId: bid.crid, dealId: bid.dealid || null };
-      if (bid.ext?.mediaType === 'video') bidObj.vastUrl = bid.adm;
-      else if (bid.ext?.mediaType === 'native') bidObj.native = parseNative(bid.adm);
-      else bidObj.ad = bid.adm;
-      return bidObj;
-    }));
+
+    let bids = [];
+    serverResponse.body.seatbid.forEach(response => {
+      response.bid.forEach(bid => {
+        let mediaType = bid.ext && bid.ext.mediaType ? bid.ext.mediaType : 'banner';
+
+        let bidObj = {
+          requestId: bid.impid,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          ttl: 1200,
+          currency: DEFAULT_CUR,
+          netRevenue: true,
+          creativeId: bid.crid,
+          dealId: bid.dealid || null,
+          mediaType: mediaType
+        };
+
+        switch (mediaType) {
+          case 'video':
+            bidObj.vastUrl = bid.adm;
+            break;
+          case 'native':
+            bidObj.native = parseNative(bid.adm);
+            break;
+          default:
+            bidObj.ad = bid.adm;
+        }
+
+        bids.push(bidObj);
+      });
+    });
+
+    return bids;
   },
 
-  onBidWon: (bid) => { if (isStr(bid.nurl)) triggerPixel(bid.nurl); }
+  onBidWon: (bid) => {
+    if (isStr(bid.nurl) && bid.nurl !== '') {
+      triggerPixel(bid.nurl);
+    }
+  }
 };
 
 registerBidder(spec);
