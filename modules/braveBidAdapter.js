@@ -71,7 +71,7 @@ export const spec = {
     return { method: 'POST', url: endpointURL, data: data };
   },
 
-    interpretResponse: (serverResponse) => {
+  interpretResponse: (serverResponse) => {
     if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
     let bids = [];
