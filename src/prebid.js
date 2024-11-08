@@ -122,7 +122,9 @@ export function syncOrtb2(adUnit, mediaType) {
     return;
   }
 
-  fields.entries().forEach(([key, validator]) => {
+  const params = fields.entries?.() || [];
+
+  params.forEach(([key, validator]) => {
     const mediaTypesFieldValue = deepAccess(adUnit, `mediaTypes.${mediaType}.${key}`);
     const ortbFieldValue = deepAccess(adUnit, `ortb2Imp.${mediaType}.${key}`);
 
