@@ -118,13 +118,11 @@ export function syncOrtb2(adUnit, mediaType) {
     'banner': ORTB_BANNER_PARAMS
   }[mediaType];
 
-  if (!fields) {
+  if (!fields || !(fields instanceof Map)) {
     return;
   }
 
-  const params = fields.entries?.() || [];
-
-  params.forEach(([key, validator]) => {
+  fields.entries().forEach(([key, validator]) => {
     const mediaTypesFieldValue = deepAccess(adUnit, `mediaTypes.${mediaType}.${key}`);
     const ortbFieldValue = deepAccess(adUnit, `ortb2Imp.${mediaType}.${key}`);
 
