@@ -1,6 +1,7 @@
-import { isEmpty, parseUrl } from '../src/utils.js';
+import { isEmpty, parseUrl } from '../../src/utils.js';
+import {config} from '../../src/config.js';
 import { createNativeRequest, createBannerRequest, createVideoRequest } from './index.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 
 export const buildRequests = (validBidRequests, bidderRequest, endpointURL, defaultCur) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
