@@ -221,6 +221,7 @@ describe('interpretResponse', function () {
         meta: {
           advertiserDomains: ['test.com'],
         },
+        mediaType: 'banner',
       },
     ]
 
@@ -681,16 +682,24 @@ describe('hasProtocol', () => {
 
 describe('addProtocol', () => {
   it('www.testpage.com', () => {
-    expect(addProtocol('www.testpage.com')).to.be.equal('https://www.testpage.com')
+    expect(addProtocol('www.testpage.com')).to.be.equal(
+      'https://www.testpage.com'
+    )
   })
   it('//www.testpage.com', () => {
-    expect(addProtocol('//www.testpage.com')).to.be.equal('https://www.testpage.com')
+    expect(addProtocol('//www.testpage.com')).to.be.equal(
+      'https://www.testpage.com'
+    )
   })
   it('http://www.testpage.com', () => {
-    expect(addProtocol('http://www.testpage.com')).to.be.equal('http://www.testpage.com')
+    expect(addProtocol('http://www.testpage.com')).to.be.equal(
+      'http://www.testpage.com'
+    )
   })
   it('https://www.testpage.com', () => {
-    expect(addProtocol('https://www.testpage.com')).to.be.equal('https://www.testpage.com')
+    expect(addProtocol('https://www.testpage.com')).to.be.equal(
+      'https://www.testpage.com'
+    )
   })
 })
 
@@ -786,7 +795,7 @@ describe('RequestData', () => {
 
 describe('UserEIDs', () => {
   const userEids = new UserEIDs()
-  const eids = [{ 'testId': 1111 }]
+  const eids = [{ testId: 1111 }]
 
   describe('processBidRequestData', () => {
     it('Processes bid request without eids', () => {
@@ -810,7 +819,7 @@ describe('UserEIDs', () => {
       expect(qs).to.include('ntv_pb_eid=')
       try {
         expect(JSON.parse(value)).to.be.equal(eids)
-      } catch (err) { }
+      } catch (err) {}
     })
   })
 })
@@ -828,12 +837,83 @@ describe('buildRequestUrl', () => {
   })
 
   it('Returns baseUrl + QS params if QS strings passed', () => {
-    const url = buildRequestUrl(baseUrl, ['ntv_ptd=123456&ntv_test=true', 'ntv_foo=bar'])
-    expect(url).to.be.equal(`${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`)
+    const url = buildRequestUrl(baseUrl, [
+      'ntv_ptd=123456&ntv_test=true',
+      'ntv_foo=bar',
+    ])
+    expect(url).to.be.equal(
+      `${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`
+    )
   })
 
   it('Returns baseUrl + QS params if mixed QS strings passed', () => {
-    const url = buildRequestUrl(baseUrl, ['ntv_ptd=123456&ntv_test=true', '', '', 'ntv_foo=bar'])
-    expect(url).to.be.equal(`${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`)
+    const url = buildRequestUrl(baseUrl, [
+      'ntv_ptd=123456&ntv_test=true',
+      '',
+      '',
+      'ntv_foo=bar',
+    ])
+    expect(url).to.be.equal(
+      `${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`
+    )
+  })
+})
+
+describe('Prebid Video', function () {
+  it('should handle video bid requests', function () {
+    const videoBidRequest = {
+      bidder: 'nativo',
+      params: {
+        video: {
+          mimes: ['video/mp4'],
+          protocols: [2, 3, 5, 6],
+          playbackmethod: [1, 2],
+          skip: 1,
+          skipafter: 5,
+        },
+      },
+    }
+
+    const isValid = spec.isBidRequestValid(videoBidRequest)
+    expect(isValid).to.be.true
+  })
+})
+
+describe('Prebid Native', function () {
+  it('should handle native bid requests', function () {
+    const nativeBidRequest = {
+      bidder: 'nativo',
+      params: {
+        native: {
+          title: {
+            required: true,
+            len: 80,
+          },
+          image: {
+            required: true,
+            sizes: [150, 50],
+          },
+          sponsoredBy: {
+            required: true,
+          },
+          clickUrl: {
+            required: true,
+          },
+          privacyLink: {
+            required: false,
+          },
+          body: {
+            required: true,
+          },
+          icon: {
+            required: true,
+            sizes: [50, 50],
+          },
+        },
+      },
+    }
+
+    const isValid = spec.isBidRequestValid(nativeBidRequest)
+    expect(isValid).to.be.true
   })
 })

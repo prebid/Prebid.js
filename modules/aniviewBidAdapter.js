@@ -31,7 +31,6 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const { mediaType } = context;
     const imp = buildImp(bidRequest, context);
-    const isVideo = mediaType === VIDEO;
     const isBanner = mediaType === BANNER;
     const { width, height } = getSize(context, bidRequest);
     const floor = getFloor(bidRequest, { width, height }, mediaType);
@@ -43,14 +42,7 @@ const converter = ortbConverter({
       imp.bidfloorcur = DEFAULT_CURRENCY;
     }
 
-    if (isVideo) {
-      deepSetValue(imp, `ext.${BIDDER_CODE}`, {
-        AV_WIDTH: width,
-        AV_HEIGHT: height,
-        bidWidth: width,
-        bidHeight: height,
-      });
-    } else if (isBanner) {
+    if (isBanner) {
       // TODO: remove once serving will be fixed
       deepSetValue(imp, 'banner', { w: width, h: height });
     }
