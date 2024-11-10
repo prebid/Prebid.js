@@ -28,6 +28,7 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
 
@@ -262,7 +263,7 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
     [ 'creatype', '%%creatype%%' ]
   ]);
 
-  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), 'adloox');
+  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
 }
 
 adapterManager.registerAnalyticsAdapter({

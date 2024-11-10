@@ -318,9 +318,11 @@ export const connectIdSubmodule = {
    */
   userHasOptedOut() {
     try {
-      // TODO FIX THIS RULES VIOLATION
-      // eslint-disable-next-line
-      return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
+      if (storage.localStorageIsEnabled()) {
+        return storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1';
+      } else {
+        return true;
+      }
     } catch {
       return false;
     }
