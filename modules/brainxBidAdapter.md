@@ -5,7 +5,7 @@
 ```
 Module Name: brianx Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: hugh.qu@tec-do.com
+Maintainer: brainx.official@tec-do.com
 ```
 
 ## Description
@@ -51,6 +51,6 @@ pbjs.setConfig({
     ortb2: {
         ortbVersion: '2.5'
     },
-    debug: true // or false
+    debug: false // or true
 });
 ```
