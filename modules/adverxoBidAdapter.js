@@ -20,13 +20,15 @@ const BIDDER_CODE = 'adverxo';
 
 const ALIASES = [
   {code: 'adport', skipPbsAliasing: true},
-  {code: 'bidsmind', skipPbsAliasing: true}
+  {code: 'bidsmind', skipPbsAliasing: true},
+  {code: 'mobupps', skipPbsAliasing: true}
 ];
 
 const AUCTION_URLS = {
   adverxo: 'js.pbsadverxo.com',
   adport: 'diclotrans.com',
   bidsmind: 'egrevirda.com',
+  mobupps: 'traffhb.com'
 };
 
 const ENDPOINT_URL_AD_UNIT_PLACEHOLDER = '{AD_UNIT}';
