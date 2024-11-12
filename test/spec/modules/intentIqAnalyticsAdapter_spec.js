@@ -292,7 +292,16 @@ describe('IntentIQ tests all', function () {
       domainName: null,
       expectedVrref: '',
       shouldContainFui: true
-    }
+    },
+    {
+      description: 'domainName is missing',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: 'http://example.com/page' } },
+      getWindowLocation: { href: 'http://example.com/page' },
+      domainName: null,
+      expectedVrref: encodeURIComponent('http://example.com/page'),
+      shouldContainFui: false
+    },
   ];
 
   testCasesVrref.forEach(({ description, getWindowSelf, getWindowTop, getWindowLocation, domainName, expectedVrref, shouldContainFui }) => {
