@@ -64,7 +64,7 @@ let wonRequest = {
   'pbDg': '5.00',
   'pbCg': '',
   'size': '728x90',
-  'status': 'rendered',
+  'status': 'rendered'
 };
 
 describe('IntentIQ tests all', function () {
