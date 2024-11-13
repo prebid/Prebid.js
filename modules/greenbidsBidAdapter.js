@@ -147,7 +147,7 @@ export const spec = {
         currency: bid.currency,
         netRevenue: true,
         ttl: bid.ttl,
-        meta: {
+        meta: { 
           advertiserDomains: bid && bid.adomain ? bid.adomain : [],
         },
         ad: bid.ad,

@@ -261,6 +261,8 @@ export const spec = {
         return false
       }
     }
+
+    // check if BANNER VIDEO OR NATIVE
     let bidFormats = bidType(bid, true);
     // bidType is undefined? Return false
     if (!bidFormats.length) {
@@ -269,8 +271,9 @@ export const spec = {
       valid = hasValidVideoParams(bid);
     }
     const hasBannerOrNativeMediaType = [BANNER, NATIVE].filter(mediaType => bidFormats.includes(mediaType)).length > 0;
-    if (!hasBannerOrNativeMediaType) return valid;
-    return valid && hasBannerOrNativeMediaType;
+    if (!hasBannerOrNativeMediaType) return valid; // case means it's video
+    // else
+    return valid && hasBannerOrNativeMediaType; // return true if both conditions are meet
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -283,6 +286,8 @@ export const spec = {
     let filteredHttpRequest = [];
     let filteredRequests;
 
+    // looping on bidRequets and keep only those who meet
+    // the criterias 
     filteredRequests = bidRequests.filter(req => {
       const mediaTypes = bidType(req) || [];
       const { length } = mediaTypes;
@@ -301,16 +306,20 @@ export const spec = {
     });
 
     if (filteredRequests && filteredRequests.length) {
+      // convert the request to open RTB format
       const data = converter.toORTB({bidRequests: filteredRequests, bidderRequest});
+      // data contains all the requests to sent
 
+      // prepare to send the requests, but it is not send yet.
       filteredHttpRequest.push({
         method: 'POST',
         url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
         data,
-        bidRequest: filteredRequests
+        bidRequest: filteredRequests // optional parameters, choosen by rubicon.
       });
     }
 
+    // filter to check for banner bid request only 
     const bannerBidRequests = bidRequests.filter((req) => {
       const mediaTypes = bidType(req) || [];
       const {bidonmultiformat, video} = req.params || {};
@@ -328,8 +337,14 @@ export const spec = {
         )
       );
     });
-    if (rubiConf.singleRequest !== true) {
+
+    
+    // question: find if the config is usually for single request or for group requests 
+
+    if (rubiConf.singleRequest !== true) { // send each bids individuaally
       // bids are not grouped if single request mode is not enabled
+
+      // for each good banner request, create an HTTP get method based on its params.
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
@@ -375,7 +390,7 @@ export const spec = {
         return aggregate;
       }, []));
     }
-    return requests;
+    return requests; // request is an array of both POST and GET requests, as it is concatenated 
   },
 
   getOrderedParams: function(params) {
@@ -383,7 +398,7 @@ export const spec = {
     const containsTgI = /^tg_i/
     const containsUId = /^eid_|^tpid_/
 
-    const orderedParams = [
+    const orderedParams = [ // param used for the bid request.
       'account_id',
       'site_id',
       'zone_id',
@@ -465,6 +480,8 @@ export const spec = {
    * @returns {Object} - object key values named and formatted as slot params
    */
   createSlotParams: function(bidRequest, bidderRequest) {
+    // generate a set of parameters for an ad slot,
+    // from basic info to to user ID, GDPR, consent etc ...
     bidRequest.startTime = new Date().getTime();
 
     const params = bidRequest.params;
@@ -495,7 +512,8 @@ export const spec = {
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
 
-    // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undfined
+    // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undefined
+    // if floor price is available
     if (typeof bidRequest.getFloor === 'function' && !rubiConf.disableFloors) {
       let floorInfo;
       try {
@@ -570,6 +588,7 @@ export const spec = {
       });
     }
 
+    // gdpr consent
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
@@ -589,7 +608,7 @@ export const spec = {
 
     data['rp_maxbids'] = bidderRequest.bidLimit || 1;
 
-    applyFPD(bidRequest, BANNER, data);
+    applyFPD(bidRequest, BANNER, data); // apply first party data
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -634,6 +653,8 @@ export const spec = {
    * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
    */
   interpretResponse: function (responseObj, request) {
+    // request: request initally sent to the rubicon.
+    // responseObj: response from the ad server.
     responseObj = responseObj.body;
     const {data} = request;
 
@@ -642,16 +663,17 @@ export const spec = {
       return [];
     }
     // Response from PBS Java openRTB
-    if (responseObj.seatbid) {
+    if (responseObj.seatbid) { // check if there is seatbid in the answer.
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
       if (Array.isArray(responseErrors) && responseErrors.length > 0) {
         logWarn('Rubicon: Error in video response');
       }
+      // handling ORTB response.
       const bids = converter.fromORTB({request: data, response: responseObj}).bids;
       return bids;
     }
 
-    let ads = responseObj.ads;
+    let ads = responseObj.ads; // information about the ads to potentially display, if auction is won.
     let lastImpId;
     let multibid = 0;
     const {bidRequest} = request;
@@ -666,6 +688,7 @@ export const spec = {
       return [];
     }
 
+    // construct the bids array.
     let bids = ads.reduce((bids, ad, i) => {
       (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
 
@@ -674,6 +697,7 @@ export const spec = {
       }
 
       // associate bidRequests; assuming ads matches bidRequest
+      // associate bid requests to eaach ad.
       const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i - multibid] : bidRequest;
 
       if (associatedBidRequest && typeof associatedBidRequest === 'object') {

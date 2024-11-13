@@ -13,9 +13,9 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
-const DEFAULT_DC = 'hb-api';
+const DEFAULT_DC = 'hb-api'; // DC = data center
 const CURRENCY = 'USD';
-const GVLID = 259;
+const GVLID = 259; // The Global Vendor List ID for GDPR compliance.
 
 const NATIVE_IMAGE = {
   image: {
@@ -84,14 +84,14 @@ export const spec = {
         accumulator[bidReq.bidId].Width = size.width;
         accumulator[bidReq.bidId].Height = size.height;
         accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
-        if (typeof bidReq.getFloor === 'function') {
+        if (typeof bidReq.getFloor === 'function') { // if getfloor is defined
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
         if (bidReq.schain) {
-          accumulator[bidReq.bidId].SChain = bidReq.schain;
+          accumulator[bidReq.bidId].SChain = bidReq.schain; // if supply chain
         }
         if (!eids && bidReq.userIdAsEids && bidReq.userIdAsEids.length) {
-          eids = bidReq.userIdAsEids;
+          eids = bidReq.userIdAsEids; // if user ids 
         }
         if (mediatype === NATIVE) {
           let nativeReq = bidReq.mediaTypes.native;
