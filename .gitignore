@@ -1,6 +1,11 @@
-# Built Files
+# Built Files - need to be granular otherwise it ignores the build files that we need
 node_modules/
-build
+build/dist/uk/*
+build/dist/us/*
+build/dist/aus-nz/*
+build/dist/row/*
+build/creative
+
 # gu-mod-start #
 # we install prebid as a dependency via this built file
 !build/dist/prebid.js
