@@ -24,10 +24,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (typeof bid.params !== 'undefined' && parseInt(getValue(bid.params, 'gbPlacementId')) > 0) {
+    if (typeof bid.params !== 'undefined' && parseInt(getValue(bid.params, 'placementId')) > 0) {
       return true;
     } else {
-      logError('Greenbids bidder adapter requires gbPlacementId to be defined and a positive number');
+      logError('Greenbids bidder adapter requires placementId to be defined and a positive number');
       return false;
     }
   },
@@ -117,7 +117,7 @@ export const spec = {
         ad: bid.ad,
         requestId: bid.bidId,
         creativeId: bid.creativeId,
-        gbPlacementId: bid.gbPlacementId,
+        placementId: bid.placementId,
       };
       if (bid.dealId) {
         bidResponse.dealId = bid.dealId
@@ -199,12 +199,12 @@ function getTimeToFirstByte(win) {
 
 function cleanBidsInfo(bids) {
   const reqObj = {};
-  let gbPlacementId = getValue(bids.params, 'gbPlacementId');
+  let placementId = getValue(bids.params, 'placementId');
   const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid');
   reqObj.sizes = getSizes(bids);
   reqObj.bidId = getBidIdParameter('bidId', bids);
   reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bids);
-  reqObj.gbPlacementId = parseInt(gbPlacementId, 10);
+  reqObj.placementId = parseInt(placementId, 10);
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
   reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
   if (gpid) { reqObj.gpid = gpid; }

@@ -26,7 +26,7 @@ describe('greenbidsBidAdapter', () => {
     let bid = {
       'bidder': 'greenbids',
       'params': {
-        'gbPlacementId': 4242
+        'placementId': 4242
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -51,7 +51,7 @@ describe('greenbidsBidAdapter', () => {
     let bidNonGBCompatible2 = {
       'bidder': 'greenbids',
       'params': {
-        'gbPlacementId': 'toto'
+        'placementId': 'toto'
       },
     };
 
@@ -841,7 +841,7 @@ describe('greenbidsBidAdapter', () => {
             'ttl': 360,
             'width': 300,
             'creativeId': 'er2ee',
-            'gbPlacementId': 4242
+            'placementId': 4242
           }, {
             'ad': AD_SCRIPT,
             'cpm': 0.5,
@@ -851,7 +851,7 @@ describe('greenbidsBidAdapter', () => {
             'ttl': 360,
             'width': 350,
             'creativeId': 'fs3ff',
-            'gbPlacementId': 4242,
+            'placementId': 4242,
             'dealId': 'ABC_123',
             'ext': {
               'dsa': {
@@ -881,7 +881,7 @@ describe('greenbidsBidAdapter', () => {
           'ad': AD_SCRIPT,
           'requestId': '3ede2a3fa0db94',
           'creativeId': 'er2ee',
-          'gbPlacementId': 4242
+          'placementId': 4242
         }, {
           'cpm': 0.5,
           'width': 350,
@@ -904,7 +904,7 @@ describe('greenbidsBidAdapter', () => {
           'ad': AD_SCRIPT,
           'requestId': '4fef3b4gb1ec15',
           'creativeId': 'fs3ff',
-          'gbPlacementId': 4242,
+          'placementId': 4242,
           'dealId': 'ABC_123'
         }
       ]
@@ -937,7 +937,7 @@ let bidRequests = [
   {
     'bidder': 'greenbids',
     'params': {
-      'gbPlacementId': 4242
+      'placementId': 4242
     },
     'adUnitCode': 'adunit-code',
     'sizes': [[300, 250], [300, 600]],
