@@ -7,7 +7,7 @@ build/dist/row/*
 build/creative
 
 # gu-mod-start #
-# we install prebid as a dependency via this built file
+# we install prebid as a dependency via these built files
 !build/dist/uk/prebid.js
 !build/dist/us/prebid.js
 !build/dist/aus-nz/prebid.js
