@@ -4,7 +4,6 @@
   "consentManagement",
   "consentManagementUsp",
   "criteoBidAdapter",
-  "gridBidAdapter",
   "guAnalyticsAdapter",
   "improvedigitalBidAdapter",
   "ixBidAdapter",
@@ -14,8 +13,5 @@
   "prebidServerBidAdapter",
   "pubmaticBidAdapter",
   "sharedIdSystem",
-  "sonobiBidAdapter",
-  "tripleliftBidAdapter",
-  "kargoBidAdapter",
   "rubiconBidAdapter"
 ]

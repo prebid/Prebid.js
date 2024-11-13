@@ -9,7 +9,7 @@ const gutil = require('gulp-util');
 const submodules = require('./modules/.submodules.json').parentModules;
 
 const MODULE_PATH = './modules';
-const BUILD_PATH = './build/dist';
+const BUILD_PATH = './build/dist/';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
 
@@ -105,20 +105,20 @@ module.exports = {
     }, internalModules));
   }),
 
-  getBuiltPath(dev, assetPath) {
-    return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
+  getBuiltPath(dev, assetPath, version) {
+    return path.join(__dirname, dev ? DEV_PATH + version : BUILD_PATH + version, assetPath)
   },
 
-  getBuiltModules: function(dev, externalModules) {
+  getBuiltModules: function(dev, externalModules, version) {
     var modules = this.getModuleNames(externalModules);
     if (Array.isArray(externalModules)) {
       modules = _.intersection(modules, externalModules);
     }
-    return modules.map(name => this.getBuiltPath(dev, name + '.js'));
+    return modules.map(name => this.getBuiltPath(dev, name + '.js', version));
   },
 
-  getBuiltPrebidCoreFile: function(dev) {
-    return this.getBuiltPath(dev, 'prebid-core.js')
+  getBuiltPrebidCoreFile: function(dev, version) {
+    return this.getBuiltPath(dev, 'prebid-core.js', version)
   },
 
   getModulePaths: function(externalModules) {

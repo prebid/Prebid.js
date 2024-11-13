@@ -186,7 +186,7 @@ function makeDevpackPkg(config = webpackConfig) {
   }
 }
 
-function makeWebpackPkg(config = webpackConfig) {
+function makeWebpackPkg(version = 'uk', config = webpackConfig) {
   var cloned = _.cloneDeep(config)
   if (!argv.sourceMaps) {
     delete cloned.devtool;
@@ -200,8 +200,16 @@ function makeWebpackPkg(config = webpackConfig) {
         console.error(err);
       })
       /* gu-mod-end */
-      .pipe(gulp.dest('build/dist'));
+      .pipe(gulp.dest(`build/dist/${version}`));
   }
+}
+
+function cleanVersion() {
+  return gulp.src(['build/dist/' + argv.version], {
+    read: false,
+    allowEmpty: true
+  })
+    .pipe(gulpClean());
 }
 
 function buildCreative(mode = 'production') {
@@ -245,13 +253,13 @@ function getModulesListToAddInBanner(modules) {
   }
 }
 
-function gulpBundle(dev) {
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+function gulpBundle(dev, version) {
+  return bundle(dev, version).pipe(gulp.dest('build/' + (dev ? 'dev/' : 'dist/') + version));
 }
 
-function nodeBundle(modules, dev = false) {
+function nodeBundle(modules, version, dev = false) {
   return new Promise((resolve, reject) => {
-    bundle(dev, modules)
+    bundle(dev, version, modules)
       .on('error', (err) => {
         reject(err);
       })
@@ -303,7 +311,7 @@ function wrapWithHeaderAndFooter(dev, modules) {
   }
 }
 
-function bundle(dev, moduleArr) {
+function bundle(dev, version, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
   const sm = dev || argv.sourceMaps;
@@ -319,12 +327,12 @@ function bundle(dev, moduleArr) {
       });
     }
   }
-  const coreFile = helpers.getBuiltPrebidCoreFile(dev);
-  const moduleFiles = helpers.getBuiltModules(dev, modules);
-  const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
+  const coreFile = helpers.getBuiltPrebidCoreFile(dev, version);
+  const moduleFiles = helpers.getBuiltModules(dev, modules, version);
+  const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json', version));
   const dependencies = new Set();
   [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
-    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
+    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep, version)));
   });
   const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
 
@@ -536,8 +544,8 @@ gulp.task(escapePostbidConfig);
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
 
-gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true, argv.version)));
+gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(argv.version, standaloneDebuggingConfig), makeWebpackPkg(argv.version), gulpBundle.bind(null, false, argv.version)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, true)));
@@ -552,7 +560,7 @@ gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+gulp.task('build', gulp.series(cleanVersion, 'build-bundle-prod', updateCreativeExample));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
