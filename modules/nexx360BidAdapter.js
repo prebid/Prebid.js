@@ -34,6 +34,7 @@ const ALIASES = [
   { code: 'prjads' },
   { code: 'pubtech' },
   { code: '1accord', gvlid: 965 },
+  { code: 'easybid', gvlid: 1068 },
 ];
 
 export const storage = getStorageManager({

@@ -71,6 +71,7 @@ const VALID_REQUEST_BANNER = {
         'sparteo': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
             'formats': ['corner']
           }
         }
@@ -80,7 +81,8 @@ const VALID_REQUEST_BANNER = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -112,7 +114,8 @@ const VALID_REQUEST_VIDEO = {
         'pbadslot': 'video',
         'sparteo': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
           }
         }
       }
@@ -121,7 +124,8 @@ const VALID_REQUEST_VIDEO = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -147,6 +151,7 @@ const VALID_REQUEST = {
         'sparteo': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
             'formats': ['corner']
           }
         }
@@ -170,7 +175,8 @@ const VALID_REQUEST = {
         'pbadslot': 'video',
         'sparteo': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
           }
         }
       }
@@ -179,7 +185,8 @@ const VALID_REQUEST = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
