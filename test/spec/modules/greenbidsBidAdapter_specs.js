@@ -39,6 +39,25 @@ describe('greenbidsBidAdapter', () => {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
+
+    let bidNonGBCompatible = {
+      'bidder': 'greenbids',
+    };
+
+    it('should return false when required params are not found', function () {
+      expect(spec.isBidRequestValid(bidNonGBCompatible)).to.equal(false);
+    });
+
+    let bidNonGBCompatible2 = {
+      'bidder': 'greenbids',
+      'params': {
+        'gbPlacementId': 'toto'
+      },
+    };
+
+    it('should return false when required the placement is not a number', function () {
+      expect(spec.isBidRequestValid(bidNonGBCompatible2)).to.equal(false);
+    });
   })
   describe('buildRequests', function () {
     it('should send bid request to ENDPOINT via POST', function () {
@@ -679,114 +698,14 @@ describe('greenbidsBidAdapter', () => {
       const mediaTypesBannerSize = {
         'mediaTypes': {
           'banner': {
-            'sizes': [46, 48]
+            'sizes': [300, 250]
           }
         }
       };
-      checkMediaTypesSizes(mediaTypesBannerSize, '46x48');
+      checkMediaTypesSizes(mediaTypesBannerSize, '300x250');
     });
   });
 
-  describe('User IDs', function () {
-    const baseBidRequest = {
-      'bidder': 'teads',
-      'params': {
-        'placementId': 10433394,
-        'pageId': 1234
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-      'creativeId': 'er2ee',
-      'deviceWidth': 1680
-    };
-
-    const userIdModules = {
-      unifiedId2: { uid2: { id: 'unifiedId2-id' } },
-      liveRampId: { idl_env: 'liveRampId-id' },
-      lotamePanoramaId: { lotamePanoramaId: 'lotamePanoramaId-id' },
-      id5Id: { id5id: { uid: 'id5Id-id' } },
-      criteoId: { criteoId: 'criteoId-id' },
-      yahooConnectId: { connectId: 'yahooConnectId-id' },
-      quantcastId: { quantcastId: 'quantcastId-id' },
-      epsilonPublisherLinkId: { publinkId: 'epsilonPublisherLinkId-id' },
-      publisherFirstPartyViewerId: { pubcid: 'publisherFirstPartyViewerId-id' },
-      merkleId: { merkleId: { id: 'merkleId-id' } },
-      kinessoId: { kpuid: 'kinessoId-id' }
-    };
-
-    describe('User Id Modules', function () {
-      it(`should not add param to payload if user id system is not enabled`, function () {
-        const bidRequest = {
-          ...baseBidRequest,
-          userId: {} // no property -> assumption that the system is disabled
-        };
-
-        const request = spec.buildRequests([bidRequest], bidderRequestDefault);
-        const payload = JSON.parse(request.data);
-
-        for (const userId in userIdModules) {
-          expect(payload, userId).not.to.have.property(userId);
-        }
-      });
-
-      it(`should not add param to payload if user id field is absent`, function () {
-        const request = spec.buildRequests([baseBidRequest], bidderRequestDefault);
-        const payload = JSON.parse(request.data);
-
-        for (const userId in userIdModules) {
-          expect(payload, userId).not.to.have.property(userId);
-        }
-      });
-
-      it(`should not add param to payload if user id is enabled but there is no value`, function () {
-        const bidRequest = {
-          ...baseBidRequest,
-          userId: {
-            idl_env: '',
-            pubcid: 'publisherFirstPartyViewerId-id'
-          }
-        };
-
-        const request = spec.buildRequests([bidRequest], bidderRequestDefault);
-        const payload = JSON.parse(request.data);
-
-        expect(payload).not.to.have.property('liveRampId');
-        expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
-      });
-
-      it(`should add userId param to payload for each enabled user id system`, function () {
-        let userIdObject = {};
-        for (const userId in userIdModules) {
-          userIdObject = {
-            ...userIdObject,
-            ...userIdModules[userId]
-          }
-        }
-        const bidRequest = {
-          ...baseBidRequest,
-          userId: userIdObject
-        };
-
-        const request = spec.buildRequests([bidRequest], bidderRequestDefault);
-        const payload = JSON.parse(request.data);
-
-        expect(payload['unifiedId2']).to.equal('unifiedId2-id');
-        expect(payload['liveRampId']).to.equal('liveRampId-id');
-        expect(payload['lotamePanoramaId']).to.equal('lotamePanoramaId-id');
-        expect(payload['id5Id']).to.equal('id5Id-id');
-        expect(payload['criteoId']).to.equal('criteoId-id');
-        expect(payload['yahooConnectId']).to.equal('yahooConnectId-id');
-        expect(payload['quantcastId']).to.equal('quantcastId-id');
-        expect(payload['epsilonPublisherLinkId']).to.equal('epsilonPublisherLinkId-id');
-        expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
-        expect(payload['merkleId']).to.equal('merkleId-id');
-        expect(payload['kinessoId']).to.equal('kinessoId-id');
-      });
-    })
-  });
   describe('Global Placement Id', function () {
     let bidRequests = [
       {

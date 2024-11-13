@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter } from '../src/utils.js';
+import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getDM, getHC, getHLen } from '../libraries/navigatorData/navigatorData.js';
@@ -11,18 +11,12 @@ import { getDM, getHC, getHLen } from '../libraries/navigatorData/navigatorData.
 const BIDDER_CODE = 'greenbids';
 const GVL_ID = 1232;
 const ENDPOINT_URL = 'https://d.greenbids.ai/hb/bid-request';
-const gdprStatus = {
-  GDPR_APPLIES_PUBLISHER: 12,
-  GDPR_APPLIES_GLOBAL: 11,
-  GDPR_DOESNT_APPLY: 0,
-  CMP_NOT_FOUND_OR_ERROR: 22
-};
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
-  supportedMediaTypes: ['banner'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -30,25 +24,22 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    let isValid = false;
-    if (typeof bid.params !== 'undefined') {
-      let isValidgbPlacementId = _validateId(getValue(bid.params, 'gbPlacementId'));
-      isValid = isValidgbPlacementId;
+    if (typeof bid.params !== 'undefined' && parseInt(getValue(bid.params, 'gbPlacementId')) > 0) {
+      return true;
+    } else {
+      logError('Greenbids bidder adapter requires gbPlacementId to be defined and a positive number');
+      return false;
     }
-
-    if (!isValid) {
-      logError(' parameters are required. Bid aborted.');
-    }
-    return isValid;
   },
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} an array of bids
+   * @param {validBidRequests[]} validBidRequests array of bids
+   * @param bidderRequest bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const bids = validBidRequests.map(buildRequestObject);
+    const bids = validBidRequests.map(cleanBidsInfo);
     const topWindow = window.top;
 
     const payload = {
@@ -69,8 +60,7 @@ export const spec = {
       viewportWidth: topWindow.visualViewport?.width,
       hardwareConcurrency: getHC(),
       deviceMemory: getDM(),
-      hb_version: '$prebid.version$',
-      ...getSharedViewerIdParameters(validBidRequests),
+      prebid_version: '$prebid.version$',
     };
 
     const firstBidRequest = validBidRequests[0];
@@ -79,35 +69,9 @@ export const spec = {
       payload.schain = firstBidRequest.schain;
     }
 
-    let gpp = bidderRequest.gppConsent;
-    if (bidderRequest && gpp) {
-      let isValidConsentString = typeof gpp.gppString === 'string';
-      let validateApplicableSections =
-        Array.isArray(gpp.applicableSections) &&
-        gpp.applicableSections.every((section) => typeof (section) === 'number')
-      payload.gpp = {
-        consentString: isValidConsentString ? gpp.gppString : '',
-        applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],
-      };
-    }
-
-    let gdpr = bidderRequest.gdprConsent;
-    if (bidderRequest && gdpr) {
-      let isCmp = typeof gdpr.gdprApplies === 'boolean';
-      let isConsentString = typeof gdpr.consentString === 'string';
-      let status = isCmp
-        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData)
-        : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
-      payload.gdpr_iab = {
-        consent: isConsentString ? gdpr.consentString : '',
-        status: status,
-        apiVersion: gdpr.apiVersion
-      };
-    }
-
-    if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent;
-    }
+    hydratePayloadWithGPPData(payload, bidderRequest.gppConsent);
+    hydratePayloadWithGDPRData(payload, bidderRequest.gdprConsent);
+    hydratePayloadWithUspConsentData(payload, bidderRequest.uspConsent);
 
     const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
     if (userAgentClientHints) {
@@ -147,7 +111,7 @@ export const spec = {
         currency: bid.currency,
         netRevenue: true,
         ttl: bid.ttl,
-        meta: { 
+        meta: {
           advertiserDomains: bid && bid.adomain ? bid.adomain : [],
         },
         ad: bid.ad,
@@ -166,36 +130,9 @@ export const spec = {
   }
 };
 
-/**
- *
- * @param validBidRequests an array of bids
- * @returns {{sharedViewerIdKey : 'sharedViewerIdValue'}} object with all sharedviewerids
- */
-function getSharedViewerIdParameters(validBidRequests) {
-  const sharedViewerIdMapping = {
-    unifiedId2: 'uid2.id', // uid2IdSystem
-    liveRampId: 'idl_env', // identityLinkIdSystem
-    lotamePanoramaId: 'lotamePanoramaId', // lotamePanoramaIdSystem
-    id5Id: 'id5id.uid', // id5IdSystem
-    criteoId: 'criteoId', // criteoIdSystem
-    yahooConnectId: 'connectId', // connectIdSystem
-    quantcastId: 'quantcastId', // quantcastIdSystem
-    epsilonPublisherLinkId: 'publinkId', // publinkIdSystem
-    publisherFirstPartyViewerId: 'pubcid', // sharedIdSystem
-    merkleId: 'merkleId.id', // merkleIdSystem
-    kinessoId: 'kpuid' // kinessoIdSystem
-  }
+registerBidder(spec);
 
-  let sharedViewerIdObject = {};
-  for (const sharedViewerId in sharedViewerIdMapping) {
-    const key = sharedViewerIdMapping[sharedViewerId];
-    const value = deepAccess(validBidRequests, `0.userId.${key}`);
-    if (value) {
-      sharedViewerIdObject[sharedViewerId] = value;
-    }
-  }
-  return sharedViewerIdObject;
-}
+// Page info retrival
 
 function getReferrerInfo(bidderRequest) {
   let ref = '';
@@ -207,28 +144,24 @@ function getReferrerInfo(bidderRequest) {
 
 function getPageTitle() {
   try {
-    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
-
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]');
     return window.top.document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
-    const ogTitle = document.querySelector('meta[property="og:title"]')
-
+    const ogTitle = document.querySelector('meta[property="og:title"]');
     return document.title || (ogTitle && ogTitle.content) || '';
   }
 }
 
 function getPageDescription() {
-  let element;
-
   try {
-    element = window.top.document.querySelector('meta[name="description"]') ||
-      window.top.document.querySelector('meta[property="og:description"]')
+    const element = window.top.document.querySelector('meta[name="description"]') ||
+      window.top.document.querySelector('meta[property="og:description"]');
+    return (element && element.content) || '';
   } catch (e) {
-    element = document.querySelector('meta[name="description"]') ||
-      document.querySelector('meta[property="og:description"]')
+    const element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]');
+    return (element && element.content) || '';
   }
-
-  return (element && element.content) || '';
 }
 
 function getConnectionDownLink(nav) {
@@ -264,6 +197,68 @@ function getTimeToFirstByte(win) {
   return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
 }
 
+function cleanBidsInfo(bids) {
+  const reqObj = {};
+  let gbPlacementId = getValue(bids.params, 'gbPlacementId');
+  const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid');
+  reqObj.sizes = getSizes(bids);
+  reqObj.bidId = getBidIdParameter('bidId', bids);
+  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bids);
+  reqObj.gbPlacementId = parseInt(gbPlacementId, 10);
+  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
+  reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
+  if (gpid) { reqObj.gpid = gpid; }
+  return reqObj;
+}
+
+function getSizes(bid) {
+  return parseSizesInput(bid.sizes);
+}
+
+// Privacy handling
+
+export function hydratePayloadWithGPPData(payload, gppData) {
+  if (gppData) {
+    let isValidConsentString = typeof gppData.gppString === 'string';
+    let validateApplicableSections =
+      Array.isArray(gppData.applicableSections) &&
+      gppData.applicableSections.every((section) => typeof (section) === 'number')
+    payload.gpp = {
+      consentString: isValidConsentString ? gppData.gppString : '',
+      applicableSectionIds: validateApplicableSections ? gppData.applicableSections : [],
+    };
+  }
+  return payload;
+}
+
+export function hydratePayloadWithGDPRData(payload, gdprData) {
+  if (gdprData) {
+    let isCmp = typeof gdprData.gdprApplies === 'boolean';
+    let isConsentString = typeof gdprData.consentString === 'string';
+    let status = isCmp
+      ? findGdprStatus(gdprData.gdprApplies, gdprData.vendorData)
+      : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
+    payload.gdpr_iab = {
+      consent: isConsentString ? gdprData.consentString : '',
+      status: status,
+      apiVersion: gdprData.apiVersion
+    };
+  }
+}
+
+export function hydratePayloadWithUspConsentData(payload, uspConsentData) {
+  if (uspConsentData) {
+    payload.us_privacy = uspConsentData;
+  }
+}
+
+const gdprStatus = {
+  GDPR_APPLIES_PUBLISHER: 12,
+  GDPR_APPLIES_GLOBAL: 11,
+  GDPR_DOESNT_APPLY: 0,
+  CMP_NOT_FOUND_OR_ERROR: 22
+};
+
 function findGdprStatus(gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
@@ -275,50 +270,3 @@ function findGdprStatus(gdprApplies, gdprData) {
   }
   return status;
 }
-
-function buildRequestObject(bid) {
-  const reqObj = {};
-  let gbPlacementId = getValue(bid.params, 'gbPlacementId');
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
-  reqObj.sizes = getSizes(bid);
-  reqObj.bidId = getBidIdParameter('bidId', bid);
-  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
-  reqObj.gbPlacementId = parseInt(gbPlacementId, 10);
-  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
-  if (gpid) { reqObj.gpid = gpid; }
-  return reqObj;
-}
-
-function getSizes(bid) {
-  return parseSizesInput(concatSizes(bid));
-}
-
-function concatSizes(bid) {
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-
-  if (isArray(bannerSizes)) {
-    let mediaTypesSizes = [bannerSizes];
-    return mediaTypesSizes
-      .reduce(function (acc, currSize) {
-        if (isArray(currSize)) {
-          if (isArray(currSize[0])) {
-            currSize.forEach(function (childSize) {
-              acc.push(childSize);
-            })
-          } else {
-            acc.push(currSize);
-          }
-        }
-        return acc;
-      }, []);
-  } else {
-    return bid.sizes;
-  }
-}
-
-function _validateId(id) {
-  return (parseInt(id) > 0);
-}
-
-registerBidder(spec);
