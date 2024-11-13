@@ -8,7 +8,6 @@ build/creative
 
 # gu-mod-start #
 # we install prebid as a dependency via this built file
-!build/dist/prebid.js
 !build/dist/uk/prebid.js
 !build/dist/us/prebid.js
 !build/dist/aus-nz/prebid.js
