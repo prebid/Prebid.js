@@ -369,6 +369,21 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should include ip4,ip6,userAgent if it\'s present', function(done) {
+    liveIntentIdSubmodule.getId({ params: {
+      ...defaultConfigParams,
+      ipv4: 'foov4',
+      ipv6: 'foov6',
+      userAgent: 'boo'
+    }});
+    setTimeout(() => {
+      let request = rpRequests()[0];
+      expect(request.url).to.match(/^https:\/\/rp\.liadm\.com\/j?.*pip=.*&pip6=.*$/)
+      expect(request.requestHeaders['X-LI-Provided-User-Agent']).to.be.eq('boo')
+      done();
+    }, 300);
+  });
+
   it('should send an error when the cookie jar throws an unexpected error', function() {
     getCookieStub.throws('CookieError', 'A message');
     liveIntentIdSubmodule.getId({ params: defaultConfigParams });
@@ -509,6 +524,21 @@ describe('LiveIntentId', function() {
       lipb: { 'fpid': expectedValue },
       fpid: { id: expectedValue }
     });
+  });
+
+  it('should decode a sharethrough id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sharethrough: 'bar' }, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sharethrough': 'bar'}, 'sharethrough': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a sonobi id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sonobi: 'bar' }, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a vidazoo id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' }, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   describe('eid', () => {
@@ -783,6 +813,105 @@ describe('LiveIntentId', function() {
       expect(newEids[0]).to.deep.equal({
         source: 'liveintent.com',
         uids: [{id: 'some-random-id-value', atype: 3}]
+      });
+    });
+
+    it('sharethrough', function () {
+      const userId = {
+        sharethrough: { 'id': 'sample_id' }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'sharethrough.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('sharethrough with ext', function () {
+      const userId = {
+        sharethrough: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'sharethrough.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('sonobi', function () {
+      const userId = {
+        sonobi: { 'id': 'sample_id' }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.sonobi.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('sonobi with ext', function () {
+      const userId = {
+        sonobi: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.sonobi.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('vidazoo', function () {
+      const userId = {
+        vidazoo: { 'id': 'sample_id' }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.vidazoo.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('vidazoo with ext', function () {
+      const userId = {
+        vidazoo: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.vidazoo.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
       });
     });
   })
