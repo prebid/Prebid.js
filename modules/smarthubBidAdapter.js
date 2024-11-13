@@ -9,6 +9,7 @@ import {
 
 const BIDDER_CODE = 'smarthub';
 const ALIASES = [
+  {code: 'attekmi', skipPbsAliasing: true},
   {code: 'markapp', skipPbsAliasing: true},
   {code: 'jdpmedia', skipPbsAliasing: true},
   {code: 'tredio', skipPbsAliasing: true},
@@ -16,6 +17,7 @@ const ALIASES = [
   {code: 'vimayx', skipPbsAliasing: true},
 ];
 const BASE_URLS = {
+  attekmi: 'https://prebid.attekmi.com/pbjs',
   smarthub: 'https://prebid.attekmi.com/pbjs',
   markapp: 'https://markapp-prebid.attekmi.com/pbjs',
   jdpmedia: 'https://jdpmedia-prebid.attekmi.com/pbjs',
