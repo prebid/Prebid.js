@@ -54,7 +54,7 @@ describe('LiveIntentExternalId', function() {
     },
     {
       clientRef: {},
-      sourceEvent: { hash: '123' },
+      sourceEvent: { emailHash: '123' },
       type: 'collect'
     }])
   });
@@ -120,7 +120,7 @@ describe('LiveIntentExternalId', function() {
 
     expect(window.liQHub[1]).to.eql({
       clientRef: {},
-      sourceEvent: { hash: '58131bc547fb87af94cebdaf3102321f' },
+      sourceEvent: { emailHash: '58131bc547fb87af94cebdaf3102321f' },
       type: 'collect'
     })
 
@@ -179,7 +179,7 @@ describe('LiveIntentExternalId', function() {
     },
     {
       clientRef: {},
-      sourceEvent: { hash: '123' },
+      sourceEvent: { emailHash: '123' },
       type: 'collect'
     }])
   });
@@ -205,7 +205,36 @@ describe('LiveIntentExternalId', function() {
     },
     {
       clientRef: {},
-      sourceEvent: { hash: '123' },
+      sourceEvent: { emailHash: '123' },
+      type: 'collect'
+    }])
+  });
+
+  it('should include the identifier data if it is present in config', function() {
+    const configParams = {
+      params: {
+        ...defaultConfigParams.params,
+        distributorId: 'did-1111',
+        emailHash: '123',
+        ipv4: 'foov4',
+        ipv6: 'foov6',
+        userAgent: 'bar'
+      }
+    }
+    liveIntentExternalIdSubmodule.decode({}, configParams);
+    expect(window.liQHub).to.eql([{
+      clientDetails: { name: 'prebid', version: '$prebid.version$' },
+      clientRef: {},
+      collectSettings: { timeout: DEFAULT_AJAX_TIMEOUT },
+      consent: {},
+      integration: { distributorId: 'did-1111', publisherId: defaultConfigParams.params.publisherId, type: 'custom' },
+      partnerCookies: new Set(),
+      resolveSettings: { identityPartner: 'did-1111', timeout: DEFAULT_AJAX_TIMEOUT },
+      type: 'register_client'
+    },
+    {
+      clientRef: {},
+      sourceEvent: { emailHash: '123', ipv4: 'foov4', ipv6: 'foov6', userAgent: 'bar' },
       type: 'collect'
     }])
   });
@@ -415,5 +444,20 @@ describe('LiveIntentExternalId', function() {
       requestedAttributes: [ 'nonId', 'idCookie' ],
       type: 'resolve'
     })
+  });
+
+  it('should decode a sharethrough id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', sharethrough: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sharethrough': 'bar'}, 'sharethrough': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a sonobi id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', sonobi: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a vidazoo id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 });

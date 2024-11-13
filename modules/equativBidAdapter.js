@@ -1,18 +1,20 @@
+import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, isFn, logError, logWarn, mergeDeep } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
 
 const LOG_PREFIX = 'Equativ:';
 
 /**
- * Evaluates a bid request for validity.  Returns false if the 
+ * Evaluates a bid request for validity.  Returns false if the
  * request contains a video media type with no properties, true
  * otherwise.
  * @param {*} bidReq - A bid request object to evaluate
- * @returns boolean 
+ * @returns boolean
  */
-function isValid(bidReq){
+function isValid(bidReq) {
   if (bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}') {
     return false;
   } else {
@@ -25,8 +27,15 @@ function isValid(bidReq){
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
+const BIDDER_CODE = 'equativ';
+const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
+const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
+const PID_COOKIE_NAME = 'eqt_pid';
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
 export const spec = {
-  code: 'equativ',
+  code: BIDDER_CODE,
   gvlid: 45,
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -43,30 +52,9 @@ export const spec = {
     return {
       data: converter.toORTB({ bidderRequest, bidRequests }),
       method: 'POST',
-      url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169' // TODO: SADR-6484: temporary URL for testing
-      // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169' // TODO: SADR-6484: original URL to be used after testing
+      // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169'
+      url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
     };
-  },
-
-  /**
-   * @param bidRequest
-   * @returns {number}
-   */
-  getMinFloor: (bidRequest) => {
-    const floors = [];
-
-    if (isFn(bidRequest.getFloor)) {
-      (deepAccess(bidRequest, 'mediaTypes.banner.sizes') || []).forEach(size => {
-        const floor = bidRequest.getFloor({ size }).floor;
-        if (!isNaN(floor)) {
-          floors.push(floor);
-        } else {
-          floors.push(0.0);
-        }
-      });
-    }
-
-    return floors.length ? Math.min(...floors) : 0.0;
   },
 
   /**
@@ -95,24 +83,24 @@ export const spec = {
 
   /**
    * @param syncOptions
-   * @param serverResponse
    * @returns {{type: string, url: string}[]}
    */
-  // getUserSyncs: (syncOptions, serverResponse) => {
-  //   if (syncOptions.iframeEnabled && serverResponses[0]?.body.cSyncUrl) {
-  //     return [
-  //       {
-  //         type: 'iframe',
-  //         url: serverResponses[0].body.cSyncUrl,
-  //       },
-  //     ];
-  //   }
-  //   return (syncOptions.pixelEnabled && serverResponse.body?.dspPixels)
-  //     ? serverResponse.body.dspPixels.map((pixel) => ({
-  //       type: 'image',
-  //       url: pixel,
-  //     })) : [];
-  // },
+  getUserSyncs: (syncOptions) => {
+    if (syncOptions.iframeEnabled) {
+      window.addEventListener('message', function handler(event) {
+        if (event.origin === COOKIE_SYNC_ORIGIN && event.data.pid) {
+          const exp = new Date();
+          exp.setTime(Date.now() + 31536000000); // in a year
+          storage.setCookie(PID_COOKIE_NAME, event.data.pid, exp.toUTCString());
+          this.removeEventListener('message', handler);
+        }
+      });
+
+      return [{ type: 'iframe', url: COOKIE_SYNC_URL }];
+    }
+
+    return [];
+  }
 };
 
 export const converter = ortbConverter({
@@ -127,14 +115,14 @@ export const converter = ortbConverter({
 
     delete imp.dt;
 
-    imp.bidfloor = imp.bidfloor || spec.getMinFloor(bidRequest);
-    imp.secure = Number(window.location.protocol === 'https:');
+    imp.bidfloor = imp.bidfloor || getBidFloor(bidRequest);
+    imp.secure = 1;
     imp.tagid = bidRequest.adUnitCode;
 
     if (bidRequest.mediaTypes.video && !!bidRequest.mediaTypes.video.ext.rewarded) {
       mergeDeep(imp.video, {
         ext: { rewarded: bidRequest.mediaTypes.video.ext.rewarded },
-      })  
+      })
     }
 
     if (siteId || pageId || formatId) {
@@ -180,9 +168,13 @@ export const converter = ortbConverter({
     if (bid.mediaTypes.video && !bid.mediaTypes.video.placement) {
       logWarn(`${LOG_PREFIX} Property "placement" is missing from request`, bid); // TODO: SADR-6484: message OK?  Should it say something else?
     }
+    const pid = storage.getCookie(PID_COOKIE_NAME);
+    if (pid) {
+      deepSetValue(req, 'user.buyeruid', pid);
+    }
 
     return req;
-  },
+  }
 });
 
 registerBidder(spec);
