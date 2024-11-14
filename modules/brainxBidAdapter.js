@@ -9,7 +9,8 @@ const BIDDER_CODE = 'brainx';
 const METHOD = 'POST';
 const TTL = 200;
 const NET_REV = true;
-let ENDPOINT = 'http://adx-engine-gray.tec-do.cn/bid'
+let ENDPOINT = 'https://dsp.brainx.tech/bid'
+// let ENDPOINT = 'http://adx-engine-gray.tec-do.cn/bid'
 
 const converter = ortbConverter({
   context: {

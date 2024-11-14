@@ -14,10 +14,10 @@ Module that connects to brianx's demand sources
 
 ## Bid Parameters
 
-| Name        | Scope    | Type      | Description                              | Example          |
-| -------     | -------- | ------    | ---------------------------------------  | ---------------- |
-| `pubId`     | required | String    | The Pub Id provided by Brainx Ads.       | `F7B53DBC-85C1-4685-9A06-9CF4B6261FA3`   |
-| `endpoint`  | Not required | String    | The endpoint provided by Brainx Url.     | `http://adx-engine-gray.tec-do.cn/bid`   |
+| Name       | Scope        | Type   | Description                          | Example                                |
+| ---------- | ------------ | ------ | ------------------------------------ | -------------------------------------- |
+| `pubId`    | required     | String | The Pub Id provided by Brainx Ads.   | `F7B53DBC-85C1-4685-9A06-9CF4B6261FA3` |
+| `endpoint` | Not required | String | The endpoint provided by Brainx Url. | `https://dsp.brainx.tech/bid`          |
 
 ## Example
 
@@ -38,7 +38,7 @@ var adUnits = [{
     bidder: 'brianx',
     params: {
       pubId: 'F7B53DBC-85C1-4685-9A06-9CF4B6261FA3',
-      endpoint: 'http://adx-engine-gray.tec-do.cn/bid'
+      endpoint: 'https://dsp.brainx.tech/bid'
     }
   }]
 }];
