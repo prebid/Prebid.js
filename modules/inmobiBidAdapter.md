@@ -15,16 +15,6 @@ Module that connects to InMobi's demand sources.
 | `plc`      | required | Placement ID | `'1234'`  | `string` |
 | `bidfloor` | optional | Bid Floor    | `1.2`     | `float`  |
 
-## Video Bid Params  
-| Name            | Scope    | Description                                        |  Example  | Type      |
-|-----------------|----------|----------------------------------------------------|-----------|-----------|
-| `skip`          | optional | Is video skippable, where 0 = no, 1 = yes.         | `0`       | `number`  |
-| `placement`     | optional | Placement as per oRTB standard                     | `1`       | `number`  |
-| `plcmt`         | optional | Plcmt as per oRTB standard                         | `2`       | `number`  |
-| `minduration`   | optional | Minimum video ad duration in seconds.              | `5`       | `number`  |
-| `playbackmethod`| optional | playback method that may be in use                 | `[1,3]`   | `number[]`|
-| `startdelay`    | optional | Indicates the start delay in seconds for video ads | `5`       | `number`  |
-
 
 # Test Parameters
 

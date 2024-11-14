@@ -1,10 +1,10 @@
-import {deepAccess, deepSetValue, logError} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {ajax} from '../src/ajax.js';
+import { deepAccess, deepSetValue, isFn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { ajax } from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -54,42 +54,35 @@ function imp(buildImp, bidRequest, context) {
   const params = bidRequest.params;
 
   imp.tagid = bidRequest.adUnitCode;
+  let floorInfo = {};
+
+  if (isFn(bidRequest.getFloor)) {
+    floorInfo = bidRequest.getFloor({
+      currency: CURRENCY,
+      size: '*',
+      mediaType: '*'
+    });
+  }
+  
+  // if floor price module is not set reading from bidRequest.params
+  if (!imp.bidfloor && bidRequest.params.bidfloor) {
+    imp.bidfloor = bidRequest.params.bidfloor;
+    imp.bidfloorcur = CURRENCY;
+  }
+
   deepSetValue(imp, 'ext', {
     ...imp.ext,
-    floors: getFloors(bidRequest),
     params: bidRequest.params,
     bidder: {
       plc: params?.plc,
     },
+    moduleFloors: floorInfo
   });
   imp.secure = Number(window.location.protocol === 'https:');
   imp.displaymanager = 'Prebid.js';
   imp.displaymanagerver = '$prebid.version$';
 
-  if (isVideoMediaType(bidRequest)) {
-    const videoParams = bidRequest.params.video;
-    if (videoParams !== undefined) {
-      deepSetValue(imp, 'video', {
-        ...imp.video,
-        skip: imp.video.skip || videoParams.skip,
-        placement: imp.video.placement || videoParams.placement,
-        plcmt: imp.video.plcmt || videoParams.plcmt,
-        minduration: imp.video.minduration || videoParams.minduration,
-        playbackmethod: imp.video.playbackmethod || videoParams.playbackmethod,
-        startdelay: imp.video.startdelay || videoParams.startdelay,
-      })
-    }
-    deepSetValue(imp, 'video.ext', {
-      context: bidRequest.mediaTypes.video.context,
-      playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
-      plcmt: bidRequest.mediaTypes.video.plcmt
-    })
-  }
-
-  if (!imp.bidfloor && bidRequest.params.bidfloor) {
-    imp.bidfloor = bidRequest.params.bidfloor;
-    imp.bidfloorcur = CURRENCY;
-  }
+  
 
   return imp;
 }
@@ -246,7 +239,7 @@ export const spec = {
    * @returns {ServerRequest} The server request for bidding.
    */
   buildRequests: (bidRequests, bidderRequest) => {
-    const data = CONVERTER.toORTB({bidderRequest, bidRequests});
+    const data = CONVERTER.toORTB({ bidderRequest, bidRequests });
 
     if (data) {
       const requestPayload = {
@@ -275,7 +268,7 @@ export const spec = {
       return [];
     }
 
-    const interpretedResponse = CONVERTER.fromORTB({response: response.body, request: request.data});
+    const interpretedResponse = CONVERTER.fromORTB({ response: response.body, request: request.data });
     const bids = interpretedResponse.bids || [];
 
     return bids;
@@ -328,63 +321,8 @@ export const spec = {
 
 };
 
-function getFloorFunc(bidRequest) {
-  if (bidRequest.getFloor) {
-    return bidRequest.getFloor;
-  }
-}
-
-function getFloors(bidRequest) {
-  try {
-    const floors = {};
-
-    const getFloor = getFloorFunc(bidRequest);
-
-    if (getFloor) {
-      if (bidRequest.mediaTypes?.banner) {
-        floors.banner = {};
-        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => floors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER }));
-      }
-
-      if (bidRequest.mediaTypes?.video) {
-        floors.video = {};
-        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => floors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO }));
-      }
-
-      if (bidRequest.mediaTypes?.native) {
-        floors.native = {};
-        floors.native['*'] = getFloor.call(bidRequest, { size: '*', mediaType: NATIVE });
-      }
-
-      return floors;
-    }
-  } catch (e) {
-    logError(LOG_PREFIX + 'Could not parse floors from Prebid: ' + e);
-  }
-}
-
-function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
-    return [];
-  }
-  if (Array.isArray(sizes[0])) {
-    return sizes.map(size => parser(size));
-  }
-  return [parser(sizes)];
-}
-
-function parseSize(size) {
-  return size[0] + 'x' + size[1];
-}
-
 function isReportingAllowed(loggingPercentage) {
   return loggingPercentage != 0;
-}
-
-function isVideoMediaType(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
 }
 
 function report(type, data) {

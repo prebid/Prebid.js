@@ -958,33 +958,27 @@ describe('The inmobi bidding adapter', function () {
                 playbackend: 1,
                 adPodDurationSec: 30,
                 durationRangeSec: [1, 30],
-                placement: 2
-              }
-            },
-            params: {
-              plc: '123',
-              video: {
                 skip: 1,
                 minduration: 5,
                 startdelay: 5,
                 playbackmethod: [1, 3],
-                placement: 4
+                placement: 2
               }
+            },
+            params: {
+              plc: '123'
             },
           },
         ];
         const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
         const ortbRequest = request.data;
         expect(ortbRequest.imp).to.have.lengthOf(1);
+        console.log(ortbRequest.imp[0].video);
         expect(ortbRequest.imp[0].video.skip).to.equal(1);
         expect(ortbRequest.imp[0].video.minduration).to.equal(5);
         expect(ortbRequest.imp[0].video.startdelay).to.equal(5);
         expect(ortbRequest.imp[0].video.playbackmethod).to.deep.equal([1, 3]);
         expect(ortbRequest.imp[0].video.placement).to.equal(2);
-        // mediaType
-        expect(ortbRequest.imp[0].video.ext.context).to.equal('inbanner');
-        expect(ortbRequest.imp[0].video.ext.plcmt).to.equal(3);
-        expect(ortbRequest.imp[0].video.ext.playersizes).to.deep.equal(['640x360']);
         expect(ortbRequest.imp[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
         expect(ortbRequest.imp[0].video.maxduration).to.equal(30);
         expect(ortbRequest.imp[0].video.api).to.deep.equal([1, 2]);
@@ -1031,11 +1025,6 @@ describe('The inmobi bidding adapter', function () {
                 playbackend: 1,
                 adPodDurationSec: 30,
                 durationRangeSec: [1, 30],
-              }
-            },
-            params: {
-              plc: '123',
-              video: {
                 skip: 1,
                 minduration: 5,
                 startdelay: 5,
@@ -1043,12 +1032,17 @@ describe('The inmobi bidding adapter', function () {
                 placement: 2
               }
             },
+            params: {
+              plc: '123'
+            },
           },
         ];
         const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
         const ortbRequest = request.data;
+        console.log(ortbRequest.imp[0].video);
         expect(ortbRequest.imp).to.have.lengthOf(1);
-        expect(ortbRequest.imp[0].video.ext.playersizes).to.deep.equal(['640x360', '480x320']);
+        expect(ortbRequest.imp[0].video.w).to.be.equal(640);
+        expect(ortbRequest.imp[0].video.h).to.be.equal(360);
       });
     }
 
@@ -1079,18 +1073,16 @@ describe('The inmobi bidding adapter', function () {
                 pos: 1,
                 playbackend: 1,
                 adPodDurationSec: 30,
-                durationRangeSec: [1, 30]
-              }
-            },
-            params: {
-              plc: '123',
-              video: {
-                skip: 0,
+                durationRangeSec: [1, 30],
+                skip:0,
                 minduration: 5,
                 startdelay: 5,
                 playbackmethod: [1, 3],
                 placement: 2
               }
+            },
+            params: {
+              plc: '123'
             },
           },
         ];
@@ -1098,10 +1090,6 @@ describe('The inmobi bidding adapter', function () {
         const ortbRequest = request.data;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].video.skip).to.equal(0);
-        expect(ortbRequest.imp[0].video.minduration).to.equal(5);
-        expect(ortbRequest.imp[0].video.startdelay).to.equal(5);
-        expect(ortbRequest.imp[0].video.playbackmethod).to.deep.equal([1, 3]);
-        expect(ortbRequest.imp[0].video.placement).to.equal(2);
       });
     }
 
@@ -1228,16 +1216,11 @@ describe('The inmobi bidding adapter', function () {
             plc: '123a'
           },
           getFloor: inputParams => {
-            return { currency: 'USD', floor: 1.23 };
+            return { currency: 'USD', floor: 1.23 , size : '*', mediaType: '*'};
           }
         }
       ];
       const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
-      expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
-        'banner': {
-          '320x50': { 'currency': 'USD', 'floor': 1.23 }
-        }
-      });
       expect(ortbRequest.imp[0].bidfloor).equal(1.23);
       expect(ortbRequest.imp[0].bidfloorcur).equal('USD');
     });
@@ -1281,30 +1264,13 @@ describe('The inmobi bidding adapter', function () {
               plc: '123a'
             },
             getFloor: inputParams => {
-              if (inputParams.mediaType === VIDEO && inputParams.size[0] === 480 && inputParams.size[1] === 320) {
-                return {
-                  currency: 'USD',
-                  floor: 1.0
-                };
-              } else if (inputParams.mediaType === VIDEO && inputParams.size[0] === 720 && inputParams.size[1] === 480) {
-                return {
-                  currency: 'INR',
-                  floor: 100.0
-                };
-              } else {
-                return {}
-              }
+              return { currency: 'USD', floor: 1.23 , size : '*', mediaType: '*'};
             }
-
           }
         ];
         const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
-        expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
-          'video': {
-            '480x320': { 'currency': 'USD', 'floor': 1 },
-            '720x480': { 'currency': 'INR', 'floor': 100 }
-          }
-        });
+        expect(ortbRequest.imp[0].bidfloor).to.equal(1.23);
+        expect(ortbRequest.imp[0].bidfloorcur).to.equal('USD');
       });
     }
 
@@ -1355,29 +1321,7 @@ describe('The inmobi bidding adapter', function () {
               plc: '12456'
             },
             getFloor: inputParams => {
-              if (inputParams.mediaType === BANNER && inputParams.size[0] === 320 && inputParams.size[1] === 50) {
-                return {
-                  currency: 'USD',
-                  floor: 1.0
-                };
-              } else if (inputParams.mediaType === BANNER && inputParams.size[0] === 720 && inputParams.size[1] === 90) {
-                return {
-                  currency: 'USD',
-                  floor: 2.0
-                };
-              } else if (inputParams.mediaType === VIDEO && inputParams.size[0] === 640 && inputParams.size[1] === 480) {
-                return {
-                  currency: 'USD',
-                  floor: 3.0
-                };
-              } else if (inputParams.mediaType === NATIVE && inputParams.size === '*') {
-                return {
-                  currency: 'USD',
-                  floor: 6.1
-                };
-              } else {
-                return {}
-              }
+              return { currency: 'USD', floor: 1.23 , size : '*', mediaType: '*'};
             }
           },
         ];
@@ -1386,18 +1330,8 @@ describe('The inmobi bidding adapter', function () {
         expect(ortbRequest.imp[0].banner).not.to.be.undefined;
         expect(ortbRequest.imp[0].video).not.to.be.undefined;
         expect(ortbRequest.imp[0].native.request).not.to.be.undefined;
-        expect(ortbRequest.imp[0].ext.floors).to.deep.equal({
-          'banner': {
-            '320x50': { 'currency': 'USD', 'floor': 1 },
-            '720x90': { 'currency': 'USD', 'floor': 2 }
-          },
-          'video': {
-            '640x480': { 'currency': 'USD', 'floor': 3 }
-          },
-          'native': {
-            '*': { 'currency': 'USD', 'floor': 6.1 }
-          }
-        });
+        expect(ortbRequest.imp[0].bidfloor).to.deep.equal(1.23);
+        expect(ortbRequest.imp[0].bidfloorcur).to.deep.equal('USD');
       });
     }
 
@@ -1427,17 +1361,15 @@ describe('The inmobi bidding adapter', function () {
               playbackend: 1,
               adPodDurationSec: 30,
               durationRangeSec: [1, 30],
-            }
-          },
-          params: {
-            plc: '123',
-            video: {
               skip: 1,
               minduration: 5,
               startdelay: 5,
               playbackmethod: [1, 3],
               placement: 2
             }
+          },
+          params: {
+            plc: '123'
           },
         }, {
           adUnitCode: 'impId',
@@ -1489,20 +1421,18 @@ describe('The inmobi bidding adapter', function () {
               playbackend: 1,
               adPodDurationSec: 30,
               durationRangeSec: [1, 30],
+              skip: 1,
+              minduration: 5,
+              startdelay: 5,
+              playbackmethod: [1, 3],
+              placement: 2
             },
             banner: {
               sizes: [[320, 50]]
             }
           },
           params: {
-            plc: '123',
-            video: {
-              skip: 1,
-              minduration: 5,
-              startdelay: 5,
-              playbackmethod: [1, 3],
-              placement: 2
-            }
+            plc: '123'
           },
         }];
         const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
