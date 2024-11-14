@@ -87,8 +87,8 @@ function auctionEndHandler(args) {
 function bidTimeoutHandler(args) {
   const event = {
     zetaParams: zetaParams,
-    domain: args.find(t => t?.ortb2?.site?.domain),
-    page: args.find(t => t?.ortb2?.site?.page),
+    domain: args.find(t => t?.ortb2?.site?.domain)?.ortb2?.site?.domain,
+    page: args.find(t => t?.ortb2?.site?.page)?.ortb2?.site?.page,
     timeouts: args.map(t => ({
       bidId: t?.bidId,
       auctionId: t?.auctionId,

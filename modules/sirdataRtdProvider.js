@@ -8,7 +8,7 @@
  * @requires module:modules/realTimeData
  */
 import adapterManager from '../src/adapterManager.js';
-import { ajax } from '../src/ajax.js';
+import { ajax, sendBeacon } from '../src/ajax.js';
 import {
   deepAccess, checkCookieSupport, deepSetValue, hasDeviceAccess, inIframe, isEmpty,
   logError, logInfo, mergeDeep
@@ -217,10 +217,7 @@ export function postContentForSemanticAnalysis(postContentToken, actualUrl) {
     if (payload && payload.length > 300 && payload.length < 300000) {
       const url = `https://contextual.sirdata.io/api/v1/push/contextual?post_content_token=${postContentToken}&url=${encodeURIComponent(actualUrl)}`;
 
-      // Use the Beacon API if supported to send the payload
-      if ('sendBeacon' in navigator) {
-        navigator.sendBeacon(url, payload);
-      } else {
+      if (!sendBeacon(url, payload)) {
         // Fallback to using AJAX if Beacon API is not supported
         ajax(url, {}, payload, {
           contentType: 'text/plain',

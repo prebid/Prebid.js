@@ -5,7 +5,7 @@ import {
   adjustBids,
   getMediaTypeGranularity,
   getPriceByGranularity,
-  addBidResponse, resetAuctionState, responsesReady
+  addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
 import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
@@ -28,6 +28,7 @@ import '../../modules/currency.js'
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 import { REJECTION_REASON } from '../../src/constants.js';
 import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
+import {sandbox} from 'sinon';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -841,6 +842,13 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
+    it('resolves .requestsDone', async () => {
+      const auction = auctionManager.createAuction({adUnits});
+      stubCallAdapters.reset();
+      auction.callBids();
+      await auction.requestsDone;
+    })
+
     describe('stale auctions', () => {
       let clock, auction;
       beforeEach(() => {
@@ -1036,26 +1044,38 @@ describe('auctionmanager.js', function () {
         Object.entries({
           'on adUnit': () => adUnits[0],
           'on bid': () => bidderRequests[0].bids[0],
+          'on mediatype': () => bidderRequests[0].bids[0].mediaTypes.banner,
         }).forEach(([t, getObj]) => {
-          it(t, () => {
-            let renderer = {
+          let renderer, bid;
+          beforeEach(() => {
+            renderer = {
               url: 'renderer.js',
               render: (bid) => bid
             };
+          })
 
-            let bids1 = Object.assign({},
+          function getBid() {
+            let bid = Object.assign({},
               bids[0],
               {
                 bidderCode: BIDDER_CODE,
-                mediaType: 'video-outstream',
+                mediaType: 'banner',
               }
             );
             Object.assign(getObj(), {renderer});
-            spec.interpretResponse.returns(bids1);
+            spec.interpretResponse.returns(bid);
             auction.callBids();
-            const addedBid = auction.getBidsReceived().pop();
-            assert.equal(addedBid.renderer.url, 'renderer.js');
-          })
+            return auction.getBidsReceived().pop();
+          }
+
+          it(t, () => {
+            expect(getBid().renderer.url).to.eql('renderer.js');
+          });
+
+          it('allows renderers without URL', () => {
+            delete renderer.url;
+            expect(getBid().renderer.renderNow).to.be.true;
+          });
         })
       })
 
@@ -1737,6 +1757,42 @@ describe('auctionmanager.js', function () {
       })).to.equal('high');
     });
   });
+
+  describe('addWinningBid', () => {
+    let auction, bid, adUnits, sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(adapterManager, 'callBidWonBidder');
+      sandbox.stub(adapterManager, 'triggerBilling')
+      adUnits = [{code: 'au1'}, {code: 'au2'}]
+      auction = newAuction({adUnits});
+      bid = {
+        bidder: 'mock-bidder'
+      };
+    })
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should call bidWon', () => {
+      auction.addWinningBid(bid);
+      sinon.assert.calledWith(adapterManager.callBidWonBidder, bid.bidder, bid, adUnits);
+    });
+
+    [undefined, false].forEach(deferBilling => {
+      it(`should call onBidBillable if deferBilling = ${deferBilling}`, () => {
+        bid.deferBilling = deferBilling;
+        auction.addWinningBid(bid);
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+    })
+
+    it('should NOT call onBidBillable if deferBilling  = true', () => {
+      bid.deferBilling = true;
+      auction.addWinningBid(bid);
+      sinon.assert.notCalled(adapterManager.triggerBilling);
+    })
+  })
 
   function mockAuction(getBidRequests, start = 1) {
     return {

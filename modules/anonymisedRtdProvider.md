@@ -24,7 +24,7 @@ Anonymised’s Real-time Data Provider automatically obtains segment IDs from th
          waitForIt: true,
          params: {
            cohortStorageKey: "cohort_ids",
-           bidders: ["smartadserver", "appnexus"],
+           bidders: ["appnexus", "onetag", "pubmatic", "smartadserver", ...],
            segtax: 1000
          }
        }

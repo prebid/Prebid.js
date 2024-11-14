@@ -20,6 +20,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -96,7 +97,10 @@ export const spec = {
     {code: 'digiad'},
     {code: 'monetix'},
     {code: 'hyperbrainz'},
-    {code: 'globalsun'}
+    {code: 'voisetech'},
+    {code: 'global_sun'},
+    {code: 'rxnetwork'},
+    {code: 'revbid'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -112,7 +116,9 @@ export const spec = {
       !isNaN(Number(bidRequest.params.zoneId)) &&
       bidRequest.params.zoneId > 0 &&
       bidRequest.mediaTypes &&
-      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video || (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native)));
+      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video ||
+        (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native))
+      );
   },
 
   /**
@@ -245,18 +251,6 @@ function groupImpressionsByHostZone(bidRequests, refererInfo) {
         return acc;
       }, {})
   );
-}
-
-function getBidFloor(bid, mediaType, sizes) {
-  var floor;
-  var size = sizes.length === 1 ? sizes[0] : '*';
-  if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
 }
 
 /**

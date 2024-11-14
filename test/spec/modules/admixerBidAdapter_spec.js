@@ -40,7 +40,7 @@ describe('AdmixerAdapter', function () {
     let rtbBid = {
       bidder: RTB_BIDDER_CODE,
       params: {
-        endpointId: ENDPOINT_ID,
+        tagId: ENDPOINT_ID,
       },
       adUnitCode: 'adunit-code',
       sizes: [
@@ -133,7 +133,7 @@ describe('AdmixerAdapter', function () {
         {
           bidder: bidder,
           params: bidder === 'rtbstack' ? {
-            endpointId: ENDPOINT_ID
+            tagId: ENDPOINT_ID
           } : {
             zone: ZONE_ID,
           },
@@ -226,12 +226,12 @@ describe('AdmixerAdapter', function () {
       },
     };
     it('gets floor', function () {
-      bidderRequest.getFloor = () => {
+      validRequest[0].getFloor = () => {
         return { floor: 0.6 };
       };
       const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = request.data;
-      expect(payload.bidFloor).to.deep.equal(0.6);
+      expect(payload.imps[0].bidFloor).to.deep.equal(0.6);
     });
   });
 

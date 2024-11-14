@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
-import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
+import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from '../../../libraries/liveIntentId/idSystem.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 
 const PUBLISHER_ID = '89899';
@@ -312,5 +312,20 @@ describe('LiveIntentMinimalId', function() {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should decode a sharethrough id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sharethrough: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sharethrough': 'bar'}, 'sharethrough': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a sonobi id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sonobi: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a vidazoo id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 });
