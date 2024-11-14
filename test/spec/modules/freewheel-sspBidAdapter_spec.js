@@ -269,6 +269,36 @@ describe('freewheelSSP BidAdapter Test', () => {
         url: 'https://ads.stickyadstv.com/auto-user-sync?gpp=abc1234&gpp_sid[]=8'
       }]);
     });
+
+    it('should add ORTB2 device data to the request via bidderRequest.ortb2.device', function () {
+      const bidderRequest = {
+        ortb2: {
+          device: {
+            w: 980,
+            h: 1720,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+            language: 'en',
+            devicetype: 1,
+            make: 'Apple',
+            model: 'iPhone 12 Pro Max',
+            os: 'iOS',
+            osv: '17.4',
+          }
+        },
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[0].data;
+
+      expect(payload.ortb2DeviceDevicetype).to.equal(bidderRequest.ortb2.device.devicetype);
+      expect(payload.ortb2DeviceMake).to.equal(bidderRequest.ortb2.device.make);
+      expect(payload.ortb2DeviceModel).to.equal(bidderRequest.ortb2.device.model);
+      expect(payload.ortb2DeviceOs).to.equal(bidderRequest.ortb2.device.os);
+      expect(payload.ortb2DeviceOsv).to.equal(bidderRequest.ortb2.device.osv);
+      expect(payload.ortb2DeviceH).to.equal(bidderRequest.ortb2.device.h);
+      expect(payload.ortb2DeviceW).to.equal(bidderRequest.ortb2.device.w);
+    });
   })
 
   describe('buildRequestsForVideo', () => {
