@@ -973,7 +973,6 @@ describe('The inmobi bidding adapter', function () {
         const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
         const ortbRequest = request.data;
         expect(ortbRequest.imp).to.have.lengthOf(1);
-        console.log(ortbRequest.imp[0].video);
         expect(ortbRequest.imp[0].video.skip).to.equal(1);
         expect(ortbRequest.imp[0].video.minduration).to.equal(5);
         expect(ortbRequest.imp[0].video.startdelay).to.equal(5);
@@ -1039,7 +1038,6 @@ describe('The inmobi bidding adapter', function () {
         ];
         const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
         const ortbRequest = request.data;
-        console.log(ortbRequest.imp[0].video);
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].video.w).to.be.equal(640);
         expect(ortbRequest.imp[0].video.h).to.be.equal(360);
@@ -1074,7 +1072,7 @@ describe('The inmobi bidding adapter', function () {
                 playbackend: 1,
                 adPodDurationSec: 30,
                 durationRangeSec: [1, 30],
-                skip:0,
+                skip: 0,
                 minduration: 5,
                 startdelay: 5,
                 playbackmethod: [1, 3],
@@ -1216,7 +1214,7 @@ describe('The inmobi bidding adapter', function () {
             plc: '123a'
           },
           getFloor: inputParams => {
-            return { currency: 'USD', floor: 1.23 , size : '*', mediaType: '*'};
+            return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
           }
         }
       ];
@@ -1264,7 +1262,7 @@ describe('The inmobi bidding adapter', function () {
               plc: '123a'
             },
             getFloor: inputParams => {
-              return { currency: 'USD', floor: 1.23 , size : '*', mediaType: '*'};
+              return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
             }
           }
         ];
@@ -1321,7 +1319,7 @@ describe('The inmobi bidding adapter', function () {
               plc: '12456'
             },
             getFloor: inputParams => {
-              return { currency: 'USD', floor: 1.23 , size : '*', mediaType: '*'};
+              return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
             }
           },
         ];

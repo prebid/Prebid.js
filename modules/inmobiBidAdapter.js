@@ -63,7 +63,7 @@ function imp(buildImp, bidRequest, context) {
       mediaType: '*'
     });
   }
-  
+
   // if floor price module is not set reading from bidRequest.params
   if (!imp.bidfloor && bidRequest.params.bidfloor) {
     imp.bidfloor = bidRequest.params.bidfloor;
@@ -82,7 +82,7 @@ function imp(buildImp, bidRequest, context) {
   imp.displaymanager = 'Prebid.js';
   imp.displaymanagerver = '$prebid.version$';
 
-  
+
 
   return imp;
 }
