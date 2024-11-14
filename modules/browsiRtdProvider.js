@@ -68,7 +68,7 @@ export function addBrowsiTag(data) {
   return script;
 }
 
-export const setKeyValue = setGptKeyValue;
+export const setKeyValue = (key) => setGptKeyValue(key, RANDOM.toString());
 
 export function sendPageviewEvent(eventType) {
   if (eventType === 'PAGEVIEW') {
