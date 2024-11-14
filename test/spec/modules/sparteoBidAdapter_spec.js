@@ -81,7 +81,8 @@ const VALID_REQUEST_BANNER = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -123,7 +124,8 @@ const VALID_REQUEST_VIDEO = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -183,7 +185,8 @@ const VALID_REQUEST = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }

@@ -100,6 +100,21 @@ describe('Seedtag Adapter', function () {
 
           it(
             placement +
+              ' shouldn\'t be valid when has only video mediatypes, and video context is outstream',
+            function () {
+              const isBidRequestValid = spec.isBidRequestValid(
+                createBannerSlotConfig(placement, {
+                  video: {
+                    context: 'outstream',
+                    playerSize: [[600, 200]],
+                  },
+                })
+              );
+              expect(isBidRequestValid).to.equal(false);
+            }
+          );
+          it(
+            placement +
               " shouldn't be valid when has display and video mediatypes, and video context is instream",
             function () {
               const isBidRequestValid = spec.isBidRequestValid(
@@ -155,15 +170,41 @@ describe('Seedtag Adapter', function () {
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
           expect(isBidRequestValid).to.equal(false);
         });
-        it('should return false, when video context is outstream', function () {
-          const slotConfig = createInStreamSlotConfig({
-            video: {
-              context: 'outstream',
-              playerSize: [[600, 200]],
+
+        it('should return true when placement is inStream and video context is outstream', function () {
+          const slotConfig = getSlotConfigs(
+            {
+              video: {
+                context: 'instream',
+                playerSize: [[600, 200]],
+              },
             },
-          });
+            {
+              publisherId: PUBLISHER_ID,
+              adUnitId: ADUNIT_ID,
+              placement: 'inStream',
+            }
+          );
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
-          expect(isBidRequestValid).to.equal(false);
+          expect(isBidRequestValid).to.equal(true);
+        });
+
+        it('should return true when placement is inStream and video context is instream', function () {
+          const slotConfig = getSlotConfigs(
+            {
+              video: {
+                context: 'outstream',
+                playerSize: [[600, 200]],
+              },
+            },
+            {
+              publisherId: PUBLISHER_ID,
+              adUnitId: ADUNIT_ID,
+              placement: 'inStream',
+            }
+          );
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig);
+          expect(isBidRequestValid).to.equal(true);
         });
       });
     });
@@ -224,17 +265,7 @@ describe('Seedtag Adapter', function () {
           );
           expect(isBidRequestValid).to.equal(false);
         });
-        it('is outstream ', function () {
-          const isBidRequestValid = spec.isBidRequestValid(
-            createInStreamSlotConfig({
-              video: {
-                context: 'outstream',
-                playerSize: [[600, 200]],
-              },
-            })
-          );
-          expect(isBidRequestValid).to.equal(false);
-        });
+
         describe('order does not matter', function () {
           it('when video is not the first slot', function () {
             const isBidRequestValid = spec.isBidRequestValid(
