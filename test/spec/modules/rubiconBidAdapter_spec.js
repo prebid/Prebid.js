@@ -4210,6 +4210,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
+            const adUnitSelector = `#${bid.adUnitCode}`
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 
@@ -4223,7 +4224,7 @@ describe('the rubicon adapter', function () {
               label: undefined,
               placement: {
                 align: 'left',
-                attachTo: adUnit,
+                attachTo: adUnitSelector,
                 position: 'append',
               },
               vastUrl: 'https://test.com/vast.xml',
@@ -4279,6 +4280,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
+            const adUnitSelector = `#${bid.adUnitCode}`
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 
@@ -4292,7 +4294,7 @@ describe('the rubicon adapter', function () {
               label: undefined,
               placement: {
                 align: 'left',
-                attachTo: adUnit,
+                attachTo: adUnitSelector,
                 position: 'append',
               },
               vastUrl: 'https://test.com/vast.xml',
