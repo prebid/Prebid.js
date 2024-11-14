@@ -4,7 +4,6 @@ import { BANNER } from '../src/mediaTypes.js';
 import { _each, replaceMacros, deepAccess, deepSetValue } from '../src/utils.js';
 
 const BIDDER_CODE = 'mobkoi';
-const DEFAULT_AD_SERVER_BASE_URL = 'https://adserver.mobkoi.com';
 /**
  * The name of the parameter that the publisher can use to specify the ad server endpoint.
  */
@@ -18,10 +17,15 @@ const PARAM_NAME_AD_SERVER_BASE_URL = 'adServerBaseUrl';
 const ORTB_RESPONSE_FIELDS_SUPPORT_MACROS = ['adm', 'nurl', 'lurl'];
 
 const getBidServerEndpointBase = (prebidBidRequest) => {
-  return prebidBidRequest.params[PARAM_NAME_AD_SERVER_BASE_URL] || DEFAULT_AD_SERVER_BASE_URL;
+  const adServerBaseUrl = prebidBidRequest.params[PARAM_NAME_AD_SERVER_BASE_URL];
+
+  if (!adServerBaseUrl) {
+    throw new Error(`The "${PARAM_NAME_AD_SERVER_BASE_URL}" parameter is required in Ad unit bid params.`);
+  }
+  return adServerBaseUrl;
 }
 
-const converter = ortbConverter({
+export const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 30,
@@ -33,7 +37,7 @@ const converter = ortbConverter({
   bidResponse(buildPrebidBidResponse, ortbBidResponse, context) {
     const macros = {
       // ORTB macros
-      // AUCTION_PRICE: Don't replace the price macro because it's already replaced by Prebid.js.
+      AUCTION_PRICE: ortbBidResponse.price,
       AUCTION_IMP_ID: ortbBidResponse.impid,
       AUCTION_CURRENCY: ortbBidResponse.cur,
       AUCTION_BID_ID: context.bidderRequest.auctionId,
@@ -53,7 +57,9 @@ const converter = ortbConverter({
     });
 
     const prebidBid = buildPrebidBidResponse(ortbBidResponse, context);
-    prebidBid.ortbBidResponse = ortbBidResponse;
+    // Save the ORTB response for later use in the other parts of the adapter as
+    // well as the within the analytics adapter.
+    prebidBid.ortbBid = ortbBidResponse;
     return prebidBid;
   },
 });
