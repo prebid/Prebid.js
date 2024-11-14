@@ -54,14 +54,37 @@ function getVideoMetadata(bidRequest, bidderRequest) {
       : Object.keys(parsedContentData.iabcat2),
     id: videoParams.id || deepAccess(contentObj, 'id', ''),
     lang: videoParams.lang || deepAccess(contentObj, 'language', ''),
-    private: videoParams.private || false,
-    tags: videoParams.tags || deepAccess(contentObj, 'keywords', ''),
-    title: videoParams.title || deepAccess(contentObj, 'title', ''),
-    topics: videoParams.topics || '',
-    xid: videoParams.xid || '',
     livestream: typeof videoParams.livestream === 'number'
       ? !!videoParams.livestream
       : !!deepAccess(contentObj, 'livestream', 0),
+    private: videoParams.private || false,
+    tags: videoParams.tags || deepAccess(contentObj, 'keywords', ''),
+    title: videoParams.title || deepAccess(contentObj, 'title', ''),
+    url: videoParams.url || deepAccess(contentObj, 'url', ''),
+    topics: videoParams.topics || '',
+    xid: videoParams.xid || '',
+    isCreatedForKids: typeof videoParams.isCreatedForKids === 'boolean'
+      ? videoParams.isCreatedForKids
+      : null,
+    context: {
+      siteOrAppCat: deepAccess(contentObj, 'cat', ''),
+      videoViewsInSession: (
+        typeof videoParams.videoViewsInSession === 'number' &&
+        videoParams.videoViewsInSession >= 0
+      )
+        ? videoParams.videoViewsInSession
+        : null,
+      autoplay: typeof videoParams.autoplay === 'boolean'
+        ? videoParams.autoplay
+        : null,
+      playerVolume: (
+        typeof videoParams.playerVolume === 'number' &&
+        videoParams.playerVolume >= 0 &&
+        videoParams.playerVolume <= 10
+      )
+        ? videoParams.playerVolume
+        : null,
+    },
   };
 
   return videoMetadata;
@@ -111,6 +134,7 @@ export const spec = {
     method: 'POST',
     url: 'https://pb.dmxleo.com',
     data: {
+      pbv: '$prebid.version$',
       bidder_request: {
         gdprConsent: {
           apiVersion: deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1),
@@ -139,6 +163,13 @@ export const spec = {
         appBundle: deepAccess(bidderRequest, 'ortb2.app.bundle', ''),
         appStoreUrl: deepAccess(bidderRequest, 'ortb2.app.storeurl', ''),
       } : {}),
+      ...(deepAccess(bidderRequest, 'ortb2.device') ? {
+        device: {
+          lmt: deepAccess(bidderRequest, 'ortb2.device.lmt', null),
+          ifa: deepAccess(bidderRequest, 'ortb2.device.ifa', ''),
+          atts: deepAccess(bidderRequest, 'ortb2.device.ext.atts', 0),
+        },
+      } : {}),
       request: {
         adUnitCode: deepAccess(bid, 'adUnitCode', ''),
         auctionId: deepAccess(bid, 'auctionId', ''),
@@ -149,6 +180,8 @@ export const spec = {
             mimes: bid.mediaTypes?.[VIDEO]?.mimes || [],
             minduration: bid.mediaTypes?.[VIDEO]?.minduration || 0,
             maxduration: bid.mediaTypes?.[VIDEO]?.maxduration || 0,
+            playbackmethod: bid.mediaTypes?.[VIDEO]?.playbackmethod || [],
+            plcmt: bid.mediaTypes?.[VIDEO]?.plcmt || 1, // Fallback to instream considering logic of `isBidRequestValid`
             protocols: bid.mediaTypes?.[VIDEO]?.protocols || [],
             skip: bid.mediaTypes?.[VIDEO]?.skip || 0,
             skipafter: bid.mediaTypes?.[VIDEO]?.skipafter || 0,
@@ -177,6 +210,37 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: serverResponse => serverResponse?.body ? [serverResponse.body] : [],
+
+  /**
+   * Retrieves user synchronization URLs based on provided options and consents.
+   *
+   * @param {object} syncOptions - Options for synchronization.
+   * @param {object[]} serverResponses - Array of server responses.
+   * @returns {object[]} - Array of synchronization URLs.
+   */
+  getUserSyncs: (syncOptions, serverResponses) => {
+    if (!!serverResponses?.length && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
+      const iframeSyncs = [];
+      const pixelSyncs = [];
+
+      serverResponses.forEach((response) => {
+        (response.user_syncs || []).forEach((syncUrl) => {
+          if (syncUrl.type === 'image') {
+            pixelSyncs.push({ url: syncUrl.url, type: 'image' });
+          }
+
+          if (syncUrl.type === 'iframe') {
+            iframeSyncs.push({ url: syncUrl.url, type: 'iframe' });
+          }
+        });
+      });
+
+      if (syncOptions.iframeEnabled) return iframeSyncs;
+      return pixelSyncs;
+    }
+
+    return [];
+  },
 };
 
 registerBidder(spec);
