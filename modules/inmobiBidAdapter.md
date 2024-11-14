@@ -60,10 +60,7 @@ Module that connects to InMobi's demand sources.
             bids: [{
                 bidder: 'inmobi',
                 params: {
-                    plc: '1443164204446401', //Mandatory
-                    video: {
-                        skip: 1 //Optional
-                    }
+                    plc: '1443164204446401' //Mandatory
                 }
             }]
     }];
