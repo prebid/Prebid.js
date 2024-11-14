@@ -20,7 +20,6 @@ const BIDDER_CODE = 'inmobi';
 const BID_ENDPOINT = 'https://api.w.inmobi.com/openrtb/bidder/prebidjs';
 export const EVENT_ENDPOINT = 'https://sync.inmobi.com';
 export const SYNC_ENDPOINT = 'https://sync.inmobi.com/prebidjs?';
-const LOG_PREFIX = 'Inmobi: ';
 const TRANSLATOR = ortb25Translator();
 const CURRENCY = 'USD';
 const POST_METHOD = 'POST';
@@ -81,8 +80,6 @@ function imp(buildImp, bidRequest, context) {
   imp.secure = Number(window.location.protocol === 'https:');
   imp.displaymanager = 'Prebid.js';
   imp.displaymanagerver = '$prebid.version$';
-
-
 
   return imp;
 }
