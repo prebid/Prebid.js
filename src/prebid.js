@@ -64,7 +64,7 @@ pbjsInstance.libLoaded = true;
 
 // version auto generated from build
 pbjsInstance.version = 'v$prebid.version$';
-logInfo('Prebid.js v$prebid.version$ loaded');
+logInfo(' v$prebid.version$ loaded');
 
 pbjsInstance.installedModules = pbjsInstance.installedModules || [];
 

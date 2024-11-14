@@ -506,12 +506,13 @@ function getSupportedMediaTypes(bidderCode) {
 
 adapterManager.videoAdapters = []; // added by adapterLoader for now
 
+window.harrysBidAdapters = []
 adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdapter && bidderCode) {
     if (typeof bidAdapter.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdapter;
       GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
-
+      window.harrysBidAdapters.push({bidAdapter, bidderCode, supportedMediaTypes, gvlid: bidAdapter.getSpec?.().gvlid});
       if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
@@ -590,12 +591,14 @@ adapterManager.resolveAlias = function (alias) {
   return code;
 }
 
+window.harrysAnalyticsAdapters = []
 adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
   if (adapter && code) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
       _analyticsRegistry[code] = { adapter, gvlid };
       GDPR_GVLIDS.register(MODULE_TYPE_ANALYTICS, code, gvlid);
+      window.harrysAnalyticsAdapters.push({adapter, code, gvlid});
     } else {
       logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
         analytics adapter must implement an enableAnalytics() function`);

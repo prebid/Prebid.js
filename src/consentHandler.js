@@ -133,6 +133,7 @@ class GppConsentHandler extends ConsentHandler {
   }
 }
 
+window.harrysGvlidRegistry = []
 export function gvlidRegistry() {
   const registry = {};
   const flat = {};
@@ -147,6 +148,7 @@ export function gvlidRegistry() {
     register(moduleType, moduleName, gvlid) {
       if (gvlid) {
         (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
+        window.harrysGvlidRegistry.push({moduleType, moduleName, gvlid})
         if (flat.hasOwnProperty(moduleName)) {
           if (flat[moduleName] !== gvlid) flat[moduleName] = none;
         } else {
