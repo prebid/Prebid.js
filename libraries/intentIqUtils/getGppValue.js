@@ -9,20 +9,8 @@ import {gppDataHandler} from '../../src/consentHandler.js';
  */
 export function getGppValue() {
   const gppData = gppDataHandler.getConsentData();
+  const gppString = gppData?.gppString || '';
+  const gpi = gppString ? 0 : 1;
 
-  if (gppData) {
-    let gppString = '';
-    let gpi = 1;
-
-    // Check for the presence of the 'usnat' section in GPP data
-    if (gppData.gppString) {
-      gppString = gppData.gppString;
-      gpi = 0; // Set GPI to 0 indicating GPP consent is present
-    }
-
-    return {
-      gppString,
-      gpi
-    };
-  }
+  return { gppString, gpi };
 }
