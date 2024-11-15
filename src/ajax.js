@@ -37,10 +37,6 @@ export function toFetchRequest(url, data, options = {}) {
   }
   const headers = new Headers(options.customHeaders);
   headers.set(CTYPE, options.contentType || 'text/plain');
-  // TODO: SADR-6484: remove this (if statement below) after testing
-  if (url === 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169') {
-    headers.set('X-Eqtv-Debug', '671a49bebd18e71ead36f0a1');
-  }
   const rqOpts = {
     method,
     headers
