@@ -515,14 +515,11 @@ describe('The inmobi bidding adapter', function () {
         }
       }];
 
-      const prebidVersion = '$prebid.version$';
       const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.imp).to.have.lengthOf(1);
       expect(ortbRequest.imp[0].id).to.deep.equal('bidId');
       expect(ortbRequest.imp[0].tagid).to.deep.equal('impId');
       expect(ortbRequest.imp[0].instl).to.equal(1);
-      expect(ortbRequest.imp[0].displaymanager).to.equal('Prebid.js');
-      expect(ortbRequest.imp[0].displaymanagerver).to.equal(prebidVersion);
       expect(ortbRequest.imp[0].bidfloor).to.equal(4.66);
       expect(ortbRequest.imp[0].bidfloorcur).to.equal('USD');
       expect(ortbRequest.imp[0].metric).to.deep.equal(expectedMetric);

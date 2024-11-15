@@ -78,8 +78,6 @@ function imp(buildImp, bidRequest, context) {
     moduleFloors: floorInfo
   });
   imp.secure = Number(window.location.protocol === 'https:');
-  imp.displaymanager = 'Prebid.js';
-  imp.displaymanagerver = '$prebid.version$';
 
   return imp;
 }
