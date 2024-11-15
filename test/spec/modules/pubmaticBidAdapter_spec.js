@@ -3592,6 +3592,7 @@ describe('PubMatic adapter', function () {
 
         let response = spec.interpretResponse(copyOfBidResponse, request);
         expect(response[0].ext.ibv).to.equal(true);
+        expect(response[0].meta.mediaType).to.equal('video');
       });
 
       it('should not set ibv field when bid.ext does not exist ', function() {
@@ -3601,6 +3602,8 @@ describe('PubMatic adapter', function () {
 
         let response = spec.interpretResponse(bannerBidResponse, request);
         expect(response[0].ext).to.not.exist;
+        expect(response[0].meta).to.exist;
+        expect(response[0].meta.mediaType).to.not.exist;
       });
 
       if (FEATURES.VIDEO) {
@@ -4212,6 +4215,8 @@ describe('PubMatic adapter', function () {
         setIBVField(bid, newBid);
         expect(newBid.ext).to.exist;
         expect(newBid.ext.ibv).to.equal(true);
+        expect(newBid.meta).to.exist;
+        expect(newBid.meta.mediaType).to.equal('video');
       });
 
       it('should not set ibv field when bid.ext.ibv does not exist', function() {
@@ -4221,6 +4226,7 @@ describe('PubMatic adapter', function () {
         const newBid = {};
         setIBVField(bid, newBid);
         expect(newBid.ext).to.not.exist;
+        expect(newBid.meta).to.not.exist;
       });
 
       it('should not set ibv field when bid.ext does not exist', function() {
@@ -4228,6 +4234,7 @@ describe('PubMatic adapter', function () {
         const newBid = {};
         setIBVField(bid, newBid);
         expect(newBid.ext).to.not.exist;
+        expect(newBid.meta).to.not.exist;
       });
 
       it('should preserve existing newBid.ext properties', function() {
@@ -4244,6 +4251,8 @@ describe('PubMatic adapter', function () {
         setIBVField(bid, newBid);
         expect(newBid.ext.existingProp).to.equal('should remain');
         expect(newBid.ext.ibv).to.equal(true);
+        expect(newBid.meta).to.exist;
+        expect(newBid.meta.mediaType).to.equal('video');
       });
     });
   });

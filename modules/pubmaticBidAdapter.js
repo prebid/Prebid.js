@@ -859,11 +859,13 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
-// Setting IBV field into the bid response
+// Setting IBV & meta.mediaType field into the bid response
 export function setIBVField(bid, newBid) {
   if (bid?.ext?.ibv) {
     newBid.ext = newBid.ext || {};
     newBid.ext['ibv'] = bid.ext.ibv;
+    newBid.meta = newBid.meta || {};
+    newBid.meta.mediaType = VIDEO;
   }
 }
 
@@ -1016,7 +1018,7 @@ function isNonEmptyArray(test) {
  * @param {*} bid : bids
  */
 export function prepareMetaObject(br, bid, seat) {
-  br.meta = {};
+  br.meta = br.meta || {};
 
   if (bid.ext && bid.ext.dspid) {
     br.meta.networkId = bid.ext.dspid;
