@@ -11,6 +11,7 @@ import {
   parseUrl,
   triggerPixel,
 } from '../src/utils.js';
+
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
@@ -20,7 +21,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '4.1.0';
+const NM_VERSION = '4.2.0';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -90,6 +91,7 @@ export const spec = {
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
     const device = getDeviceObj();
+    const source = getSourceObj(validBidRequests, bidderRequest);
     const tmax = deepAccess(bidderRequest, 'timeout') || DEFAULT_TMAX;
 
     const postBody = {
@@ -101,6 +103,7 @@ export const spec = {
 
       device,
       site,
+      source,
       imp: [],
     };
 
@@ -493,6 +496,19 @@ function getDeviceObj() {
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
   };
+}
+
+export function getSourceObj(validBidRequests, bidderRequest) {
+  const schain = validBidRequests?.[0]?.schain ||
+    (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
+
+  if (!schain) return;
+
+  const source = {
+    schain,
+  };
+
+  return source;
 }
 
 function getSua() {

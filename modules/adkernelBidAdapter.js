@@ -99,7 +99,8 @@ export const spec = {
     {code: 'hyperbrainz'},
     {code: 'voisetech'},
     {code: 'global_sun'},
-    {code: 'rxnetwork'}
+    {code: 'rxnetwork'},
+    {code: 'revbid'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
