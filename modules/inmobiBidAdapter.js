@@ -324,6 +324,7 @@ function report(type, data) {
   if (!data) {
     return;
   }
+  //use logging percentage to decide the report call.
   if (['onBidWon', 'onAdRenderSucceeded', 'onSetTargeting'].includes(type) && !isReportingAllowed(data.loggingPercentage)) {
     return;
   }
