@@ -859,6 +859,14 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
+// Setting IBV field into the bid response
+export function setIBVField(bid, newBid) {
+  if (bid?.ext?.ibv) {
+    newBid.ext = newBid.ext || {};
+    newBid.ext['ibv'] = bid.ext.ibv;
+  }
+}
+
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
   if (bid.ext && bid.ext['bidtype'] != undefined) {
@@ -1401,6 +1409,7 @@ export const spec = {
                   }
                 });
               }
+              setIBVField(bid, newBid);
               if (bid.ext && bid.ext.deal_channel) {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
