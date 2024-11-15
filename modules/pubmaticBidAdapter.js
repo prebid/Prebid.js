@@ -860,7 +860,7 @@ function _handleEids(payload, validBidRequests) {
 }
 
 // Setting IBV field into the bid response
-function setIBVField(bid, newBid) {
+export function setIBVField(bid, newBid) {
   if (bid?.ext?.ibv) {
     newBid.ext = newBid.ext || {};
     newBid.ext['ibv'] = bid.ext.ibv;
@@ -1405,11 +1405,11 @@ export const spec = {
                       case NATIVE:
                         _parseNativeResponse(bid, newBid);
                         break;
-                    }                  
+                    }
                   }
                 });
               }
-              setIBVField(bid, newBid);              
+              setIBVField(bid, newBid);
               if (bid.ext && bid.ext.deal_channel) {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
