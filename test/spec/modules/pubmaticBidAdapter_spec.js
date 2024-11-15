@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setIBVField } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -3579,30 +3579,6 @@ describe('PubMatic adapter', function () {
         expect(response[0].renderer).to.not.exist;
       });
 
-      it('should set ibv field in bid.ext when bid.ext.ibv exists', function() {
-        let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
-        });
-
-        let copyOfBidResponse = utils.deepClone(bannerBidResponse);
-        let bidExt = utils.deepClone(copyOfBidResponse.body.seatbid[0].bid[0].ext);
-        copyOfBidResponse.body.seatbid[0].bid[0].ext = Object.assign(bidExt, {
-          ibv: true
-        });
-
-        let response = spec.interpretResponse(copyOfBidResponse, request);
-        expect(response[0].ext.ibv).to.equal(true);
-      });
-
-      it('should not set ibv field when bid.ext does not exist ', function() {
-        let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
-        });
-
-        let response = spec.interpretResponse(bannerBidResponse, request);
-        expect(response[0].ext).to.not.exist;
-      });
-
       if (FEATURES.VIDEO) {
         it('should check for valid video mediaType in case of multiformat request', function() {
           let request = spec.buildRequests(videoBidRequests, {
@@ -4198,52 +4174,6 @@ describe('PubMatic adapter', function () {
         });
         let data = JSON.parse(req.data);
         expect(data.imp[0]['banner']['battr']).to.equal(undefined);
-      });
-    });
-
-    describe('setIBVField', function() {
-      it('should set ibv field in newBid.ext when bid.ext.ibv exists', function() {
-        const bid = {
-          ext: {
-            ibv: true
-          }
-        };
-        const newBid = {};
-        setIBVField(bid, newBid);
-        expect(newBid.ext).to.exist;
-        expect(newBid.ext.ibv).to.equal(true);
-      });
-
-      it('should not set ibv field when bid.ext.ibv does not exist', function() {
-        const bid = {
-          ext: {}
-        };
-        const newBid = {};
-        setIBVField(bid, newBid);
-        expect(newBid.ext).to.not.exist;
-      });
-
-      it('should not set ibv field when bid.ext does not exist', function() {
-        const bid = {};
-        const newBid = {};
-        setIBVField(bid, newBid);
-        expect(newBid.ext).to.not.exist;
-      });
-
-      it('should preserve existing newBid.ext properties', function() {
-        const bid = {
-          ext: {
-            ibv: true
-          }
-        };
-        const newBid = {
-          ext: {
-            existingProp: 'should remain'
-          }
-        };
-        setIBVField(bid, newBid);
-        expect(newBid.ext.existingProp).to.equal('should remain');
-        expect(newBid.ext.ibv).to.equal(true);
       });
     });
   });
