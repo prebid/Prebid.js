@@ -325,42 +325,48 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
     eventType,
     args
   }) {
-    logInfo(`+ eventType: ${eventType}`, args);
-
     switch (eventType) {
       case AUCTION_INIT: {
+        logInfo(`Event: ${eventType}`, args);
         this.localContext.initialise(args);
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
             pick(args, [
               'auctionId',
+              'adUnitCodes',
+              'adUnits',
               'auctionStart',
+              'auctionStatus',
               'timeout',
-              'timestamp'
+              'timestamp',
             ])
           )
         );
         break;
       }
       case BID_RESPONSE: {
+        logInfo(`Event: ${eventType}`, args);
         const prebidBid = args;
         const bidContext = this.localContext.appendBid(prebidBid);
         bidContext.pushEvent(
           new DebugEvent(
             eventType,
             pick(prebidBid, [
-              'bidderCode',
+              'requestId',
+              'creativeId',
               'cpm',
               'currency',
+              'bidderCode',
+              'adUnitCode',
               'ttl',
               'adId',
-              'creativeId',
               'width',
               'height',
-              'responseTimestamp',
               'requestTimestamp',
-              'adUnitCode',
+              'responseTimestamp',
+              'seatBidId',
+              'statusMessage',
               'timeToRespond'
             ])
           )
@@ -368,6 +374,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         break;
       }
       case BID_WON: {
+        logInfo(`Event: ${eventType}`, args);
         const prebidBid = args;
         if (isMobkoiBid(prebidBid)) {
           this.localContext.retrieveBidContext(prebidBid).bidWin = true;
@@ -378,38 +385,66 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         bidContext.pushEvent(
           new DebugEvent(
             eventType,
-            pick(args, [
-              'bidderCode as winnerBidderCode',
-              'requestId as winnerImpId',
-            ])
+            {
+              ...pick(args, [
+                'adId',
+                'bidderCode',
+                'requestId',
+                'status',
+                'statusMessage',
+                'cpm',
+                'currency',
+                'creativeId',
+                'adUnitCode',
+                'addUnitId',
+                'adId',
+                'ttl',
+                'width',
+                'height',
+                'requestTimestamp',
+                'responseTimestamp',
+                'timeToRespond',
+              ]),
+              bidWin: bidContext.bidWin,
+            }
           )
         );
         break;
       }
       case AUCTION_END: {
+        logInfo(`Event: ${eventType}`, args);
         const auction = args;
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
             pick(auction, [
               'auctionId',
+              'auctionStatus',
               'auctionStart',
+              'auctionEnd',
+              'auctionStatus',
               'bidderCode',
               'bidderRequestId',
+              'timestamp',
             ])
           )
         );
         break;
       }
       case AUCTION_TIMEOUT:
+        logInfo(`Event: ${eventType}`, args);
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
             pick(args, [
               'auctionId',
+              'auctionStatus',
               'auctionStart',
+              'auctionEnd',
+              'auctionStatus',
               'bidderCode',
               'bidderRequestId',
+              'timestamp',
             ])
           )
         );
@@ -419,19 +454,37 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
       case NO_BID:
       case SEAT_NON_BID:
       case BIDDER_ERROR: {
+        logInfo(`Event: ${eventType}`, args);
         try {
+          if (args.auctionId) {
+            this.localContext.pushEventToAllBidContexts(
+              new DebugEvent(
+                eventType,
+                pick(args, [
+                  'auctionId',
+                  'auctionStatus',
+                  'auctionStart',
+                  'auctionEnd',
+                  'auctionStatus',
+                  'bidderCode',
+                  'bidderRequestId',
+                  'timestamp',
+                ])
+              )
+            );
+            break;
+          }
+
           const prebidBid = args;
           const bidContext = this.localContext.retrieveBidContext(prebidBid);
           bidContext.pushEvent(
             new DebugEvent(
               eventType,
               pick(prebidBid, [
-                'bidderCode',
-                'bidId',
                 'auctionId',
-                'auctionEnd',
+                'bidderCode',
+                'bidderRequestId',
                 'timeout',
-                'timestamp'
               ])
             )
           );
@@ -452,21 +505,26 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
           this.localContext.pushEventToAllBidContexts(
             new DebugEvent(
               eventType,
-              cloneNonObjectFields(args)
+              {
+                args: cloneNonObjectFields(args),
+                warn: 'Unexpected error occurred. Please investigate.',
+                error: JSON.stringify(error)
+              }
             )
           );
         }
         break;
       }
       case AD_RENDER_FAILED: {
+        logInfo(`Event: ${eventType}`, args);
         const prebidBid = args.bid;
         const bidContext = this.localContext.retrieveBidContext(prebidBid);
         bidContext.pushEvent(
           new DebugEvent(
             eventType,
             pick(prebidBid, [
-              'adId',
               'ad',
+              'adId',
               'adUnitCode',
               'creativeId',
               'width',
@@ -477,6 +535,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         break;
       }
       case AD_RENDER_SUCCEEDED: {
+        logInfo(`Event: ${eventType}`, args);
         const prebidBid = args.bid;
         const bidContext = this.localContext.retrieveBidContext(prebidBid);
         bidContext.pushEvent(
@@ -494,17 +553,16 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         break;
       }
       case BIDDER_DONE: {
+        logInfo(`Event: ${eventType}`, args);
         const auction = args;
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
             pick(auction, [
-              'bidderCode',
-              'bids',
               'auctionId',
-              'auctionEnd',
+              'bidderCode',
+              'bidderRequestId',
               'timeout',
-              'timestamp'
             ])
           )
         );
