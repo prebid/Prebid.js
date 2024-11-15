@@ -16,15 +16,6 @@ const PARAM_NAME_AD_SERVER_BASE_URL = 'adServerBaseUrl';
  */
 const ORTB_RESPONSE_FIELDS_SUPPORT_MACROS = ['adm', 'nurl', 'lurl'];
 
-const getBidServerEndpointBase = (prebidBidRequest) => {
-  const adServerBaseUrl = prebidBidRequest.params[PARAM_NAME_AD_SERVER_BASE_URL];
-
-  if (!adServerBaseUrl) {
-    throw new Error(`The "${PARAM_NAME_AD_SERVER_BASE_URL}" parameter is required in Ad unit bid params.`);
-  }
-  return adServerBaseUrl;
-}
-
 export const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -35,31 +26,13 @@ export const converter = ortbConverter({
     return buildImp(bidRequest, context);
   },
   bidResponse(buildPrebidBidResponse, ortbBidResponse, context) {
-    const macros = {
-      // ORTB macros
-      AUCTION_PRICE: ortbBidResponse.price,
-      AUCTION_IMP_ID: ortbBidResponse.impid,
-      AUCTION_CURRENCY: ortbBidResponse.cur,
-      AUCTION_BID_ID: context.bidderRequest.auctionId,
-
-      // Custom macros
-      BIDDING_API_BASE_URL: context[PARAM_NAME_AD_SERVER_BASE_URL],
-      CREATIVE_ID: ortbBidResponse.crid,
-      CAMPAIGN_ID: ortbBidResponse.cid,
-    };
-
-    _each(ORTB_RESPONSE_FIELDS_SUPPORT_MACROS, ortbField => {
-      deepSetValue(
-        ortbBidResponse,
-        ortbField,
-        replaceMacros(deepAccess(ortbBidResponse, ortbField), macros)
-      );
-    });
+    replaceAllMacrosInPlace(ortbBidResponse, context);
 
     const prebidBid = buildPrebidBidResponse(ortbBidResponse, context);
     // Save the ORTB response for later use in the other parts of the adapter as
     // well as the within the analytics adapter.
-    prebidBid.ortbBid = ortbBidResponse;
+    prebidBid.ortbBidResponse = ortbBidResponse;
+    prebidBid.ortbId = ortbBidResponse.id;
     return prebidBid;
   },
 });
@@ -102,3 +75,36 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+function replaceAllMacrosInPlace(ortbBidResponse, context) {
+  const macros = {
+    // ORTB macros
+    AUCTION_PRICE: ortbBidResponse.price,
+    AUCTION_IMP_ID: ortbBidResponse.impid,
+    AUCTION_CURRENCY: ortbBidResponse.cur,
+    AUCTION_BID_ID: context.bidderRequest.auctionId,
+
+    // Custom macros
+    BIDDING_API_BASE_URL: context[PARAM_NAME_AD_SERVER_BASE_URL],
+    CREATIVE_ID: ortbBidResponse.crid,
+    CAMPAIGN_ID: ortbBidResponse.cid,
+    ORTB_ID: ortbBidResponse.id,
+  };
+
+  _each(ORTB_RESPONSE_FIELDS_SUPPORT_MACROS, ortbField => {
+    deepSetValue(
+      ortbBidResponse,
+      ortbField,
+      replaceMacros(deepAccess(ortbBidResponse, ortbField), macros)
+    );
+  });
+}
+
+function getBidServerEndpointBase (prebidBidRequest) {
+  const adServerBaseUrl = prebidBidRequest.params[PARAM_NAME_AD_SERVER_BASE_URL];
+
+  if (!adServerBaseUrl) {
+    throw new Error(`The "${PARAM_NAME_AD_SERVER_BASE_URL}" parameter is required in Ad unit bid params.`);
+  }
+  return adServerBaseUrl;
+}
