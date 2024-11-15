@@ -23,7 +23,8 @@ export const spec = {
     {code: 'admaticde', gvlid: 1281},
     {code: 'pixad', gvlid: 1281},
     {code: 'monetixads', gvlid: 1281},
-    {code: 'netaddiction', gvlid: 1281}
+    {code: 'netaddiction', gvlid: 1281},
+    {code: 'adt', gvlid: 779}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -54,7 +55,7 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
-    const host = getValue(validBidRequests[0].params, 'host');
+    let host = getValue(validBidRequests[0].params, 'host');
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -137,11 +138,15 @@ export const spec = {
         case 'admaticde':
           SYNC_URL = 'https://static.cdn.admatic.de/admaticde/sync.html';
           break;
+        case 'adt':
+          SYNC_URL = 'https://static.cdn.adtarget.org/adt/sync.html';
+          break;
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
           break;
       }
 
+      host = host?.replace('https://', '')?.replace('http://', '')?.replace('/', '');
       return { method: 'POST', url: `https://${host}/pb`, data: payload, options: { contentType: 'application/json' } };
     }
   },
@@ -150,7 +155,7 @@ export const spec = {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
-      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
+      params = Object.keys(params).length ? `&${formatQS(params)}` : '';
 
       hasSynced = true;
       return {
