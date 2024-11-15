@@ -8,9 +8,8 @@ import {EVENTS} from '../src/constants.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui, getReferrer} from '../libraries/intentIqUtils/getRefferer.js';
-import {getGppStringValue} from '../libraries/intentIqUtils/getGppStringValue.js';
+import {getGppValue} from '../libraries/intentIqUtils/getGppValue.js';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, VERSION} from '../libraries/intentIqConstants/intentIqConstants.js';
-import {getGpcSignal} from '../libraries/intentIqUtils/getGpcValue.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -266,8 +265,7 @@ function constructFullUrl(data) {
   let report = [];
   data = btoa(JSON.stringify(data));
   report.push(data);
-  const gppData = getGppStringValue();
-  const gpcSignal = getGpcSignal();
+  const gppData = getGppValue();
 
   let url = defaultUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
     '&mct=1' +
@@ -278,8 +276,7 @@ function constructFullUrl(data) {
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report) +
     '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints +
-    (gppData.gppString ? '&gpp=' + gppData.gppString : '') +
-    (gpcSignal !== null ? '&gpc=' + encodeURIComponent(gpcSignal) : '');
+    (gppData.gppString ? '&gpp=' + gppData.gppString : '');
 
   url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);
   return url;

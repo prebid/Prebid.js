@@ -7,7 +7,7 @@ import {gppDataHandler} from '../../src/consentHandler.js';
  * - `gppString` (string): The encoded GPP string value.
  * - `gpi` (number): An indicator representing whether GPP consent is available (0 if available, 1 if not).
  */
-export function getGppStringValue() {
+export function getGppValue() {
   const gppData = gppDataHandler.getConsentData();
 
   if (gppData) {
@@ -15,20 +15,14 @@ export function getGppStringValue() {
     let gpi = 1;
 
     // Check for the presence of the 'usnat' section in GPP data
-    if (gppData.parsedSections && 'usnat' in gppData.parsedSections) {
+    if (gppData.gppString) {
       gppString = gppData.gppString;
       gpi = 0; // Set GPI to 0 indicating GPP consent is present
     }
 
     return {
-      gppString: encodeURIComponent(gppString),
+      gppString,
       gpi
     };
   }
-
-  // If no GPP data is available, return default values
-  return {
-    gppString: '',
-    gpi: 1
-  };
 }
