@@ -16,6 +16,7 @@ import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
 import {getGppStringValue} from '../libraries/intentIqUtils/getGppStringValue.js';
+import {getGpcSignal} from '../libraries/intentIqUtils/getGpcValue.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -30,6 +31,7 @@ import {
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
 
@@ -262,6 +264,7 @@ export const intentIqIdSubmodule = {
     const cmpData = {};
     const uspData = uspDataHandler.getConsentData();
     const gppData = getGppStringValue();
+    const gpcSignal = getGpcSignal();
 
     if (uspData) {
       cmpData.us_privacy = uspData;
@@ -270,7 +273,6 @@ export const intentIqIdSubmodule = {
     if (gppData) {
       cmpData.gpp = gppData.gppString;
       cmpData.gpi = gppData.gpi;
-      cmpData.gpp_sid = gppData.gppSid;
     }
 
     // Read client hints from storage
@@ -363,6 +365,9 @@ export const intentIqIdSubmodule = {
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
+    if (gpcSignal !== null) {
+      url = url + '&gpc=' + encodeURIComponent(gpcSignal)
+    }
 
     // Add vrref and fui to the URL
     url = appendVrrefAndFui(url, configParams.domainName);

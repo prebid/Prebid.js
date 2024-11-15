@@ -6,7 +6,6 @@ import {gppDataHandler} from '../../src/consentHandler.js';
  * @return {Object} An object containing:
  * - `gppString` (string): The encoded GPP string value.
  * - `gpi` (number): An indicator representing whether GPP consent is available (0 if available, 1 if not).
- * - `gppSid` (array): The list of applicable sections from GPP data.
  */
 export function getGppStringValue() {
   const gppData = gppDataHandler.getConsentData();
@@ -23,15 +22,13 @@ export function getGppStringValue() {
 
     return {
       gppString: encodeURIComponent(gppString),
-      gpi,
-      gppSid: gppData.applicableSections
+      gpi
     };
   }
 
   // If no GPP data is available, return default values
   return {
     gppString: '',
-    gpi: 1,
-    gppSid: []
+    gpi: 1
   };
 }
