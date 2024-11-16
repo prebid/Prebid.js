@@ -1,5 +1,3 @@
-// mediaimpactBidAdapter.js
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { buildBidRequestsAndParams, postRequest, buildEndpointUrl } from '../libraries/mediaImpactUtils/index.js';
 
@@ -79,6 +77,8 @@ export const spec = {
 
     return true;
   },
+
+  getUserSyncs: getUserSyncs()
 };
 
 registerBidder(spec);
