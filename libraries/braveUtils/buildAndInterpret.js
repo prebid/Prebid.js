@@ -41,10 +41,12 @@ export const buildRequests = (validBidRequests, bidderRequest, endpointURL, defa
 export const interpretResponse = (serverResponse, defaultCur, parseNative) => {
   if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
-  return serverResponse.body.seatbid.flatMap(response =>
-    response.bid.map(bid => {
+  let bids = [];
+  serverResponse.body.seatbid.forEach(response => {
+    response.bid.forEach(bid => {
       const mediaType = bid.ext?.mediaType || 'banner';
-      return {
+
+      const bidObj = {
         requestId: bid.impid,
         cpm: bid.price,
         width: bid.w,
@@ -55,10 +57,22 @@ export const interpretResponse = (serverResponse, defaultCur, parseNative) => {
         creativeId: bid.crid,
         dealId: bid.dealid || null,
         mediaType,
-        ad: mediaType === 'banner' ? bid.adm : undefined,
-        vastUrl: mediaType === 'video' ? bid.adm : undefined,
-        native: mediaType === 'native' ? parseNative(bid.adm) : undefined,
       };
-    })
-  );
+
+      switch (mediaType) {
+        case 'video':
+          bidObj.vastUrl = bid.adm;
+          break;
+        case 'native':
+          bidObj.native = parseNative(bid.adm);
+          break;
+        default:
+          bidObj.ad = bid.adm;
+      }
+
+      bids.push(bidObj);
+    });
+  });
+
+  return bids;
 };
