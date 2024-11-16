@@ -1,7 +1,7 @@
 // adpartnerBidAdapter.js
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { buildBidRequestsAndParams, postRequest, buildEndpointUrl } from '../libraries/mediaImpactUtils/index.js';
+import { buildBidRequestsAndParams, postRequest, buildEndpointUrl, getUserSyncs } from '../libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'adpartner';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -81,6 +81,8 @@ export const spec = {
 
     return true;
   },
+
+  getUserSyncs: getUserSyncs()
 };
 
 registerBidder(spec);
