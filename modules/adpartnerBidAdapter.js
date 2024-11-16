@@ -80,7 +80,7 @@ export const spec = {
     return true;
   },
 
-  getUserSyncs: getUserSyncs()
+  getUserSyncs: getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent)
 };
 
 registerBidder(spec);
