@@ -77,7 +77,7 @@ export const spec = {
 
     return true;
   },
- 
+
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
