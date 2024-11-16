@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { buildBidRequestsAndParams, postRequest, buildEndpointUrl, getUserSyncs } from '../libraries/mediaImpactUtils/index.js';
+import { buildBidRequestsAndParams, postRequest, buildEndpointUrl } from '../libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'adpartner';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -80,7 +80,70 @@ export const spec = {
     return true;
   },
 
-  getUserSyncs: getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent)
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = [];
+
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
+      return syncs;
+    }
+
+    let appendGdprParams = function (url, gdprParams) {
+      if (gdprParams === null) {
+        return url;
+      }
+
+      return url + (url.indexOf('?') >= 0 ? '&' : '?') + gdprParams;
+    };
+
+    let gdprParams = null;
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    serverResponses.forEach(resp => {
+      if (resp.body) {
+        Object.keys(resp.body).map(function(key, index) {
+          let respObject = resp.body[key];
+          if (respObject['syncs'] !== undefined &&
+            Array.isArray(respObject.syncs) &&
+            respObject.syncs.length > 0) {
+            if (syncOptions.iframeEnabled) {
+              respObject.syncs.filter(function (syncIframeObject) {
+                if (syncIframeObject['type'] !== undefined &&
+                  syncIframeObject['link'] !== undefined &&
+                  syncIframeObject.type === 'iframe') { return true; }
+                return false;
+              }).forEach(function (syncIframeObject) {
+                syncs.push({
+                  type: 'iframe',
+                  url: appendGdprParams(syncIframeObject.link, gdprParams)
+                });
+              });
+            }
+            if (syncOptions.pixelEnabled) {
+              respObject.syncs.filter(function (syncImageObject) {
+                if (syncImageObject['type'] !== undefined &&
+                  syncImageObject['link'] !== undefined &&
+                  syncImageObject.type === 'image') { return true; }
+                return false;
+              }).forEach(function (syncImageObject) {
+                syncs.push({
+                  type: 'image',
+                  url: appendGdprParams(syncImageObject.link, gdprParams)
+                });
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return syncs;
+  },
 };
 
 registerBidder(spec);
