@@ -239,7 +239,7 @@ describe('MediaimpactAdapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'postRequest')
+      ajaxStub = sinon.stub(miUtils, 'postRequest')
     })
 
     afterEach(() => {
