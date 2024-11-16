@@ -1,5 +1,3 @@
-// adpartnerBidAdapter.js
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { buildBidRequestsAndParams, postRequest, buildEndpointUrl, getUserSyncs } from '../libraries/mediaImpactUtils/index.js';
 
