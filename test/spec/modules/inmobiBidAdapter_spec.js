@@ -21,19 +21,21 @@ const BIDDER_CODE = 'inmobi';
 export const EVENT_ENDPOINT = 'https://sync.inmobi.com';
 
 describe('The inmobi bidding adapter', function () {
-  let utilsMock, sandbox, ajaxStub;
+  let utilsMock, sandbox, ajaxStub, fetchStub; ;
 
   beforeEach(function () {
     // mock objects
     utilsMock = sinon.mock(utils);
     sandbox = sinon.sandbox.create();
     ajaxStub = sandbox.stub(ajax, 'ajax');
+    fetchStub = sinon.stub(global, 'fetch').resolves(new Response('OK'));
   });
 
   afterEach(function () {
     utilsMock.restore();
     sandbox.restore();
     ajaxStub.restore();
+    fetchStub.restore();
   });
 
   describe('onBidWon', function () {
@@ -72,21 +74,23 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid.meta
       });
       // assert statements
-      expect(ajaxStub.calledOnce).to.be.true;
-      const ajaxArgs = ajaxStub.getCall(0).args;
+      expect(fetchStub.callCount).to.be.equal(1);
+      const fetchArgs = fetchStub.getCall(0).args;
       /*
-                     index  ajax parameter
+                     index  fetch parameter
                      0 ->   URL
-                     1 ->   callback
-                     2 ->   payload
-                     3 ->   options
+                     1 ->   options (method, headers, body, etc.)
                   */
-      expect(ajaxArgs[0]).to.equal(expectedUrl);
-      expect(ajaxArgs[2]).to.equal(expectedPayload);
-      expect(ajaxArgs[3]).to.deep.equal({
+      expect(fetchArgs[0]).to.equal(expectedUrl);
+      const actualPayload = fetchArgs[1]?.body;
+      expect(actualPayload).to.equal(expectedPayload);
+      expect(fetchArgs[1]).to.deep.include({
         method: 'POST',
-        contentType: 'text/plain',
-        withCredentials: true
+        credentials: 'include',
+        keepalive: true,
+      });
+      expect(fetchArgs[1]?.headers).to.deep.equal({
+        'Content-Type': 'text/plain',
       });
     });
 
@@ -120,14 +124,14 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid.meta
       });
       // assert statements
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
 
     it('onBidWon should not be called if the bid data is null', function () {
       // Call onBidWon with null data
       spec.onBidWon(null);
       // Assert that ajax was not called since bid data is null
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
   });
 
@@ -140,7 +144,7 @@ describe('The inmobi bidding adapter', function () {
       // Call onBidError with null data
       spec.onBidderError(null);
       // Assert that ajax was not called since bid data is null
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
 
     it('onBidderError should be called with the eventType', function () {
@@ -161,21 +165,23 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid
       });
       // assert statements
-      expect(ajaxStub.calledOnce).to.be.true;
-      const ajaxArgs = ajaxStub.getCall(0).args;
+      expect(fetchStub.callCount).to.be.equal(1);
+      const fetchArgs = fetchStub.getCall(0).args;
       /*
-                     index  ajax parameter
+                     index  fetch parameter
                      0 ->   URL
-                     1 ->   callback
-                     2 ->   payload
-                     3 ->   options
+                     1 ->   options (method, headers, body, etc.)
                   */
-      expect(ajaxArgs[0]).to.equal(expectedUrl);
-      expect(ajaxArgs[2]).to.equal(expectedPayload);
-      expect(ajaxArgs[3]).to.deep.equal({
+      expect(fetchArgs[0]).to.equal(expectedUrl);
+      const actualPayload = fetchArgs[1]?.body;
+      expect(actualPayload).to.equal(expectedPayload);
+      expect(fetchArgs[1]).to.deep.include({
         method: 'POST',
-        contentType: 'text/plain',
-        withCredentials: true
+        credentials: 'include',
+        keepalive: true,
+      });
+      expect(fetchArgs[1]?.headers).to.deep.equal({
+        'Content-Type': 'text/plain',
       });
     });
   });
@@ -216,21 +222,23 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid.meta
       });
       // assert statements
-      expect(ajaxStub.calledOnce).to.be.true;
-      const ajaxArgs = ajaxStub.getCall(0).args;
+      expect(fetchStub.callCount).to.be.equal(1);
+      const fetchArgs = fetchStub.getCall(0).args;
       /*
-                     index  ajax parameter
+                     index  fetch parameter
                      0 ->   URL
-                     1 ->   callback
-                     2 ->   payload
-                     3 ->   options
+                     1 ->   options (method, headers, body, etc.)
                   */
-      expect(ajaxArgs[0]).to.equal(expectedUrl);
-      expect(ajaxArgs[2]).to.equal(expectedPayload);
-      expect(ajaxArgs[3]).to.deep.equal({
+      expect(fetchArgs[0]).to.equal(expectedUrl);
+      const actualPayload = fetchArgs[1]?.body;
+      expect(actualPayload).to.equal(expectedPayload);
+      expect(fetchArgs[1]).to.deep.include({
         method: 'POST',
-        contentType: 'text/plain',
-        withCredentials: true
+        credentials: 'include',
+        keepalive: true,
+      });
+      expect(fetchArgs[1]?.headers).to.deep.equal({
+        'Content-Type': 'text/plain',
       });
     });
 
@@ -264,14 +272,14 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid.meta
       });
       // assert statements
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
 
     it('onAdRenderSucceeded should not be called if the bid data is null', function () {
       // Call onAdRenderSucceeded with null data
       spec.onAdRenderSucceeded(null);
       // Assert that ajax was not called since bid data is null
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
   });
 
@@ -299,21 +307,23 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid
       });
       // assert statements
-      expect(ajaxStub.calledOnce).to.be.true;
-      const ajaxArgs = ajaxStub.getCall(0).args;
+      expect(fetchStub.callCount).to.be.equal(1);
+      const fetchArgs = fetchStub.getCall(0).args;
       /*
-                     index  ajax parameter
+                     index  fetch parameter
                      0 ->   URL
-                     1 ->   callback
-                     2 ->   payload
-                     3 ->   options
+                     1 ->   options (method, headers, body, etc.)
                   */
-      expect(ajaxArgs[0]).to.equal(expectedUrl);
-      expect(ajaxArgs[2]).to.equal(expectedPayload);
-      expect(ajaxArgs[3]).to.deep.equal({
+      expect(fetchArgs[0]).to.equal(expectedUrl);
+      const actualPayload = fetchArgs[1]?.body;
+      expect(actualPayload).to.equal(expectedPayload);
+      expect(fetchArgs[1]).to.deep.include({
         method: 'POST',
-        contentType: 'text/plain',
-        withCredentials: true
+        credentials: 'include',
+        keepalive: true,
+      });
+      expect(fetchArgs[1]?.headers).to.deep.equal({
+        'Content-Type': 'text/plain',
       });
     });
 
@@ -321,7 +331,7 @@ describe('The inmobi bidding adapter', function () {
       // Call onTimeout with null data
       spec.onTimeout(null);
       // Assert that ajax was not called since bid data is null
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
   });
 
@@ -361,21 +371,23 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid.meta
       });
       // assert statements
-      expect(ajaxStub.calledOnce).to.be.true;
-      const ajaxArgs = ajaxStub.getCall(0).args;
+      expect(fetchStub.callCount).to.be.equal(1);
+      const fetchArgs = fetchStub.getCall(0).args;
       /*
-                     index  ajax parameter
+                     index  fetch parameter
                      0 ->   URL
-                     1 ->   callback
-                     2 ->   payload
-                     3 ->   options
+                     1 ->   options (method, headers, body, etc.)
                   */
-      expect(ajaxArgs[0]).to.equal(expectedUrl);
-      expect(ajaxArgs[2]).to.equal(expectedPayload);
-      expect(ajaxArgs[3]).to.deep.equal({
+      expect(fetchArgs[0]).to.equal(expectedUrl);
+      const actualPayload = fetchArgs[1]?.body;
+      expect(actualPayload).to.equal(expectedPayload);
+      expect(fetchArgs[1]).to.deep.include({
         method: 'POST',
-        contentType: 'text/plain',
-        withCredentials: true
+        credentials: 'include',
+        keepalive: true,
+      });
+      expect(fetchArgs[1]?.headers).to.deep.equal({
+        'Content-Type': 'text/plain',
       });
     });
 
@@ -409,14 +421,14 @@ describe('The inmobi bidding adapter', function () {
         eventPayload: bid.meta
       });
       // assert statements
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
 
     it('onSetTargeting should not be called if the bid data is null', function () {
       // Call onSetTargeting with null data
       spec.onSetTargeting(null);
       // Assert that ajax was not called since bid data is null
-      expect(ajaxStub.notCalled).to.be.true;
+      expect(fetchStub.callCount).to.be.equal(0);
     });
   });
 

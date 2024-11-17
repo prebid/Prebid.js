@@ -4,7 +4,6 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
-import { ajax } from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -327,18 +326,22 @@ function report(type, data) {
   if (['onBidWon', 'onAdRenderSucceeded', 'onSetTargeting'].includes(type) && !isReportingAllowed(data.loggingPercentage)) {
     return;
   }
-  const options = {
-    method: POST_METHOD,
-    contentType: PLAIN_CONTENT_TYPE,
-    withCredentials: true
-  };
-
   const payload = JSON.stringify({
     domain: location.hostname,
     eventPayload: data
   });
 
-  ajax(`${EVENT_ENDPOINT}/report/${type}`, null, payload, options);
+  fetch(`${EVENT_ENDPOINT}/report/${type}`, {
+    body: payload,
+    keepalive: true,
+    credentials: 'include',
+    method: POST_METHOD,
+    headers: {
+      'Content-Type': PLAIN_CONTENT_TYPE
+    }
+  }).catch((_e) => {
+    // do nothing; ignore errors
+  });
 }
 
 registerBidder(spec);
