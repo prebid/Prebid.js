@@ -11,6 +11,7 @@ import {
   parseUrl,
   triggerPixel,
 } from '../src/utils.js';
+
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
@@ -20,7 +21,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '4.0.1';
+const NM_VERSION = '4.2.0';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -30,6 +31,7 @@ const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdp
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_TMAX = 1500;
 
 const VIDEO_PARAMS_DEFAULT = {
   api: undefined,
@@ -65,6 +67,10 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'site.keywords',
   'site.content.keywords',
   'user.keywords',
+  'bcat',
+  'badv',
+  'wlang',
+  'wlangb',
 ];
 
 export const spec = {
@@ -74,7 +80,8 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return !!(
-      (bid.params.placement_id && isStr(bid.params.placement_id)) || (bid.params.group_id && isStr(bid.params.group_id))
+      (bid.params.placement_id && isStr(bid.params.placement_id)) ||
+      (bid.params.group_id && isStr(bid.params.group_id))
     );
   },
 
@@ -84,15 +91,19 @@ export const spec = {
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
     const device = getDeviceObj();
+    const source = getSourceObj(validBidRequests, bidderRequest);
+    const tmax = deepAccess(bidderRequest, 'timeout') || DEFAULT_TMAX;
 
     const postBody = {
       id: bidderRequest?.bidderRequestId,
+      tmax,
       ext: {
         next_mil_imps: [],
       },
 
       device,
       site,
+      source,
       imp: [],
     };
 
@@ -334,10 +345,10 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
   if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) gppConsent = bidderRequest?.ortb2?.regs;
 
   if (gdprConsent || uspConsent || gppConsent) {
-    postBody.regs = { ext: {} };
+    postBody.regs = {};
 
     if (uspConsent) {
-      postBody.regs.ext.us_privacy = uspConsent;
+      postBody.regs.us_privacy = uspConsent;
     };
 
     if (gppConsent) {
@@ -347,14 +358,18 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies !== 'undefined') {
-        postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+        postBody.regs.gdpr = gdprConsent.gdprApplies ? 1 : 0;
       };
 
       if (typeof gdprConsent.consentString !== 'undefined') {
         postBody.user = {
-          ext: { consent: gdprConsent.consentString },
+          consent: gdprConsent.consentString,
         };
       };
+    };
+
+    if (typeof bidderRequest?.ortb2?.regs?.coppa === 'number') {
+      postBody.regs.coppa = bidderRequest?.ortb2?.regs?.coppa;
     };
   };
 };
@@ -364,6 +379,8 @@ export function setOrtb2Parameters(postBody, ortb2 = {}) {
     const value = deepAccess(ortb2, parameter);
     if (value) deepSetValue(postBody, parameter, value);
   }
+
+  if (postBody.wlang) delete postBody.wlangb
 }
 
 export function setEids(postBody = {}, bids = []) {
@@ -479,6 +496,19 @@ function getDeviceObj() {
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
   };
+}
+
+export function getSourceObj(validBidRequests, bidderRequest) {
+  const schain = validBidRequests?.[0]?.schain ||
+    (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
+
+  if (!schain) return;
+
+  const source = {
+    schain,
+  };
+
+  return source;
 }
 
 function getSua() {

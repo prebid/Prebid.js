@@ -114,7 +114,7 @@ function hasMandatoryVideoParams(bid) {
   switch (bid.params.placement) {
     // instream accept only video format
     case 'inStream':
-      return isValid && videoParams.context === 'instream';
+      return isValid && (videoParams.context === 'instream' || videoParams.context === 'outstream');
     // outstream accept banner/native/video format
     default:
       return (

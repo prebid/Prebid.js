@@ -84,7 +84,6 @@ export const spec = {
     {code: 'unibots'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
-    {code: 'felixads'},
     {code: 'motionspots'},
     {code: 'sonic_twist'},
     {code: 'displayioads'},
@@ -99,7 +98,8 @@ export const spec = {
     {code: 'hyperbrainz'},
     {code: 'voisetech'},
     {code: 'global_sun'},
-    {code: 'rxnetwork'}
+    {code: 'rxnetwork'},
+    {code: 'revbid'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
