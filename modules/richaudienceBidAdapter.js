@@ -118,7 +118,9 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        meta: response.adomain,
+        meta: {
+          advertiserDomains: [response.adomain[0]]
+        },
         dealId: response.dealId
       };
 
