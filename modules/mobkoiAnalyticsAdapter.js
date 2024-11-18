@@ -7,26 +7,27 @@ import { ajax } from '../src/ajax.js';
 const BIDDER_CODE = 'mobkoi';
 const analyticsType = 'endpoint';
 const GVL_ID = 898;
+
+/**
+ * Order by events lifecycle
+ */
 const {
-  BID_WON,
-  BIDDER_DONE,
-  BID_RESPONSE,
-
-  // Auction events
   AUCTION_INIT,
-  AUCTION_TIMEOUT,
-  AUCTION_END,
+  BID_RESPONSE,
+  BID_WON,
 
-  // Bid events
+  AUCTION_TIMEOUT,
   BID_TIMEOUT,
-  BID_REJECTED,
   NO_BID,
+  BID_REJECTED,
   SEAT_NON_BID,
   BIDDER_ERROR,
 
-  // Ad rendering events
+  AUCTION_END,
+
   AD_RENDER_FAILED,
   AD_RENDER_SUCCEEDED,
+  BIDDER_DONE,
 } = EVENTS;
 
 const CUSTOM_EVENTS = {
@@ -38,37 +39,19 @@ const CUSTOM_EVENTS = {
  */
 let initOptions = {};
 
-async function sendGetRequest(url) {
-  return new Promise((resolve, reject) => {
-    try {
-      logInfo('triggerPixel', url);
-      triggerPixel(url, resolve);
-    } catch (error) {
-      try {
-        logWarn(`triggerPixel failed. URL: (${url}) Falling back to ajax. Error: `, error);
-        ajax(url, resolve, null, {
-          contentType: 'application/json',
-          method: 'GET',
-          withCredentials: false, // No user-specific data is tied to the request
-          referrerPolicy: 'unsafe-url',
-          crossOrigin: true
-        });
-      } catch (error) {
-        // If failed with both methods, reject the promise
-        reject(error);
-      }
-    }
-  });
-}
-
-function isMobkoiBid(prebidBid) {
-  return prebidBid && prebidBid.bidderCode === BIDDER_CODE;
-}
+const DEBUG_EVENT_LEVELS = {
+  info: 'info',
+  warn: 'warn',
+  error: 'error',
+};
 
 class DebugEvent {
-  constructor(eventType, payload) {
+  constructor(eventType, level, payload) {
     if (!eventType) {
       throw new Error('Event type is required');
+    }
+    if (!DEBUG_EVENT_LEVELS[level]) {
+      throw new Error(`Event level must be one of ${Object.keys(DEBUG_EVENT_LEVELS).join(', ')}. Given: "${level}"`);
     }
     if (payload !== null && typeof payload !== 'object') {
       throw new Error('Event payload must be an object');
@@ -190,24 +173,7 @@ class BidContext {
   }
 
   async flushDebugEvents() {
-    return new Promise((resolve, reject) => {
-      try {
-        const debugPayload = this.getDebugPayload();
-        this.events = []; // Clear the events after submitting to the server
-        ajax(`${initOptions.endpoint}/debug`, (response) => resolve({
-          ...debugPayload,
-          response
-        }), JSON.stringify(debugPayload), {
-          contentType: 'application/json',
-          method: 'POST',
-          withCredentials: false, // No user-specific data is tied to the request
-          referrerPolicy: 'unsafe-url',
-          crossOrigin: true
-        });
-      } catch (error) {
-        reject(new Error(`Failed to flush debug events. Error: ${error}`, {cause: error}));
-      }
-    });
+    return postAjax(`${initOptions.endpoint}/debug`, this.getDebugPayload());
   }
 }
 
@@ -234,8 +200,9 @@ class LocalContext {
   }
 
   /**
-   * Append the Prebid bid response to the context object. The object is
-   * converted by the custom adapter from the ORTB response from our server.
+   * Append the Prebid bid response to the context object if the associated
+   * BidContext has not been created yet. The object is converted by the custom
+   * adapter from the ORTB response from our server.
    * @param {*} prebidBidResponse
    */
   appendBid(prebidBidResponse) {
@@ -278,6 +245,7 @@ class LocalContext {
         bidContext.pushEvent(
           new DebugEvent(
             CUSTOM_EVENTS.BID_LOSS,
+            DEBUG_EVENT_LEVELS.info,
             {
               impid: ortbBidResponse.impid,
               ortbId: ortbBidResponse.id,
@@ -300,6 +268,10 @@ class LocalContext {
     _each(this.bidContexts, (bidContext) => {
       bidContext.flushDebugEvents();
     });
+  }
+
+  async pushSystemError(debugEvent) {
+    return postAjax(`${initOptions.endpoint}/error`, debugEvent);
   }
 }
 
@@ -332,6 +304,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.info,
             pick(args, [
               'auctionId',
               'adUnitCodes',
@@ -352,6 +325,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         bidContext.pushEvent(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.info,
             pick(prebidBid, [
               'requestId',
               'creativeId',
@@ -385,6 +359,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         bidContext.pushEvent(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.info,
             {
               ...pick(args, [
                 'adId',
@@ -417,6 +392,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.info,
             pick(auction, [
               'auctionId',
               'auctionStatus',
@@ -436,6 +412,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.error,
             pick(args, [
               'auctionId',
               'auctionStatus',
@@ -449,64 +426,74 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
           )
         );
         break;
+      case NO_BID: {
+        logInfo(`Event: ${eventType}`, args);
+        const prebidBid = args;
+        const bidContext = this.localContext.retrieveBidContext(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.warn,
+            pick(prebidBid, [
+              'auctionId',
+              'bidderCode',
+              'bidderRequestId',
+              'timeout',
+            ])
+          )
+        );
+        break;
+      }
+      case BID_REJECTED: {
+        logInfo(`Event: ${eventType}`, args);
+        const prebidBid = args;
+        const bidContext = this.localContext.appendBid(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.warn,
+            pick(prebidBid, [
+              'rejectionReason',
+              'ortbId',
+              'requestId',
+              'auctionId',
+              'bidderCode',
+              'bidderRequestId',
+              'ortbBidResponse',
+            ])
+          )
+        );
+        break;
+      };
       case BID_TIMEOUT:
-      case BID_REJECTED:
-      case NO_BID:
       case SEAT_NON_BID:
       case BIDDER_ERROR: {
         logInfo(`Event: ${eventType}`, args);
         try {
+          // Submit entire args object for debugging
+          const debugEvent = new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.error,
+            { args }
+          );
+
+          // If args is an auction object
           if (args.auctionId) {
-            this.localContext.pushEventToAllBidContexts(
-              new DebugEvent(
-                eventType,
-                pick(args, [
-                  'auctionId',
-                  'auctionStatus',
-                  'auctionStart',
-                  'auctionEnd',
-                  'auctionStatus',
-                  'bidderCode',
-                  'bidderRequestId',
-                  'timestamp',
-                ])
-              )
-            );
+            this.localContext.pushEventToAllBidContexts(debugEvent);
             break;
           }
 
+          // Assuming args is a prebid bid object
           const prebidBid = args;
           const bidContext = this.localContext.retrieveBidContext(prebidBid);
-          bidContext.pushEvent(
-            new DebugEvent(
-              eventType,
-              pick(prebidBid, [
-                'auctionId',
-                'bidderCode',
-                'bidderRequestId',
-                'timeout',
-              ])
-            )
-          );
+          bidContext.pushEvent(debugEvent);
         } catch (error) {
-          /**
-           * Only clone the root level fields that are not objects. This is to
-           * avoid sending large objects to the server.
-           */
-          const cloneNonObjectFields = (obj) => {
-            const cloned = {};
-            Object.keys(obj).forEach(key => {
-              if (typeof obj[key] !== 'object' || obj[key] === null) {
-                cloned[key] = obj[key];
-              }
-            });
-            return cloned;
-          }
-          this.localContext.pushEventToAllBidContexts(
+          this.localContext.pushSystemError(
             new DebugEvent(
               eventType,
+              DEBUG_EVENT_LEVELS.error,
               {
-                args: cloneNonObjectFields(args),
+                args: args,
                 warn: 'Unexpected error occurred. Please investigate.',
                 error: JSON.stringify(error)
               }
@@ -522,6 +509,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         bidContext.pushEvent(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.error,
             pick(prebidBid, [
               'ad',
               'adId',
@@ -541,6 +529,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         bidContext.pushEvent(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.info,
             pick(prebidBid, [
               'adId',
               'adUnitCode',
@@ -558,6 +547,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
         this.localContext.pushEventToAllBidContexts(
           new DebugEvent(
             eventType,
+            DEBUG_EVENT_LEVELS.info,
             pick(auction, [
               'auctionId',
               'bidderCode',
@@ -604,3 +594,58 @@ adapterManager.registerAnalyticsAdapter({
 });
 
 export default mobkoiAnalytics;
+
+/**
+ * Make a POST request to the given URL with the given data.
+ * @param {*} url
+ * @param {*} data JSON data
+ * @returns
+ */
+async function postAjax(url, data) {
+  return new Promise((resolve, reject) => {
+    try {
+      ajax(url, resolve, JSON.stringify(data), {
+        contentType: 'application/json',
+        method: 'POST',
+        withCredentials: false, // No user-specific data is tied to the request
+        referrerPolicy: 'unsafe-url',
+        crossOrigin: true
+      });
+    } catch (error) {
+      reject(new Error(`Failed to make post request to endpoint "${url}". With data: ${JSON.stringify(data)}. Error: ${error}`, {cause: error}));
+    }
+  });
+}
+
+/**
+ * Make a GET request to the given URL. If the request fails, it will fall back
+ * to AJAX request.
+ * @param {*} url URL with the query string
+ * @returns
+ */
+async function sendGetRequest(url) {
+  return new Promise((resolve, reject) => {
+    try {
+      logInfo('triggerPixel', url);
+      triggerPixel(url, resolve);
+    } catch (error) {
+      try {
+        logWarn(`triggerPixel failed. URL: (${url}) Falling back to ajax. Error: `, error);
+        ajax(url, resolve, null, {
+          contentType: 'application/json',
+          method: 'GET',
+          withCredentials: false, // No user-specific data is tied to the request
+          referrerPolicy: 'unsafe-url',
+          crossOrigin: true
+        });
+      } catch (error) {
+        // If failed with both methods, reject the promise
+        reject(error);
+      }
+    }
+  });
+}
+
+function isMobkoiBid(prebidBid) {
+  return prebidBid && prebidBid.bidderCode === BIDDER_CODE;
+}
