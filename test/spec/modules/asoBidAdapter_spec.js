@@ -204,8 +204,8 @@ describe('Adserver.Online bidding adapter', function () {
       expect(payload.site.page).to.equal('https://example.com/page.html');
 
       expect(payload.device).to.exist;
-      expect(payload.device.w).to.equal(window.innerWidth);
-      expect(payload.device.h).to.equal(window.innerHeight);
+      expect(payload.device.w).to.equal(window.screen.width);
+      expect(payload.device.h).to.equal(window.screen.height);
 
       expect(payload.imp).to.have.lengthOf(1);
 
@@ -233,8 +233,8 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.site.page).to.equal('https://example.com/page.html');
 
         expect(payload.device).to.exist;
-        expect(payload.device.w).to.equal(window.innerWidth);
-        expect(payload.device.h).to.equal(window.innerHeight);
+        expect(payload.device.w).to.equal(window.screen.width);
+        expect(payload.device.h).to.equal(window.screen.height);
 
         expect(payload.imp).to.have.lengthOf(1);
 
@@ -262,8 +262,8 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.site.page).to.equal('https://example.com/page.html');
 
         expect(payload.device).to.exist;
-        expect(payload.device.w).to.equal(window.innerWidth);
-        expect(payload.device.h).to.equal(window.innerHeight);
+        expect(payload.device.w).to.equal(window.screen.width);
+        expect(payload.device.h).to.equal(window.screen.height);
 
         expect(payload.imp).to.have.lengthOf(1);
 

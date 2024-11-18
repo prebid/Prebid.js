@@ -248,7 +248,7 @@ describe('consentManagement', function () {
         hookRan = true
       }, request);
       try {
-        await consentConfig.consentDataLoaded;
+        await consentConfig.loadConsentData();
       } catch (e) {
       }
       return hookRan;

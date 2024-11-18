@@ -38,6 +38,9 @@ jobs:
       - name: Check out PR
         run: git checkout ${{ github.event.pull_request.head.sha }}
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run linter on PR
         run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __pr.json || true
 

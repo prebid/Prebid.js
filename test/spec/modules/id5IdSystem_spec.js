@@ -4,7 +4,7 @@ import {
   coreStorage,
   getConsentHash,
   init,
-  requestBidsHook,
+  startAuctionHook,
   setSubmoduleRegistry
 } from '../../../modules/userId/index.js';
 import {config} from '../../../src/config.js';
@@ -912,7 +912,7 @@ describe('ID5 ID System', function () {
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(getFetchLocalStorageConfig());
 
-      requestBidsHook(wrapAsyncExpects(done, () => {
+      startAuctionHook(wrapAsyncExpects(done, () => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
@@ -940,7 +940,7 @@ describe('ID5 ID System', function () {
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(getFetchLocalStorageConfig());
 
-      requestBidsHook(function () {
+      startAuctionHook(function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property(`userId.euid`);
@@ -969,7 +969,7 @@ describe('ID5 ID System', function () {
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(getFetchLocalStorageConfig());
 
-      requestBidsHook(wrapAsyncExpects(done, function () {
+      startAuctionHook(wrapAsyncExpects(done, function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
@@ -992,7 +992,7 @@ describe('ID5 ID System', function () {
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(getValueConfig(ID5_STORED_ID));
 
-      requestBidsHook(function () {
+      startAuctionHook(function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
@@ -1022,7 +1022,7 @@ describe('ID5 ID System', function () {
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(id5Config);
       return new Promise((resolve) => {
-        requestBidsHook(() => {
+        startAuctionHook(() => {
           resolve();
         }, {adUnits});
       }).then(() => {

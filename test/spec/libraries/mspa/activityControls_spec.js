@@ -229,6 +229,13 @@ describe('setupRules', () => {
     sinon.assert.calledWith(rules.mockActivity, {mock: 'consent'})
   });
 
+  it('should accept already flattened section data', () => {
+    consent.parsedSections.mockApi = {flat: 'consent'};
+    runSetup('mockApi', [1]);
+    isAllowed('mockActivity', {});
+    sinon.assert.calledWith(rules.mockActivity, {flat: 'consent'})
+  })
+
   it('should not choke when no consent data is available', () => {
     consent = null;
     runSetup('mockApi', [1]);

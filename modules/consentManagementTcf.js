@@ -131,7 +131,7 @@ export function setConsentConfig(config) {
   gdprScope = config?.defaultGdprScope === true;
   dsaPlatform = !!config?.dsaPlatform;
   consentConfig = parseConfig({gdpr: config});
-  return consentConfig.consentDataLoaded?.catch(() => null);
+  return consentConfig.loadConsentData?.()?.catch?.(() => null);
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 

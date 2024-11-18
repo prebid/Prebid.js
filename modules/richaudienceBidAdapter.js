@@ -11,7 +11,7 @@ let REFERER = '';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 108,
-  aliases: ['ra'],
+  aliases: [{code: 'ra', gvlid: 108}],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
@@ -55,7 +55,9 @@ export const spec = {
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
         kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
         schain: bid.schain,
-        gpid: raiSetPbAdSlot(bid)
+        gpid: raiSetPbAdSlot(bid),
+        dsa: setDSA(bid),
+        userData: deepAccess(bid, 'ortb2.user.data')
       };
 
       REFERER = (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null)
@@ -116,7 +118,9 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        meta: response.adomain,
+        meta: {
+          advertiserDomains: [response.adomain[0]]
+        },
         dealId: response.dealId
       };
 
@@ -372,4 +376,9 @@ function raiGetTimeoutURL(data) {
     url = url.replace('[domain]', document.location.host)
   }
   return url
+}
+
+function setDSA(bid) {
+  let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
+  return dsa;
 }

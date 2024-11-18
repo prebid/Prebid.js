@@ -1,6 +1,5 @@
 import * as utils from 'src/utils.js';
 import {lookupConsentData, consentManagementHook} from '../../../libraries/consentManagement/cmUtils';
-import {consentDataLoaded} from '../../../modules/consentManagementGpp';
 
 describe('consent management utils', () => {
   let sandbox;

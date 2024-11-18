@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel } from '../src/utils.js';
+import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -181,7 +181,7 @@ export const spec = {
       }
 
       const queryParamsString = formatQS(queryParams);
-      return {
+      const request = {
         method: 'POST',
         url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
         data,
@@ -190,6 +190,10 @@ export const spec = {
         },
         bidRequest,
       };
+
+      logInfo('ServerRequest', request);
+
+      return request;
     });
   },
 

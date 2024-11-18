@@ -164,6 +164,7 @@ export function configParser(
       actionTimeout,
       getNullConsent,
     })
+    const loadConsentData = () => consentDataLoaded.then(({error}) => ({error, consentData: consentDataHandler.getConsentData()}))
     if (requestBidsHook == null) {
       requestBidsHook = consentManagementHook(namespace, () => consentDataLoaded);
       getGlobal().requestBids.before(requestBidsHook, 50);
@@ -177,7 +178,7 @@ export function configParser(
       cmpTimeout,
       actionTimeout,
       staticConsentData,
-      consentDataLoaded,
+      loadConsentData,
       requestBidsHook
     }
   }

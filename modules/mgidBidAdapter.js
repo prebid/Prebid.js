@@ -88,7 +88,7 @@ _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAs
 _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.7',
+  VERSION: '1.8',
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
