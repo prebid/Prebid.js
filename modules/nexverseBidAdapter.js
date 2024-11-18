@@ -2,35 +2,23 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { isArray, logError, logWarn, logInfo } from '../src/utils.js';
+import { isArray } from '../src/utils.js';
+import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
+import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
+import { getOsVersion, getDeviceModel, buildEndpointUrl, isSecureRequest, isBidRequestValid, parseNativeResponse, printLog } from '../libraries/nexverseUtils/index.js';
 
 const BIDDER_CODE = 'nexverse';
-const ENDPOINT_URL = 'https://rtb.nexverse.ai/';
+const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai/';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
-
-const LOG_WARN_PREFIX = '[Nexverse warn]: ';
-const LOG_ERROR_PREFIX = '[Nexverse error]: ';
-const LOG_INFO_PREFIX = '[Nexverse info]: ';
+const DEFAULT_CURRENCY = 'USD';
+const BID_TTL = 300;
+const DEFAULT_IP = '123.123.123.123';
+const DEFAULT_LANG = 'en';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
-
-  /**
-   * Validates the bid request to ensure all required parameters are present.
-   * @param {Object} bid - The bid request object.
-   * @returns {boolean} True if the bid request is valid, false otherwise.
-   */
-  isBidRequestValid(bid) {
-    const isValid = !!(bid.params && bid.params.uid && bid.params.pub_id && bid.params.pub_epid);
-
-    if (!isValid) {
-      logError(`${LOG_ERROR_PREFIX} Missing required bid parameters.`);
-    }
-
-    return isValid;
-  },
-
+  isBidRequestValid,
   /**
    * Builds the OpenRTB server request from the list of valid bid requests.
    *
@@ -40,23 +28,14 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const requests = validBidRequests.map((bid) => {
-      const { uid, pub_id, pub_epid } = bid.params;
-
-      if (!uid || !pub_id || !pub_epid) {
-        logError(`${LOG_ERROR_PREFIX} Missing required endpoint URL parameters.`);
-        return null; // Stop processing this bid
-      }
-
       // Build the endpoint URL with query parameters
-      const endpointUrl = `${ENDPOINT_URL}?uid=${encodeURIComponent(uid)}&pub_id=${encodeURIComponent(
-        pub_id
-      )}&pub_epid=${encodeURIComponent(pub_epid)}`;
+      const endpointUrl = buildEndpointUrl(BIDDER_ENDPOINT, bid);
 
       // Build the OpenRTB payload
       const payload = buildOpenRtbRequest(bid, bidderRequest);
 
       if (!payload) {
-        logError(`${LOG_ERROR_PREFIX} Payload could not be built.`);
+        printLog('error', 'Payload could not be built.');
         return null; // Skip this bid
       }
 
@@ -85,7 +64,7 @@ export const spec = {
    */
   interpretResponse(serverResponse, request) {
     if (serverResponse && serverResponse.status === 204) {
-      logInfo(`${LOG_INFO_PREFIX} No ad available (204 response).`);
+      printLog('info', 'No ad available (204 response).');
       return [];
     }
 
@@ -93,7 +72,7 @@ export const spec = {
     const response = serverResponse.body;
 
     if (!response || !response.seatbid || !isArray(response.seatbid)) {
-      logWarn(`${LOG_WARN_PREFIX} No valid bids in the response.`);
+      printLog('warning', 'No valid bids in the response.');
       return bidResponses;
     }
 
@@ -102,11 +81,11 @@ export const spec = {
         const bidResponse = {
           requestId: bid.impid,
           cpm: bid.price,
-          currency: response.cur || 'USD',
+          currency: response.cur || DEFAULT_CURRENCY,
           width: bid.w || 0,
           height: bid.h || 0,
           creativeId: bid.crid || bid.id,
-          ttl: 300,
+          ttl: BID_TTL,
           netRevenue: true,
           meta: {},
         };
@@ -143,21 +122,11 @@ export const spec = {
 
     return bidResponses;
   },
-
-  /**
-   * Registers user sync pixels.
-   *
-   * @param {Object} syncOptions - Configuration specifying which user syncs are allowed.
-   * @param {Array} serverResponses - Array of server responses.
-   * @param {Object} gdprConsent - GDPR consent information.
-   * @param {string} uspConsent - US Privacy consent string.
-   * @returns {Array} Array of user syncs to be executed.
-   */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
     if (syncOptions.iframeEnabled) {
-      let syncUrl = `${ENDPOINT_URL}/sync`;
+      let syncUrl = `${BIDDER_ENDPOINT}/sync`;
 
       const params = [];
 
@@ -195,7 +164,7 @@ export const spec = {
  */
 function buildOpenRtbRequest(bid, bidderRequest) {
   if (!bid || !bidderRequest) {
-    logError(`${LOG_ERROR_PREFIX} Missing required parameters for OpenRTB request.`);
+    printLog('error', 'Missing required parameters for OpenRTB request.');
     return null;
   }
 
@@ -211,7 +180,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         h: bid.sizes[0][1],
       },
       bidfloor: bid.params.bidfloor || 0, // Handle bid floor if specified
-      secure: isSecureRequest() ? 1 : 0, // Indicates whether the request is secure (HTTPS)
+      secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
     });
   }
 
@@ -228,7 +197,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         playbackmethod: bid.mediaTypes.video.playbackmethod || [2],
       },
       bidfloor: bid.params.bidfloor || 0,
-      secure: isSecureRequest() ? 1 : 0, // Indicates whether the request is secure (HTTPS)
+      secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
     });
   }
 
@@ -239,7 +208,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string
       },
       bidfloor: bid.params.bidfloor || 0,
-      secure: isSecureRequest() ? 1 : 0, // Indicates whether the request is secure (HTTPS)
+      secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
     });
   }
 
@@ -254,10 +223,10 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     },
     device: {
       ua: navigator.userAgent,
-      ip: bidderRequest.ip || '123.123.123.123', // IP address (replace with actual)
+      ip: bidderRequest.ip || DEFAULT_IP, // IP address (replace with actual)
       devicetype: getDeviceType(), // 1 = Mobile/Tablet, 2 = Desktop
-      os: getDeviceOS(),
-      osv: getDeviceOSVersion(),
+      os: getOS(),
+      osv: getOsVersion(),
       make: navigator.vendor || '',
       model: getDeviceModel(),
       connectiontype: getConnectionType(), // Include connection type
@@ -265,7 +234,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         lat: bid.params.geoLat || 0,
         lon: bid.params.geoLon || 0,
       },
-      language: navigator.language || 'en',
+      language: navigator.language || DEFAULT_LANG,
       dnt: navigator.doNotTrack === '1' ? 1 : 0, // Do Not Track flag
     },
     user: {
@@ -305,143 +274,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
   }
 
   return openRtbRequest;
-}
-
-/**
- * Checks if the request is made over a secure connection (HTTPS).
- * @returns {boolean} True if the connection is secure (HTTPS), false otherwise.
- */
-function isSecureRequest() {
-  return location.protocol === 'https:';
-}
-
-/**
- * Determines the device connection type.
- * @returns {number} The connection type based on OpenRTB 2.5 spec.
- */
-function getConnectionType() {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (connection) {
-    const type = connection.effectiveType || connection.type;
-    switch (type) {
-      case 'ethernet':
-        return 1; // Ethernet
-      case 'wifi':
-      case 'wimax':
-        return 2; // WiFi
-      case 'cellular':
-        return getCellularConnectionType(connection);
-      default:
-        return 0; // Unknown
-    }
-  }
-  return 0; // Unknown
-}
-
-/**
- * Determines the cellular connection type based on OpenRTB 2.5 spec.
- * @param {Object} connection - The connection object from the browser.
- * @returns {number} The cellular connection type.
- */
-function getCellularConnectionType(connection) {
-  const gen = connection.effectiveType;
-  switch (gen) {
-    case '2g':
-      return 4; // Cellular (2G)
-    case '3g':
-      return 5; // Cellular (3G)
-    case '4g':
-      return 6; // Cellular (4G)
-    case '5g':
-      return 7; // Cellular (5G)
-    default:
-      return 3; // Cellular (Unknown Generation)
-  }
-}
-
-/**
- * Determines the device type (1 = Mobile/Tablet, 2 = Desktop).
- * @returns {number} The device type.
- */
-function getDeviceType() {
-  const ua = navigator.userAgent;
-  if (/Mobi|Android|iPhone|iPad/i.test(ua)) {
-    return 1; // Mobile/Tablet
-  }
-  return 2; // Desktop
-}
-
-/**
- * Determines the device operating system.
- * @returns {string} The OS name.
- */
-function getDeviceOS() {
-  const ua = navigator.userAgent;
-  if (/Android/i.test(ua)) {
-    return 'Android';
-  } else if (/iPhone|iPad|iPod/i.test(ua)) {
-    return 'iOS';
-  } else if (/Windows/i.test(ua)) {
-    return 'Windows';
-  } else if (/Mac OS/i.test(ua)) {
-    return 'Mac OS';
-  }
-  return 'Other';
-}
-
-/**
- * Determines the device operating system version.
- * @returns {string} The OS version.
- */
-function getDeviceOSVersion() {
-  const ua = navigator.userAgent;
-  let osVersion = 'unknown';
-
-  if (/Android/i.test(ua)) {
-    const match = ua.match(/Android\s([0-9\.]+)/);
-    if (match) {
-      osVersion = match[1];
-    }
-  } else if (/iPhone|iPad|iPod/i.test(ua)) {
-    const match = ua.match(/OS\s([0-9_]+)/);
-    if (match) {
-      osVersion = match[1].replace(/_/g, '.');
-    }
-  }
-  return osVersion;
-}
-
-/**
- * Determines the device model (if possible).
- * @returns {string} The device model.
- */
-function getDeviceModel() {
-  const ua = navigator.userAgent;
-  if (/iPhone/i.test(ua)) {
-    return 'iPhone';
-  } else if (/iPad/i.test(ua)) {
-    return 'iPad';
-  } else if (/Android/i.test(ua)) {
-    const match = ua.match(/Android.*;\s([a-zA-Z0-9\s]+)\sBuild/);
-    return match ? match[1].trim() : '';
-  }
-  return '';
-}
-
-/**
- * Parses the native response from the server into Prebid's native format.
- *
- * @param {string} adm - The adm field from the bid response (JSON string).
- * @returns {Object} The parsed native response object.
- */
-function parseNativeResponse(adm) {
-  try {
-    const admObj = JSON.parse(adm);
-    return admObj.native;
-  } catch (e) {
-    logError(`${LOG_ERROR_PREFIX} Error parsing native response: `, e);
-    return {};
-  }
 }
 
 registerBidder(spec);

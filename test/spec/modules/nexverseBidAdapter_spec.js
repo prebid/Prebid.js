@@ -3,38 +3,18 @@
 import { registerBidder } from '../../../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { isArray, logError, logWarn } from '../../../src/utils.js';
+import { buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog } from '../../../libraries/nexverseUtils/index.js';
 
 const BIDDER_CODE = 'nexverse';
 const ENDPOINT_URL = 'https://rtb.nexverse.ai/'; // Changed to HTTPS for security reasons
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
-const LOG_WARN_PREFIX = '[Nexverse warn]: ';
-const LOG_ERROR_PREFIX = '[Nexverse error]: ';
 const DEFAULT_CURRENCY = 'USD';
 const BID_TTL = 300;
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
-
-  /**
-   * Validates the bid request to ensure all required parameters are present.
-   * @param {Object} bid - The bid request object.
-   * @returns {boolean} True if the bid request is valid, false otherwise.
-   */
-  isBidRequestValid(bid) {
-    const isValid = !!(
-      bid.params &&
-      bid.params.uid &&
-      bid.params.pub_id &&
-      bid.params.pub_epid
-    );
-
-    if (!isValid) {
-      logError(`${LOG_ERROR_PREFIX} Missing required bid parameters: `, bid.params);
-    }
-
-    return isValid;
-  },
+  isBidRequestValid,
 
   /**
    * Builds the OpenRTB server request from the list of valid bid requests.
@@ -46,28 +26,28 @@ export const spec = {
   buildRequests(validBidRequests, bidderRequest) {
     const requests = validBidRequests.map((bid) => {
       const uid = bid.params.uid;
-      const pub_id = bid.params.pub_id;
-      const pub_epid = bid.params.pub_epid;
+      const pubId = bid.params.pubId;
+      const pubEpid = bid.params.pubEpid;
 
-      if (!uid || !pub_id || !pub_epid) {
-        logError(`${LOG_ERROR_PREFIX} Missing required endpoint URL parameters.`, bid.params);
+      if (!uid || !pubId || !pubEpid) {
+        printLog('error', 'Missing required endpoint URL parameters: ', bid.params);
         return null; // Skip this bid
       }
 
       // Ensure sizes are valid
       if (!bid.sizes || !isArray(bid.sizes) || !bid.sizes[0] || bid.sizes[0].length < 2) {
-        logError(`${LOG_ERROR_PREFIX} Invalid sizes for bid request.`, bid.sizes);
+        printLog('error', ' Invalid sizes for bid request', bid.sizes);
         return null;
       }
 
       // Build the endpoint URL with query parameters
-      const endpointUrl = `${ENDPOINT_URL}?uid=${encodeURIComponent(uid)}&pub_id=${encodeURIComponent(pub_id)}&pub_epid=${encodeURIComponent(pub_epid)}`;
+      const endpointUrl = buildEndpointUrl(BIDDER_ENDPOINT, bid);
 
       // Build the OpenRTB payload
       const payload = buildOpenRtbRequest(bid, bidderRequest);
 
       if (!payload) {
-        logError(`${LOG_ERROR_PREFIX} Failed to build OpenRTB payload for bid.`);
+        printLog('error', ' Failed to build OpenRTB payload for bid.');
         return null; // Skip this bid
       }
 
@@ -98,7 +78,7 @@ export const spec = {
     const response = serverResponse.body;
 
     if (!response || !response.seatbid || !isArray(response.seatbid)) {
-      logWarn(`${LOG_WARN_PREFIX} No valid bids in the response.`, serverResponse);
+      printLog('warning', ' No valid bids in the response.', serverResponse);
       return bidResponses;
     }
 
@@ -212,7 +192,7 @@ function determineMediaType(bid) {
  */
 function buildOpenRtbRequest(bid, bidderRequest) {
   if (!bid.sizes || !isArray(bid.sizes) || !bid.sizes[0]) {
-    logError(`${LOG_ERROR_PREFIX} Missing or invalid sizes in the bid request.`);
+    printLog('error', ' Missing or invalid sizes in the bid request.');
     return null;
   }
 
@@ -231,22 +211,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       page: bidderRequest.refererInfo.page,
     },
   };
-}
-
-/**
- * Parses the native response from the server into Prebid's native format.
- *
- * @param {string} adm - The adm field from the bid response (JSON string).
- * @returns {Object} The parsed native response object.
- */
-function parseNativeResponse(adm) {
-  try {
-    const admObj = JSON.parse(adm);
-    return admObj.native || {}; // Ensure we return an object even if native isn't found
-  } catch (e) {
-    logError(`${LOG_ERROR_PREFIX} Error parsing native response: `, e);
-    return {};
-  }
 }
 
 registerBidder(spec);

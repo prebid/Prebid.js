@@ -69,7 +69,7 @@ export function isSecureRequest() {
    * @returns {boolean} True if the bid request is valid, false otherwise.
    */
 export function isBidRequestValid(bid) {
-  const isValid = !!(bid.params && bid.params.uid && bid.params.pub_id && bid.params.pub_epid);
+  const isValid = !!(bid.params && bid.params.uid && bid.params.pubId && bid.params.pubEpid);
 
   if (!isValid) {
     logError(`${LOG_ERROR_PREFIX} Missing required bid parameters.`);
