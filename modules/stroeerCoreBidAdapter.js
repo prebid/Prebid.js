@@ -75,7 +75,7 @@ export const spec = {
       };
     }
 
-    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep'];
+    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep', 'site.ext'];
     ORTB2_KEYS.forEach(key => {
       const value = deepAccess(bidderRequest.ortb2, key);
       if (value !== undefined) {
@@ -216,6 +216,7 @@ const mapToPayloadBaseBid = (bidRequest) => ({
   bid: bidRequest.bidId,
   sid: bidRequest.params.sid,
   viz: elementInView(bidRequest.adUnitCode),
+  sfp: bidRequest.params.sfp,
 });
 
 const mapToPayloadBannerBid = (bidRequest) => {

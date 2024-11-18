@@ -209,11 +209,8 @@ describe('secureCreatives', () => {
           return receive(ev);
         }).then(() => {
           sinon.assert.calledWith(spyLogWarn, warning);
-          sinon.assert.calledOnce(spyAddWinningBid);
-          sinon.assert.calledWith(spyAddWinningBid, adResponse);
           sinon.assert.calledOnce(adResponse.renderer.render);
           sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
           sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
         });
       });
@@ -413,6 +410,21 @@ describe('secureCreatives', () => {
           stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
         });
       });
+
+      it('should fire BID_WON when no asset is requested', () => {
+        pushBidResponseToAuction({});
+        const data = {
+          adId: bidId,
+          message: 'Prebid Native',
+        };
+
+        const ev = makeEvent({
+          data: JSON.stringify(data),
+        });
+        return receive(ev).then(() => {
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        });
+      })
 
       describe('resizing', () => {
         let container, slot;

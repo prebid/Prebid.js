@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, triggerPixel, logError } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -452,21 +452,20 @@ function getRequestCount() {
 }
 
 function sendTimeoutData(auctionId, auctionTimeout) {
-  let params = {
-    aid: auctionId,
-    ato: auctionTimeout
-  };
+  const params = { aid: auctionId, ato: auctionTimeout };
+  const timeoutRequestUrl = buildUrl({
+    protocol: 'https',
+    hostname: BIDDER.HOST,
+    pathname: BIDDER.TIMEOUT_ENDPOINT,
+    search: params,
+  });
 
-  try {
-    let timeoutRequestUrl = buildUrl({
-      protocol: 'https',
-      hostname: BIDDER.HOST,
-      pathname: BIDDER.TIMEOUT_ENDPOINT,
-      search: params
-    });
-
-    triggerPixel(timeoutRequestUrl);
-  } catch (e) {}
+  fetch(timeoutRequestUrl, {
+    method: 'GET',
+    keepalive: true,
+  }).catch((e) => {
+    logError('Kargo: sendTimeoutData/fetch threw an error: ', e);
+  });
 }
 
 function getImpression(bid) {
