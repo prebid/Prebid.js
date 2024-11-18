@@ -30,16 +30,14 @@ describe('common processors', () => {
     const impFpd = DEFAULT_PROCESSORS[IMP].secure.fn;
 
     it('should set secure as 1 if publisher did not set it', () => {
-      const imp = {secure: 1};
-      const bidRequest = {adUnitCode: 'ad-code-1', ortb2Imp: {}};
-      impFpd(imp, bidRequest);
+      const imp = {};
+      impFpd(imp);
       expect(imp.secure).to.eql(1);
     });
 
     it('should not overwrite secure if set by publisher', () => {
-      const imp = {secure: 1};
-      const bidRequest = {adUnitCode: 'ad-code-1', ortb2Imp: {secure: 0}};
-      impFpd(imp, bidRequest);
+      const imp = {secure: 0};
+      impFpd(imp);
       expect(imp.secure).to.eql(0);
     });
   })
