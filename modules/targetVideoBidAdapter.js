@@ -1,8 +1,8 @@
-import {_each, formatQS, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_each, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {formatRequest, getRtbBid, getSiteObj, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
-import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, SYNC_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
+import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
+import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -184,37 +184,7 @@ export const spec = {
    * Return an array containing an object with the sync type and the constructed URL.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    const params = {
-      endpoint: 'targetvideo'
-    };
-
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      params.gdpr = (gdprConsent.gdprApplies ? 1 : 0);
-      params.gdpr_consent = encodeURIComponent(gdprConsent.consentString || '');
-    }
-
-    // CCPA
-    if (uspConsent && typeof uspConsent === 'string') {
-      params.us_privacy = encodeURIComponent(uspConsent);
-    }
-
-    // GPP Consent
-    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-      params.gpp = encodeURIComponent(gppConsent.gppString);
-      params.gpp_sid = encodeURIComponent(gppConsent?.applicableSections?.join(','));
-    }
-
-    const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
-    let response = [];
-    if (syncOptions.iframeEnabled) {
-      response = [{
-        type: 'iframe',
-        url: SYNC_URL + 'load-cookie.html?' + queryParams
-      }];
-    }
-
-    return response;
+    return getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, 'targetvideo');
   }
 
 }
