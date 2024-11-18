@@ -65,7 +65,7 @@ export const DEFAULT_PROCESSORS = {
     secure: {
       // should set imp.secure to 1 unless publisher has set it
       fn(imp, bidRequest) {
-        imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
+        imp.secure = imp.secure ?? 1;
       }
     }
   },
