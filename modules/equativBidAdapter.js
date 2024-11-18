@@ -131,7 +131,7 @@ export const converter = ortbConverter({
     const bid = context.bidRequests[0];
     const req = buildRequest(imps, bidderRequest, context);
 
-    let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(env => deepAccess(bid, env)) || 'ortb2.site.publisher';
+    let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
     deepSetValue(req, env.replace('ortb2.', '') + '.id', deepAccess(bid, env + '.id') || bid.params.networkId);
 
     if (deepAccess(bid, 'mediaTypes.video')) {
