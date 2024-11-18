@@ -585,6 +585,76 @@ describe('yieldlabBidAdapter', () => {
         expect(request.url).to.not.include('dsaparams');
       });
     });
+
+    describe('google topics handling', () => {
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('does pass segtax, segclass, segments for google topics data', () => {
+        const GOOGLE_TOPICS_DATA = {
+          ortb2: {
+            user: {
+              data: [
+                {
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {id: '717'}, {id: '808'},
+                  ]
+                }
+              ]
+            },
+          },
+        }
+        config.setConfig(GOOGLE_TOPICS_DATA);
+        const request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...GOOGLE_TOPICS_DATA });
+        expect(request.url).to.include('segtax=600&segclass=v1&segments=717%2C808');
+      });
+
+      it('does not pass topics params for invalid topics data', () => {
+        const INVALID_TOPICS_DATA = {
+          ortb2: {
+            user: {
+              data: [
+                {
+                  segment: []
+                },
+                {
+                  segment: [{id: ''}]
+                },
+                {
+                  segment: [{id: null}]
+                },
+                {
+                  segment: [{id: 'dummy'}, {id: '123'}]
+                },
+                {
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {
+                      name: 'dummy'
+                    }
+                  ]
+                },
+              ]
+            }
+          }
+        };
+
+        config.setConfig(INVALID_TOPICS_DATA);
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...INVALID_TOPICS_DATA });
+
+        expect(request.url).to.not.include('segtax');
+        expect(request.url).to.not.include('segclass');
+        expect(request.url).to.not.include('segments');
+      });
+    });
   });
 
   describe('interpretResponse', () => {
@@ -612,7 +682,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].netRevenue).to.equal(false);
       expect(result[0].ttl).to.equal(300);
       expect(result[0].referrer).to.equal('');
-      expect(result[0].meta.advertiserDomains).to.equal('yieldlab');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
       expect(result[0].ad).to.include('&id=abc');
     });
@@ -649,7 +719,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].netRevenue).to.equal(false);
       expect(result[0].ttl).to.equal(300);
       expect(result[0].referrer).to.equal('');
-      expect(result[0].meta.advertiserDomains).to.equal('yieldlab');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
       expect(result[0].ad).to.include('&id=abc');
     });

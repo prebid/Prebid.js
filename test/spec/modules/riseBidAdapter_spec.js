@@ -201,16 +201,6 @@ describe('riseAdapter', function () {
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
     });
 
-    it('should send the correct currency in bid request', function () {
-      const bid = utils.deepClone(bidRequests[0]);
-      bid.params = {
-        'currency': 'EUR'
-      };
-      const expectedCurrency = bid.params.currency;
-      const request = spec.buildRequests([bid], bidderRequest);
-      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
-    });
-
     it('should respect syncEnabled option', function() {
       config.setConfig({
         userSync: {
@@ -476,6 +466,8 @@ describe('riseAdapter', function () {
         height: 480,
         requestId: '21e12606d47ba7',
         adomain: ['abc.com'],
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         mediaType: VIDEO
       },
       {
@@ -485,6 +477,8 @@ describe('riseAdapter', function () {
         height: 250,
         requestId: '21e12606d47ba7',
         adomain: ['abc.com'],
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         mediaType: BANNER
       }]
     };
@@ -496,7 +490,7 @@ describe('riseAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: VIDEO,
@@ -511,10 +505,10 @@ describe('riseAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 640,
-      height: 480,
+      width: 300,
+      height: 250,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
@@ -527,8 +521,8 @@ describe('riseAdapter', function () {
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
-      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
+      expect(result[0]).to.deep.equal(expectedVideoResponse);
+      expect(result[1]).to.deep.equal(expectedBannerResponse);
     });
 
     it('video type should have vastXml key', function () {

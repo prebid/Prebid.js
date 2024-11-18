@@ -2,29 +2,27 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import {registerVideoSupport} from '../src/adServerManager.js';
-import {targeting} from '../src/targeting.js';
+import { getSignals } from '../libraries/gptUtils/gptUtils.js';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { getPPID } from '../src/adserver.js';
+import { auctionManager } from '../src/auctionManager.js';
+import { config } from '../src/config.js';
+import { EVENTS } from '../src/constants.js';
+import * as events from '../src/events.js';
+import { getHook } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { targeting } from '../src/targeting.js';
 import {
-  isNumber,
   buildUrl,
   deepAccess,
   formatQS,
   isEmpty,
+  isNumber,
   logError,
   parseSizesInput,
-  parseUrl,
-  uniques
+  parseUrl
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getHook, submodule} from '../src/hook.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {gdprDataHandler} from '../src/adapterManager.js';
-import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.js';
-import {getPPID} from '../src/adserver.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';
-
+import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -53,16 +51,6 @@ import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';
  *   These will override this module's defaults whenever they conflict.
  * @param {string} [url] video adserver url
  */
-
-/** Safe defaults which work on pretty much all video calls. */
-const defaultParamConstants = {
-  env: 'vp',
-  gdfp_req: 1,
-  output: 'vast',
-  unviewed_position_start: 1,
-};
-
-export const adpodUtils = {};
 
 export const dep = {
   ri: getRefererInfo
@@ -115,21 +103,16 @@ export function buildDfpVideoUrl(options) {
   let encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
 
   const queryParams = Object.assign({},
-    defaultParamConstants,
+    DEFAULT_DFP_PARAMS,
     urlComponents.search,
     derivedParams,
     options.params,
-    { cust_params: encodedCustomParams }
+    { cust_params: encodedCustomParams },
+    gdprParams()
   );
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
-  const gdprConsent = gdprDataHandler.getConsentData();
-  if (gdprConsent) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
-    if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
-    if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
-  }
 
   if (!queryParams.ppid) {
     const ppid = getPPID();
@@ -181,20 +164,7 @@ export function buildDfpVideoUrl(options) {
   const fpd = auctionManager.index.getBidRequest(options.bid || {})?.ortb2 ??
     auctionManager.index.getAuction(options.bid || {})?.getFPD()?.global;
 
-  function getSegments(sections, segtax) {
-    return sections
-      .flatMap(section => deepAccess(fpd, section) || [])
-      .filter(datum => datum.ext?.segtax === segtax)
-      .flatMap(datum => datum.segment?.map(seg => seg.id))
-      .filter(ob => ob)
-      .filter(uniques)
-  }
-
-  const signals = Object.entries({
-    IAB_AUDIENCE_1_1: getSegments(['user.data'], 4),
-    IAB_CONTENT_2_2: getSegments(CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
-  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
-    .filter(ob => ob);
+  const signals = getSignals(fpd);
 
   if (signals.length) {
     queryParams.ppsj = btoa(JSON.stringify({
@@ -202,11 +172,7 @@ export function buildDfpVideoUrl(options) {
     }))
   }
 
-  return buildUrl(Object.assign({
-    protocol: 'https',
-    host: 'securepubads.g.doubleclick.net',
-    pathname: '/gampad/ads'
-  }, urlComponents, { search: queryParams }));
+  return buildUrl(Object.assign({}, DFP_ENDPOINT, urlComponents, { search: queryParams }));
 }
 
 export function notifyTranslationModule(fn) {
@@ -216,99 +182,10 @@ export function notifyTranslationModule(fn) {
 if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
 
 /**
- * @typedef {Object} DfpAdpodOptions
- *
- * @param {string} code Ad Unit code
- * @param {Object} params Query params which should be set on the DFP request.
- * These will override this module's defaults whenever they conflict.
- * @param {function} callback Callback function to execute when master tag is ready
- */
-
-/**
- * Creates master tag url for long-form
- * @param {DfpAdpodOptions} options
- * @returns {string} A URL which calls DFP with custom adpod targeting key values to compete with rest of the demand in DFP
- */
-export function buildAdpodVideoUrl({code, params, callback} = {}) {
-  // TODO: the public API for this does not take in enough info to fill all DFP params (adUnit/bid),
-  // and is marked "alpha": https://docs.prebid.org/dev-docs/publisher-api-reference/adServers.dfp.buildAdpodVideoUrl.html
-  if (!params || !callback) {
-    logError(`A params object and a callback is required to use pbjs.adServers.dfp.buildAdpodVideoUrl`);
-    return;
-  }
-
-  const derivedParams = {
-    correlator: Date.now(),
-    sz: getSizeForAdUnit(code),
-    url: encodeURIComponent(location.href),
-  };
-
-  function getSizeForAdUnit(code) {
-    let adUnit = auctionManager.getAdUnits()
-      .filter((adUnit) => adUnit.code === code)
-    let sizes = deepAccess(adUnit[0], 'mediaTypes.video.playerSize');
-    return parseSizesInput(sizes).join('|');
-  }
-
-  adpodUtils.getTargeting({
-    'codes': [code],
-    'callback': createMasterTag
-  });
-
-  function createMasterTag(err, targeting) {
-    if (err) {
-      callback(err, null);
-      return;
-    }
-
-    let initialValue = {
-      [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
-      [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
-    };
-    let customParams = {};
-    if (targeting[code]) {
-      customParams = targeting[code].reduce((acc, curValue) => {
-        if (Object.keys(curValue)[0] === adpodUtils.TARGETING_KEY_PB_CAT_DUR) {
-          acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] = (typeof acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] !== 'undefined') ? acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] + ',' + curValue[adpodUtils.TARGETING_KEY_PB_CAT_DUR] : curValue[adpodUtils.TARGETING_KEY_PB_CAT_DUR];
-        } else if (Object.keys(curValue)[0] === adpodUtils.TARGETING_KEY_CACHE_ID) {
-          acc[adpodUtils.TARGETING_KEY_CACHE_ID] = curValue[adpodUtils.TARGETING_KEY_CACHE_ID]
-        }
-        return acc;
-      }, initialValue);
-    }
-
-    let encodedCustomParams = encodeURIComponent(formatQS(customParams));
-
-    const queryParams = Object.assign({},
-      defaultParamConstants,
-      derivedParams,
-      params,
-      { cust_params: encodedCustomParams }
-    );
-
-    const gdprConsent = gdprDataHandler.getConsentData();
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
-      if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
-      if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
-    }
-
-    const masterTag = buildUrl({
-      protocol: 'https',
-      host: 'securepubads.g.doubleclick.net',
-      pathname: '/gampad/ads',
-      search: queryParams
-    });
-
-    callback(null, masterTag);
-  }
-}
-
-/**
  * Builds a video url from a base dfp video url and a winning bid, appending
  * Prebid-specific key-values.
  * @param {Object} components base video adserver url parsed into components object
- * @param {AdapterBidResponse} bid winning bid object to append parameters from
+ * @param {Object} bid winning bid object to append parameters from
  * @param {Object} options Options which should be used to construct the URL (used for custom params).
  * @return {string} video url
  */
@@ -325,7 +202,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
 /**
  * Returns the encoded vast url if it exists on a bid object, only if prebid-cache
  * is disabled, and description_url is not already set on a given input
- * @param {AdapterBidResponse} bid object to check for vast url
+ * @param {Object} bid object to check for vast url
  * @param {Object} components the object to check that description_url is NOT set on
  * @param {string} prop the property of components that would contain description_url
  * @return {string | undefined} The encoded vast url if it exists, or undefined
@@ -336,7 +213,7 @@ function getDescriptionUrl(bid, components, prop) {
 
 /**
  * Returns the encoded `cust_params` from the bid.adserverTargeting and adds the `hb_uuid`, and `hb_cache_id`. Optionally the options.params.cust_params
- * @param {AdapterBidResponse} bid
+ * @param {Object} bid
  * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
  * @return {Object} Encoded key value pairs for cust_params
  */
@@ -375,8 +252,4 @@ function getCustParams(bid, options, urlCustParams) {
 
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
-  buildAdpodVideoUrl: buildAdpodVideoUrl,
-  getAdpodTargeting: (args) => adpodUtils.getTargeting(args)
 });
-
-submodule('adpod', adpodUtils);

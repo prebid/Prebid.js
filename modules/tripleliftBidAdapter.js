@@ -58,8 +58,8 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest && bidderRequest.fledgeEnabled) {
-      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
+    if (bidderRequest?.paapi?.enabled) {
+      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.paapi.enabled);
     }
 
     if (config.getConfig('coppa') === true) {
@@ -96,7 +96,7 @@ export const tripleliftAdapterSpec = {
       logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
         bids,
-        fledgeAuctionConfigs
+        paapi: fledgeAuctionConfigs
       };
     } else {
       return bids;
@@ -236,20 +236,7 @@ function _getORTBVideo(bidRequest) {
   } catch (err) {
     logWarn('Video size not defined', err);
   }
-  // honor existing publisher settings
-  if (video.context === 'instream') {
-    if (!video.placement) {
-      video.placement = 1;
-    }
-  }
-  if (video.context === 'outstream') {
-    if (!video.placement) {
-      video.placement = 3
-    } else if ([3, 4, 5].indexOf(video.placement) === -1) {
-      logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
-      video.placement = 3
-    }
-  }
+
   if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
     video.playbackmethod = Array.from(String(video.playbackmethod), Number);
   }

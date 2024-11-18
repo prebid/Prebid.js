@@ -143,7 +143,7 @@ describe('JustIdSystem', function () {
     var scriptTagCallback;
 
     beforeEach(() => {
-      loadExternalScriptStub.callsFake((url, moduleCode, callback) => {
+      loadExternalScriptStub.callsFake((url, moduleCode, moduleType, callback) => {
         scriptTagCallback = callback;
         return scriptTag;
       });

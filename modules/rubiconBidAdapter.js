@@ -22,6 +22,7 @@ import {
   _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -40,6 +41,8 @@ config.getConfig('rubicon', config => {
 });
 
 const GVLID = 52;
+
+let impIdMap = {};
 
 var sizeMap = {
   1: '468x60',
@@ -147,7 +150,13 @@ var sizeMap = {
   580: '505x656',
   622: '192x160',
   632: '1200x450',
-  634: '340x450'
+  634: '340x450',
+  680: '970x570',
+  682: '300x240',
+  684: '970x550',
+  686: '300x210',
+  688: '300x220',
+  690: '970x170'
 };
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -211,6 +220,9 @@ export const converter = ortbConverter({
 
     setBidFloors(bidRequest, imp);
 
+    // ensure unique imp IDs for twin adunits
+    imp.id = impIdMap[imp.id] ? imp.id + impIdMap[imp.id]++ : (impIdMap[imp.id] = 2, imp.id);
+
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -219,9 +231,9 @@ export const converter = ortbConverter({
     const {bidRequest} = context;
 
     let [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
-
-    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth;
-    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight;
+    // 0 by default to avoid undefined size
+    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth || 0;
+    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight || 0;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
@@ -301,6 +313,7 @@ export const spec = {
 
     if (filteredRequests && filteredRequests.length) {
       const data = converter.toORTB({bidRequests: filteredRequests, bidderRequest});
+      resetImpIdMap();
 
       filteredHttpRequest.push({
         method: 'POST',
@@ -704,6 +717,10 @@ export const spec = {
           bid.meta.advertiserDomains = Array.isArray(ad.adomain) ? ad.adomain : [ad.adomain];
         }
 
+        if (ad.emulated_format) {
+          bid.meta.mediaType = ad.emulated_format;
+        }
+
         if (ad.creative_type === VIDEO) {
           bid.width = associatedBidRequest.params.video.playerWidth;
           bid.height = associatedBidRequest.params.video.playerHeight;
@@ -736,7 +753,7 @@ export const spec = {
     });
 
     if (fledgeAuctionConfigs) {
-      return { bids, fledgeAuctionConfigs };
+      return { bids, paapi: fledgeAuctionConfigs };
     } else {
       return bids;
     }
@@ -744,26 +761,7 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      let params = {};
-
-      if (gdprConsent) {
-        if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params['gdpr'] = Number(gdprConsent.gdprApplies);
-        }
-        if (typeof gdprConsent.consentString === 'string') {
-          params['gdpr_consent'] = gdprConsent.consentString;
-        }
-      }
-
-      if (uspConsent) {
-        params['us_privacy'] = encodeURIComponent(uspConsent);
-      }
-
-      if (gppConsent?.gppString) {
-        params['gpp'] = gppConsent.gppString;
-        params['gpp_sid'] = gppConsent.applicableSections?.toString();
-      }
-
+      let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       hasSynced = true;
@@ -982,11 +980,25 @@ function applyFPD(bidRequest, mediaType, data) {
         'transparency', (transparency) => {
           if (Array.isArray(transparency) && transparency.length) {
             data['dsatransparency'] = transparency.reduce((param, transp) => {
+              // make sure domain is there, otherwise skip entry
+              const domain = transp.domain || '';
+              if (!domain) {
+                return param;
+              }
+
+              // make sure dsaParam array is there (try both 'dsaparams' and 'params', but prefer dsaparams)
+              const dsaParamArray = transp.dsaparams || transp.params;
+              if (!Array.isArray(dsaParamArray) || dsaParamArray.length === 0) {
+                return param;
+              }
+
+              // finally we will add this one, if param has been added already, add our seperator
               if (param) {
                 param += '~~'
               }
-              return param += `${transp.domain}~${transp.dsaparams.join('_')}`
-            }, '')
+
+              return param += `${domain}~${dsaParamArray.join('_')}`;
+            }, '');
           }
         }
       ])
@@ -1156,6 +1168,7 @@ function bidType(bid, log = false) {
 }
 
 export const resetRubiConf = () => rubiConf = {};
+export const resetImpIdMap = () => impIdMap = {};
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
@@ -1191,7 +1204,7 @@ export function determineRubiconVideoSizeId(bid) {
 }
 
 /**
- * @param {PrebidConfig} config
+ * @param {Object} config
  * @returns {{ranges: {ranges: Object[]}}}
  */
 export function getPriceGranularity(config) {
@@ -1240,7 +1253,6 @@ export function hasValidVideoParams(bid) {
 /**
  * Make sure the required params are present
  * @param {Object} schain
- * @param {boolean}
  */
 export function hasValidSupplyChainParams(schain) {
   let isValid = false;
