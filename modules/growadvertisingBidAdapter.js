@@ -1,6 +1,6 @@
 'use strict';
 
-import { getBidIdParameter, deepAccess, _each, triggerPixel } from '../src/utils.js';
+import {deepAccess, _each, triggerPixel, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

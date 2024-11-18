@@ -1,6 +1,13 @@
-import { getValue, logError, deepAccess, getBidIdParameter, parseSizesInput, isArray } from '../src/utils.js';
+import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
+import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
@@ -45,6 +52,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+    const topWindow = window.top;
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -54,7 +62,16 @@ export const spec = {
       networkBandwidth: getConnectionDownLink(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
+      device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
+      deviceHeight: screen.height,
+      devicePixelRatio: topWindow.devicePixelRatio,
+      screenOrientation: screen.orientation?.type,
+      historyLength: getHLen(),
+      viewportHeight: topWindow.visualViewport?.height,
+      viewportWidth: topWindow.visualViewport?.width,
+      hardwareConcurrency: getHC(),
+      deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -64,6 +81,18 @@ export const spec = {
 
     if (firstBidRequest.schain) {
       payload.schain = firstBidRequest.schain;
+    }
+
+    let gpp = bidderRequest.gppConsent;
+    if (bidderRequest && gpp) {
+      let isValidConsentString = typeof gpp.gppString === 'string';
+      let validateApplicableSections =
+        Array.isArray(gpp.applicableSections) &&
+        gpp.applicableSections.every((section) => typeof (section) === 'number')
+      payload.gpp = {
+        consentString: isValidConsentString ? gpp.gppString : '',
+        applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],
+      };
     }
 
     let gdpr = bidderRequest.gdprConsent;
@@ -89,6 +118,11 @@ export const spec = {
       payload.userAgentClientHints = userAgentClientHints;
     }
 
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      payload.dsa = dsa;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -103,11 +137,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidderRequest) {
-    const bidResponses = [];
     serverResponse = serverResponse.body;
 
-    if (serverResponse.responses) {
-      serverResponse.responses.forEach(function (bid) {
+    if (!serverResponse.responses) {
+      return [];
+    }
+
+    const autoplayEnabled = isAutoplayEnabled();
+    return serverResponse.responses
+      .filter((bid) =>
+        // ignore this bid if it requires autoplay but it is not enabled on this browser
+        !bid.needAutoplay || autoplayEnabled
+      ).map((bid) => {
         const bidResponse = {
           cpm: bid.cpm,
           width: bid.width,
@@ -126,10 +167,11 @@ export const spec = {
         if (bid.dealId) {
           bidResponse.dealId = bid.dealId
         }
-        bidResponses.push(bidResponse);
+        if (bid?.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
+        }
+        return bidResponse;
       });
-    }
-    return bidResponses;
   }
 };
 
@@ -174,9 +216,13 @@ function getReferrerInfo(bidderRequest) {
 
 function getPageTitle() {
   try {
-    return window.top.document.title || document.title;
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+
+    return window.top.document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
-    return document.title;
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+
+    return document.title || (ogTitle && ogTitle.content) || '';
   }
 }
 
@@ -185,9 +231,7 @@ function getPageDescription() {
 
   try {
     element = window.top.document.querySelector('meta[name="description"]') ||
-      window.top.document.querySelector('meta[property="og:description"]') ||
-      document.querySelector('meta[name="description"]') ||
-      document.querySelector('meta[property="og:description"]')
+      window.top.document.querySelector('meta[property="og:description"]')
   } catch (e) {
     element = document.querySelector('meta[name="description"]') ||
       document.querySelector('meta[property="og:description"]')

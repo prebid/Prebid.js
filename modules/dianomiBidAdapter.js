@@ -10,10 +10,12 @@ import {
   parseSizesInput,
   deepSetValue,
   formatQS,
+  setOnAny
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const { getConfig } = config;
 
@@ -301,19 +303,8 @@ export const spec = {
       .filter(Boolean);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
-    const params = {};
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params['gdpr'] = Number(gdprConsent.gdprApplies);
-      }
-      if (typeof gdprConsent.consentString === 'string') {
-        params['gdpr_consent'] = gdprConsent.consentString;
-      }
-    }
+    const params = getUserSyncParams(gdprConsent, uspConsent);
 
-    if (uspConsent) {
-      params['us_privacy'] = encodeURIComponent(uspConsent);
-    }
     if (syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       return {
@@ -353,15 +344,6 @@ function parseNative(bid) {
   });
 
   return result;
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

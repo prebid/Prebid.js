@@ -14,14 +14,15 @@ Prebid.js Adapter for C-Wire.
 
 Below, the list of C-WIRE params and where they can be set.
 
-| Param name  | URL parameter | AdUnit config |   Type   |   Required    |
-|-------------|:-------------:|:-------------:|:--------:|:-------------:|
-| pageId      |               |       x       |  number  |      YES      |
-| placementId |               |       x       |  number  |      YES      |
-| cwgroups    |       x       |               |  string  |      NO       |
-| cwcreative  |       x       |               |  string  |      NO       |
-| cwdebug     |       x       |               | boolean  |      NO       |
-| cwfeatures  |       x       |               |  string  |      NO       |
+| Param name  | URL parameter | AdUnit config |   Type   | Required |
+|-------------|:-------------:|:-------------:|:--------:|:--------:|
+| pageId      |               |       x       |  number  |    NO    |
+| domainId    |               |       x       |  number  |   YES    |
+| placementId |               |       x       |  number  |    NO    |
+| cwgroups    |       x       |               |  string  |    NO    |
+| cwcreative  |       x       |               |  string  |    NO    |
+| cwdebug     |       x       |               | boolean  |    NO    |
+| cwfeatures  |       x       |               |  string  |    NO    |
 
 
 ### adUnit configuration
@@ -38,11 +39,29 @@ var adUnits = [
         }
       },
       params: {
-        pageId: 1422,                 // required - number
-        placementId: 2211521,         // required - number
+        domainId: 1422,               // required - number
+        placementId: 2211521,         // optional - number
       }
     }]
   }
+];
+// old version for the compatibility
+var adUnits = [
+    {
+        code: 'target_div_id', // REQUIRED
+        bids: [{
+            bidder: 'cwire',
+            mediaTypes: {
+                banner: {
+                    sizes: [[400, 600]],
+                }
+            },
+            params: {
+                pageId: 1422,               // required - number
+                placementId: 2211521,       // required - number
+            }
+        }]
+    }
 ];
 ```
 

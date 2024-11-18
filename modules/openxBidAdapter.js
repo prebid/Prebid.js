@@ -17,8 +17,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
-  transformBidParams
+  getUserSyncs
 };
 
 registerBidder(spec);
@@ -49,7 +48,8 @@ const converter = ortbConverter({
     mergeDeep(req, {
       at: 1,
       ext: {
-        bc: `${bidderConfig}_${bidderVersion}`
+        bc: `${bidderConfig}_${bidderVersion}`,
+        pv: '$prebid.version$'
       }
     })
     const bid = context.bidRequests[0];
@@ -80,11 +80,6 @@ const converter = ortbConverter({
       bidResponse.meta.advertiserId = bid.ext.buyer_id;
       bidResponse.meta.brandId = bid.ext.brand_id;
     }
-    const {ortbResponse} = context;
-    if (ortbResponse.ext && ortbResponse.ext.paf) {
-      bidResponse.meta.paf = Object.assign({}, ortbResponse.ext.paf);
-      bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
-    }
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
@@ -105,17 +100,19 @@ const converter = ortbConverter({
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
         return {
           bidId,
-          config: Object.assign({
-            auctionSignals: {},
-          }, cfg)
+          config: mergeDeep(Object.assign({}, cfg), {
+            auctionSignals: {
+              ortb2Imp: context.impContext[bidId]?.imp,
+            },
+          }),
         }
       });
       return {
         bids: response.bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       }
     } else {
-      return response.bids
+      return response
     }
   },
   overrides: {
@@ -140,21 +137,11 @@ const converter = ortbConverter({
             bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
           }
           orig(imp, bidRequest, context);
-          if (imp.video && videoParams?.context === 'outstream') {
-            imp.video.placement = imp.video.placement || 4;
-          }
         }
       }
     }
   }
 });
-
-function transformBidParams(params, isOpenRtb) {
-  return utils.convertTypes({
-    'unit': 'string',
-    'customFloor': 'number'
-  }, params);
-}
 
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||

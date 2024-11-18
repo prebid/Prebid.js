@@ -66,6 +66,7 @@ const ORTB_VIDEO_PARAMS = {
   h: value => isInteger(value),
   startdelay: value => isInteger(value),
   placement: value => [1, 2, 3, 4, 5].indexOf(value) !== -1,
+  plcmt: value => [1, 2, 3, 4].indexOf(value) !== -1,
   linearity: value => [1, 2].indexOf(value) !== -1,
   skip: value => [0, 1].indexOf(value) !== -1,
   skipmin: value => isInteger(value),
@@ -119,7 +120,7 @@ function getOS() {
  *
  * @param {*} bid a Prebid.js bid (request) object
  * @param {string} mediaType the mediaType or the wildcard '*'
- * @param {string|array} size the size array or the wildcard '*'
+ * @param {string|Array} size the size array or the wildcard '*'
  * @returns {number|boolean}
  */
 function getFloor(bid, mediaType, size = '*') {

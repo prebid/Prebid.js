@@ -47,7 +47,7 @@ export const spec = {
       const GDPR = BIDDER_GDPR || bid.params.gdpr || null;
       const GDPRS = BIDDER_GDPRS || bid.params.gdprs || null;
       const DNT = bid.params.dnt || null;
-      const BID_FLOOR = bid.params.flrd > bid.params.flrmp ? bid.params.flrd : bid.params.flrmp;
+      const BID_FLOOR = 0;
       const VIDEO_BID = bid.video ? bid.video : {};
 
       const requestData = {
@@ -67,7 +67,7 @@ export const spec = {
         },
         test: 0,
         at: 2,
-        tmax: bid.params.timeout || config.getConfig('bidderTimeout') || 100,
+        tmax: bidderRequest.timeout,
         cur: ['USD'],
         regs: {
           ext: {
@@ -157,7 +157,6 @@ export const spec = {
             h: sizes[1],
             skip: VIDEO_BID.skip || 0,
             playbackmethod: VIDEO_BID.playbackmethod || [1],
-            placement: (bid.params.execution === 'outstream' || VIDEO_BID.context === 'outstream') ? 5 : 1,
             ext: {
               lkqdcustomparameters: {}
             },

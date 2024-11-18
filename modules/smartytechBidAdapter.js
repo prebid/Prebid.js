@@ -127,12 +127,17 @@ export const spec = {
       creativeId: response.creativeId,
       netRevenue: true,
       currency: response.currency,
-      mediaType: BANNER
-    }
+      mediaType: BANNER,
+      meta: {}
+    };
 
     if (response.mediaType === VIDEO) {
       bidObject.vastXml = response.ad;
       bidObject.mediaType = VIDEO;
+    }
+
+    if (response.meta) {
+      bidObject.meta = response.meta;
     }
 
     return bidObject;

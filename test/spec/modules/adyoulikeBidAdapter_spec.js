@@ -2,6 +2,7 @@ import { expect } from 'chai';
 
 import { spec } from 'modules/adyoulikeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'https://canonical.url/?t=%26';
@@ -618,19 +619,19 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.size;
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.sizes;
 
-      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placement': 0
       };
-      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -811,6 +812,12 @@ describe('Adyoulike Adapter', function () {
       }
     });
 
+    it('handles 204 responses', function () {
+      serverResponse.body = '';
+      let result = spec.interpretResponse(serverResponse, []);
+      expect(result).deep.equal([]);
+    });
+
     it('handles nobid responses', function () {
       let response = [{
         BidID: '123dfsdf',
@@ -886,5 +893,116 @@ describe('Adyoulike Adapter', function () {
     it('should expose gvlid', function() {
       expect(spec.gvlid).to.equal(259)
     })
+  });
+
+  describe('getUserSyncs', function () {
+    const syncurl_iframe = 'https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4';
+
+    const emptySync = [];
+
+    describe('with iframe enabled', function() {
+      const userSyncConfig = { iframeEnabled: true };
+
+      it('should not add parameters if not provided', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}`
+        }]);
+      });
+
+      it('should add GDPR parameters if provided', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
+        }]);
+
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: 'foo?'}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo%3F`
+        }]);
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: false, consentString: 'bar'}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=bar`
+        }]);
+      });
+
+      it('should add CCPA parameters if provided', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, undefined, 'foo?')).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&us_privacy=foo%3F`
+        }]);
+      });
+
+      describe('COPPA', function() {
+        let sandbox;
+
+        this.beforeEach(function() {
+          sandbox = sinon.sandbox.create();
+        });
+
+        this.afterEach(function() {
+          sandbox.restore();
+        });
+
+        it('should add coppa parameters if provided', function() {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+
+          expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&coppa=1`
+          }]);
+        });
+      });
+
+      describe('GPP', function() {
+        it('should not apply if not gppConsent.gppString', function() {
+          const gppConsent = { gppString: '', applicableSections: [123] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should not apply if not gppConsent.applicableSections', function() {
+          const gppConsent = { gppString: '', applicableSections: undefined };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should not apply if empty gppConsent.applicableSections', function() {
+          const gppConsent = { gppString: '', applicableSections: [] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should apply if all above are available', function() {
+          const gppConsent = { gppString: 'foo?', applicableSections: [123] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gpp=foo%3F&gpp_sid=123`
+          }]);
+        });
+
+        it('should support multiple sections', function() {
+          const gppConsent = { gppString: 'foo', applicableSections: [123, 456] };
+          const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gpp=foo&gpp_sid=123%2C456`
+          }]);
+        });
+      });
+    });
+
+    describe('with iframe disabled', function() {
+      const userSyncConfig = { iframeEnabled: false };
+
+      it('should return empty list of syncs', function() {
+        expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal(emptySync);
+        expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: 'foo'}, 'bar')).to.deep.equal(emptySync);
+      });
+    });
   });
 });

@@ -3,7 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 
@@ -64,6 +64,7 @@ export const spec = {
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const schain = setOnAny(validBidRequests, 'schain');
+    const dsa = commonFpd.regs?.ext?.dsa;
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -77,6 +78,7 @@ export const spec = {
       const bidfloor = floorInfo.floor;
       const bidfloorcur = floorInfo.currency;
       const { mid, inv, mname } = bid.params;
+      const impExtData = bid.ortb2Imp?.ext?.data;
 
       const imp = {
         id: id + 1,
@@ -84,6 +86,7 @@ export const spec = {
         bidfloor,
         bidfloorcur,
         ext: {
+          data: impExtData,
           bidder: {
             inv,
             mname
@@ -179,6 +182,10 @@ export const spec = {
       deepSetValue(request, 'source.ext.schain', schain);
     }
 
+    if (dsa) {
+      deepSetValue(request, 'regs.ext.dsa', dsa);
+    }
+
     return {
       method: 'POST',
       url: 'https://' + adxDomain + '/adx/openrtb',
@@ -201,6 +208,7 @@ export const spec = {
       const bidResponse = bidResponses[id];
       if (bidResponse) {
         const mediaType = deepAccess(bidResponse, 'ext.prebid.type');
+        const dsa = deepAccess(bidResponse, 'ext.dsa');
         const result = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
@@ -214,7 +222,8 @@ export const spec = {
           dealId: bidResponse.dealid,
           meta: {
             mediaType,
-            advertiserDomains: bidResponse.adomain
+            advertiserDomains: bidResponse.adomain,
+            dsa
           }
         };
 
@@ -223,7 +232,14 @@ export const spec = {
             ortb: bidResponse.native
           };
         } else {
-          result[ mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
+          if (mediaType === VIDEO) {
+            result.vastXml = bidResponse.adm;
+            if (bidResponse.nurl) {
+              result.vastUrl = bidResponse.nurl;
+            }
+          } else {
+            result.ad = bidResponse.adm;
+          }
         }
 
         if (!bid.renderer && mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
@@ -238,15 +254,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
-}
 
 function flatten(arr) {
   return [].concat(...arr);

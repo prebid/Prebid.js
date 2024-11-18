@@ -10,6 +10,12 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {coppaDataHandler, uspDataHandler} from '../src/adapterManager.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ */
+
 const MODULE_NAME = 'kpuid';
 const ID_SVC = 'https://id.knsso.com/id';
 // These values should NEVER change. If

@@ -134,4 +134,39 @@ describe('vrtcalBidAdapter', function () {
       ).to.be.true
     })
   })
+
+  describe('getUserSyncs', function() {
+    const syncurl_iframe = 'https://usync.vrtcal.com/i?ssp=1804&synctype=iframe';
+    const syncurl_redirect = 'https://usync.vrtcal.com/i?ssp=1804&synctype=redirect';
+
+    it('base iframe sync pper config', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=&gdpr=0&gdpr_consent=&gpp=&gpp_sid=&surl='
+      }]);
+    });
+
+    it('base redirect sync per config', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+        type: 'image', url: syncurl_redirect + '&us_privacy=&gdpr=0&gdpr_consent=&gpp=&gpp_sid=&surl='
+      }]);
+    });
+
+    it('pass with ccpa data', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, 'ccpa_consent_string', undefined)).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=ccpa_consent_string&gdpr=0&gdpr_consent=&gpp=&gpp_sid=&surl='
+      }]);
+    });
+
+    it('pass with gdpr data', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: 1, consentString: 'gdpr_consent_string'}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=&gdpr=1&gdpr_consent=gdpr_consent_string&gpp=&gpp_sid=&surl='
+      }]);
+    });
+
+    it('pass with gpp data', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined, {gppString: 'gpp_consent_string', applicableSections: [1, 5]})).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=&gdpr=0&gdpr_consent=&gpp=gpp_consent_string&gpp_sid=1,5&surl='
+      }]);
+    });
+  })
 })
