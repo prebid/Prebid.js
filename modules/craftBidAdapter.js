@@ -61,6 +61,15 @@ export const spec = {
       if (bidRequest.userId) {
         payload.userId = bidRequest.userId
       }
+      if (storage.hasLocalStorage()) {
+        const imUidLocalName = '__im_uid';
+        payload.userId = payload.userId || {};
+        payload.userId.imuid = payload.userId.imuid || storage.getDataFromLocalStorage(imUidLocalName);
+        const imRtdLocalName = '__im_sids';
+        const sids = storage.getDataFromLocalStorage(imRtdLocalName);
+        const parsedSids = sids ? sids.split(',') : [];
+        payload.userId.imsids = parsedSids;
+      }
     }
     const request = formatRequest(payload, bidderRequest);
     return request;
