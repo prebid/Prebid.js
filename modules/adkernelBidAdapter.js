@@ -99,7 +99,8 @@ export const spec = {
     {code: 'voisetech'},
     {code: 'global_sun'},
     {code: 'rxnetwork'},
-    {code: 'revbid'}
+    {code: 'revbid'},
+    {code: 'spinx', gvlid: 1308}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
