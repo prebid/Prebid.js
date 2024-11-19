@@ -140,6 +140,12 @@ const MEDIATYPE = [
   NATIVE
 ]
 
+const MEDIATYPE_TTL = {
+  'banner': 360,
+  'video': 1800,
+  'native': 1800
+};
+
 let publisherId = 0;
 let isInvalidNativeRequest = false;
 let biddersList = ['pubmatic'];
@@ -859,6 +865,11 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
+export function setTTL(bid, newBid) {
+  let ttl = MEDIATYPE_TTL[newBid.mediaType];
+  newBid.ttl = bid.exp || ttl;
+}
+
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
   if (bid.ext && bid.ext['bidtype'] != undefined) {
@@ -1384,6 +1395,7 @@ export const spec = {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
                     _checkMediaType(bid, newBid);
+                    setTTL(bid, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
