@@ -2828,6 +2828,36 @@ describe('the rubicon adapter', function () {
           expect(slotParams['tg_i.tax10']).is.equal('2,3');
           expect(slotParams['tg_v.tax404']).is.equal(undefined);
         });
+
+        it('should add p_site.mobile if mobile is a number in ortb2.site', function () {
+          // Set up a bidRequest with mobile property as a number
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.bids[0].ortb2 = {
+            site: {
+              mobile: 1 // Valid mobile value (number)
+            }
+          };
+
+          // Call the function
+          const slotParams = spec.createSlotParams(localBidderRequest.bids[0], localBidderRequest);
+          // Check that p_site.mobile was added to the slotParams with the correct value
+          expect(slotParams['p_site.mobile']).to.equal(1);
+        });
+        it('should not add p_site.mobile if mobile is not a number in ortb2.site', function () {
+          // Set up a bidRequest with mobile property as a string (invalid value)
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.bids[0].ortb2 = {
+            site: {
+              mobile: 'not-a-number' // Invalid mobile value (string)
+            }
+          };
+
+          // Call the function
+          const slotParams = spec.createSlotParams(localBidderRequest.bids[0], localBidderRequest);
+
+          // Check that p_site.mobile is not added to the slotParams
+          expect(slotParams['p_site.mobile']).to.be.undefined;
+        });
       });
 
       describe('classifiedAsVideo', function () {
