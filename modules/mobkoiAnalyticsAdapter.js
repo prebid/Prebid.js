@@ -1,7 +1,7 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
-import { logInfo, logWarn, logError, _each, pick, triggerPixel } from '../src/utils.js';
+import { logInfo, logWarn, logError, _each, pick, triggerPixel, debugTurnedOn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'mobkoi';
@@ -45,22 +45,437 @@ const DEBUG_EVENT_LEVELS = {
   error: 'error',
 };
 
-class DebugEvent {
-  constructor(eventType, level, payload) {
-    if (!eventType) {
-      throw new Error('Event type is required');
+class LocalContext {
+  /**
+   * A map of impression ID (ORTB terms) to BidContext object
+   */
+  bidContexts = {};
+
+  /**
+   * The Prebid auction object but only contains the key fields that we
+   * interested in.
+   */
+  auction = null;
+
+  /**
+   * Auction.bidderRequests object
+   */
+  bidderRequests = null;
+
+  /**
+   * Cache the debug events that are common to all bid contexts.
+   * When a new bid context is created, the events will be pushed to the new
+   * context.
+   */
+  commonBidContextEvents = [];
+
+  initialise(auction) {
+    this.auction = pick(auction, ['auctionId', 'auctionEnd']);
+    this.bidderRequests = auction.bidderRequests;
+  }
+
+  /**
+   * Retrieve the BidContext object by the bid object. If the bid context is not
+   * available, it will create a new one. The new bid context will returned.
+   * @param {*} bid can be a prebid bid response or ortb bid response
+   * @returns BidContext object
+   */
+  retrieveBidContext(bid) {
+    const bidType = determineObjType(bid);
+
+    if (![COMMON_OBJECT_TYPES.ORTB_BID, COMMON_OBJECT_TYPES.PREBID_BID].includes(bidType)) {
+      logWarn('Given object is not a bid object. Expect a Prebid Bid Object or ORTB Bid Object. Given object:', bid);
+      return null;
     }
-    if (!DEBUG_EVENT_LEVELS[level]) {
-      throw new Error(`Event level must be one of ${Object.keys(DEBUG_EVENT_LEVELS).join(', ')}. Given: "${level}"`);
+
+    const ortbId = getOrtbId(bid);
+    const bidContext = this.bidContexts[ortbId];
+
+    if (bidContext) {
+      return bidContext;
     }
-    if (payload !== null && typeof payload !== 'object') {
-      throw new Error('Event payload must be an object');
+
+    /**
+     * Create a new context object and return it.
+     */
+    let newBidContext = null;
+    if (bidType === COMMON_OBJECT_TYPES.ORTB_BID) {
+      newBidContext = new BidContext({
+        localContext: this,
+        ortbBidResponse: bid,
+        prebidBidResponse: null,
+      });
+    } else if (bidType === COMMON_OBJECT_TYPES.PREBID_BID) {
+      newBidContext = new BidContext({
+        localContext: this,
+        ortbBidResponse: bid.ortbBidResponse,
+        prebidBidResponse: bid,
+      });
+    } else {
+      throw new Error(`Unknown bid object type. Given object:\n${JSON.stringify(bid, null, 2)}`);
     }
-    this.eventType = eventType;
-    this.payload = payload;
-    this.timestamp = payload.timestamp || Date.now();
+
+    /**
+     * Push common events to the new bid context.
+     */
+    _each(
+      this.commonBidContextEvents,
+      event => newBidContext.pushEvent(event)
+    );
+
+    this.bidContexts[ortbId] = newBidContext;
+    return newBidContext;
+  }
+
+  /**
+   * Loop through all the bid contexts and trigger the loss beacon if it hasn't
+   * to notify the server that the bid has lost the auction.
+   */
+  triggerAllLossBidLossBeacon() {
+    _each(this.bidContexts, (bidContext) => {
+      const { ortbBidResponse, bidWin, lurlTriggered } = bidContext;
+      if (ortbBidResponse.lurl && !bidWin && !lurlTriggered) {
+        logInfo('TriggerLossBeacon. impid:', ortbBidResponse.impid);
+        sendGetRequest(ortbBidResponse.lurl);
+        // Don't wait for the response to continue to avoid race conditions
+        bidContext.lurlTriggered = true;
+        bidContext.pushEvent(
+          new DebugEvent(
+            CUSTOM_EVENTS.BID_LOSS,
+            DEBUG_EVENT_LEVELS.info,
+            {
+              impid: ortbBidResponse.impid,
+              ortbId: ortbBidResponse.id,
+              cpm: ortbBidResponse.cpm,
+              lurl: ortbBidResponse.lurl,
+            }
+          )
+        );
+      }
+    });
+  }
+
+  pushCommonEventToAllBidContexts(debugEvent) {
+    this.commonBidContextEvents.push(debugEvent);
+    _each(this.bidContexts, (bidContext) => {
+      bidContext.pushEvent(debugEvent);
+    });
+  }
+
+  flushAllBidContextDebugEvents() {
+    _each(this.bidContexts, (bidContext) => {
+      bidContext.flushDebugEvents();
+    });
+  }
+
+  async pushSystemError(debugEvent) {
+    return postAjax(`${initOptions.endpoint}/error`, debugEvent);
   }
 }
+
+let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
+  localContext: new LocalContext(),
+  track({
+    eventType,
+    args
+  }) {
+    switch (eventType) {
+      case AUCTION_INIT: {
+        logTrackEvent(eventType, args)
+        this.localContext.initialise(args);
+        this.localContext.pushCommonEventToAllBidContexts(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.info,
+            pick(args, [
+              'auctionId',
+              'adUnitCodes',
+              'adUnits',
+              'auctionStart',
+              'auctionStatus',
+              'timeout',
+              'timestamp',
+            ])
+          )
+        );
+        break;
+      }
+      case BID_RESPONSE: {
+        logTrackEvent(eventType, args)
+        const prebidBid = args;
+        const bidContext = this.localContext.retrieveBidContext(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.info,
+            pick(prebidBid, [
+              'requestId',
+              'creativeId',
+              'cpm',
+              'currency',
+              'bidderCode',
+              'adUnitCode',
+              'ttl',
+              'adId',
+              'width',
+              'height',
+              'requestTimestamp',
+              'responseTimestamp',
+              'seatBidId',
+              'statusMessage',
+              'timeToRespond'
+            ])
+          )
+        );
+        break;
+      }
+      case BID_WON: {
+        logTrackEvent(eventType, args)
+        const prebidBid = args;
+        if (isMobkoiBid(prebidBid)) {
+          this.localContext.retrieveBidContext(prebidBid).bidWin = true;
+        }
+        this.localContext.triggerAllLossBidLossBeacon();
+
+        const bidContext = this.localContext.retrieveBidContext(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.info,
+            {
+              ...pick(args, [
+                'adId',
+                'bidderCode',
+                'requestId',
+                'status',
+                'statusMessage',
+                'cpm',
+                'currency',
+                'creativeId',
+                'adUnitCode',
+                'addUnitId',
+                'adId',
+                'ttl',
+                'width',
+                'height',
+                'requestTimestamp',
+                'responseTimestamp',
+                'timeToRespond',
+              ]),
+              bidWin: bidContext.bidWin,
+            }
+          )
+        );
+        break;
+      }
+      case AUCTION_END: {
+        logTrackEvent(eventType, args)
+        const auction = args;
+        this.localContext.pushCommonEventToAllBidContexts(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.info,
+            pick(auction, [
+              'auctionId',
+              'auctionStatus',
+              'auctionStart',
+              'auctionEnd',
+              'auctionStatus',
+              'bidderCode',
+              'bidderRequestId',
+              'timestamp',
+            ])
+          )
+        );
+        break;
+      }
+      case AUCTION_TIMEOUT:
+        logTrackEvent(eventType, args)
+        this.localContext.pushCommonEventToAllBidContexts(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.error,
+            pick(args, [
+              'auctionId',
+              'auctionStatus',
+              'auctionStart',
+              'auctionEnd',
+              'auctionStatus',
+              'bidderCode',
+              'bidderRequestId',
+              'timestamp',
+            ])
+          )
+        );
+        break;
+      case NO_BID: {
+        logTrackEvent(eventType, args)
+        const prebidBid = args;
+        const bidContext = this.localContext.retrieveBidContext(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.warn,
+            pick(prebidBid, [
+              'auctionId',
+              'bidderCode',
+              'bidderRequestId',
+              'timeout',
+            ])
+          )
+        );
+        break;
+      }
+      case BID_REJECTED: {
+        logTrackEvent(eventType, args)
+        const prebidBid = args;
+        const bidContext = this.localContext.retrieveBidContext(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.warn,
+            pick(prebidBid, [
+              'rejectionReason',
+              'ortbId',
+              'requestId',
+              'auctionId',
+              'bidderCode',
+              'bidderRequestId',
+              'ortbBidResponse',
+            ])
+          )
+        );
+        break;
+      };
+      case BID_TIMEOUT:
+      case SEAT_NON_BID:
+      case BIDDER_ERROR: {
+        logTrackEvent(eventType, args)
+        try {
+          // Submit entire args object for debugging
+          const debugEvent = new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.error,
+            { args }
+          );
+
+          // If args is an auction object
+          if (args.auctionId) {
+            this.localContext.pushCommonEventToAllBidContexts(debugEvent);
+            break;
+          }
+
+          // Assuming args is a prebid bid object
+          const prebidBid = args;
+          const bidContext = this.localContext.retrieveBidContext(prebidBid);
+          bidContext.pushEvent(debugEvent);
+        } catch (error) {
+          this.localContext.pushSystemError(
+            new DebugEvent(
+              eventType,
+              DEBUG_EVENT_LEVELS.error,
+              {
+                args: args,
+                warn: 'Unexpected error occurred. Please investigate.',
+                error: JSON.stringify(error)
+              }
+            )
+          );
+        }
+        break;
+      }
+      case AD_RENDER_FAILED: {
+        logTrackEvent(eventType, args)
+        const prebidBid = args.bid;
+        const bidContext = this.localContext.retrieveBidContext(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.error,
+            pick(prebidBid, [
+              'ad',
+              'adId',
+              'adUnitCode',
+              'creativeId',
+              'width',
+              'height',
+            ])
+          )
+        );
+        break;
+      }
+      case AD_RENDER_SUCCEEDED: {
+        logTrackEvent(eventType, args);
+        const prebidBid = args.bid;
+        const bidContext = this.localContext.retrieveBidContext(prebidBid);
+        bidContext.pushEvent(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.info,
+            pick(prebidBid, [
+              'adId',
+              'adUnitCode',
+              'creativeId',
+              'width',
+              'height',
+            ])
+          )
+        );
+        break;
+      }
+      case BIDDER_DONE: {
+        logTrackEvent(eventType, args)
+        const auction = args;
+        this.localContext.pushCommonEventToAllBidContexts(
+          new DebugEvent(
+            eventType,
+            DEBUG_EVENT_LEVELS.info,
+            pick(auction, [
+              'auctionId',
+              'bidderCode',
+              'bidderRequestId',
+              'timeout',
+            ])
+          )
+        );
+        this.localContext.triggerAllLossBidLossBeacon();
+        this.localContext.flushAllBidContextDebugEvents();
+        break;
+      }
+      default:
+        // Do nothing
+        break;
+    }
+  }
+});
+
+// save the base class function
+mobkoiAnalytics.originEnableAnalytics = mobkoiAnalytics.enableAnalytics;
+
+// override enableAnalytics so we can get access to the config passed in from the page
+mobkoiAnalytics.enableAnalytics = function (config) {
+  initOptions = config.options;
+  if (!config.options.publisherId) {
+    logError('PublisherId option is not defined. Analytics won\'t work');
+    return;
+  }
+
+  if (!config.options.endpoint) {
+    logError('Endpoint option is not defined. Analytics won\'t work');
+    return;
+  }
+
+  logInfo('mobkoiAnalytics.enableAnalytics', initOptions);
+  mobkoiAnalytics.originEnableAnalytics(config); // call the base class function
+};
+
+adapterManager.registerAnalyticsAdapter({
+  adapter: mobkoiAnalytics,
+  code: BIDDER_CODE,
+  gvlid: GVL_ID
+});
+
+export default mobkoiAnalytics;
 
 class BidContext {
   /**
@@ -138,11 +553,20 @@ class BidContext {
    */
   localContext = null;
 
+  /**
+   * A object to store related data of a bid for easy access.
+   * i.e. bid request and bid response.
+   * @param {*} param0
+   */
   constructor({
     localContext,
     prebidBidResponse = null,
     ortbBidResponse = null
   }) {
+    if (!prebidBidResponse && !ortbBidResponse) {
+      throw new Error('Either Prebid bid response or ORTB bid response must be provided');
+    }
+
     this.localContext = localContext;
     this.prebidBidResponse = prebidBidResponse;
     this.ortbBidResponse = ortbBidResponse;
@@ -177,423 +601,25 @@ class BidContext {
   }
 }
 
-class LocalContext {
-  /**
-   * A map of impression ID (ORTB terms) to BidContext object
-   */
-  bidContexts = {};
-
-  /**
-   * The Prebid auction object but only contains the key fields that we
-   * interested in.
-   */
-  auction = null;
-
-  /**
-   * Auction.bidderRequests object
-   */
-  bidderRequests = null;
-
-  initialise(auction) {
-    this.auction = pick(auction, ['auctionId', 'auctionEnd']);
-    this.bidderRequests = auction.bidderRequests;
-  }
-
-  /**
-   * Append the Prebid bid response to the context object if the associated
-   * BidContext has not been created yet. The object is converted by the custom
-   * adapter from the ORTB response from our server.
-   * @param {*} prebidBidResponse
-   */
-  appendBid(prebidBidResponse) {
-    const bidContext = this.retrieveBidContext(prebidBidResponse);
-
-    if (!bidContext) {
-      const ortbId = getOrtbId(prebidBidResponse);
-      this.bidContexts[ortbId] = new BidContext({
-        localContext: this,
-        prebidBidResponse,
-        ortbBidResponse: prebidBidResponse.ortbBidResponse
-      });
-    }
-
-    return this.retrieveBidContext(prebidBidResponse);
-  }
-
-  /**
-   * Retrieve the BidContext object by the bid object.
-   * @param {*} bid can be a prebid bid response or ortb bid response
-   * @returns BidContext object
-   */
-  retrieveBidContext(bid) {
-    const ortbId = getOrtbId(bid);
-    return this.bidContexts[ortbId];
-  }
-
-  /**
-   * Loop through all the bid contexts and trigger the loss beacon if it hasn't
-   * to notify the server that the bid has lost the auction.
-   */
-  triggerAllLossBidLossBeacon() {
-    _each(this.bidContexts, (bidContext) => {
-      const { ortbBidResponse, bidWin, lurlTriggered } = bidContext;
-      if (ortbBidResponse.lurl && !bidWin && !lurlTriggered) {
-        logInfo('TriggerLossBeacon. impid:', ortbBidResponse.impid);
-        sendGetRequest(ortbBidResponse.lurl);
-        // Don't wait for the response to continue to avoid race conditions
-        bidContext.lurlTriggered = true;
-        bidContext.pushEvent(
-          new DebugEvent(
-            CUSTOM_EVENTS.BID_LOSS,
-            DEBUG_EVENT_LEVELS.info,
-            {
-              impid: ortbBidResponse.impid,
-              ortbId: ortbBidResponse.id,
-              cpm: ortbBidResponse.cpm,
-              lurl: ortbBidResponse.lurl,
-            }
-          )
-        );
-      }
-    });
-  }
-
-  pushEventToAllBidContexts(debugEvent) {
-    _each(this.bidContexts, (bidContext) => {
-      bidContext.pushEvent(debugEvent);
-    });
-  }
-
-  flushAllBidContextDebugEvents() {
-    _each(this.bidContexts, (bidContext) => {
-      bidContext.flushDebugEvents();
-    });
-  }
-
-  async pushSystemError(debugEvent) {
-    return postAjax(`${initOptions.endpoint}/error`, debugEvent);
-  }
-}
-
 /**
- * The primary ID we use for identifying bid requests and responses.
- * Get ORTB ID from Prebid Bid response or ORTB bid response object.
+ * A class defines the uniform structure of a debug event object.
  */
-function getOrtbId(bid) {
-  if (bid.id) {
-    // If it's an ORTB bid response
-    return bid.id;
-  } else if (bid.ortbId) {
-    // If it's a Prebid bid response
-    return bid.ortbId;
-  } else {
-    throw new Error('Not a valid bid object. Given object:\n', JSON.stringify(bid));
+class DebugEvent {
+  constructor(eventType, level, payload) {
+    if (!eventType) {
+      throw new Error('Event type is required');
+    }
+    if (!DEBUG_EVENT_LEVELS[level]) {
+      throw new Error(`Event level must be one of ${Object.keys(DEBUG_EVENT_LEVELS).join(', ')}. Given: "${level}"`);
+    }
+    if (payload !== null && typeof payload !== 'object') {
+      throw new Error('Event payload must be an object');
+    }
+    this.eventType = eventType;
+    this.payload = payload;
+    this.timestamp = payload.timestamp || Date.now();
   }
 }
-
-let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
-  localContext: new LocalContext(),
-  track({
-    eventType,
-    args
-  }) {
-    switch (eventType) {
-      case AUCTION_INIT: {
-        logInfo(`Event: ${eventType}`, args);
-        this.localContext.initialise(args);
-        this.localContext.pushEventToAllBidContexts(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.info,
-            pick(args, [
-              'auctionId',
-              'adUnitCodes',
-              'adUnits',
-              'auctionStart',
-              'auctionStatus',
-              'timeout',
-              'timestamp',
-            ])
-          )
-        );
-        break;
-      }
-      case BID_RESPONSE: {
-        logInfo(`Event: ${eventType}`, args);
-        const prebidBid = args;
-        const bidContext = this.localContext.appendBid(prebidBid);
-        bidContext.pushEvent(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.info,
-            pick(prebidBid, [
-              'requestId',
-              'creativeId',
-              'cpm',
-              'currency',
-              'bidderCode',
-              'adUnitCode',
-              'ttl',
-              'adId',
-              'width',
-              'height',
-              'requestTimestamp',
-              'responseTimestamp',
-              'seatBidId',
-              'statusMessage',
-              'timeToRespond'
-            ])
-          )
-        );
-        break;
-      }
-      case BID_WON: {
-        logInfo(`Event: ${eventType}`, args);
-        const prebidBid = args;
-        if (isMobkoiBid(prebidBid)) {
-          this.localContext.retrieveBidContext(prebidBid).bidWin = true;
-        }
-        this.localContext.triggerAllLossBidLossBeacon();
-
-        const bidContext = this.localContext.retrieveBidContext(prebidBid);
-        bidContext.pushEvent(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.info,
-            {
-              ...pick(args, [
-                'adId',
-                'bidderCode',
-                'requestId',
-                'status',
-                'statusMessage',
-                'cpm',
-                'currency',
-                'creativeId',
-                'adUnitCode',
-                'addUnitId',
-                'adId',
-                'ttl',
-                'width',
-                'height',
-                'requestTimestamp',
-                'responseTimestamp',
-                'timeToRespond',
-              ]),
-              bidWin: bidContext.bidWin,
-            }
-          )
-        );
-        break;
-      }
-      case AUCTION_END: {
-        logInfo(`Event: ${eventType}`, args);
-        const auction = args;
-        this.localContext.pushEventToAllBidContexts(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.info,
-            pick(auction, [
-              'auctionId',
-              'auctionStatus',
-              'auctionStart',
-              'auctionEnd',
-              'auctionStatus',
-              'bidderCode',
-              'bidderRequestId',
-              'timestamp',
-            ])
-          )
-        );
-        break;
-      }
-      case AUCTION_TIMEOUT:
-        logInfo(`Event: ${eventType}`, args);
-        this.localContext.pushEventToAllBidContexts(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.error,
-            pick(args, [
-              'auctionId',
-              'auctionStatus',
-              'auctionStart',
-              'auctionEnd',
-              'auctionStatus',
-              'bidderCode',
-              'bidderRequestId',
-              'timestamp',
-            ])
-          )
-        );
-        break;
-      case NO_BID: {
-        logInfo(`Event: ${eventType}`, args);
-        const prebidBid = args;
-        const bidContext = this.localContext.retrieveBidContext(prebidBid);
-        bidContext.pushEvent(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.warn,
-            pick(prebidBid, [
-              'auctionId',
-              'bidderCode',
-              'bidderRequestId',
-              'timeout',
-            ])
-          )
-        );
-        break;
-      }
-      case BID_REJECTED: {
-        logInfo(`Event: ${eventType}`, args);
-        const prebidBid = args;
-        const bidContext = this.localContext.appendBid(prebidBid);
-        bidContext.pushEvent(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.warn,
-            pick(prebidBid, [
-              'rejectionReason',
-              'ortbId',
-              'requestId',
-              'auctionId',
-              'bidderCode',
-              'bidderRequestId',
-              'ortbBidResponse',
-            ])
-          )
-        );
-        break;
-      };
-      case BID_TIMEOUT:
-      case SEAT_NON_BID:
-      case BIDDER_ERROR: {
-        logInfo(`Event: ${eventType}`, args);
-        try {
-          // Submit entire args object for debugging
-          const debugEvent = new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.error,
-            { args }
-          );
-
-          // If args is an auction object
-          if (args.auctionId) {
-            this.localContext.pushEventToAllBidContexts(debugEvent);
-            break;
-          }
-
-          // Assuming args is a prebid bid object
-          const prebidBid = args;
-          const bidContext = this.localContext.retrieveBidContext(prebidBid);
-          bidContext.pushEvent(debugEvent);
-        } catch (error) {
-          this.localContext.pushSystemError(
-            new DebugEvent(
-              eventType,
-              DEBUG_EVENT_LEVELS.error,
-              {
-                args: args,
-                warn: 'Unexpected error occurred. Please investigate.',
-                error: JSON.stringify(error)
-              }
-            )
-          );
-        }
-        break;
-      }
-      case AD_RENDER_FAILED: {
-        logInfo(`Event: ${eventType}`, args);
-        const prebidBid = args.bid;
-        const bidContext = this.localContext.retrieveBidContext(prebidBid);
-        bidContext.pushEvent(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.error,
-            pick(prebidBid, [
-              'ad',
-              'adId',
-              'adUnitCode',
-              'creativeId',
-              'width',
-              'height',
-            ])
-          )
-        );
-        break;
-      }
-      case AD_RENDER_SUCCEEDED: {
-        logInfo(`Event: ${eventType}`, args);
-        const prebidBid = args.bid;
-        const bidContext = this.localContext.retrieveBidContext(prebidBid);
-        bidContext.pushEvent(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.info,
-            pick(prebidBid, [
-              'adId',
-              'adUnitCode',
-              'creativeId',
-              'width',
-              'height',
-            ])
-          )
-        );
-        break;
-      }
-      case BIDDER_DONE: {
-        logInfo(`Event: ${eventType}`, args);
-        const auction = args;
-        this.localContext.pushEventToAllBidContexts(
-          new DebugEvent(
-            eventType,
-            DEBUG_EVENT_LEVELS.info,
-            pick(auction, [
-              'auctionId',
-              'bidderCode',
-              'bidderRequestId',
-              'timeout',
-            ])
-          )
-        );
-        this.localContext.triggerAllLossBidLossBeacon();
-        this.localContext.flushAllBidContextDebugEvents();
-        break;
-      }
-      default:
-        // Do nothing
-        break;
-    }
-  }
-});
-
-// save the base class function
-mobkoiAnalytics.originEnableAnalytics = mobkoiAnalytics.enableAnalytics;
-
-// override enableAnalytics so we can get access to the config passed in from the page
-mobkoiAnalytics.enableAnalytics = function (config) {
-  initOptions = config.options;
-  if (!config.options.publisherId) {
-    logError('PublisherId option is not defined. Analytics won\'t work');
-    return;
-  }
-
-  if (!config.options.endpoint) {
-    logError('Endpoint option is not defined. Analytics won\'t work');
-    return;
-  }
-
-  logInfo('mobkoiAnalytics.enableAnalytics', initOptions);
-  mobkoiAnalytics.originEnableAnalytics(config); // call the base class function
-};
-
-adapterManager.registerAnalyticsAdapter({
-  adapter: mobkoiAnalytics,
-  code: BIDDER_CODE,
-  gvlid: GVL_ID
-});
-
-export default mobkoiAnalytics;
 
 /**
  * Make a POST request to the given URL with the given data.
@@ -612,7 +638,10 @@ async function postAjax(url, data) {
         crossOrigin: true
       });
     } catch (error) {
-      reject(new Error(`Failed to make post request to endpoint "${url}". With data: ${JSON.stringify(data)}. Error: ${error}`, {cause: error}));
+      reject(new Error(
+        `Failed to make post request to endpoint "${url}". With data: ${JSON.stringify(data, null, 2)}.\nError: ${error}`,
+        { cause: error }
+      ));
     }
   });
 }
@@ -648,4 +677,63 @@ async function sendGetRequest(url) {
 
 function isMobkoiBid(prebidBid) {
   return prebidBid && prebidBid.bidderCode === BIDDER_CODE;
+}
+
+/**
+ * The primary ID we use for identifying bid requests and responses.
+ * Get ORTB ID from Prebid Bid response or ORTB bid response object.
+ */
+function getOrtbId(bid) {
+  if (bid.id) {
+    // If it's an ORTB bid response
+    return bid.id;
+  } else if (bid.ortbId) {
+    // If it's a Prebid bid response
+    return bid.ortbId;
+  } else {
+    throw new Error(`Not a valid bid object. Given object:\n${JSON.stringify(bid, null, 2)}`);
+  }
+}
+
+const COMMON_OBJECT_TYPES = {
+  AUCTION: 'prebid_auction',
+  BIDDER_REQUEST: 'bidder_request',
+  ORTB_BID: 'ortb_bid',
+  PREBID_BID: 'prebid_bid',
+  AD_DOC_AND_PREBID_BID: 'ad_doc_and_prebid_bid',
+};
+
+function logTrackEvent(eventType, args) {
+  if (!debugTurnedOn()) {
+    return;
+  }
+  const argsType = (() => {
+    try {
+      return determineObjType(args);
+    } catch (error) {
+      logError(`Error when logging track event: ${eventType}\n`, error);
+      return 'Unknown';
+    }
+  })();
+  logInfo(`Track event: ${eventType}. Args Object Type: ${argsType}`, args);
+}
+
+function determineObjType(trackArgs) {
+  if (typeof trackArgs !== 'object' || trackArgs === null) {
+    throw new Error('Expect an object. Given object is not an object or null');
+  }
+
+  if (trackArgs.hasOwnProperty('bidderRequests')) {
+    return COMMON_OBJECT_TYPES.AUCTION;
+  } else if (trackArgs.hasOwnProperty('adm') && trackArgs.hasOwnProperty('impid')) {
+    return COMMON_OBJECT_TYPES.ORTB_BID;
+  } else if (trackArgs.hasOwnProperty('requestId')) {
+    return COMMON_OBJECT_TYPES.PREBID_BID;
+  } else if (trackArgs.hasOwnProperty('doc') && trackArgs.hasOwnProperty('bid')) {
+    return COMMON_OBJECT_TYPES.AD_DOC_AND_PREBID_BID;
+  } else if (trackArgs.hasOwnProperty('bidderRequestId')) {
+    return COMMON_OBJECT_TYPES.BIDDER_REQUEST;
+  } else {
+    throw new Error(`Unable to determine track args type. Given object:${JSON.stringify(trackArgs, null, 2)}`);
+  }
 }
