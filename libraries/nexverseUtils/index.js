@@ -4,6 +4,10 @@ const LOG_WARN_PREFIX = '[Nexverse warn]: ';
 const LOG_ERROR_PREFIX = '[Nexverse error]: ';
 const LOG_INFO_PREFIX = '[Nexverse info]: ';
 
+/**
+ * Determines the os version (if possible).
+ * @returns {string} The device model.
+ */
 export function getOsVersion() {
   const ua = navigator.userAgent;
   let osVersion = 'unknown';
@@ -41,14 +45,14 @@ export function getDeviceModel() {
 
 /**
  * Prepapre the endpoint URL based on passed bid request.
- *
- * @param {bid} bid - Bid details.
+ * @param {string} bidderEndPoint - Bidder End Point.
+ * @param {object} bid - Bid details.
  * @returns {string} The Endpoint URL with required parameters.
  */
 export function buildEndpointUrl(bidderEndPoint, bid) {
-  const { uid, pubId, pubEpid, placementId, placementName } = bid.params;
+  const { uid, pubId, pubEpid } = bid.params;
   const isDebug = bid.isDebug;
-  let endPoint = `${bidderEndPoint}?uid=${encodeURIComponent(uid)}&pub_id=${encodeURIComponent(pubId)}&pub_epid=${encodeURIComponent(pubEpid)}&placement_id=${encodeURIComponent(placementId)}&placement_name=${encodeURIComponent(placementName)}`;
+  let endPoint = `${bidderEndPoint}?uid=${encodeURIComponent(uid)}&pub_id=${encodeURIComponent(pubId)}&pub_epid=${encodeURIComponent(pubEpid)}`;
   if (isDebug) {
     endPoint = `${endPoint}&test=1`;
   }
@@ -64,10 +68,10 @@ export function isSecureRequest() {
 }
 
 /**
-   * Validates the bid request to ensure all required parameters are present.
-   * @param {Object} bid - The bid request object.
-   * @returns {boolean} True if the bid request is valid, false otherwise.
-   */
+ * Validates the bid request to ensure all required parameters are present.
+ * @param {Object} bid - The bid request object.
+ * @returns {boolean} True if the bid request is valid, false otherwise.
+ */
 export function isBidRequestValid(bid) {
   const isValid = !!(bid.params && bid.params.uid && bid.params.pubId && bid.params.pubEpid);
 
@@ -97,8 +101,7 @@ export function parseNativeResponse(adm) {
 
 /**
  * Parses the native response from the server into Prebid's native format.
- *
- * @param {type} type - Type of log.
+ * @param {type} type - Type of log. default is info
  * @param {args} args - Log data.
  */
 export function printLog(type, ...args) {

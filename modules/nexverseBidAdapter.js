@@ -80,10 +80,10 @@ export const spec = {
       seatbid.bid.forEach((bid) => {
         const bidResponse = {
           requestId: bid.impid,
-          cpm: bid.price,
+          cpm: 0.2,
           currency: response.cur || DEFAULT_CURRENCY,
-          width: bid.w || 0,
-          height: bid.h || 0,
+          width: bid.width || 0,
+          height: bid.height || 0,
           creativeId: bid.crid || bid.id,
           ttl: BID_TTL,
           netRevenue: true,
@@ -108,8 +108,15 @@ export const spec = {
         if (bid.adomain && isArray(bid.adomain)) {
           bidResponse.meta.advertiserDomains = bid.adomain;
         } else {
-          bidResponse.meta.advertiserDomains = [];
+          bidResponse.meta.advertiserDomains = bid.bundle;
         }
+        if (bid.attr && isArray(bid.attr)) {
+          bidResponse.meta.attr = bid.attr;
+        } else {
+          bidResponse.meta.attr = [];
+        }
+        bidResponse.meta.primaryCatId = bid.cat;
+        bidResponse.meta.secondaryCatIds = bid.cat.slice(1);
 
         // Include 'nurl' if provided
         if (bid.nurl) {
@@ -119,9 +126,18 @@ export const spec = {
         bidResponses.push(bidResponse);
       });
     });
-
     return bidResponses;
   },
+
+  /**
+   * Registers user sync pixels.
+   *
+   * @param {Object} syncOptions - Configuration specifying which user syncs are allowed.
+   * @param {Array} serverResponses - Array of server responses.
+   * @param {Object} gdprConsent - GDPR consent information.
+   * @param {string} uspConsent - US Privacy consent string.
+   * @returns {Array} Array of user syncs to be executed.
+   */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
@@ -179,7 +195,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         w: bid.sizes[0][0],
         h: bid.sizes[0][1],
       },
-      bidfloor: bid.params.bidfloor || 0, // Handle bid floor if specified
       secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
     });
   }
@@ -196,7 +211,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         linearity: bid.mediaTypes.video.linearity || 1,
         playbackmethod: bid.mediaTypes.video.playbackmethod || [2],
       },
-      bidfloor: bid.params.bidfloor || 0,
       secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
     });
   }
@@ -207,7 +221,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       native: {
         request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string
       },
-      bidfloor: bid.params.bidfloor || 0,
       secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
     });
   }
@@ -267,12 +280,10 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       cat: bidderRequest.app.cat || [],
     };
   }
-
   // Add additional fields related to GDPR, US Privacy, CCPA
   if (bidderRequest.uspConsent) {
     openRtbRequest.regs.ext.us_privacy = bidderRequest.uspConsent;
   }
-
   return openRtbRequest;
 }
 
