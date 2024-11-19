@@ -698,8 +698,9 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
  * @param {function} fn required; The next function in the chain, used by hook.js
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  */
-export const baseStartAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
+export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
   addIdData(reqBidsConfigObj);
+  uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
   // calling fn allows prebid to continue processing
   fn.call(this, reqBidsConfigObj);
 });
@@ -1097,9 +1098,6 @@ function updateSubmodules() {
   updateEIDConfig(submoduleRegistry);
   const configs = getValidSubmoduleConfigs(configRegistry);
   if (!configs.length) {
-    if (!startAuction.getHooks({hook: baseStartAuctionHook}).length) {
-      startAuction.before(baseStartAuctionHook, 100);
-    }
     return;
   }
   // do this to avoid reprocessing submodules
@@ -1125,7 +1123,7 @@ function updateSubmodules() {
 
   if (submodules.length) {
     if (!addedUserIdHook) {
-      startAuction.getHooks({hook: baseStartAuctionHook}).remove();
+      startAuction.getHooks({hook: addUserIdsHook}).remove();
       startAuction.before(startAuctionHook, 100) // use higher priority than dataController / rtd
       adapterManager.callDataDeletionRequest.before(requestDataDeletion);
       coreGetPPID.after((next) => next(getPPID()));
@@ -1224,8 +1222,11 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
         updateSubmodules();
         updateIdPriority(userSync.idPriority, submoduleRegistry);
         initIdSystem({ready: true});
+        return;
       }
     }
+    // Add ortb2.user.ext.eids even if 0 submodules are added
+    startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd
   });
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.

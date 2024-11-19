@@ -8,6 +8,7 @@ import {
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   startAuctionHook,
+  addUserIdsHook,
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
@@ -2065,6 +2066,28 @@ describe('User ID', function () {
           coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
           done();
         }, {adUnits});
+      });
+
+      it('should add global user id', function (done) {
+        addUserIdsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userIdAsEids.0.source');
+              expect(bid).to.have.deep.nested.property('userIdAsEids.0.uids.0.id');
+              expect(bid.userIdAsEids[0].source).to.equal('example.com');
+              expect(bid.userIdAsEids[0].uids[0].id).to.equal('1234');
+            });
+          });
+          done();
+        }, {
+          adUnits,
+          ortb2Fragments: {
+            global: {
+              user: {ext: {eids: [{source: 'example.com', uids: [{id: '1234', atype: 3}]}]}}
+            },
+            bidder: {}
+          }
+        });
       });
 
       describe('activity controls', () => {
