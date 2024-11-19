@@ -4338,5 +4338,12 @@ describe('PubMatic adapter', function () {
       setTTL(bid, newBid);
       expect(newBid.ttl).to.equal(1800);
     });
+
+    it('should set ttl as 360 as default if all condition fails', function() {
+      const bid = {};
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
+    });
   });
 });
