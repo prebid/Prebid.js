@@ -544,7 +544,7 @@ export const spec = {
       data['o_ae'] = 1;
     }
     // If the bid request contains a 'mobile' property under 'ortb2.site', add it to 'data' as 'p_site.mobile'.
-    if (bidRequest?.ortb2?.site?.mobile) {
+    if (typeof bidRequest?.ortb2?.site?.mobile === 'number') {
       data['p_site.mobile'] = bidRequest.ortb2.site.mobile
     }
 
