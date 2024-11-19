@@ -68,7 +68,7 @@ class LocalContext {
    * The payload that is common to all bid contexts. The payload will be
    * submitted to the server along with the debug events.
    */
-  get commonPayload() {
+  get payload() {
     return this._commonPayload;
   }
   /**
@@ -162,7 +162,7 @@ class LocalContext {
       event => newBidContext.pushEvent(event)
     );
     // Merge common payload to the new bid context
-    newBidContext.mergePayload(this.commonPayload);
+    newBidContext.mergePayload(this.payload);
 
     this.bidContexts[ortbId] = newBidContext;
     return newBidContext;
@@ -210,7 +210,7 @@ class LocalContext {
     }
 
     _each(this.bidContexts, (bidContext) => {
-      bidContext.pushEvent(debugEvent, this.commonPayload);
+      bidContext.pushEvent(debugEvent, this.payload);
     });
   }
 
@@ -239,11 +239,10 @@ class LocalContext {
       flushPromises.push(postAjax(
         `${initOptions.endpoint}/debug`,
         {
-          auctionId: this.auctionId,
-          impid: null,
-          ortbId: null,
+          impid: getImpId(this.payload),
+          ortbId: safeGetOrtbId(this.payload),
           events: this.commonBidContextEvents,
-          payload: this.commonPayload,
+          payload: this.payload,
         }
       ));
     }
@@ -255,7 +254,6 @@ class LocalContext {
           return postAjax(
             `${initOptions.endpoint}/debug`,
             {
-              auctionId: bidContext.prebidBidRequest.auctionId,
               impid: bidContext.impid,
               ortbId: bidContext.ortbId,
               events: bidContext.events,
@@ -420,6 +418,7 @@ let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
           debugEvent,
           pick(prebidBidRequest, [
             'auctionId',
+            'bidId',
             'bidderCode',
             'bidderRequestId',
             'timeout',
@@ -593,6 +592,11 @@ class BidContext {
       return this.prebidBidResponse.requestId;
     } else if (this.prebidBidRequest) {
       return this.prebidBidRequest.bidId;
+    } else if (
+      this.payload &&
+      getImpId(this.payload)
+    ) {
+      return getImpId(this.payload);
     } else {
       throw new Error('ORTB bid response and Prebid bid response are not available');
     }
@@ -606,6 +610,8 @@ class BidContext {
       return getOrtbId(this.ortbBidResponse);
     } else if (this.prebidBidResponse) {
       return getOrtbId(this.prebidBidResponse);
+    } else if (this.payload) {
+      return getOrtbId(this.payload);
     } else {
       throw new Error('ORTB bid response and Prebid bid response are not available');
     }
@@ -737,7 +743,8 @@ class DebugEvent {
 
     if (
       debugTurnedOn() &&
-      (level === DEBUG_EVENT_LEVELS.error ||
+      (
+        level === DEBUG_EVENT_LEVELS.error ||
         level === DEBUG_EVENT_LEVELS.warn
       )) {
       logWarn(`New Debug Event - Type: ${eventType} Level: ${level}.`);
@@ -810,6 +817,15 @@ function isMobkoiBid(prebidBid) {
  */
 function getOrtbId(bid) {
   if (bid.id) {
+    if (debugTurnedOn()) {
+      const objType = determineObjType(bid);
+      if (!objType === COMMON_OBJECT_TYPES.ORTB_BID) {
+        logWarn(
+          `Given object is not an ORTB bid response. Given object type: ${objType}.`,
+          bid
+        );
+      }
+    }
     // If it's an ORTB bid response
     return bid.id;
   } else if (bid.ortbId) {
@@ -818,6 +834,30 @@ function getOrtbId(bid) {
   } else {
     throw new Error(`Not a valid bid object. Given object:\n${JSON.stringify(bid, null, 2)}`);
   }
+}
+
+/**
+ * Safely get ORTB ID from a bid object. If the ID is not available, it will
+ * return null.
+ * @param {*} obj
+ * @returns string | null
+ */
+function safeGetOrtbId(obj) {
+  try {
+    return getOrtbId(obj);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Impression ID is named differently in different objects. This function will
+ * return the impression ID from the given bid object.
+ * @param {*} bid ORTB bid response or Prebid bid response or Prebid bid request
+ * @returns string | null
+ */
+function getImpId(bid) {
+  return (bid && (bid.impid || bid.requestId || bid.bidId)) || null;
 }
 
 function logTrackEvent(eventType, args) {
