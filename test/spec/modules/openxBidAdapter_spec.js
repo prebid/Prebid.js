@@ -1489,7 +1489,8 @@ describe('OpenxRtbAdapter', function () {
               },
               ext: {
                 divid: 'adunit-code',
-              }
+              },
+              secure: 1
             }
           }
         });

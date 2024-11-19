@@ -94,7 +94,7 @@ export const converter = ortbConverter({
     delete imp.dt;
 
     imp.bidfloor = imp.bidfloor || getBidFloor(bidRequest);
-    imp.secure = 1;
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     imp.tagid = bidRequest.adUnitCode;
 
     if (siteId || pageId || formatId) {

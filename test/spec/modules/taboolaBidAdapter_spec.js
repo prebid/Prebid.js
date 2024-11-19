@@ -181,6 +181,7 @@ describe('Taboola Adapter', function () {
       const expectedData = {
         'imp': [{
           'id': res.data.imp[0].id,
+          'secure': 1,
           'banner': {
             format: [{
               w: displayBidRequestParams.sizes[0][0],

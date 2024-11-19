@@ -38,7 +38,8 @@ describe('Geniee adapter tests', () => {
               ext: {
                 test: 1
               },
-              id: 'bid-id'
+              id: 'bid-id',
+              secure: 1
             }
           ],
           test: 1

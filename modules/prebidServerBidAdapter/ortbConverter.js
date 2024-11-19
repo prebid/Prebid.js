@@ -37,7 +37,7 @@ const PBS_CONVERTER = ortbConverter({
       }
     });
     if (Object.values(SUPPORTED_MEDIA_TYPES).some(mtype => imp[mtype])) {
-      imp.secure = context.s2sBidRequest.s2sConfig.secure;
+      imp.secure = proxyBidRequest.ortb2Imp?.secure ?? 1;
       return imp;
     }
   },
