@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setTTL } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -4299,6 +4299,44 @@ describe('PubMatic adapter', function () {
       let response = spec.interpretResponse(newBidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].bidderCode).to.equal('groupm');
+    });
+  });
+
+  describe('setTTL', function() {
+    it('should set ttl field in newBid.ttl when bid.exp exists', function() {
+      const bid = {
+        exp: 200
+      };
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(200);
+    });
+
+    it('should set ttl as 360 mediatype banner', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'banner'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
+    });
+
+    it('should set ttl as 1800 mediatype video', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'video'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
+    });
+
+    it('should set ttl as 1800 mediatype native', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'native'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
     });
   });
 });
