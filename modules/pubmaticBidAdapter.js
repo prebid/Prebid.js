@@ -22,6 +22,7 @@ const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
+const DEFAULT_TTL = 360;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
@@ -866,7 +867,7 @@ function _handleEids(payload, validBidRequests) {
 }
 
 export function setTTL(bid, newBid) {
-  let ttl = MEDIATYPE_TTL[newBid.mediaType];
+  let ttl = MEDIATYPE_TTL[newBid?.mediaType] || DEFAULT_TTL;
   newBid.ttl = bid.exp || ttl;
 }
 
