@@ -424,7 +424,7 @@ function postBidEnrichmentMessage(msg) {
 export function windowPostMessageReceived(evt) {
   const data = evt.data;
   if (typeof data.target !== 'undefined' && data.target === 'QORTEX-PREBIDJS-RTD-MODULE') {
-    if (data.message === 'CX-BID-ENRICH-INITIALIZED') {
+    if (data.message === 'CX-BID-ENRICH-INITIALIZED' && shouldAllowBidEnrichment()) {
       requestContextData()
     }
   }
