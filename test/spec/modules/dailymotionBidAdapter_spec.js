@@ -211,6 +211,7 @@ describe('dailymotionBidAdapterTests', () => {
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
         siteOrAppCat: [],
+        siteOrAppContentCat: [],
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
         playerName: bidRequestData[0].params.video.playerName,
@@ -1551,6 +1552,7 @@ describe('dailymotionBidAdapterTests', () => {
       isCreatedForKids: null,
       context: {
         siteOrAppCat: [],
+        siteOrAppContentCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerName: 'dailymotion',
@@ -1605,6 +1607,7 @@ describe('dailymotionBidAdapterTests', () => {
           coppa: 0,
         },
         site: {
+          cat: ['IAB-1'],
           content: {
             id: '54321',
             language: 'FR',
@@ -1729,7 +1732,8 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidderRequestData.ortb2.site.content.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
-        siteOrAppCat: bidderRequestData.ortb2.site.content.cat,
+        siteOrAppCat: bidderRequestData.ortb2.site.cat,
+        siteOrAppContentCat: bidderRequestData.ortb2.site.content.cat,
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
         playerName: bidRequestData[0].params.video.playerName,
@@ -1821,6 +1825,7 @@ describe('dailymotionBidAdapterTests', () => {
       isCreatedForKids: null,
       context: {
         siteOrAppCat: [],
+        siteOrAppContentCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerName: '',

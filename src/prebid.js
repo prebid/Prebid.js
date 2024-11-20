@@ -39,7 +39,13 @@ import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
-import {insertLocatorFrame, markBidAsRendered, renderAdDirect, renderIfDeferred} from './adRendering.js';
+import {
+  insertLocatorFrame,
+  markBidAsRendered,
+  markWinningBid,
+  renderAdDirect,
+  renderIfDeferred
+} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 
@@ -100,6 +106,22 @@ function validateSizes(sizes, targLength) {
   return cleanSizes;
 }
 
+export function setBattrForAdUnit(adUnit, mediaType) {
+  const ortb2Imp = adUnit.ortb2Imp || {};
+  const mediaTypes = adUnit.mediaTypes || {};
+
+  if (ortb2Imp[mediaType]?.battr && mediaTypes[mediaType]?.battr && (ortb2Imp[mediaType]?.battr !== mediaTypes[mediaType]?.battr)) {
+    logWarn(`Ad unit ${adUnit.code} specifies conflicting ortb2Imp.${mediaType}.battr and mediaTypes.${mediaType}.battr, the latter will be ignored`, adUnit);
+  }
+
+  const battr = ortb2Imp[mediaType]?.battr || mediaTypes[mediaType]?.battr;
+
+  if (battr != null) {
+    deepSetValue(adUnit, `ortb2Imp.${mediaType}.battr`, battr);
+    deepSetValue(adUnit, `mediaTypes.${mediaType}.battr`, battr);
+  }
+}
+
 function validateBannerMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
@@ -112,6 +134,7 @@ function validateBannerMediaType(adUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
+  setBattrForAdUnit(validatedAdUnit, 'banner');
   return validatedAdUnit;
 }
 
@@ -135,6 +158,7 @@ function validateVideoMediaType(adUnit) {
     }
   }
   validateOrtbVideoFields(validatedAdUnit);
+  setBattrForAdUnit(validatedAdUnit, 'video');
   return validatedAdUnit;
 }
 
@@ -184,6 +208,7 @@ function validateNativeMediaType(adUnit) {
     logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.icon.sizes;
   }
+  setBattrForAdUnit(validatedAdUnit, 'native');
   return validatedAdUnit;
 }
 
@@ -886,7 +911,7 @@ if (FEATURES.VIDEO) {
    *
    * @alias module:pbjs.markWinningBidAsUsed
    */
-  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode}) {
+  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false}) {
     let bids;
     if (adUnitCode && adId == null) {
       bids = targeting.getWinningBids(adUnitCode);
@@ -896,7 +921,11 @@ if (FEATURES.VIDEO) {
       logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
     }
     if (bids.length > 0) {
-      auctionManager.addWinningBid(bids[0]);
+      if (analytics) {
+        markWinningBid(bids[0]);
+      } else {
+        auctionManager.addWinningBid(bids[0]);
+      }
       markBidAsRendered(bids[0])
     }
   }

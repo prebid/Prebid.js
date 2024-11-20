@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import {
   getImp,
+  getSourceObj,
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
@@ -108,6 +109,112 @@ describe('nextMillenniumBidAdapterTests', () => {
     }
   });
 
+  describe('function getSourceObj', () => {
+    const dataTests = [
+      {
+        title: 'schain is empty',
+        validBidRequests: [{}],
+        bidderRequest: {},
+        expected: undefined,
+      },
+
+      {
+        title: 'schain is validBidReequest',
+        bidderRequest: {},
+        validBidRequests: [{
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        }],
+
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.ext.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+    ];
+
+    for (let {title, validBidRequests, bidderRequest, expected} of dataTests) {
+      it(title, () => {
+        const source = getSourceObj(validBidRequests, bidderRequest);
+        expect(source).to.deep.equal(expected);
+      });
+    }
+  });
+
   describe('function setConsentStrings', () => {
     const dataTests = [
       {
@@ -118,16 +225,18 @@ describe('nextMillenniumBidAdapterTests', () => {
             uspConsent: '1---',
             gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
             gdprConsent: {consentString: 'kjfdniwjnifwenrif3', gdprApplies: true},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10]}},
+            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 1}},
           },
         },
 
         expected: {
-          user: {ext: {consent: 'kjfdniwjnifwenrif3'}},
+          user: {consent: 'kjfdniwjnifwenrif3'},
           regs: {
             gpp: 'DBACNYA~CPXxRfAPXxR',
             gpp_sid: [7],
-            ext: {gdpr: 1, us_privacy: '1---'},
+            gdpr: 1,
+            us_privacy: '1---',
+            coppa: 1
           },
         },
       },
@@ -138,16 +247,17 @@ describe('nextMillenniumBidAdapterTests', () => {
           postBody: {},
           bidderRequest: {
             gdprConsent: {consentString: 'ewtewbefbawyadexv', gdprApplies: false},
-            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10]}},
+            ortb2: {regs: {gpp: 'DSFHFHWEUYVDC', gpp_sid: [8, 9, 10], coppa: 0}},
           },
         },
 
         expected: {
-          user: {ext: {consent: 'ewtewbefbawyadexv'}},
+          user: {consent: 'ewtewbefbawyadexv'},
           regs: {
             gpp: 'DSFHFHWEUYVDC',
             gpp_sid: [8, 9, 10],
-            ext: {gdpr: 0},
+            gdpr: 0,
+            coppa: 0,
           },
         },
       },
@@ -160,7 +270,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          regs: {ext: {gdpr: 0}},
+          regs: {gdpr: 0},
         },
       },
 
@@ -414,16 +524,27 @@ describe('nextMillenniumBidAdapterTests', () => {
         title: 'site.pagecat, site.content.cat and site.content.language',
         data: {
           postBody: {},
-          ortb2: {site: {
-            pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
-          }},
+          ortb2: {
+            bcat: ['IAB1-3', 'IAB1-4'],
+            badv: ['domain1.com', 'domain2.com'],
+            wlang: ['en', 'fr', 'de'],
+            wlangb: ['en', 'fr', 'de'],
+            site: {
+              pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+              content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+            }
+          },
         },
 
-        expected: {site: {
-          pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
-          content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
-        }},
+        expected: {
+          bcat: ['IAB1-3', 'IAB1-4'],
+          badv: ['domain1.com', 'domain2.com'],
+          wlang: ['en', 'fr', 'de'],
+          site: {
+            pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+          }
+        },
       },
 
       {
@@ -431,6 +552,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           postBody: {},
           ortb2: {
+            wlangb: ['en', 'fr', 'de'],
             user: {keywords: 'key7,key8,key9'},
             site: {
               keywords: 'key1,key2,key3',
@@ -440,6 +562,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
+          wlangb: ['en', 'fr', 'de'],
           user: {keywords: 'key7,key8,key9'},
           site: {
             keywords: 'key1,key2,key3',
@@ -569,61 +692,6 @@ describe('nextMillenniumBidAdapterTests', () => {
     }
   });
 
-  const bidRequestData = [{
-    adUnitCode: 'test-div',
-    bidId: 'bid1234',
-    auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-    bidder: 'nextMillennium',
-    params: { placement_id: '-1' },
-    sizes: [[300, 250]],
-    uspConsent: '1---',
-    gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
-    gdprConsent: {
-      consentString: 'kjfdniwjnifwenrif3',
-      gdprApplies: true
-    },
-
-    ortb2: {
-      device: {
-        w: 1500,
-        h: 1000
-      },
-
-      site: {
-        domain: 'example.com',
-        page: 'http://example.com'
-      }
-    }
-  }];
-
-  const serverResponse = {
-    body: {
-      id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
-      seatbid: [
-        {
-          bid: [
-            {
-              id: '7457329903666272789',
-              price: 0.5,
-              adm: 'Hello! It\'s a test ad!',
-              adid: '96846035',
-              adomain: ['test.addomain.com'],
-              w: 300,
-              h: 250
-            }
-          ]
-        }
-      ],
-      cur: 'USD',
-      ext: {
-        sync: {
-          image: ['urlA?gdpr={{.GDPR}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}'],
-          iframe: ['urlB'],
-        }
-      }
-    }
-  };
-
   const bidRequestDataGI = getBidRequestDataGI();
   function getBidRequestDataGI(adUnitCodes = ['test-banner-gi', 'test-banner-gi', 'test-video-gi']) {
     return [
@@ -649,7 +717,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
       {
         adUnitCode: adUnitCodes[1],
-        bidId: 'bid1234',
+        bidId: 'bid1235',
         auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
         bidder: 'nextMillennium',
         params: { group_id: '1234' },
@@ -669,7 +737,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
       {
         adUnitCode: adUnitCodes[2],
-        bidId: 'bid1234',
+        bidId: 'bid1236',
         auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
         bidder: 'nextMillennium',
         params: { group_id: '1234' },
@@ -688,35 +756,33 @@ describe('nextMillenniumBidAdapterTests', () => {
     ];
   }
 
-  it('validate_generated_params', function() {
-    const request = spec.buildRequests(bidRequestData, {bidderRequestId: 'mock-uuid'});
-    expect(JSON.parse(request[0].data).id).to.exist;
-  });
-
-  it('check parameters group_id or placement_id', function() {
+  describe('check parameters group_id or placement_id', function() {
+    let numberTest = 0
     for (let test of bidRequestDataGI) {
-      const request = spec.buildRequests([test]);
-      const requestData = JSON.parse(request[0].data);
-      const storeRequestId = (requestData.imp[0].ext.prebid.storedrequest.id || '');
-      expect(storeRequestId.length).to.be.not.equal(0);
+      it(`test - ${++numberTest}`, () => {
+        const request = spec.buildRequests([test]);
+        const requestData = JSON.parse(request[0].data);
+        const storeRequestId = (requestData.imp[0].ext.prebid.storedrequest.id || '');
+        expect(storeRequestId.length).to.be.not.equal(0);
 
-      const srId = storeRequestId.split(';');
-      const isGroupId = (/^g[1-9]\d*/).test(srId[0]);
-      if (isGroupId) {
-        expect(srId.length).to.be.equal(3);
-        expect((/^g[1-9]\d*/).test(srId[0])).to.be.true;
-        const sizes = srId[1].split('|');
-        for (let size of sizes) {
-          if (!(/^[1-9]\d*[xX,][1-9]\d*$/).test(size)) {
-            expect(storeRequestId).to.be.equal('');
+        const srId = storeRequestId.split(';');
+        const isGroupId = (/^g[1-9]\d*/).test(srId[0]);
+        if (isGroupId) {
+          expect(srId.length).to.be.equal(3);
+          expect((/^g[1-9]\d*/).test(srId[0])).to.be.true;
+          const sizes = srId[1].split('|');
+          for (let size of sizes) {
+            if (!(/^[1-9]\d*[xX,][1-9]\d*$/).test(size)) {
+              expect(storeRequestId).to.be.equal('');
+            }
+
+            expect((/^[1-9]\d*[xX,][1-9]\d*$/).test(size)).to.be.true;
           }
-
-          expect((/^[1-9]\d*[xX,][1-9]\d*$/).test(size)).to.be.true;
-        }
-      } else {
-        expect(srId.length).to.be.equal(1);
-        expect((/^[1-9]\d*/).test(srId[0])).to.be.true;
-      };
+        } else {
+          expect(srId.length).to.be.equal(1);
+          expect((/^[1-9]\d*/).test(srId[0])).to.be.true;
+        };
+      });
     };
   });
 
@@ -750,112 +816,6 @@ describe('nextMillenniumBidAdapterTests', () => {
         })
       };
     };
-  });
-
-  it('Check if domain was added', function() {
-    const request = spec.buildRequests(bidRequestData);
-    expect(JSON.parse(request[0].data).site.domain).to.exist;
-  });
-
-  it('Check if imp object was added', function() {
-    const request = spec.buildRequests(bidRequestData)
-    expect(JSON.parse(request[0].data).imp).to.be.an('array')
-  });
-
-  it('validate_response_params', function() {
-    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
-    expect(bids).to.have.lengthOf(1);
-
-    let bid = bids[0];
-
-    expect(bid.creativeId).to.equal('96846035');
-    expect(bid.ad).to.equal('Hello! It\'s a test ad!');
-    expect(bid.cpm).to.equal(0.5);
-    expect(bid.width).to.equal(300);
-    expect(bid.height).to.equal(250);
-    expect(bid.currency).to.equal('USD');
-  });
-
-  it('validate_videowrapper_response_params', function() {
-    const serverResponse = {
-      body: {
-        id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: '7457329903666272789',
-                price: 0.5,
-                adm: 'https://some_vast_host.com/vast.xml',
-                adid: '96846035',
-                adomain: ['test.addomain.com'],
-                w: 300,
-                h: 250,
-                ext: {
-                  prebid: {
-                    type: 'video'
-                  }
-                }
-              }
-            ]
-          }
-        ],
-        cur: 'USD'
-      }
-    };
-
-    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
-    expect(bids).to.have.lengthOf(1);
-
-    let bid = bids[0];
-
-    expect(bid.creativeId).to.equal('96846035');
-    expect(bid.vastUrl).to.equal('https://some_vast_host.com/vast.xml');
-    expect(bid.cpm).to.equal(0.5);
-    expect(bid.width).to.equal(300);
-    expect(bid.height).to.equal(250);
-    expect(bid.currency).to.equal('USD');
-  });
-
-  it('validate_videoxml_response_params', function() {
-    const serverResponse = {
-      body: {
-        id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: '7457329903666272789',
-                price: 0.5,
-                adm: '<vast><ad></ad></vast>',
-                adid: '96846035',
-                adomain: ['test.addomain.com'],
-                w: 300,
-                h: 250,
-                ext: {
-                  prebid: {
-                    type: 'video'
-                  }
-                }
-              }
-            ]
-          }
-        ],
-        cur: 'USD'
-      }
-    };
-
-    let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
-    expect(bids).to.have.lengthOf(1);
-
-    let bid = bids[0];
-
-    expect(bid.creativeId).to.equal('96846035');
-    expect(bid.vastXml).to.equal('<vast><ad></ad></vast>');
-    expect(bid.cpm).to.equal(0.5);
-    expect(bid.width).to.equal(300);
-    expect(bid.height).to.equal(250);
-    expect(bid.currency).to.equal('USD');
   });
 
   describe('function spec._getUrlPixelMetric', function() {
@@ -1028,6 +988,218 @@ describe('nextMillenniumBidAdapterTests', () => {
       it(title, () => {
         const url = spec._getUrlPixelMetric(eventName, bids);
         expect(url).to.equal(expected);
+      });
+    };
+  });
+
+  describe('check function buildRequests', () => {
+    const tests = [
+      {
+        title: 'test - 1',
+        bidderRequest: {bidderRequestId: 'mock-uuid', timeout: 1200},
+        bidRequests: [
+          {
+            adUnitCode: 'test-div',
+            bidId: 'bid1234',
+            auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+            bidder: 'nextMillennium',
+            params: { placement_id: '-1' },
+            sizes: [[300, 250]],
+            uspConsent: '1---',
+            gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
+            gdprConsent: {
+              consentString: 'kjfdniwjnifwenrif3',
+              gdprApplies: true
+            },
+
+            ortb2: {
+              device: {
+                w: 1500,
+                h: 1000
+              },
+
+              site: {
+                domain: 'example.com',
+                page: 'http://example.com'
+              }
+            }
+          },
+
+          {
+            adUnitCode: 'test-div-2',
+            bidId: 'bid1235',
+            auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+            bidder: 'nextMillennium',
+            params: { placement_id: '333' },
+            sizes: [[300, 250]],
+            uspConsent: '1---',
+            gppConsent: {gppString: 'DBACNYA~CPXxRfAPXxR', applicableSections: [7]},
+            gdprConsent: {
+              consentString: 'kjfdniwjnifwenrif3',
+              gdprApplies: true
+            },
+
+            ortb2: {
+              device: {
+                w: 1500,
+                h: 1000
+              },
+
+              site: {
+                domain: 'example.com',
+                page: 'http://example.com'
+              }
+            },
+          },
+        ],
+
+        expected: {
+          id: 'mock-uuid',
+          bidIds: {'test-div': 'bid1234', 'test-div-2': 'bid1235'},
+          impSize: 2,
+          requestSize: 1,
+          domain: 'example.com',
+          tmax: 1200,
+        },
+      },
+    ];
+
+    for (let {title, bidRequests, bidderRequest, expected} of tests) {
+      it(title, () => {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.length).to.equal(expected.requestSize);
+        expect(request[0].bidIds).to.deep.equal(expected.bidIds);
+
+        const requestData = JSON.parse(request[0].data);
+        expect(requestData.id).to.equal(expected.id);
+        expect(requestData.tmax).to.equal(expected.tmax);
+        expect(requestData?.imp?.length).to.equal(expected.impSize);
+      });
+    };
+  });
+
+  describe('check function interpretResponse', () => {
+    const tests = [
+      {
+        title: 'test - 1',
+        serverResponse: {
+          body: {
+            id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: '7457329903666272789-0',
+                    impid: 'ad-unit-0',
+                    price: 0.5,
+                    adm: 'Hello! It\'s a test ad!',
+                    adid: '96846035-0',
+                    adomain: ['test.addomain.com'],
+                    w: 300,
+                    h: 250,
+                  },
+
+                  {
+                    id: '7457329903666272789-1',
+                    impid: 'ad-unit-1',
+                    price: 0.7,
+                    adm: 'https://some_vast_host.com/vast.xml',
+                    adid: '96846035-1',
+                    adomain: ['test.addomain.com'],
+                    w: 400,
+                    h: 300,
+                    ext: {prebid: {type: 'video'}},
+                  },
+
+                  {
+                    id: '7457329903666272789-2',
+                    impid: 'ad-unit-3',
+                    price: 1.0,
+                    adm: '<vast><ad></ad></vast>',
+                    adid: '96846035-3',
+                    adomain: ['test.addomain.com'],
+                    w: 640,
+                    h: 480,
+                    ext: {prebid: {type: 'video'}},
+                  },
+                ],
+              },
+            ],
+            cur: 'USD',
+          },
+        },
+
+        bidRequest: {
+          bidIds: {
+            'ad-unit-0': 'bid-id-0',
+            'ad-unit-1': 'bid-id-1',
+            'ad-unit-2': 'bid-id-2',
+            'ad-unit-3': 'bid-id-3',
+          },
+        },
+
+        expected: [
+          {
+            title: 'banner',
+            requestId: 'bid-id-0',
+            creativeId: '96846035-0',
+            ad: 'Hello! It\'s a test ad!',
+            vastUrl: undefined,
+            vastXml: undefined,
+            cpm: 0.5,
+            width: 300,
+            height: 250,
+            currency: 'USD',
+          },
+
+          {
+            title: 'video - vastUrl',
+            requestId: 'bid-id-1',
+            creativeId: '96846035-1',
+            ad: undefined,
+            vastUrl: 'https://some_vast_host.com/vast.xml',
+            vastXml: undefined,
+            cpm: 0.7,
+            width: 400,
+            height: 300,
+            currency: 'USD',
+          },
+
+          {
+            title: 'video - vastXml',
+            requestId: 'bid-id-3',
+            creativeId: '96846035-3',
+            ad: undefined,
+            vastUrl: undefined,
+            vastXml: '<vast><ad></ad></vast>',
+            cpm: 1.0,
+            width: 640,
+            height: 480,
+            currency: 'USD',
+          },
+        ],
+      },
+    ];
+
+    for (let {title, serverResponse, bidRequest, expected} of tests) {
+      describe(title, () => {
+        const bids = spec.interpretResponse(serverResponse, bidRequest);
+        for (let i = 0; i < bids.length; i++) {
+          it(expected[i].title, () => {
+            expect(bids).to.have.lengthOf(expected.length);
+
+            const bid = bids[i]
+            expect(bid.creativeId).to.equal(expected[i].creativeId);
+            expect(bid.requestId).to.equal(expected[i].requestId);
+            expect(bid.ad).to.equal(expected[i].ad);
+            expect(bid.vastUrl).to.equal(expected[i].vastUrl);
+            expect(bid.vastXml).to.equal(expected[i].vastXml);
+            expect(bid.cpm).to.equal(expected[i].cpm);
+            expect(bid.width).to.equal(expected[i].width);
+            expect(bid.height).to.equal(expected[i].height);
+            expect(bid.currency).to.equal(expected[i].currency);
+          });
+        };
       });
     };
   });
