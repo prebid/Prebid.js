@@ -27,11 +27,8 @@ export function getDeviceModel() {
   } else if (/Windows/i.test(ua)) {
     return 'Windows PC';
   }
-  
   return '';
 }
-
-
 /**
  * Prepapre the endpoint URL based on passed bid request.
  * @param {string} bidderEndPoint - Bidder End Point.
