@@ -5,9 +5,10 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray } from '../src/utils.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
-import { getOsVersion, getDeviceModel, buildEndpointUrl, isSecureRequest, isBidRequestValid, parseNativeResponse, printLog, getUserSyncs, getUid } from '../libraries/nexverseUtils/index.js';
+import { getOsVersion, getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid } from '../libraries/nexverseUtils/index.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'nexverse';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai/';
@@ -88,7 +89,6 @@ export const spec = {
           netRevenue: true,
           meta: {},
         };
-
         // Determine media type and assign the ad content
         if (bid.ext && bid.ext.mediaType) {
           bidResponse.mediaType = bid.ext.mediaType;
@@ -154,10 +154,9 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         w: bid.sizes[0][0],
         h: bid.sizes[0][1],
       },
-      secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
+      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
     });
   }
-
   if (bid.mediaTypes.video) {
     imp.push({
       id: bid.bidId,
@@ -170,17 +169,16 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         linearity: bid.mediaTypes.video.linearity || 1,
         playbackmethod: bid.mediaTypes.video.playbackmethod || [2],
       },
-      secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
+      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
     });
   }
-
   if (bid.mediaTypes.native) {
     imp.push({
       id: bid.bidId,
       native: {
         request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string
       },
-      secure: isSecureRequest(), // Indicates whether the request is secure (HTTPS)
+      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
     });
   }
 

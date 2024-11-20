@@ -4,31 +4,33 @@ const LOG_WARN_PREFIX = '[Nexverse warn]: ';
 const LOG_ERROR_PREFIX = '[Nexverse error]: ';
 const LOG_INFO_PREFIX = '[Nexverse info]: ';
 const NEXVERSE_USER_COOKIE_KEY = 'user_nexverse';
-/**
- * Determines the os version (if possible).
- * @returns {string} The device model.
- */
-export function getOsVersion() {
-  const ua = navigator.userAgent;
-  let osVersion = 'unknown';
 
-  if (/Android/i.test(ua)) {
-    const match = ua.match(/Android\s([0-9\.]+)/);
-    if (match) {
-      osVersion = match[1];
-    }
-  } else if (/iPhone|iPad|iPod/i.test(ua)) {
-    const match = ua.match(/OS\s([0-9_]+)/);
-    if (match) {
-      osVersion = match[1].replace(/_/g, '.');
-    }
-  }
-  return osVersion;
+
+export function getOsVersion() {
+  let clientStrings = [
+    { s: 'Android', r: /Android/ },
+    { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
+    { s: 'Mac OS X', r: /Mac OS X [0-9_]+/ }, // Adjusted regex to match underscores in version
+    { s: 'Mac OS', r: /(MacPPC|MacIntel|Mac_PowerPC|Macintosh)/ },
+    { s: 'Linux', r: /(Linux|X11)/ },
+    { s: 'Windows 10', r: /(Windows 10.0|Windows NT 10.0)/ },
+    { s: 'Windows 8.1', r: /(Windows 8.1|Windows NT 6.3)/ },
+    { s: 'Windows 8', r: /(Windows 8|Windows NT 6.2)/ },
+    { s: 'Windows 7', r: /(Windows 7|Windows NT 6.1)/ },
+    { s: 'Windows Vista', r: /Windows NT 6.0/ },
+    { s: 'Windows Server 2003', r: /Windows NT 5.2/ },
+    { s: 'Windows XP', r: /(Windows NT 5.1|Windows XP)/ },
+    { s: 'UNIX', r: /UNIX/ },
+    { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
+  ];
+
+  let cs = clientStrings.find(cs => cs.r.test(navigator.userAgent));
+  return cs ? cs.s : 'unknown';
 }
 
 /**
  * Determines the device model (if possible).
- * @returns {string} The device model.
+ * @returns {string} The device model or a fallback message if not identifiable.
  */
 export function getDeviceModel() {
   const ua = navigator.userAgent;
@@ -38,10 +40,20 @@ export function getDeviceModel() {
     return 'iPad';
   } else if (/Android/i.test(ua)) {
     const match = ua.match(/Android.*;\s([a-zA-Z0-9\s]+)\sBuild/);
-    return match ? match[1].trim() : '';
+    return match ? match[1].trim() : 'Unknown Android Device';
+  } else if (/Windows Phone/i.test(ua)) {
+    return 'Windows Phone';
+  } else if (/Macintosh/i.test(ua)) {
+    return 'Mac';
+  } else if (/Linux/i.test(ua)) {
+    return 'Linux';
+  } else if (/Windows/i.test(ua)) {
+    return 'Windows PC';
   }
+  
   return '';
 }
+
 
 /**
  * Prepapre the endpoint URL based on passed bid request.
@@ -58,16 +70,6 @@ export function buildEndpointUrl(bidderEndPoint, bid) {
   }
   return endPoint;
 }
-
-/**
- * Checks if the request is made over a secure connection (HTTPS).
- * @returns {boolean} True if the connection is secure (HTTPS), false otherwise.
- */
-export function isSecureRequest() {
-  const secure = window.location.protocol === 'https:' ? 1 : 0;
-  return secure;
-}
-
 /**
  * Validates the bid request to ensure all required parameters are present.
  * @param {Object} bid - The bid request object.
@@ -134,48 +136,6 @@ export function printLog(type, ...args) {
   // Call the appropriate log function (defaulting to logInfo)
   (logFunctions[type] || logInfo)(formattedMessage);
 }
-
-/**
- * Registers user sync pixels.
- *
- * @param {Object} syncOptions - Configuration specifying which user syncs are allowed.
- * @param {Array} serverResponses - Array of server responses.
- * @param {Object} gdprConsent - GDPR consent information.
- * @param {string} uspConsent - US Privacy consent string.
- * @returns {Array} Array of user syncs to be executed.
- */
-export const getUserSyncs = (syncEndpoint) => (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-  const syncs = [];
-
-  if (syncOptions.iframeEnabled) {
-    let syncUrl = `${syncEndpoint}/sync`;
-
-    const params = [];
-
-    // GDPR
-    if (gdprConsent) {
-      params.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
-      params.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
-    }
-
-    // CCPA
-    if (uspConsent) {
-      params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
-    }
-
-    if (params.length > 0) {
-      syncUrl += '?' + params.join('&');
-    }
-
-    syncs.push({
-      type: 'iframe',
-      url: syncUrl,
-    });
-  }
-
-  return syncs;
-}
-
 /**
  * Get or Create Uid for First Party Cookie
  */
