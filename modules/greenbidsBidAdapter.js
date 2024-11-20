@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter } from '../src/utils.js';
+import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getDM, getHC, getHLen } from '../libraries/navigatorData/navigatorData.js';
@@ -25,6 +25,7 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (typeof bid.params !== 'undefined' && parseInt(getValue(bid.params, 'placementId')) > 0) {
+      logInfo('Greenbids bidder adapter valid bid request');
       return true;
     } else {
       logError('Greenbids bidder adapter requires placementId to be defined and a positive number');
@@ -69,8 +70,8 @@ export const spec = {
       payload.schain = firstBidRequest.schain;
     }
 
-    hydratePayloadWithGPPData(payload, bidderRequest.gppConsent);
-    hydratePayloadWithGDPRData(payload, bidderRequest.gdprConsent);
+    hydratePayloadWithGppData(payload, bidderRequest.gppConsent);
+    hydratePayloadWithGdprData(payload, bidderRequest.gdprConsent);
     hydratePayloadWithUspConsentData(payload, bidderRequest.uspConsent);
 
     const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
@@ -87,22 +88,20 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: payloadString
+      data: payloadString,
     };
   },
   /**
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @return {Bid[]} An array of bids which were nested inside the server response.
    */
-  interpretResponse: function (serverResponse, bidderRequest) {
+  interpretResponse: function (serverResponse) {
     serverResponse = serverResponse.body;
-
     if (!serverResponse.responses) {
       return [];
     }
-
     return serverResponse.responses.map((bid) => {
       const bidResponse = {
         cpm: bid.cpm,
@@ -110,6 +109,7 @@ export const spec = {
         height: bid.height,
         currency: bid.currency,
         netRevenue: true,
+        size: bid.size,
         ttl: bid.ttl,
         meta: {
           advertiserDomains: bid && bid.adomain ? bid.adomain : [],
@@ -133,7 +133,6 @@ export const spec = {
 registerBidder(spec);
 
 // Page info retrival
-
 function getReferrerInfo(bidderRequest) {
   let ref = '';
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
@@ -217,7 +216,7 @@ function getSizes(bid) {
 
 // Privacy handling
 
-export function hydratePayloadWithGPPData(payload, gppData) {
+export function hydratePayloadWithGppData(payload, gppData) {
   if (gppData) {
     let isValidConsentString = typeof gppData.gppString === 'string';
     let validateApplicableSections =
@@ -228,22 +227,20 @@ export function hydratePayloadWithGPPData(payload, gppData) {
       applicableSectionIds: validateApplicableSections ? gppData.applicableSections : [],
     };
   }
-  return payload;
 }
 
-export function hydratePayloadWithGDPRData(payload, gdprData) {
-  if (gdprData) {
-    let isCmp = typeof gdprData.gdprApplies === 'boolean';
-    let isConsentString = typeof gdprData.consentString === 'string';
-    let status = isCmp
-      ? findGdprStatus(gdprData.gdprApplies, gdprData.vendorData)
-      : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
-    payload.gdpr_iab = {
-      consent: isConsentString ? gdprData.consentString : '',
-      status: status,
-      apiVersion: gdprData.apiVersion
-    };
-  }
+export function hydratePayloadWithGdprData(payload, gdprData) {
+  if (!gdprData) { return; }
+  let isCmp = typeof gdprData.gdprApplies === 'boolean';
+  let isConsentString = typeof gdprData.consentString === 'string';
+  let status = isCmp
+    ? findGdprStatus(gdprData.gdprApplies, gdprData.vendorData)
+    : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
+  payload.gdpr_iab = {
+    consent: isConsentString ? gdprData.consentString : '',
+    status: status,
+    apiVersion: gdprData.apiVersion
+  };
 }
 
 export function hydratePayloadWithUspConsentData(payload, uspConsentData) {

@@ -40,23 +40,21 @@ describe('greenbidsBidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    let bidNonGBCompatible = {
-      'bidder': 'greenbids',
-    };
-
     it('should return false when required params are not found', function () {
-      expect(spec.isBidRequestValid(bidNonGBCompatible)).to.equal(false);
+      let bidNonGbCompatible = {
+        'bidder': 'greenbids',
+      };
+      expect(spec.isBidRequestValid(bidNonGbCompatible)).to.equal(false);
     });
 
-    let bidNonGBCompatible2 = {
-      'bidder': 'greenbids',
-      'params': {
-        'placementId': 'toto'
-      },
-    };
-
-    it('should return false when required the placement is not a number', function () {
-      expect(spec.isBidRequestValid(bidNonGBCompatible2)).to.equal(false);
+    it('should return false when the placement is not a number', function () {
+      let bidNonGbCompatible = {
+        'bidder': 'greenbids',
+        'params': {
+          'placementId': 'toto'
+        },
+      };
+      expect(spec.isBidRequestValid(bidNonGbCompatible)).to.equal(false);
     });
   })
   describe('buildRequests', function () {
@@ -184,20 +182,35 @@ describe('greenbidsBidAdapter', () => {
       expect(payload.referrer).to.deep.equal('https://example.com/page.html')
     });
 
-    it('should add networkBandwidth info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
+    const originalConnection = window.navigator.connection;
+    const mockConnection = { downlink: 10 };
 
-      const bandwidth = window.navigator && window.navigator.connection && window.navigator.connection.downlink;
+    const setNavigatorConnection = (connection) => {
+      Object.defineProperty(window.navigator, 'connection', {
+        value: connection,
+        configurable: true,
+      });
+    };
 
-      expect(payload.networkBandwidth).to.exist;
+    try {
+      setNavigatorConnection(mockConnection);
 
-      if (bandwidth) {
-        expect(payload.networkBandwidth).to.deep.equal(bandwidth.toString());
-      } else {
-        expect(payload.networkBandwidth).to.deep.equal('');
-      }
-    });
+      const requestWithConnection = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payloadWithConnection = JSON.parse(requestWithConnection.data);
+
+      expect(payloadWithConnection.networkBandwidth).to.exist;
+      expect(payloadWithConnection.networkBandwidth).to.deep.equal(mockConnection.downlink.toString());
+
+      setNavigatorConnection(undefined);
+
+      const requestWithoutConnection = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payloadWithoutConnection = JSON.parse(requestWithoutConnection.data);
+
+      expect(payloadWithoutConnection.networkBandwidth).to.exist;
+      expect(payloadWithoutConnection.networkBandwidth).to.deep.equal('');
+    } finally {
+      setNavigatorConnection(originalConnection);
+    }
 
     it('should add pageReferrer info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
@@ -235,14 +248,37 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should add screenOrientation info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const screenOrientation = window.top.screen.orientation?.type
+      const originalScreenOrientation = window.top.screen.orientation;
 
-      if (screenOrientation) {
-        expect(payload.screenOrientation).to.exist;
-        expect(payload.screenOrientation).to.deep.equal(screenOrientation);
-      } else expect(payload.screenOrientation).to.not.exist;
+      const mockScreenOrientation = (type) => {
+        Object.defineProperty(window.top.screen, 'orientation', {
+          value: { type },
+          configurable: true,
+        });
+      };
+
+      try {
+        const mockType = 'landscape-primary';
+        mockScreenOrientation(mockType);
+
+        const requestWithOrientation = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithOrientation = JSON.parse(requestWithOrientation.data);
+
+        expect(payloadWithOrientation.screenOrientation).to.exist;
+        expect(payloadWithOrientation.screenOrientation).to.deep.equal(mockType);
+
+        mockScreenOrientation(undefined);
+
+        const requestWithoutOrientation = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithoutOrientation = JSON.parse(requestWithoutOrientation.data);
+
+        expect(payloadWithoutOrientation.screenOrientation).to.not.exist;
+      } finally {
+        Object.defineProperty(window.top.screen, 'orientation', {
+          value: originalScreenOrientation,
+          configurable: true,
+        });
+      }
     });
 
     it('should add historyLength info to payload', function () {
@@ -305,27 +341,74 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should add hardwareConcurrency info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
+      const originalHardwareConcurrency = window.top.navigator.hardwareConcurrency;
 
-      if (hardwareConcurrency) {
-        expect(payload.hardwareConcurrency).to.exist;
-        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
-      } else expect(payload.hardwareConcurrency).to.not.exist
+      const mockHardwareConcurrency = (value) => {
+        Object.defineProperty(window.top.navigator, 'hardwareConcurrency', {
+          value,
+          configurable: true,
+        });
+      };
+
+      try {
+        const mockValue = 8;
+        mockHardwareConcurrency(mockValue);
+
+        const requestWithHardwareConcurrency = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithHardwareConcurrency = JSON.parse(requestWithHardwareConcurrency.data);
+
+        expect(payloadWithHardwareConcurrency.hardwareConcurrency).to.exist;
+        expect(payloadWithHardwareConcurrency.hardwareConcurrency).to.deep.equal(mockValue);
+
+        mockHardwareConcurrency(undefined);
+
+        const requestWithoutHardwareConcurrency = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithoutHardwareConcurrency = JSON.parse(requestWithoutHardwareConcurrency.data);
+
+        expect(payloadWithoutHardwareConcurrency.hardwareConcurrency).to.not.exist;
+      } finally {
+        Object.defineProperty(window.top.navigator, 'hardwareConcurrency', {
+          value: originalHardwareConcurrency,
+          configurable: true,
+        });
+      }
     });
 
     it('should add deviceMemory info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
-      const payload = JSON.parse(request.data);
-      const deviceMemory = window.top.navigator.deviceMemory
+      const originalDeviceMemory = window.top.navigator.deviceMemory;
 
-      if (deviceMemory) {
-        expect(payload.deviceMemory).to.exist;
-        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
-      } else expect(payload.deviceMemory).to.not.exist;
+      const mockDeviceMemory = (value) => {
+        Object.defineProperty(window.top.navigator, 'deviceMemory', {
+          value,
+          configurable: true,
+        });
+      };
+
+      try {
+        const mockValue = 4;
+        mockDeviceMemory(mockValue);
+
+        const requestWithDeviceMemory = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithDeviceMemory = JSON.parse(requestWithDeviceMemory.data);
+
+        expect(payloadWithDeviceMemory.deviceMemory).to.exist;
+        expect(payloadWithDeviceMemory.deviceMemory).to.deep.equal(mockValue);
+
+        mockDeviceMemory(undefined);
+
+        const requestWithoutDeviceMemory = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payloadWithoutDeviceMemory = JSON.parse(requestWithoutDeviceMemory.data);
+
+        expect(payloadWithoutDeviceMemory.deviceMemory).to.not.exist;
+      } finally {
+        Object.defineProperty(window.top.navigator, 'deviceMemory', {
+          value: originalDeviceMemory,
+          configurable: true,
+        });
+      }
     });
   });
+
   describe('pageTitle', function () {
     it('should add pageTitle info to payload based on document title', function () {
       const testText = 'This is a title';
@@ -420,38 +503,65 @@ describe('greenbidsBidAdapter', () => {
       expect(payload.pageDescription).to.deep.equal(testText);
     });
 
-    it('should add timeToFirstByte info to payload', function () {
+    it('should add timeToFirstByte info to payload for Navigation Timing V2', function () {
+      // Mock `performance` object with Navigation Timing V2 data
+      const mockPerformance = {
+        getEntriesByType: () => [
+          { requestStart: 100, responseStart: 150 },
+        ],
+      };
+
+      // Override the global performance object
+      const originalPerformance = window.performance;
+      window.performance = mockPerformance;
+
+      // Execute the code
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const performance = window.performance || window.webkitPerformance || window.msPerformance || window.mozPerformance;
 
-      const ttfbExpectedV2 = performance &&
-        typeof performance.getEntriesByType === 'function' &&
-        Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
-        performance.getEntriesByType('navigation')[0] &&
-        performance.getEntriesByType('navigation')[0].responseStart &&
-        performance.getEntriesByType('navigation')[0].requestStart &&
-        performance.getEntriesByType('navigation')[0].responseStart > 0 &&
-        performance.getEntriesByType('navigation')[0].requestStart > 0 &&
-        Math.round(
-          performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
-        );
+      // Calculate expected TTFB for V2
+      const ttfbExpected = Math.round(
+        mockPerformance.getEntriesByType('navigation')[0].responseStart -
+        mockPerformance.getEntriesByType('navigation')[0].requestStart
+      ).toString();
 
+      // Assertions
       expect(payload.timeToFirstByte).to.exist;
+      expect(payload.timeToFirstByte).to.deep.equal(ttfbExpected);
 
-      if (ttfbExpectedV2) {
-        expect(payload.timeToFirstByte).to.deep.equal(ttfbExpectedV2.toString());
-      } else {
-        const ttfbWithTimingV1 = performance &&
-          performance.timing.responseStart &&
-          performance.timing.requestStart &&
-          performance.timing.responseStart > 0 &&
-          performance.timing.requestStart > 0 &&
-          performance.timing.responseStart - performance.timing.requestStart;
-        const ttfbExpectedV1 = ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+      // Restore the original performance object
+      window.performance = originalPerformance;
+    });
 
-        expect(payload.timeToFirstByte).to.deep.equal(ttfbExpectedV1);
-      }
+    it('should add timeToFirstByte info to payload for Navigation Timing V1', function () {
+      // Mock `performance` object with Navigation Timing V1 data
+      const mockPerformance = {
+        timing: {
+          requestStart: 100,
+          responseStart: 150,
+        },
+        getEntriesByType: () => [],
+      };
+
+      // Override the global performance object
+      const originalPerformance = window.performance;
+      window.performance = mockPerformance;
+
+      // Execute the code
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      // Calculate expected TTFB for V1
+      const ttfbExpected = (
+        mockPerformance.timing.responseStart - mockPerformance.timing.requestStart
+      ).toString();
+
+      // Assertions
+      expect(payload.timeToFirstByte).to.exist;
+      expect(payload.timeToFirstByte).to.deep.equal(ttfbExpected);
+
+      // Restore the original performance object
+      window.performance = originalPerformance;
     });
 
     it('should send GDPR to endpoint with 11 status', function () {
@@ -627,43 +737,7 @@ describe('greenbidsBidAdapter', () => {
     });
 
     it('should add userAgentClientHints info to payload if available', function () {
-      const bidRequest = Object.assign({}, bidRequests[0], {
-        ortb2: {
-          device: {
-            sua: {
-              source: 2,
-              platform: {
-                brand: 'macOS',
-                version: ['12', '4', '0']
-              },
-              browsers: [
-                {
-                  brand: 'Chromium',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Google Chrome',
-                  version: ['106', '0', '5249', '119']
-                },
-                {
-                  brand: 'Not;A=Brand',
-                  version: ['99', '0', '0', '0']
-                }
-              ],
-              mobile: 0,
-              model: '',
-              bitness: '64',
-              architecture: 'x86'
-            }
-          }
-        }
-      });
-
-      const requestWithUserAgentClientHints = spec.buildRequests([bidRequest], bidderRequestDefault);
-      const payload = JSON.parse(requestWithUserAgentClientHints.data);
-
-      expect(payload.userAgentClientHints).to.exist;
-      expect(payload.userAgentClientHints).to.deep.equal({
+      const sua = {
         source: 2,
         platform: {
           brand: 'macOS',
@@ -688,7 +762,20 @@ describe('greenbidsBidAdapter', () => {
         bitness: '64',
         architecture: 'x86'
       }
-      );
+
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        ortb2: {
+          device: {
+            sua: sua
+          }
+        }
+      });
+
+      const requestWithUserAgentClientHints = spec.buildRequests([bidRequest], bidderRequestDefault);
+      const payload = JSON.parse(requestWithUserAgentClientHints.data);
+
+      expect(payload.userAgentClientHints).to.exist;
+      expect(payload.userAgentClientHints).to.deep.equal(sua);
 
       const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
       expect(JSON.parse(defaultRequest.data).userAgentClientHints).to.not.exist;
@@ -766,7 +853,7 @@ describe('greenbidsBidAdapter', () => {
       const request = spec.buildRequests(updatedBidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
-      return payload.data.forEach(bid => {
+      payload.data.forEach(bid => {
         expect(bid).not.to.have.property('gpid');
       });
     });
@@ -783,7 +870,7 @@ describe('greenbidsBidAdapter', () => {
       const request = spec.buildRequests(updatedBidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
-      return payload.data.forEach(bid => {
+      payload.data.forEach(bid => {
         expect(bid).not.to.have.property('gpid');
       });
     });
