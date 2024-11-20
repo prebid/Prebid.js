@@ -831,6 +831,9 @@ function getOrtbId(bid) {
   } else if (bid.ortbId) {
     // If it's a Prebid bid response
     return bid.ortbId;
+  } else if (bid.ortbBidResponse && bid.ortbBidResponse.id) {
+    // If it's a Prebid bid response with ORTB response. i.e. interpreted response
+    return bid.ortbBidResponse.id;
   } else {
     throw new Error(`Not a valid bid object. Given object:\n${JSON.stringify(bid, null, 2)}`);
   }
