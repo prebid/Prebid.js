@@ -222,7 +222,7 @@ describe('FPD enrichment', () => {
         it('is set if globalPrivacyControl is set', () => {
           win.navigator.globalPrivacyControl = true;
           return fpd().then(ortb2 => {
-            expect(ortb2.regs.ext.gpc).to.eql(1);
+            expect(ortb2.regs.ext.gpc).to.eql('1');
           });
         });
 

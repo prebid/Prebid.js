@@ -209,6 +209,17 @@ describe('GPT pre-auction module', () => {
       expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: '/12345/slotCode2' });
     });
 
+    it('returns full ad unit path even if mcmEnabled is true', () => {
+      config.setConfig({ gptPreAuction: { enabled: true, mcmEnabled: true } });
+      window.googletag.pubads().setSlots([
+        makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
+      ]);
+      const adUnit = {code: '/12345,21212/slot'};
+      expect(appendGptSlots([adUnit])).to.eql({
+        '/12345,21212/slot': '/12345,21212/slot'
+      })
+    })
+
     it('will not trim child id if mcmEnabled is not set to true', () => {
       window.googletag.pubads().setSlots([
         makeSlot({ code: '/12345,21212/slotCode1', divId: 'div1' }),
@@ -459,6 +470,33 @@ describe('GPT pre-auction module', () => {
       expect(returnedAdUnits).to.deep.equal(expectedAdUnits);
     });
 
+    it('should pass full slot path to customPreAuction when mcmEnabled is true', () => {
+      const customPreAuction = sinon.stub();
+      config.setConfig({
+        gptPreAuction: {
+          enabled: true,
+          mcmEnabled: true,
+          customPreAuction
+        }
+      });
+      window.googletag.pubads().setSlots([
+        makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
+      ]);
+      const adUnit = {code: '/12345,21212/slot'};
+      makeBidRequestsHook(sinon.stub(), [adUnit]);
+      sinon.assert.calledWith(customPreAuction, adUnit, '/12345/slot', adUnit.code);
+    });
+
+    it('should not choke if gpt is not available', () => {
+      config.setConfig({
+        gptPreAuction: {
+          enabled: true
+        }
+      });
+      sandbox.stub(window, 'googletag').value(null);
+      makeBidRequestsHook(sinon.stub(), [{}]);
+    })
+
     it('should use useDefaultPreAuction logic', () => {
       config.setConfig({
         gptPreAuction: {
@@ -539,6 +577,16 @@ describe('GPT pre-auction module', () => {
       window.googletag.pubads().setSlots(testSlots);
       runMakeBidRequests(testAdUnits);
       expect(returnedAdUnits).to.deep.equal(expectedAdUnits);
+    });
+
+    it('sets gpid when mcmEnabled: true', () => {
+      config.setConfig({ gptPreAuction: { enabled: true, mcmEnabled: true } });
+      window.googletag.pubads().setSlots([
+        makeSlot({ code: '/12345,21212/slot', divId: 'div1' }),
+      ]);
+      const adUnit = {code: '/12345,21212/slot'};
+      makeBidRequestsHook(sinon.stub(), [adUnit]);
+      expect(adUnit.ortb2Imp.ext.gpid).to.eql('/12345/slot');
     });
   });
 
