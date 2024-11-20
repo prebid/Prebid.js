@@ -42,8 +42,8 @@ import {allConsent} from './consentHandler.js';
 import {insertLocatorFrame, markBidAsRendered, renderAdDirect, renderIfDeferred} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
-import { ORTB_NATIVE_PARAMS } from './native.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
+import { BANNER, VIDEO } from './mediaTypes.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -113,9 +113,8 @@ export function syncOrtb2(adUnit, mediaType) {
   }
 
   const fields = {
-    'video': ORTB_VIDEO_PARAMS,
-    'native': ORTB_NATIVE_PARAMS,
-    'banner': ORTB_BANNER_PARAMS
+    [VIDEO]: ORTB_VIDEO_PARAMS,
+    [BANNER]: ORTB_BANNER_PARAMS
   }[mediaType];
 
   if (!fields) {
@@ -225,7 +224,6 @@ function validateNativeMediaType(adUnit) {
     logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.icon.sizes;
   }
-  syncOrtb2(validatedAdUnit, 'native');
   return validatedAdUnit;
 }
 

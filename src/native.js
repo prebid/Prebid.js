@@ -3,12 +3,10 @@ import {
   deepClone, getDefinedParams,
   insertHtmlIntoIframe,
   isArray,
-  isArrayOfNums,
   isBoolean,
   isInteger,
   isNumber,
   isPlainObject,
-  isStr,
   logError,
   pick,
   triggerPixel
@@ -19,18 +17,6 @@ import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB,
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
-
-/**
- * List of OpenRTB 2.x native object properties with simple validators.
- * Not included: `ext`
- * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
- */
-export const ORTB_NATIVE_PARAMS = new Map([
-  [ 'request', isStr ],
-  [ 'ver', isStr ],
-  [ 'api', isArrayOfNums ],
-  [ 'battr', isArrayOfNums ]
-]);
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
