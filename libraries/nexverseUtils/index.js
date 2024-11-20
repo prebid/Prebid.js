@@ -59,7 +59,6 @@ export function isBidRequestValid(bid) {
     bid.params.pubId && bid.params.pubId.trim() &&
     bid.params.pubEpid && bid.params.pubEpid.trim()
   );
-  logInfo(bid)
   if (!isValid) {
     logError(`${LOG_ERROR_PREFIX} Missing required bid parameters.`);
   }
