@@ -20,6 +20,7 @@ import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+import {interpretResponseUtil} from '../libraries/interpretResponseUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -162,29 +163,19 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, {bidderRequest}) {
-    serverResponse = serverResponse.body;
-    const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      logError(errorMessage);
-      return bids;
-    }
-
-    if (serverResponse.tags) {
-      serverResponse.tags.forEach(serverBid => {
+    try {
+      const bids = interpretResponseUtil(serverResponse, {bidderRequest}, serverBid => {
         const rtbBid = getRtbBid(serverBid);
-        if (rtbBid) {
-          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
-            const bid = newBid(serverBid, rtbBid, bidderRequest);
-            bid.mediaType = parseMediaType(rtbBid);
-            bids.push(bid);
-          }
+        if (rtbBid && rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          const bid = newBid(serverBid, rtbBid, bidderRequest);
+          bid.mediaType = parseMediaType(rtbBid);
+          return bid;
         }
       });
+      return bids;
+    } catch (e) {
+      return [];
     }
-
-    return bids;
   }
 };
 
