@@ -846,7 +846,7 @@ function renderBid(bid) {
       height: bid.height,
       vastUrl: bid.vastUrl,
       placement: {
-        attachTo: adUnitElement,
+        attachTo: `#${bid.adUnitCode}`,
         align: config.align,
         position: config.position
       },
