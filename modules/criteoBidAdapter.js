@@ -9,6 +9,8 @@ import {OUTSTREAM} from '../src/video.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
+import {browserTypes, osTypes} from "../libraries/userAgentUtils/userAgentTypes.enums";
+import {getBrowser, getOS} from "../libraries/userAgentUtils";
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -219,6 +221,11 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
+    // Stop sending push_sync requests in case of Safari browser OR iOS device
+    if (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) {
+      return []
+    }
+
     let { gppString = '', applicableSections = [] } = gppConsent;
 
     const refererInfo = getRefererInfo();
