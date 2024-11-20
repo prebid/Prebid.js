@@ -1,7 +1,7 @@
 import { logError } from '../../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
 import { submodule } from '../../src/hook.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID, PRIMARY_IDS } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend } from './shared.js'
 
 // Reference to the client for the liQHub.
 let cachedClientRef
@@ -97,8 +97,9 @@ function initializeClient(configParams) {
     resolveSettings
   })
 
-  if (configParams.emailHash != null) {
-    window.liQHub.push({ type: 'collect', clientRef, sourceEvent: { hash: configParams.emailHash } })
+  let sourceEvent = makeSourceEventToSend(configParams)
+  if (sourceEvent != null) {
+    window.liQHub.push({ type: 'collect', clientRef, sourceEvent })
   }
 
   cachedClientRef = clientRef

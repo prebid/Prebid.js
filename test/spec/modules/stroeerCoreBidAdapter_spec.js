@@ -935,6 +935,28 @@ describe('stroeerCore bid adapter', function () {
           assert.deepEqual(serverRequestInfo.data.bids[0].sfp, {});
           assert.isUndefined(serverRequestInfo.data.bids[1].sfp);
         });
+
+        it('should add the ortb2 site extension', () => {
+          const bidReq = buildBidderRequest();
+
+          const ortb2 = {
+            site: {
+              domain: 'example.com',
+              ext: {
+                data: {
+                  abc: '123'
+                }
+              }
+            }
+          };
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+          assert.deepEqual(sentOrtb2, {site: {ext: ortb2.site.ext}})
+        });
       });
     });
   });
