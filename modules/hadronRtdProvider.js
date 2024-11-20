@@ -5,12 +5,11 @@
  * @module modules/hadronRtdProvider
  * @requires module:modules/realTimeData
  */
-import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isFn, isStr, isArray, isEmpty, deepEqual, isPlainObject, logError, logInfo} from '../src/utils.js';
+import {isFn, isStr, isArray, deepEqual, isPlainObject, logInfo} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
@@ -48,11 +47,11 @@ function mergeDeep(target, ...sources) {
   if (isPlainObject(target) && isPlainObject(source)) {
     for (const key in source) {
       if (isPlainObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
+        if (!target[key]) Object.assign(target, {[key]: {}});
         mergeDeep(target[key], source[key]);
       } else if (isArray(source[key])) {
         if (!target[key]) {
-          Object.assign(target, { [key]: source[key] });
+          Object.assign(target, {[key]: source[key]});
         } else if (isArray(target[key])) {
           source[key].forEach(obj => {
             let e = 1;
@@ -68,7 +67,7 @@ function mergeDeep(target, ...sources) {
           });
         }
       } else {
-        Object.assign(target, { [key]: source[key] });
+        Object.assign(target, {[key]: source[key]});
       }
     }
   }
