@@ -125,6 +125,8 @@ export const getUid = (storage) => {
     const expirationTime = new Date(Date.now() + expirationInMs); // Set expiration time
     // Set the cookie with the expiration date
     storage.setCookie(NEXVERSE_USER_COOKIE_KEY, nexverseUid, expirationTime.toUTCString());
-  } catch (e) {}
+  } catch (e) {
+    printLog('error', `Failed to set UID cookie: ${e.message}`);
+  }
   return nexverseUid;
 };
