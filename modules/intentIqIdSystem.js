@@ -216,18 +216,20 @@ export const intentIqIdSubmodule = {
   getId(config) {
     const configParams = (config?.params) || {};
     let decryptedData, callbackTimeoutID;
-    let callbackFired = false
-    let runtimeEids = {}
+    let callbackFired = false;
+    let runtimeEids = {};
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+    const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
 
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
-        configParams.callback(runtimeEids, firstPartyData?.group || NOT_YET_DEFINED);
+        const ids = isGroupB ? [] : runtimeEids || [];
+        configParams.callback(ids, firstPartyData?.group || NOT_YET_DEFINED);
       }
     }
 
@@ -342,7 +344,7 @@ export const intentIqIdSubmodule = {
 
     if (!shouldCallServer) {
       firePartnerCallback();
-      return {id: runtimeEids?.eids || []};
+      return { id: isGroupB ? [] : runtimeEids?.eids || [] };
     }
 
     // use protocol relative urls for http or https
@@ -355,7 +357,7 @@ export const intentIqIdSubmodule = {
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
     url += cmpData.us_privacy ? '&pa=' + encodeURIComponent(cmpData.us_privacy) : '';
-    url += cmpData.gpp ? '&gpp=' + cmpData.gpp : '';
+    url += cmpData.gpp ? '&gpp=' + encodeURIComponent(cmpData.gpp) : '';
     url += cmpData.gpi ? '&gpi=' + cmpData.gpi : '';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';

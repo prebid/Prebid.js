@@ -276,7 +276,7 @@ function constructFullUrl(data) {
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report) +
     '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints +
-    (gppData.gppString ? '&gpp=' + gppData.gppString : '');
+    (gppData.gppString ? '&gpp=' + encodeURIComponent(gppData.gppString) : '');
 
   url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);
   return url;
