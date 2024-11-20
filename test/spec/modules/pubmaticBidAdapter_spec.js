@@ -3603,7 +3603,7 @@ describe('PubMatic adapter', function () {
         let response = spec.interpretResponse(bannerBidResponse, request);
         expect(response[0].ext).to.not.exist;
         expect(response[0].meta).to.exist;
-        expect(response[0].meta.mediaType).to.not.exist;
+        expect(response[0].meta.mediaType).to.equal('banner');
       });
 
       if (FEATURES.VIDEO) {
@@ -3905,10 +3905,12 @@ describe('PubMatic adapter', function () {
             // dchain: 'dc',
             // demandSource: 'ds',
             // secondaryCatIds: ['secondaryCatIds']
-          }
+          },
         };
 
-        const br = {};
+        const br = {
+          mediaType: 'video'
+        };
         prepareMetaObject(br, bid, null);
         expect(br.meta.networkId).to.equal(6); // dspid
         expect(br.meta.buyerId).to.equal('12'); // adid
@@ -3927,6 +3929,7 @@ describe('PubMatic adapter', function () {
         expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
         expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
         expect(br.meta.dsa).to.equal(dsa); // dsa
+        expect(br.meta.mediaType).to.equal('video'); // mediaType
       });
 
       it('Should be empty, when ext and adomain is absent in bid object', function () {
