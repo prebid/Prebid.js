@@ -29,6 +29,7 @@ export function getDeviceModel() {
   }
   return '';
 }
+
 /**
  * Prepapre the endpoint URL based on passed bid request.
  * @param {string} bidderEndPoint - Bidder End Point.
