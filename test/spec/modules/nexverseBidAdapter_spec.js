@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/nexverseBidAdapter.js';
-import { getDeviceModel, buildEndpointUrl, parseNativeResponse, getOsVersion } from '../../../libraries/nexverseUtils/index.js';
+import { getDeviceModel, buildEndpointUrl, parseNativeResponse } from '../../../libraries/nexverseUtils/index.js';
+import { getOsVersion } from '../libraries/advangUtils/index.js';
 
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai/';
 
