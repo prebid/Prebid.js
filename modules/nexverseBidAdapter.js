@@ -5,15 +5,18 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray } from '../src/utils.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
-import { getOsVersion, getDeviceModel, buildEndpointUrl, isSecureRequest, isBidRequestValid, parseNativeResponse, printLog } from '../libraries/nexverseUtils/index.js';
+import { getOsVersion, getDeviceModel, buildEndpointUrl, isSecureRequest, isBidRequestValid, parseNativeResponse, printLog, getUserSyncs, getUid } from '../libraries/nexverseUtils/index.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const BIDDER_CODE = 'nexverse';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai/';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 const DEFAULT_CURRENCY = 'USD';
 const BID_TTL = 300;
-const DEFAULT_IP = '123.123.123.123';
 const DEFAULT_LANG = 'en';
+
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -45,10 +48,6 @@ export const spec = {
         url: endpointUrl,
         data: JSON.stringify(payload),
         bidRequest: bid,
-        options: {
-          contentType: 'application/json',
-          withCredentials: true,
-        },
       };
     });
 
@@ -128,47 +127,7 @@ export const spec = {
     });
     return bidResponses;
   },
-
-  /**
-   * Registers user sync pixels.
-   *
-   * @param {Object} syncOptions - Configuration specifying which user syncs are allowed.
-   * @param {Array} serverResponses - Array of server responses.
-   * @param {Object} gdprConsent - GDPR consent information.
-   * @param {string} uspConsent - US Privacy consent string.
-   * @returns {Array} Array of user syncs to be executed.
-   */
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = [];
-
-    if (syncOptions.iframeEnabled) {
-      let syncUrl = `${BIDDER_ENDPOINT}/sync`;
-
-      const params = [];
-
-      // GDPR
-      if (gdprConsent) {
-        params.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
-        params.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
-      }
-
-      // CCPA
-      if (uspConsent) {
-        params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
-      }
-
-      if (params.length > 0) {
-        syncUrl += '?' + params.join('&');
-      }
-
-      syncs.push({
-        type: 'iframe',
-        url: syncUrl,
-      });
-    }
-
-    return syncs;
-  },
+  getUserSyncs: getUserSyncs(BIDDER_ENDPOINT),
 };
 
 /**
@@ -236,7 +195,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     },
     device: {
       ua: navigator.userAgent,
-      ip: bidderRequest.ip || DEFAULT_IP, // IP address (replace with actual)
       devicetype: getDeviceType(), // 1 = Mobile/Tablet, 2 = Desktop
       os: getOS(),
       osv: getOsVersion(),
@@ -251,7 +209,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       dnt: navigator.doNotTrack === '1' ? 1 : 0, // Do Not Track flag
     },
     user: {
-      id: bid.userId || 'anonymous',
+      id: getUid(storage),
       buyeruid: bidderRequest.userId || '', // User ID or Buyer ID
       ext: {
         consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : null, // GDPR consent string

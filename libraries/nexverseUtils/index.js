@@ -1,9 +1,9 @@
-import { logError, logInfo, logWarn } from '../../src/utils.js';
+import { logError, logInfo, logWarn, generateUUID } from '../../src/utils.js';
 
 const LOG_WARN_PREFIX = '[Nexverse warn]: ';
 const LOG_ERROR_PREFIX = '[Nexverse error]: ';
 const LOG_INFO_PREFIX = '[Nexverse info]: ';
-
+const NEXVERSE_USER_COOKIE_KEY = 'user_nexverse';
 /**
  * Determines the os version (if possible).
  * @returns {string} The device model.
@@ -64,7 +64,8 @@ export function buildEndpointUrl(bidderEndPoint, bid) {
  * @returns {boolean} True if the connection is secure (HTTPS), false otherwise.
  */
 export function isSecureRequest() {
-  return location.protocol === 'https:' ? 1 : 0;
+  const secure = window.location.protocol === 'https:' ? 1 : 0;
+  return secure;
 }
 
 /**
@@ -73,8 +74,13 @@ export function isSecureRequest() {
  * @returns {boolean} True if the bid request is valid, false otherwise.
  */
 export function isBidRequestValid(bid) {
-  const isValid = !!(bid.params && bid.params.uid && bid.params.pubId && bid.params.pubEpid);
-
+  const isValid = !!(
+    bid.params &&
+    bid.params.uid && bid.params.uid.trim() &&
+    bid.params.pubId && bid.params.pubId.trim() &&
+    bid.params.pubEpid && bid.params.pubEpid.trim()
+  );
+  logInfo(bid)
   if (!isValid) {
     logError(`${LOG_ERROR_PREFIX} Missing required bid parameters.`);
   }
@@ -128,3 +134,61 @@ export function printLog(type, ...args) {
   // Call the appropriate log function (defaulting to logInfo)
   (logFunctions[type] || logInfo)(formattedMessage);
 }
+
+/**
+ * Registers user sync pixels.
+ *
+ * @param {Object} syncOptions - Configuration specifying which user syncs are allowed.
+ * @param {Array} serverResponses - Array of server responses.
+ * @param {Object} gdprConsent - GDPR consent information.
+ * @param {string} uspConsent - US Privacy consent string.
+ * @returns {Array} Array of user syncs to be executed.
+ */
+export const getUserSyncs = (syncEndpoint) => (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+  const syncs = [];
+
+  if (syncOptions.iframeEnabled) {
+    let syncUrl = `${syncEndpoint}/sync`;
+
+    const params = [];
+
+    // GDPR
+    if (gdprConsent) {
+      params.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
+      params.push(`gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+    }
+
+    if (params.length > 0) {
+      syncUrl += '?' + params.join('&');
+    }
+
+    syncs.push({
+      type: 'iframe',
+      url: syncUrl,
+    });
+  }
+
+  return syncs;
+}
+
+/**
+ * Get or Create Uid for First Party Cookie
+ */
+export const getUid = (storage) => {
+  let nexverseUid = storage.getCookie(NEXVERSE_USER_COOKIE_KEY);
+  if (!nexverseUid) {
+    nexverseUid = generateUUID();
+  }
+  try {
+    const expirationInMs = 60 * 60 * 24 * 1000; // 1 day in milliseconds
+    const expirationTime = new Date(Date.now() + expirationInMs); // Set expiration time
+    // Set the cookie with the expiration date
+    storage.setCookie(NEXVERSE_USER_COOKIE_KEY, nexverseUid, expirationTime.toUTCString());
+  } catch (e) {}
+  return nexverseUid;
+};
