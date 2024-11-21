@@ -7,8 +7,11 @@ import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 const DEFAULT_API_URL = 'https://demand.qortex.ai';
+const LOOKUP_RATE_LIMIT = 5000;
+const qortexSessionInfo = {};
 
-const qortexSessionInfo = {}
+let lookupRateLimitTimeout;
+let lookupAttemptDelay;
 
 /**
  * Init if module configuration is valid
@@ -93,8 +96,16 @@ function onAuctionEndEvent (data, config, t) {
  * @returns {Promise} ortb Content object
  */
 export function getContext () {
-  if (!qortexSessionInfo.currentSiteContext) {
-    const pageUrlObject = { pageUrl: qortexSessionInfo.indexData?.pageUrl ?? '' }
+  if (qortexSessionInfo.currentSiteContext) {
+    logMessage('Adding Content object from existing context data');
+    return new Promise((resolve, reject) => resolve(qortexSessionInfo.currentSiteContext));
+  } else if (lookupRateLimitTimeout !== null) {
+    logMessage(`Content lookup attempted during rate limit waiting period of ${LOOKUP_RATE_LIMIT}ms.`);
+    lookupAttemptDelay = true;
+    return new Promise((resolve, reject) => reject(new Error(429)));
+  } else {
+    lookupRateLimitTimeout = setTimeout(resetRateLimitTimeout, LOOKUP_RATE_LIMIT);
+    const pageUrlObject = { pageUrl: document.location.href ?? '' }
     logMessage('Requesting new context data');
     return new Promise((resolve, reject) => {
       const callbacks = {
@@ -114,9 +125,20 @@ export function getContext () {
       }
       ajax(qortexSessionInfo.contextUrl, callbacks, JSON.stringify(pageUrlObject), {contentType: 'application/json'})
     })
-  } else {
-    logMessage('Adding Content object from existing context data');
-    return new Promise((resolve, reject) => resolve(qortexSessionInfo.currentSiteContext));
+  }
+}
+
+/**
+ * Resets rate limit timeout for preventing overactive page content lookup
+ * Will re-trigger requestContextData if page lookups had been previously delayed
+ */
+export function resetRateLimitTimeout() {
+  lookupRateLimitTimeout = null;
+  if (lookupAttemptDelay) {
+    lookupAttemptDelay = false;
+    if (!qortexSessionInfo.currentSiteContext) {
+      requestContextData();
+    }
   }
 }
 
@@ -144,26 +166,22 @@ export function getGroupConfig () {
  * @returns {Promise}
  */
 export function sendAnalyticsEvent(eventType, subType, data) {
-  if (qortexSessionInfo.analyticsUrl !== null) {
-    if (shouldSendAnalytics(data)) {
-      const analtyicsEventObject = generateAnalyticsEventObject(eventType, subType, data)
-      logMessage('Sending qortex analytics event');
-      return new Promise((resolve, reject) => {
-        const callbacks = {
-          success() {
-            resolve();
-          },
-          error(e, x) {
-            reject(new Error('Returned error status code: ' + x.status));
-          }
+  if (shouldSendAnalytics(data)) {
+    const analtyicsEventObject = generateAnalyticsEventObject(eventType, subType, data)
+    logMessage('Sending qortex analytics event');
+    return new Promise((resolve, reject) => {
+      const callbacks = {
+        success() {
+          resolve();
+        },
+        error(e, x) {
+          reject(new Error('Returned error status code: ' + x.status));
         }
-        ajax(qortexSessionInfo.analyticsUrl, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
-      })
-    } else {
-      return new Promise((resolve, reject) => reject(new Error('Current request did not meet analytics percentage threshold, cancelling sending event')));
-    }
+      }
+      ajax(qortexSessionInfo.analyticsUrl, callbacks, JSON.stringify(analtyicsEventObject), {contentType: 'application/json'})
+    })
   } else {
-    return new Promise((resolve, reject) => reject(new Error('Analytics host not initialized')));
+    return new Promise((resolve, reject) => reject(new Error('Current request did not meet analytics percentage threshold, cancelling sending event')));
   }
 }
 
@@ -265,22 +283,37 @@ export function loadScriptTag(config) {
   loadExternalScript(src, MODULE_TYPE_RTD, code, undefined, undefined, attr);
 }
 
+/**
+ * Request contextual data about page (after checking for allow) and begin listening for postMessages from publisher
+ */
 export function initializeBidEnrichment() {
   if (shouldAllowBidEnrichment()) {
-    getContext()
-      .then(contextData => {
-        if (qortexSessionInfo.pageAnalysisData.contextRetrieved) {
-          logMessage('Contextual record Received from Qortex API')
-          setContextData(contextData)
-        } else {
-          logWarn('Contexual record is not yet complete at this time')
-        }
-      })
-      .catch((e) => {
-        logWarn('Returned error status code: ' + e.message)
-      })
+    requestContextData()
   }
+  addEventListener('message', windowPostMessageReceived);
 }
+
+/**
+ * Call Qortex api for available contextual information about current environment
+ */
+export function requestContextData() {
+  getContext()
+    .then(contextData => {
+      if (qortexSessionInfo.pageAnalysisData.contextRetrieved) {
+        logMessage('Contextual record Received from Qortex API')
+        setContextData(contextData)
+      } else {
+        logWarn('Contexual record is not yet complete at this time')
+      }
+    })
+    .catch((e) => {
+      logWarn('Returned error status code: ' + e.message)
+      if (e.message == 404) {
+        postBidEnrichmentMessage('NO-CONTEXT')
+      }
+    })
+}
+
 /**
  * Helper function to set initial values when they are obtained by init
  * @param {Object} config module config obtained during init
@@ -302,6 +335,8 @@ export function initializeModuleData(config) {
   qortexSessionInfo.groupConfigUrl = `${qortexUrlBase}/api/v1/prebid/group/configs/${groupId}/${windowUrl}`;
   qortexSessionInfo.contextUrl = `${qortexUrlBase}/api/v1/prebid/${groupId}/page/lookup`;
   qortexSessionInfo.analyticsUrl = generateAnalyticsHostUrl(qortexUrlBase);
+  lookupRateLimitTimeout = null;
+  lookupAttemptDelay = false;
   return qortexSessionInfo;
 }
 
@@ -368,6 +403,31 @@ function shouldAllowBidEnrichment() {
     return false;
   }
   return true
+}
+
+/**
+ * Passes message out to external page through postMessage method
+ * @param {string} msg message string to be passed to CX-BID-ENRICH target on current page
+ */
+function postBidEnrichmentMessage(msg) {
+  window.postMessage({
+    target: 'CX-BID-ENRICH',
+    message: msg
+  }, window.location.protocol + '//' + window.location.host);
+  logMessage('Message post :: Qortex contextuality has been not been indexed.')
+}
+
+/**
+ * Receives messages passed through postMessage method to QORTEX-PREBIDJS-RTD-MODULE on current page
+ * @param {Object} evt data object holding Event information
+ */
+export function windowPostMessageReceived(evt) {
+  const data = evt.data;
+  if (typeof data.target !== 'undefined' && data.target === 'QORTEX-PREBIDJS-RTD-MODULE') {
+    if (data.message === 'CX-BID-ENRICH-INITIALIZED' && shouldAllowBidEnrichment()) {
+      requestContextData()
+    }
+  }
 }
 
 export const qortexSubmodule = {
