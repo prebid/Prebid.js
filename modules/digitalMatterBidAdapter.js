@@ -5,10 +5,12 @@ import {BANNER} from '../src/mediaTypes.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'digitalMatter';
+const GVLID = 1345;
 const ENDPOINT_URL = 'https://adx.digitalmatter.services/'
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   aliases: ['dichange', 'digitalmatter'],
   bidParameters: ['accountId', 'siteId'],

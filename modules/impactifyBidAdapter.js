@@ -21,6 +21,7 @@ const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
+const LOGGER_JS_URI = 'https://log.impactify.it'
 const AUCTION_URI = '/bidder';
 const COOKIE_SYNC_URI = '/static/cookie_sync.html';
 const GVL_ID = 606;
@@ -166,11 +167,6 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
   deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
-
-  if (bidderRequest.uspConsent) {
-    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    this.syncStore.uspConsent = bidderRequest.uspConsent;
-  }
 
   if (GET_CONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
@@ -389,6 +385,19 @@ export const spec = {
     });
 
     return true;
-  }
+  },
+
+  /**
+   * Register bidder specific code, which will execute if the bid request failed
+   * @param {*} param0
+   */
+  onBidderError: function ({ error, bidderRequest }) {
+    ajax(`${LOGGER_JS_URI}/logger`, null, JSON.stringify({ error, bidderRequest }), {
+      method: 'POST',
+      contentType: 'application/json'
+    });
+
+    return true;
+  },
 };
 registerBidder(spec);

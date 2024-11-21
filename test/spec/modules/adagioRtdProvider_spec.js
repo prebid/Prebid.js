@@ -121,7 +121,8 @@ describe('Adagio Rtd Provider', function () {
         id: 'uid-1234',
         rnd: 0.5697,
         vwSmplg: 0.1,
-        vwSmplgNxt: 0.1
+        vwSmplgNxt: 0.1,
+        pages: 1
       };
 
       it('store new session data for further usage', function () {
@@ -139,7 +140,8 @@ describe('Adagio Rtd Provider', function () {
           session: {
             new: true,
             id: utils.generateUUID(),
-            rnd: Math.random()
+            rnd: Math.random(),
+            pages: 1,
           }
         }
 
@@ -211,7 +213,8 @@ describe('Adagio Rtd Provider', function () {
         vwSmplgNxt: 0.1,
         testName: 'adg-test',
         testVersion: 'srv',
-        initiator: 'snippet'
+        initiator: 'snippet',
+        pages: 1
       };
 
       it('store new session data instancied by the AB Test snippet for further usage', function () {
@@ -591,7 +594,8 @@ describe('Adagio Rtd Provider', function () {
                       'new': true,
                       'rnd': 0.020644826280300954,
                       'vwSmplg': 0.1,
-                      'vwSmplgNxt': 0.1
+                      'vwSmplgNxt': 0.1,
+                      'pages': 1
                     }
                   }
                 }
@@ -617,7 +621,8 @@ describe('Adagio Rtd Provider', function () {
                   'new': true,
                   'rnd': 0.020644826280300954,
                   'vwSmplg': 0.1,
-                  'vwSmplgNxt': 0.1
+                  'vwSmplgNxt': 0.1,
+                  'pages': 1
                 }
               }
             }

@@ -40,7 +40,8 @@ describe('Geniee adapter tests', () => {
               ext: {
                 test: 1
               },
-              id: 'bid-id'
+              id: 'bid-id',
+              secure: 1
             }
           ],
           test: 1
@@ -126,7 +127,9 @@ describe('Geniee adapter tests', () => {
         currency: 'JPY',
         mediaType: 'banner',
         meta: {
-          advertiserDomains: ['geniee.co.jp']
+          advertiserDomains: ['geniee.co.jp'],
+          primaryCatId: 'IAB1',
+          secondaryCatIds: []
         },
         netRevenue: true,
         requestId: 'bid-id',

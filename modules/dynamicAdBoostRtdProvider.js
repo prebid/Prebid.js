@@ -8,6 +8,7 @@ import { submodule } from '../src/hook.js'
 import { loadExternalScript } from '../src/adloader.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { deepAccess, deepSetValue, isEmptyStr } from '../src/utils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -72,7 +73,7 @@ function loadLmScript(keyId) {
   let viewableAdUnits = Object.keys(dynamicAdBoostAdUnits);
   let viewableAdUnitsCSV = viewableAdUnits.join(',');
   const scriptUrl = `${SCRIPT_URL}/${keyId}.js?viewableAdUnits=${viewableAdUnitsCSV}`;
-  loadExternalScript(scriptUrl, MODULE_NAME);
+  loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME);
   observer.disconnect();
 }
 

@@ -73,13 +73,14 @@ const _SESSION = (function() {
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, testName, testVersion, initiator } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, testName, testVersion, initiator, pages } = _internal.getSessionFromLocalStorage(storageValue);
 
         // isNew can be `true` if the session has been initialized by the A/B test snippet (external)
         const isNewSess = (initiator === 'snippet') ? isNew : isNewSession(lastActivityTime);
 
         data.session = {
           rnd,
+          pages: pages || 1,
           new: isNewSess, // legacy: `new` was used but the choosen name is not good.
           // Don't use values if they are not defined.
           ...(vwSmplg !== undefined && { vwSmplg }),
@@ -211,7 +212,10 @@ function loadAdagioScript(config) {
       return;
     }
 
-    loadExternalScript(SCRIPT_URL, SUBMODULE_NAME, undefined, undefined, { id: `adagiojs-${getUniqueIdentifierStr()}`, 'data-pid': config.params.organizationId });
+    loadExternalScript(SCRIPT_URL, MODULE_TYPE_RTD, SUBMODULE_NAME, undefined, undefined, {
+      id: `adagiojs-${getUniqueIdentifierStr()}`,
+      'data-pid': config.params.organizationId
+    });
   });
 }
 
@@ -682,6 +686,7 @@ function registerEventsForAdServers(config) {
  * @property {number} vwSmplg - View sampling rate.
  * @property {number} vwSmplgNxt - Next view sampling rate.
  * @property {number} lastActivityTime - Last activity time.
+ * @property {number} pages - current number of pages seen.
  */
 
 /**

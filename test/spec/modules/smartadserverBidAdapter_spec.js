@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
+import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
 import { spec } from 'modules/smartadserverBidAdapter.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { addFPDToBidderRequest } from '../../helpers/fpd';
@@ -1317,21 +1318,10 @@ describe('Smart bid adapter tests', function () {
       expect(bidRequest.bidfloor).to.deep.equal(DEFAULT_PARAMS[0].params.bidfloor);
     });
 
-    it('should return floor from module', function() {
-      const moduleFloor = 1.5;
-      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
-      bidRequest.getFloor = function () {
-        return { floor: moduleFloor };
-      };
-
-      const floor = spec.getBidFloor(bidRequest, 'EUR');
-      expect(floor).to.deep.equal(moduleFloor);
-    });
-
     it('should return default floor when module not activated', function() {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
 
-      const floor = spec.getBidFloor(bidRequest, 'EUR');
+      const floor = getBidFloor(bidRequest, 'EUR');
       expect(floor).to.deep.equal(0);
     });
 
@@ -1341,14 +1331,14 @@ describe('Smart bid adapter tests', function () {
         return { floor: 'one' };
       };
 
-      const floor = spec.getBidFloor(bidRequest, 'EUR');
+      const floor = getBidFloor(bidRequest, 'EUR');
       expect(floor).to.deep.equal(0.0);
     });
 
     it('should return default floor when currency unknown', function() {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
 
-      const floor = spec.getBidFloor(bidRequest, null);
+      const floor = getBidFloor(bidRequest, null);
       expect(floor).to.deep.equal(0);
     });
 
@@ -1430,6 +1420,95 @@ describe('Smart bid adapter tests', function () {
       const bannerRequest = requestContents.filter(r => !r.videoData)[0];
       expect(bannerRequest).to.not.equal(null).and.to.not.be.undefined;
       expect(bannerRequest).to.have.property('bidfloor').and.to.equal(1.93);
+    });
+
+    describe('#getBidFloor', () => {
+      let bid;
+      beforeEach(() => {
+        bid = {
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [300, 600]
+              ]
+            }
+          },
+          getFloor: (data) => {
+            if (data.currency === 'USD') {
+              if (data.mediaType === BANNER) {
+                if (data.size[0] === 300 && data.size[1] === 250) {
+                  return { floor: 1.2 };
+                } else if (data.size[0] === 300 && data.size[1] === 600) {
+                  return { floor: 1.4 };
+                } else if (data.size[0] === 30 && data.size[1] === 60) {
+                  return 'string';
+                } else {
+                  return { floor: 1.0 };
+                }
+              } else if (data.mediaType === VIDEO) {
+                if (data.size[0] === 640 && data.size[1] === 480) {
+                  return { floor: 2.3 };
+                } else {
+                  return { floor: 2.1 };
+                }
+              } else {
+                return {};
+              }
+            } else {
+              return undefined;
+            }
+          }
+        };
+      });
+
+      it('should return lowest floor from specified ones', () => {
+        expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.2);
+      });
+
+      it('should return default floor for media type whatever size', () => {
+        bid.mediaTypes.banner.sizes.push([300, 400]);
+        expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.0);
+      });
+
+      it('should return default floor', () => {
+        expect(getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(0);
+      });
+
+      it('should return floor when currency not passed', () => {
+        expect(getBidFloor(bid, undefined, BANNER)).to.deep.eq(1.2);
+      });
+
+      it('should return DEFAULT_FLOOR in case of not a number value from floor module', () => {
+        bid.mediaTypes.banner.sizes.push([30, 60]);
+        expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(0);
+      });
+
+      it('should return proper video floor', () => {
+        bid.mediaTypes = {
+          video: {
+            playerSize: [
+              [640, 480]
+            ]
+          }
+        };
+        expect(getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(2.3);
+      });
+
+      it('should return default video floor', () => {
+        bid.mediaTypes = {
+          video: {
+            playerSize: [
+              [640, 490]
+            ]
+          }
+        };
+        expect(getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(2.1);
+      });
+
+      it('should return DEFAULT_FLOOR for not supported media type', () => {
+        expect(getBidFloor(bid, 'USD', 'test')).to.deep.eq(0);
+      });
     });
   });
 
