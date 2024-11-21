@@ -1221,11 +1221,12 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
         updateSubmodules();
         updateIdPriority(userSync.idPriority, submoduleRegistry);
         initIdSystem({ready: true});
-        return;
       }
     }
-    // Add ortb2.user.ext.eids even if 0 submodules are added
-    startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd
+    if (!addedUserIdHook && !startAuction.getHooks({hook: addUserIdsHook}).length) {
+      // Add ortb2.user.ext.eids even if 0 submodules are added
+      startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd
+    }
   });
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
