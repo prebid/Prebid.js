@@ -2465,6 +2465,14 @@ describe('Unit: Prebid Module', function () {
                   adUnits: [au]
                 });
                 expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[123, 321]]);
+              });
+
+              it('should ignore incomplete formats', () => {
+                deepSetValue(au, prop, [{w: 123, h: 321}, {w: 123}, {wratio: 2}]);
+                $$PREBID_GLOBAL$$.requestBids({
+                  adUnits: [au]
+                });
+                expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[123, 321]]);
               })
             });
           })

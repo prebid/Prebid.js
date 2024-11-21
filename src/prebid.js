@@ -139,7 +139,7 @@ function validateBannerMediaType(adUnit) {
             logWarn(`Ad unit banner.format specifies both w/h and wratio/hratio`, adUnit);
             return false;
           }
-          return (w ?? h ?? wratio ?? hratio) != null;
+          return (w != null && h != null) || (wratio != null && hratio != null);
         })
         .map(({w, h, wratio, hratio}) => [w ?? wratio, h ?? hratio]);
     } catch (e) {
