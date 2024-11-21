@@ -30,8 +30,7 @@ var adUnits = [
       bids: [{
          bidder: 'nexx360',
          params: {
-            account: '1067',
-            tagId: 'luvxjvgn'
+            tagId: 'testnexx'
          }
        }]
    },
@@ -51,8 +50,7 @@ var adUnits = [
         bids: [{
             bidder: 'nexx360',
             params: {
-               account: '1067',
-               tagId: 'luvxjvgn'
+              tagId: 'testnexx'
             }
         }]
     };

@@ -188,7 +188,6 @@ describe('Aniview Bid Adapter', function () {
       expect(url).equal('https://rtb.aniview.com/sspRTB2');
       expect(method).equal('POST');
       expect(imp[0].tagid).equal(CHANNEL_ID_1);
-      expect(imp[0].ext.aniview.AV_HEIGHT).equal(VIDEO_SIZE.height);
       expect(imp[0].id).equal(videoBidRequest.bids[0].bidId);
       expect(ext.aniview.pbjs).equal(1);
     });

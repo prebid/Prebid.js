@@ -80,7 +80,7 @@ const CONVERTER = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
-    imp.secure = Number(window.location.protocol === 'https:');
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
       imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
