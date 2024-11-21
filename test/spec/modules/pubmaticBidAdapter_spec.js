@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setIBVField } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setIBVField, setTTL } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -3463,7 +3463,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(true);
-        expect(response[0].ttl).to.equal(300);
+        expect(response[0].ttl).to.equal(360);
         expect(response[0].meta.networkId).to.equal(123);
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
         expect(response[0].meta.buyerId).to.equal('seat-id');
@@ -3488,7 +3488,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].dealId).to.equal(bidResponses.body.seatbid[1].bid[0].dealid);
         expect(response[1].currency).to.equal('USD');
         expect(response[1].netRevenue).to.equal(true);
-        expect(response[1].ttl).to.equal(300);
+        expect(response[1].ttl).to.equal(360);
         expect(response[1].meta.networkId).to.equal(422);
         expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
         expect(response[1].meta.buyerId).to.equal(832);
@@ -4381,6 +4381,51 @@ describe('PubMatic adapter', function () {
       let response = spec.interpretResponse(newBidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].bidderCode).to.equal('groupm');
+    });
+  });
+
+  describe('setTTL', function() {
+    it('should set ttl field in newBid.ttl when bid.exp exists', function() {
+      const bid = {
+        exp: 200
+      };
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(200);
+    });
+
+    it('should set ttl as 360 mediatype banner', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'banner'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
+    });
+
+    it('should set ttl as 1800 mediatype video', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'video'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
+    });
+
+    it('should set ttl as 1800 mediatype native', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'native'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
+    });
+
+    it('should set ttl as 360 as default if all condition fails', function() {
+      const bid = {};
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
     });
   });
 });
