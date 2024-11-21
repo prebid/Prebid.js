@@ -22,6 +22,7 @@ const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
+const DEFAULT_TTL = 360;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
@@ -139,6 +140,12 @@ const MEDIATYPE = [
   VIDEO,
   NATIVE
 ]
+
+const MEDIATYPE_TTL = {
+  'banner': 360,
+  'video': 1800,
+  'native': 1800
+};
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
@@ -859,6 +866,11 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
+export function setTTL(bid, newBid) {
+  let ttl = MEDIATYPE_TTL[newBid?.mediaType] || DEFAULT_TTL;
+  newBid.ttl = bid.exp || ttl;
+}
+
 // Setting IBV & meta.mediaType field into the bid response
 export function setIBVField(bid, newBid) {
   if (bid?.ext?.ibv) {
@@ -1390,7 +1402,7 @@ export const spec = {
                 dealId: bid.dealid,
                 currency: respCur,
                 netRevenue: NET_REVENUE,
-                ttl: 300,
+                ttl: DEFAULT_TTL,
                 referrer: parsedReferrer,
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
@@ -1401,6 +1413,7 @@ export const spec = {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
                     _checkMediaType(bid, newBid);
+                    setTTL(bid, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
