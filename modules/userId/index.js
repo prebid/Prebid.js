@@ -700,7 +700,6 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
  */
 export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
   addIdData(reqBidsConfigObj);
-  uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
   // calling fn allows prebid to continue processing
   fn.call(this, reqBidsConfigObj);
 });

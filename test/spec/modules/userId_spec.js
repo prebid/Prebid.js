@@ -28,6 +28,7 @@ import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
+import {startAuction} from 'src/prebid';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
@@ -176,6 +177,7 @@ describe('User ID', function () {
   afterEach(() => {
     sandbox.restore();
     config.resetConfig();
+    startAuction.getHooks({hook: addUserIdsHook}).remove();
   });
 
   after(() => {
