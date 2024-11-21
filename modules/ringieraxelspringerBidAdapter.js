@@ -139,7 +139,7 @@ const buildBid = (ad, mediaType) => {
 };
 
 const getContextParams = (bidRequests, bidderRequest) => {
-  const bid = bidRequests[0];
+  const bid = [...bidRequests].reverse().find(bid => bid.params?.customParams?.bidPriority === 1) || bidRequests[0];
   const { params } = bid;
   const requestParams = {
     site: params.site,
