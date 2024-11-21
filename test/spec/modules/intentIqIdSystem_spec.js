@@ -253,7 +253,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false })
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.args[0][0]).to.deep.equal({});
+    expect(callBackSpy.args[0][0]).to.deep.equal({eids: []});
   });
 
   it('send addition parameters if were found in localstorage', function () {

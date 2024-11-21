@@ -217,7 +217,7 @@ export const intentIqIdSubmodule = {
     const configParams = (config?.params) || {};
     let decryptedData, callbackTimeoutID;
     let callbackFired = false;
-    let runtimeEids = {};
+    let runtimeEids = { eids: [] };
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
@@ -228,8 +228,7 @@ export const intentIqIdSubmodule = {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
-        const ids = isGroupB ? [] : runtimeEids || [];
-        configParams.callback(ids, firstPartyData?.group || NOT_YET_DEFINED);
+        configParams.callback(isGroupB ? { eids: [] } : runtimeEids, firstPartyData?.group || NOT_YET_DEFINED);
       }
     }
 
@@ -343,8 +342,9 @@ export const intentIqIdSubmodule = {
     }
 
     if (!shouldCallServer) {
+      runtimeEids = isGroupB ? { eids: [] } : runtimeEids;
       firePartnerCallback();
-      return { id: isGroupB ? [] : runtimeEids?.eids || [] };
+      return { id: runtimeEids.eids };
     }
 
     // use protocol relative urls for http or https
@@ -381,8 +381,9 @@ export const intentIqIdSubmodule = {
             partnerData.date = Date.now();
             firstPartyData.date = Date.now();
             const defineEmptyDataAndFireCallback = () => {
-              respJson.data = partnerData.data = runtimeEids = {};
-              partnerData.data = ''
+              respJson.data = [];
+              runtimeEids = { eids: [] };
+              partnerData.data = '';
               storeFirstPartyData()
               firePartnerCallback()
               callback(runtimeEids)
