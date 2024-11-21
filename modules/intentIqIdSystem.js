@@ -228,7 +228,8 @@ export const intentIqIdSubmodule = {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
-        configParams.callback(isGroupB ? { eids: [] } : runtimeEids, firstPartyData?.group || NOT_YET_DEFINED);
+        if (isGroupB) runtimeEids = { eids: [] };
+        configParams.callback(runtimeEids, firstPartyData?.group || NOT_YET_DEFINED);
       }
     }
 
@@ -342,7 +343,7 @@ export const intentIqIdSubmodule = {
     }
 
     if (!shouldCallServer) {
-      runtimeEids = isGroupB ? { eids: [] } : runtimeEids;
+      if (isGroupB) runtimeEids = { eids: [] };
       firePartnerCallback();
       return { id: runtimeEids.eids };
     }
@@ -381,9 +382,7 @@ export const intentIqIdSubmodule = {
             partnerData.date = Date.now();
             firstPartyData.date = Date.now();
             const defineEmptyDataAndFireCallback = () => {
-              respJson.data = [];
-              runtimeEids = { eids: [] };
-              partnerData.data = '';
+              respJson.data = partnerData.data = runtimeEids = { eids: [] };
               storeFirstPartyData()
               firePartnerCallback()
               callback(runtimeEids)
