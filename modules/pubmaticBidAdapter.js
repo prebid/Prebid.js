@@ -1385,7 +1385,7 @@ export const spec = {
                 dealId: bid.dealid,
                 currency: respCur,
                 netRevenue: NET_REVENUE,
-                ttl: 300,
+                ttl: DEFAULT_TTL,
                 referrer: parsedReferrer,
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
