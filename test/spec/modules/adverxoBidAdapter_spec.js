@@ -317,6 +317,7 @@ describe('Adverxo Bid Adapter', () => {
 
         expect(ortbRequest.imp[0]).to.deep.equal({
           id: 'bid-video',
+          secure: 1,
           video: {
             w: 400,
             h: 300,
