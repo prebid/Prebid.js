@@ -859,6 +859,18 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
+// Setting IBV & meta.mediaType field into the bid response
+export function setIBVField(bid, newBid) {
+  if (bid?.ext?.ibv) {
+    newBid.ext = newBid.ext || {};
+    newBid.ext['ibv'] = bid.ext.ibv;
+
+    // Overriding the mediaType field in meta with the `video` value if bid.ext.ibv is present
+    newBid.meta = newBid.meta || {};
+    newBid.meta.mediaType = VIDEO;
+  }
+}
+
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
   if (bid.ext && bid.ext['bidtype'] != undefined) {
@@ -1008,7 +1020,7 @@ function isNonEmptyArray(test) {
  * @param {*} bid : bids
  */
 export function prepareMetaObject(br, bid, seat) {
-  br.meta = {};
+  br.meta = br.meta || {};
 
   if (bid.ext && bid.ext.dspid) {
     br.meta.networkId = bid.ext.dspid;
@@ -1046,6 +1058,11 @@ export function prepareMetaObject(br, bid, seat) {
 
   if (bid.ext && bid.ext.dsa && Object.keys(bid.ext.dsa).length) {
     br.meta.dsa = bid.ext.dsa;
+  }
+
+  // Initializing meta.mediaType field to the actual bidType returned by the bidder
+  if (br.mediaType) {
+    br.meta.mediaType = br.mediaType;
   }
 }
 
@@ -1401,11 +1418,11 @@ export const spec = {
                   }
                 });
               }
+              prepareMetaObject(newBid, bid, seatbidder.seat);
+              setIBVField(bid, newBid);
               if (bid.ext && bid.ext.deal_channel) {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
-
-              prepareMetaObject(newBid, bid, seatbidder.seat);
 
               // adserverTargeting
               if (seatbidder.ext && seatbidder.ext.buyid) {
