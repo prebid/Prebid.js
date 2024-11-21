@@ -82,7 +82,7 @@ function toPayload(bidRequest, bidderRequest) {
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
-  payload.currency =  getCurrencyFromBidderRequest(bidderRequest);
+  payload.currency = getCurrencyFromBidderRequest(bidderRequest);
   payload.schain = bidRequest.schain;
   payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
