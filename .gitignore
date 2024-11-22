@@ -4,6 +4,7 @@ build/dist/uk/*
 build/dist/us/*
 build/dist/aus-nz/*
 build/dist/row/*
+build/dist/all/*
 build/creative
 
 # gu-mod-start #
@@ -12,6 +13,7 @@ build/creative
 !build/dist/us/prebid.js
 !build/dist/aus-nz/prebid.js
 !build/dist/row/prebid.js
+!build/dist/all/prebid.js
 # gu-mod-end #
 
 # Test Files

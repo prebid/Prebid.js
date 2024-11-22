@@ -10,6 +10,7 @@
     "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint",
+    "build": "gulp build --modules=modules.json --version=all",
     "build:uk": "gulp build --modules=modules-uk.json --version=uk",
     "build:us": "gulp build --modules=modules-us.json --version=us",
     "build:aus-nz": "gulp build --modules=modules-aus-nz.json --version=aus-nz",
