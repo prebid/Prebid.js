@@ -4,6 +4,7 @@ import { storage } from 'modules/utiqIdSystem.js';
 
 describe('utiqIdSystem', () => {
   const utiqPassKey = 'utiqPass';
+  const netIdKey = 'netid_utiq_adtechpass';
 
   const getStorageData = (idGraph) => {
     if (!idGraph) {
@@ -183,6 +184,50 @@ describe('utiqIdSystem', () => {
         expect(response.id.utiq).to.be.equal('atidValue');
         done();
       });
+    });
+  });
+
+  describe('utiq getUtiqFromStorage', () => {
+    const idGraph = {
+      'domain': 'TEST DOMAIN',
+      'atid': 'TEST ATID',
+    };
+
+    const netIdStorageValues = {
+      nullValue: '',
+      correctValue: 'testValue',
+    };
+
+    beforeEach(() => {
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
+    });
+
+    afterEach(() => {
+      storage.removeDataFromLocalStorage(utiqPassKey);
+    });
+
+    it(`correctly set utiqPassKey as adtechpass utiq value for ${netIdKey} empty`, (done) => {
+      // given
+      storage.setDataInLocalStorage(netIdKey, netIdStorageValues.nullValue);
+
+      // when
+      const response = utiqIdSubmodule.getId();
+
+      // then
+      expect(response.id.utiq).to.be.equal(idGraph.atid);
+      done();
+    });
+
+    it(`correctly set netIdAdtechpass as adtechpass utiq value for ${netIdKey} settled`, (done) => {
+      // given
+      storage.setDataInLocalStorage(netIdKey, netIdStorageValues.correctValue);
+
+      // when
+      const response = utiqIdSubmodule.getId();
+
+      // then
+      expect(response.id.utiq).to.be.equal(netIdStorageValues.correctValue);
+      done();
     });
   });
 });
