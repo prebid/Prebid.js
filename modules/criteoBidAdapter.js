@@ -59,7 +59,7 @@ function imp(buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
-  imp.tagid = bidRequest.adUnitCode;
+  imp.tagid = params?.tagid || bidRequest.adUnitCode;
   deepSetValue(imp, 'ext', {
     ...bidRequest.params.ext,
     ...imp.ext,
