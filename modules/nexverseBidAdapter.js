@@ -81,7 +81,7 @@ export const spec = {
       seatbid.bid.forEach((bid) => {
         const bidResponse = {
           requestId: bid.impid,
-          cpm: 0.2,
+          cpm: bid.price,
           currency: response.cur || DEFAULT_CURRENCY,
           width: bid.width || 0,
           height: bid.height || 0,
