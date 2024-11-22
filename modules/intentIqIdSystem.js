@@ -13,7 +13,8 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {gppDataHandler, uspDataHandler} from '../src/consentHandler.js';
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
-import {detectBrowser} from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
+import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -382,6 +383,9 @@ export const intentIqIdSubmodule = {
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
+
+    // Add vrref and fui to the URL
+    url = appendVrrefAndFui(url, configParams.domainName);
 
     const storeFirstPartyData = () => {
       partnerData.eidl = runtimeEids?.eids?.length || -1
