@@ -165,9 +165,6 @@ export const dep = {
   isAllowed: isActivityAllowed
 }
 
-/** @type {boolean} */
-let addedUserIdHook = false;
-
 /** @type {SubmoduleContainer[]} */
 let submodules = [];
 
@@ -694,6 +691,25 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
 });
 
 /**
+ * Append user id data from config to bids to be accessed in adapters when there are no submodules.
+ * @param {function} fn required; The next function in the chain, used by hook.js
+ * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
+ */
+export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
+  addIdData(reqBidsConfigObj);
+  // calling fn allows prebid to continue processing
+  fn.call(this, reqBidsConfigObj);
+});
+
+/**
+ * Is startAuctionHook added
+ * @returns {boolean}
+ */
+function addedStartAuctionHook() {
+  return !!startAuction.getHooks({hook: startAuctionHook}).length;
+}
+
+/**
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
@@ -1110,11 +1126,11 @@ function updateSubmodules() {
     .forEach((sm) => submodules.push(sm));
 
   if (submodules.length) {
-    if (!addedUserIdHook) {
+    if (!addedStartAuctionHook()) {
+      startAuction.getHooks({hook: addUserIdsHook}).remove();
       startAuction.before(startAuctionHook, 100) // use higher priority than dataController / rtd
       adapterManager.callDataDeletionRequest.before(requestDataDeletion);
       coreGetPPID.after((next) => next(getPPID()));
-      addedUserIdHook = true;
     }
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
   }
@@ -1221,6 +1237,10 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
   (getGlobal()).refreshUserIds = normalizePromise(refreshUserIds);
   (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
+  if (!addedStartAuctionHook()) {
+    // Add ortb2.user.ext.eids even if 0 submodules are added
+    startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd
+  }
 }
 
 // init config update listener to start the application

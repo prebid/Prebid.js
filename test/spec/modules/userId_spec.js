@@ -8,6 +8,7 @@ import {
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   startAuctionHook,
+  addUserIdsHook,
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
@@ -27,6 +28,7 @@ import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
+import {startAuction} from 'src/prebid';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
@@ -175,6 +177,8 @@ describe('User ID', function () {
   afterEach(() => {
     sandbox.restore();
     config.resetConfig();
+    startAuction.getHooks({hook: startAuctionHook}).remove();
+    startAuction.getHooks({hook: addUserIdsHook}).remove();
   });
 
   after(() => {
@@ -2422,6 +2426,58 @@ describe('User ID', function () {
           })
         })
       })
+    });
+
+    describe('submodules not added', () => {
+      const eid = {
+        source: 'example.com',
+        uids: [{id: '1234', atype: 3}]
+      };
+      let adUnits;
+      let startAuctionStub;
+      function saHook(fn, ...args) {
+        return startAuctionStub(...args);
+      }
+      beforeEach(() => {
+        adUnits = [{code: 'au1', bids: [{bidder: 'sampleBidder'}]}];
+        startAuctionStub = sinon.stub();
+        startAuction.before(saHook);
+        config.resetConfig();
+      });
+      afterEach(() => {
+        startAuction.getHooks({hook: saHook}).remove();
+      })
+
+      it('addUserIdsHook', function (done) {
+        addUserIdsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userIdAsEids.0.source');
+              expect(bid).to.have.deep.nested.property('userIdAsEids.0.uids.0.id');
+              expect(bid.userIdAsEids[0].source).to.equal('example.com');
+              expect(bid.userIdAsEids[0].uids[0].id).to.equal('1234');
+            });
+          });
+          done();
+        }, {
+          adUnits,
+          ortb2Fragments: {
+            global: {user: {ext: {eids: [eid]}}},
+            bidder: {}
+          }
+        });
+      });
+
+      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', () => {
+        init(config);
+        config.setConfig({
+          ortb2: {user: {ext: {eids: [eid]}}}
+        })
+        expect(startAuction.getHooks({hook: startAuctionHook}).length).equal(0);
+        expect(startAuction.getHooks({hook: addUserIdsHook}).length).equal(1);
+        $$PREBID_GLOBAL$$.requestBids({adUnits});
+        sinon.assert.calledWith(startAuctionStub, sinon.match.hasNested('adUnits[0].bids[0].userIdAsEids[0]', eid));
+      });
     });
   });
 
