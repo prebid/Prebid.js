@@ -73,7 +73,7 @@ const _SESSION = (function() {
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, testName, testVersion, initiator, pages } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, initiator, pages } = _internal.getSessionFromLocalStorage(storageValue);
 
         // isNew can be `true` if the session has been initialized by the A/B test snippet (external)
         const isNewSess = (initiator === 'snippet') ? isNew : isNewSession(lastActivityTime);
@@ -87,10 +87,16 @@ const _SESSION = (function() {
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
           ...(lastActivityTime !== undefined && { lastActivityTime }),
           ...(id !== undefined && { id }),
-          ...(testName !== undefined && { testName }),
-          ...(testVersion !== undefined && { testVersion }),
           ...(initiator !== undefined && { initiator }),
+
         };
+
+        const { testName, testVersion, expiry } = _internal.getAbTestFromLocalStorage(storageValue);
+        data.abTest = {};
+        if (expiry && expiry > Date.now()) {
+          data.session.testName = testName;
+          data.session.testVersion = testVersion;
+        }
 
         // `initiator` is a pseudo flag used to know if the session has been initialized by the A/B test snippet (external).
         // If the AB Test snippet has not been used, then `initiator` value is `adgjs` or `undefined`.
@@ -99,9 +105,6 @@ const _SESSION = (function() {
           data.session.new = true;
           data.session.id = generateUUID();
           data.session.rnd = Math.random();
-          // Ensure that the A/B test values are removed.
-          delete data.session.testName;
-          delete data.session.testVersion;
         }
 
         _internal.getAdagioNs().queue.push({
@@ -203,6 +206,22 @@ export const _internal = {
     });
 
     return (!obj || !obj.session) ? _default : obj.session;
+  },
+
+  /**
+   * Returns the abTest data from the localStorage.
+   *
+   * @param {string} storageValue - The value stored in the localStorage.
+   * @returns {AbTest}
+   */
+  getAbTestFromLocalStorage: function(storageValue) {
+    const obj = JSON.parse(storageValue, function(name, value) {
+      if (name.charAt(0) !== '_' || name === '') {
+        return value;
+      }
+    });
+
+    return (!obj || !obj.abTest) ? {} : obj.abTest;
   }
 };
 
@@ -687,6 +706,13 @@ function registerEventsForAdServers(config) {
  * @property {number} vwSmplgNxt - Next view sampling rate.
  * @property {number} lastActivityTime - Last activity time.
  * @property {number} pages - current number of pages seen.
+ */
+
+/**
+ * @typedef {Object} AbTest
+ * @property {number} pages - current number of pages seen.
+ * @property {string} testName - 'adg-pbs', 'adg-discrepancies'
+ * @property {string} testVersion - 'clt', 'srv'
  */
 
 /**
