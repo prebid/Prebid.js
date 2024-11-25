@@ -80,25 +80,7 @@ export function getBidderFunction(bidderName) {
         );
       }
       return bid
-    },
-    craft: function (bid, data, moduleConfig) {
-      if (data.im_segments && data.im_segments.length) {
-        const segments = getSegments(data.im_segments, moduleConfig);
-        deepSetValue(
-          bid,
-          'params.imsids',
-          segments
-        );
-      }
-      if (data.im_uid) {
-        deepSetValue(
-          bid,
-          'params.imuid',
-          data.im_uid
-        );
-      }
-      return bid
-    },
+    }
   }
   return biddersFunction[bidderName] || null;
 }
