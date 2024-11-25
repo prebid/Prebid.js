@@ -1179,6 +1179,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     if (ip) {
       deepSetValue(r, 'device.ip', ip);
     }
+
     const ipv6 = fpd.device.ipv6;
     if (ipv6) {
       deepSetValue(r, 'device.ipv6', ipv6);
