@@ -17,7 +17,7 @@ const MODULE_NAME = 'currency';
 let ratesURL;
 let bidResponseQueue = [];
 let conversionCache = {};
-export let currencyRatesLoaded = false;
+let currencyRatesLoaded = false;
 let needToCallForCurrencyFile = true;
 let adServerCurrency = 'USD';
 
