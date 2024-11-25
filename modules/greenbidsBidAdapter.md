@@ -16,7 +16,7 @@ Use `greenbids` as bidder.
       bids: [{
           bidder: 'greenbids',
           params: { 
-              gbPlacementId: 12345,
+              placementId: 12345,
           }
       }]
     },{
@@ -25,7 +25,7 @@ Use `greenbids` as bidder.
       bids: [{
           bidder: 'greenbids',
           params: { 
-              gbPlacementId: 12345,
+              placementId: 12345,
           }
       }]
     }];

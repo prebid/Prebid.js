@@ -2,6 +2,7 @@ import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, log
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getDM, getHC, getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,7 +11,7 @@ import { getDM, getHC, getHLen } from '../libraries/navigatorData/navigatorData.
 
 const BIDDER_CODE = 'greenbids';
 const GVL_ID = 1232;
-const ENDPOINT_URL = 'https://d.greenbids.ai/hb/bid-request';
+const ENDPOINT_URL = 'https://hb.greenbids.ai';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
@@ -40,7 +41,18 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const bids = validBidRequests.map(cleanBidsInfo);
+    const bids = validBidRequests.map(bids => {
+      const reqObj = {};
+      let placementId = getValue(bids.params, 'placementId');
+      const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid');
+      reqObj.sizes = getSizes(bids);
+      reqObj.bidId = getBidIdParameter('bidId', bids);
+      reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bids);
+      reqObj.placementId = parseInt(placementId, 10);
+      reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
+      reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
+      if (gpid) { reqObj.gpid = gpid; }
+    });
     const topWindow = window.top;
 
     const payload = {
@@ -70,8 +82,8 @@ export const spec = {
       payload.schain = firstBidRequest.schain;
     }
 
-    hydratePayloadWithGppData(payload, bidderRequest.gppConsent);
-    hydratePayloadWithGdprData(payload, bidderRequest.gdprConsent);
+    hydratePayloadWithGppConsentData(payload, bidderRequest.gppConsent);
+    hydratePayloadWithGdprConsentData(payload, bidderRequest.gdprConsent);
     hydratePayloadWithUspConsentData(payload, bidderRequest.uspConsent);
 
     const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
@@ -133,6 +145,15 @@ export const spec = {
 registerBidder(spec);
 
 // Page info retrival
+
+/**
+ * Retrieves the referrer information from the bidder request.
+ *
+ * @param {Object} bidderRequest - The bidder request object.
+ * @param {Object} [bidderRequest.refererInfo] - The referer information object.
+ * @param {string} [bidderRequest.refererInfo.page] - The page URL of the referer.
+ * @returns {string} The referrer URL if available, otherwise an empty string.
+ */
 function getReferrerInfo(bidderRequest) {
   let ref = '';
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
@@ -141,6 +162,15 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
+/**
+ * Retrieves the title of the current web page.
+ *
+ * This function attempts to get the title from the top-level window's document.
+ * If an error occurs (e.g., due to cross-origin restrictions), it falls back to the current document.
+ * It first tries to get the title from the `og:title` meta tag, and if that is not available, it uses the document's title.
+ *
+ * @returns {string} The title of the current web page, or an empty string if no title is found.
+ */
 function getPageTitle() {
   try {
     const ogTitle = window.top.document.querySelector('meta[property="og:title"]');
@@ -151,6 +181,15 @@ function getPageTitle() {
   }
 }
 
+/**
+ * Retrieves the content of the page description meta tag.
+ *
+ * This function attempts to get the description from the top-level window's document.
+ * If it fails (e.g., due to cross-origin restrictions), it falls back to the current document.
+ * It looks for meta tags with either the name "description" or the property "og:description".
+ *
+ * @returns {string} The content of the description meta tag, or an empty string if not found.
+ */
 function getPageDescription() {
   try {
     const element = window.top.document.querySelector('meta[name="description"]') ||
@@ -163,73 +202,60 @@ function getPageDescription() {
   }
 }
 
+/**
+ * Retrieves the downlink speed of the user's network connection.
+ *
+ * @param {object} nav - The navigator object, typically `window.navigator`.
+ * @returns {string} The downlink speed as a string if available, otherwise an empty string.
+ */
 function getConnectionDownLink(nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
-function getTimeToFirstByte(win) {
-  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
-
-  const ttfbWithTimingV2 = performance &&
-    typeof performance.getEntriesByType === 'function' &&
-    Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
-    performance.getEntriesByType('navigation')[0] &&
-    performance.getEntriesByType('navigation')[0].responseStart &&
-    performance.getEntriesByType('navigation')[0].requestStart &&
-    performance.getEntriesByType('navigation')[0].responseStart > 0 &&
-    performance.getEntriesByType('navigation')[0].requestStart > 0 &&
-    Math.round(
-      performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
-    );
-
-  if (ttfbWithTimingV2) {
-    return ttfbWithTimingV2.toString();
-  }
-
-  const ttfbWithTimingV1 = performance &&
-    performance.timing.responseStart &&
-    performance.timing.requestStart &&
-    performance.timing.responseStart > 0 &&
-    performance.timing.requestStart > 0 &&
-    performance.timing.responseStart - performance.timing.requestStart;
-
-  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
-}
-
-function cleanBidsInfo(bids) {
-  const reqObj = {};
-  let placementId = getValue(bids.params, 'placementId');
-  const gpid = deepAccess(bids, 'ortb2Imp.ext.gpid');
-  reqObj.sizes = getSizes(bids);
-  reqObj.bidId = getBidIdParameter('bidId', bids);
-  reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bids);
-  reqObj.placementId = parseInt(placementId, 10);
-  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bids);
-  reqObj.transactionId = bids.ortb2Imp?.ext?.tid || '';
-  if (gpid) { reqObj.gpid = gpid; }
-  return reqObj;
-}
-
+/**
+ * Converts the sizes from the bid object to the required format.
+ *
+ * @param {Object} bid - The bid object containing size information.
+ * @param {Array} bid.sizes - The sizes array from the bid object.
+ * @returns {Array} - The parsed sizes in the required format.
+ */
 function getSizes(bid) {
   return parseSizesInput(bid.sizes);
 }
 
 // Privacy handling
 
-export function hydratePayloadWithGppData(payload, gppData) {
-  if (gppData) {
-    let isValidConsentString = typeof gppData.gppString === 'string';
-    let validateApplicableSections =
+/**
+ * Hydrates the given payload with GPP consent data if available.
+ *
+ * @param {Object} payload - The payload object to be hydrated.
+ * @param {Object} gppData - The GPP consent data object.
+ * @param {string} gppData.gppString - The GPP consent string.
+ * @param {number[]} gppData.applicableSections - An array of applicable section IDs.
+ */
+function hydratePayloadWithGppConsentData(payload, gppData) {
+  if (!gppData) { return; }
+  let isValidConsentString = typeof gppData.gppString === 'string';
+  let validateApplicableSections =
       Array.isArray(gppData.applicableSections) &&
       gppData.applicableSections.every((section) => typeof (section) === 'number')
-    payload.gpp = {
-      consentString: isValidConsentString ? gppData.gppString : '',
-      applicableSectionIds: validateApplicableSections ? gppData.applicableSections : [],
-    };
-  }
+  payload.gpp = {
+    consentString: isValidConsentString ? gppData.gppString : '',
+    applicableSectionIds: validateApplicableSections ? gppData.applicableSections : [],
+  };
 }
 
-export function hydratePayloadWithGdprData(payload, gdprData) {
+/**
+ * Hydrates the given payload with GDPR consent data if available.
+ *
+ * @param {Object} payload - The payload object to be hydrated with GDPR consent data.
+ * @param {Object} gdprData - The GDPR data object containing consent information.
+ * @param {boolean} gdprData.gdprApplies - Indicates if GDPR applies.
+ * @param {string} gdprData.consentString - The GDPR consent string.
+ * @param {number} gdprData.apiVersion - The version of the GDPR API being used.
+ * @param {Object} gdprData.vendorData - Additional vendor data related to GDPR.
+ */
+function hydratePayloadWithGdprConsentData(payload, gdprData) {
   if (!gdprData) { return; }
   let isCmp = typeof gdprData.gdprApplies === 'boolean';
   let isConsentString = typeof gdprData.consentString === 'string';
@@ -243,10 +269,15 @@ export function hydratePayloadWithGdprData(payload, gdprData) {
   };
 }
 
-export function hydratePayloadWithUspConsentData(payload, uspConsentData) {
-  if (uspConsentData) {
-    payload.us_privacy = uspConsentData;
-  }
+/**
+ * Adds USP (CCPA) consent data to the payload if available.
+ *
+ * @param {Object} payload - The payload object to be hydrated with USP consent data.
+ * @param {string} uspConsentData - The USP consent string to be added to the payload.
+ */
+function hydratePayloadWithUspConsentData(payload, uspConsentData) {
+  if (!uspConsentData) { return; }
+  payload.us_privacy = uspConsentData;
 }
 
 const gdprStatus = {
@@ -256,6 +287,14 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 
+/**
+ * Determines the GDPR status based on whether GDPR applies and the provided GDPR data.
+ *
+ * @param {boolean} gdprApplies - Indicates if GDPR applies.
+ * @param {Object} gdprData - The GDPR data object.
+ * @param {boolean} gdprData.isServiceSpecific - Indicates if the GDPR data is service-specific.
+ * @returns {string} The GDPR status.
+ */
 function findGdprStatus(gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
