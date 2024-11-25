@@ -1,6 +1,7 @@
 import { logError, isEmpty, deepAccess, triggerPixel, logWarn, isArray } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
+import {getSupplyChain} from '../libraries/riseUtils/index.js';
 
 const BIDDER_CODE = 'telaria';
 const DOMAIN = 'tremorhub.com';
@@ -127,37 +128,6 @@ function getDefaultSrcPageUrl() {
   return encodeURIComponent(document.location.href);
 }
 
-function getEncodedValIfNotEmpty(val) {
-  return (val !== '' && val !== undefined) ? encodeURIComponent(val) : '';
-}
-
-/**
- * Converts the schain object to a url param value. Please refer to
- * https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
- * (schain for non ORTB section) for more information
- * @param schainObject
- * @returns {string}
- */
-function getSupplyChainAsUrlParam(schainObject) {
-  if (isEmpty(schainObject)) {
-    return '';
-  }
-
-  let scStr = `&schain=${schainObject.ver},${schainObject.complete}`;
-
-  schainObject.nodes.forEach((node) => {
-    scStr += '!';
-    scStr += `${getEncodedValIfNotEmpty(node.asi)},`;
-    scStr += `${getEncodedValIfNotEmpty(node.sid)},`;
-    scStr += `${getEncodedValIfNotEmpty(node.hp)},`;
-    scStr += `${getEncodedValIfNotEmpty(node.rid)},`;
-    scStr += `${getEncodedValIfNotEmpty(node.name)},`;
-    scStr += `${getEncodedValIfNotEmpty(node.domain)}`;
-  });
-
-  return scStr;
-}
-
 function getUrlParams(params, schainFromBidRequest) {
   let urlSuffix = '';
 
@@ -167,7 +137,7 @@ function getUrlParams(params, schainFromBidRequest) {
         urlSuffix += `&${key}=${params[key]}`;
       }
     }
-    urlSuffix += getSupplyChainAsUrlParam(!isEmpty(schainFromBidRequest) ? schainFromBidRequest : params['schain']);
+    urlSuffix += getSupplyChain(!isEmpty(schainFromBidRequest) ? schainFromBidRequest : params['schain']);
   }
 
   return urlSuffix;

@@ -73,20 +73,35 @@ const _SESSION = (function() {
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew, vwSmplg, vwSmplgNxt, lastActivityTime } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, testName, testVersion, initiator, pages } = _internal.getSessionFromLocalStorage(storageValue);
+
+        // isNew can be `true` if the session has been initialized by the A/B test snippet (external)
+        const isNewSess = (initiator === 'snippet') ? isNew : isNewSession(lastActivityTime);
 
         data.session = {
           rnd,
-          new: isNew || false, // legacy: `new` was used but the choosen name is not good.
+          pages: pages || 1,
+          new: isNewSess, // legacy: `new` was used but the choosen name is not good.
           // Don't use values if they are not defined.
           ...(vwSmplg !== undefined && { vwSmplg }),
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
-          ...(lastActivityTime !== undefined && { lastActivityTime })
+          ...(lastActivityTime !== undefined && { lastActivityTime }),
+          ...(id !== undefined && { id }),
+          ...(testName !== undefined && { testName }),
+          ...(testVersion !== undefined && { testVersion }),
+          ...(initiator !== undefined && { initiator }),
         };
 
-        if (isNewSession(lastActivityTime)) {
+        // `initiator` is a pseudo flag used to know if the session has been initialized by the A/B test snippet (external).
+        // If the AB Test snippet has not been used, then `initiator` value is `adgjs` or `undefined`.
+        // The check on `testName` is used to ensure that the A/B test values are removed.
+        if (initiator !== 'snippet' && (isNewSess || testName)) {
           data.session.new = true;
+          data.session.id = generateUUID();
           data.session.rnd = Math.random();
+          // Ensure that the A/B test values are removed.
+          delete data.session.testName;
+          delete data.session.testVersion;
         }
 
         _internal.getAdagioNs().queue.push({
@@ -197,7 +212,10 @@ function loadAdagioScript(config) {
       return;
     }
 
-    loadExternalScript(SCRIPT_URL, SUBMODULE_NAME, undefined, undefined, { id: `adagiojs-${getUniqueIdentifierStr()}`, 'data-pid': config.params.organizationId });
+    loadExternalScript(SCRIPT_URL, MODULE_TYPE_RTD, SUBMODULE_NAME, undefined, undefined, {
+      id: `adagiojs-${getUniqueIdentifierStr()}`,
+      'data-pid': config.params.organizationId
+    });
   });
 }
 
@@ -278,15 +296,18 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
 
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits || [];
   adUnits.forEach(adUnit => {
+    adUnit.ortb2Imp = adUnit.ortb2Imp || {};
     const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+
     // A divId is required to compute the slot position and later to track viewability.
     // If nothing has been explicitly set, we try to get the divId from the GPT slot and fallback to the adUnit code in last resort.
-    if (!deepAccess(ortb2Imp, 'ext.data.divId')) {
-      const divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
+    let divId = deepAccess(ortb2Imp, 'ext.data.divId')
+    if (!divId) {
+      divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
       deepSetValue(ortb2Imp, `ext.data.divId`, divId || adUnit.code);
     }
 
-    const slotPosition = getSlotPosition(adUnit);
+    const slotPosition = getSlotPosition(divId);
     deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
 
     // It is expected that the publisher set a `adUnits[].ortb2Imp.ext.data.placement` value.
@@ -430,7 +451,7 @@ function getElementFromTopWindow(element, currentWindow) {
   }
 };
 
-function getSlotPosition(adUnit) {
+function getSlotPosition(divId) {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
@@ -451,16 +472,15 @@ function getSlotPosition(adUnit) {
       // window.top based computing
       const wt = getWindowTop();
       const d = wt.document;
-      const adUnitElementId = deepAccess(adUnit, 'ortb2Imp.ext.data.divId');
 
       let domElement;
 
       if (inIframe() === true) {
         const ws = getWindowSelf();
-        const currentElement = ws.document.getElementById(adUnitElementId);
+        const currentElement = ws.document.getElementById(divId);
         domElement = getElementFromTopWindow(currentElement, ws);
       } else {
-        domElement = wt.document.getElementById(adUnitElementId);
+        domElement = wt.document.getElementById(divId);
       }
 
       if (!domElement) {
@@ -666,6 +686,7 @@ function registerEventsForAdServers(config) {
  * @property {number} vwSmplg - View sampling rate.
  * @property {number} vwSmplgNxt - Next view sampling rate.
  * @property {number} lastActivityTime - Last activity time.
+ * @property {number} pages - current number of pages seen.
  */
 
 /**
