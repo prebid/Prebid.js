@@ -8,7 +8,7 @@ import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {on as onEvent, off as offEvent} from '../src/events.js';
-import {continueAuction as continueAuctionNative, resumeDelayedAuctions} from '../libraries/auctionUtils/auctionUtils.js';
+import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -28,7 +28,7 @@ let defaultRates;
 
 export let responseReady = defer();
 
-export let delayedAuctions = [];
+const delayedAuctions = timeoutQueue();
 let auctionDelay = 0;
 
 /**
@@ -144,7 +144,7 @@ function loadRates() {
             conversionCache = {};
             currencyRatesLoaded = true;
             processBidResponseQueue();
-            resumeDelayedAuctions(delayedAuctions, continueAuction);
+            delayedAuctions.resume();
           } catch (e) {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
           }
@@ -153,7 +153,7 @@ function loadRates() {
           errorSettingsRates(...args);
           currencyRatesLoaded = true;
           processBidResponseQueue();
-          resumeDelayedAuctions(delayedAuctions, continueAuction);
+          delayedAuctions.resume();
           needToCallForCurrencyFile = true;
         }
       }
@@ -348,25 +348,14 @@ export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
 registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});
 
 export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook(fn, reqBidsConfigObj) {
-  const hookConfig = {
-    reqBidsConfigObj,
-    context: this,
-    nextFn: fn,
-    hasExited: false,
-    timer: null
-  };
+  const continueAuction = ((that) => () => fn.call(that, reqBidsConfigObj))(this);
 
   if (!currencyRatesLoaded && auctionDelay > 0) {
-    hookConfig.timer = setTimeout(() => {
+    delayedAuctions.submit(auctionDelay, continueAuction, () => {
       logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`)
-      continueAuction(hookConfig);
-    }, auctionDelay);
-    delayedAuctions.push(hookConfig);
+      continueAuction();
+    });
   } else {
-    continueAuction(hookConfig);
+    continueAuction();
   }
 });
-
-function continueAuction(config) {
-  continueAuctionNative(config, delayedAuctions);
-}

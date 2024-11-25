@@ -30,7 +30,7 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
-import {continueAuction as continueAuctionNative, resumeDelayedAuctions} from '../libraries/auctionUtils/auctionUtils.js';
+import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -73,7 +73,7 @@ let _floorsConfig = {};
 /**
  * @summary If a auction is to be delayed by an ongoing fetch we hold it here until it can be resumed
  */
-let _delayedAuctions = [];
+const _delayedAuctions = timeoutQueue();
 
 /**
  * @summary Each auction can have differing floors data depending on execution time or per adunit setup
@@ -437,12 +437,14 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
  * @summary This is the function which will be called to exit our module and continue the auction.
  */
 export function continueAuction(hookConfig) {
-  continueAuctionNative(hookConfig, _delayedAuctions, () => {
+  if (!hookConfig.hasExited) {
     // We need to know the auctionId at this time. So we will use the passed in one or generate and set it ourselves
     hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || generateUUID();
     // now we do what we need to with adUnits and save the data object to be used for getFloor and enforcement calls
     _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits, hookConfig.reqBidsConfigObj.auctionId);
-  })
+    hookConfig.nextFn.apply(hookConfig.context, [hookConfig.reqBidsConfigObj]);
+    hookConfig.hasExited = true;
+  }
 }
 
 function validateSchemaFields(fields) {
@@ -576,12 +578,11 @@ export const requestBidsHook = timedAuctionHook('priceFloors', function requestB
 
   // If auction delay > 0 AND we are fetching -> Then wait until it finishes
   if (_floorsConfig.auctionDelay > 0 && fetching) {
-    hookConfig.timer = setTimeout(() => {
+    _delayedAuctions.submit(_floorsConfig.auctionDelay, () => continueAuction(hookConfig), () => {
       logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction`);
       _floorsConfig.fetchStatus = 'timeout';
       continueAuction(hookConfig);
-    }, _floorsConfig.auctionDelay);
-    _delayedAuctions.push(hookConfig);
+    });
   } else {
     continueAuction(hookConfig);
   }
@@ -611,7 +612,7 @@ export function handleFetchResponse(fetchResponse) {
   }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions(_delayedAuctions, continueAuction);
+  _delayedAuctions.resume();
 }
 
 function handleFetchError(status) {
@@ -620,7 +621,7 @@ function handleFetchError(status) {
   logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions(_delayedAuctions, continueAuction);
+  _delayedAuctions.resume();
 }
 
 /**

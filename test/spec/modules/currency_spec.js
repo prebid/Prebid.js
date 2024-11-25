@@ -17,7 +17,7 @@ import * as utils from 'src/utils.js';
 import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
-import {delayedAuctions, requestBidsHook} from '../../../modules/currency.js';
+import {requestBidsHook} from '../../../modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -536,9 +536,9 @@ describe('currency', function () {
     });
 
     afterEach(function () {
+      clock.runAll();
       sandbox.restore();
       clock.restore();
-      delayedAuctions.length = 0;
       utils.logWarn.restore();
       continueAuction.resetHistory();
     });
@@ -550,9 +550,7 @@ describe('currency', function () {
       };
       requestBidsHook(continueAuction, reqBidsConfigObj);
       clock.tick(1000);
-      expect(delayedAuctions.length).to.deep.equal(1);
       expect(continueAuction.notCalled).to.be.true;
-      expect(delayedAuctions[0].timer).to.not.be.undefined;
     });
 
     it('should start auction when auctionDelay time passed', () => {
@@ -561,9 +559,7 @@ describe('currency', function () {
         auctionId: '128937'
       };
       requestBidsHook(continueAuction, reqBidsConfigObj);
-      expect(delayedAuctions.length).to.deep.equal(1);
       clock.tick(3000);
-      expect(delayedAuctions.length).to.deep.equal(0);
       expect(logWarnSpy.calledOnce).to.equal(true);
       expect(continueAuction.calledOnce).to.be.true;
     });
@@ -576,7 +572,6 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       requestBidsHook(continueAuction, reqBidsConfigObj);
       expect(continueAuction.calledOnce).to.be.true;
-      expect(delayedAuctions.length).to.deep.equal(0);
     });
   });
 });
