@@ -35,7 +35,7 @@ var adUnits = [{
       pubId: '54321',
       pubEpid: 'abcde'
     },
-    isDebug: true
+    isDebug: false // Optional, i.e True for debug mode
   }]
 }];
 ```
