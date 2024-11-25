@@ -732,7 +732,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const isLastAdUnit = adUnitIndex === impKeys.length - 1;
 
-    r = addDeviceInfo(r);
+    r = addDeviceInfo(r, bidderRequest);
     r = deduplicateImpExtFields(r);
     r = removeSiteIDs(r);
 
@@ -2069,12 +2069,17 @@ function isValidAuctionConfig(config) {
  * @param {object} r
  * @returns object
  */
-export function addDeviceInfo(r) {
+export function addDeviceInfo(r, bidderRequest) {
   if (r.device == undefined) {
     r.device = {};
   }
   r.device.h = window.screen.height;
   r.device.w = window.screen.width;
+
+  const deviceIp = deepAccess(bidderRequest, 'ortb2.device.ip') || deepAccess(bidderRequest, 'device.ip');
+  if (deviceIp) {
+    r.device.ip = deviceIp;
+  }
 
   return r;
 }

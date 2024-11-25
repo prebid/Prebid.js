@@ -5378,11 +5378,43 @@ describe('IndexexchangeAdapter', function () {
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
     });
+
     it('should add device to request when device doesnt exist', () => {
       let r = {}
       r = addDeviceInfo(r);
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
+    });
+
+    it('should add device.ip from bidderRequest if ortb2.device.ip exists', () => {
+      let r = {};
+      const bidderRequest = {
+        ortb2: {
+          device: {
+            ip: '192.168.1.1'
+          }
+        }
+      };
+      r = addDeviceInfo(r, bidderRequest);
+      expect(r.device.ip).to.equal('192.168.1.1');
+    });
+
+    it('should add device.ip from bidderRequest if device.ip exists', () => {
+      let r = {};
+      const bidderRequest = {
+        device: {
+          ip: '10.0.0.1'
+        }
+      };
+      r = addDeviceInfo(r, bidderRequest);
+      expect(r.device.ip).to.equal('10.0.0.1');
+    });
+
+    it('should not add device.ip if neither ortb2.device.ip nor device.ip exists', () => {
+      let r = {};
+      const bidderRequest = {};
+      r = addDeviceInfo(r, bidderRequest);
+      expect(r.device.ip).to.be.undefined;
     });
   });
 });
