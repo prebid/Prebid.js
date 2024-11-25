@@ -5386,35 +5386,24 @@ describe('IndexexchangeAdapter', function () {
       expect(r.device.h).to.exist;
     });
 
-    it('should add device.ip from bidderRequest if ortb2.device.ip exists', () => {
-      let r = {};
-      const bidderRequest = {
-        ortb2: {
-          device: {
-            ip: '192.168.1.1'
-          }
-        }
-      };
-      r = addDeviceInfo(r, bidderRequest);
-      expect(r.device.ip).to.equal('192.168.1.1');
-    });
-
-    it('should add device.ip from bidderRequest if device.ip exists', () => {
-      let r = {};
-      const bidderRequest = {
+    it('should add device.ip if available in fpd', () => {
+      const ortb2 = {
         device: {
-          ip: '10.0.0.1'
-        }
-      };
-      r = addDeviceInfo(r, bidderRequest);
-      expect(r.device.ip).to.equal('10.0.0.1');
+          ip: '192.168.1.1',
+          ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+        }};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.equal('192.168.1.1')
+      expect(payload.device.ipv6).to.equal('2001:0db8:85a3:0000:0000:8a2e:0370:7334')
     });
 
-    it('should not add device.ip if neither ortb2.device.ip nor device.ip exists', () => {
-      let r = {};
-      const bidderRequest = {};
-      r = addDeviceInfo(r, bidderRequest);
-      expect(r.device.ip).to.be.undefined;
+    it('should not add device.ip if neither ip nor ipv6 exists', () => {
+      const ortb2 = {device: {}};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.be.undefined;
+      expect(payload.device.ip6).to.be.undefined;
     });
   });
 });

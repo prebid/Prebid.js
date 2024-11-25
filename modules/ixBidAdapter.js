@@ -732,7 +732,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const isLastAdUnit = adUnitIndex === impKeys.length - 1;
 
-    r = addDeviceInfo(r, bidderRequest);
+    r = addDeviceInfo(r);
     r = deduplicateImpExtFields(r);
     r = removeSiteIDs(r);
 
@@ -1173,6 +1173,15 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     const sua = {...fpd.device.sua};
     if (!isEmpty(sua)) {
       deepSetValue(r, 'device.sua', sua);
+    }
+
+    const ip = fpd.device.ip;
+    if (ip) {
+      deepSetValue(r, 'device.ip', ip);
+    }
+    const ipv6 = fpd.device.ipv6;
+    if (ipv6) {
+      deepSetValue(r, 'device.ipv6', ipv6);
     }
   }
 
@@ -2069,17 +2078,12 @@ function isValidAuctionConfig(config) {
  * @param {object} r
  * @returns object
  */
-export function addDeviceInfo(r, bidderRequest) {
+export function addDeviceInfo(r) {
   if (r.device == undefined) {
     r.device = {};
   }
   r.device.h = window.screen.height;
   r.device.w = window.screen.width;
-
-  const deviceIp = deepAccess(bidderRequest, 'ortb2.device.ip') || deepAccess(bidderRequest, 'device.ip');
-  if (deviceIp) {
-    r.device.ip = deviceIp;
-  }
 
   return r;
 }
