@@ -130,6 +130,8 @@ export const spec = {
       return [];
     }
 
+    this.msnaApiKey = validBidRequests[0]?.params.apiKey;
+
     return validBidRequests.map((bidRequest) =>
       toPayload(bidRequest, bidderRequest),
     );
@@ -154,26 +156,25 @@ export const spec = {
   getUserSyncs: function (
     syncOptions,
     serverResponses,
-    gdprConsent,
+    gdprConsent = {},
     uspConsent,
   ) {
-    if (!syncOptions.iframeEnabled) {
+    if (!syncOptions.iframeEnabled || !this.msnaApiKey) {
       return [];
     }
 
-    let gdprParams = '';
-    if (
-      gdprConsent &&
-      'gdprApplies' in gdprConsent &&
-      typeof gdprConsent.gdprApplies === 'boolean'
-    ) {
-      gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
-        gdprConsent.consentString
-      }`;
+    const url = new URL('https://sync.missena.io/iframe');
+    url.searchParams.append('t', this.msnaApiKey);
+
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      url.searchParams.append('gdpr', Number(gdprConsent.gdprApplies));
+      url.searchParams.append('gdpr_consent', gdprConsent.consentString);
     }
-    return [
-      { type: 'iframe', url: 'https://sync.missena.io/iframe' + gdprParams },
-    ];
+    if (uspConsent) {
+      url.searchParams.append('us_privacy', uspConsent);
+    }
+
+    return [{ type: 'iframe', url: url.href }];
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
