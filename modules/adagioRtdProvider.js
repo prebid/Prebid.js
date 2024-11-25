@@ -73,10 +73,9 @@ const _SESSION = (function() {
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, initiator, pages } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, vwSmplg, vwSmplgNxt, lastActivityTime, id, pages } = _internal.getSessionFromLocalStorage(storageValue);
 
-        // isNew can be `true` if the session has been initialized by the A/B test snippet (external)
-        const isNewSess = (initiator === 'snippet') ? isNew : isNewSession(lastActivityTime);
+        const isNewSess = isNewSession(lastActivityTime);
 
         data.session = {
           rnd,
@@ -87,24 +86,19 @@ const _SESSION = (function() {
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
           ...(lastActivityTime !== undefined && { lastActivityTime }),
           ...(id !== undefined && { id }),
-          ...(initiator !== undefined && { initiator }),
 
         };
 
-        const { testName, testVersion, expiry } = _internal.getAbTestFromLocalStorage(storageValue);
-        data.abTest = {};
-        if (expiry && expiry > Date.now()) {
-          data.session.testName = testName;
-          data.session.testVersion = testVersion;
-        }
-
-        // `initiator` is a pseudo flag used to know if the session has been initialized by the A/B test snippet (external).
-        // If the AB Test snippet has not been used, then `initiator` value is `adgjs` or `undefined`.
-        // The check on `testName` is used to ensure that the A/B test values are removed.
-        if (initiator !== 'snippet' && (isNewSess || testName)) {
+        if (isNewSess) {
           data.session.new = true;
           data.session.id = generateUUID();
           data.session.rnd = Math.random();
+        }
+
+        const { testName, testVersion, expiry, sessionId } = _internal.getAbTestFromLocalStorage(storageValue);
+        if (expiry && expiry > Date.now() && (!sessionId || sessionId === data.session.id)) { // if AbTest didn't set a session id, it's probably because it's a new one and it didn't retrieve it yet, assume it's okay to get test Name and Version.
+          data.session.testName = testName;
+          data.session.testVersion = testVersion;
         }
 
         _internal.getAdagioNs().queue.push({
@@ -713,6 +707,7 @@ function registerEventsForAdServers(config) {
  * @property {number} pages - current number of pages seen.
  * @property {string} testName - 'adg-pbs', 'adg-discrepancies'
  * @property {string} testVersion - 'clt', 'srv'
+ * @property {string} sessionId - uuid of the session
  */
 
 /**
