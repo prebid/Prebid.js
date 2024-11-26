@@ -37,7 +37,7 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
 
-const CONTEXT_KEYS = [
+export const CONTEXT_KEYS = [
   'apValues',
   'categories',
   'emotions',
@@ -84,12 +84,18 @@ export async function fetchContextData() {
 }
 
 export function getConfig(config) {
-  const advertiserTargeting = Array.isArray(config?.params?.advertiserTargeting)
-    ? config?.params?.advertiserTargeting.filter((key) => CONTEXT_KEYS.includes(key))
-    : [];
-  const publisherTargeting = Array.isArray(config?.params?.publisherTargeting)
-    ? config?.params?.publisherTargeting.filter((key) => CONTEXT_KEYS.includes(key))
-    : [];
+  const [advertiserTargeting, publisherTargeting] = ['advertiserTargeting', 'publisherTargeting'].map((key) => {
+    const value = config?.params?.[key];
+    if (!value) {
+      return [];
+    } else if (value === true) {
+      return CONTEXT_KEYS;
+    } else if (Array.isArray(value) && value.length) {
+      return value.filter((key) => CONTEXT_KEYS.includes(key));
+    }
+    return [];
+  });
+
   const prefix = config?.params?.prefix || 'mobian';
   return { advertiserTargeting, prefix, publisherTargeting };
 }

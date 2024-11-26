@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import * as ajax from 'src/ajax.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import {
+  CONTEXT_KEYS,
   extendBidRequestConfig,
   fetchContextData,
   getConfig,
@@ -223,6 +224,21 @@ describe('Mobian RTD Submodule', function () {
         prefix: 'mobian',
         publisherTargeting: [],
         advertiserTargeting: [],
+      });
+    });
+
+    it('should set all tarteging values if value is true', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          publisherTargeting: true,
+          advertiserTargeting: true,
+        }
+      });
+      expect(config).to.deep.equal({
+        prefix: 'mobian',
+        publisherTargeting: CONTEXT_KEYS,
+        advertiserTargeting: CONTEXT_KEYS,
       });
     });
   });
