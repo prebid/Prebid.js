@@ -100,7 +100,8 @@ export const spec = {
     {code: 'global_sun'},
     {code: 'rxnetwork'},
     {code: 'revbid'},
-    {code: 'spinx', gvlid: 1308}
+    {code: 'spinx', gvlid: 1308},
+    {code: 'oppamedia'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
