@@ -3,34 +3,34 @@ import { logInfo } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'tncId';
+const TNC_DEFAULT_NS = '__tnc';
+const TNC_PREBID_NS = '__tncPbjs';
 let url = null;
 
-const waitTNCScript = (tncNS) => {
-  return new Promise((resolve, reject) => {
-    var tnc = window[tncNS];
-    if (!tnc) reject(new Error('No TNC Object'));
-    if (tnc.tncid) resolve(tnc.tncid);
-    tnc.ready(async () => {
-      let tncid = await tnc.getTNCID('prebid');
-      resolve(tncid);
-    });
+const loadRemoteScript = async (ns) => {
+  await new Promise((resolve) => {
+    let currentURL = new URL(url);
+    currentURL.searchParams.append('ns', ns);
+    loadExternalScript(currentURL.toString(), MODULE_NAME, resolve);
   });
 }
 
-const loadRemoteScript = () => {
-  return new Promise((resolve) => {
-    loadExternalScript(url, MODULE_NAME, resolve);
-  })
-}
+const tncCallback = async function(cb) {
+  try {
+    let tncNS = TNC_DEFAULT_NS;
+    if (!window[tncNS]) {
+      if (!url) return cb();
+      tncNS = TNC_PREBID_NS;
+      await (window[tncNS] || loadRemoteScript(tncNS));
+    }
+    let tnc = window[tncNS];
+    if (!tnc || typeof tnc.ready !== 'function') return cb();
 
-const tncCallback = function (cb) {
-  let tncNS = '__tnc';
-  let promiseArray = [];
-  if (!window[tncNS]) {
-    tncNS = '__tncPbjs';
-    promiseArray.push(loadRemoteScript());
-  }
-  return Promise.all(promiseArray).then(() => waitTNCScript(tncNS)).then(cb).catch(() => cb());
+    await new Promise(resolve => tnc.ready(resolve));
+    tnc = window[tncNS];
+    let tncid = await tnc.getTNCID('prebid');
+    return cb(tncid);
+  } catch (err) { return cb(); }
 }
 
 export const tncidSubModule = {
@@ -54,6 +54,7 @@ export const tncidSubModule = {
 
     return {
       callback: function (cb) { return tncCallback(cb); }
+      // callback: tncCallback
     }
   },
   eids: {
