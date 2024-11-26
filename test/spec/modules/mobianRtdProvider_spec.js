@@ -25,7 +25,7 @@ describe('Mobian RTD Submodule', function () {
     results: {
       ap: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
       mobianContentCategories: [],
-      mobianEmotions: ['joy'],
+      mobianEmotions: ['affection'],
       mobianGenres: [],
       mobianRisk: 'low',
       mobianSentiment: 'positive',
@@ -37,7 +37,7 @@ describe('Mobian RTD Submodule', function () {
   const mockContextData = {
     apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
     categories: [],
-    emotions: ['joy'],
+    emotions: ['affection'],
     genres: [],
     risk: 'low',
     sentiment: 'positive',
@@ -111,7 +111,7 @@ describe('Mobian RTD Submodule', function () {
       expect(setKeyValueSpy.calledWith('mobian_ap_a1', [2313, 12])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_ap_p0', [1231231, 212])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_ap_p1', [231, 419])).to.equal(true);
-      expect(setKeyValueSpy.calledWith('mobian_emotions', ['joy'])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_emotions', ['affection'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_risk', 'low')).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_sentiment', 'positive')).to.equal(true);
 
@@ -140,7 +140,7 @@ describe('Mobian RTD Submodule', function () {
       setTargeting(parsedConfig, mockContextData);
 
       expect(setKeyValueSpy.callCount).to.equal(2);
-      expect(setKeyValueSpy.calledWith('mobian_emotions', ['joy'])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_emotions', ['affection'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_risk', 'low')).to.equal(true);
 
       expect(setKeyValueSpy.calledWith('mobian_ap_a0')).to.equal(false);
