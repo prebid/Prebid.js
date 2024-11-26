@@ -151,8 +151,12 @@ function initCustomer(config) {
   addConnectorEventListener(customer, config);
 
   const loadScript = () => loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME);
-  // Optionally defer the script loading
-  defer ? setTimeout(loadScript, defer) : loadScript();
+  // Optionally defer the loading of the script
+  if (Number.isFinite(defer) && defer > 0) {
+    setTimeout(loadScript, defer);
+  } else {
+    loadScript();
+  }
 }
 
 /**
