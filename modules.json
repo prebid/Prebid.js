@@ -62,5 +62,6 @@
     "yahoosspBidAdapter",
     "yieldmoBidAdapter",
     "pulsepointBidAdapter",
-    "pulsepointAnalyticsAdapter"
+    "pulsepointAnalyticsAdapter",
+    "sovrnBidAdapter"
 ]
