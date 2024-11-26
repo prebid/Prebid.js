@@ -59,6 +59,7 @@ const VALID_REQUEST_BANNER = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -71,6 +72,7 @@ const VALID_REQUEST_BANNER = {
         'sparteo': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
             'formats': ['corner']
           }
         }
@@ -80,7 +82,8 @@ const VALID_REQUEST_BANNER = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -94,6 +97,7 @@ const VALID_REQUEST_VIDEO = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,
@@ -112,7 +116,8 @@ const VALID_REQUEST_VIDEO = {
         'pbadslot': 'video',
         'sparteo': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
           }
         }
       }
@@ -121,7 +126,8 @@ const VALID_REQUEST_VIDEO = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -135,6 +141,7 @@ const VALID_REQUEST = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -147,11 +154,13 @@ const VALID_REQUEST = {
         'sparteo': {
           'params': {
             'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
             'formats': ['corner']
           }
         }
       }
     }, {
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,
@@ -170,7 +179,8 @@ const VALID_REQUEST = {
         'pbadslot': 'video',
         'sparteo': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
           }
         }
       }
@@ -179,7 +189,8 @@ const VALID_REQUEST = {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }

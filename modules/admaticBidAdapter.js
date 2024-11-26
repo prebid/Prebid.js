@@ -4,34 +4,13 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
-
-export const OPENRTB = {
-  N: {
-    IMAGE_TYPE: {
-      ICON: 1,
-      MAIN: 3,
-    },
-    ASSET_ID: {
-      TITLE: 1,
-      IMAGE: 2,
-      ICON: 3,
-      BODY: 4,
-      SPONSORED: 5,
-      CTA: 6
-    },
-    DATA_ASSET_TYPE: {
-      SPONSORED: 1,
-      DESC: 2,
-      CTA_TEXT: 12,
-    },
-  }
-};
 
 let SYNC_URL = '';
 const BIDDER_CODE = 'admatic';
@@ -44,7 +23,8 @@ export const spec = {
     {code: 'admaticde', gvlid: 1281},
     {code: 'pixad', gvlid: 1281},
     {code: 'monetixads', gvlid: 1281},
-    {code: 'netaddiction', gvlid: 1281}
+    {code: 'netaddiction', gvlid: 1281},
+    {code: 'adt', gvlid: 779}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -75,7 +55,7 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
-    const host = getValue(validBidRequests[0].params, 'host');
+    let host = getValue(validBidRequests[0].params, 'host');
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -158,11 +138,15 @@ export const spec = {
         case 'admaticde':
           SYNC_URL = 'https://static.cdn.admatic.de/admaticde/sync.html';
           break;
+        case 'adt':
+          SYNC_URL = 'https://static.cdn.adtarget.org/adt/sync.html';
+          break;
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
           break;
       }
 
+      host = host?.replace('https://', '')?.replace('http://', '')?.replace('/', '');
       return { method: 'POST', url: `https://${host}/pb`, data: payload, options: { contentType: 'application/json' } };
     }
   },
@@ -171,7 +155,7 @@ export const spec = {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
-      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
+      params = Object.keys(params).length ? `&${formatQS(params)}` : '';
 
       hasSynced = true;
       return {
@@ -414,45 +398,6 @@ function concatSizes(bid) {
         return acc;
       }, []);
   }
-}
-
-function interpretNativeAd(adm) {
-  const native = JSON.parse(adm).native;
-  const result = {
-    clickUrl: encodeURI(native.link.url),
-    impressionTrackers: native.imptrackers
-  };
-  native.assets.forEach(asset => {
-    switch (asset.id) {
-      case OPENRTB.N.ASSET_ID.TITLE:
-        result.title = asset.title.text;
-        break;
-      case OPENRTB.N.ASSET_ID.IMAGE:
-        result.image = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.N.ASSET_ID.ICON:
-        result.icon = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.N.ASSET_ID.BODY:
-        result.body = asset.data.value;
-        break;
-      case OPENRTB.N.ASSET_ID.SPONSORED:
-        result.sponsoredBy = asset.data.value;
-        break;
-      case OPENRTB.N.ASSET_ID.CTA:
-        result.cta = asset.data.value;
-        break;
-    }
-  });
-  return result;
 }
 
 function _validateId(id) {

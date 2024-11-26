@@ -842,6 +842,13 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
+    it('resolves .requestsDone', async () => {
+      const auction = auctionManager.createAuction({adUnits});
+      stubCallAdapters.reset();
+      auction.callBids();
+      await auction.requestsDone;
+    })
+
     describe('stale auctions', () => {
       let clock, auction;
       beforeEach(() => {
@@ -1037,26 +1044,38 @@ describe('auctionmanager.js', function () {
         Object.entries({
           'on adUnit': () => adUnits[0],
           'on bid': () => bidderRequests[0].bids[0],
+          'on mediatype': () => bidderRequests[0].bids[0].mediaTypes.banner,
         }).forEach(([t, getObj]) => {
-          it(t, () => {
-            let renderer = {
+          let renderer, bid;
+          beforeEach(() => {
+            renderer = {
               url: 'renderer.js',
               render: (bid) => bid
             };
+          })
 
-            let bids1 = Object.assign({},
+          function getBid() {
+            let bid = Object.assign({},
               bids[0],
               {
                 bidderCode: BIDDER_CODE,
-                mediaType: 'video-outstream',
+                mediaType: 'banner',
               }
             );
             Object.assign(getObj(), {renderer});
-            spec.interpretResponse.returns(bids1);
+            spec.interpretResponse.returns(bid);
             auction.callBids();
-            const addedBid = auction.getBidsReceived().pop();
-            assert.equal(addedBid.renderer.url, 'renderer.js');
-          })
+            return auction.getBidsReceived().pop();
+          }
+
+          it(t, () => {
+            expect(getBid().renderer.url).to.eql('renderer.js');
+          });
+
+          it('allows renderers without URL', () => {
+            delete renderer.url;
+            expect(getBid().renderer.renderNow).to.be.true;
+          });
         })
       })
 
