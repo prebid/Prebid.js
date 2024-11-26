@@ -23,7 +23,8 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
-const CONTXTFUL_RECEPTIVITY_DOMAIN = 'api.receptivity.io';
+const CONTXTFUL_HOSTNAME_DEFAULT = 'api.receptivity.io';
+const CONTXTFUL_DEFER_DEFAULT = 0;
 
 const storageManager = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -128,9 +129,10 @@ export function extractParameters(config) {
     throw Error(`${MODULE}: params.customer should be a non-empty string`);
   }
 
-  const hostname = config?.params?.hostname || CONTXTFUL_RECEPTIVITY_DOMAIN;
+  const hostname = config?.params?.hostname || CONTXTFUL_HOSTNAME_DEFAULT;
+  const defer = config?.params?.defer || CONTXTFUL_DEFER_DEFAULT;
 
-  return { version, customer, hostname };
+  return { version, customer, hostname, defer };
 }
 
 /**
@@ -139,7 +141,7 @@ export function extractParameters(config) {
  * @param { String } config
  */
 function initCustomer(config) {
-  const { version, customer, hostname } = extractParameters(config);
+  const { version, customer, hostname, defer } = extractParameters(config);
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
     host: hostname,
@@ -147,7 +149,14 @@ function initCustomer(config) {
   });
 
   addConnectorEventListener(customer, config);
-  loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME);
+
+  const loadScript = () => loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME);
+  // Optionally defer the loading of the script
+  if (Number.isFinite(defer) && defer > 0) {
+    setTimeout(loadScript, defer);
+  } else {
+    loadScript();
+  }
 }
 
 /**
