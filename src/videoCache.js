@@ -72,7 +72,7 @@ function wrapURI(uri, impTrackerURLs) {
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  const vastValue = getVastValue(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   let payload = {
@@ -140,6 +140,10 @@ function shimStorageCallback(done) {
   }
 }
 
+function getVastValue(bid) {
+  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+};
+
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
@@ -161,6 +165,12 @@ export function store(bids, done, getAjax = ajaxBuilder) {
 export function getCacheUrl(id) {
   return `${config.getConfig('cache.url')}?uuid=${id}`;
 }
+
+export const storeLocally = (bid) => {
+  const vastValue = getVastValue(bid);
+  const url = URL.createObjectURL(new Blob([vastValue], { type: 'text/xml' }));
+  bid.vastUrl = url;
+};
 
 export const _internal = {
   store

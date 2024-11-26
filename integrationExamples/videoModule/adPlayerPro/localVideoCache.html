@@ -1,7 +1,9 @@
+
 <html lang="en">
 
 <head>
   <script src="https://serving.stat-rock.com/player/prebidAdPlayerPro.js"></script>
+  <!-- <script async src="https://cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script> -->
   <script async src="../../../build/dev/prebid.js"></script>
 
   <title>AdPlayer.Pro Event Listeners</title>
@@ -14,8 +16,7 @@
       code: 'div-gpt-ad-51545-0',
       mediaTypes: {
         video: {
-          "context":"outstream",
-          playerSize: [640, 360]
+            playerSize: [640, 360], 
         }
       },
       video: {
@@ -31,11 +32,16 @@
       ]
     }];
 
+    const vastXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://adplayer.pro/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"640\" height=\"360\" type=\"video/mp4\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://static.adplayer.pro/video/demo_v2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
+
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
 
     pbjs.que.push(function () {
       pbjs.setConfig({
+        cache: {
+            useLocal: true
+        },
         video: {
           providers: [{
             divId: 'player', // required, this is the id of the div element where the player will be placed
@@ -43,20 +49,20 @@
             playerConfig: {
               placementId: 'c9gebfehcqjE', // required, this placementId is only for demo purposes
               params: {
-                'type': 'inView',
-                'muted': true,
-                'autoStart': true,
-                'advertising': {
-                  'controls': true,
-                  'closeButton': true,
+                type: 'inView',
+                muted: true,
+                autoStart: true,
+                width: 640,
+                height: 360,
+                advertising: {
+                  closeButton: true,
                   // 'tag': {'client': 'googima'},
-                },
-                'width': '600',
-                'height': '300'
+                }
               }
             },
-          },]
+          }]
         },
+        //settings for demo only
         debugging: {
           enabled: true,
           intercept: [
@@ -68,12 +74,15 @@
                 context: "outstream",
                 cpm: 10,
                 mediaType: "video",
-                vastXml: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://adplayer.pro/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"640\" height=\"360\" type=\"video/mp4\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://static.adplayer.pro/video/demo_v2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>",
+                // vastUrl: url,
+                vastXml,
                 renderer: {},
               }
             },
           ]
-        }
+        },
+        consentManagement: {cmpApi: 'static', consentData: {getTCData: {gdprApplies: false}}},
+        bidResponseFilter: {cat: {blockUnknown: false}, adv: {blockUnknown: false}, attr: {blockUnknown: false}}
       });
       pbjs.addAdUnits(adUnits);
 
@@ -148,7 +157,7 @@
 </head>
 
 <body>
-<h2>AdPlayer.Pro Event Listeners</h2>
+<h2>AdPlayer.Pro with Local Cache</h2>
 
 <h5>Div-1: Player placeholder div</h5>
 <div id='player'></div>

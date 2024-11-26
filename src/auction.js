@@ -81,7 +81,7 @@ import {
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
-import {batchAndStore} from './videoCache.js';
+import {storeLocally} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
@@ -566,15 +566,23 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
     }), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
   const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+  const { 
+    useLocal, 
+    url: cacheUrl, 
+    ignoreBidderCacheKey 
+  } = config.getConfig('cache') || {};
 
-  if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
-    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
+  if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
+    if (!bidResponse.videoCacheKey || ignoreBidderCacheKey) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
     } else if (!bidResponse.vastUrl) {
       logError('videoCacheKey specified but not required vastUrl for video bid');
       addBid = false;
     }
+  } else if (useLocal) {
+    // stores video bid vast as local blob in the browser
+    storeLocally(bidResponse);
   }
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);

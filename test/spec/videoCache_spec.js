@@ -1,5 +1,5 @@
 import chai from 'chai';
-import {batchingCache, getCacheUrl, store, _internal, storeBatch} from 'src/videoCache.js';
+import {batchingCache, getCacheUrl, store, _internal, storeBatch, storeLocally} from 'src/videoCache.js';
 import {config} from 'src/config.js';
 import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
@@ -395,6 +395,36 @@ describe('The video cache', function () {
       sinon.assert.notCalled(batch[0].afterBidAdded);
       sinon.assert.called(utils.logError);
     })
+  })
+
+  describe('storeLocally', () => {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      config.setConfig({
+        cache: {
+          useLocal: true
+        }
+      });
+    });
+
+    afterEach(function () {
+      config.resetConfig();
+      sandbox.restore();
+    });
+
+    it('should set blob url to bid.vastUrl', () => {
+      const bid = {
+        vastXml: '<xml></xml>'
+      };
+      const currentHost = `${window.location.protocol}//${window.location.host}`;
+      const blobUrlPattern = new RegExp(`^blob:${currentHost}/[a-f0-9\\-]+$`);
+
+      storeLocally(bid);
+
+      expect(bid.vastUrl).to.match(blobUrlPattern);
+    });
   })
 });
 
