@@ -86,6 +86,7 @@ function toPayload(bidRequest, bidderRequest) {
   payload.schain = bidRequest.schain;
   payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
+  payload.screen = { height: screen.height, width: screen.width };
 
   return {
     method: 'POST',

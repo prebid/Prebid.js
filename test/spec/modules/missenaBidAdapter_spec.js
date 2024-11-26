@@ -173,6 +173,11 @@ describe('Missena Adapter', function () {
       expect(payload.ik).to.equal(window.msna_ik);
     });
 
+    it('should send screen', function () {
+      expect(payload.screen.width).to.equal(screen.width);
+      expect(payload.screen.height).to.equal(screen.height);
+    });
+
     getDataFromLocalStorageStub.restore();
     getDataFromLocalStorageStub = sinon.stub(
       storage,
