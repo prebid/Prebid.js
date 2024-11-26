@@ -1,6 +1,7 @@
 import { submodule } from '../src/hook.js';
 import { logInfo } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'tncId';
 let url = null;
@@ -19,7 +20,7 @@ const waitTNCScript = (tncNS) => {
 
 const loadRemoteScript = () => {
   return new Promise((resolve) => {
-    loadExternalScript(url, MODULE_NAME, resolve);
+    loadExternalScript(url, MODULE_TYPE_UID, MODULE_NAME, resolve);
   })
 }
 

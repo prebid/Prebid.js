@@ -1,8 +1,10 @@
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
 import {
   deepAccess,
   deepSetValue,
+  formatQS,
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
@@ -106,14 +108,41 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
  * @param {Object} pathData API path data
  * @param {string} [pathData.resourceKey] Resource key
  * @param {string} [pathData.onPremiseJSUrl] On-premise JS URL
+ * @param {Object<string, any>} [pathData.hev] High entropy values
+ * @param {Window} [win] Window object (mainly for testing)
  * @returns {string} 51Degrees JS URL
  */
-export const get51DegreesJSURL = (pathData) => {
-  if (pathData.onPremiseJSUrl) {
-    return pathData.onPremiseJSUrl;
-  }
-  return `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`;
+export const get51DegreesJSURL = (pathData, win) => {
+  const _window = win || window;
+  const baseURL = pathData.onPremiseJSUrl || `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`;
+
+  const queryPrefix = baseURL.includes('?') ? '&' : '?';
+  const qs = {};
+
+  deepSetNotEmptyValue(
+    qs,
+    '51D_GetHighEntropyValues',
+    pathData.hev && Object.keys(pathData.hev).length ? btoa(JSON.stringify(pathData.hev)) : null,
+  );
+  deepSetNotEmptyValue(qs, '51D_ScreenPixelsHeight', _window?.screen?.height);
+  deepSetNotEmptyValue(qs, '51D_ScreenPixelsWidth', _window?.screen?.width);
+  deepSetNotEmptyValue(qs, '51D_PixelRatio', _window?.devicePixelRatio);
+
+  const _qs = formatQS(qs);
+  const _qsString = _qs ? `${queryPrefix}${_qs}` : '';
+
+  return `${baseURL}${_qsString}`;
 }
+
+/**
+ * Retrieves high entropy values from `navigator.userAgentData` if available
+ *
+ * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
+ * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
+ */
+export const getHighEntropyValues = async (hints) => {
+  return navigator?.userAgentData?.getHighEntropyValues?.(hints);
+};
 
 /**
  * Check if meta[http-equiv="Delegate-CH"] tag is present in the document head and points to 51Degrees cloud
@@ -250,10 +279,6 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     logMessage('Resource key: ', resourceKey);
     logMessage('On-premise JS URL: ', onPremiseJSUrl);
 
-    // Get 51Degrees JS URL, which is either cloud or on-premise
-    const scriptURL = get51DegreesJSURL(resourceKey ? {resourceKey} : {onPremiseJSUrl});
-    logMessage('URL of the script to be injected: ', scriptURL);
-
     // Check if 51Degrees meta is present (cloud only)
     if (resourceKey) {
       logMessage('Checking if 51Degrees meta is present in the document head');
@@ -262,20 +287,26 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       }
     }
 
-    // Inject 51Degrees script, get device data and merge it into the ORTB2 object
-    loadExternalScript(scriptURL, MODULE_NAME, () => {
-      logMessage('Successfully injected 51Degrees script');
-      const fod = /** @type {Object} */ (window.fod);
-      // Convert and merge device data in the callback
-      fod.complete((data) => {
-        logMessage('51Degrees raw data: ', data);
-        mergeDeep(
-          reqBidsConfigObj.ortb2Fragments.global,
-          convert51DegreesDataToOrtb2(data),
-        );
-        logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
-        callback();
-      });
+    getHighEntropyValues(['model', 'platform', 'platformVersion', 'fullVersionList']).then((hev) => {
+      // Get 51Degrees JS URL, which is either cloud or on-premise
+      const scriptURL = get51DegreesJSURL({resourceKey, onPremiseJSUrl, hev});
+      logMessage('URL of the script to be injected: ', scriptURL);
+
+      // Inject 51Degrees script, get device data and merge it into the ORTB2 object
+      loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, () => {
+        logMessage('Successfully injected 51Degrees script');
+        const fod = /** @type {Object} */ (window.fod);
+        // Convert and merge device data in the callback
+        fod.complete((data) => {
+          logMessage('51Degrees raw data: ', data);
+          mergeDeep(
+            reqBidsConfigObj.ortb2Fragments.global,
+            convert51DegreesDataToOrtb2(data),
+          );
+          logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
+          callback();
+        });
+      }, document, {crossOrigin: 'anonymous'});
     });
   } catch (error) {
     // In case of an error, log it and continue

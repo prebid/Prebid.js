@@ -2030,31 +2030,49 @@ describe('kargo adapter tests', function() {
     });
   });
 
-  describe('onTimeout', function() {
+  describe('onTimeout', function () {
+    let fetchStub;
+
     beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
+      fetchStub = sinon.stub(global, 'fetch').resolves(); // Stub fetch globally
     });
 
     afterEach(function () {
-      utils.triggerPixel.restore();
+      fetchStub.restore(); // Restore the original fetch function
     });
 
-    it('does not call triggerPixel if timeout data is not provided', function() {
+    it('does not call fetch if timeout data is not provided', function () {
       spec.onTimeout(null);
-      expect(utils.triggerPixel.callCount).to.equal(0);
+      expect(fetchStub.callCount).to.equal(0);
     });
 
-    it('calls triggerPixel if any timeout data is provided', function() {
+    it('calls fetch with the correct URLs if timeout data is provided', function () {
       spec.onTimeout([
-        {auctionId: 'test-auction-id', timeout: 400},
-        {auctionId: 'test-auction-id-2', timeout: 100},
-        {auctionId: 'test-auction-id-3', timeout: 450},
-        {auctionId: 'test-auction-id-4', timeout: 500},
+        { auctionId: 'test-auction-id', timeout: 400 },
+        { auctionId: 'test-auction-id-2', timeout: 100 },
+        { auctionId: 'test-auction-id-3', timeout: 450 },
+        { auctionId: 'test-auction-id-4', timeout: 500 },
       ]);
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id&ato=400')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-2&ato=100')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-3&ato=450')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-4&ato=500')).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id&ato=400',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-2&ato=100',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-3&ato=450',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-4&ato=500',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
     });
   });
 });
