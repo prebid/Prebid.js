@@ -159,6 +159,41 @@ describe('the michao bidder adapter', () => {
           'data.test': 1,
         });
       });
+
+      it('Specifying a reward builds a bid request for the reward.', () => {
+        const bidRequest = {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0,
+          mediaTypes: { banner: [[300, 250]] },
+          params: {
+            site: 123,
+            placement: 456,
+            reward: true,
+          },
+        };
+        const bidderRequest = {
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          auctionStart: 1579746300522,
+          bidderCode: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bids: [bidRequest],
+        };
+        config.setConfig({
+          debug: true,
+        });
+
+        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+
+        expect(result).to.nested.include({
+          'data.imp[0].rwdd': 1,
+        });
+      });
     });
 
     describe('interpret response', () => {
@@ -427,17 +462,13 @@ describe('the michao bidder adapter', () => {
         },
         {
           adUnitCode: 'test-div',
-          auctionId: 'auction-1',
+          auctionId: 'auction-2',
           bidId: 'bid-2',
           bidder: 'michao',
-          bidderRequestId: 'bidder-request-1',
+          bidderRequestId: 'bidder-request-2',
           mediaTypes: {
-            video: {
-              context: 'outstream',
-              playerSize: [640, 480],
-              mimes: ['video/mp4'],
-              minduration: 0,
-              maxduration: 30,
+            banner: {
+              sizes: [[300, 250]],
             },
           },
           params: {

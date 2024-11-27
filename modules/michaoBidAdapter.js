@@ -147,10 +147,15 @@ export function hasParamsObject(bid) {
 }
 
 export function validateMichaoParams(params) {
-  const michaoParams = ['site', 'placement'];
-  return michaoParams.every((michaoParam) =>
+  let valid = true;
+
+  const michaoAdUnitInfoParams = ['site', 'placement'];
+
+  valid = michaoAdUnitInfoParams.every((michaoParam) =>
     Number.isFinite(params[michaoParam])
   );
+
+  return valid
 }
 
 export function billBid(bid) {
@@ -178,8 +183,8 @@ const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    // imp.id = bidRequest.adUnitCode;
     deepSetValue(imp, 'ext.placement', bidRequest.params.placement.toString());
+    deepSetValue(imp, 'rwdd', bidRequest.params?.reward ? 1 : false);
 
     return imp;
   },
