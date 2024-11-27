@@ -29,6 +29,31 @@ export function parseRequestedAttributes(overrides) {
   }
 }
 
+export function makeSourceEventToSend(configParams) {
+  const sourceEvent = {}
+  let nonEmpty = false
+  if (typeof configParams.emailHash === 'string') {
+    nonEmpty = true
+    sourceEvent.emailHash = configParams.emailHash
+  }
+  if (typeof configParams.ipv4 === 'string') {
+    nonEmpty = true
+    sourceEvent.ipv4 = configParams.ipv4
+  }
+  if (typeof configParams.ipv6 === 'string') {
+    nonEmpty = true
+    sourceEvent.ipv6 = configParams.ipv6
+  }
+  if (typeof configParams.userAgent === 'string') {
+    nonEmpty = true
+    sourceEvent.userAgent = configParams.userAgent
+  }
+
+  if (nonEmpty) {
+    return sourceEvent
+  }
+}
+
 export function composeIdObject(value) {
   const result = {};
 
@@ -87,6 +112,18 @@ export function composeIdObject(value) {
     result.lipb = {...result.lipb, tdid: value.thetradedesk}
     result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
     delete result.lipb.thetradedesk
+  }
+
+  if (value.sharethrough) {
+    result.sharethrough = { 'id': value.sharethrough, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.sonobi) {
+    result.sonobi = { 'id': value.sonobi, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.vidazoo) {
+    result.vidazoo = { 'id': value.vidazoo, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
   return result
@@ -198,6 +235,42 @@ export const eids = {
     atype: 1,
     getValue: function(data) {
       return data.id;
+    }
+  },
+  'sharethrough': {
+    source: 'sharethrough.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'sonobi': {
+    source: 'liveintent.sonobi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'vidazoo': {
+    source: 'liveintent.vidazoo.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
     }
   }
 }

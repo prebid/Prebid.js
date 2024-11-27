@@ -129,7 +129,7 @@ const ENRICHMENTS = {
   regs() {
     const regs = {};
     if (winFallback((win) => win.navigator.globalPrivacyControl)) {
-      deepSetValue(regs, 'ext.gpc', 1);
+      deepSetValue(regs, 'ext.gpc', '1');
     }
     const coppa = config.getConfig('coppa');
     if (typeof coppa === 'boolean') {
