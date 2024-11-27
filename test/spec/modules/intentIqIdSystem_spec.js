@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { decryptData, handleClientHints, handleGPPData, readData } from '../../../modules/intentIqIdSystem';
+import { decryptData, handleClientHints, readData } from '../../../modules/intentIqIdSystem';
+import {getGppValue} from '../../../libraries/intentIqUtils/getGppValue.js';
 import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
@@ -252,7 +253,7 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false })
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.args[0][0]).to.deep.equal({});
+    expect(callBackSpy.args[0][0]).to.deep.equal({eids: []});
   });
 
   it('send addition parameters if were found in localstorage', function () {
@@ -306,36 +307,39 @@ describe('IntentIQ tests', function () {
     expect(logErrorStub.called).to.be.true;
   });
 
-  describe('handleGPPData', function () {
-    it('should convert array of objects to a single JSON string', function () {
-      const input = [
-        { key1: 'value1' },
-        { key2: 'value2' }
-      ];
-      const expectedOutput = JSON.stringify({ key1: 'value1', key2: 'value2' });
-      const result = handleGPPData(input);
-      expect(result).to.equal(expectedOutput);
-    });
+  describe('getGppValue', function () {
+    const testCases = [
+      {
+        description: 'should return gppString and gpi=0 when GPP data exists',
+        input: { gppString: '{"key1":"value1","key2":"value2"}' },
+        expectedOutput: { gppString: '{"key1":"value1","key2":"value2"}', gpi: 0 }
+      },
+      {
+        description: 'should return empty gppString and gpi=1 when GPP data does not exist',
+        input: null,
+        expectedOutput: { gppString: '', gpi: 1 }
+      },
+      {
+        description: 'should return empty gppString and gpi=1 when gppString is not set',
+        input: {},
+        expectedOutput: { gppString: '', gpi: 1 }
+      },
+      {
+        description: 'should handle GPP data with empty string',
+        input: { gppString: '' },
+        expectedOutput: { gppString: '', gpi: 1 }
+      }
+    ];
 
-    it('should convert a single object to a JSON string', function () {
-      const input = { key1: 'value1', key2: 'value2' };
-      const expectedOutput = JSON.stringify(input);
-      const result = handleGPPData(input);
-      expect(result).to.equal(expectedOutput);
-    });
+    testCases.forEach(({ description, input, expectedOutput }) => {
+      it(description, function () {
+        sinon.stub(gppDataHandler, 'getConsentData').returns(input);
 
-    it('should handle empty object', function () {
-      const input = {};
-      const expectedOutput = JSON.stringify(input);
-      const result = handleGPPData(input);
-      expect(result).to.equal(expectedOutput);
-    });
+        const result = getGppValue();
+        expect(result).to.deep.equal(expectedOutput);
 
-    it('should handle empty array', function () {
-      const input = [];
-      const expectedOutput = JSON.stringify({});
-      const result = handleGPPData(input);
-      expect(result).to.equal(expectedOutput);
+        gppDataHandler.getConsentData.restore();
+      });
     });
   });
 
@@ -431,54 +435,36 @@ describe('IntentIQ tests', function () {
       expect(firstPartyData.uspapi_value).to.equal(uspData);
     });
 
-    it('should set cmpData.gpp and cmpData.gpp_sid if gppData exists and has parsedSections with usnat', function () {
-      const gppData = {
-        parsedSections: {
-          usnat: { key1: 'value1', key2: 'value2' }
-        },
-        applicableSections: ['usnat']
+    it('should create a request with gpp data if gppData exists and has gppString', function () {
+      const mockGppValue = {
+        gppString: '{"key1":"value1","key2":"value2"}',
+        gpi: 0
       };
-      gppDataHandlerStub.returns(gppData);
+
+      const mockConfig = {
+        params: { partner: partner },
+        enabledStorageTypes: ['localStorage']
+      };
+
+      gppDataHandlerStub.returns(mockGppValue);
 
       let callBackSpy = sinon.spy();
-      let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+      let submoduleCallback = intentIqIdSubmodule.getId(mockConfig).callback;
       submoduleCallback(callBackSpy);
+
       let request = server.requests[0];
-      expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+
       request.respond(
         200,
         responseHeader,
-        JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false, isOptedOut: false })
+        JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
       );
+
+      expect(request.url).to.contain(`&gpp=${encodeURIComponent(mockGppValue.gppString)}`);
       expect(callBackSpy.calledOnce).to.be.true;
 
       const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-      expect(firstPartyData.gpp_value).to.equal(JSON.stringify({ key1: 'value1', key2: 'value2' }));
-    });
-
-    it('should handle gppData without usnat in parsedSections', function () {
-      const gppData = {
-        parsedSections: {
-          euconsent: { key1: 'value1' }
-        },
-        applicableSections: ['euconsent']
-      };
-      gppDataHandlerStub.returns(gppData);
-
-      let callBackSpy = sinon.spy();
-      let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-      submoduleCallback(callBackSpy);
-      let request = server.requests[0];
-      expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
-      request.respond(
-        200,
-        responseHeader,
-        JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false, isOptedOut: true })
-      );
-      expect(callBackSpy.calledOnce).to.be.true;
-
-      const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-      expect(firstPartyData.gpp_value).to.equal('');
+      expect(firstPartyData.gpp_string_value).to.equal(mockGppValue.gppString);
     });
   });
 
