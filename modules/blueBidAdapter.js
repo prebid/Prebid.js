@@ -16,6 +16,7 @@ import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 const BIDDER_CODE = 'blue';
 const GVLID = 620;
 const CDB_ENDPOINT = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
+const BUNDLE_COOKIE_NAME = 'ckid';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const TRANSLATOR = ortb25Translator();
@@ -180,9 +181,19 @@ export const spec = {
    */
   buildRequests: (bidRequests, bidderRequest) => {
     const context = buildContext(bidRequests, bidderRequest);
+    const blueId = storage.cookiesAreEnabled() && storage.getCookie(BUNDLE_COOKIE_NAME);
     const url = buildCdbUrl(context);
     const data = CONVERTER.toORTB({ bidderRequest, bidRequests, context });
+    // put user id in the request
+    if (data.user == undefined) {
+      data.user = {};
+    }
 
+    if (data.user.ext == undefined) {
+      data.user.ext = {
+        buyerid: blueId
+      };
+    }
     if (data) {
       return { method: 'POST', url, data, bidRequests };
     }
@@ -268,7 +279,6 @@ function pickAvailableGetFloorFunc(bidRequest) {
   }
   return undefined;
 }
-
 function getFloors(bidRequest) {
   try {
     const floors = {};
