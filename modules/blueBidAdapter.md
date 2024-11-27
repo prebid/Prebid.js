@@ -18,7 +18,7 @@ Module that connects to Blue's demand sources.
                 {
                     bidder: 'blue',
                     params: {
-                        zoneId: 497747
+                        publisherId: "xpto"
                     }
                 }
             ]
