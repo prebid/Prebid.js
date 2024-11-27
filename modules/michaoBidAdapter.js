@@ -86,7 +86,7 @@ export const spec = {
 
 export const domainLogger = {
   bidRequestValidationError() {
-    logError('Michao: wrong format of site or placement.');
+    logError('Michao Bid Adapter: wrong format of site or placement.');
   },
 };
 
