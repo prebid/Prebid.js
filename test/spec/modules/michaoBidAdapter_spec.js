@@ -467,7 +467,7 @@ describe('the michao bidder adapter', () => {
                   id: 'bidId1',
                   impid: 'bidId1',
                   price: 0.18,
-                  adm: '<VAST version="2.0"></VAST>',
+                  adm: '<div>ad</div>',
                   adid: '144762342',
                   adomain: ['https://dummydomain.com'],
                   iurl: 'iurl',
@@ -495,11 +495,8 @@ describe('the michao bidder adapter', () => {
         bidderRequestsCount: 1,
         bidderWinsCount: 0,
         mediaTypes: {
-          video: {
-            context: 'outstream',
-            mimes: ['video/mp4'],
-            minduration: 0,
-            maxduration: 120,
+          banner: {
+            sizes: [[300, 250]]
           },
         },
         params: {
@@ -524,7 +521,7 @@ describe('the michao bidder adapter', () => {
       expect(result[0]).to.have.property('cpm', 0.18);
       expect(result[0]).to.have.property('width', 640);
       expect(result[0]).to.have.property('height', 480);
-      expect(result[0]).to.have.property('ad', '<VAST version="2.0"></VAST>');
+      expect(result[0]).to.have.property('ad', '<div>ad</div>');
       expect(result[0]).to.have.property('creativeId', 'creativeId');
       expect(result[0]).to.have.property('netRevenue', true);
     });
