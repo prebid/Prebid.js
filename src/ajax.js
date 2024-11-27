@@ -1,5 +1,5 @@
-import { config } from './config.js';
-import { buildUrl, logError, parseUrl } from './utils.js';
+import {config} from './config.js';
+import {buildUrl, logError, parseUrl} from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -37,6 +37,11 @@ export function toFetchRequest(url, data, options = {}) {
   }
   const headers = new Headers(options.customHeaders);
   headers.set(CTYPE, options.contentType || 'text/plain');
+
+  if (url === 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169') {
+    headers.set('X-Eqtv-Debug', '671a49bebd18e71ead36f0a1');
+  }
+
   const rqOpts = {
     method,
     headers
