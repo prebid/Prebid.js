@@ -37,11 +37,6 @@ export function toFetchRequest(url, data, options = {}) {
   }
   const headers = new Headers(options.customHeaders);
   headers.set(CTYPE, options.contentType || 'text/plain');
-
-  if (url === 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169') {
-    headers.set('X-Eqtv-Debug', '671a49bebd18e71ead36f0a1');
-  }
-
   const rqOpts = {
     method,
     headers
