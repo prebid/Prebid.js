@@ -304,6 +304,9 @@ describe('the michao bidder adapter', () => {
             video: {
               context: 'outstream',
               playerSize: [640, 480],
+              minduration: 0,
+              maxduration: 30,
+              protocols: [7]
             },
           },
           params: {

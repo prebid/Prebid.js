@@ -187,14 +187,17 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const { bidRequest } = context;
     let bidResponse = buildBidResponse(bid, context);
-    if (bidRequest.mediaTypes.video?.context === 'outstream') {
-      const renderer = Renderer.install({
-        id: bid.bidId,
-        url: ENV.RENDERER_URL,
-        adUnitCode: bid.adUnitCode,
-      });
-      renderer.setRender(addRenderer);
-      bidResponse.renderer = renderer;
+    if (hasVideoMediaType(bidRequest)) {
+      bidResponse.vastXml = bid.adm;
+      if (bidRequest.mediaTypes.video?.context === 'outstream') {
+        const renderer = Renderer.install({
+          id: bid.bidId,
+          url: ENV.RENDERER_URL,
+          adUnitCode: bid.adUnitCode,
+        });
+        renderer.setRender(addRenderer);
+        bidResponse.renderer = renderer;
+      }
     }
 
     return bidResponse;
