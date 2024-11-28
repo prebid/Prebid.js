@@ -170,10 +170,16 @@ export function initializeModuleData(config) {
   return qortexSessionInfo;
 }
 
+/**
+ * Allows setting of contextual data
+ */
 export function setContextData(value) {
   qortexSessionInfo.currentSiteContext = value
 }
 
+/**
+ * Allows setting of group configuration data
+ */
 export function setGroupConfigData(value) {
   qortexSessionInfo.groupConfig = value
 }
