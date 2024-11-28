@@ -11,7 +11,7 @@ const getBannerRequest = () => {
       {
         bidder: 'madsense',
         params: {
-          company_id: 1234567,
+          company_id: '1234567',
           bidfloor: 10,
         },
         auctionId: 'auctionId-56a2-4f71-9098-720a68f2f708',
@@ -105,7 +105,7 @@ const getVideoRequest = () => {
           page: 'https://test.com',
           referrer: 'http://test.com'
         },
-        company_id: 1234567,
+        company_id: '1234567',
         bidfloor: 10,
       }
     }],

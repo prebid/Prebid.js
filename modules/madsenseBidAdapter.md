@@ -28,7 +28,7 @@ var adUnits = [
         bids: [{
             bidder: 'madsense',
             params: {
-                company_id: 1234567,
+                company_id: '1234567',
                 bidfloor: 2.7,
             }
         }]
@@ -82,7 +82,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
               bidder: 'madsense',
               params: {
                 bidfloor: 0.5,
-                company_id: 1234567
+                company_id: '1234567'
               }
             }
           ]
