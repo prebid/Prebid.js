@@ -5,13 +5,13 @@ import {BANNER, VIDEO} from 'src/mediaTypes.js';
 const getBannerRequest = () => {
   return {
     bidderCode: 'madsense',
-    auctionId: 'c4c13mm4-423e-3mma-c4c1-1b24cwc9adbd',
+    auctionId: 'ba87bfdf-493e-4a88-8e26-17b4cbc9adbd',
     bidderRequestId: 'bidderRequestId',
     bids: [
       {
         bidder: 'madsense',
         params: {
-          company_id: 123456,
+          company_id: 1234567,
           bidfloor: 10,
         },
         auctionId: 'auctionId-56a2-4f71-9098-720a68f2f708',
@@ -68,10 +68,10 @@ const getVideoRequest = () => {
         },
         site: {
           id: 1,
-          page: 'https://test.io',
-          referrer: 'http://test.io'
+          page: 'https://test.com',
+          referrer: 'http://test.com'
         },
-        company_id: '123567'
+        bidfloor: 10,
       }
     }, {
       mediaTypes: {
@@ -102,21 +102,21 @@ const getVideoRequest = () => {
         },
         site: {
           id: 1,
-          page: 'https://test.io',
-          referrer: 'http://test.io'
+          page: 'https://test.com',
+          referrer: 'http://test.com'
         },
-        company_id: '123456',
+        company_id: 1234567,
         bidfloor: 10,
       }
     }],
-    auctionStart: 1521001292880,
+    auctionStart: 1520001292880,
     timeout: 5000,
-    start: 1521001292884,
+    start: 1520001292884,
     doneCbCallCount: 0,
     refererInfo: {
       numIframes: 1,
       reachedTop: true,
-      referer: 'test.io'
+      referer: 'test.com'
     }
   };
 };
@@ -136,7 +136,7 @@ const getBidderResponse = () => {
               adm: '<script>adm</script>',
               adid: '144762342',
               adomain: [
-                'https://example.io'
+                'https://dummydomain.com'
               ],
               iurl: 'iurl',
               cid: '109',
@@ -209,7 +209,7 @@ describe('madsenseBidAdapter', function() {
     'refererInfo': {
       'numIframes': 1,
       'reachedTop': true,
-      'referer': 'test.io'
+      'referer': 'test.com'
     }
   };
 
@@ -243,10 +243,10 @@ describe('madsenseBidAdapter', function() {
         },
         site: {
           id: 1,
-          page: 'https://test.io',
-          referrer: 'http://test.io'
+          page: 'https://test.com',
+          referrer: 'http://test.com'
         },
-        company_id: 'cid123',
+        company_id: '1234567',
         bidfloor: 0
       }
     };

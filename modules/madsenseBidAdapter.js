@@ -12,7 +12,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'madsense';
-const DEFAULT_BID_TTL = 55;
+const DEFAULT_BID_TTL = 300;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
 
@@ -55,8 +55,7 @@ const converter = ortbConverter({
     let resMediaType;
     const {bidRequest} = context;
 
-    // KORISTITI mtype PARAMETAR za detekciju banner vs video (1 = banner, 2 = video)
-    if (bid.adm?.trim().startsWith('<VAST')) {
+    if (bid.mtype == 2) {
       resMediaType = VIDEO;
     } else {
       resMediaType = BANNER;
@@ -71,10 +70,6 @@ const converter = ortbConverter({
 
     const bidResponse = buildBidResponse(bid, context);
 
-    if (resMediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
-      bidResponse.renderer = outstreamRenderer(bidResponse);
-    }
-
     return bidResponse;
   }
 });
@@ -83,7 +78,7 @@ export const spec = {
   code: BIDDER_CODE,
   VERSION: '1.0.0',
   supportedMediaTypes: [BANNER, VIDEO],
-  ENDPOINT: 'https://ads.madsense.io/pbjs',
+  ENDPOINT: 'https://ads.dev.madsense.io/pbjs',
 
   isBidRequestValid: function (bid) {
     return (
@@ -102,18 +97,13 @@ export const spec = {
 
     const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: {contextMediaType} });
 
-    let publisherId = validBidRequests[0].params.publisherId;
-    let placementId = validBidRequests[0].params.placementId;
+    let companyId = validBidRequests[0].params.company_id;
 
     if (validBidRequests[0].params.e2etest) {
-      logMessage('madsense: E2E test mode enabled');
-      publisherId = 'e2etest'
+      logMessage('madsense: test mode');
+      companyId = 'test'
     }
-    let baseEndpoint = spec.ENDPOINT + '?pid=' + publisherId;
-
-    if (placementId) {
-      baseEndpoint += '&placementId=' + placementId
-    }
+    let baseEndpoint = spec.ENDPOINT + '?company_id=' + companyId;
 
     return {
       method: 'POST',
@@ -149,13 +139,8 @@ function _validateParams(bidRequest) {
     return true;
   }
 
-  if (!bidRequest.params.publisherId) {
-    logError('madsense: Validation failed: publisherId not declared');
-    return false;
-  }
-
-  if (!bidRequest.params.placementId) {
-    logError('madsense: Validation failed: placementId not declared');
+  if (!bidRequest.params.company_id) {
+    logError('madsense: Validation failed: company_id not declared');
     return false;
   }
 
@@ -198,12 +183,12 @@ function _validateVideo(bidRequest) {
   };
 
   if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-    logError('madsense: Validation failed: mimes are invalid');
+    logError('madsense: Validation failed: invalid mimes');
     return false;
   }
 
   if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-    logError('madsense: Validation failed: protocols are invalid');
+    logError('madsense: Validation failed: invalid protocols');
     return false;
   }
 
@@ -213,7 +198,7 @@ function _validateVideo(bidRequest) {
   }
 
   if (videoParams.context !== 'instream') {
-    logError('madsense: Validation failed: only context instream is supported ');
+    logError('madsense: Validation failed: only context instream is supported');
     return false;
   }
 
