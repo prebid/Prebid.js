@@ -99,7 +99,9 @@ export const spec = {
     {code: 'voisetech'},
     {code: 'global_sun'},
     {code: 'rxnetwork'},
-    {code: 'revbid'}
+    {code: 'revbid'},
+    {code: 'spinx', gvlid: 1308},
+    {code: 'oppamedia'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -263,7 +265,7 @@ function buildImps(bidRequest, secure) {
     'tagid': bidRequest.adUnitCode
   };
   if (secure) {
-    imp.secure = 1;
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
   var sizes = [];
   let mediaTypes = bidRequest.mediaTypes;
