@@ -178,16 +178,29 @@ export function setGroupConfigData(value) {
   qortexSessionInfo.groupConfig = value
 }
 
+/**
+ * Unique id generator creating an identifier through datetime and random number
+ * @returns {string}
+ */
 function generateSessionId() {
   const randomInt = window.crypto.getRandomValues(new Uint32Array(1));
   const currentDateTime = Math.floor(Date.now() / 1000);
   return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString()
 }
 
+/**
+ * Check for a random value to be above given percentage threshold
+ * @param {number} percentageValue 0-100 number for percentage check.
+ * @returns {Boolean}
+ */
 function checkPercentageOutcome(percentageValue) {
   return (percentageValue ?? 0) > (Math.random() * 100);
 }
 
+/**
+ * Check for allowing functionality of bid enrichment capabilities.
+ * @returns {Boolean}
+ */
 function shouldAllowBidEnrichment() {
   if (qortexSessionInfo.bidEnrichmentDisabled) {
     logWarn('Bid enrichment disabled at prebid config')
