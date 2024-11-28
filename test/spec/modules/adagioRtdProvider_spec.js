@@ -117,12 +117,13 @@ describe('Adagio Rtd Provider', function () {
 
     describe('store session data in localStorage', function () {
       const session = {
-        lastActivityTime: 1714116520700,
+        expiry: 1714116530700,
         id: 'uid-1234',
         rnd: 0.5697,
         vwSmplg: 0.1,
         vwSmplgNxt: 0.1,
-        pages: 1
+        pages: 1,
+        v: 2
       };
 
       it('store new session data for further usage', function () {
@@ -138,6 +139,7 @@ describe('Adagio Rtd Provider', function () {
 
         const expected = {
           session: {
+            v: 2,
             new: true,
             id: utils.generateUUID(),
             rnd: Math.random(),
