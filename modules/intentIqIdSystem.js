@@ -10,11 +10,12 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {gppDataHandler, uspDataHandler} from '../src/consentHandler.js';
+import {uspDataHandler} from '../src/consentHandler.js';
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
+import {getGppValue} from '../libraries/intentIqUtils/getGppValue.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -159,22 +160,6 @@ function tryParse(data) {
 }
 
 /**
- * Convert GPP data to an object
- * @param {Object} data
- * @return {string} The JSON string representation of the input data.
- */
-export function handleGPPData(data = {}) {
-  if (Array.isArray(data)) {
-    let obj = {};
-    for (const element of data) {
-      obj = Object.assign(obj, element);
-    }
-    return JSON.stringify(obj);
-  }
-  return JSON.stringify(data);
-}
-
-/**
  * Processes raw client hints data into a structured format.
  * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
@@ -231,17 +216,19 @@ export const intentIqIdSubmodule = {
   getId(config) {
     const configParams = (config?.params) || {};
     let decryptedData, callbackTimeoutID;
-    let callbackFired = false
-    let runtimeEids = {}
+    let callbackFired = false;
+    let runtimeEids = { eids: [] };
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+    const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
 
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
+        if (isGroupB) runtimeEids = { eids: [] };
         configParams.callback(runtimeEids, firstPartyData?.group || NOT_YET_DEFINED);
       }
     }
@@ -276,22 +263,14 @@ export const intentIqIdSubmodule = {
     // Get consent information
     const cmpData = {};
     const uspData = uspDataHandler.getConsentData();
-    const gppData = gppDataHandler.getConsentData();
+    const gppData = getGppValue();
 
     if (uspData) {
       cmpData.us_privacy = uspData;
     }
 
-    if (gppData) {
-      cmpData.gpp = '';
-      cmpData.gpi = 1;
-
-      if (gppData.parsedSections && 'usnat' in gppData.parsedSections) {
-        cmpData.gpp = handleGPPData(gppData.parsedSections['usnat']);
-        cmpData.gpi = 0
-      }
-      cmpData.gpp_sid = gppData.applicableSections;
-    }
+    cmpData.gpp = gppData.gppString;
+    cmpData.gpi = gppData.gpi;
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
@@ -345,9 +324,9 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_value !== cmpData.gpp) {
+    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_string_value !== cmpData.gpp) {
       firstPartyData.uspapi_value = cmpData.us_privacy;
-      firstPartyData.gpp_value = cmpData.gpp;
+      firstPartyData.gpp_string_value = cmpData.gpp;
       firstPartyData.isOptedOut = false
       firstPartyData.cttl = 0
       shouldCallServer = true;
@@ -364,8 +343,9 @@ export const intentIqIdSubmodule = {
     }
 
     if (!shouldCallServer) {
+      if (isGroupB) runtimeEids = { eids: [] };
       firePartnerCallback();
-      return {id: runtimeEids?.eids || []};
+      return { id: runtimeEids.eids };
     }
 
     // use protocol relative urls for http or https
@@ -378,7 +358,7 @@ export const intentIqIdSubmodule = {
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
     url += cmpData.us_privacy ? '&pa=' + encodeURIComponent(cmpData.us_privacy) : '';
-    url += cmpData.gpp ? '&gpv=' + encodeURIComponent(cmpData.gpp) : '';
+    url += cmpData.gpp ? '&gpp=' + encodeURIComponent(cmpData.gpp) : '';
     url += cmpData.gpi ? '&gpi=' + cmpData.gpi : '';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
@@ -402,8 +382,7 @@ export const intentIqIdSubmodule = {
             partnerData.date = Date.now();
             firstPartyData.date = Date.now();
             const defineEmptyDataAndFireCallback = () => {
-              respJson.data = partnerData.data = runtimeEids = {};
-              partnerData.data = ''
+              respJson.data = partnerData.data = runtimeEids = { eids: [] };
               storeFirstPartyData()
               firePartnerCallback()
               callback(runtimeEids)
