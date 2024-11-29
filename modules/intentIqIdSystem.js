@@ -315,6 +315,11 @@ export const intentIqIdSubmodule = {
     const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY, allowedStorage))
     if (savedData) {
       partnerData = savedData;
+
+      if (partnerData.wsrvcll) {
+        partnerData.wsrvcll = false;
+        storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      }
     }
 
     if (partnerData.data) {
@@ -434,6 +439,14 @@ export const intentIqIdSubmodule = {
               partnerData.data = respJson.data;
             }
 
+            if ('ct' in respJson) {
+              partnerData.ct = respJson.ct;
+            }
+
+            if ('sid' in respJson) {
+              partnerData.siteId = respJson.sid;
+            }
+
             if (rrttStrtTime && rrttStrtTime > 0) {
               partnerData.rrtt = Date.now() - rrttStrtTime;
             }
@@ -459,7 +472,10 @@ export const intentIqIdSubmodule = {
           callback(runtimeEids);
         }
       };
+      rrttStrtTime = Date.now();
 
+      partnerData.wsrvcll = true;
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
       ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
     const respObj = {callback: resp};
