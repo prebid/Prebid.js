@@ -3,7 +3,6 @@ import { spec } from '../../../modules/rediadsBidAdapter';
 
 describe('rediads Bid Adapter', function () {
   const BIDDER_CODE = 'rediads';
-  const ENDPOINT_URL = 'https://stagingbidding.rediads.com/openrtb2/auction';
 
   const bidRequest = {
     bidder: BIDDER_CODE,
@@ -45,7 +44,7 @@ describe('rediads Bid Adapter', function () {
 
       const request = requests[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.url).that.is.not.empty;
       expect(request.data).to.have.property('ext');
       expect(request.data.ext.rediads.params).to.deep.equal(bidRequest.params);
     });

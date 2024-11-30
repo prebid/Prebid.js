@@ -25,7 +25,7 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     let mediaType = 'banner'; // Default media type
 
-    if (bid.vastXml || bid.vastUrl) {
+    if (bid.vastXml || bid.vastUrl || (bid.nurl && bid.w && bid.h) || (bid.adm && bid.adm.startsWith('<VAST'))) {
       mediaType = 'video';
     } else if (bid.adm && bid.adm.includes('"native"') && bid.adm.includes('"assets"')) {
       mediaType = 'native';
