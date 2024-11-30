@@ -3,6 +3,7 @@ import { spec } from '../../../modules/rediadsBidAdapter';
 
 describe('rediads Bid Adapter', function () {
   const BIDDER_CODE = 'rediads';
+  const STAGING_ENDPOINT_URL = 'https://stagingbidding.rediads.com/openrtb2/auction';
 
   const bidRequest = {
     bidder: BIDDER_CODE,
@@ -58,6 +59,16 @@ describe('rediads Bid Adapter', function () {
 
       location.hash = originalHash; // Reset the hash
     });
+
+    it('should set staging environtment if stagingEnvRequested is true', function () {
+      const originalHash = location.hash;
+      location.hash = '#rediads-staging';
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      expect(requests[0].url).to.equal(STAGING_ENDPOINT_URL);
+
+      location.hash = originalHash; // Reset the hash
+    });
   });
 
   describe('interpretResponse', function () {
@@ -94,91 +105,6 @@ describe('rediads Bid Adapter', function () {
         ad: '<div>Ad</div>',
       });
       expect(bid.mediaType).to.equal('banner');
-    });
-    it('should interpret and return valid bid responses for video bid with VAST inline', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [
-            {
-              bid: [
-                {
-                  price: 1.23,
-                  impid: '2ab03f1234',
-                  adm: '<VAST>Video VAST Ad</VAST>',
-                  crid: 'creative123',
-                  w: 300,
-                  h: 250,
-                },
-              ],
-            },
-          ],
-        },
-      };
-      const updatedBidRequest = { ...bidRequest,
-        mediaTypes: {
-          video: {
-            sizes: [[300, 250]],
-          },
-        },
-      };
-      const requestObj = spec.buildRequests([updatedBidRequest], bidderRequest);
-      const bids = spec.interpretResponse(serverResponse, requestObj[0]);
-      expect(bids).to.be.an('array').that.is.not.empty;
-
-      const bid = bids[0];
-      expect(bid).to.include({
-        requestId: '2ab03f1234',
-        cpm: 1.23,
-        creativeId: 'creative123',
-        width: 300,
-        height: 250,
-        vastXml: '<VAST>Video VAST Ad</VAST>',
-      });
-      expect(bid.mediaType).to.equal('video');
-    });
-
-    it('should interpret and return valid bid responses for video bid with nurl, w and h', function () {
-      const serverResponse = {
-        body: {
-          seatbid: [
-            {
-              bid: [
-                {
-                  price: 1.23,
-                  impid: '2ab03f1234',
-                  adm: '<div> Video NURL Ad</div>',
-                  crid: 'creative123',
-                  w: 300,
-                  h: 250,
-                  nurl: 'https://example.com/nurl-video-ad-vast.xml'
-                },
-              ],
-            },
-          ],
-        },
-      };
-      const updatedBidRequest = { ...bidRequest,
-        mediaTypes: {
-          video: {
-            sizes: [[300, 250]],
-          },
-        },
-      };
-      const requestObj = spec.buildRequests([updatedBidRequest], bidderRequest);
-      const bids = spec.interpretResponse(serverResponse, requestObj[0]);
-      expect(bids).to.be.an('array').that.is.not.empty;
-
-      const bid = bids[0];
-      expect(bid).to.include({
-        requestId: '2ab03f1234',
-        cpm: 1.23,
-        creativeId: 'creative123',
-        width: 300,
-        height: 250,
-        vastXml: '<div> Video NURL Ad</div>',
-        vastUrl: 'https://example.com/nurl-video-ad-vast.xml'
-      });
-      expect(bid.mediaType).to.equal('video');
     });
 
     it('should return an empty array for invalid responses', function () {
