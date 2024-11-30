@@ -59,7 +59,7 @@ export const spec = {
     let data = {};
     let FINAL_ENDPOINT_URL = params.endpoint || ENDPOINT_URL
     try {
-      const data = converter.toORTB({ bidRequests, bidderRequest });
+      data = converter.toORTB({ bidRequests, bidderRequest });
       const testBidsRequested = location.hash.includes('rediads-test-bids');
       const stagingEnvRequested = location.hash.includes('rediads-staging');
 
