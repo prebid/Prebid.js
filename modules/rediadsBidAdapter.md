@@ -27,7 +27,9 @@ Please reach out to support@rediads.com for more information.
                 {
                     bidder: "rediads",
                     params: {
-                        accountID: 123
+                        account_id: '123',
+                        site: 'rediads.com',
+                        slot: '321'
                     }
                 }
             ]
