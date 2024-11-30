@@ -1,140 +1,199 @@
-import { spec } from 'modules/rediadsBidAdapter';
-import { deepSetValue } from 'src/utils.js';
-import { config } from 'src/config.js';
 import { expect } from 'chai';
-import sinon from 'sinon';
+import { spec } from '../../../modules/rediadsBidAdapter';
 
-// Test for isBidRequestValid
-describe('isBidRequestValid', function() {
-  it('should return true if accountID is present', function() {
-    const bidRequest = {
-      params: {
-        accountID: '12345',
+describe('rediads Bid Adapter', function () {
+  const BIDDER_CODE = 'rediads';
+  const ENDPOINT_URL = 'https://stagingbidding.rediads.com/openrtb2/auction';
+
+  const bidRequest = {
+    bidder: BIDDER_CODE,
+    params: {
+      account_id: '12345',
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [728, 90]],
       },
-    };
-    const result = spec.isBidRequestValid(bidRequest);
-    expect(result).to.be.true;
+    },
+    adUnitCode: 'adunit-code',
+    bidId: '2ab03f1234',
+    auctionId: '123456789',
+  };
+
+  const bidderRequest = {
+    bidderCode: BIDDER_CODE,
+    refererInfo: {
+      referer: 'http://example.com',
+    },
+  };
+
+  describe('isBidRequestValid', function () {
+    it('should return true for valid bid requests', function () {
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('should return false if account_id is missing', function () {
+      const invalidBid = { ...bidRequest, params: {} };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
   });
 
-  it('should return false if accountID is missing', function() {
-    const bidRequest = {
-      params: {},
-    };
-    const result = spec.isBidRequestValid(bidRequest);
-    expect(result).to.be.false;
+  describe('buildRequests', function () {
+    it('should build a valid request with correct data', function () {
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      expect(requests).to.be.an('array').that.is.not.empty;
+
+      const request = requests[0];
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.data).to.have.property('ext');
+      expect(request.data.ext.rediads.params).to.deep.equal(bidRequest.params);
+    });
+
+    it('should include test flag if testBidsRequested is true', function () {
+      const originalHash = location.hash;
+      location.hash = '#rediads-test-bids';
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      expect(requests[0].data.test).to.equal(1);
+
+      location.hash = originalHash; // Reset the hash
+    });
   });
-});
 
-// Test for buildRequests
-describe('buildRequests', function() {
-  it('should build a valid request with account_id and test flag', function() {
-    const bidRequests = [{
-      params: {
-        accountID: '12345',
-      },
-    }];
-    const bidderRequest = {}; // Mock bidderRequest if needed
+  describe('interpretResponse', function () {
+    it('should interpret and return valid bid responses for banner bid', function () {
+      const serverResponse = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  price: 1.23,
+                  impid: '2ab03f1234',
+                  adm: '<div>Ad</div>',
+                  crid: 'creative123',
+                  w: 300,
+                  h: 250,
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const requestObj = spec.buildRequests([bidRequest], bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, requestObj[0]);
+      expect(bids).to.be.an('array').that.is.not.empty;
 
-    // Mock config.getConfig('content') to return a valid value
-    sinon.stub(config, 'getConfig').returns('content_value');
-
-    const requests = spec.buildRequests(bidRequests, bidderRequest);
-
-    const data = requests[0].data;
-    expect(data).to.have.property('test', 1);
-    expect(data).to.have.property('ext');
-    expect(data.ext).to.have.property('rediads.account_id', '12345');
-    expect(data.site).to.have.property('content', 'content_value');
-    expect(requests[0].url).to.equal('https://stagingbidding.rediads.com/openrtb2/auction');
-
-    // Restore the stub after the test
-    sinon.restore();
-  });
-});
-
-// Test for interpretResponse
-describe('interpretResponse', function() {
-  it('should correctly interpret the OpenRTB response and return bids', function() {
-    const mockResponse = {
-      body: {
-        bids: [
-          {
-            requestId: '123',
-            cpm: 1.5,
-            ad: '<html></html>',
-            mediaType: 'banner',
-            currency: 'USD',
-            ttl: 300,
-          },
-        ],
-      },
-    };
-
-    const request = {
-      data: {
-        test: 1,
-        ext: {
-          rediads: {
-            account_id: '12345',
+      const bid = bids[0];
+      expect(bid).to.include({
+        requestId: '2ab03f1234',
+        cpm: 1.23,
+        creativeId: 'creative123',
+        width: 300,
+        height: 250,
+        ad: '<div>Ad</div>',
+      });
+      expect(bid.mediaType).to.equal('banner');
+    });
+    it('should interpret and return valid bid responses for video bid with VAST inline', function () {
+      const serverResponse = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  price: 1.23,
+                  impid: '2ab03f1234',
+                  adm: '<VAST>Video VAST Ad</VAST>',
+                  crid: 'creative123',
+                  w: 300,
+                  h: 250,
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const updatedBidRequest = { ...bidRequest,
+        mediaTypes: {
+          video: {
+            sizes: [[300, 250]],
           },
         },
-      },
-    };
+      };
+      const requestObj = spec.buildRequests([updatedBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, requestObj[0]);
+      expect(bids).to.be.an('array').that.is.not.empty;
 
-    const bids = spec.interpretResponse(mockResponse, request);
+      const bid = bids[0];
+      expect(bid).to.include({
+        requestId: '2ab03f1234',
+        cpm: 1.23,
+        creativeId: 'creative123',
+        width: 300,
+        height: 250,
+        vastXml: '<VAST>Video VAST Ad</VAST>',
+      });
+      expect(bid.mediaType).to.equal('video');
+    });
 
-    expect(bids).to.have.lengthOf(1);
-    expect(bids[0]).to.have.property('requestId', '123');
-    expect(bids[0]).to.have.property('cpm', 1.5);
-    expect(bids[0]).to.have.property('ad', '<html></html>');
-    expect(bids[0]).to.have.property('mediaType', 'banner');
+    it('should interpret and return valid bid responses for video bid with nurl, w and h', function () {
+      const serverResponse = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  price: 1.23,
+                  impid: '2ab03f1234',
+                  adm: '<div> Video NURL Ad</div>',
+                  crid: 'creative123',
+                  w: 300,
+                  h: 250,
+                  nurl: 'https://example.com/nurl-video-ad-vast.xml'
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const updatedBidRequest = { ...bidRequest,
+        mediaTypes: {
+          video: {
+            sizes: [[300, 250]],
+          },
+        },
+      };
+      const requestObj = spec.buildRequests([updatedBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, requestObj[0]);
+      expect(bids).to.be.an('array').that.is.not.empty;
+
+      const bid = bids[0];
+      expect(bid).to.include({
+        requestId: '2ab03f1234',
+        cpm: 1.23,
+        creativeId: 'creative123',
+        width: 300,
+        height: 250,
+        vastXml: '<div> Video NURL Ad</div>',
+        vastUrl: 'https://example.com/nurl-video-ad-vast.xml'
+      });
+      expect(bid.mediaType).to.equal('video');
+    });
+
+    it('should return an empty array for invalid responses', function () {
+      const invalidResponse = { body: {} };
+      const updatedBidRequest = {...bidRequest, params: undefined}
+      const requestObj = spec.buildRequests([updatedBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(invalidResponse, requestObj[0]);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
   });
-});
 
-// Test for Default Values (Currency, Net Revenue)
-describe('Default Values', function() {
-  it('should set the default currency as USD', function() {
-    const bidRequest = {
-      params: {
-        accountID: '12345',
-      },
-    };
-    const request = spec.buildRequests([bidRequest], {});
-    expect(request[0].data.ext.rediads.account_id).to.equal('12345');
-    expect(request[0].data.ext.rediads.currency).to.equal('USD');
-  });
-
-  it('should set netRevenue to true', function() {
-    const bidRequest = {
-      params: {
-        accountID: '12345',
-      },
-    };
-    const request = spec.buildRequests([bidRequest], {});
-    expect(request[0].data.ext.rediads.netRevenue).to.be.true;
-  });
-});
-
-// Test for Media Type Handling
-describe('Media Type Handling', function() {
-  it('should assign "banner" as mediaType by default', function() {
-    const bid = { adm: '<html></html>', mediaType: 'banner' };
-    const result = spec.converter.bidResponse(() => {}, bid, {});
-    expect(result.mediaType).to.equal('banner');
-    expect(result.mtype).to.equal(1); // BANNER = 1
-  });
-
-  it('should assign "video" when video object exists', function() {
-    const bid = { video: {}, mediaType: 'video' };
-    const result = spec.converter.bidResponse(() => {}, bid, {});
-    expect(result.mediaType).to.equal('video');
-    expect(result.mtype).to.equal(2); // VIDEO = 2
-  });
-
-  it('should assign "native" when native object exists', function() {
-    const bid = { native: {}, mediaType: 'native' };
-    const result = spec.converter.bidResponse(() => {}, bid, {});
-    expect(result.mediaType).to.equal('native');
-    expect(result.mtype).to.equal(4); // NATIVE = 4
+  describe('Miscellaneous', function () {
+    it('should support multiple media types', function () {
+      expect(spec.supportedMediaTypes).to.include.members(['banner', 'native', 'video']);
+    });
   });
 });
