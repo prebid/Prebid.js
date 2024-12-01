@@ -27,6 +27,15 @@ describe('rediads Bid Adapter', function () {
     },
   };
 
+  const resetHash = (originalHash) => {
+    // Reset the hash, ensuring no trailing #
+    if (originalHash) {
+      location.hash = originalHash;
+    } else {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  }
+
   describe('isBidRequestValid', function () {
     it('should return true for valid bid requests', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
@@ -57,7 +66,7 @@ describe('rediads Bid Adapter', function () {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       expect(requests[0].data.test).to.equal(1);
 
-      location.hash = originalHash; // Reset the hash
+      resetHash(originalHash);
     });
 
     it('should set staging environtment if stagingEnvRequested is true', function () {
@@ -67,7 +76,7 @@ describe('rediads Bid Adapter', function () {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       expect(requests[0].url).to.equal(STAGING_ENDPOINT_URL);
 
-      location.hash = originalHash; // Reset the hash
+      resetHash(originalHash);
     });
   });
 
