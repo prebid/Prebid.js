@@ -398,10 +398,7 @@ describe('The video cache', function () {
   })
 
   describe('storeLocally', () => {
-    let sandbox;
-
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
       config.setConfig({
         cache: {
           useLocal: true
@@ -411,7 +408,6 @@ describe('The video cache', function () {
 
     afterEach(function () {
       config.resetConfig();
-      sandbox.restore();
     });
 
     it('should set blob url to bid.vastUrl', () => {

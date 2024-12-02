@@ -204,15 +204,23 @@ export function storeBatch(batch) {
   });
 };
 
-let batchSize, batchTimeout;
+let batchSize, batchTimeout, cleanupHandler;
 if (FEATURES.VIDEO) {
-  config.getConfig('cache', (cacheConfig) => {
-    batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
-      ? cacheConfig.cache.batchSize
+  config.getConfig('cache', ({cache}) => {
+    batchSize = typeof cache.batchSize === 'number' && cache.batchSize > 0
+      ? cache.batchSize
       : 1;
-    batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
-      ? cacheConfig.cache.batchTimeout
+    batchTimeout = typeof cache.batchTimeout === 'number' && cache.batchTimeout > 0
+      ? cache.batchTimeout
       : 0;
+
+    // removing blobs that are not going to be used
+    if (cache.useLocal && !cleanupHandler) {
+      cleanupHandler = auctionManager.onExpiry((auction) => {
+        auction.getBidsReceived()
+          .forEach(({vastUrl}) => URL.revokeObjectURL(vastUrl))
+      });
+    }
   });
 }
 
