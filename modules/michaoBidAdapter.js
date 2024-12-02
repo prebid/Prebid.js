@@ -18,7 +18,7 @@ const ENV = {
   NET_REVENUE: true,
   DEFAULT_CURRENCY: 'USD',
   RENDERER_URL:
-    'https://cdn.jsdelivr.net/npm/in-renderer-js@latest/dist/in-renderer.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/in-renderer-js@latest/dist/in-video-renderer.umd.min.js',
 };
 
 export const spec = {
@@ -137,7 +137,7 @@ export function syncUser(gdprConsent) {
 
 export function addRenderer(bid) {
   bid.renderer.push(() => {
-    const inRenderer = new window.InRenderer();
+    const inRenderer = new window.InVideoRenderer();
     inRenderer.render(bid.adUnitCode, bid);
   });
 }
