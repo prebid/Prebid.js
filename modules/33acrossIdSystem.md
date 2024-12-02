@@ -53,3 +53,7 @@ The following settings are available in the `params` property in `userSync.userI
 | pid | Required | String | Partner ID provided by 33Across | `"0010b00002GYU4eBAH"` |
 | storeFpid | Optional | Boolean | Indicates whether a supplemental first-party ID may be stored to improve addressability, this feature is enabled by default | `true` (default) or `false` |
 | storeTpid | Optional | Boolean | Indicates whether a supplemental third-party ID may be stored to improve addressability, this feature is enabled by default | `true` (default) or `false` |
+
+### HEM Collection
+
+33Across ID System supports user's hashed email, if available in storage.

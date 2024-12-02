@@ -558,8 +558,10 @@ describe('33acrossIdSystem', () => {
           expires: 1645667805067
         }));
 
-        expect(removeDataFromLocalStorage.calledWith('33acrossId')).to.be.true;
-        expect(setCookie.calledWithExactly('33acrossId', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+        ['', '_last', '_exp', '_cst'].forEach(suffix => {
+          expect(removeDataFromLocalStorage.calledWith(`33acrossId${suffix}`)).to.be.true;
+          expect(setCookie.calledWithExactly(`33acrossId${suffix}`, '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+        });
 
         removeDataFromLocalStorage.restore();
         setCookie.restore();

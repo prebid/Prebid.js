@@ -209,7 +209,9 @@ export const thirtyThreeAcrossIdSubmodule = {
             }
 
             if (!responseObj.envelope) {
-              deleteFromStorage(MODULE_NAME);
+              ['', '_last', '_exp', '_cst'].forEach(suffix => {
+                deleteFromStorage(`${MODULE_NAME}${suffix}`);
+              });
             }
 
             if (storeFpid) {
