@@ -1,15 +1,14 @@
 # Overview
-
 ```
-Module Name:  MadSense Bid Adapter
+Module Name:  madSense Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer:   prebid@madsense.io
 ```
 
 # Description
 
-Module that connects to MadSense's demand sources.
-MadSense bid adapter supports Banner and Video.
+- A module that integrates with madSense's demand sources.
+- The madSense bid adapter supports both Banner and Video formats.
 
 
 # Test Parameters
@@ -38,7 +37,7 @@ var adUnits = [
 
 ## Video
 
-We support the following OpenRTB params that can be specified in `mediaTypes.video` or in `bids[].params.video`
+We support the following OpenRTB parameters, which can be defined in `mediaTypes.video` or `bids[].params.video`.
 - 'mimes',
 - 'minduration',
 - 'maxduration',
@@ -55,9 +54,9 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 - 'linearity'
 
 
-## Instream Video adUnit using mediaTypes.video
-*Note:* By default, the adapter will read the mandatory parameters from mediaTypes.video.
-*Note:* The Video SSP ad server will respond with an VAST XML to load into your defined player.
+## Instream Video Ad Unit with mediaTypes.video
+- Note: The adapter, by default, will retrieve the required parameters from mediaTypes.video.
+- Note: The Video SSP ad server will return a VAST XML, which can be loaded into your specified player.
 ```
   var adUnits = [
     {
@@ -81,7 +80,6 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
             {
               bidder: 'madsense',
               params: {
-                bidfloor: 0.5,
                 company_id: '1234567'
               }
             }
@@ -90,8 +88,8 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
   ]
 ```
 
-# End To End testing mode
-By passing bid.params.e2etest = true you will be able to receive a test creative
+# End To End Testing Mode
+By setting `bid.params.test = true`, you can receive a test creative.
 
 ## Banner
 ```
@@ -106,7 +104,7 @@ var adUnits = [
         bids: [{
             bidder: 'madsense',
             params: {
-                e2etest: true
+                test: true
             }
         }]
     }
@@ -130,7 +128,7 @@ var adUnits = [
         {
           bidder: 'madsense',
           params: {
-            e2etest: true
+            test: true
           }
         }
       ]

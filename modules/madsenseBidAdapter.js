@@ -12,7 +12,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'madsense';
-const DEFAULT_BID_TTL = 300;
+const DEFAULT_BID_TTL = 55;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
 
@@ -53,7 +53,6 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     let resMediaType;
-    const {bidRequest} = context;
 
     if (bid.mtype == 2) {
       resMediaType = VIDEO;
@@ -89,25 +88,30 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let contextMediaType = BANNER;
 
     if (hasVideoMediaType(validBidRequests)) {
       contextMediaType = VIDEO;
+    } else {
+      contextMediaType = BANNER;
     }
 
-    const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest, context: {contextMediaType} });
+    const data = converter.toORTB({
+      bidRequests: validBidRequests,
+      bidderRequest,
+      context: {contextMediaType}
+    });
 
     let companyId = validBidRequests[0].params.company_id;
 
-    if (validBidRequests[0].params.e2etest) {
+    if (validBidRequests[0].params.test) {
       logMessage('madsense: test mode');
       companyId = 'test'
     }
-    let baseEndpoint = spec.ENDPOINT + '?company_id=' + companyId;
+    let madsenseExchangeEndpointUrl = spec.ENDPOINT + '?company_id=' + companyId;
 
     return {
       method: 'POST',
-      url: baseEndpoint,
+      url: madsenseExchangeEndpointUrl,
       data: data
     };
   },
@@ -118,9 +122,6 @@ export const spec = {
   }
 };
 
-/* =======================================
- * Util Functions
- *======================================= */
 
 function hasBannerMediaType(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
@@ -140,7 +141,7 @@ function _validateParams(bidRequest) {
   }
 
   if (!bidRequest.params.company_id) {
-    logError('madsense: Validation failed: company_id not declared');
+    logError('company_id not declared (madSense)');
     return false;
   }
 
@@ -183,27 +184,30 @@ function _validateVideo(bidRequest) {
   };
 
   if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-    logError('madsense: Validation failed: invalid mimes');
+    logError('Invalid MIME types (madSense)');
     return false;
   }
 
   if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-    logError('madsense: Validation failed: invalid protocols');
+    logError('Invalid protocols (madSense)');
     return false;
   }
 
   if (!videoParams.context) {
-    logError('madsense: Validation failed: context id not declared');
+    logError('Context not declared (madSense)');
     return false;
   }
 
   if (videoParams.context !== 'instream') {
-    logError('madsense: Validation failed: only context instream is supported');
+    logError('Only instream context is supported (madSense)');
     return false;
   }
 
-  if (typeof videoParams.playerSize === 'undefined' || !Array.isArray(videoParams.playerSize) || !Array.isArray(videoParams.playerSize[0])) {
-    logError('madsense: Validation failed: player size not declared or is not in format [[w,h]]');
+  if (typeof videoParams.playerSize === 'undefined' ||
+    !Array.isArray(videoParams.playerSize) ||
+    !Array.isArray(videoParams.playerSize[0])
+  ) {
+    logError('Player size not declared or not in [[w,h]] format');
     return false;
   }
 
