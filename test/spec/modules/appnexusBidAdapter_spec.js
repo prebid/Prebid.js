@@ -2085,6 +2085,8 @@ describe('AppNexusAdapter', function () {
         expect(result[0].native.body2).to.equal('Additional body text');
         expect(result[0].native.cta).to.equal('Do it');
         expect(result[0].native.image.url).to.equal('https://cdn.adnxs.com/img.png');
+        // Video is technically not a base Prebid native field, so it should be included as part of the ext
+        // But it's also included here for backwards compatibility if people read the bid directly
         expect(result[0].native.video.content).to.equal('<?xml version=\"1.0\"></xml>');
       });
 
@@ -2093,6 +2095,7 @@ describe('AppNexusAdapter', function () {
         response1.tags[0].ads[0].ad_type = 'native';
         response1.tags[0].ads[0].rtb.native = {
           ...BASE_NATIVE,
+          // 'video' is included in base native
           'title1': 'Custom Title 1',
           'title2': 'Custom Title 2',
           'title3': 'Custom Title 3',
@@ -2204,6 +2207,9 @@ describe('AppNexusAdapter', function () {
 
         let result = spec.interpretResponse({ body: response1 }, { bidderRequest });
         expect(result[0].native.ext).to.deep.equal({
+          'video': {
+            'content': '<?xml version=\"1.0\"></xml>'
+          },
           'customTitle1': 'Custom Title 1',
           'customTitle2': 'Custom Title 2',
           'customTitle3': 'Custom Title 3',

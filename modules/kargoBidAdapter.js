@@ -452,21 +452,20 @@ function getRequestCount() {
 }
 
 function sendTimeoutData(auctionId, auctionTimeout) {
-  let params = {
-    aid: auctionId,
-    ato: auctionTimeout
-  };
+  const params = { aid: auctionId, ato: auctionTimeout };
+  const timeoutRequestUrl = buildUrl({
+    protocol: 'https',
+    hostname: BIDDER.HOST,
+    pathname: BIDDER.TIMEOUT_ENDPOINT,
+    search: params,
+  });
 
-  try {
-    let timeoutRequestUrl = buildUrl({
-      protocol: 'https',
-      hostname: BIDDER.HOST,
-      pathname: BIDDER.TIMEOUT_ENDPOINT,
-      search: params
-    });
-
-    triggerPixel(timeoutRequestUrl);
-  } catch (e) {}
+  fetch(timeoutRequestUrl, {
+    method: 'GET',
+    keepalive: true,
+  }).catch((e) => {
+    logError('Kargo: sendTimeoutData/fetch threw an error: ', e);
+  });
 }
 
 function getImpression(bid) {

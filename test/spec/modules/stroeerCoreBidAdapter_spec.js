@@ -935,6 +935,28 @@ describe('stroeerCore bid adapter', function () {
           assert.deepEqual(serverRequestInfo.data.bids[0].sfp, {});
           assert.isUndefined(serverRequestInfo.data.bids[1].sfp);
         });
+
+        it('should add the ortb2 site extension', () => {
+          const bidReq = buildBidderRequest();
+
+          const ortb2 = {
+            site: {
+              domain: 'example.com',
+              ext: {
+                data: {
+                  abc: '123'
+                }
+              }
+            }
+          };
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+          assert.deepEqual(sentOrtb2, {site: {ext: ortb2.site.ext}})
+        });
       });
     });
   });
@@ -999,6 +1021,16 @@ describe('stroeerCore bid adapter', function () {
 
       assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
       assert.propertyVal(result[1].meta, 'dsa', undefined);
+    });
+
+    it('should add campaignType to meta object', () => {
+      const response = buildBidderResponse();
+      response.bids[1] = Object.assign(response.bids[1], {campaignType: 'RTB'});
+
+      const result = spec.interpretResponse({body: response});
+
+      assert.propertyVal(result[0].meta, 'campaignType', undefined);
+      assert.propertyVal(result[1].meta, 'campaignType', 'RTB');
     });
   });
 

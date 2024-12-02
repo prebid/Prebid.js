@@ -168,11 +168,6 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   }
   deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
-  if (bidderRequest.uspConsent) {
-    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    this.syncStore.uspConsent = bidderRequest.uspConsent;
-  }
-
   if (GET_CONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
   if (bidderRequest.uspConsent) {
