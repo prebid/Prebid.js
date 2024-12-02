@@ -96,7 +96,6 @@ describe('banner', () => {
             maxduration: 'omitted_value'
           }
         },
-        ortb2Imp: {}
       };
 
       const expected1 = {
