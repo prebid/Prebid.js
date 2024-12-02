@@ -1,8 +1,22 @@
+/**
+ * This module adds TncId to the User ID module
+ * The {@link module:modules/userId} module is required
+ * @module modules/tncIdSystem
+ * @requires module:modules/userId
+ */
+
 import { submodule } from '../src/hook.js';
 import { parseUrl, buildUrl, logInfo, logMessage, logError } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'tncId';
 const TNC_API_URL = 'https://js.tncid.app/remote.js';
@@ -111,7 +125,7 @@ export const tncidSubModule = {
    * Use a tncid cookie first if it is present, otherwise callout to get a new id
    * @function
    * @param {SubmoduleConfig} [config] Config object with params and storage properties
-   * @param {ConsentData|undefined} consentData GDPR consent
+   * @param {ConsentData} [consentData] GDPR consent
    * @returns {IdResponse}
    */
   getId(config, consentData) {
