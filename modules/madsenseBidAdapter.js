@@ -77,7 +77,7 @@ export const spec = {
   code: BIDDER_CODE,
   VERSION: '1.0.0',
   supportedMediaTypes: [BANNER, VIDEO],
-  ENDPOINT: 'https://ads.dev.madsense.io/pbjs',
+  ENDPOINT: 'https://ads.madsense.io/pbjs',
 
   isBidRequestValid: function (bid) {
     return (
@@ -88,6 +88,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    let contextMediaType;
 
     if (hasVideoMediaType(validBidRequests)) {
       contextMediaType = VIDEO;
@@ -117,9 +118,22 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = converter.fromORTB({response: serverResponse.body, request: bidRequest.data}).bids;
-    return bids;
-  }
+    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
+
+    return bids.map(bid => {
+        if (bid.mtype === 2 && bid.adm) {
+            if (pbjs.getConfig('cache') && pbjs.getConfig('cache').url) {
+                bid.vastXml = bid.adm;
+                delete bid.adm;
+            } else {
+                logError('Prebid Cache is not configured (madSense)');
+                return null;
+            }
+        }
+
+        return bid;
+    }).filter(bid => bid !== null);
+}
 };
 
 

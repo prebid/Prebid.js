@@ -282,7 +282,7 @@ describe('madsenseBidAdapter', function() {
           expect(bids[index]).to.have.property('ad', getBidderResponse().body.seatbid[0].bid[index].adm);
           expect(bids[index]).to.have.property('creativeId', getBidderResponse().body.seatbid[0].bid[index].crid);
           expect(bids[index].meta).to.have.property('advertiserDomains');
-          expect(bids[index]).to.have.property('ttl', 300);
+          expect(bids[index]).to.have.property('ttl', 55);
           expect(bids[index]).to.have.property('netRevenue', true);
         }
       });
