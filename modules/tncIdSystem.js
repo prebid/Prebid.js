@@ -127,6 +127,7 @@ export const tncidSubModule = {
 
     return {
       callback: function (cb) { return tncCallback(cb); }
+      // callback: tncCallback
     }
   },
   eids: {
