@@ -1,7 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {
   deepSetValue,
@@ -13,7 +13,7 @@ import {
 
 const ENV = {
   BIDDER_CODE: 'michao',
-  SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO],
+  SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO, NATIVE],
   ENDPOINT: 'https://rtb.michao-ssp.com/openrtb/prebid',
   NET_REVENUE: true,
   DEFAULT_CURRENCY: 'USD',
@@ -42,19 +42,19 @@ export const spec = {
     const bidRequests = [];
 
     validBidRequests.forEach((validBidRequest) => {
-      if (
-        hasVideoMediaType(validBidRequest) &&
-        hasBannerMediaType(validBidRequest)
-      ) {
+      if (hasVideoMediaType(validBidRequest)) {
+        bidRequests.push(buildRequest(validBidRequest, bidderRequest, 'video'));
+      }
+
+      if (hasBannerMediaType(validBidRequest)) {
         bidRequests.push(
           buildRequest(validBidRequest, bidderRequest, 'banner')
         );
-        bidRequests.push(buildRequest(validBidRequest, bidderRequest, 'video'));
-      } else if (hasVideoMediaType(validBidRequest)) {
-        bidRequests.push(buildRequest(validBidRequest, bidderRequest, 'video'));
-      } else if (hasBannerMediaType(validBidRequest)) {
+      }
+
+      if (hasNativeMediaType(validBidRequest)) {
         bidRequests.push(
-          buildRequest(validBidRequest, bidderRequest, 'banner')
+          buildRequest(validBidRequest, bidderRequest, 'native')
         );
       }
     });
@@ -184,7 +184,7 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.placement', bidRequest.params.placement.toString());
-    deepSetValue(imp, 'rwdd', bidRequest.params?.reward ? 1 : false);
+    deepSetValue(imp, 'rwdd', bidRequest.params?.reward ? 1 : 0);
 
     return imp;
   },
@@ -221,6 +221,10 @@ function hasBannerMediaType(bid) {
 
 function hasVideoMediaType(bid) {
   return hasMediaType(bid, 'video');
+}
+
+function hasNativeMediaType(bid) {
+  return hasMediaType(bid, 'native');
 }
 
 function hasMediaType(bid, mediaType) {

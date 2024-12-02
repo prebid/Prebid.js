@@ -126,6 +126,58 @@ describe('the michao bidder adapter', () => {
         });
       });
 
+      it('Native bid requests are converted to video server request objects', () => {
+        const nativeBidRequest = {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0,
+          mediaTypes: {
+            native: {
+              ortb: {
+                assets: [
+                  {
+                    id: 2,
+                    required: 1,
+                    title: {
+                      len: 80
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          params: {
+            site: 123,
+            placement: 456,
+          },
+        };
+        const bidderRequest = {
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          auctionStart: 1579746300522,
+          bidderCode: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bids: [nativeBidRequest],
+        };
+
+        const result = buildRequest(nativeBidRequest, bidderRequest, 'native');
+
+        expect(result).to.nested.include({
+          url: 'https://rtb.michao-ssp.com/openrtb/prebid',
+          'options.contentType': 'application/json',
+          'options.withCredentials': true,
+          method: 'POST',
+          'data.cur[0]': 'USD',
+          'data.imp[0].ext.placement': '456',
+          'data.site.id': '123',
+          'data.test': 0,
+        });
+      });
+
       it('Converted to server request object for testing in debug mode', () => {
         const bidRequest = {
           adUnitCode: 'test-div',
@@ -467,8 +519,36 @@ describe('the michao bidder adapter', () => {
           bidder: 'michao',
           bidderRequestId: 'bidder-request-2',
           mediaTypes: {
-            banner: {
-              sizes: [[300, 250]],
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              mimes: ['video/mp4'],
+            },
+          },
+          params: {
+            site: 12,
+            placement: 12,
+          },
+        },
+        {
+          adUnitCode: 'test-div',
+          auctionId: 'auction-2',
+          bidId: 'bid-2',
+          bidder: 'michao',
+          bidderRequestId: 'bidder-request-2',
+          mediaTypes: {
+            native: {
+              ortb: {
+                assets: [
+                  {
+                    id: 2,
+                    required: 1,
+                    title: {
+                      len: 80
+                    }
+                  }
+                ]
+              }
             },
           },
           params: {
@@ -486,7 +566,7 @@ describe('the michao bidder adapter', () => {
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
 
-      expect(result.length).to.equal(2);
+      expect(result.length).to.equal(3);
     });
 
     it('`interpretResponse`', () => {
