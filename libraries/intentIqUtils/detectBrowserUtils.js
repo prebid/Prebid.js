@@ -32,6 +32,16 @@ export function detectBrowserFromUserAgent(userAgent) {
     ie: /MSIE|Trident/,
   };
 
+  // Check for Edge first
+  if (browserRegexPatterns.edge.test(userAgent)) {
+    return 'edge';
+  }
+
+  // Check for Opera next
+  if (browserRegexPatterns.opera.test(userAgent)) {
+    return 'opera';
+  }
+
   // Check for Chrome first to avoid confusion with Safari
   if (browserRegexPatterns.chrome.test(userAgent)) {
     return 'chrome';
