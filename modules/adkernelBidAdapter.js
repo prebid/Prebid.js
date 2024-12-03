@@ -84,7 +84,6 @@ export const spec = {
     {code: 'unibots'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
-    {code: 'felixads'},
     {code: 'motionspots'},
     {code: 'sonic_twist'},
     {code: 'displayioads'},
@@ -100,7 +99,10 @@ export const spec = {
     {code: 'voisetech'},
     {code: 'global_sun'},
     {code: 'rxnetwork'},
-    {code: 'revbid'}
+    {code: 'revbid'},
+    {code: 'spinx', gvlid: 1308},
+    {code: 'oppamedia'},
+    {code: 'pixelpluses', gvlid: 1209}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -264,7 +266,7 @@ function buildImps(bidRequest, secure) {
     'tagid': bidRequest.adUnitCode
   };
   if (secure) {
-    imp.secure = 1;
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
   var sizes = [];
   let mediaTypes = bidRequest.mediaTypes;

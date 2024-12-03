@@ -231,7 +231,7 @@ function handlerAuctionInit(event) {
       mediaTypeKey => mediaTypeKey
     ).map(mediaType => getMediaTypeAlias(mediaType)).sort();
     const bannerSizes = removeDuplicates(
-      mediaTypes.filter(mediaType => mediaType.hasOwnProperty(BANNER))
+      mediaTypes.filter(mediaType => mediaType.hasOwnProperty(BANNER) && mediaType[BANNER].hasOwnProperty('sizes'))
         .map(mediaType => mediaType[BANNER].sizes.map(size => size.join('x')))
         .flat(),
       bannerSize => bannerSize

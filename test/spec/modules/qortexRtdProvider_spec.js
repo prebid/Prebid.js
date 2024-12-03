@@ -15,7 +15,9 @@ import {
   setGroupConfigData,
   saveContextAdded,
   initializeBidEnrichment,
-  getContextAddedEntry
+  getContextAddedEntry,
+  windowPostMessageReceived,
+  resetRateLimitTimeout
 } from '../../../modules/qortexRtdProvider';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
@@ -27,12 +29,10 @@ describe('qortexRtdProvider', () => {
 
   const defaultApiHost = 'https://demand.qortex.ai';
   const defaultGroupId = 'test';
-
   const validBidderArray = ['qortex', 'test'];
   const validTagConfig = {
     videoContainer: 'my-video-container'
   }
-
   const validModuleConfig = {
     params: {
       groupId: defaultGroupId,
@@ -58,7 +58,6 @@ describe('qortexRtdProvider', () => {
   const emptyModuleConfig = {
     params: {}
   }
-
   const validImpressionEvent = {
     detail: {
       uid: 'uid123',
@@ -76,17 +75,19 @@ describe('qortexRtdProvider', () => {
       type: 'qx-impression'
     }
   }
+  const validQortexPostMessage = {
+    target: 'QORTEX-PREBIDJS-RTD-MODULE',
+    message: 'CX-BID-ENRICH-INITIALIZED'
+  }
   const invalidTypeQortexEvent = {
     detail: {
       type: 'invalid-type'
     }
   }
-
   const responseHeaders = {
     'content-type': 'application/json',
     'access-control-allow-origin': '*'
   };
-
   const contextResponseObj = {
     content: {
       id: '123456',
@@ -98,7 +99,6 @@ describe('qortexRtdProvider', () => {
     }
   }
   const contextResponse = JSON.stringify(contextResponseObj);
-
   const validGroupConfigResponseObj = {
     groupId: defaultGroupId,
     active: true,
@@ -107,7 +107,6 @@ describe('qortexRtdProvider', () => {
     prebidReportingPercentage: 100
   }
   const validGroupConfigResponse = JSON.stringify(validGroupConfigResponseObj);
-
   const inactiveGroupConfigResponseObj = {
     groupId: defaultGroupId,
     active: false,
@@ -115,7 +114,6 @@ describe('qortexRtdProvider', () => {
     PrebidReportingPercentage: 100
   }
   const inactiveGroupConfigResponse = JSON.stringify(inactiveGroupConfigResponseObj);
-
   const noEnrichmentGroupConfigResponseObj = {
     groupId: defaultGroupId,
     active: true,
@@ -123,7 +121,6 @@ describe('qortexRtdProvider', () => {
     prebidBidEnrichmentPercentage: 0,
     prebidReportingPercentage: 100
   }
-
   const reqBidsConfig = {
     auctionId: '1234',
     adUnits: [{
@@ -275,11 +272,13 @@ describe('qortexRtdProvider', () => {
       setGroupConfigData(validGroupConfigResponseObj);
       callbackSpy = sinon.spy();
       server.reset();
+      global.lookupRateLimitTimeout = null;
     })
 
     afterEach(() => {
       initializeModuleData(emptyModuleConfig);
       callbackSpy.resetHistory();
+      global.lookupRateLimitTimeout = null;
     })
 
     it('will call callback immediately if no adunits', () => {
@@ -336,6 +335,17 @@ describe('qortexRtdProvider', () => {
       server.requests[0].respond(500, responseHeaders, JSON.stringify({}));
       setTimeout(() => {
         expect(logWarnSpy.calledWith('Returned error status code: 500')).to.be.eql(true);
+        done();
+      }, 200)
+    })
+
+    it('Logs warning for rate limit', (done) => {
+      saveContextAdded(reqBidsConfig);
+      const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
+      module.onAuctionEndEvent(testData);
+      server.requests[0].respond(429, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(logWarnSpy.calledWith('Returned error status code: 429')).to.be.eql(true);
         done();
       }, 200)
     })
@@ -426,6 +436,26 @@ describe('qortexRtdProvider', () => {
         expect(logWarnSpy.called).to.be.false;
         done();
       });
+    })
+
+    it('request content object after elapsed rate limit timeout if a second content lookup was delayed', (done) => {
+      const ctx = getContext();
+      server.requests[0].respond(202, responseHeaders, JSON.stringify({}))
+      ctx.then(response => {
+        expect(response).to.be.null;
+        expect(logMessageSpy.calledWith('Requesting new context data')).to.be.true;
+        expect(server.requests.length).to.be.eql(1);
+        expect(logWarnSpy.called).to.be.false;
+      });
+      setTimeout(() => {
+        const ctx2 = getContext();
+        ctx2.catch(e => {
+          expect(e.message).to.equal('429');
+          expect(logMessageSpy.calledWith('Content lookup attempted during rate limit waiting period of 5000ms.')).to.be.true;
+          resetRateLimitTimeout();
+          done();
+        })
+      }, 200)
     })
   })
 
@@ -603,7 +633,6 @@ describe('qortexRtdProvider', () => {
     })
 
     afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
       setGroupConfigData(null);
       setContextData(null);
       server.reset();
@@ -625,6 +654,28 @@ describe('qortexRtdProvider', () => {
         expect(logWarnSpy.calledWith('Contexual record is not yet complete at this time')).to.be.true;
         done();
       }, 250)
+    })
+
+    it('processes incoming qortex component "initialize" message', () => {
+      postMessage(validQortexPostMessage);
+    })
+
+    it('will catch and log error and fire callback', (done) => {
+      initializeBidEnrichment();
+      server.requests[0].respond(404, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(logWarnSpy.calledWith('Returned error status code: 404')).to.be.eql(true);
+        done();
+      }, 250)
+    })
+
+    it('Logs warning for network error', (done) => {
+      initializeBidEnrichment();
+      server.requests[0].respond(500, responseHeaders, JSON.stringify({}));
+      setTimeout(() => {
+        expect(logWarnSpy.calledWith('Returned error status code: 500')).to.be.eql(true);
+        done();
+      }, 200)
     })
   })
 })

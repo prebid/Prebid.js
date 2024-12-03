@@ -121,6 +121,7 @@ export const converter = ortbConverter({
 
     imp.bidfloor = imp.bidfloor || getBidFloor(bidRequest, config.getConfig('currency.adServerCurrency'), mediaType);
     imp.secure = 1;
+
     imp.tagid = bidRequest.adUnitCode;
 
     if (!deepAccess(bidRequest, 'ortb2Imp.rwdd') && deepAccess(bidRequest, 'mediaTypes.video.ext.rewarded')) {

@@ -116,7 +116,8 @@ export const spec = {
           creativeId: '',
           meta: {
             advertiserDomains: bidResponse.adomain,
-            dsa: bidResponse.dsa
+            dsa: bidResponse.dsa,
+            campaignType: bidResponse.campaignType,
           },
           mediaType,
         };
