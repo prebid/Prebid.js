@@ -28,7 +28,7 @@ import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
-import { setBattrForAdUnit } from '../../../src/prebid.js';
+import {setBattrForAdUnit} from '../../../src/prebid.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -1316,6 +1316,16 @@ describe('Unit: Prebid Module', function () {
       return renderAd(document, bidId).then(() => {
         const error = `Error rendering ad (id: ${bidId}): renderAd was prevented from writing to the main document.`;
         assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+      });
+    });
+
+    it('should emit AD_RENDER_SUCCEEDED', () => {
+      sandbox.stub(events, 'emit');
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+      return renderAd(document, bidId).then(() => {
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({adId: bidId}));
       });
     });
 
