@@ -237,9 +237,21 @@ describe('Unit: Prebid Module', function () {
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
-  it('should insert a locator frame on the page', () => {
-    $$PREBID_GLOBAL$$.processQueue();
-    expect(window.frames[PB_LOCATOR]).to.exist;
+  describe('processQueue', () => {
+    it('should insert a locator frame on the page', () => {
+      $$PREBID_GLOBAL$$.processQueue();
+      expect(window.frames[PB_LOCATOR]).to.exist;
+    });
+
+    ['cmd', 'que'].forEach(prop => {
+      it(`should patch ${prop}.push`, () => {
+        $$PREBID_GLOBAL$$[prop].push = false;
+        $$PREBID_GLOBAL$$.processQueue();
+        let ran = false;
+        $$PREBID_GLOBAL$$[prop].push(() => { ran = true; });
+        expect(ran).to.be.true;
+      })
+    })
   })
 
   describe('and global adUnits', () => {
@@ -262,10 +274,10 @@ describe('Unit: Prebid Module', function () {
 
     beforeEach(() => {
       $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
-      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
       hookRan = new Promise((resolve) => {
         done = resolve;
       });
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
     });
 
     afterEach(() => {
