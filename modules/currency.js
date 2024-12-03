@@ -6,11 +6,13 @@ import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
-import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {on as onEvent, off as offEvent} from '../src/events.js';
+import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
+const MODULE_NAME = 'currency';
 
 let ratesURL;
 let bidResponseQueue = [];
@@ -25,6 +27,9 @@ let bidderCurrencyDefault = {};
 let defaultRates;
 
 export let responseReady = defer();
+
+const delayedAuctions = timeoutQueue();
+let auctionDelay = 0;
 
 /**
  * Configuration function for currency
@@ -77,6 +82,7 @@ export function setConfig(config) {
   }
 
   if (typeof config.adServerCurrency === 'string') {
+    auctionDelay = config.auctionDelay;
     logInfo('enabling currency support', arguments);
 
     adServerCurrency = config.adServerCurrency;
@@ -106,6 +112,7 @@ export function setConfig(config) {
     initCurrency();
   } else {
     // currency support is disabled, setting defaults
+    auctionDelay = 0;
     logInfo('disabling currency support');
     resetCurrency();
   }
@@ -137,6 +144,7 @@ function loadRates() {
             conversionCache = {};
             currencyRatesLoaded = true;
             processBidResponseQueue();
+            delayedAuctions.resume();
           } catch (e) {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
           }
@@ -145,6 +153,7 @@ function loadRates() {
           errorSettingsRates(...args);
           currencyRatesLoaded = true;
           processBidResponseQueue();
+          delayedAuctions.resume();
           needToCallForCurrencyFile = true;
         }
       }
@@ -162,6 +171,7 @@ function initCurrency() {
     getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
     getHook('addBidResponse').before(addBidResponseHook, 100);
     getHook('responsesReady').before(responsesReadyHook);
+    getHook('requestBids').before(requestBidsHook, 50);
     onEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
     onEvent(EVENTS.AUCTION_INIT, loadRates);
     loadRates();
@@ -172,6 +182,7 @@ function resetCurrency() {
   if (currencySupportEnabled) {
     getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
     getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
+    getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
     offEvent(EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
     offEvent(EVENTS.AUCTION_INIT, loadRates);
     delete getGlobal().convertCurrency;
@@ -335,3 +346,16 @@ export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
 }
 
 registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});
+
+export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook(fn, reqBidsConfigObj) {
+  const continueAuction = ((that) => () => fn.call(that, reqBidsConfigObj))(this);
+
+  if (!currencyRatesLoaded && auctionDelay > 0) {
+    delayedAuctions.submit(auctionDelay, continueAuction, () => {
+      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`)
+      continueAuction();
+    });
+  } else {
+    continueAuction();
+  }
+});

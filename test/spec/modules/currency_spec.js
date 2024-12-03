@@ -3,7 +3,7 @@ import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
 
-import { getGlobal } from 'src/prebidGlobal.js';
+import {getGlobal} from 'src/prebidGlobal.js';
 
 import {
   setConfig,
@@ -13,9 +13,11 @@ import {
   responseReady
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
-import { EVENTS, STATUS, REJECTION_REASON } from '../../../src/constants.js';
+import * as utils from 'src/utils.js';
+import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
+import {requestBidsHook} from '../../../modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -520,6 +522,56 @@ describe('currency', function () {
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.0623');
       expect(innerBid.currency).to.equal('CNY');
+    });
+  });
+
+  describe('auctionDelay param', () => {
+    const continueAuction = sinon.stub();
+    let logWarnSpy;
+
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      clock.runAll();
+      sandbox.restore();
+      clock.restore();
+      utils.logWarn.restore();
+      continueAuction.resetHistory();
+    });
+
+    it('should delay auction start when auctionDelay set in module config', () => {
+      setConfig({auctionDelay: 2000, adServerCurrency: 'USD'});
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      clock.tick(1000);
+      expect(continueAuction.notCalled).to.be.true;
+    });
+
+    it('should start auction when auctionDelay time passed', () => {
+      setConfig({auctionDelay: 2000, adServerCurrency: 'USD'});
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      clock.tick(3000);
+      expect(logWarnSpy.calledOnce).to.equal(true);
+      expect(continueAuction.calledOnce).to.be.true;
+    });
+
+    it('should run auction if rates were fetched before auctionDelay time', () => {
+      setConfig({auctionDelay: 3000, adServerCurrency: 'USD'});
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      fakeCurrencyFileServer.respond();
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      expect(continueAuction.calledOnce).to.be.true;
     });
   });
 });
