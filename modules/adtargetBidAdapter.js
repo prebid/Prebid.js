@@ -12,6 +12,7 @@ const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 779,
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return !!deepAccess(bid, 'params.aid');
