@@ -2,11 +2,6 @@
 
 Module Name: tncIdSystem
 
-# Description
-
-TNCID is a shared persistent identifier that improves user recognition compared to both third-party and first-party cookies. This enhanced identification capability enables publishers and advertisers to consistently recognize their audiences, leading to improved monetization and more precise targeting.  The Newco User ID sub-module adds powerful TNCID user identification technology to your Prebid.js bidstream. 
-For more details, visit our <a href="https://www.thenewco.tech">website</a> and contact us to request your publisher-id and the on-page tag.
-
 ## Prebid Configuration
 
 First, make sure to add the TNCID submodule to your Prebid.js package with: 
