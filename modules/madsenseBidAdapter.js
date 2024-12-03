@@ -175,7 +175,7 @@ function _validateParams(bidRequest) {
     return false;
   }
 
-  if (bidRequest.params.e2etest) {
+  if (bidRequest.params.test) {
     return true;
   }
 
@@ -213,7 +213,7 @@ function _validateVideo(bidRequest) {
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
   const params = deepAccess(bidRequest, 'params', {});
 
-  if (params && params.e2etest) {
+  if (params && params.test) {
     return true;
   }
 
