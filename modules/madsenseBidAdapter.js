@@ -149,7 +149,7 @@ function filterValidBids(bids) {
   return bids
     .map((bid) => {
       if (bid.mtype === 2 && bid.adm) {
-        if(!config.getConfig('cache.url')) {
+        if (!config.getConfig('cache.url')) {
           bid.vastXml = bid.adm;
           delete bid.adm;
         } else {
