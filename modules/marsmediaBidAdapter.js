@@ -1,6 +1,6 @@
 
 'use strict';
-import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf } from '../src/utils.js';
+import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -341,7 +341,7 @@ function MarsmediaAdapter() {
         size: '*'
       });
 
-      if (typeof floorInfo === 'object' &&
+      if (isPlainObject(floorInfo) &&
         floorInfo.currency === 'USD' &&
         !isNaN(parseFloat(floorInfo.floor))) {
         floor = floorInfo.floor;

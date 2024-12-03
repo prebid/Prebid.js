@@ -128,8 +128,8 @@ export const spec = {
           currency: currency || 'USD',
         })
         : {};
-      const bidfloor = floorInfo.floor;
-      const bidfloorcur = floorInfo.currency;
+      const bidfloor = floorInfo?.floor;
+      const bidfloorcur = floorInfo?.currency;
       const { smartadId } = bid.params;
 
       const imp = {
