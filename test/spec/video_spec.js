@@ -277,6 +277,10 @@ describe('video.js', function () {
   })
 
   describe('syncOrtb2', () => {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     let logWarnSpy;
 
     beforeEach(function () {
