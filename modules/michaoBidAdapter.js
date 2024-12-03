@@ -169,6 +169,8 @@ const converter = ortbConverter({
     const openRTBBidRequest = buildRequest(imps, bidderRequest, context);
     openRTBBidRequest.cur = [ENV.DEFAULT_CURRENCY];
     openRTBBidRequest.test = config.getConfig('debug') ? 1 : 0;
+    openRTBBidRequest.bcat = bidRequest.params?.bcat || [];
+    openRTBBidRequest.badv = bidRequest.params?.badv || [];
     deepSetValue(
       openRTBBidRequest,
       'site.id',

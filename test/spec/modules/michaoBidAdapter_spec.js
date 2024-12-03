@@ -212,7 +212,7 @@ describe('the michao bidder adapter', () => {
         });
       });
 
-      it('Specifying a reward builds a bid request for the reward.', () => {
+      it('Specifying a reward builds a bid request for the reward', () => {
         const bidRequest = {
           adUnitCode: 'test-div',
           auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
@@ -244,6 +244,76 @@ describe('the michao bidder adapter', () => {
 
         expect(result).to.nested.include({
           'data.imp[0].rwdd': 1,
+        });
+      });
+
+      it('Block categories are set in the bid request through parameters', () => {
+        const bidRequest = {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0,
+          mediaTypes: { banner: [[300, 250]] },
+          params: {
+            site: 123,
+            placement: 456,
+            bcat: ['IAB2']
+          },
+        };
+        const bidderRequest = {
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          auctionStart: 1579746300522,
+          bidderCode: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bids: [bidRequest],
+        };
+        config.setConfig({
+          debug: true,
+        });
+
+        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+
+        expect(result).to.nested.include({
+          'data.bcat[0]': 'IAB2',
+        });
+      });
+
+      it('Block advertisers set in bid request through parameters', () => {
+        const bidRequest = {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0,
+          mediaTypes: { banner: [[300, 250]] },
+          params: {
+            site: 123,
+            placement: 456,
+            badv: ['adomain.com']
+          },
+        };
+        const bidderRequest = {
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          auctionStart: 1579746300522,
+          bidderCode: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bids: [bidRequest],
+        };
+        config.setConfig({
+          debug: true,
+        });
+
+        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+
+        expect(result).to.nested.include({
+          'data.badv[0]': 'adomain.com',
         });
       });
     });
