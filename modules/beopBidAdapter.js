@@ -1,6 +1,6 @@
 import {
   buildUrl,
-  deepAccess, getBidIdParameter,
+  deepAccess, generateUUID, getBidIdParameter,
   getValue,
   isArray,
   isPlainObject,
@@ -10,6 +10,7 @@ import {
 } from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {config} from '../src/config.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
@@ -21,9 +22,11 @@ import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.beop.io/bid';
+const COOKIE_NAME = 'beopid';
 const TCF_VENDOR_ID = 666;
 
 const validIdRegExp = /^[0-9a-fA-F]{24}$/
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -64,6 +67,19 @@ export const spec = {
     const kwdsFromRequest = firstSlot.kwds;
     let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
+    let beopid = '';
+    if (storage.cookiesAreEnabled) {
+      beopid = storage.getCookie(COOKIE_NAME, undefined);
+      if (!beopid) {
+        beopid = generateUUID();
+        let expirationDate = new Date();
+        expirationDate.setTime(expirationDate.getTime() + 86400 * 183 * 1000);
+        storage.setCookie(COOKIE_NAME, beopid, expirationDate.toUTCString());
+      }
+    } else {
+      storage.setCookie(COOKIE_NAME, '', 0);
+    }
+
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
@@ -74,6 +90,7 @@ export const spec = {
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
       dbg: false,
+      fg: beopid,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
