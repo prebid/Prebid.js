@@ -327,4 +327,16 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.eids[0].source).to.equal('provider.com');
     });
   })
+
+  describe('Ensure first party cookie is well managed', function () {
+    let bidRequests = [];
+
+    it(`should generate a new uuid`, function () {
+      let bid = Object.assign({}, validBid);
+      bidRequests.push(bid);
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      expect(payload.fg).to.exist;
+    })
+  })
 });
