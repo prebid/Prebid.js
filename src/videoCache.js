@@ -140,7 +140,7 @@ function shimStorageCallback(done) {
   }
 }
 
-function getVastValue(bid) {
+function getVastXml(bid) {
   return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
 };
 
