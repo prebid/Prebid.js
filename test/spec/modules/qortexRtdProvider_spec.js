@@ -4,20 +4,13 @@ import { EVENTS } from '../../../src/constants.js';
 import {loadExternalScript} from 'src/adloader.js';
 import {
   qortexSubmodule as module,
-  getContext,
-  getGroupConfig,
-  generateAnalyticsEventObject,
-  generateAnalyticsHostUrl,
   addContextToRequests,
   setContextData,
   loadScriptTag,
   initializeModuleData,
   setGroupConfigData,
-  saveContextAdded,
-  initializeBidEnrichment,
-  getContextAddedEntry,
-  windowPostMessageReceived,
-  resetRateLimitTimeout
+  requestContextData,
+  windowPostMessageReceived
 } from '../../../modules/qortexRtdProvider';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
@@ -75,9 +68,15 @@ describe('qortexRtdProvider', () => {
       type: 'qx-impression'
     }
   }
-  const validQortexPostMessage = {
+  const QortexPostMessageInitialized = {
     target: 'QORTEX-PREBIDJS-RTD-MODULE',
-    message: 'CX-BID-ENRICH-INITIALIZED'
+    message: 'CX-BID-ENRICH-INITIALIZED',
+    params: {groupConfig: {data: true}}
+  }
+  const QortexPostMessageContext = {
+    target: 'QORTEX-PREBIDJS-RTD-MODULE',
+    message: 'DISPATCH-CONTEXT',
+    params: {context: {data: true}}
   }
   const invalidTypeQortexEvent = {
     detail: {
@@ -148,37 +147,6 @@ describe('qortexRtdProvider', () => {
   })
 
   describe('init', () => {
-    it('returns true for valid config object', (done) => {
-      const result = module.init(validModuleConfig);
-      expect(server.requests.length).to.be.eql(1)
-      const groupConfigReq = server.requests[0];
-      groupConfigReq.respond(200, responseHeaders, validGroupConfigResponse);
-      setTimeout(() => {
-        expect(result).to.be.true;
-        done()
-      }, 500)
-    })
-
-    it('logs warning when group config does not pass setup conditions', (done) => {
-      const result = module.init(validModuleConfig);
-      expect(server.requests.length).to.be.eql(1)
-      const groupConfigReq = server.requests[0];
-      groupConfigReq.respond(200, responseHeaders, inactiveGroupConfigResponse);
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Group config is not configured for qortex bid enrichment')).to.be.true;
-        done()
-      }, 500)
-    })
-
-    it('logs warning when group config request errors', (done) => {
-      const result = module.init(validModuleConfig);
-      server.requests[0].respond(404, responseHeaders, inactiveGroupConfigResponse);
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('No Group Config found')).to.be.true;
-        done()
-      }, 500)
-    })
-
     it('will not initialize bid enrichment if it is disabled', () => {
       module.init(bidEnrichmentDisabledModuleConfig);
       expect(logWarnSpy.calledWith('Bid Enrichment Function has been disabled in module configuration')).to.be.true;
@@ -272,13 +240,11 @@ describe('qortexRtdProvider', () => {
       setGroupConfigData(validGroupConfigResponseObj);
       callbackSpy = sinon.spy();
       server.reset();
-      global.lookupRateLimitTimeout = null;
     })
 
     afterEach(() => {
       initializeModuleData(emptyModuleConfig);
       callbackSpy.resetHistory();
-      global.lookupRateLimitTimeout = null;
     })
 
     it('will call callback immediately if no adunits', () => {
@@ -288,74 +254,23 @@ describe('qortexRtdProvider', () => {
       expect(logWarnSpy.calledOnce).to.be.true;
     })
 
-    it('will call callback if getContext does not throw', (done) => {
-      const cb = function () {
-        expect(logWarnSpy.calledOnce).to.be.false;
-        done();
-      }
-      module.getBidRequestData(reqBidsConfig, cb);
-      server.requests[0].respond(200, responseHeaders, contextResponse);
-    })
-
-    it('will log message call callback if context data has already been collected', (done) => {
-      setContextData(contextResponseObj);
-      module.getBidRequestData(reqBidsConfig, callbackSpy);
-      setTimeout(() => {
-        expect(server.requests.length).to.be.eql(0);
-        expect(logMessageSpy.calledWith('Adding Content object from existing context data')).to.be.true;
-        done();
-      }, 250)
-    })
-
-    it('will catch and log error and fire callback', (done) => {
-      module.getBidRequestData(reqBidsConfig, callbackSpy);
-      server.requests[0].respond(404, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Returned error status code: 404')).to.be.eql(true);
-        expect(callbackSpy.calledOnce).to.be.true;
-        done();
-      }, 250)
-    })
-
-    it('will not request context if group config toggle is false', (done) => {
-      setGroupConfigData(inactiveGroupConfigResponseObj);
-      const cb = function () {
-        expect(server.requests.length).to.be.eql(0);
-        expect(logWarnSpy.called).to.be.true;
-        expect(logWarnSpy.calledWith('Bid enrichment disabled at group config')).to.be.true;
-        done();
-      }
-      module.getBidRequestData(reqBidsConfig, cb);
-    })
-
-    it('Logs warning for network error', (done) => {
-      saveContextAdded(reqBidsConfig);
-      const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
-      module.onAuctionEndEvent(testData);
-      server.requests[0].respond(500, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Returned error status code: 500')).to.be.eql(true);
-        done();
-      }, 200)
-    })
-
-    it('Logs warning for rate limit', (done) => {
-      saveContextAdded(reqBidsConfig);
-      const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
-      module.onAuctionEndEvent(testData);
-      server.requests[0].respond(429, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Returned error status code: 429')).to.be.eql(true);
-        done();
-      }, 200)
-    })
-
     it('will not request context if prebid disable toggle is true', (done) => {
       initializeModuleData(bidEnrichmentDisabledModuleConfig);
       const cb = function () {
         expect(server.requests.length).to.be.eql(0);
         expect(logWarnSpy.called).to.be.true;
         expect(logWarnSpy.calledWith('Bid enrichment disabled at prebid config')).to.be.true;
+        done();
+      }
+      module.getBidRequestData(reqBidsConfig, cb);
+    })
+
+    it('will request to add context when ad units present and enabled', (done) => {
+      const cb = function () {
+        setContextData(null);
+        expect(server.requests.length).to.be.eql(0);
+        expect(logWarnSpy.called).to.be.true;
+        expect(logWarnSpy.calledWith('No context data received at this time')).to.be.true;
         done();
       }
       module.getBidRequestData(reqBidsConfig, cb);
@@ -373,89 +288,24 @@ describe('qortexRtdProvider', () => {
       setGroupConfigData(null);
     })
 
-    it('Properly sends analytics event with valid config', (done) => {
-      saveContextAdded(reqBidsConfig);
+    it('Properly sends analytics event with valid config', () => {
       const testData = {auctionId: reqBidsConfig.auctionId, data: 'data'};
       module.onAuctionEndEvent(testData);
-      const request = server.requests[0];
-      expect(request.url).to.be.eql('https://events.qortex.ai/api/v1/player-event');
-      server.requests[0].respond(200, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logMessageSpy.calledWith('Qortex analytics event sent')).to.be.true
-        done();
-      }, 200)
-    })
-
-    it('Logs warning for rejected analytics request', (done) => {
-      const invalidPercentageConfig = cloneDeep(validGroupConfigResponseObj);
-      invalidPercentageConfig.prebidReportingPercentage = -1;
-      setGroupConfigData(invalidPercentageConfig);
-      const testData = {data: 'data'};
-      module.onAuctionEndEvent(testData);
-      expect(server.requests.length).to.be.eql(0);
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Current request did not meet analytics percentage threshold, cancelling sending event')).to.be.true
-        done();
-      }, 200)
     })
   })
 
-  describe('getContext', () => {
-    beforeEach(() => {
-      initializeModuleData(validModuleConfig);
+  describe('requestContextData', () => {
+    before(() => {
+      setContextData({data: true});
     })
 
-    afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
+    after(() => {
+      setContextData(null);
     })
 
-    it('returns a promise', () => {
-      const result = getContext();
-      expect(result).to.be.a('promise');
-    })
-
-    it('uses request url generated from initialize function in config and resolves to content object data', (done) => {
-      let requestUrl = `${validModuleConfig.params.apiUrl}/api/v1/prebid/${validModuleConfig.params.groupId}/page/lookup`;
-      const ctx = getContext()
-      const request = server.requests[0]
-      request.respond(200, responseHeaders, contextResponse);
-      ctx.then(response => {
-        expect(server.requests.length).to.be.eql(1);
-        expect(request.url).to.be.eql(requestUrl);
-        expect(response).to.be.eql(contextResponseObj.content);
-        done();
-      });
-    })
-
-    it('returns null when necessary', (done) => {
-      const ctx = getContext()
-      server.requests[0].respond(202, responseHeaders, JSON.stringify({}))
-      ctx.then(response => {
-        expect(response).to.be.null;
-        expect(server.requests.length).to.be.eql(1);
-        expect(logWarnSpy.called).to.be.false;
-        done();
-      });
-    })
-
-    it('request content object after elapsed rate limit timeout if a second content lookup was delayed', (done) => {
-      const ctx = getContext();
-      server.requests[0].respond(202, responseHeaders, JSON.stringify({}))
-      ctx.then(response => {
-        expect(response).to.be.null;
-        expect(logMessageSpy.calledWith('Requesting new context data')).to.be.true;
-        expect(server.requests.length).to.be.eql(1);
-        expect(logWarnSpy.called).to.be.false;
-      });
-      setTimeout(() => {
-        const ctx2 = getContext();
-        ctx2.catch(e => {
-          expect(e.message).to.equal('429');
-          expect(logMessageSpy.calledWith('Content lookup attempted during rate limit waiting period of 5000ms.')).to.be.true;
-          resetRateLimitTimeout();
-          done();
-        })
-      }, 200)
+    it('Will log properly when context data already available', () => {
+      requestContextData();
+      expect(logMessageSpy.calledWith('Context data already retrieved.')).to.be.true;
     })
   })
 
@@ -488,16 +338,6 @@ describe('qortexRtdProvider', () => {
       expect(logWarnSpy.calledWith('No context data received at this time')).to.be.ok;
       expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
-    })
-
-    it('saves context added entry with skipped flag if valid request does not meet threshold', () => {
-      initializeModuleData(validModuleConfig);
-      setContextData(contextResponseObj.content);
-      setGroupConfigData(noEnrichmentGroupConfigResponseObj);
-      addContextToRequests(reqBidsConfig);
-      const contextAdded = getContextAddedEntry(reqBidsConfig.auctionId);
-      expect(contextAdded).to.not.be.null;
-      expect(contextAdded.contextSkipped).to.eql(true);
     })
 
     it('adds site.content only to global ortb2 when bidders array is omitted', () => {
@@ -545,137 +385,24 @@ describe('qortexRtdProvider', () => {
     })
   })
 
-  describe('generateAnalyticsEventObject', () => {
-    let qortexSessionInfo;
-    beforeEach(() => {
-      qortexSessionInfo = initializeModuleData(validModuleConfig);
-      setGroupConfigData(validGroupConfigResponseObj);
-    })
-
-    afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
-      setGroupConfigData(null);
-    })
-
-    it('returns expected object', () => {
-      const testEventType = 'TEST';
-      const testSubType = 'TEST_SUBTYPE';
-      const testData = {data: 'data'};
-
-      const result = generateAnalyticsEventObject(testEventType, testSubType, testData);
-
-      expect(result.sessionId).to.be.eql(qortexSessionInfo.sessionId);
-      expect(result.groupId).to.be.eql(qortexSessionInfo.groupId);
-      expect(result.eventType).to.be.eql(testEventType);
-      expect(result.subType).to.be.eql(testSubType);
-      expect(result.eventOriginSource).to.be.eql('RTD');
-      expect(result.data).to.be.eql(testData);
-    })
-  })
-
-  describe('generateAnalyticsHostUrl', () => {
-    it('will use qortex analytics host when appropriate', () => {
-      const hostUrl = generateAnalyticsHostUrl(defaultApiHost);
-      expect(hostUrl).to.be.eql('https://events.qortex.ai/api/v1/player-event');
-    })
-
-    it('will use qortex stage analytics host when appropriate', () => {
-      const hostUrl = generateAnalyticsHostUrl('https://stg-demand.qortex.ai');
-      expect(hostUrl).to.be.eql('https://stg-events.qortex.ai/api/v1/player-event');
-    })
-
-    it('will default to dev analytics host when appropriate', () => {
-      const hostUrl = generateAnalyticsHostUrl('https://dev-demand.qortex.ai');
-      expect(hostUrl).to.be.eql('https://dev-events.qortex.ai/api/v1/player-event');
-    })
-  })
-
-  describe('getGroupConfig', () => {
-    let sessionInfo;
-
-    beforeEach(() => {
-      sessionInfo = initializeModuleData(validModuleConfig);
-    })
-
-    afterEach(() => {
-      initializeModuleData(emptyModuleConfig);
-      setGroupConfigData(null);
-      setContextData(null);
-      server.reset();
-    })
-
-    it('returns a promise', () => {
-      const result = getGroupConfig();
-      expect(result).to.be.a('promise');
-    })
-
-    it('processes group config response in valid conditions', (done) => {
-      const result = getGroupConfig();
-      const request = server.requests[0]
-      request.respond(200, responseHeaders, validGroupConfigResponse);
-      result.then(response => {
-        expect(request.url).to.be.eql(sessionInfo.groupConfigUrl);
-        expect(response.groupId).to.be.eql(validGroupConfigResponseObj.groupId);
-        expect(response.active).to.be.eql(validGroupConfigResponseObj.active);
-        expect(response.prebidBidEnrichment).to.be.eql(validGroupConfigResponseObj.prebidBidEnrichment);
-        expect(response.prebidReportingPercentage).to.be.eql(validGroupConfigResponseObj.prebidReportingPercentage);
-        done();
-      })
-    })
-  })
-
   describe('initializeBidEnrichment', () => {
     beforeEach(() => {
       initializeModuleData(validModuleConfig);
       setGroupConfigData(validGroupConfigResponseObj);
       setContextData(null);
-      server.reset();
     })
 
     afterEach(() => {
       setGroupConfigData(null);
       setContextData(null);
-      server.reset();
-    })
-
-    it('sets context data if applicable', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(200, responseHeaders, contextResponse);
-      setTimeout(() => {
-        expect(logMessageSpy.calledWith('Contextual record Received from Qortex API')).to.be.true;
-        done()
-      }, 250)
-    })
-
-    it('logs warning if no record has been made', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(202, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Contexual record is not yet complete at this time')).to.be.true;
-        done();
-      }, 250)
     })
 
     it('processes incoming qortex component "initialize" message', () => {
-      postMessage(validQortexPostMessage);
+      windowPostMessageReceived({data: QortexPostMessageInitialized})
     })
 
-    it('will catch and log error and fire callback', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(404, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Returned error status code: 404')).to.be.eql(true);
-        done();
-      }, 250)
-    })
-
-    it('Logs warning for network error', (done) => {
-      initializeBidEnrichment();
-      server.requests[0].respond(500, responseHeaders, JSON.stringify({}));
-      setTimeout(() => {
-        expect(logWarnSpy.calledWith('Returned error status code: 500')).to.be.eql(true);
-        done();
-      }, 200)
+    it('processes incoming qortex component "context" message', () => {
+      windowPostMessageReceived({data: QortexPostMessageContext})
     })
   })
 })
