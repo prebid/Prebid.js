@@ -5,137 +5,163 @@ import {
   logMessage,
   deepAccess,
   deepSetValue,
-  mergeDeep
+  mergeDeep,
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'madsense';
 const DEFAULT_BID_TTL = 55;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
+const MS_EXCHANGE_BASE_URL = 'https://ads.madsense.io/pbjs';
+
+const buildImpWithDefaults = (buildImp, bidRequest, context) => {
+  const imp = buildImp(bidRequest, context);
+
+  imp.bidfloor = imp.bidfloor || bidRequest.params.bidfloor || 0;
+  imp.bidfloorcur = imp.bidfloorcur || bidRequest.params.currency || DEFAULT_CURRENCY;
+
+  return imp;
+};
+
+const enrichRequestWithConsent = (req, bidderRequest) => {
+  if (bidderRequest.gdprConsent) {
+    deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    deepSetValue(req, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+  }
+
+  if (bidderRequest.uspConsent) {
+    deepSetValue(req, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
+};
+
+const determineMediaType = (bid) => {
+  if (bid.mtype === 2) {
+    return VIDEO;
+  }
+
+  if (hasVideoMediaType(bid)) {
+    return VIDEO;
+  }
+
+  return BANNER;
+};
 
 const converter = ortbConverter({
   context: {
     netRevenue: DEFAULT_NET_REVENUE,
-    ttl: DEFAULT_BID_TTL
+    ttl: DEFAULT_BID_TTL,
   },
-  imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-
-    if (!imp.bidfloor) {
-      imp.bidfloor = bidRequest.params.bidfloor || 0;
-      imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY;
-    }
-    return imp;
-  },
-  request(buildRequest, imps, bidderRequest, context) {
+  imp: (buildImp, bidRequest, context) => buildImpWithDefaults(buildImp, bidRequest, context),
+  request: (buildRequest, imps, bidderRequest, context) => {
     const req = buildRequest(imps, bidderRequest, context);
+
     mergeDeep(req, {
       ext: {
         hb: 1,
         prebidver: '$prebid.version$',
         adapterver: '1.0.0',
-      }
-    })
+      },
+    });
 
-    if (bidderRequest.gdprConsent) {
-      deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(req, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
-    }
-
-    if (bidderRequest.uspConsent) {
-      deepSetValue(req, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    }
-
+    enrichRequestWithConsent(req, bidderRequest);
     return req;
   },
-  bidResponse(buildBidResponse, bid, context) {
-    let resMediaType;
+  bidResponse: (buildBidResponse, bid, context) => {
+    const resMediaType = determineMediaType(bid);
 
-    if (bid.mtype == 2) {
-      resMediaType = VIDEO;
-    } else {
-      resMediaType = BANNER;
-    }
+    Object.assign(context, {
+      mediaType: resMediaType,
+      currency: DEFAULT_CURRENCY,
+      ...(resMediaType === VIDEO && { vastXml: bid.adm }),
+    });
 
-    context.mediaType = resMediaType;
-    context.currency = DEFAULT_CURRENCY;
-
-    if (resMediaType === VIDEO) {
-      context.vastXml = bid.adm;
-    }
-
-    const bidResponse = buildBidResponse(bid, context);
-
-    return bidResponse;
-  }
+    return buildBidResponse(bid, context);
+  },
 });
 
 export const spec = {
   code: BIDDER_CODE,
   VERSION: '1.0.0',
   supportedMediaTypes: [BANNER, VIDEO],
-  ENDPOINT: 'https://ads.madsense.io/pbjs',
+  ENDPOINT: MS_EXCHANGE_BASE_URL,
 
   isBidRequestValid: function (bid) {
-    return (
-      _validateParams(bid) &&
-      _validateBanner(bid) &&
-      _validateVideo(bid)
-    );
+    return validateBidRequest(bid);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let contextMediaType;
-
-    if (hasVideoMediaType(validBidRequests)) {
-      contextMediaType = VIDEO;
-    } else {
-      contextMediaType = BANNER;
-    }
-
+    const contextMediaType = determineMediaType(validBidRequests[0]);
     const data = converter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest,
-      context: {contextMediaType}
+      context: { contextMediaType },
     });
 
-    let companyId = validBidRequests[0].params.company_id;
-
-    if (validBidRequests[0].params.test) {
-      logMessage('madsense: test mode');
-      companyId = 'test'
-    }
-    let madsenseExchangeEndpointUrl = spec.ENDPOINT + '?company_id=' + companyId;
+    const companyId = getCompanyId(validBidRequests);
+    const madsenseExchangeEndpointUrl = buildEndpointUrl(companyId);
 
     return {
       method: 'POST',
       url: madsenseExchangeEndpointUrl,
-      data: data
+      data: data,
     };
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bids = converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
-
-    return bids.map(bid => {
-        if (bid.mtype === 2 && bid.adm) {
-            if (pbjs.getConfig('cache') && pbjs.getConfig('cache').url) {
-                bid.vastXml = bid.adm;
-                delete bid.adm;
-            } else {
-                logError('Prebid Cache is not configured (madSense)');
-                return null;
-            }
-        }
-
-        return bid;
-    }).filter(bid => bid !== null);
-}
+    const bids = parseServerResponse(serverResponse, bidRequest);
+    return filterValidBids(bids);
+  },
 };
 
+function validateBidRequest(bid) {
+  return (
+    _validateParams(bid) &&
+    _validateBanner(bid) &&
+    _validateVideo(bid)
+  );
+}
+
+function getCompanyId(validBidRequests) {
+  let companyId = validBidRequests[0].params.company_id;
+
+  if (validBidRequests[0].params.test) {
+    logMessage('madsense: test mode');
+    companyId = 'test';
+  }
+
+  return companyId;
+}
+
+function buildEndpointUrl(companyId) {
+  return `${spec.ENDPOINT}?company_id=${companyId}`;
+}
+
+function parseServerResponse(serverResponse, bidRequest) {
+  return converter.fromORTB({
+    response: serverResponse.body,
+    request: bidRequest.data,
+  }).bids;
+}
+
+function filterValidBids(bids) {
+  return bids
+    .map((bid) => {
+      if (bid.mtype === 2 && bid.adm) {
+        if (pbjs.getConfig('cache')?.url) {
+          bid.vastXml = bid.adm;
+          delete bid.adm;
+        } else {
+          logError('Prebid Cache is not configured (madSense)');
+          return null;
+        }
+      }
+      return bid;
+    })
+    .filter((bid) => bid !== null);
+}
 
 function hasBannerMediaType(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
@@ -194,7 +220,7 @@ function _validateVideo(bidRequest) {
 
   const videoParams = {
     ...videoPlacement,
-    ...videoBidderParams
+    ...videoBidderParams,
   };
 
   if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
@@ -217,7 +243,8 @@ function _validateVideo(bidRequest) {
     return false;
   }
 
-  if (typeof videoParams.playerSize === 'undefined' ||
+  if (
+    typeof videoParams.playerSize === 'undefined' ||
     !Array.isArray(videoParams.playerSize) ||
     !Array.isArray(videoParams.playerSize[0])
   ) {

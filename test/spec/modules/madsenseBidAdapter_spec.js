@@ -33,7 +33,6 @@ const getBannerRequest = () => {
   }
 };
 
-
 const getVideoRequest = () => {
   return {
     bidderCode: 'madsense',
@@ -190,9 +189,6 @@ const getBidderResponse = () => {
     }
   };
 }
-
-
-
 
 describe('madsenseBidAdapter', function() {
   let videoBidRequest;
