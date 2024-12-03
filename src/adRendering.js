@@ -20,7 +20,7 @@ import {fireNativeTrackers} from './native.js';
 import {GreedyPromise} from './utils/promise.js';
 import adapterManager from './adapterManager.js';
 import {useMetrics} from './utils/perfMetrics.js';
-import {filters} from '../../../Prebid.js/src/targeting.js';
+import {filters} from './targeting.js';
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;

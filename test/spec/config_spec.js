@@ -386,7 +386,7 @@ describe('config API', function () {
     const warning = 'Auction Options suppressExpiredRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
-  
+
   it('should log warning for invalid properties to auctionOptions', function () {
     setConfig({ auctionOptions: {
       'testing': true
