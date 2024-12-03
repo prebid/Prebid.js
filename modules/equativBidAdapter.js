@@ -1,3 +1,4 @@
+import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
 import { getStorageManager } from '../src/storageManager.js';
@@ -45,12 +46,18 @@ export const spec = {
       return undefined;
     }
 
-    return {
-      data: converter.toORTB({ bidderRequest, bidRequests }),
-      method: 'POST',
-      // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169'
-      url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-    };
+    const requests = [];
+
+    bidRequests.forEach(bid => {
+      const data = converter.toORTB({bidRequests: [bid], bidderRequest});
+      requests.push({
+        data,
+        method: 'POST',
+        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+      })
+    });
+
+    return requests;
   },
 
   /**
@@ -107,11 +114,12 @@ export const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    const mediaType = deepAccess(bidRequest, 'mediaTypes.video') ? VIDEO : BANNER;
     const { siteId, pageId, formatId } = bidRequest.params;
 
     delete imp.dt;
 
-    imp.bidfloor = imp.bidfloor || getBidFloor(bidRequest);
+    imp.bidfloor = imp.bidfloor || getBidFloor(bidRequest, config.getConfig('currency.adServerCurrency'), mediaType);
     imp.secure = 1;
     imp.tagid = bidRequest.adUnitCode;
 
