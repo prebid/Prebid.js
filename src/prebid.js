@@ -967,12 +967,12 @@ pbjsInstance.que.push(() => listenMessagesFromCreative());
  * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
  * function to execute immediately.
  *
- * @memberof pbjs
  * @param  {function} command A function which takes no arguments. This is guaranteed to run exactly once, and only after
  *                            the Prebid script has been fully loaded.
  * @alias module:pbjs.cmd.push
+ * @alias module:pbjs.que.push
  */
-pbjsInstance.cmd.push = function (command) {
+function quePush(command) {
   if (typeof command === 'function') {
     try {
       command.call();
@@ -982,9 +982,7 @@ pbjsInstance.cmd.push = function (command) {
   } else {
     logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
   }
-};
-
-pbjsInstance.que.push = pbjsInstance.cmd.push;
+}
 
 function processQueue(queue) {
   queue.forEach(function (cmd) {
@@ -1003,6 +1001,7 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 pbjsInstance.processQueue = function () {
+  pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
   processQueue(pbjsInstance.que);
