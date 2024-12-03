@@ -255,7 +255,7 @@ export function renderAdDirect(doc, adId, options) {
     if (adData.ad) {
       doc.write(adData.ad);
       doc.close();
-      emitAdRenderSucceeded({doc, bid, adId: bid.adId});
+      emitAdRenderSucceeded({doc, bid, id: bid.adId});
     } else {
       getCreativeRenderer(bid)
         .then(render => render(adData, {
@@ -263,7 +263,7 @@ export function renderAdDirect(doc, adId, options) {
           mkFrame: createIframe,
         }, doc.defaultView))
         .then(
-          () => emitAdRenderSucceeded({doc, bid, adId: bid.adId}),
+          () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
           (e) => {
             fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
             e?.stack && logError(e);
