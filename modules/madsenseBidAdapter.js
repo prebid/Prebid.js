@@ -1,6 +1,4 @@
 import {
-  logInfo,
-  logWarn,
   logError,
   logMessage,
   deepAccess,
@@ -10,6 +8,7 @@ import {
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'madsense';
 const DEFAULT_BID_TTL = 55;
@@ -150,7 +149,7 @@ function filterValidBids(bids) {
   return bids
     .map((bid) => {
       if (bid.mtype === 2 && bid.adm) {
-        if (pbjs.getConfig('cache')?.url) {
+        if(!config.getConfig('cache.url')) {
           bid.vastXml = bid.adm;
           delete bid.adm;
         } else {
