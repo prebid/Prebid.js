@@ -259,7 +259,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*',
   });
-  return bidFloor.floor;
+  return bidFloor?.floor;
 }
 
 function _renderer(bid) {

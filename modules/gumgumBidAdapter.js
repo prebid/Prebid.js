@@ -233,7 +233,7 @@ function _getFloor(mediaTypes, staticBidFloor, bid) {
     const { currency, floor } = bid.getFloor({
       mediaType: curMediaType,
       size: '*'
-    });
+    }) || {};
     floor && (bidFloor.floor = floor);
     currency && (bidFloor.currency = currency);
 

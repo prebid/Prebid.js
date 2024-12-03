@@ -291,7 +291,7 @@ function getBidFloorByType(bidRequest) {
   return floorInfo;
 }
 function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
-  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size});
+  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);

@@ -313,7 +313,7 @@ function _getFloors(bidRequest) {
     floors.push(cleanObj({
       mt: mediaType,
       s: isArray(size) ? `${size[0]}x${size[1]}` : undefined,
-      f: (!isNaN(info.floor) && info.currency === CURRENCY) ? info.floor : undefined
+      f: (!isNaN(info?.floor) && info?.currency === CURRENCY) ? info?.floor : undefined
     }));
   }
 

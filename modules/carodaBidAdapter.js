@@ -184,8 +184,8 @@ function getImps (validBidRequests, common) {
     const floorInfo = bid.getFloor
       ? bid.getFloor({ currency: common.currency || 'EUR' })
       : {};
-    const bidfloor = floorInfo.floor;
-    const bidfloorcur = floorInfo.currency;
+    const bidfloor = floorInfo?.floor;
+    const bidfloorcur = floorInfo?.currency;
     const { ctok, placementId } = bid.params;
     const imp = {
       bid_id: bid.bidId,

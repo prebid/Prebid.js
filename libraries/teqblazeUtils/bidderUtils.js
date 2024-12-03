@@ -29,7 +29,7 @@ const getBidFloor = (bid) => {
       size: '*',
     });
 
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (err) {
     return 0;
   }

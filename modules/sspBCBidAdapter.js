@@ -261,18 +261,18 @@ const getHighestFloor = (slot) => {
           mediaType: 'banner',
           size: next,
           currency
-        });
+        }) || {};
         return prev > currentFloor ? prev : currentFloor;
       }, 0);
     }
 
     const { floor: nativeFloor = 0 } = slot.getFloor({
       mediaType: 'native', currency
-    });
+    }) || {};
 
     const { floor: videoFloor = 0 } = slot.getFloor({
       mediaType: 'video', currency
-    });
+    }) || {};
 
     result.floor = Math.max(bannerFloor, nativeFloor, videoFloor);
   }

@@ -90,7 +90,7 @@ function getFloorModuleData(bid) {
     mediaType: BANNER,
     size: '*'
   };
-  return (isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
+  return (isFn(bid.getFloor)) ? (bid.getFloor(getFloorRequestObject) || {}) : false;
 };
 
 function generateOpenRtbObject(bidderRequest, bid) {
