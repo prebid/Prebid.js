@@ -11,14 +11,14 @@ Maintainer:   prebid@madsense.io
 - The madSense bid adapter supports both Banner and Video formats.
 
 
-# Test Parameters
+### Test Parameters
 
-## Banner
+#### Banner
 
 ```
 var adUnits = [
     {
-        code: 'banner-ad-div',
+        code: 'adUnitBanner_div_1',
         mediaTypes: {
             banner: {
                 sizes: [[300, 250], [300,600]]
@@ -35,32 +35,19 @@ var adUnits = [
 ];
 ```
 
-## Video
+#### Video
 
 We support the following OpenRTB parameters, which can be defined in `mediaTypes.video` or `bids[].params.video`.
-- 'mimes',
-- 'minduration',
-- 'maxduration',
-- 'plcmt',
-- 'protocols',
-- 'startdelay',
-- 'skip',
-- 'skipafter',
-- 'minbitrate',
-- 'maxbitrate',
-- 'delivery',
-- 'playbackmethod',
-- 'api',
-- 'linearity'
+- `mimes`, `minduration`, `maxduration`, `plcmt`, `protocols`, `startdelay`, `skip`, `skipafter`, `minbitrate`, `maxbitrate`, `delivery`, `playbackmethod`, `api`, `linearity`
 
 
-## Instream Video Ad Unit with mediaTypes.video
+##### Instream Video Ad Unit with mediaTypes.video
 - Note: The adapter, by default, will retrieve the required parameters from mediaTypes.video.
 - Note: The Video SSP ad server will return a VAST XML, which can be loaded into your specified player.
 ```
   var adUnits = [
     {
-        code: 'video1',
+        code: 'adUnitVideo_1',
           mediaTypes: {
             video: {
                   context: 'instream',
@@ -88,14 +75,14 @@ We support the following OpenRTB parameters, which can be defined in `mediaTypes
   ]
 ```
 
-# End To End Testing Mode
+## End To End Testing Mode
 By setting `bid.params.test = true`, you can receive a test creative.
 
-## Banner
+#### Banner
 ```
 var adUnits = [
     {
-        code: 'banner-ad-div',
+        code: 'adUnitBanner_div_1',
         mediaTypes: {
             banner: {
                 sizes: [[300, 250], [300,600]]
@@ -111,11 +98,11 @@ var adUnits = [
 ];
 ```
 
-## Video
+#### Video
 ```
 var adUnits = [
     {
-      code: 'video1',
+      code: 'adUnitVideo_1',
       mediaTypes: {
         video: {
           context: "instream",
