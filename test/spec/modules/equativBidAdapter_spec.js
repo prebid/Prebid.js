@@ -564,7 +564,7 @@ describe('Equativ bid adapter tests', () => {
       const expectedResult = true;
 
       // ACT
-      const request = spec.buildRequests(DEFAULT_NATIVE_BID_REQUESTS, DEFAULT_NATIVE_BIDDER_REQUEST).data;
+      const request = spec.buildRequests(DEFAULT_NATIVE_BID_REQUESTS, DEFAULT_NATIVE_BIDDER_REQUEST)[0].data;
 
       // ASSERT
       expect(request.imp[0]).to.have.property('native');
