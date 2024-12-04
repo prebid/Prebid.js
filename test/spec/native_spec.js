@@ -22,7 +22,7 @@ import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '..
 import {auctionManager} from '../../src/auctionManager.js';
 import {getRenderingData} from '../../src/adRendering.js';
 import {getCreativeRendererSource} from '../../src/creativeRenderers.js';
-import {deepClone, deepSetValue} from '../../src/utils.js';
+import {deepSetValue} from '../../src/utils.js';
 const utils = require('src/utils');
 
 const bid = {

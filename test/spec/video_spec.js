@@ -2,6 +2,7 @@ import {fillVideoDefaults, isValidVideoBid, validateOrtbVideoFields} from 'src/v
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
 import * as utils from '../../src/utils.js';
+import { syncOrtb2 } from '../../src/prebid.js';
 
 describe('video.js', function () {
   let sandbox;
@@ -274,4 +275,207 @@ describe('video.js', function () {
       expect(valid).to.equal(false);
     });
   })
+
+  describe('syncOrtb2', () => {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
+    let logWarnSpy;
+
+    beforeEach(function () {
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      utils.logWarn.restore();
+    });
+
+    it('should properly sync fields if both present', () => {
+      const adUnit = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5, // should be overwritten with value from ortb2Imp
+            w: 100,
+            h: 200,
+            foo: 'omitted_value' // should be omitted during copying - not part of video obj spec
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minbitrate: 10,
+            maxbitrate: 50,
+            delivery: [1, 2, 3, 4],
+            linearity: 10,
+            bar: 'omitted_value' // should be omitted during copying - not part of video obj spec
+          }
+        }
+      };
+
+      const expected = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            w: 100,
+            h: 200,
+            minbitrate: 10,
+            maxbitrate: 50,
+            delivery: [1, 2, 3, 4],
+            linearity: 10,
+            foo: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            w: 100,
+            h: 200,
+            minbitrate: 10,
+            maxbitrate: 50,
+            delivery: [1, 2, 3, 4],
+            linearity: 10,
+            bar: 'omitted_value'
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'video');
+      expect(adUnit).to.deep.eql(expected);
+
+      assert.ok(logWarnSpy.calledOnce, 'expected warning was logged due to conflicting linearity');
+    });
+
+    it('should omit sync if video mediaType not present on adUnit', () => {
+      const adUnit = {
+        mediaTypes: {
+          native: {
+            fieldToOmit: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          native: {
+            fieldToOmit2: 'omitted_value'
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'video');
+
+      expect(adUnit.mediaTypes.video).to.be.undefined;
+      expect(adUnit.ortb2Imp.video).to.be.undefined;
+    });
+
+    it('should properly sync if mediaTypes is not present on any of side', () => {
+      const adUnit = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          // lack of video field
+        }
+      };
+
+      const expected1 = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value'
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+          }
+        }
+      };
+
+      syncOrtb2(adUnit, 'video');
+      expect(adUnit).to.deep.eql(expected1);
+
+      const adUnit2 = {
+        mediaTypes: {
+          // lack of video field
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value'
+          }
+        }
+      };
+
+      const expected2 = {
+        mediaTypes: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+          }
+        },
+        ortb2Imp: {
+          video: {
+            minduration: 500,
+            maxduration: 1000,
+            protocols: [1, 2, 3],
+            linearity: 5,
+            w: 100,
+            h: 200,
+            foo: 'omitted_value',
+          }
+        }
+      };
+
+      syncOrtb2(adUnit2, 'video');
+      expect(adUnit2).to.deep.eql(expected2);
+    });
+
+    it('should not create empty video object on ortb2Imp if there was nothing to copy', () => {
+      const adUnit2 = {
+        mediaTypes: {
+          video: {
+            noOrtbVideoField1: 'value',
+            noOrtbVideoField2: 'value'
+          }
+        },
+        ortb2Imp: {
+          // lack of video field
+        }
+      };
+      syncOrtb2(adUnit2, 'video');
+      expect(adUnit2.ortb2Imp.video).to.be.undefined
+    });
+  });
 });
