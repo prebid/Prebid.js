@@ -1,108 +1,245 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { mobianBrandSafetySubmodule, MOBIAN_URL } from 'modules/mobianRtdProvider.js';
 import * as ajax from 'src/ajax.js';
+import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
+import {
+  CONTEXT_KEYS,
+  extendBidRequestConfig,
+  fetchContextData,
+  getConfig,
+  getContextData,
+  makeDataFromResponse,
+  setTargeting,
+} from 'modules/mobianRtdProvider.js';
 
 describe('Mobian RTD Submodule', function () {
   let ajaxStub;
   let bidReqConfig;
+  let setKeyValueSpy;
+
+  const mockResponse = JSON.stringify({
+    meta: {
+      url: 'https://example.com',
+      has_results: true
+    },
+    results: {
+      ap: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
+      mobianContentCategories: [],
+      mobianEmotions: ['affection'],
+      mobianGenres: [],
+      mobianRisk: 'low',
+      mobianSentiment: 'positive',
+      mobianThemes: [],
+      mobianTones: [],
+    }
+  });
+
+  const mockContextData = {
+    apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
+    categories: [],
+    emotions: ['affection'],
+    genres: [],
+    risk: 'low',
+    sentiment: 'positive',
+    themes: [],
+    tones: [],
+  }
 
   beforeEach(function () {
     bidReqConfig = {
       ortb2Fragments: {
         global: {
           site: {
-            ext: {}
+            ext: {
+              data: {}
+            }
           }
         }
       }
     };
+
+    setKeyValueSpy = sinon.spy(gptUtils, 'setKeyValue');
   });
 
   afterEach(function () {
     ajaxStub.restore();
+    setKeyValueSpy.restore();
   });
 
-  it('should return risk level when server responds with garm_risk', function () {
-    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success(JSON.stringify({
-        garm_risk: 'low',
-        sentiment_positive: true,
-        emotion_joy: true
-      }));
-    });
-
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({
-        risk: 'low',
-        contentCategories: [],
-        sentiment: 'positive',
-        emotions: ['joy']
+  describe('fetchContextData', function () {
+    it('should return fetched context data', async function () {
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+        callbacks.success(mockResponse);
       });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+
+      const contextData = await fetchContextData();
+      expect(contextData).to.deep.equal(mockResponse);
     });
   });
 
-  it('should handle response with GARM content categories, sentiment, and emotions', function () {
-    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success(JSON.stringify({
-        garm_risk: 'medium',
-        garm_content_category_arms: true,
-        garm_content_category_crime: true,
-        sentiment_negative: true,
-        emotion_anger: true,
-        emotion_fear: true
-      }));
-    });
-
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({
-        risk: 'medium',
-        contentCategories: ['arms', 'crime'],
-        sentiment: 'negative',
-        emotions: ['anger', 'fear']
+  describe('makeDataFromResponse', function () {
+    it('should format context data response', async function () {
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+        callbacks.success(mockResponse);
       });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+
+      const data = makeDataFromResponse(mockResponse);
+      expect(data).to.deep.equal(mockContextData);
     });
   });
 
-  it('should return unknown risk when garm_risk is not present', function () {
-    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success(JSON.stringify({
-        sentiment_neutral: true
-      }));
-    });
-
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({
-        risk: 'unknown',
-        contentCategories: [],
-        sentiment: 'neutral',
-        emotions: []
+  describe('getContextData', function () {
+    it('should return formatted context data', async function () {
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+        callbacks.success(mockResponse);
       });
-      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
+
+      const data = await getContextData();
+      expect(data).to.deep.equal(mockContextData);
     });
   });
 
-  it('should return empty object when server response is not valid JSON', function () {
-    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.success('unexpected output not even of the right type');
+  describe('setTargeting', function () {
+    it('should set targeting key-value pairs as per config', function () {
+      const parsedConfig = {
+        prefix: 'mobian',
+        publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+      };
+      setTargeting(parsedConfig, mockContextData);
+
+      expect(setKeyValueSpy.callCount).to.equal(6);
+      expect(setKeyValueSpy.calledWith('mobian_ap_a1', [2313, 12])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_ap_p0', [1231231, 212])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_ap_p1', [231, 419])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_emotions', ['affection'])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_risk', 'low')).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_sentiment', 'positive')).to.equal(true);
+
+      expect(setKeyValueSpy.calledWith('mobian_ap_a0')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_themes')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_tones')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_genres')).to.equal(false);
     });
-    const originalConfig = JSON.parse(JSON.stringify(bidReqConfig));
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({});
-      // Check that bidReqConfig hasn't been modified
-      expect(bidReqConfig).to.deep.equal(originalConfig);
+
+    it('should not set key-value pairs if context data is empty', function () {
+      const parsedConfig = {
+        prefix: 'mobian',
+        publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+      };
+      setTargeting(parsedConfig, {});
+
+      expect(setKeyValueSpy.callCount).to.equal(0);
+    });
+
+    it('should only set key-value pairs for the keys specified in config', function () {
+      const parsedConfig = {
+        prefix: 'mobian',
+        publisherTargeting: ['emotions', 'risk'],
+      };
+
+      setTargeting(parsedConfig, mockContextData);
+
+      expect(setKeyValueSpy.callCount).to.equal(2);
+      expect(setKeyValueSpy.calledWith('mobian_emotions', ['affection'])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_risk', 'low')).to.equal(true);
+
+      expect(setKeyValueSpy.calledWith('mobian_ap_a0')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_ap_a1')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_ap_p0')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_ap_p1')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_themes')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_tones')).to.equal(false);
+      expect(setKeyValueSpy.calledWith('mobian_genres')).to.equal(false);
     });
   });
 
-  it('should handle error response', function () {
-    ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-      callbacks.error();
+  describe('extendBidRequestConfig', function () {
+    it('should extend bid request config with context data', function () {
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
+      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockContextData);
     });
 
-    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
-      expect(risk).to.deep.equal({});
+    it('should not override existing data', function () {
+      bidReqConfig.ortb2Fragments.global.site.ext.data = {
+        existing: 'data'
+      };
+
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
+      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal({
+        existing: 'data',
+        ...mockContextData
+      });
+    });
+
+    it('should create data object if missing', function () {
+      delete bidReqConfig.ortb2Fragments.global.site.ext.data;
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
+      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockContextData);
+    });
+  });
+
+  describe('getConfig', function () {
+    it('should return config with correct keys', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          prefix: 'mobiantest',
+          publisherTargeting: ['apValues'],
+          advertiserTargeting: ['emotions'],
+        }
+      });
+      expect(config).to.deep.equal({
+        prefix: 'mobiantest',
+        publisherTargeting: ['apValues'],
+        advertiserTargeting: ['emotions'],
+      });
+    });
+
+    it('should set default values for configs not set', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          publisherTargeting: ['apValues'],
+        }
+      });
+      expect(config).to.deep.equal({
+        prefix: 'mobian',
+        publisherTargeting: ['apValues'],
+        advertiserTargeting: [],
+      });
+    });
+
+    it('should set default values if not provided', function () {
+      const config = getConfig({});
+      expect(config).to.deep.equal({
+        prefix: 'mobian',
+        publisherTargeting: [],
+        advertiserTargeting: [],
+      });
+    });
+
+    it('should set default values if no config is provided', function () {
+      const config = getConfig();
+      expect(config).to.deep.equal({
+        prefix: 'mobian',
+        publisherTargeting: [],
+        advertiserTargeting: [],
+      });
+    });
+
+    it('should set all tarteging values if value is true', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          publisherTargeting: true,
+          advertiserTargeting: true,
+        }
+      });
+      expect(config).to.deep.equal({
+        prefix: 'mobian',
+        publisherTargeting: CONTEXT_KEYS,
+        advertiserTargeting: CONTEXT_KEYS,
+      });
     });
   });
 });

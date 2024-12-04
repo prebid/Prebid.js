@@ -5,7 +5,8 @@ import {
   isEmpty,
   contains,
   isInteger,
-  getBidIdParameter
+  getBidIdParameter,
+  isPlainObject
 } from '../../src/utils.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
@@ -19,7 +20,7 @@ export function getFloor(bid, mediaType) {
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
+  return isPlainObject(floorResult) && floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
 }
 
 export function getSizesArray(bid, mediaType) {
@@ -324,7 +325,7 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
   if (bidderRequest && bidderRequest.refererInfo) {
     generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
     generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
-    generalParams.page_domain = deepAccess(bidderRequest, 'refererInfo.domain') || deepAccess(window, 'location.hostname');
+    generalParams.site_domain = deepAccess(bidderRequest, 'refererInfo.domain') || deepAccess(window, 'location.hostname');
   }
 
   return generalParams;

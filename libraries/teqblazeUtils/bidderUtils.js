@@ -29,7 +29,7 @@ const getBidFloor = (bid) => {
       size: '*',
     });
 
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (err) {
     return 0;
   }
@@ -102,7 +102,7 @@ const checkIfObjectHasKey = (keys, obj, mode = 'some') => {
     const val = obj[key];
 
     if (mode === 'some' && val) return true;
-    if (!val) return false;
+    if (mode === 'every' && !val) return false;
   }
 
   return mode === 'every';
@@ -167,6 +167,10 @@ export const buildRequestsBase = (config) => {
   } else if (bidderRequest.ortb2?.regs?.gpp) {
     request.gpp = bidderRequest.ortb2.regs.gpp;
     request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+
+  if (bidderRequest?.ortb2?.device) {
+    request.device = bidderRequest.ortb2.device;
   }
 
   const len = validBidRequests.length;

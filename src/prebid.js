@@ -39,9 +39,15 @@ import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
-import {insertLocatorFrame, renderAdDirect} from './adRendering.js';
+import {
+  insertLocatorFrame,
+  markBidAsRendered,
+  markWinningBid,
+  renderAdDirect,
+  renderIfDeferred
+} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults} from './video.js';
+import {fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -100,6 +106,22 @@ function validateSizes(sizes, targLength) {
   return cleanSizes;
 }
 
+export function setBattrForAdUnit(adUnit, mediaType) {
+  const ortb2Imp = adUnit.ortb2Imp || {};
+  const mediaTypes = adUnit.mediaTypes || {};
+
+  if (ortb2Imp[mediaType]?.battr && mediaTypes[mediaType]?.battr && (ortb2Imp[mediaType]?.battr !== mediaTypes[mediaType]?.battr)) {
+    logWarn(`Ad unit ${adUnit.code} specifies conflicting ortb2Imp.${mediaType}.battr and mediaTypes.${mediaType}.battr, the latter will be ignored`, adUnit);
+  }
+
+  const battr = ortb2Imp[mediaType]?.battr || mediaTypes[mediaType]?.battr;
+
+  if (battr != null) {
+    deepSetValue(adUnit, `ortb2Imp.${mediaType}.battr`, battr);
+    deepSetValue(adUnit, `mediaTypes.${mediaType}.battr`, battr);
+  }
+}
+
 function validateBannerMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
@@ -112,6 +134,7 @@ function validateBannerMediaType(adUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
+  setBattrForAdUnit(validatedAdUnit, 'banner');
   return validatedAdUnit;
 }
 
@@ -134,6 +157,8 @@ function validateVideoMediaType(adUnit) {
       delete validatedAdUnit.mediaTypes.video.playerSize;
     }
   }
+  validateOrtbVideoFields(validatedAdUnit);
+  setBattrForAdUnit(validatedAdUnit, 'video');
   return validatedAdUnit;
 }
 
@@ -183,6 +208,7 @@ function validateNativeMediaType(adUnit) {
     logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.icon.sizes;
   }
+  setBattrForAdUnit(validatedAdUnit, 'native');
   return validatedAdUnit;
 }
 
@@ -193,7 +219,6 @@ function validateAdUnitPos(adUnit, mediaType) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
-    events.emit(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: warning });
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
@@ -502,6 +527,9 @@ pbjsInstance.requestBids = (function() {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
+      adUnitCodes = [adUnitCodes];
+    }
     if (adUnitCodes && adUnitCodes.length) {
       // if specific adUnitCodes supplied filter adUnits for those codes
       adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
@@ -509,6 +537,7 @@ pbjsInstance.requestBids = (function() {
       // otherwise derive adUnitCodes from adUnits
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
     }
+    adUnitCodes = adUnitCodes.filter(uniques);
     const ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
@@ -882,31 +911,25 @@ if (FEATURES.VIDEO) {
    *
    * @alias module:pbjs.markWinningBidAsUsed
    */
-  pbjsInstance.markWinningBidAsUsed = function (markBidRequest) {
-    const bids = fetchReceivedBids(markBidRequest, 'Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
-
+  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false}) {
+    let bids;
+    if (adUnitCode && adId == null) {
+      bids = targeting.getWinningBids(adUnitCode);
+    } else if (adId) {
+      bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
+    } else {
+      logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+    }
     if (bids.length > 0) {
-      auctionManager.addWinningBid(bids[0]);
+      if (analytics) {
+        markWinningBid(bids[0]);
+      } else {
+        auctionManager.addWinningBid(bids[0]);
+      }
+      markBidAsRendered(bids[0])
     }
   }
 }
-
-const fetchReceivedBids = (bidRequest, warningMessage) => {
-  let bids = [];
-
-  if (bidRequest.adUnitCode && bidRequest.adId) {
-    bids = auctionManager.getBidsReceived()
-      .filter(bid => bid.adId === bidRequest.adId && bid.adUnitCode === bidRequest.adUnitCode);
-  } else if (bidRequest.adUnitCode) {
-    bids = targeting.getWinningBids(bidRequest.adUnitCode);
-  } else if (bidRequest.adId) {
-    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === bidRequest.adId);
-  } else {
-    logWarn(warningMessage);
-  }
-
-  return bids;
-};
 
 /**
  * Get Prebid config options
@@ -944,12 +967,12 @@ pbjsInstance.que.push(() => listenMessagesFromCreative());
  * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
  * function to execute immediately.
  *
- * @memberof pbjs
  * @param  {function} command A function which takes no arguments. This is guaranteed to run exactly once, and only after
  *                            the Prebid script has been fully loaded.
  * @alias module:pbjs.cmd.push
+ * @alias module:pbjs.que.push
  */
-pbjsInstance.cmd.push = function (command) {
+function quePush(command) {
   if (typeof command === 'function') {
     try {
       command.call();
@@ -959,9 +982,7 @@ pbjsInstance.cmd.push = function (command) {
   } else {
     logError('Commands written into $$PREBID_GLOBAL$$.cmd.push must be wrapped in a function');
   }
-};
-
-pbjsInstance.que.push = pbjsInstance.cmd.push;
+}
 
 function processQueue(queue) {
   queue.forEach(function (cmd) {
@@ -980,6 +1001,7 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 pbjsInstance.processQueue = function () {
+  pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
   processQueue(pbjsInstance.que);
@@ -989,19 +1011,13 @@ pbjsInstance.processQueue = function () {
 /**
  * @alias module:pbjs.triggerBilling
  */
-pbjsInstance.triggerBilling = (winningBid) => {
-  const bids = fetchReceivedBids(winningBid, 'Improper use of triggerBilling. It requires a bid with at least an adUnitCode or an adId to function.');
-  const triggerBillingBid = bids.find(bid => bid.requestId === winningBid.requestId) || bids[0];
-
-  if (bids.length > 0 && triggerBillingBid) {
-    try {
-      adapterManager.callBidBillableBidder(triggerBillingBid);
-    } catch (e) {
-      logError('Error when triggering billing :', e);
-    }
-  } else {
-    logWarn('The bid provided to triggerBilling did not match any bids received.');
-  }
+pbjsInstance.triggerBilling = ({adId, adUnitCode}) => {
+  auctionManager.getAllWinningBids()
+    .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
+    .forEach((bid) => {
+      adapterManager.triggerBilling(bid);
+      renderIfDeferred(bid);
+    });
 };
 
 export default pbjsInstance;

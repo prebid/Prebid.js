@@ -134,7 +134,7 @@ describe('MGIDXBidAdapter', function () {
     it('Returns valid EU URL', function () {
       bids[0].params.region = 'eu';
       serverRequest = spec.buildRequests(bids, bidderRequest);
-      expect(serverRequest.url).to.equal('https://eu.mgid.com/pbjs');
+      expect(serverRequest.url).to.equal('https://eu-x.mgid.com/pbjs');
     });
 
     it('Returns valid EAST URL', function () {
@@ -148,6 +148,7 @@ describe('MGIDXBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
+        'device',
         'language',
         'secure',
         'host',

@@ -245,6 +245,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
   const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
+  const contentLang = deepAccess(bidderRequest, 'ortb2.site.content.language') || document.documentElement.lang;
+  const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa', 0);
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -253,7 +255,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
       size: '*'
     });
 
-    if (floorInfo.currency === 'USD') {
+    if (floorInfo?.currency === 'USD') {
       bidFloor = floorInfo.floor;
     }
   }
@@ -278,6 +280,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     gpid: gpid,
     cat: cat,
     contentData,
+    contentLang,
+    coppa,
     userData: userData,
     pagecat: pagecat,
     transactionId: ortb2Imp?.ext?.tid,
@@ -462,7 +466,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
 
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-    const bidderTimeout = config.getConfig('bidderTimeout');
+    const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
 
     const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
 

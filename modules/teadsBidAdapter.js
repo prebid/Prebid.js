@@ -2,6 +2,7 @@ import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParame
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
+import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -61,15 +62,16 @@ export const spec = {
       networkBandwidth: getConnectionDownLink(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
+      device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
-      historyLength: topWindow.history?.length,
+      historyLength: getHLen(),
       viewportHeight: topWindow.visualViewport?.height,
       viewportWidth: topWindow.visualViewport?.width,
-      hardwareConcurrency: topWindow.navigator?.hardwareConcurrency,
-      deviceMemory: topWindow.navigator?.deviceMemory,
+      hardwareConcurrency: getHC(),
+      deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
