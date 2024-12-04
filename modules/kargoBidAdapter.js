@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, logError } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -526,7 +526,7 @@ function getImpression(bid) {
       } catch (e) {
         logError('Kargo: getFloor threw an error: ', e);
       }
-      imp.floor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+      imp.floor = isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
   }
 

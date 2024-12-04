@@ -75,8 +75,8 @@ export const spec = {
         mediaType: '*'
       }) : {};
 
-      const bidfloor = floorInfo.floor;
-      const bidfloorcur = floorInfo.currency;
+      const bidfloor = floorInfo?.floor;
+      const bidfloorcur = floorInfo?.currency;
       const { mid, inv, mname } = bid.params;
       const impExtData = bid.ortb2Imp?.ext?.data;
 

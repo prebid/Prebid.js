@@ -28,7 +28,7 @@ import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
-import { setBattrForAdUnit } from '../../../src/prebid.js';
+import {setBattrForAdUnit} from '../../../src/prebid.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -237,9 +237,21 @@ describe('Unit: Prebid Module', function () {
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
-  it('should insert a locator frame on the page', () => {
-    $$PREBID_GLOBAL$$.processQueue();
-    expect(window.frames[PB_LOCATOR]).to.exist;
+  describe('processQueue', () => {
+    it('should insert a locator frame on the page', () => {
+      $$PREBID_GLOBAL$$.processQueue();
+      expect(window.frames[PB_LOCATOR]).to.exist;
+    });
+
+    ['cmd', 'que'].forEach(prop => {
+      it(`should patch ${prop}.push`, () => {
+        $$PREBID_GLOBAL$$[prop].push = false;
+        $$PREBID_GLOBAL$$.processQueue();
+        let ran = false;
+        $$PREBID_GLOBAL$$[prop].push(() => { ran = true; });
+        expect(ran).to.be.true;
+      })
+    })
   })
 
   describe('and global adUnits', () => {
@@ -262,10 +274,10 @@ describe('Unit: Prebid Module', function () {
 
     beforeEach(() => {
       $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
-      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
       hookRan = new Promise((resolve) => {
         done = resolve;
       });
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
     });
 
     afterEach(() => {
@@ -1316,6 +1328,16 @@ describe('Unit: Prebid Module', function () {
       return renderAd(document, bidId).then(() => {
         const error = `Error rendering ad (id: ${bidId}): renderAd was prevented from writing to the main document.`;
         assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+      });
+    });
+
+    it('should emit AD_RENDER_SUCCEEDED', () => {
+      sandbox.stub(events, 'emit');
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+      return renderAd(document, bidId).then(() => {
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({adId: bidId}));
       });
     });
 

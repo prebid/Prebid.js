@@ -1022,6 +1022,16 @@ describe('stroeerCore bid adapter', function () {
       assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
       assert.propertyVal(result[1].meta, 'dsa', undefined);
     });
+
+    it('should add campaignType to meta object', () => {
+      const response = buildBidderResponse();
+      response.bids[1] = Object.assign(response.bids[1], {campaignType: 'RTB'});
+
+      const result = spec.interpretResponse({body: response});
+
+      assert.propertyVal(result[0].meta, 'campaignType', undefined);
+      assert.propertyVal(result[1].meta, 'campaignType', 'RTB');
+    });
   });
 
   describe('get user syncs entry point', () => {
