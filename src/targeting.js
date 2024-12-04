@@ -1,5 +1,5 @@
 import { auctionManager } from './auctionManager.js';
-import { getTTL } from './bidTTL.js';
+import { getBufferedTTL } from './bidTTL.js';
 import { bidderSettings } from './bidderSettings.js';
 import { config } from './config.js';
 import {
@@ -48,7 +48,7 @@ export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + getTTL(bid) * 1000) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 1000) > timestamp();
 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_STATUS.RENDERED], bid.status)) || !bid.status);
