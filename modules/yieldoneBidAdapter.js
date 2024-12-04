@@ -2,6 +2,8 @@ import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getBrowser, getOS} from "../libraries/userAgentUtils";
+import {browserTypes, osTypes} from "../libraries/userAgentUtils/userAgentTypes.enums";
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -222,7 +224,7 @@ export const spec = {
    * @returns {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled && !restrictedUserAgentConfiguration()) {
       return [{
         type: 'iframe',
         url: USER_SYNC_URL
@@ -391,6 +393,14 @@ function cmerRender(bid) {
   bid.renderer.push(() => {
     window.CMERYONEPREBID.renderPrebid(bid);
   });
+}
+
+/**
+ * Stop sending push_sync requests in case of Safari browser OR iOS device
+ * Data extracted from navigator's userAgent
+ */
+function restrictedUserAgentConfiguration() {
+  return getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS
 }
 
 registerBidder(spec);
