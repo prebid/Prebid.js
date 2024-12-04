@@ -139,7 +139,7 @@ describe('User ID', function () {
   function runBidsHook(...args) {
     startDelay = delay();
 
-    const result = startAuctionHook(...args, {delay: startDelay});
+    const result = startAuctionHook(...args, {mkDelay: startDelay});
     return new Promise((resolve) => setTimeout(() => resolve(result)));
   }
 
@@ -152,7 +152,7 @@ describe('User ID', function () {
 
   function initModule(config) {
     callbackDelay = delay();
-    return init(config, {delay: callbackDelay});
+    return init(config, {mkDelay: callbackDelay});
   }
 
   before(function () {

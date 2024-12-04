@@ -2,7 +2,7 @@ import {config} from './config.js';
 import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
 import {EVENTS} from './constants.js';
-import {GreedyPromise} from './utils/promise.js';
+import {PbPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
 import { default as deepAccess } from 'dlv/index.js';
 
@@ -443,7 +443,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  */
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
-  return new GreedyPromise((resolve) => {
+  return new PbPromise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);

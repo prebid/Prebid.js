@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd';
+import {addFPDToBidderRequest} from '../../helpers/fpd';
 import { spec } from 'modules/ccxBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -497,7 +497,7 @@ describe('ccxAdapter', function () {
   });
 
   describe('FLEDGE', function () {
-    it('should properly build a request when FLEDGE is enabled', function () {
+    it('should properly build a request when FLEDGE is enabled', async function () {
       let bidderRequest = {
         paapi: {
           enabled: true
@@ -528,12 +528,12 @@ describe('ccxAdapter', function () {
         }
       ];
 
-      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
+      let ortbRequest = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequest));
       let data = JSON.parse(ortbRequest.data);
       expect(data.imp[0].ext.ae).to.equal(1);
     });
 
-    it('should properly build a request when FLEDGE is disabled', function () {
+    it('should properly build a request when FLEDGE is disabled', async function () {
       let bidderRequest = {
         paapi: {
           enabled: false
@@ -564,7 +564,7 @@ describe('ccxAdapter', function () {
         }
       ];
 
-      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
+      let ortbRequest = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequest));
       let data = JSON.parse(ortbRequest.data);
       expect(data.imp[0].ext.ae).to.be.undefined;
     });

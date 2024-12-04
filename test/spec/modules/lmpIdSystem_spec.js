@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { find } from 'src/polyfill.js';
 import { config } from 'src/config.js';
-import { init, startAuctionHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import {init, startAuctionHook, setSubmoduleRegistry, resetUserIds} from 'modules/userId/index.js';
 import { storage, lmpIdSubmodule } from 'modules/lmpIdSystem.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import 'src/prebid.js';
@@ -105,6 +105,10 @@ describe('LMPID System', () => {
 
     after(() => {
       init(config);
+    })
+
+    after(() => {
+      resetUserIds();
     })
 
     it('when a stored LMPID exists it is added to bids', (done) => {
