@@ -3,6 +3,7 @@ import { END_POINT, spec } from 'modules/bidmaticBidAdapter.js';
 import { deepClone, deepSetValue, mergeDeep } from '../../../src/utils';
 
 const expectedImp = {
+  'secure': 1,
   'id': '2eb89f0f062afe',
   'banner': {
     'topframe': 0,

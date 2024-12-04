@@ -151,11 +151,7 @@ const getSamplingRate = (bidderConfig, eventType) => {
 };
 
 // Handles the logging of events
-const logEvent = (eventType, data, options = {}) => {
-  const {
-    samplingEnabled = false,
-  } = options;
-
+const logEvent = (eventType, data) => {
   try {
     // Log event
     logInfo(BIDDER_CODE, `[${eventType}] ${JSON.stringify(data)}`);
@@ -165,12 +161,15 @@ const logEvent = (eventType, data, options = {}) => {
     const {version, customer} = extractParameters(bidderConfig);
 
     // Sampled monitoring
-    if (samplingEnabled) {
-      const shouldSampleDice = Math.random();
+    if (['onBidBillable', 'onAdRenderSucceeded'].includes(eventType)) {
+      const randomNumber = Math.random();
       const samplingRate = getSamplingRate(bidderConfig, eventType);
-      if (shouldSampleDice >= samplingRate) {
+      if (randomNumber >= samplingRate) {
         return; // Don't sample
       }
+    } else if (!['onTimeout', 'onBidderError', 'onBidWon'].includes(eventType)) {
+      // Unsupported event type.
+      return;
     }
 
     const payload = { type: eventType, data };
@@ -206,12 +205,12 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon: function(bid, options) { logEvent('onBidWon', bid, { samplingEnabled: false, ...options }); },
-  onBidBillable: function(bid, options) { logEvent('onBidBillable', bid, { samplingEnabled: false, ...options }); },
-  onAdRenderSucceeded: function(bid, options) { logEvent('onAdRenderSucceeded', bid, { samplingEnabled: false, ...options }); },
-  onSetTargeting: function(bid, options) { },
-  onTimeout: function(timeoutData, options) { logEvent('onTimeout', timeoutData, { samplingEnabled: true, ...options }); },
-  onBidderError: function(args, options) { logEvent('onBidderError', args, { samplingEnabled: true, ...options }); },
+  onBidWon: function(bid) { logEvent('onBidWon', bid); },
+  onBidBillable: function(bid) { logEvent('onBidBillable', bid); },
+  onAdRenderSucceeded: function(bid) { logEvent('onAdRenderSucceeded', bid); },
+  onSetTargeting: function(bid) { },
+  onTimeout: function(timeoutData) { logEvent('onTimeout', timeoutData); },
+  onBidderError: function({ error, bidderRequest }) { logEvent('onBidderError', { error, bidderRequest }); },
 };
 
 registerBidder(spec);
