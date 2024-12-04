@@ -34,7 +34,7 @@ describe('the michao bidder adapter', () => {
       it('If the site ID and placement ID are correct, the verification succeeds.', () => {
         const params = {
           site: 123,
-          placement: 234,
+          placement: 'placement'
         };
 
         const result = validateMichaoParams(params);
@@ -57,7 +57,7 @@ describe('the michao bidder adapter', () => {
           mediaTypes: { banner: [[300, 250]] },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
           },
         };
         const bidderRequest = {
@@ -101,7 +101,7 @@ describe('the michao bidder adapter', () => {
           },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
           },
         };
         const bidderRequest = {
@@ -153,7 +153,7 @@ describe('the michao bidder adapter', () => {
           },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
           },
         };
         const bidderRequest = {
@@ -191,7 +191,7 @@ describe('the michao bidder adapter', () => {
           mediaTypes: { banner: [[300, 250]] },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
           },
         };
         const bidderRequest = {
@@ -225,7 +225,7 @@ describe('the michao bidder adapter', () => {
           mediaTypes: { banner: [[300, 250]] },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
             reward: true,
           },
         };
@@ -260,7 +260,7 @@ describe('the michao bidder adapter', () => {
           mediaTypes: { banner: [[300, 250]] },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
             bcat: ['IAB2']
           },
         };
@@ -295,7 +295,7 @@ describe('the michao bidder adapter', () => {
           mediaTypes: { banner: [[300, 250]] },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
             badv: ['adomain.com']
           },
         };
@@ -361,7 +361,7 @@ describe('the michao bidder adapter', () => {
           mediaTypes: { banner: [[300, 250]] },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
           },
         };
         const bidderRequest = {
@@ -400,7 +400,7 @@ describe('the michao bidder adapter', () => {
           mediaTypes: { banner: [[300, 250]] },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
           },
         };
         const bidderRequest = {
@@ -468,7 +468,7 @@ describe('the michao bidder adapter', () => {
           },
           params: {
             site: 123,
-            placement: 456,
+            placement: '456',
           },
         };
         const bidderRequest = {
@@ -526,7 +526,7 @@ describe('the michao bidder adapter', () => {
         mediaTypes: { banner: [[300, 250]] },
         params: {
           site: 123,
-          placement: 456,
+          placement: '456',
         },
         burl: 'https://example.com/burl',
       };
@@ -554,8 +554,8 @@ describe('the michao bidder adapter', () => {
     it('`isBidRequestValid`', () => {
       const validBidRequest = {
         params: {
-          placement: 124,
-          site: 456,
+          placement: '124',
+          site: 234,
         },
       };
 
@@ -579,7 +579,7 @@ describe('the michao bidder adapter', () => {
           },
           params: {
             site: 12,
-            placement: 12,
+            placement: '12',
           },
         },
         {
@@ -597,7 +597,7 @@ describe('the michao bidder adapter', () => {
           },
           params: {
             site: 12,
-            placement: 12,
+            placement: '12',
           },
         },
         {
@@ -623,7 +623,7 @@ describe('the michao bidder adapter', () => {
           },
           params: {
             site: 12,
-            placement: 12,
+            placement: '12',
           },
         },
       ];
@@ -685,7 +685,7 @@ describe('the michao bidder adapter', () => {
         },
         params: {
           site: 123,
-          placement: 456,
+          placement: '456',
         },
       };
       const bidderRequest = {
@@ -744,7 +744,7 @@ describe('the michao bidder adapter', () => {
         mediaTypes: { banner: [[300, 250]] },
         params: {
           site: 123,
-          placement: 456,
+          placement: '456',
         },
         burl: 'https://example.com/burl',
       };

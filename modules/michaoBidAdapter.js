@@ -5,6 +5,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {
   deepSetValue,
+  isNumber,
   isStr,
   logError,
   replaceAuctionPrice,
@@ -149,11 +150,13 @@ export function hasParamsObject(bid) {
 export function validateMichaoParams(params) {
   let valid = true;
 
-  const michaoAdUnitInfoParams = ['site', 'placement'];
+  if (!isNumber(params?.site)) {
+    valid = false;
+  }
 
-  valid = michaoAdUnitInfoParams.every((michaoParam) =>
-    Number.isFinite(params[michaoParam])
-  );
+  if (!isStr(params?.placement)) {
+    valid = false;
+  }
 
   return valid
 }

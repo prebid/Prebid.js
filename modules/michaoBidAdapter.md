@@ -13,6 +13,7 @@ Module that connects to Michao’s demand sources
 Supported Ad format:
 * Banner
 * Video (instream and outstream)
+* Native
 
 # Test Parameters
 ```
@@ -29,7 +30,7 @@ var adUnits = [
             bidder: 'michao',
             params: {
                 site: 1,
-                placement: 1,
+                placement: '1',
             }
         }]
     },
@@ -50,7 +51,35 @@ var adUnits = [
             bidder: 'michao',
             params: {
                 site: 1,
-                placement: 1,
+                placement: '1',
+            }
+        }]
+    },
+    // Native AdUnit
+    {
+        code: 'native-div',
+        mediaTypes: {
+            native: {
+                ortb: {
+                    assets: [
+                        {
+                            id: 1,
+                            required: 1,
+                            img: {
+                                type: 3,
+                                w: 989,
+                                h: 742,
+                            },
+                        },
+                    ]
+                }
+            }
+        },
+        bids: [{
+            bidder: 'michao',
+            params: {
+                site: 1,
+                placement: '1',
             }
         }]
     }
