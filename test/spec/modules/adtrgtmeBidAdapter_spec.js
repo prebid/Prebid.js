@@ -3,15 +3,15 @@ import { config } from 'src/config.js';
 import { BANNER } from 'src/mediaTypes.js';
 import { spec } from 'modules/adtrgtmeBidAdapter.js';
 
-const DEFAULT_SID = 1220291391;
-const DEFAULT_ZID = 1836455615;
+const DEFAULT_SID = '1220291391';
+const DEFAULT_ZID = '1836455615';
 const DEFAULT_BID_ID = '84ab500420319d';
 
 const DEFAULT_AD_UNIT_CODE = '/1220291391/header-banner';
 const DEFAULT_AD_UNIT_TYPE = BANNER;
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 
-const ADAPTER_VERSION = '1.0.0';
+const ADAPTER_VERSION = '1.0.1';
 const PREBID_VERSION = '$prebid.version$';
 const INTEGRATION_METHOD = 'prebid.js';
 
@@ -42,7 +42,7 @@ const generateBidRequest = ({bidId, adUnitCode, bidOverrideObject, zid, ortb2}) 
   bidRequest.sizes = [[300, 250]];
 
   bidRequest.params.sid = DEFAULT_SID;
-  if (typeof zid == 'number') {
+  if (typeof zid == 'string') {
     bidRequest.params.zid = zid;
   }
 
@@ -217,10 +217,11 @@ describe('adtrgtme Bid Adapter:', () => {
     const INVALID_INPUT = [
       {},
       {params: {}},
-      {params: {sid: '1234', zid: '4321'}},
-      {params: {sid: '1220291391', zid: 4321}},
+      {params: {sid: 1220291391, zid: '1836455615'}},
+      {params: {sid: '1220291391', zid: 'A'}},
+      {params: {sid: '', zid: '1836455615'}},
+      {params: {sid: '', zid: 'A'}},
       {params: {zid: ''}},
-      {params: {sid: '', zid: ''}},
     ];
 
     INVALID_INPUT.forEach(input => {
@@ -229,14 +230,17 @@ describe('adtrgtme Bid Adapter:', () => {
       });
     });
 
-    it('should determine that the bid is VALID if sid and zid are present on the params object', () => {
-      const validBid = {
-        params: {
-          sid: 1220291391,
-          zid: 1836455615
-        }
-      };
-      expect(spec.isBidRequestValid(validBid)).to.be.true;
+    const VALID_INPUT = [
+      {params: {sid: '1220291391'}},
+      {params: {sid: '1220291391', zid: 1836455615}},
+      {params: {sid: '1220291391', zid: '1836455615'}},
+      {params: {sid: '1220291391', zid: '1836455615A'}},
+    ];
+
+    VALID_INPUT.forEach(input => {
+      it(`should determine that the bid is VALID for the input ${JSON.stringify(input)}`, () => {
+        expect(spec.isBidRequestValid(input)).to.be.true;
+      });
     });
   });
 
@@ -298,7 +302,7 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     // Should add valid "site" params
-    const VALID_SITE_STRINGS = ['name', 'domain', 'page', 'ref', 'keywords'];
+    const VALID_SITE_STRINGS = ['id', 'name', 'domain', 'page', 'ref', 'keywords'];
     const VALID_SITE_ARRAYS = ['cat', 'sectioncat', 'pagecat'];
 
     VALID_SITE_STRINGS.forEach(param => {
@@ -542,7 +546,7 @@ describe('adtrgtme Bid Adapter:', () => {
     it('should return a single request object for single request mode', () => {
       let { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const BID_ID_2 = '84ab50xxxxx';
-      const BID_ZID_2 = 98876543210;
+      const BID_ZID_2 = '98876543210';
       const AD_UNIT_CODE_2 = 'test-ad-unit-code-123';
       const { bidRequest: bidRequest2 } = generateBuildRequestMock({bidId: BID_ID_2, zid: BID_ZID_2, adUnitCode: AD_UNIT_CODE_2});
       validBidRequests = [bidRequest, bidRequest2];
@@ -653,14 +657,14 @@ describe('adtrgtme Bid Adapter:', () => {
 
     it('should use siteId value as site.id in the outbound bid-request when using "pubId" integration mode', () => {
       let { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
-      validBidRequests[0].params.sid = 9876543210;
+      validBidRequests[0].params.sid = '9876543210';
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
-      expect(data.site.id).to.equal(9876543210);
+      expect(data.site.id).to.equal('9876543210');
     });
 
     it('should use placementId value as imp.tagid in the outbound bid-request when using "zid"', () => {
       let { validBidRequests, bidderRequest } = generateBuildRequestMock({}),
-        TEST_ZID = 54321;
+        TEST_ZID = '54321';
       validBidRequests[0].params.zid = TEST_ZID;
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.imp[0].tagid).to.deep.equal(TEST_ZID);
