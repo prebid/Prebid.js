@@ -66,9 +66,7 @@
  */
 
 import {
-  deepAccess,
   generateUUID,
-  getValue,
   isEmpty,
   isEmptyStr,
   isFn,
@@ -559,13 +557,12 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
   let addBid = true;
 
-  const videoMediaType = deepAccess(
-    index.getMediaTypes({
-      requestId: bidResponse.originalRequestId || bidResponse.requestId,
-      adUnitId: bidResponse.adUnitId
-    }), 'video');
-  const context = videoMediaType && deepAccess(videoMediaType, 'context');
-  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+  const videoMediaType = index.getMediaTypes({
+    requestId: bidResponse.originalRequestId || bidResponse.requestId,
+    adUnitId: bidResponse.adUnitId
+  })?.video;
+  const context = videoMediaType && videoMediaType?.context;
+  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
 
   if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
@@ -684,7 +681,7 @@ function setupBidTargeting(bidObject) {
 export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
     if (FEATURES.VIDEO && mediaType === VIDEO) {
-      const context = deepAccess(mediaTypes, `${VIDEO}.context`, 'instream');
+      const context = mediaTypes?.[VIDEO]?.context ?? 'instream';
       if (mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
         return mediaTypePriceGranularity[`${VIDEO}-${context}`];
       }
@@ -757,7 +754,7 @@ export const getAdvertiserDomain = () => {
  */
 export const getDSP = () => {
   return (bid) => {
-    return (bid.meta && (bid.meta.networkId || bid.meta.networkName)) ? deepAccess(bid, 'meta.networkName') || deepAccess(bid, 'meta.networkId') : '';
+    return (bid.meta && (bid.meta.networkId || bid.meta.networkName)) ? bid?.meta?.networkName || bid?.meta?.networkId : '';
   }
 }
 
@@ -780,7 +777,7 @@ function createKeyVal(key, value) {
         return value(bidResponse, bidReq);
       }
       : function (bidResponse) {
-        return getValue(bidResponse, value);
+        return bidResponse[value];
       }
   };
 }
@@ -829,8 +826,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
-          return deepAccess(bidResponse, `adserverTargeting.${TARGETING_KEYS.CACHE_HOST}`)
-            ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_HOST] : urlInfo.hostname;
+          return bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname;
         }));
       }
     }

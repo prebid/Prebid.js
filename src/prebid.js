@@ -2,7 +2,6 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
-  deepAccess,
   deepClone,
   deepSetValue,
   flatten,
@@ -213,7 +212,7 @@ function validateNativeMediaType(adUnit) {
 }
 
 function validateAdUnitPos(adUnit, mediaType) {
-  let pos = deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
+  let pos = adUnit?.mediaTypes?.[mediaType]?.pos;
 
   if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;

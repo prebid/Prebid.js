@@ -1,5 +1,5 @@
 import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
-import {deepAccess, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
+import {deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
 import {config} from '../../src/config.js';
 import {S2S, STATUS} from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
@@ -183,7 +183,7 @@ const PBS_CONVERTER = ortbConverter({
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
         // pass schains in ext.prebid.schains
-        let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
+        let chains = ortbRequest?.ext?.prebid?.schains || [];
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
         chains = Object.values(
@@ -192,7 +192,7 @@ const PBS_CONVERTER = ortbConverter({
               .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
               .map((req) => ({
                 bidders: [req.bidderCode],
-                schain: deepAccess(req, 'bids.0.schain')
+                schain: req?.bids?.[0]?.schain
               })))
             .filter(({bidders, schain}) => bidders?.length > 0 && schain)
             .reduce((chains, {bidders, schain}) => {
