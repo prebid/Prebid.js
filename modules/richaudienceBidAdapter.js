@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -53,7 +52,7 @@ export const spec = {
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
+        kws: bid.params.keywords,
         schain: bid.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
