@@ -7,10 +7,10 @@ import {
   safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 
 /**
@@ -82,7 +82,7 @@ function toPayload(bidRequest, bidderRequest) {
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
-  payload.currency = config.getConfig('currency.adServerCurrency');
+  payload.currency = getCurrencyFromBidderRequest(bidderRequest);
   payload.schain = bidRequest.schain;
   payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
