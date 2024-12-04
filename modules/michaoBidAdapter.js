@@ -190,6 +190,7 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.placement', bidRequest.params.placement.toString());
     deepSetValue(imp, 'rwdd', bidRequest.params?.reward ? 1 : 0);
+    deepSetValue(imp, 'bidfloor', isNumber(bidRequest.params?.bidFloor) ? bidRequest.params?.bidFloor : 0);
 
     return imp;
   },
