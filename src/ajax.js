@@ -1,5 +1,5 @@
-import { config } from './config.js';
-import { buildUrl, logError, parseUrl } from './utils.js';
+import {config} from './config.js';
+import {buildUrl, logError, parseUrl} from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
