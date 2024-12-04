@@ -198,7 +198,7 @@ describe('Bidmatic Bid Adapter', () => {
         { gdprApplies: true, consentString: '111' },
         'yyy',
         { gppString: '222', applicableSections: [1, 2] });
-      console.log(syncUrl)
+
       expect(syncUrl.includes('gdpr=1&gdpr_consent=111')).to.eq(true);
       expect(syncUrl.includes('usp=yyy')).to.eq(true);
       expect(syncUrl.includes('gpp=222&gpp_sid=1,2')).to.eq(true);
