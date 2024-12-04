@@ -20,8 +20,9 @@ import {fireNativeTrackers} from './native.js';
 import {GreedyPromise} from './utils/promise.js';
 import adapterManager from './adapterManager.js';
 import {useMetrics} from './utils/perfMetrics.js';
+import {filters} from './targeting.js';
 
-const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
+const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 export const getBidToRender = hook('sync', function (adId, forRender = true, override = GreedyPromise.resolve()) {
@@ -185,6 +186,14 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
         return;
       }
     }
+    if (!filters.isBidNotExpired(bidResponse)) {
+      logWarn(`Ad id ${adId} has been expired`);
+      events.emit(EXPIRED_RENDER, bidResponse);
+      if (deepAccess(config.getConfig('auctionOptions'), 'suppressExpiredRender')) {
+        return;
+      }
+    }
+
     try {
       doRender({renderFn, resizeFn, bidResponse, options, doc});
     } catch (e) {
