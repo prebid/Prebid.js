@@ -12,11 +12,7 @@ import {
   logWarn,
   triggerPixel
 } from '../src/utils.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {config} from '../src/config.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
