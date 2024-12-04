@@ -41,7 +41,7 @@ function getFloor(bidRequest) {
     mediaType: BANNER,
   });
 
-  if (!isNaN(bidFloors.floor)) {
+  if (!isNaN(bidFloors?.floor)) {
     return bidFloors;
   }
 }

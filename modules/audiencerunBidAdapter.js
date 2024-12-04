@@ -47,7 +47,7 @@ function getBidFloor(bid) {
       mediaType: BANNER,
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (_) {
     return 0;
   }
