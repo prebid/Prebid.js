@@ -48,7 +48,6 @@ export const spec = {
     return {
       data: converter.toORTB({ bidderRequest, bidRequests }),
       method: 'POST',
-      // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169'
       url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
     };
   },
@@ -147,7 +146,7 @@ export const converter = ortbConverter({
     // check for us (you can find this logic in the "native.js" file)
     if (deepAccess(bid, 'mediaTypes.native')) {
       ['assets', 'privacy', 'plcmttype', 'eventtrackers'].forEach(prop => {
-        if (!bid.mediaTypes.native[prop]) {
+        if (!bid.mediaTypes.native.ortb[prop]) {
           logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request`, bid);
         }
       });

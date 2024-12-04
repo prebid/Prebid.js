@@ -117,7 +117,9 @@ describe('Equativ bid adapter tests', () => {
       bidId: 'equativ_native_bidid_42',
       mediaTypes: {
         native: {
-          ...nativeOrtbRequest
+          ortb: {
+            ...nativeOrtbRequest
+          }
         },
       },
       nativeOrtbRequest,
@@ -623,9 +625,9 @@ describe('Equativ bid adapter tests', () => {
       // ASSEMBLE
       const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
 
-      delete missingRequiredNativeRequest.mediaTypes.native.eventtrackers;
-      delete missingRequiredNativeRequest.mediaTypes.native.plcmttype;
-      delete missingRequiredNativeRequest.mediaTypes.native.privacy;
+      delete missingRequiredNativeRequest.mediaTypes.native.ortb.eventtrackers;
+      delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
+      delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
 
       const bidRequests = [ missingRequiredNativeRequest ];
       const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
@@ -634,9 +636,6 @@ describe('Equativ bid adapter tests', () => {
       spec.buildRequests(bidRequests, bidderRequest);
 
       // ASSERT
-      // TODO: this test seems to "remember" that we removed "assets" from previous test
-      // so we should make, with each test, a deep clone of the bid requests, so that we
-      // can modify them without affecting other tests
       const warning = utils.logWarn.args[0][0];
       console.log(`warning: ${warning}`);
       expect(utils.logWarn.callCount).to.equal(4); // 3 missing properties + 1 for missing assets (which the library supplies, and which it seems to remember we did in previous test)
