@@ -21,7 +21,7 @@ gulp build --modules=goldbachBidAdapter,userId,pubProvidedIdSystem
 ```javascript
     var adUnits = [
         {
-            code: '/1235/example.com/video/video/example',
+            code: 'au-1',
                 mediaTypes: {
                     video: {
                         sizes: [[640, 480]],
@@ -33,12 +33,13 @@ gulp build --modules=goldbachBidAdapter,userId,pubProvidedIdSystem
                     bidder: 'goldbach',
                     params: {
                         publisherId: 'goldbach_debug',
+                        slotId: '/1235/example.com/video/video/example'
                     }
                 }
             ]
         },
         {
-            code: '/1235/example.com/inside-full-test-native/example',
+            code: 'au-2',
             sizes: [[1, 1]],
             mediaTypes: {
                 native: {
@@ -61,12 +62,13 @@ gulp build --modules=goldbachBidAdapter,userId,pubProvidedIdSystem
                     bidder: 'goldbach',
                     params: {
                         publisherId: 'goldbach_debug',
+                        slotId: '/1235/example.com/inside-full-test-native/example'
                     }
                 }
             ]
         }, 
         {
-            code: '/1235/example.com/inside-full-test-banner/example',
+            code: 'au-3',
             sizes: [[300, 250]],
             mediaTypes: {
                 banner: {
@@ -78,6 +80,7 @@ gulp build --modules=goldbachBidAdapter,userId,pubProvidedIdSystem
                     bidder: 'goldbach',
                     params: {
                         publisherId: 'goldbach_debug',
+                        slotId: '/1235/example.com/inside-full-test-banner/example'
                     }
                 }
             ]

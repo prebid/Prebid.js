@@ -138,7 +138,7 @@ let validBidderRequest = {
 let validBidRequests = [
   {
     bidder: BIDDER_NAME,
-    adUnitCode: '/46753895/publisher.ch/inside-full-content-pos1/pbjs-test',
+    adUnitCode: 'au-1',
     adUnitId: 'c3400db6-c4c5-465e-bf67-1545751944b7',
     auctionId: '7570fb24-810d-4c26-9f9c-acd0b6977f60',
     bidId: '3d52a1909b972a',
@@ -153,6 +153,7 @@ let validBidRequests = [
     sizes: [[300, 50], [300, 250], [300, 600], [320, 50], [320, 480], [320, 64], [320, 160], [320, 416], [336, 280]],
     params: {
       publisherId: 'de-publisher.ch-ios',
+      slotId: '/46753895/publisher.ch/inside-full-content-pos1/pbjs-test',
       customTargeting: {
         language: 'de'
       }
@@ -160,7 +161,7 @@ let validBidRequests = [
   },
   {
     bidder: BIDDER_NAME,
-    adUnitCode: '/46753895/publisher.ch/inside-full-content-pos1/pbjs-test/video',
+    adUnitCode: 'au-2',
     adUnitId: 'c3400db6-c4c5-465e-bf67-1545751944b8',
     auctionId: '7570fb24-810d-4c26-9f9c-acd0b6977f60',
     bidId: '3d52a1909b972b',
@@ -175,6 +176,7 @@ let validBidRequests = [
     sizes: [[640, 480]],
     params: {
       publisherId: 'de-publisher.ch-ios',
+      slotId: '/46753895/publisher.ch/inside-full-content-pos1/pbjs-test/video',
       video: {
         maxduration: 30,
       },
@@ -185,7 +187,7 @@ let validBidRequests = [
   },
   {
     bidder: BIDDER_NAME,
-    adUnitCode: '/46753895/publisher.ch/inside-full-content-pos1/pbjs-test/native',
+    adUnitCode: 'au-3',
     adUnitId: 'c3400db6-c4c5-465e-bf67-1545751944b9',
     auctionId: '7570fb24-810d-4c26-9f9c-acd0b6977f60',
     bidId: '3d52a1909b972c',
@@ -222,6 +224,7 @@ let validBidRequests = [
     },
     params: {
       publisherId: 'de-publisher.ch-ios',
+      slotId: '/46753895/publisher.ch/inside-full-content-pos1/pbjs-test/native',
       customTargeting: {
         language: 'de'
       }
@@ -479,10 +482,10 @@ describe('GoldbachBidAdapter', function () {
       expect(payload.slots).to.exist;
       expect(Array.isArray(payload.slots)).to.be.true;
       expect(payload.slots.length).to.equal(3);
-      expect(payload.slots[0].id).to.equal(bidRequests[0].adUnitCode);
+      expect(payload.slots[0].id).to.equal(bidRequests[0].params.slotId);
       expect(Array.isArray(payload.slots[0].sizes)).to.be.true;
       expect(payload.slots[0].sizes.length).to.equal(bidRequests[0].sizes.length);
-      expect(payload.slots[1].id).to.equal(bidRequests[1].adUnitCode);
+      expect(payload.slots[1].id).to.equal(bidRequests[1].params.slotId);
       expect(Array.isArray(payload.slots[1].sizes)).to.be.true;
     });
 
@@ -736,17 +739,17 @@ describe('GoldbachBidAdapter', function () {
       const response = spec.interpretResponse(bidResponse, request);
 
       expect(response).to.exist;
-      expect(response.length).to.equal(4);
-      expect(response.filter(bid => bid.requestId === validBidRequests[0].bidId).length).to.equal(2)
+      expect(response.length).to.equal(3);
+      expect(response.filter(bid => bid.requestId === validBidRequests[0].bidId).length).to.equal(1)
       expect(response.filter(bid => bid.requestId === validBidRequests[1].bidId).length).to.equal(1)
     });
 
     it('should attach a custom video renderer ', function () {
       let request = deepClone(validRequest);
       let bidResponse = deepClone({body: validCreativeResponse});
-      bidResponse.body.creatives[validBidRequests[1].adUnitCode][0].mediaType = 'video';
-      bidResponse.body.creatives[validBidRequests[1].adUnitCode][0].vastXml = '<VAST></VAST>';
-      bidResponse.body.creatives[validBidRequests[1].adUnitCode][0].contextType = 'video_outstream';
+      bidResponse.body.creatives[validBidRequests[1].params.slotId][0].mediaType = 'video';
+      bidResponse.body.creatives[validBidRequests[1].params.slotId][0].vastXml = '<VAST></VAST>';
+      bidResponse.body.creatives[validBidRequests[1].params.slotId][0].contextType = 'video_outstream';
 
       const response = spec.interpretResponse(bidResponse, request);
 
@@ -757,8 +760,8 @@ describe('GoldbachBidAdapter', function () {
     it('should not attach a custom video renderer when VAST url/xml is missing', function () {
       let request = deepClone(validRequest);
       let bidResponse = deepClone({body: validCreativeResponse});
-      bidResponse.body.creatives[validBidRequests[1].adUnitCode][0].mediaType = 'video';
-      bidResponse.body.creatives[validBidRequests[1].adUnitCode][0].contextType = 'video_outstream';
+      bidResponse.body.creatives[validBidRequests[1].params.slotId][0].mediaType = 'video';
+      bidResponse.body.creatives[validBidRequests[1].params.slotId][0].contextType = 'video_outstream';
 
       const response = spec.interpretResponse(bidResponse, request);
 

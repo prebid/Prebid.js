@@ -126,7 +126,7 @@ const convertToCustomSlotTargeting = (validBidRequest) => {
 const convertToProprietaryData = (validBidRequests, bidderRequest) => {
   const requestData = {
     mock: false,
-    debug: true,
+    debug: false,
     timestampStart: undefined,
     timestampEnd: undefined,
     config: {
@@ -207,7 +207,7 @@ const convertToProprietaryData = (validBidRequests, bidderRequest) => {
   // Set slots
   requestData.slots = validBidRequests.map((validBidRequest) => {
     const slot = {
-      id: validBidRequest?.adUnitCode,
+      id: validBidRequest.params?.slotId,
       sizes: [
         ...(validBidRequest.sizes || []),
         ...(validBidRequest.mediaTypes?.[VIDEO]?.sizes ? validBidRequest.mediaTypes[VIDEO].sizes : [])
@@ -307,7 +307,12 @@ const convertProprietaryResponseToBidResponses = (serverResponse, bidRequest) =>
   const creativeGroups = serverResponse?.body?.creatives || {};
 
   return bidRequests.reduce((bidResponses, bidRequest) => {
-    const matchingCreativeGroup = creativeGroups[bidRequest.adUnitCode] || [];
+    const matchingCreativeGroup = (creativeGroups[bidRequest.params?.slotId] || []).filter((creative) => {
+      if (bidRequest.mediaTypes?.[BANNER] && creative.mediaType === BANNER) return true;
+      if (bidRequest.mediaTypes?.[VIDEO] && creative.mediaType === VIDEO) return true;
+      if (bidRequest.mediaTypes?.[NATIVE] && creative.mediaType === NATIVE) return true;
+      return false;
+    });
     const matchingBidResponses = matchingCreativeGroup.map((creative) => {
       return {
         requestId: bidRequest.bidId,
