@@ -3,6 +3,7 @@ import {
   addRenderer,
   billBid,
   buildRequest,
+  domainLogger,
   interpretResponse,
   spec,
   syncUser,
@@ -586,17 +587,35 @@ describe('the michao bidder adapter', () => {
   });
 
   describe('integration', () => {
-    it('`isBidRequestValid`', () => {
-      const validBidRequest = {
-        params: {
-          placement: '124',
-          site: 234,
-        },
-      };
+    describe('`isBidRequestValid`', () => {
+      it('Happy path', () => {
+        const validBidRequest = {
+          params: {
+            placement: '124',
+            site: 234,
+          },
+        };
 
-      const result = spec.isBidRequestValid(validBidRequest);
+        const result = spec.isBidRequestValid(validBidRequest);
 
-      expect(result).to.true;
+        expect(result).to.true;
+      });
+
+      it('If the parameter is invalid, it will be logged', () => {
+        const validationErrorLog = sinon.spy(domainLogger, 'bidRequestValidationError');
+        const validBidRequest = {
+          params: {
+            placement: '124',
+            site: '234',
+          },
+        };
+
+        const result = spec.isBidRequestValid(validBidRequest);
+
+        expect(result).to.false;
+        expect(validationErrorLog.calledOnce).to.true;
+        validationErrorLog.restore();
+      });
     });
 
     it('`buildRequests`', () => {
