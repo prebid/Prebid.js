@@ -1,3 +1,7 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import {
   buildUrl,
   deepAccess, generateUUID, getBidIdParameter,
@@ -8,11 +12,7 @@ import {
   logWarn,
   triggerPixel
 } from '../src/utils.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {config} from '../src/config.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -56,7 +56,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the BeOp's server
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const slots = validBidRequests.map(beOpRequestSlotsMaker);
+    const slots = validBidRequests.map((bid) => beOpRequestSlotsMaker(bid, bidderRequest));
     const firstPartyData = bidderRequest.ortb2 || {};
     const psegs = firstPartyData.user?.ext?.permutive || firstPartyData.user?.ext?.data?.permutive || [];
     const userBpSegs = firstPartyData.user?.ext?.bpsegs || firstPartyData.user?.ext?.data?.bpsegs || [];
@@ -159,9 +159,9 @@ function buildTrackingParams(data, info, value) {
   };
 }
 
-function beOpRequestSlotsMaker(bid) {
+function beOpRequestSlotsMaker(bid, bidderRequest) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-  const publisherCurrency = config.getConfig('currency.adServerCurrency') || getValue(bid.params, 'currency') || 'EUR';
+  const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});

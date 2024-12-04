@@ -4,6 +4,8 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getRefererInfo} from 'src/refererDetection.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 function createBidderRequest(auctionId, timeout, pageUrl, addGdprConsent) {
   const gdprConsent = addGdprConsent ? {
@@ -598,7 +600,7 @@ describe('KoblerAdapter', function () {
           cur: 'USD'
         }
       };
-      const bids = spec.interpretResponse(responseWithTwoBids)
+      const bids = spec.interpretResponse(responseWithTwoBids, {})
 
       const expectedBids = [
         {
@@ -665,25 +667,30 @@ describe('KoblerAdapter', function () {
     });
 
     it('Should trigger pixel with replaced nurl if nurl is not empty', function () {
-      config.setConfig({
-        'currency': {
-          'adServerCurrency': 'NOK'
-        }
-      });
-      spec.onBidWon({
-        originalCpm: 1.532,
-        cpm: 8.341,
-        currency: 'NOK',
-        nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
-        adserverTargeting: {
+      setCurrencyConfig({ adServerCurrency: 'NOK' });
+      let validBidRequests = [{ params: {} }];
+      let refererInfo = { page: 'page' };
+      const bidderRequest = { refererInfo };
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        JSON.parse(spec.buildRequests(validBidRequests, res).data);
+        const bids = spec.interpretResponse({ body: { seatbid: [{ bid: [{
+          originalCpm: 1.532,
+          price: 8.341,
+          currency: 'NOK',
+          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+        }]}]}}, { bidderRequest: res });
+        const bidToWon = bids[0];
+        bidToWon.adserverTargeting = {
           hb_pb: 8
         }
-      });
+        spec.onBidWon(bidToWon);
 
-      expect(utils.triggerPixel.callCount).to.be.equal(1);
-      expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
-        'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=8.341&sp_cur=NOK&asp=8&asp_cur=NOK'
-      );
+        expect(utils.triggerPixel.callCount).to.be.equal(1);
+        expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
+          'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=8.341&sp_cur=NOK&asp=8&asp_cur=NOK'
+        );
+        setCurrencyConfig({});
+      });
     });
   });
 

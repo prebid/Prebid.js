@@ -1,8 +1,8 @@
-import {getValue, formatQS, logError, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, formatQS, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
 
@@ -56,6 +56,7 @@ export const spec = {
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     let host = getValue(validBidRequests[0].params, 'host');
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || 'TRY';
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -84,10 +85,7 @@ export const spec = {
       tmax: parseInt(tmax)
     };
 
-    if (config.getConfig('currency.adServerCurrency')) {
-      payload.ext.cur = config.getConfig('currency.adServerCurrency');
-    }
-
+    payload.ext.cur = currency;
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';

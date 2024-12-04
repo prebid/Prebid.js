@@ -1,7 +1,9 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict'
 
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
@@ -11,7 +13,6 @@ import {
   sizeTupleToRtbSize,
   sizesToSizeTuples
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 
 const { getConfig } = config;
 
@@ -45,7 +46,7 @@ export const spec = {
       getFirstWithKey(validBidRequests, 'params.priceType') ||
       'net';
     const test = getFirstWithKey(validBidRequests, 'params.test');
-    const currency = getConfig('currency.adServerCurrency');
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
     const schain = getFirstWithKey(validBidRequests, 'schain');
     const request = {
