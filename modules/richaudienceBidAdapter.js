@@ -54,7 +54,7 @@ export const spec = {
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
+        kws: bid.params.keywords,
         schain: bid.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
