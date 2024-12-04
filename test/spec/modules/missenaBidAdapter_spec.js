@@ -7,6 +7,7 @@ import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
 const COOKIE_DEPRECATION_LABEL = 'test';
+const API_KEY = 'PA-XXXXXX';
 
 describe('Missena Adapter', function () {
   $$PREBID_GLOBAL$$.bidderSettings = {
@@ -30,7 +31,7 @@ describe('Missena Adapter', function () {
       },
     },
     params: {
-      apiKey: 'PA-34745704',
+      apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
@@ -57,7 +58,7 @@ describe('Missena Adapter', function () {
     sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
     params: {
-      apiKey: 'PA-34745704',
+      apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
@@ -170,6 +171,11 @@ describe('Missena Adapter', function () {
     it('should send the idempotency key', function () {
       expect(window.msna_ik).to.not.equal(undefined);
       expect(payload.ik).to.equal(window.msna_ik);
+    });
+
+    it('should send screen', function () {
+      expect(payload.screen.width).to.equal(screen.width);
+      expect(payload.screen.height).to.equal(screen.height);
     });
 
     getDataFromLocalStorageStub.restore();
@@ -299,7 +305,7 @@ describe('Missena Adapter', function () {
 
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
-      expect(userSync[0].url).to.be.equal(syncFrameUrl);
+      expect(userSync[0].url).to.be.equal(`${syncFrameUrl}?t=${API_KEY}`);
     });
 
     it('should return empty array when iframeEnabled is false', function () {
@@ -312,7 +318,7 @@ describe('Missena Adapter', function () {
         gdprApplies: true,
         consentString,
       });
-      const expectedUrl = `${syncFrameUrl}?gdpr=1&gdpr_consent=${consentString}`;
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=1&gdpr_consent=${consentString}`;
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
       expect(userSync[0].url).to.be.equal(expectedUrl);
@@ -322,7 +328,7 @@ describe('Missena Adapter', function () {
         gdprApplies: false,
         consentString,
       });
-      const expectedUrl = `${syncFrameUrl}?gdpr=0&gdpr_consent=${consentString}`;
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=0&gdpr_consent=${consentString}`;
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
       expect(userSync[0].url).to.be.equal(expectedUrl);
