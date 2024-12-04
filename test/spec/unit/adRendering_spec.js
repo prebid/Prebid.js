@@ -16,6 +16,7 @@ import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import adapterManager from '../../../src/adapterManager.js';
+import {filters} from 'src/targeting.js';
 
 describe('adRendering', () => {
   let sandbox;
@@ -305,6 +306,26 @@ describe('adRendering', () => {
         });
         it('should skip rendering if suppressStaleRender', () => {
           config.setConfig({auctionOptions: {suppressStaleRender: true}});
+          handleRender({adId, bidResponse});
+          sinon.assert.notCalled(doRenderStub);
+        })
+      });
+
+      describe('when bid has already expired', () => {
+        let isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
+        beforeEach(() => {
+          isBidNotExpiredStub.returns(false);
+        });
+        afterEach(() => {
+          isBidNotExpiredStub.restore();
+        })
+        it('should emit EXPIRED_RENDER', () => {
+          handleRender({adId, bidResponse});
+          sinon.assert.calledWith(events.emit, EVENTS.EXPIRED_RENDER, bidResponse);
+          sinon.assert.called(doRenderStub);
+        });
+        it('should skip rendering if suppressExpiredRender', () => {
+          config.setConfig({auctionOptions: {suppressExpiredRender: true}});
           handleRender({adId, bidResponse});
           sinon.assert.notCalled(doRenderStub);
         })
