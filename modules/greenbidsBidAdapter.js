@@ -1,7 +1,7 @@
 import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { getDM, getHC, getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from '../libraries/pageInfosUtils/pageInfosUtils.js';
 /**
@@ -71,8 +71,6 @@ export const spec = {
       historyLength: getHLen(),
       viewportHeight: topWindow.visualViewport?.height,
       viewportWidth: topWindow.visualViewport?.width,
-      hardwareConcurrency: getHC(),
-      deviceMemory: getDM(),
       prebid_version: '$prebid.version$',
     };
 
