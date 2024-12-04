@@ -2,8 +2,8 @@ import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getBrowser, getOS} from "../libraries/userAgentUtils";
-import {browserTypes, osTypes} from "../libraries/userAgentUtils/userAgentTypes.enums";
+import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
+import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
