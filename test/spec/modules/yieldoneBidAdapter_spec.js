@@ -653,5 +653,12 @@ describe('yieldoneBidAdapter', function () {
         }]);
       }
     });
+
+    it('should skip sync request in case GDPR applies', function () {
+      expect(spec.getUserSyncs({'iframeEnabled': true}, [], {
+        consentString: 'GDPR_CONSENT_STRING',
+        gdprApplies: true,
+      })).to.be.undefined;
+    });
   });
 });
