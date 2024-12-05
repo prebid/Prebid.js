@@ -1,4 +1,3 @@
-import {config} from '../src/config.js';
 import { deepAccess, deepSetValue, generateUUID, logError, logInfo } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -7,6 +6,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -132,7 +132,7 @@ const converter = ortbConverter({
     deepSetValue(request, 'ext.source', 'prebid.js');
     deepSetValue(request, 'ext.pageViewId', PAGE_VIEW_ID);
     deepSetValue(request, 'ext.bidderVersion', BIDDER_VERSION);
-    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || 'USD']);
+    deepSetValue(request, 'cur', [getCurrencyFromBidderRequest(bidderRequest) || 'USD']);
     if (!request.user) request.user = {};
     if (getAmxId()) {
       if (!request.user.ext) request.user.ext = {};

@@ -17,6 +17,7 @@ import * as utils from 'src/utils.js';
 import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
+import { enrichFPD } from '../../../src/fpd/enrichment.js';
 import {requestBidsHook} from '../../../modules/currency.js';
 
 var assert = require('chai').assert;
@@ -523,6 +524,19 @@ describe('currency', function () {
       expect(innerBid.cpm).to.equal('0.0623');
       expect(innerBid.currency).to.equal('CNY');
     });
+  });
+
+  describe('enrichFpd', function() {
+    function fpd(ortb2 = {}) {
+      return enrichFPD(Promise.resolve(ortb2));
+    }
+    it('should set adServerCurrency on ortb', function () {
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig({ adServerCurrency: 'EUR' });
+      return fpd({}).then((ortb) => {
+        expect(ortb.ext.prebid.adServerCurrency).to.eql('EUR')
+      })
+    })
   });
 
   describe('auctionDelay param', () => {

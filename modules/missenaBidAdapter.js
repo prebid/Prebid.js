@@ -7,10 +7,10 @@ import {
   safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 
 /**
@@ -82,10 +82,11 @@ function toPayload(bidRequest, bidderRequest) {
   const bidFloor = getFloor(bidRequest);
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
-  payload.currency = config.getConfig('currency.adServerCurrency');
+  payload.currency = getCurrencyFromBidderRequest(bidderRequest);
   payload.schain = bidRequest.schain;
   payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
+  payload.screen = { height: screen.height, width: screen.width };
 
   return {
     method: 'POST',
@@ -130,6 +131,8 @@ export const spec = {
       return [];
     }
 
+    this.msnaApiKey = validBidRequests[0]?.params.apiKey;
+
     return validBidRequests.map((bidRequest) =>
       toPayload(bidRequest, bidderRequest),
     );
@@ -154,26 +157,25 @@ export const spec = {
   getUserSyncs: function (
     syncOptions,
     serverResponses,
-    gdprConsent,
+    gdprConsent = {},
     uspConsent,
   ) {
-    if (!syncOptions.iframeEnabled) {
+    if (!syncOptions.iframeEnabled || !this.msnaApiKey) {
       return [];
     }
 
-    let gdprParams = '';
-    if (
-      gdprConsent &&
-      'gdprApplies' in gdprConsent &&
-      typeof gdprConsent.gdprApplies === 'boolean'
-    ) {
-      gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
-        gdprConsent.consentString
-      }`;
+    const url = new URL('https://sync.missena.io/iframe');
+    url.searchParams.append('t', this.msnaApiKey);
+
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      url.searchParams.append('gdpr', Number(gdprConsent.gdprApplies));
+      url.searchParams.append('gdpr_consent', gdprConsent.consentString);
     }
-    return [
-      { type: 'iframe', url: 'https://sync.missena.io/iframe' + gdprParams },
-    ];
+    if (uspConsent) {
+      url.searchParams.append('us_privacy', uspConsent);
+    }
+
+    return [{ type: 'iframe', url: url.href }];
   },
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
