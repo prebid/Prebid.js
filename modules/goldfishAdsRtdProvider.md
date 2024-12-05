@@ -8,7 +8,7 @@
 
 ## Description
 
-This RTD module provides access to the Goldfish Ads Geograph, which leverages geographic and temporal data on a privcay-first platform. This module works without using cookies, PII, emails, or device IDs across all website traffic, including unauthenticated users, and adds audience data into bid requests to increase scale and yields.
+This RTD module provides access to the Goldfish Ads Geograph, which leverages geographic and temporal data on a privacy-first platform. This module works without using cookies, PII, emails, or device IDs across all website traffic, including unauthenticated users, and adds audience data into bid requests to increase scale and yields.
 
 ## Usage
 
