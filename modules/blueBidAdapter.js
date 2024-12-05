@@ -180,9 +180,21 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
-    const context = buildContext(bidRequests, bidderRequest);
-    const blueId = storage.cookiesAreEnabled() && storage.getCookie(BUNDLE_COOKIE_NAME);
-    const url = buildCdbUrl(context);
+    const context = {
+      url: bidderRequest?.refererInfo?.page || '',
+      publisherId: bidRequests.find((bidRequest) => bidRequest.params?.pubid)
+        ?.params.pubid,
+    };
+    const blueId =
+      storage.cookiesAreEnabled() && storage.getCookie(BUNDLE_COOKIE_NAME);
+    let url = CDB_ENDPOINT;
+    url += '&wv=' + encodeURIComponent('$prebid.version$');
+    url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
+
+    if (context.publisherId) {
+      url += `&publisherId=` + context.publisherId;
+    }
+
     const data = CONVERTER.toORTB({ bidderRequest, bidRequests, context });
     // put user id in the request
     if (data.user == undefined) {
@@ -191,7 +203,7 @@ export const spec = {
 
     if (data.user.ext == undefined) {
       data.user.ext = {
-        buyerid: blueId
+        buyerid: blueId,
       };
     }
     if (data) {
@@ -219,81 +231,47 @@ export const spec = {
   },
 };
 
-/**
- * @param {BidRequest[]} bidRequests
- * @param bidderRequest
- */
-function buildContext(bidRequests, bidderRequest) {
-  return {
-    url: bidderRequest?.refererInfo?.page || '',
-    publisherId: bidRequests.find((bidRequest) => bidRequest.params?.pubid)
-      ?.params.pubid,
-  };
-}
-
-/**
- * @param {Object} context
- * @return {string}
- */
-function buildCdbUrl(context) {
-  let url = CDB_ENDPOINT;
-  url += '&wv=' + encodeURIComponent('$prebid.version$');
-  url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
-
-  if (context.publisherId) {
-    url += `&publisherId=` + context.publisherId;
-  }
-
-  return url;
-}
-
-function parseSizes(sizes, parser = (s) => s) {
-  if (sizes == undefined) {
-    return [];
-  }
-  if (Array.isArray(sizes[0])) {
-    // is there several sizes ? (ie. [[728,90],[200,300]])
-    return sizes.map((size) => parser(size));
-  }
-  return [parser(sizes)]; // or a single one ? (ie. [728,90])
-}
-
-function parseSize(size) {
-  return size[0] + 'x' + size[1];
-}
-
-function pickAvailableGetFloorFunc(bidRequest) {
-  if (bidRequest.getFloor) {
-    return bidRequest.getFloor;
-  }
-  if (bidRequest.params.bidFloor && bidRequest.params.bidFloorCur) {
-    try {
-      const floor = parseFloat(bidRequest.params.bidFloor);
-      return () => {
-        return {
-          currency: bidRequest.params.bidFloorCur,
-          floor: floor,
-        };
-      };
-    } catch {}
-  }
-  return undefined;
-}
 function getFloors(bidRequest) {
   try {
     const floors = {};
 
-    const getFloor = pickAvailableGetFloorFunc(bidRequest);
+    let getFloor;
+
+    if (bidRequest.getFloor) {
+      getFloor = bidRequest.getFloor;
+    }
+    if (bidRequest.params.bidFloor && bidRequest.params.bidFloorCur) {
+      try {
+        const floor = parseFloat(bidRequest.params.bidFloor);
+        return () => {
+          getFloor = {
+            currency: bidRequest.params.bidFloorCur,
+            floor: floor,
+          };
+        };
+      } catch {}
+    }
+    getFloor = undefined;
 
     if (getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         floors.banner = {};
-        const bannerSizes = parseSizes(
-          deepAccess(bidRequest, 'mediaTypes.banner.sizes')
-        );
+
+        const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+        const parser = (s) => s;
+
+        if (sizes == undefined) {
+          return [];
+        }
+        if (Array.isArray(sizes[0])) {
+          // is there several sizes ? (ie. [[728,90],[200,300]])
+          return sizes.map((size) => parser(size));
+        }
+        const bannerSizes = [parser(sizes)]; // or a single one ? (ie. [728,90])
+
         bannerSizes.forEach(
           (bannerSize) =>
-            (floors.banner[parseSize(bannerSize).toString()] = getFloor.call(
+            (floors.banner[(bannerSize[0] + 'x' + bannerSize[1]).toString()] = getFloor.call(
               bidRequest,
               { size: bannerSize, mediaType: BANNER }
             ))
