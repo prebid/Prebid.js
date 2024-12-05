@@ -44,25 +44,36 @@ const CONVERTER = ortbConverter({
  * @returns {Object} The ORTB 2.5 imp object.
  */
 function imp(buildImp, bidRequest, context) {
-  let imp = buildImp(bidRequest, context);
-  const params = bidRequest.params;
+  const imp = buildImp(bidRequest, context);
+  const params = bidRequest.params || {};
 
   imp.tagid = bidRequest.adUnitCode;
-  deepSetValue(imp, 'ext', {
-    ...bidRequest.params.ext,
+
+  const ext = {
+    ...params.ext,
     ...imp.ext,
     rwdd: imp.rwdd,
     floors: getFloors(bidRequest),
-    bidder: {
-      publishersubid: params?.publisherSubId,
-      zoneid: params?.zoneId,
-      uid: params?.uid,
-    },
-  });
+    bidder: buildBidderExt(params),
+  };
 
-  delete imp.rwdd; // oRTB 2.6 field moved to ext
+  deepSetValue(imp, 'ext', ext);
 
   return imp;
+}
+
+/**
+ * Builds the bidder extension object for the impression.
+ *
+ * @param {Object} params - The parameters from the bid request.
+ * @returns {Object} The bidder extension object.
+ */
+function buildBidderExt(params) {
+  return {
+    publishersubid: params.publisherSubId,
+    zoneid: params.zoneId,
+    uid: params.uid,
+  };
 }
 
 /**
@@ -77,27 +88,37 @@ function imp(buildImp, bidRequest, context) {
 function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
 
-  // params.pubid should override publisher id
-  if (typeof context.publisherId !== 'undefined') {
-    if (typeof request.app !== 'undefined') {
-      deepSetValue(request, 'app.publisher.id', context.publisherId);
-    } else {
-      deepSetValue(request, 'site.publisher.id', context.publisherId);
-    }
+  if (context.publisherId !== undefined) {
+    setPublisherId(request, context.publisherId);
   }
 
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    deepSetValue(
-      request,
-      'regs.ext.gdprversion',
-      bidderRequest.gdprConsent.apiVersion
-    );
+  if (bidderRequest?.gdprConsent) {
+    setGdprVersion(request, bidderRequest.gdprConsent.apiVersion);
   }
 
   // Translate 2.6 OpenRTB request into 2.5 OpenRTB request
-  request = TRANSLATOR(request);
+  return TRANSLATOR(request);
+}
 
-  return request;
+/**
+ * Sets the publisher ID in the request object based on the context.
+ *
+ * @param {Object} request - The ORTB 2.5 request object.
+ * @param {string} publisherId - The publisher ID to set.
+ */
+function setPublisherId(request, publisherId) {
+  const targetPath = request.app ? 'app.publisher.id' : 'site.publisher.id';
+  deepSetValue(request, targetPath, publisherId);
+}
+
+/**
+ * Sets the GDPR version in the request object if GDPR consent is provided.
+ *
+ * @param {Object} request - The ORTB 2.5 request object.
+ * @param {string} gdprVersion - The GDPR API version.
+ */
+function setGdprVersion(request, gdprVersion) {
+  deepSetValue(request, 'regs.ext.gdprversion', gdprVersion);
 }
 
 /**
