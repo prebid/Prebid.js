@@ -1,4 +1,4 @@
-import {mergeDeep} from './utils.js';
+import {deepAccess, mergeDeep} from './utils.js';
 import {getGlobal} from './prebidGlobal.js';
 import { JSON_MAPPING } from './constants.js';
 
@@ -31,7 +31,7 @@ export class ScopedSettings {
    */
   getOwn(scope, path) {
     scope = this.#resolveScope(scope);
-    return this.getSettings()?.[scope]?.[path];
+    return deepAccess(this.getSettings(), `${scope}.${path}`)
   }
 
   /**
