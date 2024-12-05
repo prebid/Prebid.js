@@ -161,75 +161,120 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   /**
-   * f
+   * Validates the bid request.
    * @param {object} bid
    * @return {boolean}
    */
-  isBidRequestValid: (bid) => {
-    // either one of zoneId or networkId should be set
-    if (!(bid && bid.params && bid.params.publisherId)) {
-      return false;
-    }
-
-    return true;
-  },
+  isBidRequestValid: (bid) => isValidBidRequest(bid),
 
   /**
+   * Builds requests for the bidder.
    * @param {BidRequest[]} bidRequests
    * @param {*} bidderRequest
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
-    const context = {
-      url: bidderRequest?.refererInfo?.page || '',
-      publisherId: bidRequests.find((bidRequest) => bidRequest.params?.pubid)
-        ?.params.pubid,
-    };
-    const blueId =
-      storage.cookiesAreEnabled() && storage.getCookie(BUNDLE_COOKIE_NAME);
-    let url = CDB_ENDPOINT;
-    url += '&wv=' + encodeURIComponent('$prebid.version$');
-    url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
+    const context = buildContext(bidRequests, bidderRequest);
+    const url = buildUrl(context.publisherId);
+    const data = prepareData(bidRequests, bidderRequest, context);
 
-    if (context.publisherId) {
-      url += `&publisherId=` + context.publisherId;
-    }
-
-    const data = CONVERTER.toORTB({ bidderRequest, bidRequests, context });
-    // put user id in the request
-    if (data.user == undefined) {
-      data.user = {};
-    }
-
-    if (data.user.ext == undefined) {
-      data.user.ext = {
-        buyerid: blueId,
-      };
-    }
     if (data) {
       return { method: 'POST', url, data, bidRequests };
     }
   },
 
   /**
+   * Interprets the server response.
    * @param {*} response
    * @param {ServerRequest} request
    * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
    */
-  interpretResponse: (response, request) => {
-    if (typeof response?.body == 'undefined') {
-      return []; // no bid
-    }
-
-    const interpretedResponse = CONVERTER.fromORTB({
-      response: response.body,
-      request: request.data,
-    });
-    const bids = interpretedResponse.bids || [];
-
-    return bids;
-  },
+  interpretResponse: (response, request) => interpretServerResponse(response, request),
 };
+
+// Helper functions
+
+/**
+ * Validates a bid request.
+ * @param {object} bid
+ * @return {boolean}
+ */
+function isValidBidRequest(bid) {
+  return bid?.params?.publisherId ? true : false;
+}
+
+/**
+ * Builds the request context.
+ * @param {BidRequest[]} bidRequests
+ * @param {*} bidderRequest
+ * @return {object}
+ */
+function buildContext(bidRequests, bidderRequest) {
+  const publisherId = bidRequests.find((bidRequest) => bidRequest.params?.pubid)?.params.pubid;
+  return {
+    url: bidderRequest?.refererInfo?.page || '',
+    publisherId,
+  };
+}
+
+/**
+ * Builds the request URL.
+ * @param {string} publisherId
+ * @return {string}
+ */
+function buildUrl(publisherId) {
+  let url = CDB_ENDPOINT;
+  url += '&wv=' + encodeURIComponent('$prebid.version$');
+  url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
+
+  if (publisherId) {
+    url += `&publisherId=` + publisherId;
+  }
+
+  return url;
+}
+
+/**
+ * Prepares the request data.
+ * @param {BidRequest[]} bidRequests
+ * @param {*} bidderRequest
+ * @param {object} context
+ * @return {object}
+ */
+function prepareData(bidRequests, bidderRequest, context) {
+  const data = CONVERTER.toORTB({ bidderRequest, bidRequests, context });
+
+  if (!data.user) {
+    data.user = {};
+  }
+
+  if (!data.user.ext) {
+    data.user.ext = {
+      buyerid: storage.cookiesAreEnabled() ? storage.getCookie(BUNDLE_COOKIE_NAME) : undefined,
+    };
+  }
+
+  return data;
+}
+
+/**
+ * Interprets the server response.
+ * @param {*} response
+ * @param {ServerRequest} request
+ * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
+ */
+function interpretServerResponse(response, request) {
+  if (!response?.body) {
+    return []; // No bids
+  }
+
+  const interpretedResponse = CONVERTER.fromORTB({
+    response: response.body,
+    request: request.data,
+  });
+
+  return interpretedResponse.bids || [];
+}
 
 function getFloors(bidRequest) {
   try {
