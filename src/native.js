@@ -1,5 +1,4 @@
 import {
-  deepAccess,
   deepClone, getDefinedParams,
   insertHtmlIntoIframe,
   isArray,
@@ -373,15 +372,15 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
 
   Object.keys(flatBidNativeKeys).forEach(asset => {
     const key = nativeKeys[asset];
-    let value = getAssetValue(bid.native[asset]) || getAssetValue(deepAccess(bid, `native.ext.${asset}`));
+    let value = getAssetValue(bid.native[asset]) || getAssetValue(bid?.native?.ext?.[asset]);
 
     if (asset === 'adTemplate' || !key || !value) {
       return;
     }
 
-    let sendPlaceholder = deepAccess(adUnit, `nativeParams.${asset}.sendId`);
+    let sendPlaceholder = adUnit?.nativeParams?.[asset]?.sendId;
     if (typeof sendPlaceholder !== 'boolean') {
-      sendPlaceholder = deepAccess(adUnit, `nativeParams.ext.${asset}.sendId`);
+      sendPlaceholder = adUnit?.nativeParams?.ext?.[asset]?.sendId;
     }
 
     if (sendPlaceholder) {
@@ -389,9 +388,9 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
       value = placeholder;
     }
 
-    let assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.${asset}.sendTargetingKeys`);
+    let assetSendTargetingKeys = adUnit?.nativeParams?.[asset]?.sendTargetingKeys;
     if (typeof assetSendTargetingKeys !== 'boolean') {
-      assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.ext.${asset}.sendTargetingKeys`);
+      assetSendTargetingKeys = adUnit?.nativeParams?.ext?.[asset]?.sendTargetingKeys;
     }
 
     const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
