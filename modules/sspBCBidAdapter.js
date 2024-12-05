@@ -71,7 +71,7 @@ const getContentLanguage = () => {
     const topWindow = getWindowTop();
     return topWindow.document.body.parentNode.lang;
   } catch (err) {
-    logWarn('Could not read language form top-level html', err);
+    logWarn('Could not read language from top-level html', err);
   }
 };
 
@@ -84,7 +84,7 @@ const getTopHost = () => {
     const topWindow = getWindowTop();
     return topWindow.location.host;
   } catch (err) {
-    logWarn('Could not read host form top-level window', err);
+    logWarn('Could not read host from top-level window', err);
   }
 };
 
