@@ -200,7 +200,7 @@ export const spec = {
  * @return {boolean}
  */
 function isValidBidRequest(bid) {
-  return bid?.params?.publisherId ? true : false;
+  return bid && bid.params && bid.params.publisherId;
 }
 
 /**
