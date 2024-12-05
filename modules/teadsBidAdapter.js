@@ -1,4 +1,4 @@
-import {logError, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
+import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
@@ -198,7 +198,7 @@ function getSharedViewerIdParameters(validBidRequests) {
   let sharedViewerIdObject = {};
   for (const sharedViewerId in sharedViewerIdMapping) {
     const key = sharedViewerIdMapping[sharedViewerId];
-    const value = validBidRequests?.[0]?.userId?.[key];
+    const value = deepAccess(validBidRequests, `0.userId.${key}`);
     if (value) {
       sharedViewerIdObject[sharedViewerId] = value;
     }
