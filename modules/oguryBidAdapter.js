@@ -1,7 +1,7 @@
 'use strict';
 
 import {BANNER} from '../src/mediaTypes.js';
-import {getWindowSelf, getWindowTop, isFn, logWarn, deepAccess} from '../src/utils.js';
+import {getWindowSelf, getWindowTop, isFn, logWarn, deepAccess, isPlainObject} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ajax} from '../src/ajax.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
@@ -211,7 +211,7 @@ function getFloor(bid) {
     mediaType: 'banner',
     size: '*'
   });
-  return floorResult.currency === 'USD' ? floorResult.floor : 0;
+  return (isPlainObject(floorResult) && floorResult.currency === 'USD') ? floorResult.floor : 0;
 }
 
 function getWindowContext() {

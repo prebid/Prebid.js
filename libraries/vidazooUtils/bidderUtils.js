@@ -255,7 +255,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
       size: '*'
     });
 
-    if (floorInfo.currency === 'USD') {
+    if (floorInfo?.currency === 'USD') {
       bidFloor = floorInfo.floor;
     }
   }
