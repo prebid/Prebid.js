@@ -58,11 +58,29 @@ describe('Outbrain Adapter', function () {
           minduration: 3,
           maxduration: 10,
           startdelay: 2,
-          placement: 4,
+          plcmt: 4,
+          placement: 5,
           linearity: 1
         }
       }
     }
+
+    const ortb2WithDeviceData = {
+      ortb2: {
+        device: {
+          w: 980,
+          h: 1720,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+          language: 'en',
+          devicetype: 1,
+          make: 'Apple',
+          model: 'iPhone 12 Pro Max',
+          os: 'iOS',
+          osv: '17.4'
+        }
+      }
+    };
 
     describe('isBidRequestValid', function () {
       before(() => {
@@ -389,7 +407,8 @@ describe('Outbrain Adapter', function () {
                 minduration: 3,
                 maxduration: 10,
                 startdelay: 2,
-                placement: 4,
+                placement: 5,
+                plcmt: 4,
                 linearity: 1
               }
             }
@@ -427,7 +446,7 @@ describe('Outbrain Adapter', function () {
         expect(resData.badv).to.deep.equal(['bad-advertiser'])
       });
 
-      it('first party data', function () {
+      it('should pass first party data', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
@@ -506,6 +525,28 @@ describe('Outbrain Adapter', function () {
         expect(resData.regs.coppa).to.equal(1)
 
         config.resetConfig()
+      });
+
+      it('should pass gpp information', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        };
+        const bidderRequest = {
+          ...commonBidderRequest,
+          'gppConsent': {
+            'gppString': 'abc12345',
+            'applicableSections': [8]
+          }
+        }
+
+        const res = spec.buildRequests([bidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+
+        expect(resData.regs.ext.gpp).to.exist;
+        expect(resData.regs.ext.gpp_sid).to.exist;
+        expect(resData.regs.ext.gpp).to.equal('abc12345');
+        expect(resData.regs.ext.gpp_sid).to.deep.equal([8]);
       });
 
       it('should pass extended ids', function () {
@@ -596,6 +637,19 @@ describe('Outbrain Adapter', function () {
         let res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
+      });
+
+      it('should pass ortb2 device data', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        };
+
+        const res = spec.buildRequests(
+          [bidRequest],
+          {...commonBidderRequest, ...ortb2WithDeviceData},
+        );
+        expect(JSON.parse(res.data).device).to.deep.equal(ortb2WithDeviceData.ortb2.device);
       });
     })
 
@@ -859,6 +913,12 @@ describe('Outbrain Adapter', function () {
     it('should pass GDPR and US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+      }]);
+    });
+
+    it('should pass gpp consent', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '', { gppString: 'abc12345', applicableSections: [1, 2] })).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?gpp=abc12345&gpp_sid=1%2C2`
       }]);
     });
   })

@@ -308,33 +308,6 @@ describe('topics', () => {
       }],
       name: 'ads.pubmatic.com'
     }];
-    const consentString = 'CPi8wgAPi8wgAADABBENCrCsAP_AAH_AAAAAISNB7D==';
-    const consentConfig = {
-      consentString: consentString,
-      gdprApplies: true,
-      vendorData: {
-        metadata: consentString,
-        gdprApplies: true,
-        purpose: {
-          consents: {
-            1: true,
-            2: true,
-            3: true,
-            4: true
-          }
-        }
-      }
-    };
-    const mockData = [
-      {
-        name: 'domain',
-        segment: [{id: 123}]
-      },
-      {
-        name: 'domain',
-        segment: [{id: 321}],
-      }
-    ];
 
     const evt = {
       data: '{"segment":{"domain":"ads.pubmatic.com","topics":[{"configVersion":"chrome.1","modelVersion":"2206021246","taxonomyVersion":"1","topic":165,"version":"chrome.1:1:2206021246"}],"bidder":"pubmatic"},"date":1669743901858}',
@@ -345,37 +318,60 @@ describe('topics', () => {
       storage.removeDataFromLocalStorage(topicStorageName);
     });
 
-    describe('when cached data is available and not expired', () => {
+    describe('caching', () => {
       let sandbox;
       beforeEach(() => {
         sandbox = sinon.sandbox.create();
-        const storedSegments = JSON.stringify(
-          [['pubmatic', {
-            '2206021246': {
-              'ext': {'segtax': 600, 'segclass': '2206021246'},
-              'segment': [{'id': '243'}, {'id': '265'}],
-              'name': 'ads.pubmatic.com'
-            },
-            'lastUpdated': new Date().getTime()
-          }]]
-        );
-        storage.setDataInLocalStorage(topicStorageName, storedSegments);
-      });
+      })
+
       afterEach(() => {
         sandbox.restore();
+        config.resetConfig();
       });
 
-      it('should return segments for bidder if transmitUfpd is allowed', () => {
-        assert.deepEqual(getCachedTopics(), expected);
-      });
-
-      it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
-        sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
-          return !(activity === ACTIVITY_ENRICH_UFPD && params.component === 'bidder.pubmatic');
-        });
+      it('should return no segments when not configured', () => {
+        config.setConfig({userSync: {}});
         expect(getCachedTopics()).to.eql([]);
+      })
+
+      describe('when cached data is available and not expired', () => {
+        beforeEach(() => {
+          const storedSegments = JSON.stringify(
+            [['pubmatic', {
+              '2206021246': {
+                'ext': {'segtax': 600, 'segclass': '2206021246'},
+                'segment': [{'id': '243'}, {'id': '265'}],
+                'name': 'ads.pubmatic.com'
+              },
+              'lastUpdated': new Date().getTime()
+            }]]
+          );
+          storage.setDataInLocalStorage(topicStorageName, storedSegments);
+          config.setConfig({
+            userSync: {
+              topics: {
+                maxTopicCaller: 4,
+                bidders: [{
+                  bidder: 'pubmatic',
+                  iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+                }]
+              }
+            }
+          })
+        });
+
+        it('should return segments for bidder if transmitUfpd is allowed', () => {
+          assert.deepEqual(getCachedTopics(), expected);
+        });
+
+        it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
+          sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
+            return !(activity === ACTIVITY_ENRICH_UFPD && params.component === 'bidder.pubmatic');
+          });
+          expect(getCachedTopics()).to.eql([]);
+        });
       });
-    })
+    });
 
     it('should return empty segments for bidder if there is cached segments stored which is expired', () => {
       let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
@@ -384,6 +380,22 @@ describe('topics', () => {
     });
 
     describe('cross-frame messages', () => {
+      before(() => {
+        config.setConfig({
+          userSync: {
+            topics: {
+              maxTopicCaller: 3,
+              bidders: [
+                {
+                  bidder: 'pubmatic',
+                  iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+                }
+              ],
+            },
+          }
+        });
+      });
+
       beforeEach(() => {
         // init iframe logic so  that the receiveMessage origin check passes
         loadTopicsForBidders({
@@ -397,6 +409,10 @@ describe('topics', () => {
           }
         });
       });
+
+      after(() => {
+        config.resetConfig();
+      })
 
       it('should store segments if receiveMessage event is triggered with segment data', () => {
         receiveMessage(evt);
@@ -421,11 +437,13 @@ describe('handles fetch request for topics api headers', () => {
 
   beforeEach(() => {
     stubbedFetch = sinon.stub(window, 'fetch');
+    reset();
   });
 
   afterEach(() => {
     stubbedFetch.restore();
     storage.removeDataFromLocalStorage(topicStorageName);
+    config.resetConfig();
   });
 
   it('should make a fetch call when a fetchUrl is present for a selected bidder', () => {
@@ -444,6 +462,7 @@ describe('handles fetch request for topics api headers', () => {
     });
 
     stubbedFetch.returns(Promise.resolve(true));
+
     loadTopicsForBidders({
       browsingTopics: true,
       featurePolicy: {

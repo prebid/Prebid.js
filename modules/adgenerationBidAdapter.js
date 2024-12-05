@@ -1,10 +1,18 @@
-import {deepAccess, getBidIdParameter} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
-import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
+import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { deepAccess, getBidIdParameter } from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const ADG_BIDDER_CODE = 'adgeneration';
 
@@ -30,7 +38,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const ADGENE_PREBID_VERSION = '1.6.2';
+    const ADGENE_PREBID_VERSION = '1.6.3';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -53,7 +61,7 @@ export const spec = {
       data = tryAppendQueryString(data, 't', 'json3');
       data = tryAppendQueryString(data, 'transactionid', validReq.ortb2Imp?.ext?.tid);
       data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
-      data = tryAppendQueryString(data, 'currency', getCurrencyType());
+      data = tryAppendQueryString(data, 'currency', getCurrencyType(bidderRequest));
       data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
       data = tryAppendQueryString(data, 'sdkname', 'prebidjs');
       data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
@@ -72,12 +80,12 @@ export const spec = {
       }
 
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
-      if (isIos()) {
-        const hyperId = getHyperId(validReq);
-        if (hyperId != null) {
-          data = tryAppendQueryString(data, 'hyper_id', hyperId);
-        }
+
+      const hyperId = getHyperId(validReq);
+      if (hyperId != null) {
+        data = tryAppendQueryString(data, 'hyper_id', hyperId);
       }
+
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -86,7 +94,8 @@ export const spec = {
         method: 'GET',
         url: url,
         data: data,
-        bidRequest: validBidRequests[i]
+        bidRequest: validBidRequests[i],
+        bidderRequest
       });
     }
     return serverRequests;
@@ -111,7 +120,7 @@ export const spec = {
       height: body.h ? body.h : 1,
       creativeId: body.creativeid || '',
       dealId: body.dealid || '',
-      currency: getCurrencyType(),
+      currency: getCurrencyFromBidderRequest(bidRequests.bidderRequest),
       netRevenue: true,
       ttl: body.ttl || 10,
     };
@@ -296,9 +305,9 @@ function getSizes(validReq) {
 /**
  * @return {?string} USD or JPY
  */
-function getCurrencyType() {
-  if (config.getConfig('currency.adServerCurrency') && config.getConfig('currency.adServerCurrency').toUpperCase() === 'USD') return 'USD';
-  return 'JPY';
+function getCurrencyType(bidderRequest) {
+  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest) || ''
+  return adServerCurrency.toUpperCase() === 'USD' ? 'USD' : 'JPY'
 }
 
 /**
@@ -327,10 +336,6 @@ function getHyperId(validReq) {
     return validReq.userId.novatiq.snowflake.id;
   }
   return null;
-}
-
-function isIos() {
-  return (/(ios|ipod|ipad|iphone)/i).test(window.navigator.userAgent);
 }
 
 registerBidder(spec);

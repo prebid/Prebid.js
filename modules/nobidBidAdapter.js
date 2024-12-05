@@ -3,22 +3,26 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-window.nobidVersion = '1.4.1';
+window.nobidVersion = '1.3.4';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
 window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
-window.nobid.firstPartyIds = null;
-window.nobid.firstPartyIdEnabled = false;
-const FIRST_PARTY_KEY = 'fppcid.nobid.io';
-const FIRST_PARTY_SOURCE_KEY = 'fpid.nobid.io';
-const FIRST_PARTY_DATA_EXPIRY_DAYS = 7 * 24 * 3600 * 1000;
 function log(msg, obj) {
   logInfo('-NoBid- ' + msg, obj)
 }
@@ -140,10 +144,8 @@ function nobidBuildRequests(bids, bidderRequest) {
             src.push({source: eid.source, uids: ids});
           }
         });
-        if (window.nobid.firstPartyIds && window.nobid.firstPartyIds) src.push({source: FIRST_PARTY_SOURCE_KEY, uids: [{id: window.nobid.firstPartyIds.ids}]});
         return src;
       }
-      if (window.nobid.firstPartyIds && window.nobid.firstPartyIds.ids) return [{source: FIRST_PARTY_SOURCE_KEY, uids: [{id: window.nobid.firstPartyIds.ids}]}];
     }
     var state = {};
     state['sid'] = siteId;
@@ -159,6 +161,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
     state['pjbdr'] = (bidderRequest && bidderRequest.bidderCode) ? bidderRequest.bidderCode : 'nobid';
+    state['pbver'] = '$prebid.version$';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
     const cop = coppa();
@@ -228,7 +231,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     return adunits;
   }
   function getFloor (bid) {
-    if (bid && typeof bid.getFloor === 'function' && bid.getFloor().floor) {
+    if (bid && typeof bid.getFloor === 'function' && bid.getFloor()?.floor) {
       return bid.getFloor().floor;
     }
     return null;
@@ -293,12 +296,6 @@ function nobidInterpretResponse(response, bidRequest) {
   var setRefreshLimit = function(response) {
     if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
   }
-  var setFirstPartyIdEnabled = function(response) {
-    if (response && typeof response.fpid !== 'undefined') window.nobid.firstPartyIdEnabled = response.fpid;
-    if (window?.nobid?.firstPartyIdEnabled) {
-      nobidFirstPartyData.loadOrCreateFirstPartyData();
-    }
-  }
   var setUserBlock = function(response) {
     if (response && typeof response.ublock !== 'undefined') {
       nobidSetCookie('_ublock', '1', response.ublock);
@@ -306,7 +303,6 @@ function nobidInterpretResponse(response, bidRequest) {
   }
   setRefreshLimit(response);
   setUserBlock(response);
-  setFirstPartyIdEnabled(response);
   var bidResponses = [];
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
@@ -373,113 +369,6 @@ window.addEventListener('message', function (event) {
     }
   }
 }, false);
-const nobidFirstPartyData = {
-  isJson: function (str) {
-    return str && str.startsWith('{') && str.endsWith('}');
-  },
-  hasLocalStorage: function () {
-    try {
-      return window.localStorage;
-    } catch (error) {
-      logWarn('Local storage api disabled', error);
-    }
-    return false;
-  },
-  readFirstPartyDataIds: function () {
-    try {
-      if (this.hasLocalStorage()) {
-        const idsStr = window.localStorage.getItem(FIRST_PARTY_SOURCE_KEY);
-        if (this.isJson(idsStr)) {
-          const idsObj = JSON.parse(idsStr);
-          if (idsObj.ts + FIRST_PARTY_DATA_EXPIRY_DAYS < Date.now()) return { pid: idsObj.pid }; // expired?
-          return idsObj;
-        }
-        return null;
-      }
-    } catch (error) {
-      logWarn('Local storage api disabled', error);
-    }
-    return null;
-  },
-  loadOrCreateFirstPartyData: function () {
-    const storeFirstPartyDataIds = function ({ids: theIds, pid: thePid}) {
-      try {
-        if (nobidFirstPartyData.hasLocalStorage()) {
-          window.localStorage.setItem(FIRST_PARTY_SOURCE_KEY, JSON.stringify({ids: theIds, pid: thePid, ts: Date.now()}));
-        }
-      } catch (error) {
-        logWarn('Local storage api disabled', error);
-      }
-    };
-    const readFirstPartyId = function () {
-      try {
-        if (nobidFirstPartyData.hasLocalStorage()) {
-          const idStr = window.localStorage.getItem(FIRST_PARTY_KEY);
-          if (nobidFirstPartyData.isJson(idStr)) {
-            return JSON.parse(idStr);
-          }
-          return null;
-        }
-      } catch (error) {
-        logWarn('Local storage api disabled', error);
-      }
-      return null;
-    };
-    const storeFirstPartyId = function (theId) {
-      try {
-        if (nobidFirstPartyData.hasLocalStorage()) {
-          window.localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(theId));
-        }
-      } catch (error) {
-        logWarn('Local storage api disabled', error);
-      }
-    };
-    const _loadOrCreateFirstPartyData = function () {
-      const generateGUID = function () {
-        let d = new Date().getTime();
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-          const r = (d + Math.random() * 16) % 16 | 0;
-          d = Math.floor(d / 16);
-          return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-        });
-      };
-      const ajaxGet = function (ajaxParams, callback) {
-        const ajax = new XMLHttpRequest();
-        ajax.withCredentials = false;
-        ajax.timeout = ajaxParams.timeout;
-        ajax.open('GET', ajaxParams.url, true);
-        ajax.onreadystatechange = function () {
-          if (this.readyState === XMLHttpRequest.DONE) {
-            callback(this.response);
-          }
-        };
-        ajax.send(ajaxParams.data);
-      };
-      let firstPartyIdObj = readFirstPartyId();
-      if (!firstPartyIdObj || !firstPartyIdObj.id || !firstPartyIdObj.ts) {
-        const firstPartyId = generateGUID();
-        firstPartyIdObj = {id: firstPartyId, ts: Date.now()};
-        storeFirstPartyId(firstPartyIdObj);
-      }
-      let firstPartyIds = nobidFirstPartyData.readFirstPartyDataIds();
-      if (firstPartyIdObj?.ts && !firstPartyIds?.ids) {
-        const pid = firstPartyIds?.pid || '';
-        const pdate = firstPartyIdObj.ts;
-        const firstPartyId = firstPartyIdObj.id;
-        const url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&pt=17&dpn=1&iiqidtype=2&dpi=430542822&iiqpcid=${firstPartyId}&iiqpciddate=${pdate}&pid=${pid}`;
-        if (window.nobid.firstPartyRequestInProgress) return;
-        window.nobid.firstPartyRequestInProgress = true;
-        ajaxGet({ url: url }, function (response) {
-          response = JSON.parse(response);
-          if (response?.data) storeFirstPartyDataIds({ ids: response.data, pid: response.pid });
-        });
-      }
-    };
-    window.nobid.firstPartyIds = this.readFirstPartyDataIds();
-    if (window.nobid.firstPartyIdEnabled && !window.nobid.firstPartyIds?.ids) _loadOrCreateFirstPartyData();
-  }
-};
-window.nobid.firstPartyIds = nobidFirstPartyData.readFirstPartyDataIds();
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -488,21 +377,22 @@ export const spec = {
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
- * Determines whether or not the given bid request is valid.
- *
- * @param {BidRequest} bid The bid params to validate.
- * @return boolean True if this is a valid bid, and false otherwise.
- */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     log('isBidRequestValid', bid);
-    return !!bid.params.siteId;
+    if (bid?.params?.siteId) return true;
+    return false;
   },
   /**
- * Make a server request from the list of BidRequests.
- *
- * @param {validBidRequests[]} - an array of bids
- * @return ServerRequest Info describing the request to the server.
- */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     function resolveEndpoint() {
       var ret = 'https://ads.servenobid.com/';
@@ -542,11 +432,11 @@ export const spec = {
     };
   },
   /**
-     * Unpack the response from the server into a list of bids.
-     *
-     * @param {ServerResponse} serverResponse A successful response from the server.
-     * @return {Bid[]} An array of bids which were nested inside the server.
-     */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     log('interpretResponse -> serverResponse', serverResponse);
     log('interpretResponse -> bidRequest', bidRequest);
@@ -554,12 +444,12 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent) {
     if (syncOptions.iframeEnabled) {
       let params = '';
@@ -604,9 +494,9 @@ export const spec = {
   },
 
   /**
-     * Register bidder specific code, which will execute if bidder timed out after an auction
-     * @param {data} Containing timeout specific data
-     */
+   * Register bidder specific code, which will execute if bidder timed out after an auction
+   * @param {data} Containing timeout specific data
+   */
   onTimeout: function(data) {
     window.nobid.timeoutTotal++;
     log('Timeout total: ' + window.nobid.timeoutTotal, data);

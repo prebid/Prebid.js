@@ -14,6 +14,13 @@ import {formatQS, isNumber, isPlainObject, logError, parseUrl} from '../src/util
 import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'connectId';
 const STORAGE_EXPIRY_DAYS = 365;
 const STORAGE_DURATION = 60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS;
@@ -306,12 +313,16 @@ export const connectIdSubmodule = {
 
   /**
    * Utility function that returns a boolean flag indicating if the user
-   * has opeted out via the Yahoo easy-opt-out mechanism.
+   * has opted out via the Yahoo easy-opt-out mechanism.
    * @returns {Boolean}
    */
   userHasOptedOut() {
     try {
-      return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
+      if (storage.localStorageIsEnabled()) {
+        return storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1';
+      } else {
+        return true;
+      }
     } catch {
       return false;
     }

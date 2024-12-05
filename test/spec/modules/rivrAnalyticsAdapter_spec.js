@@ -19,7 +19,7 @@ import {
 import {expect} from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 
 const events = require('../../../src/events');
 
@@ -98,7 +98,7 @@ describe('RIVR Analytics adapter', () => {
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
+    events.emit(EVENTS.AUCTION_INIT, { auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000 });
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
@@ -111,12 +111,12 @@ describe('RIVR Analytics adapter', () => {
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
-    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
+    events.emit(EVENTS.AUCTION_INIT, { auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000 });
 
     expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(1);
 
     const firstArgument = rivraddonsTrackPbjsEventStub.getCall(0).args[0];
-    expect(firstArgument.eventType).to.be.equal(CONSTANTS.EVENTS.AUCTION_INIT);
+    expect(firstArgument.eventType).to.be.equal(EVENTS.AUCTION_INIT);
     expect(firstArgument.args.auctionId).to.be.equal(EMITTED_AUCTION_ID);
 
     window.rivraddon.analytics.trackPbjsEvent.restore();

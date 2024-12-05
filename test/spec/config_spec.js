@@ -252,18 +252,42 @@ describe('config API', function () {
     expect(configResult.native).to.be.equal('high');
   });
 
-  it('sets priceGranularity and customPriceBucket', function () {
-    const goodConfig = {
-      'buckets': [{
-        'max': 3,
-        'increment': 0.01,
-        'cap': true
-      }]
-    };
-    setConfig({ priceGranularity: goodConfig });
-    expect(getConfig('priceGranularity')).to.be.equal('custom');
-    expect(getConfig('customPriceBucket')).to.equal(goodConfig);
+  Object.entries({
+    'using setConfig': {
+      setter: () => config.setConfig,
+      getter: () => config.getConfig
+    },
+    'using setBidderConfig': {
+      setter: () => (config) => setBidderConfig({bidders: ['mockBidder'], config}),
+      getter: () => (option) => config.runWithBidder('mockBidder', () => config.getConfig(option))
+    }
+  }).forEach(([t, {getter, setter}]) => {
+    describe(t, () => {
+      let getConfig, setConfig;
+      beforeEach(() => {
+        getConfig = getter();
+        setConfig = setter();
+      });
+      it('sets priceGranularity and customPriceBucket', function () {
+        const goodConfig = {
+          'buckets': [{
+            'max': 3,
+            'increment': 0.01,
+            'cap': true
+          }]
+        };
+        setConfig({ priceGranularity: goodConfig });
+        expect(getConfig('priceGranularity')).to.be.equal('custom');
+        expect(getConfig('customPriceBucket')).to.eql(goodConfig);
+      });
+    });
   });
+
+  it('does not force defaults for bidder config', () => {
+    config.setConfig({bidderSequence: 'fixed'});
+    config.setBidderConfig({bidders: ['mockBidder'], config: {other: 'config'}})
+    expect(config.runWithBidder('mockBidder', () => config.getConfig('bidderSequence'))).to.eql('fixed');
+  })
 
   it('sets deviceAccess', function () {
     // When the deviceAccess flag config option is not set, cookies may be read and set
@@ -321,6 +345,14 @@ describe('config API', function () {
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
 
+  it('sets auctionOptions suppressExpiredRender', function () {
+    const auctionOptionsConfig = {
+      'suppressExpiredRender': true
+    }
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
   it('should log warning for the wrong value passed to auctionOptions', function () {
     setConfig({ auctionOptions: '' });
     expect(logWarnSpy.calledOnce).to.equal(true);
@@ -343,6 +375,15 @@ describe('config API', function () {
     }});
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options suppressStaleRender must be of type boolean';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionOptions suppress expired render', function () {
+    setConfig({ auctionOptions: {
+      'suppressExpiredRender': 'test',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options suppressExpiredRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 

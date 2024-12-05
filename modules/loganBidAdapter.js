@@ -1,54 +1,18 @@
-import { isFn, deepAccess, getWindowTop } from '../src/utils.js';
+import { getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { buildUserSyncs, interpretResponse, isBidRequestValid, getBidFloor, consentCheck } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'logan';
 const AD_URL = 'https://USeast2.logan.ai/pbjs';
-const SYNC_URL = 'https://ssp-cookie.logan.ai'
-
-function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency || !bid.meta) {
-    return false;
-  }
-  switch (bid.mediaType) {
-    case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
-    case VIDEO:
-      return Boolean(bid.vastXml || bid.vastUrl);
-    case NATIVE:
-      return Boolean(bid.native && bid.native.impressionTrackers);
-    default:
-      return false;
-  }
-}
-
-function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
-  }
-
-  try {
-    const bidFloor = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
-    });
-    return bidFloor.floor;
-  } catch (_) {
-    return 0
-  }
-}
+const SYNC_URL = 'https://ssp-cookie.logan.ai';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && bid.params.placementId);
-  },
+  isBidRequestValid: isBidRequestValid,
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
@@ -67,14 +31,7 @@ export const spec = {
       placements: placements
     };
 
-    if (bidderRequest) {
-      if (bidderRequest.uspConsent) {
-        request.ccpa = bidderRequest.uspConsent;
-      }
-      if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent;
-      }
-    }
+    consentCheck(bidderRequest, request);
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
@@ -99,6 +56,7 @@ export const spec = {
         placement.protocols = mediaType[VIDEO].protocols;
         placement.startdelay = mediaType[VIDEO].startdelay;
         placement.placement = mediaType[VIDEO].placement;
+        placement.plcmt = mediaType[VIDEO].plcmt;
         placement.skip = mediaType[VIDEO].skip;
         placement.skipafter = mediaType[VIDEO].skipafter;
         placement.minbitrate = mediaType[VIDEO].minbitrate;
@@ -122,42 +80,11 @@ export const spec = {
     };
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    for (let i = 0; i < serverResponse.body.length; i++) {
-      let resItem = serverResponse.body[i];
-      if (isBidResponseValid(resItem)) {
-        const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
-        resItem.meta = { ...resItem.meta, advertiserDomains };
-
-        response.push(resItem);
-      }
-    }
-    return response;
-  },
-
+  interpretResponse: interpretResponse,
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-
-    const coppa = config.getConfig('coppa') ? 1 : 0;
-    syncUrl += `&coppa=${coppa}`;
-
-    return [{
-      type: syncType,
-      url: syncUrl
-    }];
+    return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_URL);
   }
+
 };
 
 registerBidder(spec);

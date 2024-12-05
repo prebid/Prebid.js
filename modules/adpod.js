@@ -38,7 +38,7 @@ import {config} from '../src/config.js';
 import {ADPOD} from '../src/mediaTypes.js';
 import {find, arrayFrom as from} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
-import CONSTANTS from '../src/constants.json';
+import { TARGETING_KEYS } from '../src/constants.js';
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
@@ -319,7 +319,7 @@ export function checkAdUnitSetupHook(fn, adUnits) {
  * @param {Object} videoMediaType 'mediaTypes.video' associated to bidResponse
  * @param {Object} bidResponse incoming bidResponse being evaluated by bidderFactory
  * @returns {boolean} return false if bid duration is deemed invalid as per adUnit configuration; return true if fine
-*/
+ */
 function checkBidDuration(videoMediaType, bidResponse) {
   const buffer = 2;
   let bidDuration = deepAccess(bidResponse, 'video.durationSeconds');
@@ -451,13 +451,12 @@ export function callPrebidCacheAfterAuction(bids, callback) {
 /**
  * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
  * @param {Object} bid
- * @param {Object} bid
  */
 export function sortByPricePerSecond(a, b) {
-  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
+  if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return 1;
   }
-  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket > b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
+  if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket > b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return -1;
   }
   return 0;
@@ -465,10 +464,10 @@ export function sortByPricePerSecond(a, b) {
 
 /**
  * This function returns targeting keyvalue pairs for long-form adserver modules. Freewheel and GAM are currently supporting Prebid long-form
- * @param {Object} options
- * @param {Array[string]} codes
- * @param {function} callback
- * @returns targeting kvs for adUnitCodes
+ * @param {Object} options - Options for targeting.
+ * @param {Array<string>} options.codes - Array of ad unit codes.
+ * @param {function} options.callback - Callback function to handle the targeting key-value pairs.
+ * @returns {Object} Targeting key-value pairs for ad unit codes.
  */
 export function getTargeting({ codes, callback } = {}) {
   if (!callback) {
