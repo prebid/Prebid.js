@@ -8,11 +8,12 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
-const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '6.00';
+const BIDDER_VERSION = '6.10';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -71,6 +72,19 @@ const getContentLanguage = () => {
     return topWindow.document.body.parentNode.lang;
   } catch (err) {
     logWarn('Could not read language form top-level html', err);
+  }
+};
+
+/**
+ * Get host name of the top level html object
+ * @returns {string} host name
+ */
+const getTopHost = () => {
+  try {
+    const topWindow = getWindowTop();
+    return topWindow.location.host;
+  } catch (err) {
+    logWarn('Could not read host form top-level window', err);
   }
 };
 
@@ -604,7 +618,9 @@ const spec = {
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
     const ref = bidderRequest.refererInfo.ref;
-    const { regs = {} } = ortb2 || {};
+    const { source = {}, regs = {} } = ortb2 || {};
+
+    source.schain = setOnAny(validBidRequests, 'schain');
 
     const payload = {
       id: bidderRequest.bidderRequestId,
@@ -621,6 +637,7 @@ const spec = {
       tmax,
       user: {},
       regs,
+      source,
       device: {
         language: getBrowserLanguage(),
         w: screen.width,
@@ -764,14 +781,22 @@ const spec = {
 
     return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
   },
-  getUserSyncs(syncOptions) {
+
+  getUserSyncs(syncOptions, _, gdprConsent = {}) {
+    const {iframeEnabled, pixelEnabled} = syncOptions;
+    const {gdprApplies, consentString = ''} = gdprConsent;
     let mySyncs = [];
-    if (syncOptions.iframeEnabled) {
+    if (iframeEnabled) {
       mySyncs.push({
         type: 'iframe',
-        url: `${SYNC_URL}?tcf=2&pvid=${pageView.id}&sn=${pageView.sn}`,
+        url: `${SYNC_URL_IFRAME}?tcf=2&pvid=${pageView.id}&sn=${pageView.sn}`,
       });
-    };
+    } else if (pixelEnabled) {
+      mySyncs.push({
+        type: 'image',
+        url: `${SYNC_URL_IMAGE}?inver=0&platform=wpartner&host=${getTopHost() || ''}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`,
+      });
+    }
     return mySyncs;
   },
 
