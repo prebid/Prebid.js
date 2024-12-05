@@ -72,7 +72,7 @@ function wrapURI(uri, impTrackerURLs) {
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  const vastXml = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   let payload = {
@@ -140,6 +140,10 @@ function shimStorageCallback(done) {
   }
 }
 
+function getVastXml(bid) {
+  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+};
+
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
@@ -161,6 +165,12 @@ export function store(bids, done, getAjax = ajaxBuilder) {
 export function getCacheUrl(id) {
   return `${config.getConfig('cache.url')}?uuid=${id}`;
 }
+
+export const storeLocally = (bid) => {
+  const vastValue = getVastValue(bid);
+  const url = URL.createObjectURL(new Blob([vastValue], { type: 'text/xml' }));
+  bid.vastUrl = url;
+};
 
 export const _internal = {
   store
@@ -194,15 +204,23 @@ export function storeBatch(batch) {
   });
 };
 
-let batchSize, batchTimeout;
+let batchSize, batchTimeout, cleanupHandler;
 if (FEATURES.VIDEO) {
-  config.getConfig('cache', (cacheConfig) => {
-    batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
-      ? cacheConfig.cache.batchSize
+  config.getConfig('cache', ({cache}) => {
+    batchSize = typeof cache.batchSize === 'number' && cache.batchSize > 0
+      ? cache.batchSize
       : 1;
-    batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
-      ? cacheConfig.cache.batchTimeout
+    batchTimeout = typeof cache.batchTimeout === 'number' && cache.batchTimeout > 0
+      ? cache.batchTimeout
       : 0;
+
+    // removing blobs that are not going to be used
+    if (cache.useLocal && !cleanupHandler) {
+      cleanupHandler = auctionManager.onExpiry((auction) => {
+        auction.getBidsReceived()
+          .forEach(({vastUrl}) => URL.revokeObjectURL(vastUrl))
+      });
+    }
   });
 }
 

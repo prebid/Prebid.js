@@ -120,10 +120,12 @@ export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
 export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
-    if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
+    const { url, useLocal } = config.getConfig('cache') || {};
+    if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
-        Try enabling prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
+        Try enabling either prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
+        or local cache with $$PREBID_GLOBAL$$.setConfig({ cache: { useLocal: true }});
       `);
       return false;
     }
