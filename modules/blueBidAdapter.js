@@ -235,53 +235,49 @@ function getFloors(bidRequest) {
   try {
     const floors = {};
 
-    let getFloor;
-
-    if (bidRequest.getFloor) {
-      getFloor = bidRequest.getFloor;
-    }
-    if (bidRequest.params.bidFloor && bidRequest.params.bidFloorCur) {
-      try {
-        const floor = parseFloat(bidRequest.params.bidFloor);
-        return () => {
-          getFloor = {
+    const parseBidFloor = () => {
+      if (bidRequest.params?.bidFloor && bidRequest.params?.bidFloorCur) {
+        try {
+          const floor = parseFloat(bidRequest.params.bidFloor);
+          return {
             currency: bidRequest.params.bidFloorCur,
             floor: floor,
           };
-        };
-      } catch {}
-    }
-    getFloor = undefined;
-
-    if (getFloor) {
-      if (bidRequest.mediaTypes?.banner) {
-        floors.banner = {};
-
-        const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
-        const parser = (s) => s;
-
-        if (sizes == undefined) {
-          return [];
+        } catch {
+          return undefined;
         }
-        if (Array.isArray(sizes[0])) {
-          // is there several sizes ? (ie. [[728,90],[200,300]])
-          return sizes.map((size) => parser(size));
-        }
-        const bannerSizes = [parser(sizes)]; // or a single one ? (ie. [728,90])
-
-        bannerSizes.forEach(
-          (bannerSize) =>
-            (floors.banner[(bannerSize[0] + 'x' + bannerSize[1]).toString()] = getFloor.call(
-              bidRequest,
-              { size: bannerSize, mediaType: BANNER }
-            ))
-        );
       }
+      return undefined;
+    };
 
-      return floors;
+    const calculateBannerFloors = (getFloor) => {
+      const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+      if (!sizes) return [];
+
+      const normalizeSizes = (sizes) =>
+        Array.isArray(sizes[0]) ? sizes : [sizes]; // Normalize to array of sizes
+      const bannerSizes = normalizeSizes(sizes);
+
+      return bannerSizes.reduce((bannerFloors, bannerSize) => {
+        const sizeKey = `${bannerSize[0]}x${bannerSize[1]}`;
+        bannerFloors[sizeKey] = getFloor.call(bidRequest, {
+          size: bannerSize,
+          mediaType: BANNER,
+        });
+        return bannerFloors;
+      }, {});
+    };
+
+    let getFloor = bidRequest.getFloor || parseBidFloor();
+
+    if (getFloor && bidRequest.mediaTypes?.banner) {
+      floors.banner = calculateBannerFloors(getFloor);
     }
+
+    return floors;
   } catch (e) {
     logError('Could not parse floors from Prebid: ' + e);
+    return {};
   }
 }
 
