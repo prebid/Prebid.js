@@ -419,8 +419,8 @@ function getCurrency(bid = {}) {
 
     if (typeof bid.getFloor === 'function') {
       let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
-      mediaTypes[mediaType].bidfloorcur = floorInfo.currency;
-      mediaTypes[mediaType].bidfloor = floorInfo.floor;
+      mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
+      mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
       mediaTypes[mediaType].bidfloorcur = currency;
     };
