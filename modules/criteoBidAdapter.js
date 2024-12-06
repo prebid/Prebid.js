@@ -59,7 +59,7 @@ function imp(buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
-  imp.tagid = params?.tagid || bidRequest.adUnitCode;
+  imp.tagid = deepAccess(bidRequest, 'ortb2Imp.tagid') || bidRequest.adUnitCode;
   deepSetValue(imp, 'ext', {
     ...bidRequest.params.ext,
     ...imp.ext,
