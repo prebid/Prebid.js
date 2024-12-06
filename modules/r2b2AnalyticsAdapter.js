@@ -63,7 +63,7 @@ function flushEvents () {
   reportEvents(events)
 }
 
-export function resetAnalyticAdapter(){
+export function resetAnalyticAdapter() {
   orderedAuctions = [];
   auctionsData = {};
   bidsData = {};
