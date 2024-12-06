@@ -1,6 +1,6 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {EVENTS} from 'src/constants.js';
+import {EVENTS} from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {logWarn, logError, isNumber, isStr, isPlainObject} from '../src/utils.js';
