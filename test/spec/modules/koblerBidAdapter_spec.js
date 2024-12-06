@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/koblerBidAdapter.js';
+import {pageViewId, spec} from 'modules/koblerBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -245,6 +245,21 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.tmax).to.be.equal(timeout);
       expect(openRtbRequest.id).to.exist;
       expect(openRtbRequest.site.page).to.be.equal(testUrl);
+    });
+
+    it('should reuse the same page view ID on subsequent calls', function () {
+      const testUrl = 'kobler.no';
+      const auctionId1 = '8319af54-9795-4642-ba3a-6f57d6ff9100';
+      const auctionId2 = 'e19f2d0c-602d-4969-96a1-69a22d483f47';
+      const timeout = 5000;
+      const validBidRequests = [createValidBidRequest()];
+      const bidderRequest1 = createBidderRequest(auctionId1, timeout, testUrl);
+      const bidderRequest2 = createBidderRequest(auctionId2, timeout, testUrl);
+
+      const openRtbRequest1 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest1).data);
+      expect(openRtbRequest1.ext.kobler.page_view_id).to.be.equal(pageViewId);
+      const openRtbRequest2 = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest2).data);
+      expect(openRtbRequest2.ext.kobler.page_view_id).to.be.equal(pageViewId);
     });
 
     it('should read data from valid bid requests', function () {
@@ -538,7 +553,8 @@ describe('KoblerAdapter', function () {
         ext: {
           kobler: {
             tcf_purpose_2_given: true,
-            tcf_purpose_3_given: false
+            tcf_purpose_3_given: false,
+            page_view_id: pageViewId
           }
         }
       };
