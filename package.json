@@ -1,6 +1,6 @@
 {
   "name": "@guardian/prebid.js",
-  "version": "8.52.0-8",
+  "version": "8.52.0-9",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "files": [
