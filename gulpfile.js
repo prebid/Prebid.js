@@ -191,6 +191,7 @@ function makeWebpackPkg(config = webpackConfig) {
   if (!argv.sourceMaps) {
     delete cloned.devtool;
   }
+
   return function buildBundle() {
     return prebidSource(cloned)
       /* gu-mod-start */
@@ -306,6 +307,7 @@ function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
   const sm = dev || argv.sourceMaps;
+
   if (modules.length === 0) {
     modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
   } else {
