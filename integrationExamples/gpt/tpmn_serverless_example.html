@@ -1,0 +1,121 @@
+<!--
+  This page runs an auction for 2 adunits, simply displaying the results
+  rather than sending targeting to an ad server.
+
+  Notes:
+
+  - this approach assumes that the adunit.code is the div name. There
+  are many other ways to match the adunit to the div.
+  - this approach won't work for refreshed adunits. For that scenario
+  you'll need to be more surgical about what's passed into the bidsbackhandler.
+  - there's not a separate failsafe timeout here. Since there's no call to
+  an ad server waiting impatiently, Prebid's the only ad game in town and its
+  timeout is sufficient.
+-->
+
+<html>
+<head>
+<script>
+    var adUnits = [
+        {
+            // Banner adUnit
+            code: 'banner-div-0',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]], 
+                    battr: [] 
+                }
+            },
+            bids: [{
+                bidder: 'tpmn',
+                params: {
+                    inventoryId: 2, 
+                    bidFloor: 0.1, 
+                }
+            }]
+        },
+        {
+            // Video adUnit
+            code: 'video-div-1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480],
+                    mimes: ['video/mp4'],
+                    playbackmethod: [2, 4, 6],
+                    api: [1, 2, 4, 6],
+                    protocols: [3, 4, 7, 8, 10],
+                    placement: 1,
+                    minduration: 0,
+                    maxduration: 60,
+                    startdelay: 0,
+                    skip: 1
+                },
+            },
+            bids: [{
+                bidder: 'tpmn',
+                params: {
+                    inventoryId: 2,
+                    bidFloor: 2.0,
+                }
+            }],
+            renderer: {
+                options: {
+                    adText : "TPMN Ad",
+                    disableCollapse : true
+                }
+            }
+        }
+        ];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+  </script>
+  <script async src="../../build/dev/prebid.js"></script>
+
+  <script>
+    pbjs.que.push(function() {
+        pbjs.addAdUnits(adUnits);
+    });
+
+    // you could instead pass an array of adUnits
+    // to getHighestCpmBids() if desired
+    function renderAllAdUnits() {
+        var winners=pbjs.getHighestCpmBids();
+	    for (var i = 0; i < winners.length; i++) {
+	        renderOne(winners[i]);
+        }
+    }
+
+    function renderOne(winningBid) {
+        if (winningBid && winningBid.adId) {
+            var div = document.getElementById(winningBid.adUnitCode);
+            if (div) {
+                let iframe = document.createElement('iframe');
+                iframe.frameBorder = '0';
+                div.appendChild(iframe);
+                var iframeDoc = iframe.contentWindow.document;
+                pbjs.renderAd(iframeDoc, winningBid.adId);
+            }
+        }
+    }
+  </script>
+
+<script>
+	pbjs.que.push(function() {
+        pbjs.requestBids({
+	        timeout: 2000,
+            bidsBackHandler: renderAllAdUnits
+        });
+	});
+</script>
+</head>
+
+<body>
+<h2>Ad Serverless Test Page</h2>
+
+<div id='banner-div-0'></div>
+<br/>
+<div id='video-div-1' style="width: 640px; height: 480px;"></div>
+</body>
+</html>

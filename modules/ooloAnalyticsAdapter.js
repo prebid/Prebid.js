@@ -1,7 +1,8 @@
-import { _each, deepClone, pick, deepSetValue, getOrigin, logError, logInfo } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js'
+import { _each, deepClone, pick, deepSetValue, logError, logInfo } from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import adapterManager from '../src/adapterManager.js'
-import CONSTANTS from '../src/constants.json'
+import { EVENTS } from '../src/constants.js'
 import { ajax } from '../src/ajax.js'
 import { config } from '../src/config.js'
 
@@ -32,7 +33,7 @@ const {
   BID_WON,
   BID_TIMEOUT,
   AD_RENDER_FAILED
-} = CONSTANTS.EVENTS
+} = EVENTS
 
 const SERVER_EVENTS = {
   AUCTION: 'auction',
@@ -432,6 +433,11 @@ function sendPage() {
 function sendHbConfigData() {
   const conf = {}
   const pbjsConfig = config.getConfig()
+  // Check if pbjsConfig.userSync exists and has userIds property
+  if (pbjsConfig.userSync && pbjsConfig.userSync.userIds) {
+    // Delete the userIds property
+    delete pbjsConfig.userSync.userIds;
+  }
 
   Object.keys(pbjsConfig).forEach(key => {
     if (key[0] !== '_') {

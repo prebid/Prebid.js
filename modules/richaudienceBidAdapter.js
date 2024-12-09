@@ -1,8 +1,9 @@
-import {isEmpty, deepAccess, isStr} from '../src/utils.js';
+import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -10,7 +11,7 @@ let REFERER = '';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 108,
-  aliases: ['ra'],
+  aliases: [{code: 'ra', gvlid: 108}],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
@@ -35,7 +36,7 @@ export const spec = {
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
-        currencyCode: config.getConfig('currency.adServerCurrency'),
+        currencyCode: getCurrencyFromBidderRequest(bidderRequest),
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -43,26 +44,46 @@ export const spec = {
         bidderRequestId: bid.bidderRequestId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
-        referer: (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null),
+        referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
-        transactionId: bid.transactionId,
-        timeout: config.getConfig('bidderTimeout'),
+        transactionId: bid.ortb2Imp?.ext?.tid,
+        timeout: bidderRequest.timeout || 600,
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null),
-        schain: bid.schain
+        kws: bid.params.keywords,
+        schain: bid.schain,
+        gpid: raiSetPbAdSlot(bid),
+        dsa: setDSA(bid),
+        userData: deepAccess(bid, 'ortb2.user.data')
       };
 
-      REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
+      REFERER = (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null)
 
       payload.gdpr_consent = '';
-      payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+      payload.gdpr = false;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        if (typeof bidderRequest.gdprConsent.gdprApplies != 'undefined') {
+          payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+        }
+        if (typeof bidderRequest.gdprConsent.consentString != 'undefined') {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+      }
+
+      if (bidderRequest?.gppConsent) {
+        payload.privacy = {
+          gpp: bidderRequest.gppConsent.gppString,
+          gpp_sid: bidderRequest.gppConsent.applicableSections
+        }
+      } else if (bidderRequest?.ortb2?.regs?.gpp) {
+        payload.privacy = {
+          gpp: bidderRequest.ortb2.regs.gpp,
+          gpp_sid: bidderRequest.ortb2.regs.gpp_sid
+        }
       }
 
       var payloadString = JSON.stringify(payload);
@@ -97,7 +118,9 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        meta: response.adomain,
+        meta: {
+          advertiserDomains: [response.adomain[0]]
+        },
         dealId: response.dealId
       };
 
@@ -125,22 +148,23 @@ export const spec = {
 
       bidResponses.push(bidResponse);
     }
-    return bidResponses
+    return bidResponses;
   },
   /***
    * User Syncs
    *
    * @param {syncOptions} Publisher prebid configuration
    * @param {serverResponses} Response from the server
-   * @param {gdprConsent} GPDR consent object
+   * @param {gdprConsent} GDPR consent object
    * @returns {Array}
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
 
     var rand = Math.floor(Math.random() * 9999999999);
     var syncUrl = '';
     var consent = '';
+    var consentGPP = '';
 
     var raiSync = {};
 
@@ -150,10 +174,19 @@ export const spec = {
       consent = `consentString=${gdprConsent.consentString}`
     }
 
+    // GPP Consent
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      consentGPP = 'gpp=' + encodeURIComponent(gppConsent.gppString);
+      consentGPP += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
+    }
+
     if (syncOptions.iframeEnabled && raiSync.raiIframe != 'exclude') {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
       if (consent != '') {
         syncUrl += `&${consent}`
+      }
+      if (consentGPP != '') {
+        syncUrl += `&${consentGPP}`
       }
       syncs.push({
         type: 'iframe',
@@ -166,6 +199,9 @@ export const spec = {
       if (consent != '') {
         syncUrl += `&${consent}`
       }
+      if (consentGPP != '') {
+        syncUrl += `&${consentGPP}`
+      }
       syncs.push({
         type: 'image',
         url: syncUrl
@@ -173,6 +209,13 @@ export const spec = {
     }
     return syncs
   },
+
+  onTimeout: function (data) {
+    let url = raiGetTimeoutURL(data);
+    if (url) {
+      triggerPixel(url);
+    }
+  }
 };
 
 registerBidder(spec);
@@ -192,6 +235,13 @@ function raiGetSizes(bid) {
 
 function raiGetDemandType(bid) {
   let raiFormat = 'display';
+  if (typeof bid.sizes != 'undefined') {
+    bid.sizes.forEach(function (sz) {
+      if ((sz[0] == '1800' && sz[1] == '1000') || (sz[0] == '1' && sz[1] == '1')) {
+        raiFormat = 'skin'
+      }
+    })
+  }
   if (bid.mediaTypes != undefined) {
     if (bid.mediaTypes.video != undefined) {
       raiFormat = 'video';
@@ -269,6 +319,14 @@ function raiGetResolution() {
   return resolution;
 }
 
+function raiSetPbAdSlot(bid) {
+  let pbAdSlot = '';
+  if (deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') != null) {
+    pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot')
+  }
+  return pbAdSlot
+}
+
 function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
@@ -295,7 +353,7 @@ function raiGetFloor(bid, config) {
       raiFloor = bid.params.bidfloor;
     } else if (typeof bid.getFloor == 'function') {
       let floorSpec = bid.getFloor({
-        currency: config.getConfig('currency.adServerCurrency'),
+        currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
         mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
       })
@@ -306,4 +364,21 @@ function raiGetFloor(bid, config) {
   } catch (e) {
     return 0
   }
+}
+
+function raiGetTimeoutURL(data) {
+  let {params, timeout} = data[0]
+  let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
+
+  url = url.replace('[timeout_publisher]', timeout)
+  url = url.replace('[placement_hash]', params[0].pid)
+  if (document.location.host != null) {
+    url = url.replace('[domain]', document.location.host)
+  }
+  return url
+}
+
+function setDSA(bid) {
+  let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
+  return dsa;
 }

@@ -3,13 +3,14 @@ import * as utils from 'src/utils.js';
 import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 
 import sinon from 'sinon';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
 
 let expect = require('chai').expect;
 
 const CONFIG_PARAMS = {
-  endpoint: 'https://test/id',
-  vendor: 'idsv2',
-  sv_cid: '5344_04531',
+  endpoint: undefined,
+  ssp_ids: ['ssp-1'],
   sv_pubid: '11314',
   sv_domain: 'www.testDomain.com',
   sv_session: 'testsession'
@@ -38,6 +39,42 @@ function mockResponse(
 }
 
 describe('Merkle System', function () {
+  describe('merkleIdSystem.decode()', function() {
+    it('provides multiple Merkle IDs (EID) from a stored object', function() {
+      let storage = {
+        merkleId: [{
+          id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }
+        }, {
+          id: 'another-random-id-value',
+          ext: {
+            enc: 1,
+            idName: 'pamId',
+            third: 4,
+            ssp: 'ssp2'
+          }
+        }],
+        _svsid: 'some-identifier'
+      };
+
+      expect(merkleIdSubmodule.decode(storage)).to.deep.equal({
+        merkleId: storage.merkleId
+      });
+    });
+
+    it('can decode legacy stored object', function() {
+      let merkleId = {'pam_id': {'id': 'testmerkleId', 'keyID': 1}};
+
+      expect(merkleIdSubmodule.decode(merkleId)).to.deep.equal({
+        merkleId: {'id': 'testmerkleId', 'keyID': 1}
+      });
+    })
+
+    it('returns undefined', function() {
+      let merkleId = {};
+      expect(merkleIdSubmodule.decode(merkleId)).to.be.undefined;
+    })
+  });
+
   describe('Merkle System getId()', function () {
     const callbackSpy = sinon.spy();
     let sandbox;
@@ -59,48 +96,6 @@ describe('Merkle System', function () {
       ajaxStub.restore();
     });
 
-    it('getId() should fail on missing vendor', function () {
-      let config = {
-        params: {
-          ...CONFIG_PARAMS,
-          vendor: undefined
-        },
-        storage: STORAGE_PARAMS
-      };
-
-      let submoduleCallback = merkleIdSubmodule.getId(config, undefined);
-      expect(submoduleCallback).to.be.undefined;
-      expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule requires a valid vendor to be defined');
-    });
-
-    it('getId() should fail on missing vendor', function () {
-      let config = {
-        params: {
-          ...CONFIG_PARAMS,
-          vendor: undefined
-        },
-        storage: STORAGE_PARAMS
-      };
-
-      let submoduleCallback = merkleIdSubmodule.getId(config, undefined);
-      expect(submoduleCallback).to.be.undefined;
-      expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule requires a valid vendor to be defined');
-    });
-
-    it('getId() should fail on missing sv_cid', function () {
-      let config = {
-        params: {
-          ...CONFIG_PARAMS,
-          sv_cid: undefined
-        },
-        storage: STORAGE_PARAMS
-      };
-
-      let submoduleCallback = merkleIdSubmodule.getId(config, undefined);
-      expect(submoduleCallback).to.be.undefined;
-      expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule requires a valid sv_cid string to be defined');
-    });
-
     it('getId() should fail on missing sv_pubid', function () {
       let config = {
         params: {
@@ -113,6 +108,20 @@ describe('Merkle System', function () {
       let submoduleCallback = merkleIdSubmodule.getId(config, undefined);
       expect(submoduleCallback).to.be.undefined;
       expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
+    });
+
+    it('getId() should fail on missing ssp_ids', function () {
+      let config = {
+        params: {
+          ...CONFIG_PARAMS,
+          ssp_ids: undefined
+        },
+        storage: STORAGE_PARAMS
+      };
+
+      let submoduleCallback = merkleIdSubmodule.getId(config, undefined);
+      expect(submoduleCallback).to.be.undefined;
+      expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule requires a valid ssp_ids array to be defined');
     });
 
     it('getId() should warn on missing endpoint', function () {
@@ -139,6 +148,20 @@ describe('Merkle System', function () {
       let submoduleCallback = merkleIdSubmodule.getId(config, undefined).callback;
       submoduleCallback(callbackSpy);
       expect(callbackSpy.calledOnce).to.be.true;
+    });
+
+    it('getId() does not handle consent strings', function () {
+      let config = {
+        params: {
+          ...CONFIG_PARAMS,
+          ssp_ids: []
+        },
+        storage: STORAGE_PARAMS
+      };
+
+      let submoduleCallback = merkleIdSubmodule.getId(config, { gdprApplies: true });
+      expect(submoduleCallback).to.be.undefined;
+      expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule does not currently handle consent strings');
     });
   });
 
@@ -227,4 +250,71 @@ describe('Merkle System', function () {
       expect(callbackSpy.calledOnce).to.be.true;
     });
   });
+
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(merkleIdSubmodule);
+    });
+    it('merkleId (legacy) - supports single id', function() {
+      const userId = {
+        merkleId: {
+          id: 'some-random-id-value', keyID: 1
+        }
+      };
+      const newEids = createEidsArray(userId);
+
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'merkleinc.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 3,
+          ext: { keyID: 1 }
+        }]
+      });
+    });
+
+    it('merkleId supports multiple source providers', function() {
+      const userId = {
+        merkleId: [{
+          id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }
+        }, {
+          id: 'another-random-id-value',
+          ext: {
+            enc: 1,
+            idName: 'pamId',
+            third: 4,
+            ssp: 'ssp2'
+          }
+        }]
+      }
+
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(2);
+      expect(newEids[0]).to.deep.equal({
+        source: 'ssp1.merkleinc.com',
+        uids: [{id: 'some-random-id-value',
+          atype: 3,
+          ext: {
+            enc: 1,
+            keyID: 16,
+            idName: 'pamId',
+            ssp: 'ssp1'
+          }
+        }]
+      });
+      expect(newEids[1]).to.deep.equal({
+        source: 'ssp2.merkleinc.com',
+        uids: [{id: 'another-random-id-value',
+          atype: 3,
+          ext: {
+            third: 4,
+            enc: 1,
+            idName: 'pamId',
+            ssp: 'ssp2'
+          }
+        }]
+      });
+    });
+  })
 });

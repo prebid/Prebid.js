@@ -1,4 +1,4 @@
-import { generateUUID, deepAccess, logWarn, deepSetValue } from '../src/utils.js';
+import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -31,7 +31,7 @@ export const spec = {
       site: buildSite(bidderRequest),
       device: buildDevice(),
       cur: [CURRENCY],
-      tmax: 1000,
+      tmax: Math.min(1000, bidderRequest.timeout),
       regs: buildRegs(bidderRequest),
       user: {},
       source: {},
@@ -99,7 +99,7 @@ export const spec = {
     let response;
 
     try {
-      response = serverResponse.body
+      response = serverResponse.body;
       bid = response.seatbid[0].bid[0];
     } catch (e) {
       response = null;
@@ -149,6 +149,7 @@ export const spec = {
 registerBidder(spec);
 
 function buildSite(bidderRequest) {
+  // TODO: should name/domain be the domain?
   let site = {
     name: window.location.hostname,
     publisher: {
@@ -160,12 +161,12 @@ function buildSite(bidderRequest) {
     deepSetValue(
       site,
       'page',
-      bidderRequest.refererInfo.referer.href ? bidderRequest.refererInfo.referer.href : '',
+      bidderRequest.refererInfo.page
     );
     deepSetValue(
       site,
       'ref',
-      bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : '',
+      bidderRequest.refererInfo.ref
     );
   }
   return site;
@@ -223,7 +224,7 @@ function getFloor(bid, size) {
       size: size,
     });
 
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+    if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
       return parseFloat(floorInfo.floor);
     }
   }

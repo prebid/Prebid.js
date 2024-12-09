@@ -1,19 +1,17 @@
-import buildAdapter from '../src/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { logInfo, logError } from '../src/utils.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    TCF2_ENFORCEMENT,
-    BID_WON,
-    BID_VIEWABLE,
-    AD_RENDER_FAILED
-  }
-} = CONSTANTS
+  AUCTION_END,
+  TCF2_ENFORCEMENT,
+  BID_WON,
+  BID_VIEWABLE,
+  AD_RENDER_FAILED
+} = EVENTS
 
 const GVLID = 131;
 
@@ -34,7 +32,7 @@ const FLUSH_EVENTS = [
 
 const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
 const TZ = new Date().getTimezoneOffset();
-const PBJS_VERSION = $$PREBID_GLOBAL$$.version;
+const PBJS_VERSION = 'v' + '$prebid.version$';
 const ID5_REDACTED = '__ID5_REDACTED__';
 const isArray = Array.isArray;
 
@@ -141,7 +139,7 @@ const ENABLE_FUNCTION = (config) => {
     logInfo('id5Analytics: Tracking events', _this.eventsToTrack);
     if (sampling > 0 && _this.random() < (1 / sampling)) {
       // Init the module only if we got lucky
-      logInfo('id5Analytics: Selected by sampling. Starting up!')
+      logInfo('id5Analytics: Selected by sampling. Starting up!');
 
       // Clean start
       _this.eventBuffer = {};

@@ -1,7 +1,23 @@
 import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
-// import { config } from 'src/config'
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
+import { getGlobal } from '../src/prebidGlobal.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+
+const converter = ortbConverter({
+  context: {
+    // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
+    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
+    ttl: 30, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context)
+    imp.tagid = bidRequest.adUnitCode
+    if (imp.ext) imp.ext.placementId = bidRequest.params.placementId
+
+    return imp
+  },
+})
 
 const BIDDER_CODE = 'nativo'
 const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
@@ -10,10 +26,87 @@ const GVLID = 263
 
 const TIME_TO_LIVE = 360
 
-const SUPPORTED_AD_TYPES = [BANNER]
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
+const FLOOR_PRICE_CURRENCY = 'USD'
+const PRICE_FLOOR_WILDCARD = '*'
+
+const localPbjsRef = getGlobal()
+
+function getMediaType(accessObj) {
+  if (deepAccess(accessObj, 'mediaTypes.video')) {
+    return VIDEO
+  } else if (deepAccess(accessObj, 'mediaTypes.native')) {
+    return NATIVE
+  } else {
+    return BANNER
+  }
+}
+
+/**
+ * Keep track of bid data by keys
+ * @returns {Object} - Map of bid data that can be referenced by multiple keys
+ */
+export function BidDataMap() {
+  const referenceMap = {}
+  const bids = []
+
+  /**
+   * Add a refence to the index by key value
+   * @param {String} key - The key to store the index reference
+   * @param {Integer} index - The index value of the bidData
+   */
+  function addKeyReference(key, index) {
+    if (!referenceMap.hasOwnProperty(key)) {
+      referenceMap[key] = index
+    }
+  }
+
+  /**
+   * Adds a bid to the map
+   * @param {Object} bid - Bid data
+   * @param {Array/String} keys - Keys to reference the index value
+   */
+  function addBidData(bid, keys) {
+    const index = bids.length
+    bids.push(bid)
+
+    if (Array.isArray(keys)) {
+      keys.forEach((key) => {
+        addKeyReference(String(key), index)
+      })
+      return
+    }
+
+    addKeyReference(String(keys), index)
+  }
+
+  /**
+   * Get's the bid data refrerenced by the key
+   * @param {String} key - The key value to find the bid data by
+   * @returns {Object} - The bid data
+   */
+  function getBidData(key) {
+    const stringKey = String(key)
+    if (referenceMap.hasOwnProperty(stringKey)) {
+      return bids[referenceMap[stringKey]]
+    }
+  }
+
+  // Return API
+  return {
+    addBidData,
+    getBidData,
+  }
+}
 
 const bidRequestMap = {}
 const adUnitsRequested = {}
+const extData = {}
+
+// Filtering
+const adsToFilter = new Set()
+const advertisersToFilter = new Set()
+const campaignsToFilter = new Set()
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
@@ -41,11 +134,10 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     // We don't need any specific parameters to make a bid request
-    // If not parameters are supplied just verify it's the correct bidder code
-    if (!bid.params) return bid.bidder === BIDDER_CODE
+    if (!bid.params) return true
 
     // Check if any supplied parameters are invalid
-    const hasInvalidParameters = Object.keys(bid.params).some(key => {
+    const hasInvalidParameters = Object.keys(bid.params).some((key) => {
       const value = bid.params[key]
       const validityCheck = validParameter[key]
 
@@ -68,61 +160,122 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const placementIds = new Set()
-    const placmentBidIdMap = {}
-    let placementId, pageUrl
-    validBidRequests.forEach((request) => {
-      pageUrl = deepAccess(
-        request,
-        'params.url',
-        bidderRequest.refererInfo.referer
-      )
-      placementId = deepAccess(request, 'params.placementId')
-
-      if (placementId) {
-        placementIds.add(placementId)
-      }
-
-      var key = placementId || request.adUnitCode
-      placmentBidIdMap[key] = {
-        bidId: request.bidId,
-        size: getLargestSize(request.sizes),
-      }
+    // Get OpenRTB Data
+    const openRTBData = converter.toORTB({
+      bidRequests: validBidRequests,
+      bidderRequest,
     })
-    bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
+    const openRTBDataString = JSON.stringify(openRTBData)
+
+    const requestData = new RequestData()
+    requestData.addBidRequestDataSource(new UserEIDs())
+
+    // Parse values from bid requests
+    const placementIds = new Set()
+    const bidDataMap = BidDataMap()
+    const placementSizes = { length: 0 }
+    const floorPriceData = {}
+    let placementId, pageUrl
+    validBidRequests.forEach((bidRequest) => {
+      pageUrl =
+        getPageUrlFromBidRequest(bidRequest) ||
+        bidderRequest.refererInfo.location
+
+      placementId = deepAccess(bidRequest, 'params.placementId')
+
+      const bidDataKeys = [bidRequest.adUnitCode]
+
+      if (placementId && !placementIds.has(placementId)) {
+        placementIds.add(placementId)
+        bidDataKeys.push(placementId)
+
+        placementSizes[placementId] = bidRequest.sizes
+        placementSizes.length++
+      }
+
+      const bidData = {
+        bidId: bidRequest.bidId,
+        size: getLargestSize(bidRequest.sizes),
+      }
+      bidDataMap.addBidData(bidData, bidDataKeys)
+
+      const bidRequestFloorPriceData = parseFloorPriceData(bidRequest)
+      if (bidRequestFloorPriceData) {
+        floorPriceData[bidRequest.adUnitCode] = bidRequestFloorPriceData
+      }
+
+      requestData.processBidRequestData(bidRequest, bidderRequest)
+    })
+    bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
 
     // Build adUnit data
-    const adUnitData = {
-      adUnits: validBidRequests.map((adUnit) => {
-        // Track if we've already requested for this ad unit code
-        adUnitsRequested[adUnit.adUnitCode] =
-          adUnitsRequested[adUnit.adUnitCode] !== undefined
-            ? adUnitsRequested[adUnit.adUnitCode] + 1
-            : 0
-        return {
-          adUnitCode: adUnit.adUnitCode,
-          mediaTypes: adUnit.mediaTypes,
-        }
-      }),
-    }
+    const adUnitData = buildAdUnitData(validBidRequests)
 
-    // Build QS Params
+    // Build basic required QS Params
     let params = [
+      // Prebid version
+      {
+        key: 'ntv_pbv',
+        value: localPbjsRef.version,
+      },
+      // Prebid request id
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
+      // Ad unit data
       {
         key: 'ntv_ppc',
         value: btoa(JSON.stringify(adUnitData)), // Convert to Base 64
       },
+      // Number count of requests per ad unit
       {
         key: 'ntv_dbr',
-        value: btoa(JSON.stringify(adUnitsRequested)),
+        value: btoa(JSON.stringify(adUnitsRequested)), // Convert to Base 64
       },
+      // Page url
       {
         key: 'ntv_url',
         value: encodeURIComponent(pageUrl),
       },
     ]
 
+    // Floor pricing
+    if (Object.keys(floorPriceData).length) {
+      params.unshift({
+        key: 'ntv_ppf',
+        value: btoa(JSON.stringify(floorPriceData)),
+      })
+    }
+
+    // Add filtering
+    if (adsToFilter.size > 0) {
+      params.unshift({
+        key: 'ntv_atf',
+        value: Array.from(adsToFilter).join(','),
+      })
+    }
+
+    if (advertisersToFilter.size > 0) {
+      params.unshift({
+        key: 'ntv_avtf',
+        value: Array.from(advertisersToFilter).join(','),
+      })
+    }
+
+    if (campaignsToFilter.size > 0) {
+      params.unshift({
+        key: 'ntv_ctf',
+        value: Array.from(campaignsToFilter).join(','),
+      })
+    }
+
+    // Placement Sizes
+    if (placementSizes.length) {
+      params.unshift({
+        key: 'ntv_pas',
+        value: btoa(JSON.stringify(placementSizes)),
+      })
+    }
+
+    // Add placement IDs
     if (placementIds.size > 0) {
       // Convert Set to Array (IE 11 Safe)
       const placements = []
@@ -131,6 +284,7 @@ export const spec = {
       params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
     }
 
+    // Add GDPR params
     if (bidderRequest.gdprConsent) {
       // Put on the beginning of the qs param array
       params.unshift({
@@ -139,14 +293,31 @@ export const spec = {
       })
     }
 
+    // Add GPP params
+    if (bidderRequest.gppConsent) {
+      params.unshift({
+        key: 'ntv_gpp_consent',
+        value: bidderRequest.gppConsent.gppString,
+      })
+    }
+
+    // Add USP params
     if (bidderRequest.uspConsent) {
       // Put on the beginning of the qs param array
       params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
     }
 
+    const qsParamStrings = [
+      requestData.getRequestDataQueryString(),
+      arrayToQS(params),
+    ]
+    const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
+
     let serverRequest = {
-      method: 'GET',
-      url: BIDDER_ENDPOINT + arrayToQS(params),
+      method: 'POST',
+      url: requestUrl,
+      data: openRTBDataString,
+      bidderRequest: bidderRequest,
     }
 
     return serverRequest
@@ -176,9 +347,10 @@ export const spec = {
 
       // Step through and grab pertinent data
       let bidResponse, adUnit
-      seatbids.forEach((seatbid) => {
+      seatbids.forEach((seatbid, i) => {
         seatbid.bid.forEach((bid) => {
           adUnit = this.getAdUnitData(body.id, bid)
+
           bidResponse = {
             requestId: adUnit.bidId,
             cpm: bid.price,
@@ -193,8 +365,18 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain,
             },
+            mediaType: getMediaType(request.bidderRequest.bids[i]),
           }
 
+          if (bid.ext) extData[bid.id] = bid.ext
+          if (bidResponse.mediaType === VIDEO) {
+            bidResponse.vastUrl = bid.adm
+          }
+          if (bidResponse.mediaType === NATIVE) {
+            bidResponse.native = {
+              ortb: JSON.parse(bidResponse.ad),
+            }
+          }
           bidResponses.push(bidResponse)
         })
       })
@@ -263,26 +445,32 @@ export const spec = {
         return syncs
       }
 
-      body =
-        typeof response.body === 'string'
-          ? JSON.parse(response.body)
-          : response.body
+      try {
+        body =
+          typeof response.body === 'string'
+            ? JSON.parse(response.body)
+            : response.body
+      } catch (err) {
+        return
+      }
 
       // Make sure we have valid content
       if (!body || !body.seatbid || body.seatbid.length === 0) return
 
       body.seatbid.forEach((seatbid) => {
         // Grab the syncs for each seatbid
-        seatbid.syncUrls.forEach((sync) => {
-          if (types[sync.type]) {
-            if (sync.url.trim() !== '') {
-              syncs.push({
-                type: sync.type,
-                url: sync.url.replace('{GDPR_params}', params),
-              })
+        if (seatbid.syncUrls) {
+          seatbid.syncUrls.forEach((sync) => {
+            if (types[sync.type]) {
+              if (sync.url.trim() !== '') {
+                syncs.push({
+                  type: sync.type,
+                  url: sync.url.replace('{GDPR_params}', params),
+                })
+              }
             }
-          }
-        })
+          })
+        }
       })
     })
 
@@ -290,23 +478,18 @@ export const spec = {
   },
 
   /**
-   * Will be called when an adpater timed out for an auction.
-   * Adapter can fire a ajax or pixel call to register a timeout at thier end.
-   * @param {Object} timeoutData - Timeout specific data
-   */
-  onTimeout: function (timeoutData) {},
-
-  /**
    * Will be called when a bid from the adapter won the auction.
    * @param {Object} bid - The bid that won the auction
    */
-  onBidWon: function (bid) {},
+  onBidWon: function (bid) {
+    const ext = extData[bid.dealId]
 
-  /**
-   * Will be called when the adserver targeting has been set for a bid from the adapter.
-   * @param {Object} bidder - The bid of which the targeting has been set
-   */
-  onSetTargeting: function (bid) {},
+    if (!ext) return
+
+    appendFilterData(adsToFilter, ext.adsToFilter)
+    appendFilterData(advertisersToFilter, ext.advertisersToFilter)
+    appendFilterData(campaignsToFilter, ext.campaignsToFilter)
+  },
 
   /**
    * Maps Prebid's bidId to Nativo's placementId values per unique bidderRequestId
@@ -315,17 +498,216 @@ export const spec = {
    * @returns {String} - The bidId value associated with the corresponding placementId
    */
   getAdUnitData: function (bidderRequestId, bid) {
-    var data = deepAccess(bidRequestMap, `${bidderRequestId}.${bid.impid}`)
+    const bidDataMap = bidRequestMap[bidderRequestId]
 
-    if (data) return data
+    const placementId = bid.impid
+    const adUnitCode = deepAccess(bid, 'ext.ad_unit_id')
 
-    var unitCode = deepAccess(bid, 'ext.ad_unit_id')
-    return deepAccess(bidRequestMap, `${bidderRequestId}.${unitCode}`)
+    return (
+      bidDataMap.getBidData(adUnitCode) || bidDataMap.getBidData(placementId)
+    )
   },
 }
 registerBidder(spec)
 
 // Utils
+export class RequestData {
+  constructor() {
+    this.bidRequestDataSources = []
+  }
+
+  addBidRequestDataSource(bidRequestDataSource) {
+    if (!(bidRequestDataSource instanceof BidRequestDataSource)) return
+
+    this.bidRequestDataSources.push(bidRequestDataSource)
+  }
+
+  processBidRequestData(bidRequest, bidderRequest) {
+    for (let bidRequestDataSource of this.bidRequestDataSources) {
+      bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest)
+    }
+  }
+
+  getRequestDataQueryString() {
+    if (this.bidRequestDataSources.length == 0) return
+
+    const queryParams = this.bidRequestDataSources
+      .map((dataSource) => dataSource.getRequestQueryString())
+      .filter((queryString) => queryString !== '')
+    return queryParams.join('&')
+  }
+}
+
+export class BidRequestDataSource {
+  constructor() {
+    this.type = 'BidRequestDataSource'
+  }
+  processBidRequestData(bidRequest, bidderRequest) {}
+  getRequestQueryString() {
+    return ''
+  }
+}
+
+export class UserEIDs extends BidRequestDataSource {
+  constructor() {
+    super()
+    this.type = 'UserEIDs'
+    this.qsParam = new QueryStringParam('ntv_pb_eid')
+    this.eids = []
+  }
+
+  processBidRequestData(bidRequest, bidderRequest) {
+    if (bidRequest.userIdAsEids === undefined || this.eids.length > 0) return
+    this.eids = bidRequest.userIdAsEids
+  }
+
+  getRequestQueryString() {
+    if (this.eids.length === 0) return ''
+
+    const encodedValueArray = encodeToBase64(this.eids)
+    this.qsParam.value = encodedValueArray
+    return this.qsParam.toString()
+  }
+}
+
+export class QueryStringParam {
+  constructor(key, value) {
+    this.key = key
+    this.value = value
+  }
+}
+
+QueryStringParam.prototype.toString = function () {
+  return `${this.key}=${this.value}`
+}
+
+export function encodeToBase64(value) {
+  try {
+    return btoa(JSON.stringify(value))
+  } catch (err) {}
+}
+
+export function parseFloorPriceData(bidRequest) {
+  if (typeof bidRequest.getFloor !== 'function') return
+
+  // Setup price floor data per bid request
+  let bidRequestFloorPriceData = {}
+  let bidMediaTypes = bidRequest.mediaTypes
+  let sizeOptions = new Set()
+  // Step through meach media type so we can get floor data for each media type per bid request
+  Object.keys(bidMediaTypes).forEach((mediaType) => {
+    // Setup price floor data per media type
+    let mediaTypeData = bidMediaTypes[mediaType]
+    let mediaTypeFloorPriceData = {}
+    let mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || []
+    // Step through each size of the media type so we can get floor data for each size per media type
+    mediaTypeSizes.forEach((size) => {
+      // Get floor price data per the getFloor method and respective media type / size combination
+      const priceFloorData = bidRequest.getFloor({
+        currency: FLOOR_PRICE_CURRENCY,
+        mediaType,
+        size,
+      })
+      // Save the data and track the sizes
+      mediaTypeFloorPriceData[sizeToString(size)] = priceFloorData?.floor
+      sizeOptions.add(size)
+    })
+    bidRequestFloorPriceData[mediaType] = mediaTypeFloorPriceData
+
+    // Get floor price of current media type with a wildcard size
+    const sizeWildcardFloor = getSizeWildcardPrice(bidRequest, mediaType)
+    // Save the wildcard floor price if it was retrieved successfully
+    if (sizeWildcardFloor?.floor > 0) {
+      mediaTypeFloorPriceData['*'] = sizeWildcardFloor.floor
+    }
+  })
+
+  // Get floor price for wildcard media type using all of the sizes present in the previous media types
+  const mediaWildCardPrices = getMediaWildcardPrices(bidRequest, [
+    PRICE_FLOOR_WILDCARD,
+    ...Array.from(sizeOptions),
+  ])
+  bidRequestFloorPriceData['*'] = mediaWildCardPrices
+
+  return bidRequestFloorPriceData
+}
+
+/**
+ * Get price floor data by always setting the size value to the wildcard for a specific size
+ * @param {Object} bidRequest - The bid request
+ * @param {String} mediaType - The media type
+ * @returns {Object} - Bid floor data
+ */
+export function getSizeWildcardPrice(bidRequest, mediaType) {
+  return bidRequest.getFloor({
+    currency: FLOOR_PRICE_CURRENCY,
+    mediaType,
+    size: PRICE_FLOOR_WILDCARD,
+  })
+}
+
+/**
+ * Get price data for a range of sizes and always setting the media type to the wildcard value
+ * @param {*} bidRequest - The bid request
+ * @param {*} sizes - The sizes to get the floor price data for
+ * @returns {Object} - Bid floor data
+ */
+export function getMediaWildcardPrices(
+  bidRequest,
+  sizes = [PRICE_FLOOR_WILDCARD]
+) {
+  const sizePrices = {}
+  sizes.forEach((size) => {
+    // MODIFY the bid request's mediaTypes property (so we can get the wildcard media type value)
+    const temp = bidRequest.mediaTypes
+    bidRequest.mediaTypes = { PRICE_FLOOR_WILDCARD: temp.sizes }
+    // Get price floor data
+    const priceFloorData = bidRequest.getFloor({
+      currency: FLOOR_PRICE_CURRENCY,
+      mediaType: PRICE_FLOOR_WILDCARD,
+      size,
+    })
+    // RESTORE initial property value
+    bidRequest.mediaTypes = temp
+
+    // Only save valid floor price data
+    const key =
+      size !== PRICE_FLOOR_WILDCARD ? sizeToString(size) : PRICE_FLOOR_WILDCARD
+    sizePrices[key] = priceFloorData.floor
+  })
+  return sizePrices
+}
+
+/**
+ * Format size array to a string
+ * @param {Array} size - Size data [width, height]
+ * @returns {String} - Formated size string
+ */
+export function sizeToString(size) {
+  if (!Array.isArray(size) || size.length < 2) return ''
+  return `${size[0]}x${size[1]}`
+}
+
+/**
+ * Build the ad unit data to send back to the request endpoint
+ * @param {Array<Object>} requests - Bid requests
+ * @returns {Array<Object>} - Array of ad unit data
+ */
+function buildAdUnitData(requests) {
+  return requests.map((request) => {
+    // Track if we've already requested for this ad unit code
+    adUnitsRequested[request.adUnitCode] =
+      adUnitsRequested[request.adUnitCode] !== undefined
+        ? adUnitsRequested[request.adUnitCode] + 1
+        : 0
+    // Return a new object with only the data we need
+    return {
+      adUnitCode: request.adUnitCode,
+      mediaTypes: request.mediaTypes,
+    }
+  })
+}
+
 /**
  * Append QS param to existing string
  * @param {String} str - String to append to
@@ -343,12 +725,9 @@ function appendQSParamString(str, key, value) {
  * @returns
  */
 function arrayToQS(arr) {
-  return (
-    '?' +
-    arr.reduce((value, obj) => {
-      return appendQSParamString(value, obj.key, obj.value)
-    }, '')
-  )
+  return arr.reduce((value, obj) => {
+    return appendQSParamString(value, obj.key, obj.value)
+  }, '')
 }
 
 /**
@@ -370,8 +749,75 @@ function getLargestSize(sizes, method = area) {
 }
 
 /**
+ * Build the final request url
+ */
+export function buildRequestUrl(baseUrl, qsParamStringArray = []) {
+  if (qsParamStringArray.length === 0 || !Array.isArray(qsParamStringArray)) {
+    return baseUrl
+  }
+
+  const nonEmptyQSParamStrings = qsParamStringArray.filter(
+    (qsParamString) => qsParamString.trim() !== ''
+  )
+
+  if (nonEmptyQSParamStrings.length === 0) return baseUrl
+
+  let requestUrl = `${baseUrl}?${nonEmptyQSParamStrings[0]}`
+  for (let i = 1; i < nonEmptyQSParamStrings.length; i++) {
+    requestUrl += `&${nonEmptyQSParamStrings[i]}`
+  }
+
+  return requestUrl
+}
+
+/**
  * Calculate the area
  * @param {Array} size - [width, height]
  * @returns The calculated area
  */
 const area = (size) => size[0] * size[1]
+
+/**
+ * Save any filter data from winning bid requests for subsequent requests
+ * @param {Array} filter - The filter data bucket currently stored
+ * @param {Array} filterData - The filter data to add
+ */
+function appendFilterData(filter, filterData) {
+  if (filterData && Array.isArray(filterData) && filterData.length) {
+    filterData.forEach((ad) => filter.add(ad))
+  }
+}
+
+export function getPageUrlFromBidRequest(bidRequest) {
+  let paramPageUrl = deepAccess(bidRequest, 'params.url')
+
+  if (paramPageUrl == undefined) return
+
+  if (hasProtocol(paramPageUrl)) return paramPageUrl
+
+  paramPageUrl = addProtocol(paramPageUrl)
+
+  try {
+    const url = new URL(paramPageUrl)
+    return url.href
+  } catch (err) {}
+}
+
+export function hasProtocol(url) {
+  const protocolRegexp = /^http[s]?\:/
+  return protocolRegexp.test(url)
+}
+
+export function addProtocol(url) {
+  if (hasProtocol(url)) {
+    return url
+  }
+
+  let protocolPrefix = 'https:'
+
+  if (url.indexOf('//') !== 0) {
+    protocolPrefix += '//'
+  }
+
+  return `${protocolPrefix}${url}`
+}

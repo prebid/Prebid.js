@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta name='viewport'
+              content='width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1'>
+        <style>
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            #lemmaAd {
+                height: 100% !important;
+                max-height: 100%;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                resize: vertical;
+                margin: 0 auto;
+                position: relative;
+                object-fit: fill;
+            }
+        </style>
+        <script>
+            var PREBID_TIMEOUT = 3300;
+
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+
+            var bannerAdUnits = [{
+                code: 'banner-div',
+                mediaTypes: {
+                    banner: {
+                        sizes: [
+                            [728, 90]
+                        ]
+                    }
+                },
+                bids: [{
+                    bidder: 'lemmadigital',
+                    params: {
+                        pubId: 975, // required
+                        adunitId: '20134', // required
+                        device_type: 2,
+                    }
+                }]
+            }];
+            var videoAdUnits = [{
+                code: 'video1',
+                sizes: [
+                    [1920, 1080]
+                ],
+                mediaTypes: {
+                    video: {
+                        playerSize: [1920, 1080], // required
+                        context: 'instream'
+                    }
+                },
+                // Replace this object to test a new Adapter!
+                bids: [{
+                    bidder: 'lemmadigital',
+                    params: {
+                        pubId: 975, // required
+                        adunitId: '20134', // required
+                        latitude: 34.9578,
+                        longitude: -85.3012,
+                        device_type: 3,
+                        ifa: "ae59889b-d5bb-444b-892b-57057463d584",
+                        video: {
+                            minduration: 3,
+                            maxduration: 300,
+                            protocols: [
+                                2,
+                                3,
+                                5,
+                                6,
+                                7,
+                                8
+                            ],
+                            skippable: true,
+                            playback_method: ['auto_play_sound_off'],
+                            mimes: ['video/x-flv',
+                                "video/mp4",
+                                "video/mpeg",
+                                "video/ogg",
+                                "video/webm",
+                                "application/javascript"], // required
+                        }
+                    }
+                }]
+            }];
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+        </script>
+        <script async src="../../build/dev/prebid.js"></script>
+        <script>
+            pbjs.que.push(function () {
+                pbjs.setConfig({
+                    debug: true
+                });
+                pbjs.addAdUnits(videoAdUnits);
+                pbjs.requestBids({
+                    timeout: PREBID_TIMEOUT,
+                    bidsBackHandler: function (bids) {
+                        var highestCpmBids = pbjs.getHighestCpmBids('banner-div');
+                        if (highestCpmBids.length) {
+                            var doc = document.getElementById('banner-div');
+                            pbjs.renderAd(doc.contentWindow.document, highestCpmBids[0].adId);
+                        }
+                    }
+                });
+            });
+
+        </script>
+    </head>
+
+    <body>
+        <div id='lemmaAd'>
+            <div id="banner-div"></div>
+            <iframe id='video1' frameBorder="0"></iframe>
+        </div>
+    </body>
+
+</html>

@@ -1,4 +1,4 @@
-import includes from 'core-js-pure/features/array/includes.js'
+import {includes} from 'src/polyfill.js'
 import cloneDeep from 'lodash/cloneDeep'
 import unset from 'lodash/unset'
 import { expect } from 'chai'
@@ -125,7 +125,11 @@ const getTransformedConfig = ({mediaTypes, params}) => {
     bidId,
     bidder: BIDDER_CODE,
     mediaTypes: mediaTypes,
-    transactionId,
+    ortb2Imp: {
+      ext: {
+        tid: transactionId
+      }
+    }
   }
 }
 const validBidRequests = Object.keys(configByPlaceType).map(key => getTransformedConfig(configByPlaceType[key]))

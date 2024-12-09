@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/ventesBidAdapter.js';
 
-const BIDDER_URL = 'http://13.234.201.146:8088/va/ad';
+const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
 
 describe('Ventes Adapter', function () {
   const examples = {
@@ -28,13 +28,14 @@ describe('Ventes Adapter', function () {
 
     adUnitContext: {
       refererInfo: {
-        referer: 'https://ventesavenues.in',
+        page: 'https://ventesavenues.in',
+        domain: 'ventesavenues.in',
       }
     },
 
     serverRequest_banner: {
       method: 'POST',
-      url: 'http://13.234.201.146:8088/va/ad',
+      url: BIDDER_URL,
       data: {
         id: 'bid_request_id',
         imp: [
@@ -373,7 +374,7 @@ describe('Ventes Adapter', function () {
         expect(serverRequests[0].data).to.exist.and.to.be.an('object');
         expect(serverRequests[0].data.id).to.exist.and.to.be.an('string').and.to.equal(adUnits[0].bidderRequestId);
         expect(serverRequests[0].data.site).to.exist.and.to.be.an('object');
-        expect(serverRequests[0].data.site.page).to.exist.and.to.be.an('string').and.to.equal(adUnitContext.refererInfo.referer);
+        expect(serverRequests[0].data.site.page).to.exist.and.to.be.an('string').and.to.equal(adUnitContext.refererInfo.page);
         expect(serverRequests[0].data.site.domain).to.exist.and.to.be.an('string').and.to.equal('ventesavenues.in');
         expect(serverRequests[0].data.site.name).to.exist.and.to.be.an('string').and.to.equal('ventesavenues.in');
       });

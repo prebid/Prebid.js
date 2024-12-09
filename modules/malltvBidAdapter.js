@@ -2,6 +2,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'malltv';
 const ENDPOINT_URL = 'https://central.mall.tv/bid';
 const DIMENSION_SEPARATOR = 'x';
@@ -9,7 +16,7 @@ const SIZE_SEPARATOR = ';';
 const BISKO_ID = 'biskoId';
 const STORAGE_ID = 'bisko-sid';
 const SEGMENTS = 'biskoSegments';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -41,15 +48,18 @@ export const spec = {
     let contents = [];
     let data = {};
     let auctionId = bidderRequest ? bidderRequest.auctionId : '';
-
+    let gdrpApplies = true;
+    let gdprConsent = '';
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
       if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
-      if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
+      // TODO: is 'page' the right value here?
+      if (!url && bidderRequest) { url = bidderRequest.refererInfo.page; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
-
+      if (bidderRequest && bidRequest.gdprConsent) { gdrpApplies = bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : true; }
+      if (bidderRequest && bidRequest.gdprConsent) { gdprConsent = bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : ''; }
       let adUnitId = bidRequest.adUnitCode;
       let placementId = bidRequest.params.placementId;
       let sizes = generateSizeParam(bidRequest.sizes);
@@ -65,6 +75,7 @@ export const spec = {
     });
 
     let body = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: auctionId,
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
@@ -75,8 +86,10 @@ export const spec = {
       requestid: bidderRequestId,
       placements: placements,
       contents: contents,
-      data: data
-    }
+      data: data,
+      gdpr_applies: gdrpApplies,
+      gdpr_consent: gdprConsent,
+    };
 
     return [{
       method: 'POST',
@@ -115,14 +128,14 @@ export const spec = {
     }
     return bidResponses;
   }
-}
+};
 
 /**
-* Generate size param for bid request using sizes array
-*
-* @param {Array} sizes Possible sizes for the ad unit.
-* @return {string} Processed sizes param to be used for the bid request.
-*/
+ * Generate size param for bid request using sizes array
+ *
+ * @param {Array} sizes Possible sizes for the ad unit.
+ * @return {string} Processed sizes param to be used for the bid request.
+ */
 function generateSizeParam(sizes) {
   return sizes.map(size => size.join(DIMENSION_SEPARATOR)).join(SIZE_SEPARATOR);
 }

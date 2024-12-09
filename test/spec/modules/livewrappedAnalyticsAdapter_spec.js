@@ -1,5 +1,5 @@
 import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappedAnalyticsAdapter.js';
-import CONSTANTS from 'src/constants.json';
+import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { setConfig } from 'modules/currency.js';
@@ -9,21 +9,16 @@ let utils = require('src/utils');
 let adapterManager = require('src/adapterManager').default;
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BIDDER_DONE,
-    BID_WON,
-    BID_TIMEOUT,
-    SET_TARGETING,
-    AD_RENDER_FAILED
-  },
-  STATUS: {
-    GOOD
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BIDDER_DONE,
+  BID_WON,
+  BID_TIMEOUT,
+  SET_TARGETING,
+  AD_RENDER_FAILED
+} = EVENTS;
 
 const BID1 = {
   width: 980,
@@ -38,8 +33,12 @@ const BID1 = {
   adId: '2ecff0db240757',
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   mediaType: 'banner',
+  meta: {
+    data: 'value1'
+  },
+  dealId: 'dealid',
   getStatusCode() {
-    return CONSTANTS.STATUS.GOOD;
+    return STATUS.GOOD;
   }
 };
 
@@ -54,6 +53,10 @@ const BID2 = Object.assign({}, BID1, {
   bidId: '3ecff0db240757',
   requestId: '3ecff0db240757',
   adId: '3ecff0db240757',
+  meta: {
+    data: 'value2'
+  },
+  dealId: undefined
 });
 
 const BID3 = {
@@ -63,7 +66,7 @@ const BID3 = {
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   mediaType: 'banner',
   getStatusCode() {
-    return CONSTANTS.STATUS.NO_BID;
+    return STATUS.GOOD;
   }
 };
 
@@ -127,7 +130,7 @@ const MOCK = {
   AD_RENDER_FAILED: [
     {
       'bidId': '2ecff0db240757',
-      'reason': CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      'reason': AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
       'message': 'message',
       'bid': BID1
     }
@@ -190,7 +193,10 @@ const ANALYTICS_MESSAGE = {
       IsBid: true,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value1'
+      }
     },
     {
       timeStamp: 1519149562216,
@@ -205,7 +211,10 @@ const ANALYTICS_MESSAGE = {
       IsBid: true,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value2'
+      }
     },
     {
       timeStamp: 1519149562216,
@@ -231,7 +240,11 @@ const ANALYTICS_MESSAGE = {
       orgCpm: 120,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value1'
+      },
+      dealId: 'dealid'
     },
     {
       timeStamp: 1519149562216,
@@ -244,7 +257,10 @@ const ANALYTICS_MESSAGE = {
       orgCpm: 230,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value2'
+      }
     }
   ],
   rf: [
@@ -254,7 +270,7 @@ const ANALYTICS_MESSAGE = {
       adUnitId: 'adunitid',
       bidder: 'livewrapped',
       auctionId: 0,
-      rsn: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      rsn: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
       msg: 'message'
     },
   ]
@@ -325,7 +341,6 @@ describe('Livewrapped analytics adapter', function () {
     });
 
     it('should build a batched message from prebid events', function () {
-      sandbox.stub(utils, 'getWindowTop').returns({});
       performStandardAuction();
 
       clock.tick(BID_WON_TIMEOUT + 1000);
@@ -385,20 +400,6 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.timeouts.length).to.equal(1);
       expect(message.timeouts[0].bidder).to.equal('livewrapped');
       expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
-    });
-
-    it('should detect adblocker recovered request', function () {
-      sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
-      performStandardAuction();
-
-      clock.tick(BID_WON_TIMEOUT + 1000);
-
-      expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
-
-      let message = JSON.parse(request.requestBody);
-
-      expect(message.rcv).to.equal(true);
     });
 
     it('should forward GDPR data', function () {
@@ -605,6 +606,42 @@ describe('Livewrapped analytics adapter', function () {
       let request = server.requests[0];
 
       expect(request.url).to.equal('https://whitelabeled.com/analytics/10');
+    });
+  });
+
+  describe('when given extended options', function () {
+    adapterManager.registerAnalyticsAdapter({
+      code: 'livewrapped',
+      adapter: livewrappedAnalyticsAdapter
+    });
+
+    beforeEach(function () {
+      adapterManager.enableAnalytics({
+        provider: 'livewrapped',
+        options: {
+          publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
+          ext: {
+            testparam: 123
+          }
+        }
+      });
+    });
+
+    afterEach(function () {
+      livewrappedAnalyticsAdapter.disableAnalytics();
+    });
+
+    it('should forward the extended options', function () {
+      performStandardAuction();
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.ext).to.not.equal(null);
+      expect(message.ext.testparam).to.equal(123);
     });
   });
 });

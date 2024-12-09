@@ -1,11 +1,11 @@
-import { deepAccess, isArray, _each, logWarn, isEmpty } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { config } from '../src/config.js'
-import { getStorageManager } from '../src/storageManager.js';
+import {_each, deepAccess, isArray, isEmpty, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 
-const storage = getStorageManager();
 const BIDDER_CODE = 'ccx'
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
+const GVLID = 773;
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
 const SUPPORTED_VIDEO_MIMES = ['video/mp4', 'video/x-flv']
 const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4]
@@ -20,7 +20,7 @@ function _getDeviceObj () {
 
 function _getSiteObj (bidderRequest) {
   let site = {}
-  let url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+  let url = bidderRequest?.refererInfo?.page || ''
   if (url.length > 0) {
     url = url.split('?')[0]
   }
@@ -65,7 +65,7 @@ function _validateSizes (sizeObj, type) {
   return true
 }
 
-function _buildBid (bid) {
+function _buildBid (bid, bidderRequest) {
   let placement = {}
   placement.id = bid.bidId
   placement.secure = 1
@@ -105,6 +105,10 @@ function _buildBid (bid) {
 
   placement.ext = {'pid': bid.params.placementId}
 
+  if (bidderRequest.paapi?.enabled) {
+    placement.ext.ae = bid?.ortb2Imp?.ext?.ae
+  }
+
   return placement
 }
 
@@ -140,6 +144,7 @@ function _buildResponse (bid, currency, ttl) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -177,7 +182,7 @@ export const spec = {
       requestBody.imp = []
       requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
-      requestBody.id = bidderRequest.bids[0].auctionId
+      requestBody.id = bidderRequest.bidderRequestId;
       requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
 
       // Attaching GDPR Consent Params
@@ -196,7 +201,7 @@ export const spec = {
       }
 
       _each(validBidRequests, function (bid) {
-        requestBody.imp.push(_buildBid(bid))
+        requestBody.imp.push(_buildBid(bid, bidderRequest))
       })
       // Return the server request
       return {

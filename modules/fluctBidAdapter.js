@@ -1,6 +1,12 @@
-import { _each, isEmpty } from '../src/utils.js';
+import { _each, deepSetValue, isEmpty } from '../src/utils.js';
+import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import URLSearchParams from 'core-js-pure/web/url-search-params'
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid';
@@ -25,20 +31,47 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids.
+   * @param {validBidRequests} validBidRequests an array of bids.
+   * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
-    const referer = bidderRequest.refererInfo.referer;
+    const page = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
+      const impExt = request.ortb2Imp?.ext;
       const data = Object();
 
-      data.referer = referer;
+      data.page = page;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
-      data.transactionId = request.transactionId;
+      data.user = {
+        data: bidderRequest.ortb2?.user?.data ?? [],
+        eids: [
+          ...(request.userIdAsEids ?? []),
+          ...(bidderRequest.ortb2?.user?.ext?.eids ?? []),
+        ],
+      };
+
+      if (impExt) {
+        data.transactionId = impExt.tid;
+        data.gpid = impExt.gpid ?? impExt.data?.pbadslot ?? impExt.data?.adserver?.adslot;
+      }
+      if (bidderRequest.gdprConsent) {
+        deepSetValue(data, 'regs.gdpr', {
+          consent: bidderRequest.gdprConsent.consentString,
+          gdprApplies: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        });
+      }
+      if (bidderRequest.uspConsent) {
+        deepSetValue(data, 'regs.us_privacy', {
+          consent: bidderRequest.uspConsent,
+        });
+      }
+      if (config.getConfig('coppa') === true) {
+        deepSetValue(data, 'regs.coppa', 1);
+      }
 
       data.sizes = [];
       _each(request.sizes, (size) => {
@@ -49,7 +82,16 @@ export const spec = {
       });
 
       data.params = request.params;
-      const searchParams = new URLSearchParams(request.params);
+
+      if (request.schain) {
+        data.schain = request.schain;
+      }
+
+      const searchParams = new URLSearchParams({
+        dfpUnitCode: request.params.dfpUnitCode,
+        tagId: request.params.tagId,
+        groupId: request.params.groupId,
+      });
 
       serverRequests.push({
         method: 'POST',
@@ -88,7 +130,6 @@ export const spec = {
         `(function() { var img = new Image(); img.src = "${beaconUrl}"})()` +
         `</script>`;
       let data = {
-        bidderCode: BIDDER_CODE,
         requestId: res.id,
         currency: res.cur,
         cpm: parseFloat(bid.price) || 0,
@@ -119,8 +160,22 @@ export const spec = {
    *
    */
   getUserSyncs: (syncOptions, serverResponses) => {
-    return [];
-  },
+    // gdpr, us_privacy, and coppa params to be handled on the server end.
+    const usersyncs = serverResponses.reduce((acc, serverResponse) => [
+      ...acc,
+      ...(serverResponse.body.usersyncs ?? []),
+    ], []);
+    const syncs = usersyncs.filter(
+      (sync) => (
+        (sync['type'] === 'image' && syncOptions.pixelEnabled) ||
+        (sync['type'] === 'iframe' && syncOptions.iframeEnabled)
+      )
+    ).map((sync) => ({
+      type: sync.type,
+      url: sync.url,
+    }));
+    return syncs;
+  }
 };
 
 registerBidder(spec);

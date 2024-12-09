@@ -7,11 +7,15 @@ import {
   callImuidApi,
   getApiCallback,
   storageKey,
+  storagePpKey,
   cookieKey,
   apiUrl
 } from 'modules/imuIdSystem.js';
 
 import * as utils from 'src/utils.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 describe('imuId module', function () {
   // let setLocalStorageStub;
@@ -48,12 +52,17 @@ describe('imuId module', function () {
   describe('getId()', function () {
     it('should return the uid when it exists in local storages', function () {
       getLocalStorageStub.withArgs(storageKey).returns('testUid');
+      getLocalStorageStub.withArgs(storagePpKey).returns('testPpid');
       const id = imuIdSubmodule.getId(configParamTestCase);
-      expect(id).to.be.deep.equal({id: 'testUid'});
+      expect(id).to.be.deep.equal({id: {
+        imuid: 'testUid',
+        imppid: 'testPpid'
+      }});
     });
 
     storageTestCasesForEmpty.forEach(testCase => it('should return the callback when it not exists in local storages', function () {
       getLocalStorageStub.withArgs(storageKey).returns(testCase);
+      getLocalStorageStub.withArgs(storagePpKey).returns(testCase);
       const id = imuIdSubmodule.getId(configParamTestCase);
       expect(id).have.all.keys('callback');
     }));
@@ -73,7 +82,7 @@ describe('imuId module', function () {
   describe('getApiUrl()', function () {
     it('should return default url when cid only', function () {
       const url = getApiUrl(5126);
-      expect(url).to.be.equal(`${apiUrl}?cid=5126`);
+      expect(url).to.be.equal(`https://sync6.im-apps.net/5126/pid`);
     });
 
     it('should return param url when set url', function () {
@@ -84,8 +93,14 @@ describe('imuId module', function () {
 
   describe('decode()', function () {
     it('should return the uid when it exists in local storages', function () {
-      const id = imuIdSubmodule.decode('testDecode');
-      expect(id).to.be.deep.equal({imuid: 'testDecode'});
+      const id = imuIdSubmodule.decode({
+        imppid: 'imppid-value-imppid-value-imppid-value',
+        imuid: 'testDecodeImPpid'
+      });
+      expect(id).to.be.deep.equal({
+        imppid: 'imppid-value-imppid-value-imppid-value',
+        imuid: 'testDecodeImPpid'
+      });
     });
 
     it('should return the undefined when decode id is not "string"', function () {
@@ -97,11 +112,13 @@ describe('imuId module', function () {
   describe('getLocalData()', function () {
     it('always have the same key', function () {
       getLocalStorageStub.withArgs(storageKey).returns('testid');
+      getLocalStorageStub.withArgs(storagePpKey).returns('imppid-value-imppid-value-imppid-value');
       getCookieStub.withArgs(cookieKey).returns('testvid');
       getLocalStorageStub.withArgs(`${storageKey}_mt`).returns(new Date(utils.timestamp()).toUTCString());
       const localData = getLocalData();
       expect(localData).to.be.deep.equal({
         id: 'testid',
+        ppid: 'imppid-value-imppid-value-imppid-value',
         vid: 'testvid',
         expired: false
       });
@@ -112,6 +129,7 @@ describe('imuId module', function () {
       const localData = getLocalData();
       expect(localData).to.be.deep.equal({
         id: undefined,
+        ppid: undefined,
         vid: undefined,
         expired: true
       });
@@ -122,6 +140,7 @@ describe('imuId module', function () {
     it('should return the undefined when success response', function () {
       const res = apiSuccessProcess({
         uid: 'test',
+        ppid: 'imppid-value-imppid-value-imppid-value',
         vid: 'test'
       });
       expect(res).to.equal(undefined);
@@ -165,4 +184,38 @@ describe('imuId module', function () {
       expect(res.success('error response')).to.equal(undefined);
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(imuIdSubmodule);
+    });
+    it('should return the correct EID schema with imuid', function() {
+      const userId = {
+        imuid: 'testimuid'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'intimatemerger.com',
+        uids: [{
+          id: 'testimuid',
+          atype: 1
+        }]
+      });
+    });
+
+    it('should return the correct EID schema with imppid', function() {
+      const userId = {
+        imppid: 'imppid-value-imppid-value-imppid-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'ppid.intimatemerger.com',
+        uids: [{
+          id: 'imppid-value-imppid-value-imppid-value',
+          atype: 1
+        }]
+      });
+    });
+  })
 });

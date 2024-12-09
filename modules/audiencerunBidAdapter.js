@@ -1,32 +1,38 @@
-import { deepAccess, isFn, logError, getValue, getBidIdParameter, _each, isArray, triggerPixel } from '../src/utils.js';
-import { config } from '../src/config.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import {
+  _each,
+  deepAccess,
+  formatQS, getBidIdParameter,
+  getValue,
+  isArray,
+  isFn,
+  logError,
+  triggerPixel,
+} from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'audiencerun';
 const BASE_URL = 'https://d.audiencerun.com';
 const AUCTION_URL = `${BASE_URL}/prebid`;
 const TIMEOUT_EVENT_URL = `${BASE_URL}/ps/pbtimeout`;
+const ERROR_EVENT_URL = `${BASE_URL}/js_log`;
 const DEFAULT_CURRENCY = 'USD';
 
 let requestedBids = [];
 
 /**
- * Gets bidder request referer
- *
- * @param {Object} bidderRequest
- * @return {string}
- */
-function getPageUrl(bidderRequest) {
-  return (
-    config.getConfig('pageUrl') ||
-    deepAccess(bidderRequest, 'refererInfo.referer') ||
-    null
-  );
-}
-
-/**
- * Returns bidfloor through floors module if available
+ * Returns bidfloor through floors module if available.
  *
  * @param {Object} bid
  * @returns {number}
@@ -42,21 +48,50 @@ function getBidFloor(bid) {
       mediaType: BANNER,
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (_) {
-    return 0
+    return 0;
   }
 }
 
+/**
+ * Returns the most top page referer.
+ *
+ * @returns {string}
+ */
+function getPageReferer() {
+  let t, e;
+  do {
+    t = t ? t.parent : window;
+    try {
+      e = t.document.referrer;
+    } catch (_) {
+      break;
+    }
+  } while (t !== window.top);
+  return e;
+}
+
+/**
+ * Returns bidder request page url.
+ *
+ * @param {Object} bidderRequest
+ * @return {string}
+ */
+function getPageUrl(bidderRequest) {
+  return bidderRequest?.refererInfo?.page
+}
+
 export const spec = {
-  version: '1.1.0',
+  version: '1.2.0',
   code: BIDDER_CODE,
+  gvlid: 944,
   supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bid The bid to validate.
+   * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -88,18 +123,28 @@ export const spec = {
         bidId: bid.bidId,
         bidderRequestId: getBidIdParameter('bidderRequestId', bid),
         adUnitCode: getBidIdParameter('adUnitCode', bid),
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: getBidIdParameter('auctionId', bid),
-        transactionId: getBidIdParameter('transactionId', bid),
+        transactionId: bid.ortb2Imp?.ext?.tid || '',
       };
     });
 
     const payload = {
       libVersion: this.version,
-      referer: getPageUrl(bidderRequest),
-      currencyCode: config.getConfig('currency.adServerCurrency'),
+      pageUrl: bidderRequest?.refererInfo?.page,
+      // TODO: does it make sense to find a half-way referer? what should these parameters pick
+      pageReferer: getPageReferer(),
+      referer: deepAccess(bidderRequest, 'refererInfo.topmostLocation'),
+      // TODO: please do not send internal data structures over the network
+      refererInfo: deepAccess(bidderRequest, 'refererInfo.legacy'),
+      currencyCode: getCurrencyFromBidderRequest(bidderRequest),
       timeout: config.getConfig('bidderTimeout'),
       bids,
     };
+
+    payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
+    payload.schain = deepAccess(bidRequests, '0.schain');
+    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || []
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {
@@ -117,7 +162,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: AUCTION_URL,
+      url: deepAccess(bidRequests, '0.params.auctionUrl', AUCTION_URL),
       data: JSON.stringify(payload),
       options: {
         withCredentials: true,
@@ -201,7 +246,9 @@ export const spec = {
     }
 
     timeoutData.forEach((bid) => {
-      const bidOnTimeout = requestedBids.find((requestedBid) => requestedBid.bidId === bid.bidId);
+      const bidOnTimeout = requestedBids.find(
+        (requestedBid) => requestedBid.bidId === bid.bidId
+      );
 
       if (bidOnTimeout) {
         triggerPixel(
@@ -209,6 +256,18 @@ export const spec = {
         );
       }
     });
+  },
+
+  /**
+   * Registers bidder specific code, which will execute if the bidder responded with an error.
+   * @param {{bidderRequest: object}} args An object from which we extract bidderRequest object.
+   */
+  onBidderError: function ({ bidderRequest }) {
+    const queryString = formatQS({
+      message: `Prebid.js: Server call for ${bidderRequest.bidderCode} failed.`,
+      url: encodeURIComponent(getPageUrl(bidderRequest)),
+    });
+    triggerPixel(`${ERROR_EVENT_URL}/?${queryString}`);
   },
 };
 

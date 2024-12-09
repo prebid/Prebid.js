@@ -18,15 +18,21 @@ import {
   isFn
 } from '../src/utils.js'
 import {submodule} from '../src/hook.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 export const imUidLocalName = '__im_uid';
 export const imVidCookieName = '_im_vid';
 export const imRtdLocalName = '__im_sids';
-export const storage = getStorageManager();
 const submoduleName = 'im';
 const segmentsMaxAge = 3600000; // 1 hour (30 * 60 * 1000)
 const uidMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const vidMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
+
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: submoduleName});
 
 function setImDataInCookie(value) {
   storage.setCookie(
@@ -38,25 +44,39 @@ function setImDataInCookie(value) {
 }
 
 /**
-* @param {string} bidderName
-*/
+ * @param {Object} segments
+ * @param {Object} moduleConfig
+ */
+function getSegments(segments, moduleConfig) {
+  if (!segments) return;
+  const maxSegments = !Number.isNaN(moduleConfig.params.maxSegments) ? moduleConfig.params.maxSegments : 200;
+  return segments.slice(0, maxSegments);
+}
+
+/**
+ * @param {string} bidderName
+ */
 export function getBidderFunction(bidderName) {
   const biddersFunction = {
-    ix: function (bid, data) {
+    pubmatic: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
-        config.setConfig({
-          ix: {firstPartyData: {im_segments: data.im_segments}},
-        });
-      }
-      return bid
-    },
-    pubmatic: function (bid, data) {
-      if (data.im_segments && data.im_segments.length) {
+        const segments = getSegments(data.im_segments, moduleConfig);
         const dctr = deepAccess(bid, 'params.dctr');
         deepSetValue(
           bid,
           'params.dctr',
-          `${dctr ? dctr + '|' : ''}im_segments=${data.im_segments.join(',')}`
+          `${dctr ? dctr + '|' : ''}im_segments=${segments.join(',')}`
+        );
+      }
+      return bid
+    },
+    fluct: function (bid, data, moduleConfig) {
+      if (data.im_segments && data.im_segments.length) {
+        const segments = getSegments(data.im_segments, moduleConfig);
+        deepSetValue(
+          bid,
+          'params.kv.imsids',
+          segments
         );
       }
       return bid
@@ -86,15 +106,15 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
   const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
 
   if (data.im_segments) {
-    const ortb2 = config.getConfig('ortb2') || {};
-    deepSetValue(ortb2, 'user.ext.data.im_segments', data.im_segments);
-    config.setConfig({ortb2: ortb2});
+    const segments = getSegments(data.im_segments, moduleConfig);
+    const ortb2 = bidConfig.ortb2Fragments?.global || {};
+    deepSetValue(ortb2, 'user.ext.data.im_segments', segments);
 
     if (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues')) {
       window.googletag = window.googletag || {cmd: []};
       window.googletag.cmd = window.googletag.cmd || [];
       window.googletag.cmd.push(() => {
-        window.googletag.pubads().setTargeting('im_segments', data.im_segments);
+        window.googletag.pubads().setTargeting('im_segments', segments);
       });
     }
   }
@@ -106,7 +126,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
       if (overwriteFunction) {
         overwriteFunction(bid, data, utils, config);
       } else if (bidderFunction) {
-        bidderFunction(bid, data);
+        bidderFunction(bid, data, moduleConfig);
       }
     })
   });

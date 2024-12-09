@@ -16,10 +16,14 @@
  * @property {?boolean} allowAccess
  */
 
-import { submodule } from '../src/hook.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { isGptPubadsDefined, timestamp, generateUUID, logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import {submodule} from '../src/hook.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /** @type {Object} */
 const MessageType = {

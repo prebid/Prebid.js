@@ -2,10 +2,11 @@ import {
   lotamePanoramaIdSubmodule,
   storage,
 } from 'modules/lotamePanoramaIdSystem.js';
-import { uspDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
@@ -17,10 +18,9 @@ describe('LotameId', function() {
   let setLocalStorageStub;
   let removeFromLocalStorageStub;
   let timeStampStub;
-  let uspConsentDataStub;
+  let requestHost;
 
   const nowTimestamp = new Date().getTime();
-
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
     getCookieStub = sinon.stub(storage, 'getCookie');
@@ -32,7 +32,11 @@ describe('LotameId', function() {
       'removeDataFromLocalStorage'
     );
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
-    uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
+    if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+      requestHost = 'https://c.ltmsphrcl.net/id';
+    } else {
+      requestHost = 'https://id.crwdcntrl.net/id';
+    }
   });
 
   afterEach(function () {
@@ -43,7 +47,6 @@ describe('LotameId', function() {
     setLocalStorageStub.restore();
     removeFromLocalStorageStub.restore();
     timeStampStub.restore();
-    uspConsentDataStub.restore();
   });
 
   describe('caching initial data received from the remote server', function () {
@@ -69,8 +72,7 @@ describe('LotameId', function() {
     });
 
     it('should call the remote server when getId is called', function () {
-      expect(request.url).to.be.eq('https://id.crwdcntrl.net/id');
-
+      expect(request.url).to.be.eq(`${requestHost}`);
       expect(callBackSpy.calledOnce).to.be.true;
     });
 
@@ -440,71 +442,7 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true&gdpr_consent=consentGiven'
-      );
-    });
-  });
-
-  describe('when gdpr applies and falls back to eupubconsent cookie', function () {
-    let request;
-    let callBackSpy = sinon.spy();
-    let consentData = {
-      gdprApplies: true,
-      consentString: undefined
-    };
-
-    beforeEach(function () {
-      getCookieStub
-        .withArgs('eupubconsent-v2')
-        .returns('consentGiven');
-
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
-      submoduleCallback(callBackSpy);
-
-      // the contents of the response don't matter for this
-      request = server.requests[0];
-      request.respond(200, responseHeader, '');
-    });
-
-    it('should call the remote server when getId is called', function () {
-      expect(callBackSpy.calledOnce).to.be.true;
-    });
-
-    it('should pass the gdpr consent string back', function() {
-      expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true&gdpr_consent=consentGiven'
-      );
-    });
-  });
-
-  describe('when gdpr applies and falls back to euconsent cookie', function () {
-    let request;
-    let callBackSpy = sinon.spy();
-    let consentData = {
-      gdprApplies: true,
-      consentString: undefined
-    };
-
-    beforeEach(function () {
-      getCookieStub
-        .withArgs('euconsent-v2')
-        .returns('consentGiven');
-
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
-      submoduleCallback(callBackSpy);
-
-      // the contents of the response don't matter for this
-      request = server.requests[0];
-      request.respond(200, responseHeader, '');
-    });
-
-    it('should call the remote server when getId is called', function () {
-      expect(callBackSpy.calledOnce).to.be.true;
-    });
-
-    it('should pass the gdpr consent string back', function() {
-      expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true&gdpr_consent=consentGiven'
+        `${requestHost}?gdpr_applies=true&gdpr_consent=consentGiven`
       );
     });
   });
@@ -532,65 +470,7 @@ describe('LotameId', function() {
 
     it('should not include the gdpr consent string on the url', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true'
-      );
-    });
-  });
-
-  describe('when no consentData and falls back to eupubconsent cookie', function () {
-    let request;
-    let callBackSpy = sinon.spy();
-    let consentData;
-
-    beforeEach(function () {
-      getCookieStub
-        .withArgs('eupubconsent-v2')
-        .returns('consentGiven');
-
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
-      submoduleCallback(callBackSpy);
-
-      // the contents of the response don't matter for this
-      request = server.requests[0];
-      request.respond(200, responseHeader, '');
-    });
-
-    it('should call the remote server when getId is called', function () {
-      expect(callBackSpy.calledOnce).to.be.true;
-    });
-
-    it('should pass the gdpr consent string back', function() {
-      expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_consent=consentGiven'
-      );
-    });
-  });
-
-  describe('when no consentData and falls back to euconsent cookie', function () {
-    let request;
-    let callBackSpy = sinon.spy();
-    let consentData;
-
-    beforeEach(function () {
-      getCookieStub
-        .withArgs('euconsent-v2')
-        .returns('consentGiven');
-
-      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, consentData).callback;
-      submoduleCallback(callBackSpy);
-
-      // the contents of the response don't matter for this
-      request = server.requests[0];
-      request.respond(200, responseHeader, '');
-    });
-
-    it('should call the remote server when getId is called', function () {
-      expect(callBackSpy.calledOnce).to.be.true;
-    });
-
-    it('should pass the gdpr consent string back', function() {
-      expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_consent=consentGiven'
+        `${requestHost}?gdpr_applies=true`
       );
     });
   });
@@ -614,7 +494,7 @@ describe('LotameId', function() {
     });
 
     it('should pass the gdpr consent string back', function() {
-      expect(request.url).to.be.eq('https://id.crwdcntrl.net/id');
+      expect(request.url).to.be.eq(`${requestHost}`);
     });
   });
 
@@ -803,7 +683,6 @@ describe('LotameId', function() {
         let callBackSpy = sinon.spy();
 
         beforeEach(function () {
-          uspConsentDataStub.returns('1NNN');
           let submoduleCallback = lotamePanoramaIdSubmodule.getId(
             {
               params: {
@@ -832,12 +711,6 @@ describe('LotameId', function() {
 
         it('should call the remote server when getId is called', function () {
           expect(callBackSpy.calledOnce).to.be.true;
-        });
-
-        it('should pass the usp consent string and client id back', function () {
-          expect(request.url).to.be.eq(
-            'https://id.crwdcntrl.net/id?gdpr_applies=false&us_privacy=1NNN&c=1234'
-          );
         });
 
         it('should NOT set an expiry for the client', function () {
@@ -924,7 +797,7 @@ describe('LotameId', function() {
 
       it('should pass client id back', function () {
         expect(request.url).to.be.eq(
-          'https://id.crwdcntrl.net/id?gdpr_applies=false&c=1234'
+          `${requestHost}?gdpr_applies=false&c=1234`
         );
       });
 
@@ -953,4 +826,20 @@ describe('LotameId', function() {
       });
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(lotamePanoramaIdSubmodule);
+    });
+    it('lotamePanoramaId', function () {
+      const userId = {
+        lotamePanoramaId: 'some-random-id-value',
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'crwdcntrl.net',
+        uids: [{ id: 'some-random-id-value', atype: 1 }],
+      });
+    });
+  })
 });

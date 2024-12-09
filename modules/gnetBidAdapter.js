@@ -1,9 +1,19 @@
-import { _each, parseSizesInput, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { _each, isEmpty, parseSizesInput } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'gnet';
-const ENDPOINT = 'https://adserver.gnetproject.com/prebid.php';
+const ENDPOINT = 'https://service.gnetrtb.com/api';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,18 +26,20 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.websiteId);
+    return !!(bid.params.websiteId && bid.params.adunitId);
   },
 
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} validBidRequests an array of bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequests = [];
-    const referer = bidderRequest.refererInfo.referer;
+    // TODO: is 'page' the right value?
+    const referer = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
       const data = {};
@@ -35,7 +47,8 @@ export const spec = {
       data.referer = referer;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
-      data.transactionId = request.transactionId;
+      data.transactionId = request.ortb2Imp?.ext?.tid;
+      data.gftuid = _getCookie();
 
       data.sizes = parseSizesInput(request.sizes);
 
@@ -45,8 +58,7 @@ export const spec = {
 
       bidRequests.push({
         method: 'POST',
-        url: ENDPOINT,
-        mode: 'no-cors',
+        url: ENDPOINT + '/adrequest',
         options: {
           withCredentials: false,
         },
@@ -99,6 +111,18 @@ export const spec = {
 
     return [];
   },
+
+  onBidWon: function (bid) {
+    ajax(ENDPOINT + '/bid-won', null, JSON.stringify(bid), {
+      method: 'POST',
+    });
+
+    return true;
+  },
 };
+
+function _getCookie() {
+  return storage.cookiesAreEnabled() ? storage.getCookie('gftuid') : null;
+}
 
 registerBidder(spec);

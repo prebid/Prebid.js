@@ -1,8 +1,8 @@
-import { logError, isArray, deepAccess, getBidIdParameter } from '../src/utils.js';
+import {deepAccess, getBidIdParameter, isArray, logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
 const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid`;
 const BIDDER_CODE = 'waardex';
@@ -69,7 +69,8 @@ const getCommonBidsData = bidderRequest => {
   };
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    payload.referer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    // TODO: is 'page' the right value here?
+    payload.referer = encodeURIComponent(bidderRequest.refererInfo.page || '');
   }
 
   if (bidderRequest && bidderRequest.uspConsent) {
@@ -97,7 +98,7 @@ const getBidRequestToSend = validBidRequest => {
     bidId: validBidRequest.bidId,
     bidfloor: 0,
     position: parseInt(validBidRequest.params.position) || 1,
-    instl: parseInt(validBidRequest.params.instl) || 0,
+    instl: deepAccess(validBidRequest.ortb2Imp, 'instl') === 1 || parseInt(validBidRequest.params.instl) === 1 ? 1 : 0,
   };
 
   if (validBidRequest.mediaTypes[BANNER]) {
@@ -146,7 +147,6 @@ const createVideoObject = (videoMediaTypes, videoParams) => {
     maxduration: getBidIdParameter('maxduration', videoParams) || 500,
     protocols: getBidIdParameter('protocols', videoParams) || [2, 3, 5, 6],
     startdelay: getBidIdParameter('startdelay', videoParams) || 0,
-    placement: getBidIdParameter('placement', videoParams) || videoMediaTypes.context === 'outstream' ? 3 : 1,
     skip: getBidIdParameter('skip', videoParams) || 1,
     skipafter: getBidIdParameter('skipafter', videoParams) || 0,
     minbitrate: getBidIdParameter('minbitrate', videoParams) || 0,

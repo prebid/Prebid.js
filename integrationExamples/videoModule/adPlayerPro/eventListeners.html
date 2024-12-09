@@ -1,0 +1,154 @@
+<html lang="en">
+
+<head>
+  <script src="https://serving.stat-rock.com/player/prebidAdPlayerPro.js"></script>
+  <script async src="../../../build/dev/prebid.js"></script>
+
+  <title>AdPlayer.Pro Event Listeners</title>
+
+  <!--  This demo listens to every video event and logs the event payload. -->
+
+  <script>
+    // Setup ad units
+    var adUnits = [{
+      code: 'div-gpt-ad-51545-0',
+      mediaTypes: {
+        video:{"context":"outstream"}
+      },
+      video: {
+        divId: 'player', // required to indicate which player is being used to render this ad unit.
+      },
+      bids: [
+        {
+          bidder: 'ix',
+          params: {
+            siteId: '300',
+          }
+        }
+      ]
+    }];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function () {
+      pbjs.setConfig({
+        video: {
+          providers: [{
+            divId: 'player', // required, this is the id of the div element where the player will be placed
+            vendorCode: 3, // AdPlayer.Pro vendorCode
+            playerConfig: {
+              placementId: 'c9gebfehcqjE', // required, this placementId is only for demo purposes
+              params: {
+                'type': 'inView',
+                'muted': true,
+                'autoStart': true,
+                'advertising': {
+                  'controls': true,
+                  'closeButton': true,
+                  // 'tag': {'client': 'googima'},
+                },
+                'width': '600',
+                'height': '300'
+              }
+            },
+          },]
+        },
+        debugging: {
+          enabled: true,
+          intercept: [
+            {
+              when: {
+                adUnitCode: 'div-gpt-ad-51545-0',
+              },
+              then: {
+                context: "outstream",
+                cpm: 10,
+                mediaType: "video",
+                vastXml: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://adplayer.pro/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"640\" height=\"360\" type=\"video/mp4\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://static.adplayer.pro/video/demo_v2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>",
+                renderer: {},
+              }
+            },
+          ]
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+
+      pbjs.onEvent('videoSetupComplete', e => {
+        console.log('player setup complete: ', e);
+      });
+
+      pbjs.onEvent('videoSetupFailed', e => {
+        console.log('player setup failed: ', e);
+      });
+
+      pbjs.onEvent('videoDestroyed', e => {
+        console.log('player destroyed: ', e);
+      });
+
+      pbjs.onEvent('videoAdImpression', (e) => {
+        console.log('videos pb ad impression: ', e);
+      });
+
+      pbjs.onEvent('videoAdStarted', (e) => {
+        console.log('videos pb ad started: ', e);
+      });
+
+      pbjs.onEvent('videoAdPlay', (e) => {
+        console.log('videos pb ad play: ', e);
+      });
+
+      pbjs.onEvent('videoAdPause', (e) => {
+        console.log('videos pb ad pause: ', e);
+      });
+
+      pbjs.onEvent('videoAdComplete', (e) => {
+        console.log('videos pb ad complete: ', e);
+      });
+
+      pbjs.onEvent('videoAdSkipped', (e) => {
+        console.log('videos pb ad skipped: ', e);
+      });
+
+      pbjs.onEvent('videoAdClick', (e) => {
+        console.log('videos pb ad click: ', e);
+      });
+
+      pbjs.onEvent('videoAdError', (e) => {
+        console.log('videos pb ad error: ', e);
+      });
+
+      pbjs.onEvent('videoAuctionAdLoadAttempt', (e) => {
+        console.log('videos pb auction ad load attempt: ', e);
+      });
+
+      pbjs.onEvent('videoAuctionAdLoadQueued', (e) => {
+        console.log('videos pb auction ad load queued: ', e);
+      });
+
+      pbjs.onEvent('videoAuctionAdLoadAbort', (e) => {
+        console.log('videos pb auction ad load attempt: ', e);
+      });
+
+      pbjs.onEvent('videoBidImpression', (e) => {
+        console.log('videos pb bid Impression: ', e);
+      });
+
+      pbjs.onEvent('videoBidError', (e) => {
+        console.log('videos pb bid Error: ', e);
+      });
+
+      pbjs.requestBids();
+    });
+  </script>
+
+</head>
+
+<body>
+<h2>AdPlayer.Pro Event Listeners</h2>
+
+<h5>Div-1: Player placeholder div</h5>
+<div id='player'></div>
+</body>
+
+</html>

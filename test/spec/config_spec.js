@@ -16,11 +16,13 @@ let setDefaults;
 describe('config API', function () {
   let logErrorSpy;
   let logWarnSpy;
+  let config;
+
   beforeEach(function () {
-    const config = newConfig();
-    getConfig = config.getConfig;
+    config = newConfig();
+    getConfig = config.getAnyConfig;
     setConfig = config.setConfig;
-    readConfig = config.readConfig;
+    readConfig = config.readAnyConfig;
     mergeConfig = config.mergeConfig;
     getBidderConfig = config.getBidderConfig;
     setBidderConfig = config.setBidderConfig;
@@ -104,6 +106,20 @@ describe('config API', function () {
     sinon.assert.calledOnce(wildcard);
   });
 
+  it('getConfig subscribers are called immediately if passed {init: true}', () => {
+    const listener = sinon.spy();
+    setConfig({foo: 'bar'});
+    getConfig('foo', listener, {init: true});
+    sinon.assert.calledWith(listener, {foo: 'bar'});
+  });
+
+  it('getConfig subscribers with no topic are called immediately if passed {init: true}', () => {
+    const listener = sinon.spy();
+    setConfig({foo: 'bar'});
+    getConfig(listener, {init: true});
+    sinon.assert.calledWith(listener, sinon.match({foo: 'bar'}));
+  });
+
   it('sets and gets arbitrary configuration properties', function () {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
@@ -126,17 +142,6 @@ describe('config API', function () {
     setConfig({ foo: {biz: 'buz'} });
     setConfig({ foo: {baz: 'qux'} });
     expect(getConfig('foo')).to.eql({baz: 'qux'});
-  });
-
-  it('moves fpd config into ortb2 properties', function () {
-    setConfig({fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}});
-    expect(getConfig('ortb2')).to.eql({site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}});
-    expect(getConfig('fpd')).to.eql(undefined);
-  });
-
-  it('moves fpd bidderconfig into ortb2 properties', function () {
-    setBidderConfig({bidders: ['bidderA'], config: {fpd: {context: {keywords: 'foo,bar', data: {inventory: [1]}}}}});
-    expect(getBidderConfig()).to.eql({'bidderA': {ortb2: {site: {keywords: 'foo,bar', ext: {data: {inventory: [1]}}}}}});
   });
 
   it('sets debugging', function () {
@@ -247,18 +252,42 @@ describe('config API', function () {
     expect(configResult.native).to.be.equal('high');
   });
 
-  it('sets priceGranularity and customPriceBucket', function () {
-    const goodConfig = {
-      'buckets': [{
-        'max': 3,
-        'increment': 0.01,
-        'cap': true
-      }]
-    };
-    setConfig({ priceGranularity: goodConfig });
-    expect(getConfig('priceGranularity')).to.be.equal('custom');
-    expect(getConfig('customPriceBucket')).to.equal(goodConfig);
+  Object.entries({
+    'using setConfig': {
+      setter: () => config.setConfig,
+      getter: () => config.getConfig
+    },
+    'using setBidderConfig': {
+      setter: () => (config) => setBidderConfig({bidders: ['mockBidder'], config}),
+      getter: () => (option) => config.runWithBidder('mockBidder', () => config.getConfig(option))
+    }
+  }).forEach(([t, {getter, setter}]) => {
+    describe(t, () => {
+      let getConfig, setConfig;
+      beforeEach(() => {
+        getConfig = getter();
+        setConfig = setter();
+      });
+      it('sets priceGranularity and customPriceBucket', function () {
+        const goodConfig = {
+          'buckets': [{
+            'max': 3,
+            'increment': 0.01,
+            'cap': true
+          }]
+        };
+        setConfig({ priceGranularity: goodConfig });
+        expect(getConfig('priceGranularity')).to.be.equal('custom');
+        expect(getConfig('customPriceBucket')).to.eql(goodConfig);
+      });
+    });
   });
+
+  it('does not force defaults for bidder config', () => {
+    config.setConfig({bidderSequence: 'fixed'});
+    config.setBidderConfig({bidders: ['mockBidder'], config: {other: 'config'}})
+    expect(config.runWithBidder('mockBidder', () => config.getConfig('bidderSequence'))).to.eql('fixed');
+  })
 
   it('sets deviceAccess', function () {
     // When the deviceAccess flag config option is not set, cookies may be read and set
@@ -316,6 +345,14 @@ describe('config API', function () {
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
 
+  it('sets auctionOptions suppressExpiredRender', function () {
+    const auctionOptionsConfig = {
+      'suppressExpiredRender': true
+    }
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
   it('should log warning for the wrong value passed to auctionOptions', function () {
     setConfig({ auctionOptions: '' });
     expect(logWarnSpy.calledOnce).to.equal(true);
@@ -338,6 +375,15 @@ describe('config API', function () {
     }});
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options suppressStaleRender must be of type boolean';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionOptions suppress expired render', function () {
+    setConfig({ auctionOptions: {
+      'suppressExpiredRender': 'test',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options suppressExpiredRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
@@ -591,6 +637,7 @@ describe('config API', function () {
     }
 
     setConfig({
+      bidderTimeout: 2000,
       ortb2: {
         user: {
           data: [userObj1, userObj2]
@@ -604,6 +651,7 @@ describe('config API', function () {
     });
 
     const rtd = {
+      bidderTimeout: 3000,
       ortb2: {
         user: {
           data: [userObj1]
@@ -618,10 +666,33 @@ describe('config API', function () {
     mergeConfig(rtd);
 
     let ortb2Config = getConfig('ortb2');
+    let bidderTimeout = getConfig('bidderTimeout');
 
     expect(ortb2Config.user.data).to.deep.include.members([userObj1, userObj2]);
     expect(ortb2Config.site.content.data).to.deep.include.members([siteObj1]);
     expect(ortb2Config.user.data).to.have.lengthOf(2);
     expect(ortb2Config.site.content.data).to.have.lengthOf(1);
+    expect(bidderTimeout).to.equal(3000);
+  });
+
+  it('should not corrupt global configuration with bidder configuration', () => {
+    // https://github.com/prebid/Prebid.js/issues/7956
+    config.setConfig({
+      outer: {
+        inner: ['global']
+      }
+    });
+    config.setBidderConfig({
+      bidders: ['bidder'],
+      config: {
+        outer: {
+          inner: ['bidder']
+        }
+      }
+    });
+    config.runWithBidder('bidder', () => config.getConfig())
+    expect(config.getConfig('outer')).to.eql({
+      inner: ['global']
+    });
   });
 });

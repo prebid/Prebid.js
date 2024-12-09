@@ -1,9 +1,15 @@
-import { deepAccess, isArray, chunk, _map, flatten, convertTypes, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_map, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {Renderer} from '../src/Renderer.js';
+import {find} from '../src/polyfill.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
 
 const subdomainSuffixes = ['', 1, 2];
 const AUCTION_PATH = '/v2/auction/';
@@ -15,12 +21,11 @@ const HOST_GETTERS = {
       return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
     }
   }()),
-  navelix: () => 'ghb.hb.navelix.com',
-  appaloosa: () => 'ghb.hb.appaloosa.media',
-  onefiftytwomedia: () => 'ghb.ads.152media.com',
-  mediafuse: () => 'ghb.hbmp.mediafuse.com',
-  bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
+  janet: () => 'ghb.bidder.jmgads.com',
+  ocm: () => 'ghb.cenarius.orangeclickmedia.com',
+  '9dotsmedia': () => 'ghb.platform.audiodots.com',
+  indicue: () => 'ghb.console.indicue.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -36,12 +41,13 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey',
-    { code: 'navelix', gvlid: 380 },
-    {
-      code: 'mediafuse',
-      skipPbsAliasing: true
-    }
+  aliases: [
+    'streamkey',
+    'janet',
+    { code: 'selectmedia', gvlid: 775 },
+    { code: 'ocm', gvlid: 1148 },
+    '9dotsmedia',
+    'indicue',
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -111,7 +117,7 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids
    * @param serverResponse
-   * @param bidderRequest
+   * @param adapterRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, { adapterRequest }) {
@@ -129,11 +135,6 @@ export const spec = {
     return bids;
   },
 
-  transformBidParams(params) {
-    return convertTypes({
-      'aid': 'number',
-    }, params);
-  }
 };
 
 function parseRTBResponse(serverResponse, adapterRequest) {
@@ -162,7 +163,8 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;
@@ -187,8 +189,16 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.DMPId = window.adtDmp.getUID();
   }
 
+  if (adapterRequest.gppConsent) {
+    tag.GPP = adapterRequest.gppConsent.gppString;
+    tag.GPPSid = adapterRequest.gppConsent.applicableSections?.toString();
+  } else if (adapterRequest.ortb2?.regs?.gpp) {
+    tag.GPP = adapterRequest.ortb2.regs.gpp;
+    tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
+  }
+
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

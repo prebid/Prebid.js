@@ -1,10 +1,13 @@
-import { getWindowTop, isGptPubadsDefined, deepAccess, getAdUnitSizes, isEmpty } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
-export const storage = getStorageManager();
+import {deepAccess, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+
+export const storage = getStorageManager({bidderCode: 'datablocks'});
 
 const NATIVE_ID_MAP = {};
 const NATIVE_PARAMS = {
@@ -228,6 +231,7 @@ export const spec = {
       let scope = this;
       if (isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener == 'function') {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
             scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
           });
@@ -252,6 +256,9 @@ export const spec = {
 
   // GENERATE THE RTB REQUEST
   buildRequests: function(validRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validRequests = convertOrtbRequestToProprietaryNative(validRequests);
+
     // RETURN EMPTY IF THERE ARE NO VALID REQUESTS
     if (!validRequests.length) {
       return [];
@@ -347,16 +354,17 @@ export const spec = {
     // GENERATE SITE OBJECT
     let site = {
       domain: window.location.host,
-      page: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      page: bidderRequest.refererInfo.page,
       schain: validRequests[0].schain || {},
       ext: {
-        p_domain: config.getConfig('publisherDomain'),
+        p_domain: bidderRequest.refererInfo.domain,
         rt: bidderRequest.refererInfo.reachedTop,
         frames: bidderRequest.refererInfo.numIframes,
         stack: bidderRequest.refererInfo.stack,
         timeout: config.getConfig('bidderTimeout')
       },
-    }
+    };
 
     // ADD REF URL IF FOUND
     if (self === top && document.referrer) {
@@ -383,7 +391,7 @@ export const spec = {
         gdpr: bidderRequest.gdprConsent || {},
         usp: bidderRequest.uspConsent || {},
         client_info: this.get_client_info(),
-        ortb2: config.getConfig('ortb2') || {}
+        ortb2: bidderRequest.ortb2 || {}
       }
     };
 
@@ -395,7 +403,7 @@ export const spec = {
       method: 'POST',
       url: `https://${host}/openrtb/?sid=${sourceId}`,
       data: {
-        id: bidderRequest.auctionId,
+        id: bidderRequest.bidderRequestId,
         imp: imps,
         site: site,
         device: device
@@ -409,7 +417,7 @@ export const spec = {
   // INITIATE USER SYNCING
   getUserSyncs: function(options, rtbResponse, gdprConsent) {
     const syncs = [];
-    let bidResponse = rtbResponse[0].body;
+    let bidResponse = rtbResponse?.[0]?.body ?? null;
     let scope = this;
 
     // LISTEN FOR SYNC DATA FROM IFRAME TYPE SYNC

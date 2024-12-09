@@ -27,7 +27,8 @@ describe('imRtdProvider', function () {
   const moduleConfig = {
     params: {
       cid: 5126,
-      setGptKeyValues: true
+      setGptKeyValues: true,
+      maxSegments: 2
     }
   }
 
@@ -50,8 +51,8 @@ describe('imRtdProvider', function () {
 
   describe('getBidderFunction', function () {
     const assumedBidder = [
-      'ix',
-      'pubmatic'
+      'pubmatic',
+      'fluct'
     ];
     assumedBidder.forEach(bidderName => {
       it(`should return bidderFunction with assumed bidder: ${bidderName}`, function () {
@@ -60,15 +61,47 @@ describe('imRtdProvider', function () {
 
       it(`should return bid with correct key data: ${bidderName}`, function () {
         const bid = {bidder: bidderName};
-        expect(getBidderFunction(bidderName)(bid, {'im_segments': ['12345', '67890']})).to.equal(bid);
+        expect(getBidderFunction(bidderName)(bid, {'im_segments': ['12345', '67890']}, {params: {}})).to.equal(bid);
       });
       it(`should return bid without data: ${bidderName}`, function () {
         const bid = {bidder: bidderName};
-        expect(getBidderFunction(bidderName)(bid, '')).to.equal(bid);
+        expect(getBidderFunction(bidderName)(bid, '', {params: {}})).to.equal(bid);
       });
     });
     it(`should return null with unexpected bidder`, function () {
       expect(getBidderFunction('test')).to.equal(null);
+    });
+    describe('fluct bidder function', function () {
+      it('should return a bid w/o im_segments if not any exists', function () {
+        const bid = {bidder: 'fluct'};
+        expect(getBidderFunction('fluct')(bid, '', {params: {}})).to.eql(bid);
+      });
+      it('should return a bid w/ im_segments if any exists', function () {
+        const bid = {
+          bidder: 'fluct',
+          params: {
+            kv: {
+              foo: ['foo1']
+            }
+          }
+        };
+        expect(getBidderFunction('fluct')(
+          bid,
+          {im_segments: ['12345', '67890', '09876']},
+          {params: {maxSegments: 2}}
+        ))
+          .to.eql(
+            {
+              bidder: 'fluct',
+              params: {
+                kv: {
+                  foo: ['foo1'],
+                  imsids: ['12345', '67890']
+                }
+              }
+            }
+          );
+      });
     });
   })
 

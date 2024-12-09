@@ -2,11 +2,11 @@
 
 **Module Name**: AdButler Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**: dan@sparklit.com
+**Maintainer**: trevor@sparklit.com
 
 # Description
 
-Module that connects to an AdButler zone to fetch bids.
+Bid Adapter for creating a bid from an AdButler zone.
 
 # Test Parameters
 ```
@@ -18,14 +18,11 @@ Module that connects to an AdButler zone to fetch bids.
                    {
                        bidder: "adbutler",
                        params: {
-                           accountID: '167283',
-                           zoneID: '210093',
+                           accountID: '181556',
+                           zoneID: '705374',
                            keyword: 'red', //optional
                            minCPM: '1.00', //optional
                            maxCPM: '5.00' //optional
-                           extra: { // optional
-                                foo: "bar" 
-                           }
                        }
                    }
                ]

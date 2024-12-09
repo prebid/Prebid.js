@@ -1,9 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
-import {deepAccess, _map, isEmpty} from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import find from 'core-js-pure/features/array/find.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {_map, deepAccess, isEmpty} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {find} from '../src/polyfill.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -96,9 +97,9 @@ const flatten = (arr) => {
 const createOrtbRequest = (validBidRequests, bidderRequest) => {
   let device = createOrtbDeviceObj(validBidRequests);
   let user = createOrtbUserObj(validBidRequests)
-  let site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.referer)
+  let site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.page)
   return {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     imp: [],
     site,
     device,
@@ -128,7 +129,7 @@ const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validB
 // get bidFloor Function for different creatives
 function getBidFloor(bid, creative) {
   let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
-  return Math.floor(floorInfo.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
+  return Math.floor(floorInfo?.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
 }
 
 const createOrtbImpObj = (bid) => {
@@ -384,6 +385,9 @@ export const spec = {
   isBidRequestValid: bid => !!bid.params.placement_id && !!bid.params.publisher_id && !!bid.params.partner_name,
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let serverRequests = [];
 
     // ORTB Request.

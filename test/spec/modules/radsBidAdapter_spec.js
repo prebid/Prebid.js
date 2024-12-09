@@ -32,12 +32,12 @@ describe('radsAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'someIncorrectParam': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -105,13 +105,13 @@ describe('radsAdapter', function () {
     // Without gdprConsent
     let bidderRequest = {
       refererInfo: {
-        referer: 'some_referrer.net'
+        page: 'some_referrer.net'
       }
     }
     // With gdprConsent
     var bidderRequestGdprConsent = {
       refererInfo: {
-        referer: 'some_referrer.net'
+        page: 'some_referrer.net'
       },
       gdprConsent: {
         consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',

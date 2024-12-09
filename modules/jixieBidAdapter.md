@@ -7,6 +7,7 @@ Maintainer: contact@jixie.io
 # Description
 
 Module that connects to Jixie demand source to fetch bids.
+All prebid-supported user ids are sent to Jixie endpoint, if available. 
 
 # Test Parameters
 ```

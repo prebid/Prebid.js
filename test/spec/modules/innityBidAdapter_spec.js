@@ -39,7 +39,7 @@ describe('innityAdapterTest', () => {
 
     let bidderRequest = {
       refererInfo: {
-        referer: 'https://refererExample.com'
+        page: 'https://refererExample.com'
       }
     };
 
@@ -119,6 +119,12 @@ describe('innityAdapterTest', () => {
       const result = spec.interpretResponse(bidResponse, bidRequest);
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
       expect(result[0].meta.advertiserDomains).to.deep.equal([]);
+    });
+
+    it('result with no bids', () => {
+      bidResponse.body = {};
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      expect(result).to.deep.equal([]);
     });
   });
 });
