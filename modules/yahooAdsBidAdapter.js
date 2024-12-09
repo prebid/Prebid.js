@@ -150,7 +150,7 @@ function getSupportedEids(bid) {
 }
 
 function isSecure(bid) {
-  return deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
+  return deepAccess(bid, 'params.bidOverride.imp.secure') ?? bid.ortb2Imp?.secure ?? 1;
 };
 
 function getPubIdMode(bid) {
@@ -346,7 +346,7 @@ function appendImpObject(bid, openRtbObject) {
     const impObject = {
       id: bid.bidId,
       secure: isSecure(bid),
-      bidfloor: getFloorModuleData(bid).floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
+      bidfloor: getFloorModuleData(bid)?.floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
     };
 
     if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === BANNER || mediaTypeMode === '*')) {

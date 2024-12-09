@@ -373,7 +373,7 @@ function _getBidFloors(bid) {
     mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
     size: '*'
   }) : {}
-  const floorModuleValue = parseFloat(floorInfo.floor)
+  const floorModuleValue = parseFloat(floorInfo?.floor)
   if (!isNaN(floorModuleValue)) {
     return floorModuleValue
   }

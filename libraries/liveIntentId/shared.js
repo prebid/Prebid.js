@@ -29,6 +29,31 @@ export function parseRequestedAttributes(overrides) {
   }
 }
 
+export function makeSourceEventToSend(configParams) {
+  const sourceEvent = {}
+  let nonEmpty = false
+  if (typeof configParams.emailHash === 'string') {
+    nonEmpty = true
+    sourceEvent.emailHash = configParams.emailHash
+  }
+  if (typeof configParams.ipv4 === 'string') {
+    nonEmpty = true
+    sourceEvent.ipv4 = configParams.ipv4
+  }
+  if (typeof configParams.ipv6 === 'string') {
+    nonEmpty = true
+    sourceEvent.ipv6 = configParams.ipv6
+  }
+  if (typeof configParams.userAgent === 'string') {
+    nonEmpty = true
+    sourceEvent.userAgent = configParams.userAgent
+  }
+
+  if (nonEmpty) {
+    return sourceEvent
+  }
+}
+
 export function composeIdObject(value) {
   const result = {};
 

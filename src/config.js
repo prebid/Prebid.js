@@ -179,7 +179,7 @@ function attachProperties(config, useDefaultValues = true) {
     }
 
     for (let k of Object.keys(val)) {
-      if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
+      if (k !== 'secondaryBidders' && k !== 'suppressStaleRender' && k !== 'suppressExpiredRender') {
         logWarn(`Auction Options given an incorrect param: ${k}`)
         return false
       }
@@ -191,7 +191,7 @@ function attachProperties(config, useDefaultValues = true) {
           logWarn(`Auction Options ${k} must be only string`);
           return false
         }
-      } else if (k === 'suppressStaleRender') {
+      } else if (k === 'suppressStaleRender' || k === 'suppressExpiredRender') {
         if (!isBoolean(val[k])) {
           logWarn(`Auction Options ${k} must be of type boolean`);
           return false;
