@@ -2,6 +2,7 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
+  deepAccess,
   deepClone,
   deepSetValue,
   flatten,
