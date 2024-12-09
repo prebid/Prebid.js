@@ -1,4 +1,4 @@
-import { cloneEventArguments, deepAccess, generateUUID, logError } from '../src/utils.js';
+import { deepAccess, generateUUID, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -6,6 +6,7 @@ import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
+import * as utils from '../src/utils.js';
 
 const CARBON_GVL_ID = 493;
 const ANALYTICS_VERSION = 'v1.0';
@@ -31,7 +32,7 @@ let timeLastAuctionEvent = null;
 
 export let carbonAdapter = Object.assign(adapter({analyticsHost, ANALYTICS_TYPE}), {
   track({eventType, args}) {
-    args = cloneEventArguments(args || {});
+    args = args ? utils.deepClone(args) : {};
 
     switch (eventType) {
       case EVENTS.AUCTION_END: {

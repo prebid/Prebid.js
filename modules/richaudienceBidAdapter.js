@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -11,7 +10,7 @@ let REFERER = '';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 108,
-  aliases: ['ra'],
+  aliases: [{code: 'ra', gvlid: 108}],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
@@ -37,7 +36,6 @@ export const spec = {
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
         currencyCode: config.getConfig('currency.adServerCurrency'),
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -45,7 +43,6 @@ export const spec = {
         bidderRequestId: bid.bidderRequestId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
-        // TODO: is 'page' the right value here?
         referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.ortb2Imp?.ext?.tid,
@@ -55,12 +52,13 @@ export const spec = {
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
+        kws: bid.params.keywords,
         schain: bid.schain,
-        gpid: raiSetPbAdSlot(bid)
+        gpid: raiSetPbAdSlot(bid),
+        dsa: setDSA(bid),
+        userData: deepAccess(bid, 'ortb2.user.data')
       };
 
-      // TODO: is 'page' the right value here?
       REFERER = (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null)
 
       payload.gdpr_consent = '';
@@ -119,7 +117,9 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        meta: response.adomain,
+        meta: {
+          advertiserDomains: [response.adomain[0]]
+        },
         dealId: response.dealId
       };
 
@@ -154,7 +154,7 @@ export const spec = {
    *
    * @param {syncOptions} Publisher prebid configuration
    * @param {serverResponses} Response from the server
-   * @param {gdprConsent} GPDR consent object
+   * @param {gdprConsent} GDPR consent object
    * @returns {Array}
    */
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
@@ -375,4 +375,9 @@ function raiGetTimeoutURL(data) {
     url = url.replace('[domain]', document.location.host)
   }
   return url
+}
+
+function setDSA(bid) {
+  let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
+  return dsa;
 }

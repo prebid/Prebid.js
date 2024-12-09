@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setIBVField, setTTL } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -1187,6 +1187,8 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
         expect(data.ext.epoch).to.exist;
+        expect(data.imp[0].displaymanager).to.equal('Prebid.js');
+        expect(data.imp[0].displaymanagerver).to.equal('$prebid.version$');
   		});
 
       it('Set tmax from global config if not set by requestBids method', function() {
@@ -2376,6 +2378,40 @@ describe('PubMatic adapter', function () {
         expect(data.device.ext).to.deep.equal(cdepObj);
       });
 
+      it('should pass enriched device data from ortb2 object if present in bidderRequest fpd', function () {
+        const fpdBidderRequest = {
+          auctionId: 'new-auction-id',
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            }
+          },
+        };
+
+        const request = spec.buildRequests(multipleMediaRequests, fpdBidderRequest);
+        const data = JSON.parse(request.data);
+
+        expect(data.device.w).to.equal(fpdBidderRequest.ortb2.device.w);
+        expect(data.device.h).to.equal(fpdBidderRequest.ortb2.device.h);
+        expect(data.device.dnt).to.equal(fpdBidderRequest.ortb2.device.dnt);
+        expect(data.device.ua).to.equal(fpdBidderRequest.ortb2.device.ua);
+        expect(data.device.language).to.equal(fpdBidderRequest.ortb2.device.language);
+        expect(data.device.devicetype).to.equal(fpdBidderRequest.ortb2.device.devicetype);
+        expect(data.device.make).to.equal(fpdBidderRequest.ortb2.device.make);
+        expect(data.device.model).to.equal(fpdBidderRequest.ortb2.device.model);
+        expect(data.device.os).to.equal(fpdBidderRequest.ortb2.device.os);
+        expect(data.device.osv).to.equal(fpdBidderRequest.ortb2.device.osv);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests, {
           auctionId: 'new-auction-id'
@@ -2946,7 +2982,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: false} });
           let data = JSON.parse(req.data);
           if (data.imp[0].ext) {
             expect(data.imp[0].ext).to.not.have.property('ae');
@@ -2959,7 +2995,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: true} });
           let data = JSON.parse(req.data);
           expect(data.imp[0].ext.ae).to.equal(1);
         });
@@ -2972,6 +3008,24 @@ describe('PubMatic adapter', function () {
           expect(data.device).to.include.any.keys('connectiontype');
         }
       });
+
+      it('should send imp.pmp in request if pmp json is present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        originalBidRequests[0].ortb2Imp.pmp = {
+          'private_auction': 0,
+          'deals': [{ 'id': '5678' }]
+        }
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.exist.and.to.be.an('object');
+      })
+
+      it('should not send imp.pmp in request if pmp json is not present in adUnit ortb2Imp object', function () {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        const bidRequest = spec.buildRequests(originalBidRequests);
+        let data = JSON.parse(bidRequest.data);
+        expect(data.imp[0].pmp).to.deep.equal(undefined);
+      })
   	});
 
     it('Request params dctr check', function () {
@@ -3409,7 +3463,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(true);
-        expect(response[0].ttl).to.equal(300);
+        expect(response[0].ttl).to.equal(360);
         expect(response[0].meta.networkId).to.equal(123);
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
         expect(response[0].meta.buyerId).to.equal('seat-id');
@@ -3434,7 +3488,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].dealId).to.equal(bidResponses.body.seatbid[1].bid[0].dealid);
         expect(response[1].currency).to.equal('USD');
         expect(response[1].netRevenue).to.equal(true);
-        expect(response[1].ttl).to.equal(300);
+        expect(response[1].ttl).to.equal(360);
         expect(response[1].meta.networkId).to.equal(422);
         expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
         expect(response[1].meta.buyerId).to.equal(832);
@@ -3523,6 +3577,33 @@ describe('PubMatic adapter', function () {
         });
         let response = spec.interpretResponse(bidResponses, request);
         expect(response[0].renderer).to.not.exist;
+      });
+
+      it('should set ibv field in bid.ext when bid.ext.ibv exists', function() {
+        let request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+
+        let copyOfBidResponse = utils.deepClone(bannerBidResponse);
+        let bidExt = utils.deepClone(copyOfBidResponse.body.seatbid[0].bid[0].ext);
+        copyOfBidResponse.body.seatbid[0].bid[0].ext = Object.assign(bidExt, {
+          ibv: true
+        });
+
+        let response = spec.interpretResponse(copyOfBidResponse, request);
+        expect(response[0].ext.ibv).to.equal(true);
+        expect(response[0].meta.mediaType).to.equal('video');
+      });
+
+      it('should not set ibv field when bid.ext does not exist ', function() {
+        let request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+
+        let response = spec.interpretResponse(bannerBidResponse, request);
+        expect(response[0].ext).to.not.exist;
+        expect(response[0].meta).to.exist;
+        expect(response[0].meta.mediaType).to.equal('banner');
       });
 
       if (FEATURES.VIDEO) {
@@ -3784,9 +3865,9 @@ describe('PubMatic adapter', function () {
       response = spec.interpretResponse({ body: bidResponse }, bidRequest);
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test_bid_id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test_bid_id');
       });
     });
 
@@ -3824,10 +3905,12 @@ describe('PubMatic adapter', function () {
             // dchain: 'dc',
             // demandSource: 'ds',
             // secondaryCatIds: ['secondaryCatIds']
-          }
+          },
         };
 
-        const br = {};
+        const br = {
+          mediaType: 'video'
+        };
         prepareMetaObject(br, bid, null);
         expect(br.meta.networkId).to.equal(6); // dspid
         expect(br.meta.buyerId).to.equal('12'); // adid
@@ -3846,6 +3929,7 @@ describe('PubMatic adapter', function () {
         expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
         expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
         expect(br.meta.dsa).to.equal(dsa); // dsa
+        expect(br.meta.mediaType).to.equal('video'); // mediaType
       });
 
       it('Should be empty, when ext and adomain is absent in bid object', function () {
@@ -4044,10 +4128,10 @@ describe('PubMatic adapter', function () {
     });
 
     if (FEATURES.VIDEO) {
-      describe('Checking for Video.Placement property', function() {
+      describe('Checking for Video.plcmt property', function() {
         let sandbox, utilsMock;
         const adUnit = 'Div1';
-        const msg_placement_missing = 'Video.Placement param missing for Div1';
+        const msg_placement_missing = 'Video.plcmt param missing for Div1';
         let videoData = {
           battr: [6, 7],
           skipafter: 15,
@@ -4071,17 +4155,109 @@ describe('PubMatic adapter', function () {
           sandbox.restore();
         })
 
-        it('should log Video.Placement param missing', function() {
+        it('should log Video.plcmt param missing', function() {
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
         })
-        it('shoud not log Video.Placement param missing', function() {
-          videoData['placement'] = 1;
+        it('shoud not log Video.plcmt param missing', function() {
+          videoData['plcmt'] = 1;
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
         })
       });
     }
+
+    describe('Banner Request param battr checking', function() {
+      it('should add battr params to bannerObj if present in ortb2Imp.banner', function() {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let bannerObj = utils.deepClone(originalBidRequests[0].ortb2Imp.banner);
+        originalBidRequests[0].ortb2Imp.banner = Object.assign(bannerObj, {
+          battr: [1, 2]
+        });
+
+        const req = spec.buildRequests(originalBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.exist.and.to.be.an('array');
+        expect(data.imp[0]['banner']['battr'][0]).to.equal(originalBidRequests[0].ortb2Imp.banner['battr'][0]);
+        expect(data.imp[0]['banner']['battr'][1]).to.equal(originalBidRequests[0].ortb2Imp.banner['battr'][1]);
+      });
+
+      it('should not add battr params to bannerObj if not present in ortb2Imp.banner', function() {
+        const req = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.equal(undefined);
+      });
+
+      it('should not add battr params if _checkParamDataType returns undefined (Mismatch data type)', function() {
+        let originalBidRequests = utils.deepClone(bidRequests);
+        let bannerObj = utils.deepClone(originalBidRequests[0].ortb2Imp.banner);
+        originalBidRequests[0].ortb2Imp.banner = Object.assign(bannerObj, {
+          battr: 1
+        });
+
+        const req = spec.buildRequests(originalBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(req.data);
+        expect(data.imp[0]['banner']['battr']).to.equal(undefined);
+      });
+    });
+
+    describe('setIBVField', function() {
+      it('should set ibv field in newBid.ext when bid.ext.ibv exists', function() {
+        const bid = {
+          ext: {
+            ibv: true
+          }
+        };
+        const newBid = {};
+        setIBVField(bid, newBid);
+        expect(newBid.ext).to.exist;
+        expect(newBid.ext.ibv).to.equal(true);
+        expect(newBid.meta).to.exist;
+        expect(newBid.meta.mediaType).to.equal('video');
+      });
+
+      it('should not set ibv field when bid.ext.ibv does not exist', function() {
+        const bid = {
+          ext: {}
+        };
+        const newBid = {};
+        setIBVField(bid, newBid);
+        expect(newBid.ext).to.not.exist;
+        expect(newBid.meta).to.not.exist;
+      });
+
+      it('should not set ibv field when bid.ext does not exist', function() {
+        const bid = {};
+        const newBid = {};
+        setIBVField(bid, newBid);
+        expect(newBid.ext).to.not.exist;
+        expect(newBid.meta).to.not.exist;
+      });
+
+      it('should preserve existing newBid.ext properties', function() {
+        const bid = {
+          ext: {
+            ibv: true
+          }
+        };
+        const newBid = {
+          ext: {
+            existingProp: 'should remain'
+          }
+        };
+        setIBVField(bid, newBid);
+        expect(newBid.ext.existingProp).to.equal('should remain');
+        expect(newBid.ext.ibv).to.equal(true);
+        expect(newBid.meta).to.exist;
+        expect(newBid.meta.mediaType).to.equal('video');
+      });
+    });
   });
 
   if (FEATURES.VIDEO) {
@@ -4205,6 +4381,51 @@ describe('PubMatic adapter', function () {
       let response = spec.interpretResponse(newBidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].bidderCode).to.equal('groupm');
+    });
+  });
+
+  describe('setTTL', function() {
+    it('should set ttl field in newBid.ttl when bid.exp exists', function() {
+      const bid = {
+        exp: 200
+      };
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(200);
+    });
+
+    it('should set ttl as 360 mediatype banner', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'banner'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
+    });
+
+    it('should set ttl as 1800 mediatype video', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'video'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
+    });
+
+    it('should set ttl as 1800 mediatype native', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'native'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
+    });
+
+    it('should set ttl as 360 as default if all condition fails', function() {
+      const bid = {};
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
     });
   });
 });

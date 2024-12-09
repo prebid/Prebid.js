@@ -40,8 +40,14 @@ export const EVENTS = {
   AUCTION_DEBUG: 'auctionDebug',
   BID_VIEWABLE: 'bidViewable',
   STALE_RENDER: 'staleRender',
+  EXPIRED_RENDER: 'expiredRender',
   BILLABLE_EVENT: 'billableEvent',
-  BID_ACCEPTED: 'bidAccepted'
+  BID_ACCEPTED: 'bidAccepted',
+  RUN_PAAPI_AUCTION: 'paapiRunAuction',
+  PBS_ANALYTICS: 'pbsAnalytics',
+  PAAPI_BID: 'paapiBid',
+  PAAPI_NO_BID: 'paapiNoBid',
+  PAAPI_ERROR: 'paapiError',
 };
 
 export const AD_RENDER_FAILED_REASON = {
@@ -135,7 +141,8 @@ export const REJECTION_REASON = {
   FLOOR_NOT_MET: 'Bid does not meet price floor',
   CANNOT_CONVERT_CURRENCY: 'Unable to convert currency',
   DSA_REQUIRED: 'Bid does not provide required DSA transparency info',
-  DSA_MISMATCH: 'Bid indicates inappropriate DSA rendering method'
+  DSA_MISMATCH: 'Bid indicates inappropriate DSA rendering method',
+  PRICE_TOO_HIGH: 'Bid price exceeds maximum value'
 };
 
 export const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
@@ -188,3 +195,5 @@ export const MESSAGES = {
   NATIVE: 'Prebid Native',
   EVENT: 'Prebid Event'
 };
+
+export const PB_LOCATOR = '__pb_locator__';

@@ -75,7 +75,8 @@ const getConvertedBidReq = () => {
         },
         bidfloor: 0,
         bidfloorcur: 'JPY',
-        id: '2e9f38ea93bb9e'
+        id: '2e9f38ea93bb9e',
+        secure: 1
       }
     ],
     test: 0,

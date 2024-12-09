@@ -1,6 +1,6 @@
 import {
-  buildUrl,
   deepAccess,
+  formatQS,
   getWindowTop,
   isArray,
   isEmpty,
@@ -8,7 +8,9 @@ import {
   isStr,
   logError,
   logInfo,
-  triggerPixel
+  safeJSONEncode,
+  deepClone,
+  deepSetValue
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -18,6 +20,8 @@ import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {ajax} from '../src/ajax.js';
+import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -35,26 +39,19 @@ const SLOT_VISIBILITY = {
   ABOVE_THE_FOLD: 1,
   BELOW_THE_FOLD: 2
 };
-const EVENTS = {
+export const EVENTS = {
   TIMEOUT_EVENT_NAME: 'client_timeout',
-  BID_WON_EVENT_NAME: 'client_bid_won'
+  BID_WON_EVENT_NAME: 'client_bid_won',
+  SET_TARGETING: 'client_set_targeting',
+  BIDDER_ERROR: 'client_bidder_error'
 };
-const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
+export const EVENT_PIXEL_URL = 'https://navvy.media.net/log';
 const OUTSTREAM = 'outstream';
 
-// TODO: this should be picked from bidderRequest
-let refererInfo = getRefererInfo();
-
-let mnData = {};
+let pageMeta;
 
 window.mnet = window.mnet || {};
 window.mnet.queue = window.mnet.queue || [];
-
-mnData.urlData = {
-  domain: refererInfo.domain,
-  page: refererInfo.page,
-  isTop: refererInfo.reachedTop
-};
 
 const aliases = [
   { code: TRUSTEDSTACK_CODE, gvlid: 1288 },
@@ -85,20 +82,20 @@ function siteDetails(site, bidderRequest) {
 }
 
 function getPageMeta() {
-  if (mnData.pageMeta) {
-    return mnData.pageMeta;
+  if (pageMeta) {
+    return pageMeta;
   }
   let canonicalUrl = getUrlFromSelector('link[rel="canonical"]', 'href');
   let ogUrl = getUrlFromSelector('meta[property="og:url"]', 'content');
   let twitterUrl = getUrlFromSelector('meta[name="twitter:url"]', 'content');
 
-  mnData.pageMeta = Object.assign({},
+  pageMeta = Object.assign({},
     canonicalUrl && { 'canonical_url': canonicalUrl },
     ogUrl && { 'og_url': ogUrl },
     twitterUrl && { 'twitter_url': twitterUrl }
   );
 
-  return mnData.pageMeta;
+  return pageMeta;
 }
 
 function getUrlFromSelector(selector, attribute) {
@@ -184,9 +181,10 @@ function extParams(bidRequest, bidderRequests) {
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
   const uspApplies = !!(uspConsent);
   const coppaApplies = !!(config.getConfig('coppa'));
+  const {top = -1, right = -1, bottom = -1, left = -1} = getViewportCoordinates();
   return Object.assign({},
     { customer_id: params.cid },
-    { prebid_version: getGlobal().version },
+    { prebid_version: 'v' + '$prebid.version$' },
     { gdpr_applies: gdprApplies },
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
@@ -195,11 +193,17 @@ function extParams(bidRequest, bidderRequests) {
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
     getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
-    !isEmpty(sChain) && {schain: sChain}
+    !isEmpty(sChain) && {schain: sChain},
+    {
+      vcoords: {
+        top_left: { x: left, y: top },
+        bottom_right: { x: right, y: bottom }
+      }
+    }
   );
 }
 
-function slotParams(bidRequest) {
+function slotParams(bidRequest, bidderRequests) {
   // check with Media.net Account manager for  bid floor and crid parameters
   let params = {
     id: bidRequest.bidId,
@@ -261,7 +265,9 @@ function slotParams(bidRequest) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-
+  if (bidderRequests.paapi?.enabled) {
+    params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
+  }
   return params;
 }
 
@@ -285,7 +291,7 @@ function getBidFloorByType(bidRequest) {
   return floorInfo;
 }
 function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
-  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size});
+  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);
@@ -319,14 +325,15 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
 }
 
 function normalizeCoordinates(coordinates) {
+  const {scrollX, scrollY} = window;
   return {
     top_left: {
-      x: coordinates.top_left.x + window.pageXOffset,
-      y: coordinates.top_left.y + window.pageYOffset,
+      x: coordinates.top_left.x + scrollX,
+      y: coordinates.top_left.y + scrollY,
     },
     bottom_right: {
-      x: coordinates.bottom_right.x + window.pageXOffset,
-      y: coordinates.bottom_right.y + window.pageYOffset,
+      x: coordinates.bottom_right.x + scrollX,
+      y: coordinates.bottom_right.y + scrollY,
     }
   }
 }
@@ -336,14 +343,23 @@ function getBidderURL(bidderCode, cid) {
   return url + '?cid=' + encodeURIComponent(cid);
 }
 
+function ortb2Data(ortb2, bidRequests) {
+  const ortb2Object = deepClone(ortb2);
+  const eids = deepAccess(bidRequests, '0.userIdAsEids');
+  if (eids) {
+    deepSetValue(ortb2Object, 'user.ext.eids', eids)
+  }
+  return ortb2Object;
+}
+
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site, bidderRequests),
     ext: extParams(bidRequests[0], bidderRequests),
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     id: bidRequests[0].auctionId,
-    imp: bidRequests.map(request => slotParams(request)),
-    ortb2: bidderRequests.ortb2,
+    imp: bidRequests.map(request => slotParams(request, bidderRequests)),
+    ortb2: ortb2Data(bidderRequests.ortb2, bidRequests),
     tmax: bidderRequests.timeout
   }
 }
@@ -361,38 +377,71 @@ function fetchCookieSyncUrls(response) {
   return [];
 }
 
-function getLoggingData(event, data) {
-  data = (isArray(data) && data) || [];
-
-  let params = {};
+function getEventData(event) {
+  const params = {};
+  const referrerInfo = getRefererInfo();
   params.logid = 'kfk';
   params.evtid = 'projectevents';
   params.project = 'prebid';
-  params.acid = deepAccess(data, '0.auctionId') || '';
+  params.pbver = '$prebid.version$';
   params.cid = getGlobal().medianetGlobals.cid || '';
-  params.crid = data.map((adunit) => deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
-  params.adunit_count = data.length || 0;
-  params.dn = mnData.urlData.domain || '';
-  params.requrl = mnData.urlData.page || '';
-  params.istop = mnData.urlData.isTop || '';
+  params.dn = encodeURIComponent(referrerInfo.domain || '');
+  params.requrl = encodeURIComponent(referrerInfo.page || '');
   params.event = event.name || '';
   params.value = event.value || '';
   params.rd = event.related_data || '';
-
   return params;
 }
 
-function logEvent (event, data) {
-  let getParams = {
-    protocol: 'https',
-    hostname: EVENT_PIXEL_URL,
-    search: getLoggingData(event, data)
-  };
-  triggerPixel(buildUrl(getParams));
+function getBidData(bid) {
+  const params = {};
+  params.acid = bid.auctionId || '';
+  params.crid = deepAccess(bid, 'params.crid') || deepAccess(bid, 'params.0.crid') || bid.adUnitCode || '';
+  params.ext = safeJSONEncode(bid.ext) || '';
+
+  const rawobj = deepClone(bid);
+  delete rawobj.ad;
+  delete rawobj.vastXml;
+  params.rawobj = safeJSONEncode(rawobj);
+  return params;
 }
 
-function clearMnData() {
-  mnData = {};
+function getLoggingData(event, bids) {
+  const logData = {};
+  if (!isArray(bids)) {
+    bids = [];
+  }
+  bids.forEach((bid) => {
+    let bidData = getBidData(bid);
+    Object.keys(bidData).forEach((key) => {
+      logData[key] = logData[key] || [];
+      logData[key].push(encodeURIComponent(bidData[key]));
+    });
+  });
+  return Object.assign({}, getEventData(event), logData)
+}
+
+function fireAjaxLog(url, payload) {
+  ajax(url,
+    {
+      success: () => undefined,
+      error: () => undefined
+    },
+    payload,
+    {
+      method: 'POST',
+      keepalive: true
+    }
+  );
+}
+
+function logEvent(event, data) {
+  const logData = getLoggingData(event, data);
+  fireAjaxLog(EVENT_PIXEL_URL, formatQS(logData));
+}
+
+function clearPageMeta() {
+  pageMeta = undefined;
 }
 
 function addRenderer(bid) {
@@ -481,26 +530,33 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @returns {{bids: *[], fledgeAuctionConfigs: *[]} | *[]} An object containing bids and fledgeAuctionConfigs if present, otherwise an array of bids.
    */
   interpretResponse: function(serverResponse, request) {
     let validBids = [];
-
     if (!serverResponse || !serverResponse.body) {
       logInfo(`${BIDDER_CODE} : response is empty`);
       return validBids;
     }
-
     let bids = serverResponse.body.bidList;
     if (!isArray(bids) || bids.length === 0) {
       logInfo(`${BIDDER_CODE} : no bids`);
+    } else {
+      validBids = bids.filter(bid => isValidBid(bid));
+      validBids.forEach(addRenderer);
+    }
+    const fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.paApiAuctionConfigs') || [];
+    const ortbAuctionConfigs = deepAccess(serverResponse, 'body.ext.igi') || [];
+    if (fledgeAuctionConfigs.length === 0 && ortbAuctionConfigs.length === 0) {
       return validBids;
     }
-    validBids = bids.filter(bid => isValidBid(bid));
-
-    validBids.forEach(addRenderer);
-
-    return validBids;
+    if (ortbAuctionConfigs.length > 0) {
+      fledgeAuctionConfigs.push(...ortbAuctionConfigs.map(({igs}) => igs || []).flat());
+    }
+    return {
+      bids: validBids,
+      paapi: fledgeAuctionConfigs,
+    }
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     let cookieSyncUrls = fetchCookieSyncUrls(serverResponses);
@@ -541,7 +597,30 @@ export const spec = {
     } catch (e) {}
   },
 
-  clearMnData,
+  onSetTargeting: (bid) => {
+    try {
+      let eventData = {
+        name: EVENTS.SET_TARGETING,
+        value: bid.cpm
+      };
+      const enableSendAllBids = config.getConfig('enableSendAllBids');
+      if (!enableSendAllBids) {
+        logEvent(eventData, [bid]);
+      }
+    } catch (e) {}
+  },
+
+  onBidderError: ({error, bidderRequest}) => {
+    try {
+      let eventData = {
+        name: EVENTS.BIDDER_ERROR,
+        related_data: `timedOut:${error.timedOut}|status:${error.status}|message:${error.reason.message}`
+      };
+      logEvent(eventData, bidderRequest.bids);
+    } catch (e) {}
+  },
+
+  clearPageMeta,
 
   getWindowSize,
 };

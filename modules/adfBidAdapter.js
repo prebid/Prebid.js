@@ -3,7 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 
@@ -75,9 +75,10 @@ export const spec = {
         mediaType: '*'
       }) : {};
 
-      const bidfloor = floorInfo.floor;
-      const bidfloorcur = floorInfo.currency;
+      const bidfloor = floorInfo?.floor;
+      const bidfloorcur = floorInfo?.currency;
       const { mid, inv, mname } = bid.params;
+      const impExtData = bid.ortb2Imp?.ext?.data;
 
       const imp = {
         id: id + 1,
@@ -85,6 +86,7 @@ export const spec = {
         bidfloor,
         bidfloorcur,
         ext: {
+          data: impExtData,
           bidder: {
             inv,
             mname
@@ -252,15 +254,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
-}
 
 function flatten(arr) {
   return [].concat(...arr);

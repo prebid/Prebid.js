@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
+import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
 import { spec } from 'modules/smartadserverBidAdapter.js';
 
 // Default params with optional ones
@@ -456,6 +457,39 @@ describe('Smart bid adapter tests', function () {
       pixelEnabled: true
     }, []);
     expect(syncs).to.have.lengthOf(0);
+  });
+
+  it('should set browsingTopics=false in request.options', () => {
+    const requests = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL);
+    expect(requests[0]).to.have.property('options').and.to.deep.equal({
+      browsingTopics: false
+    });
+  });
+
+  it('Verify metadata', function () {
+    const adomain = ['advertiser-domain.com'];
+    const dsa = {
+      dsarequired: 1,
+      pubrender: 0,
+      datatopub: 1,
+      transparency: [{
+        domain: 'smartadserver.com',
+        dsaparams: [1, 2]
+      }]
+    };
+    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const bids = spec.interpretResponse({
+      body: {
+        ...BID_RESPONSE.body,
+        adomain,
+        dsa,
+      }
+    }, request[0]);
+
+    expect(bids[0].cpm).to.equal(12);
+    expect(bids[0]).to.have.property('meta');
+    expect(bids[0].meta).to.have.property('advertiserDomains').and.to.deep.equal(adomain);
+    expect(bids[0].meta).to.have.property('dsa').and.to.deep.equal(dsa);
   });
 
   describe('gdpr tests', function () {
@@ -1278,21 +1312,10 @@ describe('Smart bid adapter tests', function () {
       expect(bidRequest.bidfloor).to.deep.equal(DEFAULT_PARAMS[0].params.bidfloor);
     });
 
-    it('should return floor from module', function() {
-      const moduleFloor = 1.5;
-      const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
-      bidRequest.getFloor = function () {
-        return { floor: moduleFloor };
-      };
-
-      const floor = spec.getBidFloor(bidRequest, 'EUR');
-      expect(floor).to.deep.equal(moduleFloor);
-    });
-
     it('should return default floor when module not activated', function() {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
 
-      const floor = spec.getBidFloor(bidRequest, 'EUR');
+      const floor = getBidFloor(bidRequest, 'EUR');
       expect(floor).to.deep.equal(0);
     });
 
@@ -1302,14 +1325,14 @@ describe('Smart bid adapter tests', function () {
         return { floor: 'one' };
       };
 
-      const floor = spec.getBidFloor(bidRequest, 'EUR');
+      const floor = getBidFloor(bidRequest, 'EUR');
       expect(floor).to.deep.equal(0.0);
     });
 
     it('should return default floor when currency unknown', function() {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
 
-      const floor = spec.getBidFloor(bidRequest, null);
+      const floor = getBidFloor(bidRequest, null);
       expect(floor).to.deep.equal(0);
     });
 
@@ -1391,6 +1414,95 @@ describe('Smart bid adapter tests', function () {
       const bannerRequest = requestContents.filter(r => !r.videoData)[0];
       expect(bannerRequest).to.not.equal(null).and.to.not.be.undefined;
       expect(bannerRequest).to.have.property('bidfloor').and.to.equal(1.93);
+    });
+
+    describe('#getBidFloor', () => {
+      let bid;
+      beforeEach(() => {
+        bid = {
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [300, 600]
+              ]
+            }
+          },
+          getFloor: (data) => {
+            if (data.currency === 'USD') {
+              if (data.mediaType === BANNER) {
+                if (data.size[0] === 300 && data.size[1] === 250) {
+                  return { floor: 1.2 };
+                } else if (data.size[0] === 300 && data.size[1] === 600) {
+                  return { floor: 1.4 };
+                } else if (data.size[0] === 30 && data.size[1] === 60) {
+                  return 'string';
+                } else {
+                  return { floor: 1.0 };
+                }
+              } else if (data.mediaType === VIDEO) {
+                if (data.size[0] === 640 && data.size[1] === 480) {
+                  return { floor: 2.3 };
+                } else {
+                  return { floor: 2.1 };
+                }
+              } else {
+                return {};
+              }
+            } else {
+              return undefined;
+            }
+          }
+        };
+      });
+
+      it('should return lowest floor from specified ones', () => {
+        expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.2);
+      });
+
+      it('should return default floor for media type whatever size', () => {
+        bid.mediaTypes.banner.sizes.push([300, 400]);
+        expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.0);
+      });
+
+      it('should return default floor', () => {
+        expect(getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(0);
+      });
+
+      it('should return floor when currency not passed', () => {
+        expect(getBidFloor(bid, undefined, BANNER)).to.deep.eq(1.2);
+      });
+
+      it('should return DEFAULT_FLOOR in case of not a number value from floor module', () => {
+        bid.mediaTypes.banner.sizes.push([30, 60]);
+        expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(0);
+      });
+
+      it('should return proper video floor', () => {
+        bid.mediaTypes = {
+          video: {
+            playerSize: [
+              [640, 480]
+            ]
+          }
+        };
+        expect(getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(2.3);
+      });
+
+      it('should return default video floor', () => {
+        bid.mediaTypes = {
+          video: {
+            playerSize: [
+              [640, 490]
+            ]
+          }
+        };
+        expect(getBidFloor(bid, 'USD', VIDEO)).to.deep.eq(2.1);
+      });
+
+      it('should return DEFAULT_FLOOR for not supported media type', () => {
+        expect(getBidFloor(bid, 'USD', 'test')).to.deep.eq(0);
+      });
     });
   });
 
@@ -1502,6 +1614,38 @@ describe('Smart bid adapter tests', function () {
       const requestContent = JSON.parse(request[0].data);
 
       expect(requestContent).to.have.property('gpid').and.to.equal(gpid);
+    });
+  });
+
+  describe('Digital Services Act (DSA)', function () {
+    it('should include dsa if ortb2.regs.ext.dsa available', function () {
+      const dsa = {
+        dsarequired: 1,
+        pubrender: 0,
+        datatopub: 1,
+        transparency: [
+          {
+            domain: 'ok.domain.com',
+            dsaparams: [1, 2]
+          },
+          {
+            domain: 'ko.domain.com',
+            dsaparams: [1, '3']
+          }
+        ]
+      };
+
+      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
+      bidRequests[0].ortb2 = {
+        regs: {
+          ext: { dsa }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('dsa').and.to.deep.equal(dsa);
     });
   });
 

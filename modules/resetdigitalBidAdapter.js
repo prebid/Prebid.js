@@ -1,4 +1,4 @@
-import { timestamp, deepAccess, isStr, deepClone } from '../src/utils.js';
+import { timestamp, deepAccess, isStr, deepClone, isPlainObject } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -92,7 +92,7 @@ export const spec = {
           size: '*',
         });
         if (
-          typeof floorInfo === 'object' &&
+          isPlainObject(floorInfo) &&
           floorInfo.currency === CURRENCY &&
           !isNaN(parseFloat(floorInfo.floor))
         ) {

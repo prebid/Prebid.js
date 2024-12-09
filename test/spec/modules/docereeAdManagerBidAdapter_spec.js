@@ -1,30 +1,32 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/docereeAdManagerBidAdapter.js';
+import { spec, getPayload, getPageUrl } from '../../../modules/docereeAdManagerBidAdapter.js';
 import { config } from '../../../src/config.js';
+import * as utils from '../../../src/utils.js';
 
 describe('docereeadmanager', function () {
   config.setConfig({
     docereeadmanager: {
       user: {
         data: {
+          userId: '',
           email: '',
           firstname: '',
           lastname: '',
-          mobile: '',
           specialization: '',
-          organization: '',
           hcpid: '',
-          dob: '',
           gender: '',
           city: '',
           state: '',
-          country: '',
+          zipcode: '',
+          hashedNPI: '',
           hashedhcpid: '',
           hashedemail: '',
           hashedmobile: '',
-          userid: '',
-          zipcode: '',
-          userconsent: '',
+          country: '',
+          organization: '',
+          dob: '',
+          platformUid: '',
+          mobile: '',
         },
       },
     },
@@ -34,6 +36,7 @@ describe('docereeadmanager', function () {
     bidder: 'docereeadmanager',
     params: {
       placementId: 'DOC-19-1',
+      publisherUrl: 'xxxxxx.com/xxxx',
       gdpr: '1',
       gdprconsent:
         'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g',
@@ -122,4 +125,98 @@ describe('docereeadmanager', function () {
         .empty;
     });
   });
+
+  describe('getPageUrl', function () {
+    it('should return an url string', function () {
+      const result = getPageUrl();
+      expect(result).to.equal(utils.getWindowSelf().location.href);
+    });
+  });
+
+  describe('payload', function () {
+    it('should return payload with the correct data', function () {
+      const data = {
+        userId: 'xxxxx',
+        email: 'xxxx@mail.com',
+        firstname: 'Xxxxx',
+        lastname: 'Xxxxxx',
+        specialization: 'Xxxxxxxxx',
+        hcpid: 'xxxxxxx',
+        gender: 'Xxxx',
+        city: 'Xxxxx',
+        state: 'Xxxxxx',
+        zipcode: 'XXXXXX',
+        hashedNPI: 'xxxxxx',
+        hashedhcpid: 'xxxxxxx',
+        hashedemail: 'xxxxxxx',
+        hashedmobile: 'xxxxxxx',
+        country: 'Xxxxxx',
+        organization: 'Xxxxxx',
+        dob: 'xx-xx-xxxx',
+        platformUid: 'Xx.xxx.xxxxxx',
+        mobile: 'XXXXXXXXXX',
+      }
+      bid = { ...bid, params: { ...bid.params, placementId: 'DOC-19-1' } }
+      const buildRequests = {
+        gdprConsent: {
+          consentString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+          gdprApplies: false
+        }
+      }
+      const payload = getPayload(bid, data, buildRequests);
+
+      const payloadData = payload.data;
+      expect(payloadData).to.have.all.keys(
+        'userid',
+        'email',
+        'firstname',
+        'lastname',
+        'specialization',
+        'hcpid',
+        'gender',
+        'city',
+        'state',
+        'zipcode',
+        'hashedNPI',
+        'pb',
+        'adunit',
+        'requestId',
+        'hashedhcpid',
+        'hashedemail',
+        'hashedmobile',
+        'country',
+        'organization',
+        'dob',
+        'userconsent',
+        'mobile',
+        'pageurl',
+        'consent'
+      );
+      expect(payloadData.userid).to.equal('Xx.xxx.xxxxxx');
+      expect(payloadData.email).to.equal('xxxx@mail.com');
+      expect(payloadData.firstname).to.equal('Xxxxx');
+      expect(payloadData.lastname).to.equal('Xxxxxx');
+      expect(payloadData.specialization).to.equal('Xxxxxxxxx');
+      expect(payloadData.hcpid).to.equal('xxxxxxx');
+      expect(payloadData.gender).to.equal('Xxxx');
+      expect(payloadData.city).to.equal('Xxxxx');
+      expect(payloadData.state).to.equal('Xxxxxx');
+      expect(payloadData.zipcode).to.equal('XXXXXX');
+      expect(payloadData.hashedNPI).to.equal('xxxxxx');
+      expect(payloadData.pb).to.equal(1);
+      expect(payloadData.userconsent).to.equal(1);
+      expect(payloadData.dob).to.equal('xx-xx-xxxx');
+      expect(payloadData.organization).to.equal('Xxxxxx');
+      expect(payloadData.country).to.equal('Xxxxxx');
+      expect(payloadData.hashedmobile).to.equal('xxxxxxx');
+      expect(payloadData.hashedemail).to.equal('xxxxxxx');
+      expect(payloadData.hashedhcpid).to.equal('xxxxxxx');
+      expect(payloadData.requestId).to.equal('testing');
+      expect(payloadData.mobile).to.equal('XXXXXXXXXX');
+      expect(payloadData.adunit).to.equal('DOC-19-1');
+      expect(payloadData.pageurl).to.equal('xxxxxx.com/xxxx');
+      expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
+      expect(payloadData.consent.gdpr).to.equal(0);
+    })
+  })
 });

@@ -3,9 +3,17 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
+ * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
+ * Also see https://github.com/prebid/Prebid.js/issues/11656
+ */
+// eslint-disable-next-line no-restricted-imports
 import {loadExternalScript} from '../src/adloader.js';
+import { MODULE_TYPE_BIDDER } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -23,13 +31,10 @@ const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
 const PB_ENDPOINT = 'pb';
 const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
+const DEFAULT_CURRENCY = 'USD';
 
 const VIDEO_PARAMS = {
-  DEFAULT_MIMES: ['video/mp4'],
-  PLACEMENT_TYPE: {
-    INSTREAM: 1,
-    OUTSTREAM: 3,
-  }
+  DEFAULT_MIMES: ['video/mp4']
 };
 
 export const spec = {
@@ -46,7 +51,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return !!(bid && bid.params && (bid.params.placementId || (bid.params.placementKey && bid.params.publisherId)));
+    return !!(bid && bid.params && bid.params.placementId && bid.params.publisherId);
   },
 
   /**
@@ -122,6 +127,21 @@ export const spec = {
 
 registerBidder(spec);
 
+const convertBidFloorCurrency = (imp) => {
+  try {
+    const bidFloor = convertCurrency(
+      imp.bidfloor,
+      imp.bidfloorcur,
+      DEFAULT_CURRENCY,
+      false,
+    );
+    imp.bidfloor = bidFloor;
+    imp.bidfloorcur = DEFAULT_CURRENCY;
+  } catch (err) {
+    logWarn(`Failed to convert bid floor to ${DEFAULT_CURRENCY}. Passing floor price in its original currency.`, err);
+  }
+};
+
 export const CONVERTER = ortbConverter({
   context: {
     ttl: CREATIVE_TTL,
@@ -133,21 +153,22 @@ export const CONVERTER = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    imp.secure = Number(window.location.protocol === 'https:');
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || DEFAULT_CURRENCY;
+    }
+
+    if (imp.bidfloor && imp.bidfloorcur && imp.bidfloorcur !== DEFAULT_CURRENCY) {
+      convertBidFloorCurrency(imp);
     }
     const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
     const placementId = bidRequest.params.placementId;
-    if (placementId) {
-      deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
-      if (context.extendMode) {
-        deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
-      }
-    } else {
-      deepSetValue(imp, `${bidderParamsPath}.publisherId`, getBidIdParameter('publisherId', bidRequest.params));
-      deepSetValue(imp, `${bidderParamsPath}.placementKey`, getBidIdParameter('placementKey', bidRequest.params));
+    const publisherId = bidRequest.params.publisherId;
+    deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
+    deepSetValue(imp, `${bidderParamsPath}.publisherId`, publisherId);
+    if (context.extendMode) {
+      deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
     }
     deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
 
@@ -210,9 +231,9 @@ export const CONVERTER = ortbConverter({
   overrides: {
     imp: {
       banner(fillImpBanner, imp, bidRequest, context) {
-        // override to disregard banner.sizes if usePrebidSizes is not set
+        // override to disregard banner.sizes if usePrebidSizes is false
         if (!bidRequest.mediaTypes[BANNER]) return;
-        if (config.getConfig('improvedigital.usePrebidSizes') !== true) {
+        if (config.getConfig('improvedigital.usePrebidSizes') === false) {
           const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
           bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
         }
@@ -232,33 +253,6 @@ export const CONVERTER = ortbConverter({
           context
         );
         deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
-        if (!imp.video.placement && ID_REQUEST.isOutstreamVideo(bidRequest)) {
-          // fillImpVideo will have already set placement = 1 for instream
-          imp.video.placement = VIDEO_PARAMS.PLACEMENT_TYPE.OUTSTREAM;
-        }
-      }
-    },
-    request: {
-      gdprAddtlConsent(setAddtlConsent, ortbRequest, bidderRequest) {
-        const additionalConsent = bidderRequest?.gdprConsent?.addtlConsent;
-        if (!additionalConsent) {
-          return;
-        }
-        if (spec.syncStore.extendMode) {
-          setAddtlConsent(ortbRequest, bidderRequest);
-          return;
-        }
-        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
-          // Google Ad Tech Provider IDs
-          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          if (atpIds) {
-            deepSetValue(
-              ortbRequest,
-              'user.ext.consented_providers_settings.consented_providers',
-              atpIds.split('.').map(id => parseInt(id, 10))
-            );
-          }
-        }
       }
     }
   }
@@ -424,7 +418,7 @@ const ID_RAZR = {
       ns.q.push(data);
 
       if (!ns.loaded) {
-        loadExternalScript(ID_RAZR.RENDERER_URL, BIDDER_CODE);
+        loadExternalScript(ID_RAZR.RENDERER_URL, MODULE_TYPE_BIDDER, BIDDER_CODE);
       }
     });
 

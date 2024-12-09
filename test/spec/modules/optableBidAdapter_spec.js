@@ -47,6 +47,33 @@ describe('optableBidAdapter', function() {
     });
   });
 
+  describe('buildPAAPIConfigs', () => {
+    function makeRequest({bidId, site = 'mockSite', ae = 1}) {
+      return {
+        bidId,
+        params: {
+          site
+        },
+        ortb2Imp: {
+          ext: {ae}
+        }
+      }
+    }
+    it('should generate auction configs for ae requests', () => {
+      const configs = spec.buildPAAPIConfigs([
+        makeRequest({bidId: 'bid1', ae: 1}),
+        makeRequest({bidId: 'bid2', ae: 0}),
+        makeRequest({bidId: 'bid3', ae: 1}),
+      ]);
+      expect(configs.map(cfg => cfg.bidId)).to.eql(['bid1', 'bid3']);
+      configs.forEach(cfg => sinon.assert.match(cfg.config, {
+        seller: 'https://ads.optable.co',
+        decisionLogicURL: `https://ads.optable.co/ca/paapi/v1/ssp/decision-logic.js?origin=mockSite`,
+        interestGroupBuyers: ['https://ads.optable.co']
+      }))
+    })
+  })
+
   describe('interpretResponse', function() {
     const validBid = {
       bidder: 'optable',
@@ -78,10 +105,10 @@ describe('optableBidAdapter', function() {
       }
     };
 
-    it('maps fledgeAuctionConfigs from ext.optable.fledge.auctionconfigs', function() {
+    it('maps paapi from ext.optable.fledge.auctionconfigs', function() {
       const request = spec.buildRequests([validBid], bidderRequest);
       const result = spec.interpretResponse(response, request);
-      expect(result.fledgeAuctionConfigs).to.deep.equal([
+      expect(result.paapi).to.deep.equal([
         { bidId: 'bid123', config: { seller: 'https://ads.optable.co' } }
       ]);
     });

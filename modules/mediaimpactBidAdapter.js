@@ -1,6 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { buildUrl } from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { buildBidRequestsAndParams, postRequest, buildEndpointUrl } from '../libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'mediaimpact';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -15,77 +14,23 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    // TODO does it make sense to fall back to window.location.href?
     const referer = bidderRequest?.refererInfo?.page || window.location.href;
 
-    let bidRequests = [];
-    let beaconParams = {
-      tag: [],
-      partner: [],
-      sizes: [],
-      referer: ''
-    };
+    // Use the common function to build bidRequests and beaconParams
+    const { bidRequests, beaconParams } = buildBidRequestsAndParams(validBidRequests, referer);
 
-    validBidRequests.forEach(function(validBidRequest) {
-      let sizes = validBidRequest.sizes;
-      if (typeof validBidRequest.params.sizes !== 'undefined') {
-        sizes = validBidRequest.params.sizes;
-      }
-
-      let bidRequestObject = {
-        adUnitCode: validBidRequest.adUnitCode,
-        sizes: sizes,
-        bidId: validBidRequest.bidId,
-        referer: referer
-      };
-
-      if (parseInt(validBidRequest.params.unitId)) {
-        bidRequestObject.unitId = parseInt(validBidRequest.params.unitId);
-        beaconParams.tag.push(validBidRequest.params.unitId);
-      }
-
-      if (parseInt(validBidRequest.params.partnerId)) {
-        bidRequestObject.unitId = 0;
-        bidRequestObject.partnerId = parseInt(validBidRequest.params.partnerId);
-        beaconParams.partner.push(validBidRequest.params.partnerId);
-      }
-
-      bidRequests.push(bidRequestObject);
-
-      beaconParams.sizes.push(spec.joinSizesToString(sizes));
-      beaconParams.referer = encodeURIComponent(referer);
-    });
-
-    if (beaconParams.partner.length > 0) {
-      beaconParams.partner = beaconParams.partner.join(',');
-    } else {
-      delete beaconParams.partner;
-    }
-
-    beaconParams.tag = beaconParams.tag.join(',');
-    beaconParams.sizes = beaconParams.sizes.join(',');
-
-    let adRequestUrl = buildUrl({
-      protocol: ENDPOINT_PROTOCOL,
-      hostname: ENDPOINT_DOMAIN,
-      pathname: ENDPOINT_PATH,
-      search: beaconParams
-    });
+    const adRequestUrl = buildEndpointUrl(
+      ENDPOINT_PROTOCOL,
+      ENDPOINT_DOMAIN,
+      ENDPOINT_PATH,
+      beaconParams
+    );
 
     return {
       method: 'POST',
       url: adRequestUrl,
-      data: JSON.stringify(bidRequests)
+      data: JSON.stringify(bidRequests),
     };
-  },
-
-  joinSizesToString: function(sizes) {
-    let res = [];
-    sizes.forEach(function(size) {
-      res.push(size.join('x'));
-    });
-
-    return res.join('|');
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
@@ -96,16 +41,13 @@ export const spec = {
     }
 
     return validBids
-      .map(bid => ({
-        bid: bid,
-        ad: serverResponse.body[bid.adUnitCode]
-      }))
+      .map(bid => ({ bid: bid, ad: serverResponse.body[bid.adUnitCode] }))
       .filter(item => item.ad)
       .map(item => spec.adResponse(item.bid, item.ad));
   },
 
-  adResponse: function(bid, ad) {
-    const bidObject = {
+  adResponse: function (bid, ad) {
+    return {
       requestId: bid.bidId,
       ad: ad.ad,
       cpm: ad.cpm,
@@ -115,35 +57,25 @@ export const spec = {
       creativeId: ad.creativeId,
       netRevenue: ad.netRevenue,
       currency: ad.currency,
-      winNotification: ad.winNotification
-    }
-
-    bidObject.meta = {};
-    if (ad.adomain && ad.adomain.length > 0) {
-      bidObject.meta.advertiserDomains = ad.adomain;
-    }
-
-    return bidObject;
+      winNotification: ad.winNotification,
+      meta: ad.meta || {},
+    };
   },
 
-  onBidWon: function(data) {
-    data.winNotification.forEach(function(unitWon) {
-      let adBidWonUrl = buildUrl({
-        protocol: ENDPOINT_PROTOCOL,
-        hostname: ENDPOINT_DOMAIN,
-        pathname: unitWon.path
-      });
+  onBidWon: function (data) {
+    data.winNotification.forEach(function (unitWon) {
+      const adBidWonUrl = buildEndpointUrl(
+        ENDPOINT_PROTOCOL,
+        ENDPOINT_DOMAIN,
+        unitWon.path
+      );
 
       if (unitWon.method === 'POST') {
-        spec.postRequest(adBidWonUrl, JSON.stringify(unitWon.data));
+        postRequest(adBidWonUrl, JSON.stringify(unitWon.data));
       }
     });
 
     return true;
-  },
-
-  postRequest(endpoint, data) {
-    ajax(endpoint, null, data, {method: 'POST'});
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
@@ -210,7 +142,6 @@ export const spec = {
 
     return syncs;
   },
-
-}
+};
 
 registerBidder(spec);

@@ -1,12 +1,13 @@
-import {getBidRequest, logError} from '../src/utils.js';
+import {getBidRequest} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {interpretResponseUtil} from '../libraries/interpretResponseUtils/index.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
@@ -68,31 +69,14 @@ export const spec = {
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
     try {
-      serverResponse = serverResponse.body;
-      const bids = [];
-      if (!serverResponse) {
-        return [];
-      }
-      if (serverResponse.error) {
-        let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-        if (serverResponse.error) {
-          errorMessage += `: ${serverResponse.error}`;
+      const bids = interpretResponseUtil(serverResponse, {bidderRequest}, serverBid => {
+        const rtbBid = getRtbBid(serverBid);
+        if (rtbBid && rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          const bid = newBid(serverBid, rtbBid, bidderRequest);
+          bid.mediaType = parseMediaType(rtbBid);
+          return bid;
         }
-        logError(errorMessage);
-        return bids;
-      }
-      if (serverResponse.tags) {
-        serverResponse.tags.forEach(serverBid => {
-          const rtbBid = getRtbBid(serverBid);
-          if (rtbBid) {
-            if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
-              const bid = newBid(serverBid, rtbBid, bidderRequest);
-              bid.mediaType = parseMediaType(rtbBid);
-              bids.push(bid);
-            }
-          }
-        });
-      }
+      });
       return bids;
     } catch (e) {
       return [];

@@ -11,6 +11,7 @@ import { loadExternalScript } from '../src/adloader.js';
 import { logError, generateUUID, insertElement } from '../src/utils.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -47,6 +48,7 @@ let preloadStatus = 0;
  * @param {string} scriptURL The script URL to preload
  */
 function pageInitStepPreloadScript(scriptURL) {
+  // TODO: this bypasses adLoader
   const linkElement = document.createElement('link');
   linkElement.rel = 'preload';
   linkElement.as = 'script';
@@ -61,7 +63,7 @@ function pageInitStepPreloadScript(scriptURL) {
  * @param {string} scriptURL The script URL to add to the page for protection
  */
 function pageInitStepProtectPage(scriptURL) {
-  loadExternalScript(scriptURL, 'clean.io');
+  loadExternalScript(scriptURL, MODULE_TYPE_RTD, 'clean.io');
 }
 
 /**

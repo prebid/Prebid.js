@@ -1,13 +1,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
 const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
+const IDENTIFIER_PREFIX = 'Sharethrough:';
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
@@ -18,7 +19,7 @@ export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
   gvlid: 80,
-  isBidRequestValid: (bid) => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
+  isBidRequestValid: (bid) => !!bid.params.pkey,
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = bidderRequest.timeout;
@@ -68,6 +69,11 @@ export const sharethroughAdapterSpec = {
       req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
     }
 
+    // if present, merge device object from ortb2 into `req.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(req.device, bidderRequest.ortb2.device);
+    }
+
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
     req.user.ext.eids = bidRequests[0].userIdAsEids || [];
@@ -108,7 +114,7 @@ export const sharethroughAdapterSpec = {
 
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
-        if (bidderRequest.fledgeEnabled && bidReq.mediaTypes.banner) {
+        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
           mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
         }
 
@@ -124,43 +130,48 @@ export const sharethroughAdapterSpec = {
             [w, h] = videoRequest.playerSize[0];
           }
 
-          const getVideoPlacementValue = (vidReq) => {
-            if (vidReq.plcmt) {
-              return vidReq.placement;
-            } else {
-              return vidReq.context === 'instream' ? 1 : +deepAccess(vidReq, 'placement', 4);
+          /**
+           * Applies a specified property to an impression object if it is present in the video request
+           * @param {string} prop A property to apply to the impression object
+           * @param {object} vidReq A video request object from which to extract the property
+           * @param {object} imp A video impression object to which to apply the property
+           */
+          const applyVideoProperty = (prop, vidReq, imp) => {
+            const propIsTypeArray = ['api', 'battr', 'mimes', 'playbackmethod', 'protocols'].includes(prop);
+            if (propIsTypeArray) {
+              const notAssignable = (!Array.isArray(vidReq[prop]) || vidReq[prop].length === 0) && vidReq[prop];
+              if (notAssignable) {
+                logWarn(`${IDENTIFIER_PREFIX} Invalid video request property: "${prop}" must be an array with at least 1 entry.  Value supplied: "${vidReq[prop]}".  This will not be added to the bid request.`);
+                return;
+              }
+            }
+            if (vidReq[prop]) {
+              imp.video[prop] = vidReq[prop];
             }
           };
 
           impression.video = {
             pos: nullish(videoRequest.pos, 0),
             topframe: inIframe() ? 0 : 1,
-            skip: nullish(videoRequest.skip, 0),
-            linearity: nullish(videoRequest.linearity, 1),
-            minduration: nullish(videoRequest.minduration, 5),
-            maxduration: nullish(videoRequest.maxduration, 60),
-            playbackmethod: videoRequest.playbackmethod || [2],
-            api: getVideoApi(videoRequest),
-            mimes: videoRequest.mimes || ['video/mp4'],
-            protocols: getVideoProtocols(videoRequest),
             w,
             h,
-            startdelay: nullish(videoRequest.startdelay, 0),
-            skipmin: nullish(videoRequest.skipmin, 0),
-            skipafter: nullish(videoRequest.skipafter, 0),
-            placement: getVideoPlacementValue(videoRequest),
-            plcmt: videoRequest.plcmt ? videoRequest.plcmt : null,
           };
 
-          if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
-          if (videoRequest.companiontype) impression.video.companiontype = videoRequest.companiontype;
-          if (videoRequest.companionad) impression.video.companionad = videoRequest.companionad;
+          const propertiesToConsider = [
+            'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
+          ]
+
+          propertiesToConsider.forEach(propertyToConsider => {
+            applyVideoProperty(propertyToConsider, videoRequest, impression);
+          });
         } else {
           impression.banner = {
             pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
             topframe: inIframe() ? 0 : 1,
             format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
           };
+          const battr = deepAccess(bidReq, 'mediaTypes.banner.battr', null) || deepAccess(bidReq, 'ortb2Imp.banner.battr')
+          if (battr) impression.banner.battr = battr
         }
 
         return {
@@ -242,7 +253,7 @@ export const sharethroughAdapterSpec = {
     if (fledgeAuctionEnabled) {
       return {
         bids: bidsFromExchange,
-        fledgeAuctionConfigs: body.ext?.auctionConfigs || {},
+        paapi: body.ext?.auctionConfigs || {},
       };
     } else {
       return bidsFromExchange;
@@ -266,24 +277,6 @@ export const sharethroughAdapterSpec = {
   onSetTargeting: (bid) => {},
 };
 
-function getVideoApi({ api }) {
-  let defaultValue = [2];
-  if (api && Array.isArray(api) && api.length > 0) {
-    return api;
-  } else {
-    return defaultValue;
-  }
-}
-
-function getVideoProtocols({ protocols }) {
-  let defaultValue = [2, 3, 5, 6, 7, 8];
-  if (protocols && Array.isArray(protocols) && protocols.length > 0) {
-    return protocols;
-  } else {
-    return defaultValue;
-  }
-}
-
 function getBidRequestFloor(bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
@@ -292,7 +285,7 @@ function getBidRequestFloor(bid) {
       mediaType: bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner',
       size: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
     });
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
   }

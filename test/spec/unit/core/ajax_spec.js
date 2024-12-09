@@ -405,24 +405,22 @@ describe('attachCallbacks', () => {
     }).forEach(([cbType, makeResponse]) => {
       it(`do not choke ${cbType} callbacks`, () => {
         const {response} = makeResponse();
-        return new Promise((resolve) => {
-          const result = {success: false, error: false};
-          attachCallbacks(Promise.resolve(response), {
-            success() {
-              result.success = true;
-              throw new Error();
-            },
-            error() {
-              result.error = true;
-              throw new Error();
-            }
+        const result = {success: false, error: false};
+        return attachCallbacks(Promise.resolve(response), {
+          success() {
+            result.success = true;
+            throw new Error();
+          },
+          error() {
+            result.error = true;
+            throw new Error();
+          }
+        }).catch(() => null)
+          .then(() => {
+            Object.entries(result).forEach(([typ, ran]) => {
+              expect(ran).to.be[typ === cbType ? 'true' : 'false'];
+            });
           });
-          setTimeout(() => resolve(result), 20);
-        }).then(result => {
-          Object.entries(result).forEach(([typ, ran]) => {
-            expect(ran).to.be[typ === cbType ? 'true' : 'false']
-          })
-        });
       });
     });
   });

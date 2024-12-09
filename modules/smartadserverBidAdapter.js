@@ -1,17 +1,26 @@
-import { deepAccess, deepClone, isArrayOfNums, isFn, isInteger, isPlainObject, logError } from '../src/utils.js';
+import {
+  deepAccess,
+  deepClone,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isInteger,
+  logError
+} from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
-const DEFAULT_FLOOR = 0.0;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -156,6 +165,9 @@ export const spec = {
       method: 'POST',
       url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
       data: JSON.stringify(payload),
+      options: {
+        browsingTopics: false
+      }
     };
   },
 
@@ -163,7 +175,7 @@ export const spec = {
    * Makes server requests from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests an array of bids
-   * @param {BidderRequest} bidderRequest bidder request object
+   * @param {BidRequest} bidderRequest bidder request object
    * @return {ServerRequest[]} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -196,9 +208,14 @@ export const spec = {
         sdc: sellerDefinedContext
       };
 
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         payload.gpid = gpid;
+      }
+
+      const dsa = deepAccess(bid, 'ortb2.regs.ext.dsa');
+      if (dsa) {
+        payload.dsa = dsa;
       }
 
       if (bidderRequest) {
@@ -239,7 +256,7 @@ export const spec = {
           if (isSupportedVideoContext) {
             let videoPayload = deepClone(payload);
             spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
-            videoPayload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
+            videoPayload.bidfloor = bid.params.bidfloor || getBidFloor(bid, adServerCurrency, VIDEO);
             bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
           }
         } else {
@@ -247,7 +264,7 @@ export const spec = {
           spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
         }
 
-        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, type);
+        payload.bidfloor = bid.params.bidfloor || getBidFloor(bid, adServerCurrency, type);
         bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
       } else {
         bidRequests.push({});
@@ -282,7 +299,10 @@ export const spec = {
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
           dspPixels: response.dspPixels,
-          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
+          meta: {
+            ...isArray(response.adomain) && !isEmpty(response.adomain) ? { advertiserDomains: response.adomain } : {},
+            ...!isEmpty(response.dsa) ? { dsa: response.dsa } : {}
+          }
         };
 
         if (bidRequest.mediaType === VIDEO) {
@@ -304,33 +324,11 @@ export const spec = {
   },
 
   /**
-   * Get floors from Prebid Price Floors module
-   *
-   * @param {object} bid Bid request object
-   * @param {string} currency Ad server currency
-   * @param {string} mediaType Bid media type
-   * @return {number} Floor price
-   */
-  getBidFloor: function (bid, currency, mediaType) {
-    if (!isFn(bid.getFloor)) {
-      return DEFAULT_FLOOR;
-    }
-
-    const floor = bid.getFloor({
-      currency: currency || 'USD',
-      mediaType,
-      size: '*'
-    });
-
-    return isPlainObject(floor) && !isNaN(floor.floor) ? floor.floor : DEFAULT_FLOOR;
-  },
-
-  /**
    * User syncs.
    *
    * @param {*} syncOptions Publisher prebid configuration.
    * @param {*} serverResponses A successful response from the server.
-   * @return {syncs[]} An array of syncs that should be executed.
+   * @return {UserSync[]} An array of syncs that should be executed.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];

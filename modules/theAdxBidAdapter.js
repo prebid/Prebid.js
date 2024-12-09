@@ -20,6 +20,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'theadx';
 const ENDPOINT_URL = 'https://ssp.theadx.com/request';
+const ENDPOINT_TR_URL = 'https://ssptr.theadx.com/request';
 
 const NATIVEASSETNAMES = {
   0: 'title',
@@ -125,7 +126,7 @@ const NATIVEPROBS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['theadx'], // short code
+  aliases: ['theadx', 'theAdx'], // short code
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -160,10 +161,11 @@ export const spec = {
     if (!isEmpty(validBidRequests)) {
       results = validBidRequests.map(
         bidRequest => {
+          let url = `${getRegionEndPoint(bidRequest)}?tagid=${bidRequest.params.tagId}`;
           return {
             method: requestType,
             type: requestType,
-            url: `${ENDPOINT_URL}?tagid=${bidRequest.params.tagId}`,
+            url: url,
             options: {
               withCredentials: true,
             },
@@ -500,6 +502,14 @@ let generateImpBody = (bidRequest, bidderRequest) => {
 
   return result;
 }
+let getRegionEndPoint = (bidRequest) => {
+  if (bidRequest && bidRequest.params && bidRequest.params.region) {
+    if (bidRequest.params.region.toLowerCase() == 'tr') {
+      return ENDPOINT_TR_URL;
+    }
+  }
+  return ENDPOINT_URL;
+};
 
 let generatePayload = (bidRequest, bidderRequest) => {
   // Generate the expected OpenRTB payload
@@ -511,7 +521,38 @@ let generatePayload = (bidRequest, bidderRequest) => {
     imp: [generateImpBody(bidRequest, bidderRequest)],
   };
   // return payload;
+  let eids = getEids(bidRequest);
+  if (Object.keys(eids).length > 0) {
+    payload.ext = eids;
+  }
   return JSON.stringify(payload);
+};
+
+function getEids(bidRequest) {
+  let eids = {}
+
+  let uId2 = deepAccess(bidRequest, 'userId.uid2.id');
+  if (uId2) {
+    eids['uid2'] = uId2;
+  }
+
+  let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
+  if (id5) {
+    eids['id5id'] = id5;
+    let id5Linktype = deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+    if (id5Linktype) {
+      eids['id5_linktype'] = id5Linktype;
+    }
+  }
+  let netId = deepAccess(bidRequest, 'userId.netId');
+  if (netId) {
+    eids['netid'] = netId;
+  }
+  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  if (sharedId) {
+    eids['sharedid'] = sharedId;
+  }
+  return eids;
 };
 
 registerBidder(spec);

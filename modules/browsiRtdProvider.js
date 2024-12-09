@@ -13,6 +13,7 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
+ * @property {?string} splitKey
  */
 
 import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
@@ -25,6 +26,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import {setKeyValue as setGptKeyValue} from '../libraries/gptUtils/gptUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -33,6 +35,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+const RANDOM = Math.floor(Math.random() * 10) + 1;
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -50,7 +53,7 @@ let _ic = {};
  * @param {Object} data
  */
 export function addBrowsiTag(data) {
-  let script = loadExternalScript(data.u, 'browsi');
+  let script = loadExternalScript(data.u, MODULE_TYPE_RTD, 'browsi');
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);
@@ -58,11 +61,14 @@ export function addBrowsiTag(data) {
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
   script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
+  script.brwRandom = RANDOM;
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
   return script;
 }
+
+export const setKeyValue = (key) => setGptKeyValue(key, RANDOM.toString());
 
 export function sendPageviewEvent(eventType) {
   if (eventType === 'PAGEVIEW') {
@@ -380,6 +386,7 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     collectData();
+    setKeyValue(_moduleParams.splitKey);
   } else {
     logError('missing params for Browsi provider');
   }

@@ -53,8 +53,7 @@ let analyticsType = 'endpoint';
 
 let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
   track({eventType, args}) {
-    args = utils.cloneEventArguments(args || {});
-
+    args = args ? utils.deepClone(args) : {};
     var data = {};
     if (!eventsToTrack.includes(eventType)) return;
     switch (eventType) {

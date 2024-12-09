@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/mediaimpactBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as miUtils from 'libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'mediaimpact';
 
@@ -117,7 +118,7 @@ describe('MediaimpactAdapter', function () {
 
   describe('joinSizesToString', function () {
     it('success convert sizes list to string', function () {
-      const sizesStr = spec.joinSizesToString([[300, 250], [300, 600]]);
+      const sizesStr = miUtils.joinSizesToString([[300, 250], [300, 600]]);
       expect(sizesStr).to.equal('300x250|300x600');
     });
   });
@@ -139,9 +140,9 @@ describe('MediaimpactAdapter', function () {
             'width': 300,
             'height': 250,
             'creativeId': '8:123456',
-            'adomain': [
-              'test.domain'
-            ],
+            'meta': {
+              'advertiserDomains': ['test.domain']
+            },
             'syncs': [
               {'type': 'image', 'url': 'https://test.domain/tracker_1.gif'},
               {'type': 'image', 'url': 'https://test.domain/tracker_2.gif'},
@@ -200,9 +201,9 @@ describe('MediaimpactAdapter', function () {
       'cpm': 0.01,
       'currency': 'USD',
       'netRevenue': true,
-      'adomain': [
-        'test.domain'
-      ],
+      'meta': {
+        'advertiserDomains': ['test.domain']
+      },
     };
 
     it('fill ad for response', function () {
@@ -238,7 +239,7 @@ describe('MediaimpactAdapter', function () {
     let ajaxStub;
 
     beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'postRequest')
+      ajaxStub = sinon.stub(miUtils, 'postRequest')
     })
 
     afterEach(() => {
@@ -263,9 +264,9 @@ describe('MediaimpactAdapter', function () {
             'width': 300,
             'height': 250,
             'creativeId': '8:123456',
-            'adomain': [
-              'test.domain'
-            ],
+            'meta': {
+              'advertiserDomains': ['test.domain']
+            },
             'syncs': [
               {'type': 'image', 'link': 'https://test.domain/tracker_1.gif'},
               {'type': 'image', 'link': 'https://test.domain/tracker_2.gif'},

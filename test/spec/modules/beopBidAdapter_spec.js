@@ -132,7 +132,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.url).to.equal('http://test.te');
     });
 
-    it('should call the endpoint with psegs and bpsegs (stringified) data if any or [] if none', function () {
+    it('should call the endpoint with bpsegs (stringified) data if any or [] if none', function () {
       let bidderRequest =
       {
         'ortb2': {
@@ -149,15 +149,14 @@ describe('BeOp Bid Adapter tests', () => {
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
-      expect(payload.psegs).to.exist;
-      expect(payload.psegs).to.include(1234);
-      expect(payload.psegs).to.include(5678);
-      expect(payload.psegs).to.include(910);
-      expect(payload.psegs).to.not.include(1);
       expect(payload.bpsegs).to.exist;
       expect(payload.bpsegs).to.include('axed');
       expect(payload.bpsegs).to.include('axec');
       expect(payload.bpsegs).to.include('1234');
+      expect(payload.bpsegs).to.include('1234');
+      expect(payload.bpsegs).to.include('5678');
+      expect(payload.bpsegs).to.include('910');
+      expect(payload.bpsegs).to.not.include('1');
 
       let bidderRequest2 =
       {
@@ -166,8 +165,6 @@ describe('BeOp Bid Adapter tests', () => {
 
       const request2 = spec.buildRequests(bidRequests, bidderRequest2);
       const payload2 = JSON.parse(request2.data);
-      expect(payload2.psegs).to.exist;
-      expect(payload2.psegs).to.be.empty;
       expect(payload2.bpsegs).to.exist;
       expect(payload2.bpsegs).to.be.empty;
     });
@@ -329,5 +326,17 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.eids).to.exist;
       expect(payload.eids[0].source).to.equal('provider.com');
     });
+  })
+
+  describe('Ensure first party cookie is well managed', function () {
+    let bidRequests = [];
+
+    it(`should generate a new uuid`, function () {
+      let bid = Object.assign({}, validBid);
+      bidRequests.push(bid);
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      expect(payload.fg).to.exist;
+    })
   })
 });

@@ -58,6 +58,14 @@ module.exports = {
       });
     }
 
+    try {
+      const moduleAliases = JSON.parse(
+        fs.readFileSync('module-alias.json', 'utf8')
+      );
+
+      modules = modules.map(module => moduleAliases[module] || module);
+    } catch (_e) {}
+
     // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
     Object.keys(submodules).forEach(parentModule => {
       if (

@@ -1,37 +1,46 @@
-import {includes} from './polyfill.js';
-import { logError, logWarn, insertElement, setScriptAttributes } from './utils.js';
+import { LOAD_EXTERNAL_SCRIPT } from './activities/activities.js';
+import { activityParams } from './activities/activityParams.js';
+import { isActivityAllowed } from './activities/rules.js';
+import { includes } from './polyfill.js';
+import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js';
 
 const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
+  // Prebid maintained modules:
   'debugging',
-  'adloox',
-  'criteo',
   'outstream',
-  'adagio',
-  'spotx',
-  'browsi',
-  'brandmetrics',
-  'justtag',
-  'tncId',
-  'akamaidap',
-  'ftrackId',
-  'inskin',
-  'hadron',
-  'medianet',
+  // Bid Modules - only exception is on rendering edge cases, to clean up in Prebid 10:
   'improvedigital',
-  'azerionedge',
+  'showheroes-bs',
+  // RTD modules:
   'aaxBlockmeter',
-  'confiant',
+  'adagio',
+  'adloox',
+  'akamaidap',
   'arcspan',
   'airgrid',
+  'browsi',
+  'brandmetrics',
   'clean.io',
+  'humansecurity',
+  'confiant',
+  'contxtful',
+  'hadron',
+  'mediafilter',
+  'medianet',
+  'azerionedge',
   'a1Media',
   'geoedge',
-  'mediafilter',
   'qortex',
   'dynamicAdBoost',
-  'contxtful',
+  '51Degrees',
+  'symitridap',
+  'wurfl',
+  // UserId Submodules
+  'justtag',
+  'tncId',
+  'ftrackId',
   'id5',
   'lucead',
   'symitridap',
@@ -41,12 +50,17 @@ const _approvedLoadExternalJSList = [
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
+ * @param {string} moduleType moduleType of the module requesting this resource
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  * @param {function} [callback] callback function to be called after the script is loaded
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
  * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
-export function loadExternalScript(url, moduleCode, callback, doc, attributes) {
+export function loadExternalScript(url, moduleType, moduleCode, callback, doc, attributes) {
+  if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode))) {
+    return;
+  }
+
   if (!moduleCode || !url) {
     logError('cannot load external script without url and moduleCode');
     return;

@@ -1,9 +1,10 @@
 import * as id5System from '../../../modules/id5IdSystem.js';
 import {
+  attachIdSystem,
   coreStorage,
   getConsentHash,
   init,
-  requestBidsHook,
+  startAuctionHook,
   setSubmoduleRegistry
 } from '../../../modules/userId/index.js';
 import {config} from '../../../src/config.js';
@@ -17,6 +18,7 @@ import {mockGdprConsent} from '../../helpers/consentData.js';
 import {server} from '../../mocks/xhr.js';
 import {expect} from 'chai';
 import {GreedyPromise} from '../../../src/utils/promise.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const IdFetchFlow = id5System.IdFetchFlow;
 
@@ -24,6 +26,7 @@ describe('ID5 ID System', function () {
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
+  const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
   const ID5_TEST_PARTNER_ID = 173;
   const ID5_ENDPOINT = `https://id5-sync.com/g/v2/${ID5_TEST_PARTNER_ID}.json`;
   const ID5_API_CONFIG_URL = `https://id5-sync.com/api/config/prebid`;
@@ -46,10 +49,8 @@ describe('ID5 ID System', function () {
   const EUID_STORED_ID = 'EUID_1';
   const EUID_SOURCE = 'uidapi.com';
   const ID5_STORED_OBJ_WITH_EUID = {
-    'universal_uid': ID5_STORED_ID,
-    'signature': ID5_STORED_SIGNATURE,
+    ...ID5_STORED_OBJ,
     'ext': {
-      'linkType': ID5_STORED_LINK_TYPE,
       'euid': {
         'source': EUID_SOURCE,
         'uids': [{
@@ -58,6 +59,11 @@ describe('ID5 ID System', function () {
         }]
       }
     }
+  };
+  const TRUE_LINK_STORED_ID = 'TRUE_LINK_1';
+  const ID5_STORED_OBJ_WITH_TRUE_LINK = {
+    ...ID5_STORED_OBJ,
+    publisherTrueLinkId: TRUE_LINK_STORED_ID
   };
   const ID5_RESPONSE_ID = 'newid5id';
   const ID5_RESPONSE_SIGNATURE = 'abcdef';
@@ -86,6 +92,15 @@ describe('ID5 ID System', function () {
   const HEADERS_CONTENT_TYPE_JSON = {
     'Content-Type': 'application/json'
   };
+
+  function expDaysStr(expDays) {
+    return (new Date(Date.now() + (1000 * 60 * 60 * 24 * expDays))).toUTCString();
+  }
+
+  function storeInStorage(key, value, expDays) {
+    id5System.storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
+    id5System.storage.setDataInLocalStorage(`${key}`, value);
+  }
 
   function getId5FetchConfig(partner = ID5_TEST_PARTNER_ID, storageName = id5System.ID5_STORAGE_NAME, storageType = 'html5') {
     return {
@@ -144,6 +159,16 @@ describe('ID5 ID System', function () {
         resolve(response);
       });
     });
+  }
+
+  function wrapAsyncExpects(done, expectsFn) {
+    return function () {
+      try {
+        expectsFn();
+      } catch (err) {
+        done(err);
+      }
+    }
   }
 
   class XhrServerMock {
@@ -621,8 +646,6 @@ describe('ID5 ID System', function () {
 
     it('should call the ID5 server with nb=1 when no stored value exists and reset after', async function () {
       const xhrServerMock = new XhrServerMock(server);
-      const TEST_PARTNER_ID = 189;
-      coreStorage.removeDataFromLocalStorage(id5System.nbCacheName(TEST_PARTNER_ID));
 
       // Trigger the fetch but we await on it later
       const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
@@ -632,28 +655,28 @@ describe('ID5 ID System', function () {
       expect(requestBody.nbPage).is.eq(1);
 
       fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-      await submoduleResponsePromise;
+      const response = await submoduleResponsePromise;
 
-      expect(id5System.getNbFromCache(TEST_PARTNER_ID)).is.eq(0);
+      expect(response.nbPage).is.undefined;
     });
 
     it('should call the ID5 server with incremented nb when stored value exists and reset after', async function () {
       const xhrServerMock = new XhrServerMock(server);
       const TEST_PARTNER_ID = 189;
       const config = getId5FetchConfig(TEST_PARTNER_ID);
-      id5System.storeNbInCache(TEST_PARTNER_ID, 1);
+      const storedObj = {...ID5_STORED_OBJ, nbPage: 1};
 
       // Trigger the fetch but we await on it later
-      const submoduleResponsePromise = callSubmoduleGetId(config, undefined, ID5_STORED_OBJ);
+      const submoduleResponsePromise = callSubmoduleGetId(config, undefined, storedObj);
 
       const fetchRequest = await xhrServerMock.expectFetchRequest();
       const requestBody = JSON.parse(fetchRequest.requestBody);
       expect(requestBody.nbPage).is.eq(2);
 
       fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-      await submoduleResponsePromise;
+      const response = await submoduleResponsePromise;
 
-      expect(id5System.getNbFromCache(TEST_PARTNER_ID)).is.eq(0);
+      expect(response.nbPage).is.undefined;
     });
 
     it('should call the ID5 server with ab_testing object when abTesting is turned on', async function () {
@@ -702,45 +725,6 @@ describe('ID5 ID System', function () {
 
       fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
       await submoduleResponsePromise;
-    });
-
-    it('should store the privacy object from the ID5 server response', async function () {
-      const xhrServerMock = new XhrServerMock(server);
-
-      // Trigger the fetch but we await on it later
-      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
-
-      const privacy = {
-        jurisdiction: 'gdpr',
-        id5_consent: true
-      };
-
-      const fetchRequest = await xhrServerMock.expectFetchRequest();
-      const responseObject = utils.deepClone(ID5_JSON_RESPONSE);
-      responseObject.privacy = privacy;
-
-      fetchRequest.respond(200, responseHeader, JSON.stringify(responseObject));
-      await submoduleResponsePromise;
-
-      expect(id5System.getFromLocalStorage(id5System.ID5_PRIVACY_STORAGE_NAME)).is.eq(JSON.stringify(privacy));
-      coreStorage.removeDataFromLocalStorage(id5System.ID5_PRIVACY_STORAGE_NAME);
-    });
-
-    it('should not store a privacy object if not part of ID5 server response', async function () {
-      const xhrServerMock = new XhrServerMock(server);
-      coreStorage.removeDataFromLocalStorage(id5System.ID5_PRIVACY_STORAGE_NAME);
-
-      // Trigger the fetch but we await on it later
-      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
-
-      const fetchRequest = await xhrServerMock.expectFetchRequest();
-      const responseObject = utils.deepClone(ID5_JSON_RESPONSE);
-      responseObject.privacy = undefined;
-
-      fetchRequest.respond(200, responseHeader, JSON.stringify(responseObject));
-      await submoduleResponsePromise;
-
-      expect(id5System.getFromLocalStorage(id5System.ID5_PRIVACY_STORAGE_NAME)).is.null;
     });
 
     describe('with successful external module call', function () {
@@ -835,6 +819,38 @@ describe('ID5 ID System', function () {
         id5System.id5IdSubmodule.getId(getId5FetchConfig());
       });
     });
+
+    it('should pass true link info to ID5 server even when true link is not booted', function () {
+      let xhrServerMock = new XhrServerMock(server);
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+
+      return xhrServerMock.expectFetchRequest()
+        .then(fetchRequest => {
+          let requestBody = JSON.parse(fetchRequest.requestBody);
+          expect(requestBody.true_link).is.deep.equal({booted: false});
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse;
+        });
+    });
+
+    it('should pass full true link info to ID5 server when true link is booted', function () {
+      let xhrServerMock = new XhrServerMock(server);
+      let trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
+      window.id5Bootstrap = {
+        getTrueLinkInfo: function () {
+          return trueLinkResponse;
+        }
+      };
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+
+      return xhrServerMock.expectFetchRequest()
+        .then(fetchRequest => {
+          let requestBody = JSON.parse(fetchRequest.requestBody);
+          expect(requestBody.true_link).is.deep.equal(trueLinkResponse);
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse;
+        });
+    });
   });
 
   describe('Local storage', () => {
@@ -878,7 +894,6 @@ describe('ID5 ID System', function () {
       sinon.stub(events, 'getEvents').returns([]);
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${id5System.ID5_STORAGE_NAME}_last`);
-      coreStorage.removeDataFromLocalStorage(id5System.nbCacheName(ID5_TEST_PARTNER_ID));
       coreStorage.setDataInLocalStorage(id5System.ID5_STORAGE_NAME + '_cst', getConsentHash());
       adUnits = [getAdUnitMock()];
     });
@@ -886,19 +901,18 @@ describe('ID5 ID System', function () {
       events.getEvents.restore();
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${id5System.ID5_STORAGE_NAME}_last`);
-      coreStorage.removeDataFromLocalStorage(id5System.nbCacheName(ID5_TEST_PARTNER_ID));
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME + '_cst');
       sandbox.restore();
     });
 
     it('should add stored ID from cache to bids', function (done) {
-      id5System.storeInLocalStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), 1);
+      storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), 1);
 
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(getFetchLocalStorageConfig());
 
-      requestBidsHook(function () {
+      startAuctionHook(wrapAsyncExpects(done, () => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
@@ -916,17 +930,17 @@ describe('ID5 ID System', function () {
           });
         });
         done();
-      }, {adUnits});
+      }), {adUnits});
     });
 
     it('should add stored EUID from cache to bids', function (done) {
-      id5System.storeInLocalStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ_WITH_EUID), 1);
+      storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ_WITH_EUID), 1);
 
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(getFetchLocalStorageConfig());
 
-      requestBidsHook(function () {
+      startAuctionHook(function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property(`userId.euid`);
@@ -948,12 +962,37 @@ describe('ID5 ID System', function () {
       }, {adUnits});
     });
 
+    it('should add stored TRUE_LINK_ID from cache to bids', function (done) {
+      storeInStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ_WITH_TRUE_LINK), 1);
+
+      init(config);
+      setSubmoduleRegistry([id5System.id5IdSubmodule]);
+      config.setConfig(getFetchLocalStorageConfig());
+
+      startAuctionHook(wrapAsyncExpects(done, function () {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
+            expect(bid.userId.trueLinkId.uid).is.equal(TRUE_LINK_STORED_ID);
+            expect(bid.userIdAsEids[1]).is.deep.equal({
+              source: TRUE_LINK_SOURCE,
+              uids: [{
+                id: TRUE_LINK_STORED_ID,
+                atype: 1,
+              }]
+            });
+          });
+        });
+        done();
+      }), {adUnits});
+    });
+
     it('should add config value ID to bids', function (done) {
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(getValueConfig(ID5_STORED_ID));
 
-      requestBidsHook(function () {
+      startAuctionHook(function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
@@ -968,49 +1007,22 @@ describe('ID5 ID System', function () {
       }, {adUnits});
     });
 
-    it('should set nb=1 in cache when no stored nb value exists and cached ID', function (done) {
-      id5System.storeInLocalStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), 1);
-      coreStorage.removeDataFromLocalStorage(id5System.nbCacheName(ID5_TEST_PARTNER_ID));
-
-      init(config);
-      setSubmoduleRegistry([id5System.id5IdSubmodule]);
-      config.setConfig(getFetchLocalStorageConfig());
-
-      requestBidsHook((adUnitConfig) => {
-        expect(id5System.getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(1);
-        done();
-      }, {adUnits});
-    });
-
-    it('should increment nb in cache when stored nb value exists and cached ID', function (done) {
-      id5System.storeInLocalStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), 1);
-      id5System.storeNbInCache(ID5_TEST_PARTNER_ID, 1);
-
-      init(config);
-      setSubmoduleRegistry([id5System.id5IdSubmodule]);
-      config.setConfig(getFetchLocalStorageConfig());
-
-      requestBidsHook(() => {
-        expect(id5System.getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(2);
-        done();
-      }, {adUnits});
-    });
-
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
       const xhrServerMock = new XhrServerMock(server);
-      const initialLocalStorageValue = JSON.stringify(ID5_STORED_OBJ);
-      id5System.storeInLocalStorage(id5System.ID5_STORAGE_NAME, initialLocalStorageValue, 1);
-      id5System.storeInLocalStorage(`${id5System.ID5_STORAGE_NAME}_last`, id5System.expDaysStr(-1), 1);
+      let storedObject = ID5_STORED_OBJ;
+      storedObject.nbPage = 1;
+      const initialLocalStorageValue = JSON.stringify(storedObject);
+      storeInStorage(id5System.ID5_STORAGE_NAME, initialLocalStorageValue, 1);
+      storeInStorage(`${id5System.ID5_STORAGE_NAME}_last`, expDaysStr(-1), 1);
 
-      id5System.storeNbInCache(ID5_TEST_PARTNER_ID, 1);
       let id5Config = getFetchLocalStorageConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
+      id5Config.userSync.auctionDelay = 0; // do not trigger callback before auction
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(id5Config);
-
       return new Promise((resolve) => {
-        requestBidsHook(() => {
+        startAuctionHook(() => {
           resolve();
         }, {adUnits});
       }).then(() => {
@@ -1021,18 +1033,7 @@ describe('ID5 ID System', function () {
         const requestBody = JSON.parse(request.requestBody);
         expect(requestBody.s).is.eq(ID5_STORED_SIGNATURE);
         expect(requestBody.nbPage).is.eq(2);
-        expect(id5System.getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(0);
         request.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_JSON_RESPONSE));
-
-        return new Promise(function (resolve) {
-          (function waitForCondition() {
-            if (id5System.getFromLocalStorage(id5System.ID5_STORAGE_NAME) !== initialLocalStorageValue) return resolve();
-            setTimeout(waitForCondition, 30);
-          })();
-        });
-      }).then(() => {
-        expect(decodeURIComponent(id5System.getFromLocalStorage(id5System.ID5_STORAGE_NAME))).is.eq(JSON.stringify(ID5_JSON_RESPONSE));
-        expect(id5System.getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(0);
       });
     });
   });
@@ -1051,6 +1052,11 @@ describe('ID5 ID System', function () {
         'source': EUID_SOURCE,
         'uid': EUID_STORED_ID,
         'ext': {'provider': ID5_SOURCE}
+      });
+    });
+    it('should decode trueLinkId from a stored object with trueLinkId', function () {
+      expect(id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_TRUE_LINK, getId5FetchConfig()).trueLinkId).is.deep.equal({
+        'uid': TRUE_LINK_STORED_ID
       });
     });
   });
@@ -1123,4 +1129,45 @@ describe('ID5 ID System', function () {
       });
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(id5System);
+    });
+    it('does not include an ext if not provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
+      });
+    });
+
+    it('includes ext if provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value',
+          ext: {
+            linkType: 0
+          }
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1,
+          ext: {
+            linkType: 0
+          }
+        }]
+      });
+    });
+  })
 });

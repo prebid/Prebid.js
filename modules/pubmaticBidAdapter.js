@@ -28,10 +28,11 @@ const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
+const DEFAULT_TTL = 360;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
-const MSG_VIDEO_PLACEMENT_MISSING = 'Video.Placement param missing';
+const MSG_VIDEO_PLCMT_MISSING = 'Video.plcmt param missing';
 
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
@@ -72,6 +73,10 @@ const VIDEO_CUSTOM_PARAMS = {
 const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
   'IMAGE': 3
+}
+
+const BANNER_CUSTOM_PARAMS = {
+  'battr': DATA_TYPES.ARRAY
 }
 
 const NET_REVENUE = true;
@@ -141,6 +146,12 @@ const MEDIATYPE = [
   VIDEO,
   NATIVE
 ]
+
+const MEDIATYPE_TTL = {
+  'banner': 360,
+  'video': 1800,
+  'native': 1800
+};
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
@@ -557,6 +568,14 @@ function _createBannerRequest(bid) {
     }
     bannerObj.pos = 0;
     bannerObj.topframe = inIframe() ? 0 : 1;
+
+    // Adding Banner custom params
+    const bannerCustomParams = {...deepAccess(bid, 'ortb2Imp.banner')};
+    for (let key in BANNER_CUSTOM_PARAMS) {
+      if (bannerCustomParams.hasOwnProperty(key)) {
+        bannerObj[key] = _checkParamDataType(key, bannerCustomParams[key], BANNER_CUSTOM_PARAMS[key]);
+      }
+    }
   } else {
     logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
@@ -566,8 +585,8 @@ function _createBannerRequest(bid) {
 
 export function checkVideoPlacement(videoData, adUnitCode) {
   // Check for video.placement property. If property is missing display log message.
-  if (FEATURES.VIDEO && !deepAccess(videoData, 'placement')) {
-    logWarn(MSG_VIDEO_PLACEMENT_MISSING + ' for ' + adUnitCode);
+  if (FEATURES.VIDEO && !deepAccess(videoData, 'plcmt')) {
+    logWarn(MSG_VIDEO_PLCMT_MISSING + ' for ' + adUnitCode);
   };
 }
 
@@ -669,7 +688,7 @@ function _createImpressionObject(bid, bidderRequest) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
-  var isFledgeEnabled = bidderRequest?.fledgeEnabled;
+  var isFledgeEnabled = bidderRequest?.paapi?.enabled;
 
   impObj = {
     id: bid.bidId,
@@ -679,7 +698,10 @@ function _createImpressionObject(bid, bidderRequest) {
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
     },
-    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY,
+    displaymanager: 'Prebid.js',
+    displaymanagerver: '$prebid.version$', // prebid version
+    pmp: bid.ortb2Imp?.pmp || undefined
   };
 
   _addPMPDealsInImpression(impObj, bid);
@@ -817,7 +839,7 @@ function _addFloorFromFloorModule(impObj, bid) {
         sizesArray.forEach(size => {
           let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: size });
           logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, ' and size:', size, ' is: currency', floorInfo.currency, 'floor', floorInfo.floor);
-          if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+          if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
             let mediaTypeFloor = parseFloat(floorInfo.floor);
             logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
             if (bidFloor === -1) {
@@ -847,6 +869,23 @@ function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'user.eids', bidUserIdAsEids);
+  }
+}
+
+export function setTTL(bid, newBid) {
+  let ttl = MEDIATYPE_TTL[newBid?.mediaType] || DEFAULT_TTL;
+  newBid.ttl = bid.exp || ttl;
+}
+
+// Setting IBV & meta.mediaType field into the bid response
+export function setIBVField(bid, newBid) {
+  if (bid?.ext?.ibv) {
+    newBid.ext = newBid.ext || {};
+    newBid.ext['ibv'] = bid.ext.ibv;
+
+    // Overriding the mediaType field in meta with the `video` value if bid.ext.ibv is present
+    newBid.meta = newBid.meta || {};
+    newBid.meta.mediaType = VIDEO;
   }
 }
 
@@ -999,7 +1038,7 @@ function isNonEmptyArray(test) {
  * @param {*} bid : bids
  */
 export function prepareMetaObject(br, bid, seat) {
-  br.meta = {};
+  br.meta = br.meta || {};
 
   if (bid.ext && bid.ext.dspid) {
     br.meta.networkId = bid.ext.dspid;
@@ -1037,6 +1076,11 @@ export function prepareMetaObject(br, bid, seat) {
 
   if (bid.ext && bid.ext.dsa && Object.keys(bid.ext.dsa).length) {
     br.meta.dsa = bid.ext.dsa;
+  }
+
+  // Initializing meta.mediaType field to the actual bidType returned by the bidder
+  if (br.mediaType) {
+    br.meta.mediaType = br.mediaType;
   }
 }
 
@@ -1098,7 +1142,6 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -1289,6 +1332,11 @@ export const spec = {
       }
     }
 
+    // if present, merge device object from ortb2 into `payload.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(payload.device, bidderRequest.ortb2.device);
+    }
+
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
       _allowedIabCategoriesValidation(payload, acatParams);
@@ -1360,7 +1408,7 @@ export const spec = {
                 dealId: bid.dealid,
                 currency: respCur,
                 netRevenue: NET_REVENUE,
-                ttl: 300,
+                ttl: DEFAULT_TTL,
                 referrer: parsedReferrer,
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
@@ -1371,6 +1419,7 @@ export const spec = {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
                     _checkMediaType(bid, newBid);
+                    setTTL(bid, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
@@ -1388,11 +1437,11 @@ export const spec = {
                   }
                 });
               }
+              prepareMetaObject(newBid, bid, seatbidder.seat);
+              setIBVField(bid, newBid);
               if (bid.ext && bid.ext.deal_channel) {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
-
-              prepareMetaObject(newBid, bid, seatbidder.seat);
 
               // adserverTargeting
               if (seatbidder.ext && seatbidder.ext.buyid) {
@@ -1423,7 +1472,7 @@ export const spec = {
         });
         return {
           bids: bidResponses,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         }
       }
     } catch (error) {

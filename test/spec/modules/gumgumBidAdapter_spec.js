@@ -44,9 +44,9 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'inSlot': '789'
       };
 
@@ -54,33 +54,33 @@ describe('gumgumAdapter', function () {
     });
 
     it('should return true when inslot sends sizes and trackingid', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'inSlot': '789',
         'sizes': [[0, 1], [2, 3], [4, 5], [6, 7]]
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
 
     it('should return false when no unit type is specified', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placementId': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when bidfloor is not a number', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'inSlot': '789',
         'bidfloor': '0.50'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false if invalid request id is found', function () {
@@ -100,6 +100,28 @@ describe('gumgumAdapter', function () {
 
   describe('buildRequests', function () {
     let sizesArray = [[300, 250], [300, 600]];
+    const bidderRequest = {
+      ortb2: {
+        site: {
+          content: {
+            data: [{
+              name: 'www.iris.com',
+              ext: {
+                segtax: 500,
+                cids: ['iris_c73g5jq96mwso4d8']
+              }
+            }]
+          },
+          page: 'http://pub.com/news',
+          ref: 'http://google.com',
+          publisher: {
+            id: 'p10000',
+            domain: 'pub.com'
+          }
+        }
+      }
+    };
+
     let bidRequests = [
       {
         gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
@@ -259,19 +281,17 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.have.property('iriscat');
     });
+    it('should set the irisid param when found iris_c73g5jq96mwso4d8', function() {
+      const request = { ...bidRequests[0], params: { irisid: 'abc123' } };
+      const bidRequest = spec.buildRequests([request], bidderRequest)[0];
+      expect(bidRequest.data).to.have.property('irisid', 'iris_c73g5jq96mwso4d8');
+    });
 
     it('should not set the iriscat param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.not.have.property('iriscat');
     });
-
-    it('should set the irisid param when found', function () {
-      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.have.property('irisid');
-    });
-
     it('should not set the irisid param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
@@ -285,10 +305,38 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set the global placement id (gpid) if in adserver property', function () {
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const req = { ...bidRequests[0],
+        ortb2Imp: {
+          ext: {
+            gpid: '/17037559/jeusol/jeusol_D_1',
+            data: {
+              adserver: {
+                name: 'test',
+                adslot: 123456
+              }
+            }
+          }
+        } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(123456);
+      expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
+    });
+    it('should set ae value to 1 for PAAPI', function () {
+      const req = { ...bidRequests[0],
+        ortb2Imp: {
+          ext: {
+            ae: 1,
+            data: {
+              adserver: {
+                name: 'test',
+                adslot: 123456
+              }
+            }
+          }
+        } }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('ae');
+      expect(bidRequest.data.ae).to.equal(true);
     });
 
     it('should set the global placement id (gpid) if in pbadslot property', function () {
@@ -736,6 +784,40 @@ describe('gumgumAdapter', function () {
       // params are stripped from pu property
       expect(bidRequest.data.pu.includes('ggad')).to.be.false;
       expect(bidRequest.data.pu.includes('ggdeal')).to.be.false;
+    });
+
+    it('should handle ORTB2 device data', function () {
+      const ortb2 = {
+        device: {
+          w: 980,
+          h: 1720,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+          language: 'en',
+          devicetype: 1,
+          make: 'Apple',
+          model: 'iPhone 12 Pro Max',
+          os: 'iOS',
+          osv: '17.4',
+          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          ip: '127.0.0.1',
+          ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
+        },
+      };
+
+      const bidRequest = spec.buildRequests(bidRequests, { ortb2 })[0];
+
+      expect(bidRequest.data.dnt).to.equal(ortb2.device.dnt);
+      expect(bidRequest.data.ua).to.equal(ortb2.device.ua);
+      expect(bidRequest.data.lang).to.equal(ortb2.device.language);
+      expect(bidRequest.data.dt).to.equal(ortb2.device.devicetype);
+      expect(bidRequest.data.make).to.equal(ortb2.device.make);
+      expect(bidRequest.data.model).to.equal(ortb2.device.model);
+      expect(bidRequest.data.os).to.equal(ortb2.device.os);
+      expect(bidRequest.data.osv).to.equal(ortb2.device.osv);
+      expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
+      expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
+      expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
     });
   })
 
