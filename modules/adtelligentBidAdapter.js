@@ -26,6 +26,7 @@ const HOST_GETTERS = {
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
   indicue: () => 'ghb.console.indicue.com',
+  stellormedia: () => 'ghb.ads.stellormedia.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -48,6 +49,7 @@ export const spec = {
     { code: 'ocm', gvlid: 1148 },
     '9dotsmedia',
     'indicue',
+    'stellormedia'
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
