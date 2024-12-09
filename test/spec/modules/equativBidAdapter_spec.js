@@ -133,7 +133,7 @@ describe('Equativ bid adapter tests', () => {
           tid: 'equativ_native_tid_42',
         },
       },
-    }  
+    }
   ];
 
   const DEFAULT_BANNER_BIDDER_REQUEST = {
@@ -636,8 +636,6 @@ describe('Equativ bid adapter tests', () => {
       spec.buildRequests(bidRequests, bidderRequest);
 
       // ASSERT
-      const warning = utils.logWarn.args[0][0];
-      console.log(`warning: ${warning}`);
       expect(utils.logWarn.callCount).to.equal(4); // 3 missing properties + 1 for missing assets (which the library supplies, and which it seems to remember we did in previous test)
       expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"privacy" is missing'));
       expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"plcmttype" is missing'));
