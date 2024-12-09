@@ -18,7 +18,8 @@ import {
   mergeDeep,
   parseSizesInput,
   pick,
-  _each
+  _each,
+  isPlainObject
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
@@ -520,7 +521,7 @@ export const spec = {
       } catch (e) {
         logError('Rubicon: getFloor threw an error: ', e);
       }
-      data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+      data['rp_hard_floor'] = isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
 
     // Send multiformat data if requested

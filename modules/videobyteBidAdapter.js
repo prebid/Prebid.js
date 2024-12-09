@@ -214,8 +214,8 @@ function buildRequestData(bidRequest, bidderRequest) {
         id: '1',
         video: video,
         secure: isSecure() ? 1 : 0,
-        bidfloor: floorData.floor,
-        bidfloorcur: floorData.currency
+        bidfloor: floorData?.floor,
+        bidfloorcur: floorData?.currency
       }
     ],
     site: {
