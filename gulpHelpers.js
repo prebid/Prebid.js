@@ -9,9 +9,13 @@ const gutil = require('gulp-util');
 const submodules = require('./modules/.submodules.json').parentModules;
 
 const MODULE_PATH = './modules';
-const BUILD_PATH = './build/dist/';
+const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
+
+/* gu-mod-start */
+const GU_BUILD_PATH = './build/dist/';
+/* gu-mod-end */
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -105,21 +109,39 @@ module.exports = {
     }, internalModules));
   }),
 
-  getBuiltPath(dev, assetPath, version) {
-    return path.join(__dirname, dev ? DEV_PATH + version : BUILD_PATH + version, assetPath)
+  getBuiltPath(dev, assetPath) {
+    return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
   },
 
-  getBuiltModules: function(dev, externalModules, version) {
+  getBuiltModules: function(dev, externalModules) {
     var modules = this.getModuleNames(externalModules);
     if (Array.isArray(externalModules)) {
       modules = _.intersection(modules, externalModules);
     }
-    return modules.map(name => this.getBuiltPath(dev, name + '.js', version));
+    return modules.map(name => this.getBuiltPath(dev, name + '.js'));
   },
 
-  getBuiltPrebidCoreFile: function(dev, version) {
-    return this.getBuiltPath(dev, 'prebid-core.js', version)
+  getBuiltPrebidCoreFile: function(dev) {
+    return this.getBuiltPath(dev, 'prebid-core.js')
   },
+
+  /* gu-mod-start */
+  guGetBuiltPath(dev, assetPath, version) {
+    return path.join(__dirname, dev ? DEV_PATH + version : GU_BUILD_PATH + version, assetPath)
+  },
+
+  guGetBuiltModules: function(dev, externalModules, version) {
+    var modules = this.getModuleNames(externalModules);
+    if (Array.isArray(externalModules)) {
+      modules = _.intersection(modules, externalModules);
+    }
+    return modules.map(name => this.guGetBuiltPath(dev, name + '.js', version));
+  },
+
+  guGetBuiltPrebidCoreFile: function(dev, version) {
+    return this.guGetBuiltPath(dev, 'prebid-core.js', version)
+  },
+  /* gu-mod-end */
 
   getModulePaths: function(externalModules) {
     var modules = this.getModules(externalModules);
