@@ -1,4 +1,4 @@
-import { isArray, deepAccess } from '../src/utils.js';
+import { isArray, deepAccess, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -33,7 +33,7 @@ export const spec = {
         const mediaType = (Object.keys(bid.mediaTypes).length == 1) ? Object.keys(bid.mediaTypes)[0] : '*';
         const sizes = bid.sizes || '*';
         const floorInfo = bid.getFloor({currency: 'USD', mediaType: mediaType, size: sizes});
-        if (typeof floorInfo === 'object' && floorInfo.currency === 'USD') {
+        if (isPlainObject(floorInfo) && floorInfo.currency === 'USD') {
           let floor = parseFloat(floorInfo.floor)
           if (!isNaN(floor) && floor > 0) {
             adSlot.floor = parseFloat(floorInfo.floor);

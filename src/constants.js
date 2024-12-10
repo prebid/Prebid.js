@@ -40,6 +40,7 @@ export const EVENTS = {
   AUCTION_DEBUG: 'auctionDebug',
   BID_VIEWABLE: 'bidViewable',
   STALE_RENDER: 'staleRender',
+  EXPIRED_RENDER: 'expiredRender',
   BILLABLE_EVENT: 'billableEvent',
   BID_ACCEPTED: 'bidAccepted',
   RUN_PAAPI_AUCTION: 'paapiRunAuction',

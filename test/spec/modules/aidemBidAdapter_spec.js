@@ -455,7 +455,7 @@ describe('Aidem adapter', () => {
       expect(data.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_BANNER_REQUESTS.length)
 
       expect(data.imp[0]).to.be.a('object').that.has.all.keys(
-        'banner', 'id', 'tagId'
+        'banner', 'id', 'tagId', 'secure'
       )
       expect(data.imp[0].banner).to.be.a('object').that.has.all.keys(
         'format', 'topframe'
@@ -471,7 +471,7 @@ describe('Aidem adapter', () => {
         expect(data.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
 
         expect(data.imp[0]).to.be.a('object').that.has.all.keys(
-          'video', 'id', 'tagId'
+          'video', 'id', 'tagId', 'secure'
         )
         expect(data.imp[0].video).to.be.a('object').that.has.all.keys(
           'mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h'
