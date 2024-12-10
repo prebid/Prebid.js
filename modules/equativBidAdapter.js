@@ -151,11 +151,11 @@ export const converter = ortbConverter({
       });
     }
 
-    // note that although we include "assets" as a property to check,
-    // we actually do not need to do this as the ortbConverter will automatically
-    // check for us (you can find this logic in the "native.js" file)
+    // "assets" is not included as a property to check here because the
+    // ortbConverter library checks for it already and will skip processing
+    // the request if it is missing
     if (deepAccess(bid, 'mediaTypes.native')) {
-      ['assets', 'privacy', 'plcmttype', 'eventtrackers'].forEach(prop => {
+      ['privacy', 'plcmttype', 'eventtrackers'].forEach(prop => {
         if (!bid.mediaTypes.native.ortb[prop]) {
           logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request`, bid);
         }

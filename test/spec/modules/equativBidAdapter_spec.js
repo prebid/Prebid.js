@@ -621,10 +621,11 @@ describe('Equativ bid adapter tests', () => {
       expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes(warningMsgFromLibrary));
     });
 
-    it('should warn about missing required properties for native requests', () => {
+    it('should warn about other missing required properties for native requests', () => {
       // ASSEMBLE
       const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
 
+      // ortbConverter library will warn about missing assets; we supply warnings for these properties here
       delete missingRequiredNativeRequest.mediaTypes.native.ortb.eventtrackers;
       delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
       delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
@@ -636,7 +637,8 @@ describe('Equativ bid adapter tests', () => {
       spec.buildRequests(bidRequests, bidderRequest);
 
       // ASSERT
-      expect(utils.logWarn.callCount).to.equal(4); // 3 missing properties + 1 for missing assets (which the library supplies, and which it seems to remember we did in previous test)
+      expect(utils.logWarn.callCount).to.equal(4); // the first message, regarding missing assets, is supplied by the ortbConverter library
+      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'));
       expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"privacy" is missing'));
       expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"plcmttype" is missing'));
       expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"eventtrackers" is missing'));
