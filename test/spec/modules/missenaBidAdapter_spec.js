@@ -23,7 +23,6 @@ describe('Missena Adapter', function () {
   const bid = {
     bidder: 'missena',
     bidId: bidId,
-    sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
     ortb2: {
       device: {
@@ -55,14 +54,14 @@ describe('Missena Adapter', function () {
   const bidWithoutFloor = {
     bidder: 'missena',
     bidId: bidId,
-    sizes: [[1, 1]],
-    mediaTypes: { banner: { sizes: [[1, 1]] } },
+    mediaTypes: { banner: { sizes: [1, 1] } },
     params: {
       apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
   };
+
   const consentString = 'AAAAAAAAA==';
 
   const bidderRequest = {
@@ -176,6 +175,16 @@ describe('Missena Adapter', function () {
     it('should send screen', function () {
       expect(payload.screen.width).to.equal(screen.width);
       expect(payload.screen.height).to.equal(screen.height);
+    });
+
+    it('should send size', function () {
+      expect(payload.sizes[0].width).to.equal(1);
+      expect(payload.sizes[0].height).to.equal(1);
+    });
+
+    it('should send single size', function () {
+      expect(payloadNoFloor.sizes[0].width).to.equal(1);
+      expect(payloadNoFloor.sizes[0].height).to.equal(1);
     });
 
     getDataFromLocalStorageStub.restore();
