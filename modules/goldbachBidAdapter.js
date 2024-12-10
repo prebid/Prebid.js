@@ -54,8 +54,8 @@ export const OPENRTB = {
       IMAGE: 2,
       ICON: 3,
       BODY: 4,
-      SPONSORED: 5,
-      CTA: 6
+      CTA: 5,
+      SPONSORED: 6,
     }
   }
 };
