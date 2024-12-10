@@ -1,6 +1,5 @@
 import Adapter from '../../src/adapter.js';
 import {
-  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -450,7 +449,7 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
+    const adapterMetrics = s2sBidRequest.metrics = useMetrics(bidRequests?.[0]?.metrics)
       .newMetrics()
       .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
     done = adapterMetrics.startTiming('total').stopBefore(done);
@@ -568,7 +567,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
-  const customHeaders = deepAccess(s2sBidRequest, 's2sConfig.customHeaders', {});
+  const customHeaders = s2sBidRequest?.s2sConfig?.customHeaders ?? {};
   if (request && requestJson && endpointUrl) {
     const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
