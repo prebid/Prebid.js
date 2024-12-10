@@ -237,9 +237,21 @@ describe('Unit: Prebid Module', function () {
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
-  it('should insert a locator frame on the page', () => {
-    $$PREBID_GLOBAL$$.processQueue();
-    expect(window.frames[PB_LOCATOR]).to.exist;
+  describe('processQueue', () => {
+    it('should insert a locator frame on the page', () => {
+      $$PREBID_GLOBAL$$.processQueue();
+      expect(window.frames[PB_LOCATOR]).to.exist;
+    });
+
+    ['cmd', 'que'].forEach(prop => {
+      it(`should patch ${prop}.push`, () => {
+        $$PREBID_GLOBAL$$[prop].push = false;
+        $$PREBID_GLOBAL$$.processQueue();
+        let ran = false;
+        $$PREBID_GLOBAL$$[prop].push(() => { ran = true; });
+        expect(ran).to.be.true;
+      })
+    })
   })
 
   describe('and global adUnits', () => {
@@ -262,10 +274,10 @@ describe('Unit: Prebid Module', function () {
 
     beforeEach(() => {
       $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
-      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
       hookRan = new Promise((resolve) => {
         done = resolve;
       });
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
     });
 
     afterEach(() => {
@@ -3774,71 +3786,4 @@ describe('Unit: Prebid Module', function () {
       expect(auctionManager.getBidsReceived().length).to.equal(0);
     });
   });
-
-  describe('setBattrForAdUnit', () => {
-    it('should set copy battr to both places', () => {
-      const adUnit = {
-        ortb2Imp: {
-          video: {
-            battr: 'banned attribute'
-          }
-        },
-        mediaTypes: {
-          video: {}
-        }
-      }
-
-      setBattrForAdUnit(adUnit, 'video');
-
-      expect(adUnit.mediaTypes.video.battr).to.deep.equal('banned attribute');
-      expect(adUnit.ortb2Imp.video.battr).to.deep.equal('banned attribute');
-
-      const adUnit2 = {
-        mediaTypes: {
-          video: {
-            battr: 'banned attribute'
-          }
-        },
-        ortb2Imp: {
-          video: {}
-        }
-      }
-
-      setBattrForAdUnit(adUnit2, 'video');
-
-      expect(adUnit2.ortb2Imp.video.battr).to.deep.equal('banned attribute');
-      expect(adUnit2.mediaTypes.video.battr).to.deep.equal('banned attribute');
-    })
-
-    it('should log warn if both are specified and differ from eachother', () => {
-      let spyLogWarn = sinon.spy(utils, 'logWarn');
-      const adUnit = {
-        mediaTypes: {
-          native: {
-            battr: 'banned attribute'
-          }
-        },
-        ortb2Imp: {
-          native: {
-            battr: 'banned attribute 2'
-          }
-        }
-      }
-      setBattrForAdUnit(adUnit, 'native');
-      sinon.assert.calledOnce(spyLogWarn);
-      spyLogWarn.resetHistory();
-      utils.logWarn.restore();
-    })
-
-    it('should not copy for undefined battr', () => {
-      const adUnit = {
-        mediaTypes: {
-          native: {}
-        }
-      }
-      setBattrForAdUnit(adUnit, 'native');
-      expect(adUnit.mediaTypes.native).to.deep.equal({});
-      expect(adUnit.mediaTypes.ortb2Imp).to.not.exist;
-    })
-  })
 });
