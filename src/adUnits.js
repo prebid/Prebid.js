@@ -47,6 +47,15 @@ export function incrementBidderWinsCounter(adunit, bidderCode) {
 }
 
 /**
+ * Increments and returns current Adunit auctions counter
+ * @param {string} adunit id
+ * @returns {number} current adunit auctions count
+ */
+export function incrementAuctionsCounter(adunit) {
+  return incrementAdUnitCount(adunit, 'auctionsCounter');
+}
+
+/**
  * Returns current Adunit counter
  * @param {string} adunit id
  * @returns {number} current adunit count
@@ -73,4 +82,13 @@ export function getBidderRequestsCounter(adunit, bidder) {
  */
 export function getBidderWinsCounter(adunit, bidder) {
   return adUnits?.[adunit]?.bidders?.[bidder]?.winsCounter || 0;
+}
+
+/**
+ * Returns current Adunit auctions counter
+ * @param {string} adunit id
+ * @returns {number} current adunit auctions count
+ */
+export function getAuctionsCounter(adunit) {
+  return adUnits?.[adunit]?.auctionsCounter || 0;
 }
