@@ -6,7 +6,7 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   getEndpoint,
   generateBidsParams,
@@ -14,9 +14,9 @@ import {
   buildBidResponse,
 } from '../libraries/riseUtils/index.js';
 
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 const BIDDER_CODE = 'rise';
-const ADAPTER_VERSION = '6.0.0';
+const ADAPTER_VERSION = '7.0.0';
 const TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_GVLID = 1043;
@@ -70,7 +70,7 @@ export const spec = {
 
     if (body.bids) {
       body.bids.forEach(adUnit => {
-        const bidResponse = buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL, VIDEO, BANNER);
+        const bidResponse = buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL);
         bidResponses.push(bidResponse);
       });
     }

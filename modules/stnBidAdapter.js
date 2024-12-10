@@ -6,7 +6,7 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   getEndpoint,
   generateBidsParams,
@@ -14,7 +14,7 @@ import {
   buildBidResponse,
 } from '../libraries/riseUtils/index.js';
 
-export const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
+export const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 export const BIDDER_CODE = 'stn';
 export const ADAPTER_VERSION = '6.1.0';
 export const TTL = 360;
@@ -66,7 +66,7 @@ export const spec = {
 
     if (body.bids) {
       body.bids.forEach(adUnit => {
-        const bidResponse = buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL, VIDEO, BANNER);
+        const bidResponse = buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL);
         bidResponses.push(bidResponse);
       });
     }

@@ -6,7 +6,7 @@ import {
   triggerPixel
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   getEndpoint,
   generateBidsParams,
@@ -14,7 +14,7 @@ import {
   buildBidResponse,
 } from '../libraries/riseUtils/index.js';
 
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
 const BIDDER_CODE = 'openweb';
 const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
@@ -69,7 +69,7 @@ export const spec = {
 
     if (body && body.bids && body.bids.length) {
       body.bids.forEach(adUnit => {
-        const bidResponse = buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL, VIDEO, BANNER);
+        const bidResponse = buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL);
         bidResponses.push(bidResponse);
       });
     }

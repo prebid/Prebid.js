@@ -8,27 +8,58 @@ import {
   getBidIdParameter,
   isPlainObject
 } from '../../src/utils.js';
-import { BANNER, VIDEO } from '../../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
 
-export function getFloor(bid, mediaType) {
+export function getBidRequestMediaTypes(bidRequest) {
+  const mediaTypes = deepAccess(bidRequest, 'mediaTypes');
+  if (isPlainObject(mediaTypes)) {
+    return Object.keys(mediaTypes);
+  }
+  return [];
+}
+
+export function getPos(bidRequest) {
+  const mediaTypes = getBidRequestMediaTypes(bidRequest)
+  const firstMediaType = mediaTypes[0]
+  if (mediaTypes.length === 1) {
+    return deepAccess(bidRequest, `mediaTypes.${firstMediaType}.pos`)
+  }
+}
+
+export function getName(bidRequest) {
+  const mediaTypes = getBidRequestMediaTypes(bidRequest)
+  const firstMediaType = mediaTypes[0]
+  if (mediaTypes.length === 1) {
+    return deepAccess(bidRequest, `mediaTypes.${firstMediaType}.name`)
+  }
+}
+
+export function getFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
+
+  const mediaTypes = getBidRequestMediaTypes(bid)
+  const firstMediaType = mediaTypes[0]
+
   let floorResult = bid.getFloor({
     currency: 'USD',
-    mediaType: mediaType,
+    mediaType: mediaTypes.length === 1 ? firstMediaType : '*',
     size: '*'
   });
   return isPlainObject(floorResult) && floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
 }
 
-export function getSizesArray(bid, mediaType) {
+export function getSizesArray(bid) {
   let sizesArray = [];
 
-  if (deepAccess(bid, `mediaTypes.${mediaType}.sizes`)) {
-    sizesArray = bid.mediaTypes[mediaType].sizes;
-  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+  const mediaTypes = getBidRequestMediaTypes(bid)
+  const firstMediaType = mediaTypes[0]
+
+  if (mediaTypes.length === 1 && deepAccess(bid, `mediaTypes.${firstMediaType}.sizes`)) {
+    sizesArray = bid.mediaTypes[firstMediaType].sizes;
+  } else if (isArray(bid.sizes) && bid.sizes.length > 0) {
     sizesArray = bid.sizes;
   }
 
@@ -111,18 +142,17 @@ export function generateBidsParams(validBidRequests, bidderRequest) {
 
 export function generateBidParameters(bid, bidderRequest) {
   const { params } = bid;
-  const mediaType = isBanner(bid) ? BANNER : VIDEO;
-  const sizesArray = getSizesArray(bid, mediaType);
+  const mediaTypes = getBidRequestMediaTypes(bid);
 
   if (isNaN(params.floorPrice)) {
     params.floorPrice = 0;
   }
 
   const bidObject = {
-    mediaType,
+    mediaType: mediaTypes.join(','),
     adUnitCode: getBidIdParameter('adUnitCode', bid),
-    sizes: sizesArray,
-    floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
+    sizes: getSizesArray(bid),
+    floorPrice: Math.max(getFloor(bid), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
     loop: bid.bidderRequestsCount || 0,
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
@@ -130,9 +160,9 @@ export function generateBidParameters(bid, bidderRequest) {
     coppa: 0,
   };
 
-  const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
+  const pos = getPos(bid)
   if (pos) {
-    bidObject.pos = pos;
+    bidObject.pos = pos
   }
 
   const gpid = deepAccess(bid, `ortb2Imp.ext.gpid`);
@@ -140,19 +170,9 @@ export function generateBidParameters(bid, bidderRequest) {
     bidObject.gpid = gpid;
   }
 
-  const placementId = params.placementId || deepAccess(bid, `mediaTypes.${mediaType}.name`);
+  const placementId = params.placementId || getName(bid);
   if (placementId) {
     bidObject.placementId = placementId;
-  }
-
-  const mimes = deepAccess(bid, `mediaTypes.${mediaType}.mimes`);
-  if (mimes) {
-    bidObject.mimes = mimes;
-  }
-
-  const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
-  if (api) {
-    bidObject.api = api;
   }
 
   const sua = deepAccess(bid, `ortb2.device.sua`);
@@ -165,11 +185,11 @@ export function generateBidParameters(bid, bidderRequest) {
     bidObject.coppa = 1;
   }
 
-  if (mediaType === VIDEO) {
+  if (mediaTypes.includes(VIDEO)) {
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
     let playbackMethodValue;
 
-    if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
+    if (isArray(playbackMethod) && isInteger(playbackMethod[0])) {
       playbackMethodValue = playbackMethod[0];
     } else if (isInteger(playbackMethod)) {
       playbackMethodValue = playbackMethod;
@@ -213,12 +233,29 @@ export function generateBidParameters(bid, bidderRequest) {
     if (plcmt) {
       bidObject.plcmt = plcmt;
     }
+
+    const mimes = deepAccess(bid, `mediaTypes.video.mimes`);
+    if (mimes) {
+      bidObject.mimes = mimes;
+    }
+
+    const api = deepAccess(bid, `mediaTypes.video.api`);
+    if (api) {
+      bidObject.api = api;
+    }
+  }
+
+  if (mediaTypes.includes(NATIVE)) {
+    const nativeOrtbRequest = deepAccess(bid, `nativeOrtbRequest`);
+    if (nativeOrtbRequest) {
+      bidObject.nativeOrtbRequest = nativeOrtbRequest
+    }
   }
 
   return bidObject;
 }
 
-export function buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL, VIDEO, BANNER) {
+export function buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL) {
   const bidResponse = {
     requestId: adUnit.requestId,
     cpm: adUnit.cpm,
@@ -239,6 +276,8 @@ export function buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL, VIDEO, BANNER) {
     bidResponse.vastXml = adUnit.vastXml;
   } else if (adUnit.mediaType === BANNER) {
     bidResponse.ad = adUnit.ad;
+  } else if (adUnit.mediaType === NATIVE) {
+    bidResponse.native = adUnit.native;
   }
 
   if (adUnit.adomain && adUnit.adomain.length) {
@@ -246,10 +285,6 @@ export function buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL, VIDEO, BANNER) {
   }
 
   return bidResponse;
-}
-
-function isBanner(bid) {
-  return bid.mediaTypes && bid.mediaTypes.banner;
 }
 
 export function generateGeneralParams(generalObject, bidderRequest, adapterVersion) {
