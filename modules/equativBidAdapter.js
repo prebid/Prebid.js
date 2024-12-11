@@ -1,9 +1,10 @@
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
-import { getStorageManager } from '../src/storageManager.js';
+
+import { getBidFloor } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
 
 /**
@@ -18,14 +19,14 @@ const LOG_PREFIX = 'Equativ:';
 const PID_COOKIE_NAME = 'eqt_pid';
 
 /**
- * Evaluates a bid request for validity. Returns false if the
- * request contains a video media type with no properties, true
- * otherwise.
+ * Evaluates impressions for validity.  The entry evaluated is considered valid if NEITHER of these conditions are met:
+ * 1) it has a `video` property defined for `mediaTypes.video` which is an empty object
+ * 2) it has a `native` property defined for `mediaTypes.native` which is an empty object
  * @param {*} bidReq A bid request object to evaluate
  * @returns boolean
  */
 function isValid(bidReq) {
-  return !(bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}');
+  return !(bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}') && !(bidReq.mediaTypes.native && JSON.stringify(bidReq.mediaTypes.native) === '{}');
 }
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -33,7 +34,7 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 45,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
    * @param bidRequests
@@ -42,7 +43,7 @@ export const spec = {
    */
   buildRequests: (bidRequests, bidderRequest) => {
     if (bidRequests.filter(isValid).length === 0) {
-      logError(`${LOG_PREFIX} No useful bid requests to process. No request will be sent.`, bidRequests);
+      logError(`${LOG_PREFIX} No useful bid requests to process. No requests will be sent.`, bidRequests);
       return undefined;
     }
 
@@ -121,7 +122,6 @@ export const converter = ortbConverter({
 
     imp.bidfloor = imp.bidfloor || getBidFloor(bidRequest, config.getConfig('currency.adServerCurrency'), mediaType);
     imp.secure = 1;
-
     imp.tagid = bidRequest.adUnitCode;
 
     if (!deepAccess(bidRequest, 'ortb2Imp.rwdd') && deepAccess(bidRequest, 'mediaTypes.video.ext.rewarded')) {
@@ -147,6 +147,17 @@ export const converter = ortbConverter({
       ['mimes', 'placement'].forEach(prop => {
         if (!bid.mediaTypes.video[prop]) {
           logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request`, bid);
+        }
+      });
+    }
+
+    // "assets" is not included as a property to check here because the
+    // ortbConverter library checks for it already and will skip processing
+    // the request if it is missing
+    if (deepAccess(bid, 'mediaTypes.native')) {
+      ['privacy', 'plcmttype', 'eventtrackers'].forEach(prop => {
+        if (!bid.mediaTypes.native.ortb[prop]) {
+          logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request.  Request will proceed, but the use of ${prop} for native requests is strongly encouraged.`, bid);
         }
       });
     }
