@@ -41,7 +41,7 @@ import {
   consolidateEids,
   extractEids,
   getPBSBidderConfig
-} from "../../../modules/prebidServerBidAdapter/bidderConfig.js";
+} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
 
 let CONFIG = {
   accountId: '1',
