@@ -1,15 +1,85 @@
 import {
-  isArray,
-  isFn,
-  deepAccess,
-  isEmpty,
   contains,
-  isInteger,
+  deepAccess,
   getBidIdParameter,
-  isPlainObject
+  isArray,
+  isEmpty,
+  isFn,
+  isInteger,
+  isPlainObject,
+  logInfo,
+  triggerPixel
 } from '../../src/utils.js';
-import { BANNER, VIDEO, NATIVE } from '../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
+import {ADAPTER_VERSION, DEFAULT_CURRENCY, DEFAULT_TTL, SUPPORTED_AD_TYPES} from './constants.js';
+
+export const makeBaseSpec = (baseUrl, modes) => {
+  return {
+    version: ADAPTER_VERSION,
+    supportedMediaTypes: SUPPORTED_AD_TYPES,
+    buildRequests: function (validBidRequests, bidderRequest) {
+      const combinedRequestsObject = {};
+
+      // use data from the first bid, to create the general params for all bids
+      const generalObject = validBidRequests[0];
+      const testMode = generalObject.params.testMode;
+      const rtbDomain = generalObject.params.rtbDomain || baseUrl;
+
+      combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
+      combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
+
+      return {
+        method: 'POST',
+        url: getEndpoint(testMode, rtbDomain, modes),
+        data: combinedRequestsObject
+      }
+    },
+    interpretResponse: function ({ body }) {
+      const bidResponses = [];
+
+      if (body.bids) {
+        body.bids.forEach(adUnit => {
+          const bidResponse = buildBidResponse(adUnit);
+          bidResponses.push(bidResponse);
+        });
+      }
+
+      return bidResponses;
+    },
+    getUserSyncs: function (syncOptions, serverResponses) {
+      const syncs = [];
+      for (const response of serverResponses) {
+        if (syncOptions.iframeEnabled && deepAccess(response, 'body.params.userSyncURL')) {
+          syncs.push({
+            type: 'iframe',
+            url: deepAccess(response, 'body.params.userSyncURL')
+          });
+        }
+        if (syncOptions.pixelEnabled && isArray(deepAccess(response, 'body.params.userSyncPixels'))) {
+          const pixels = response.body.params.userSyncPixels.map(pixel => {
+            return {
+              type: 'image',
+              url: pixel
+            }
+          });
+          syncs.push(...pixels);
+        }
+      }
+      return syncs;
+    },
+    onBidWon: function (bid) {
+      if (bid == null) {
+        return;
+      }
+
+      logInfo('onBidWon:', bid);
+      if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
+        triggerPixel(bid.nurl);
+      }
+    }
+  }
+}
 
 export function getBidRequestMediaTypes(bidRequest) {
   const mediaTypes = deepAccess(bidRequest, 'mediaTypes');
@@ -255,14 +325,14 @@ export function generateBidParameters(bid, bidderRequest) {
   return bidObject;
 }
 
-export function buildBidResponse(adUnit, DEFAULT_CURRENCY, TTL) {
+export function buildBidResponse(adUnit) {
   const bidResponse = {
     requestId: adUnit.requestId,
     cpm: adUnit.cpm,
     currency: adUnit.currency || DEFAULT_CURRENCY,
     width: adUnit.width,
     height: adUnit.height,
-    ttl: adUnit.ttl || TTL,
+    ttl: adUnit.ttl || DEFAULT_TTL,
     creativeId: adUnit.creativeId,
     netRevenue: adUnit.netRevenue || true,
     nurl: adUnit.nurl,
