@@ -21,7 +21,7 @@ const PID_COOKIE_NAME = 'eqt_pid';
 /**
  * Evaluates impressions for validity.  The entry evaluated is considered valid if NEITHER of these conditions are met:
  * 1) it has a `video` property defined for `mediaTypes.video` which is an empty object
- * 2) it has a `native` property defined for `mediatTypes.native` which is an empty object
+ * 2) it has a `native` property defined for `mediaTypes.native` which is an empty object
  * @param {*} bidReq A bid request object to evaluate
  * @returns boolean
  */
@@ -157,7 +157,7 @@ export const converter = ortbConverter({
     if (deepAccess(bid, 'mediaTypes.native')) {
       ['privacy', 'plcmttype', 'eventtrackers'].forEach(prop => {
         if (!bid.mediaTypes.native.ortb[prop]) {
-          logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request`, bid);
+          logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request.  Request will proceed, but the use of ${prop} for native requests is strongly encouraged.`, bid);
         }
       });
     }
