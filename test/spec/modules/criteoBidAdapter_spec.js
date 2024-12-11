@@ -123,6 +123,7 @@ describe('The Criteo bidding adapter', function () {
       getCookieStub,
       setCookieStub,
       getDataFromLocalStorageStub,
+      setDataInLocalStorageStub,
       removeDataFromLocalStorageStub,
       triggerPixelStub;
 
@@ -146,6 +147,7 @@ describe('The Criteo bidding adapter', function () {
       getCookieStub = sinon.stub(storage, 'getCookie');
       setCookieStub = sinon.stub(storage, 'setCookie');
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
       removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
 
       triggerPixelStub = sinon.stub(utils, 'triggerPixel');
@@ -160,6 +162,7 @@ describe('The Criteo bidding adapter', function () {
       getCookieStub.restore();
       setCookieStub.restore();
       getDataFromLocalStorageStub.restore();
+      setDataInLocalStorageStub.restore();
       removeDataFromLocalStorageStub.restore();
       triggerPixelStub.restore();
     });
@@ -325,6 +328,38 @@ describe('The Criteo bidding adapter', function () {
         expect(triggerPixelStub.calledTwice).to.be.true;
         expect(triggerPixelStub.firstCall.calledWith('https://example.com/pixel1')).to.be.true;
         expect(triggerPixelStub.secondCall.calledWith('https://example.com/pixel2')).to.be.true;
+
+        done();
+      }, 0);
+    });
+
+    it('should write cookie only on TLD+1 level', function(done) {
+      const cookies = {};
+
+      const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
+
+      setCookieStub.callsFake((name, value, expires, _, domain) => {
+        if (domain != '.com') {
+          cookies[name] = value;
+        }
+      });
+
+      getCookieStub.callsFake((name) => cookies[name]);
+
+      const event = new MessageEvent('message', {
+        data: {
+          requestId: '123456',
+          bundle: 'bundle'
+        },
+        origin: 'https://gum.criteo.com'
+      });
+
+      window.dispatchEvent(event);
+      setTimeout(() => {
+        expect(setCookieStub.calledWith('cto_bundle', 'bundle', sinon.match.string, null, '.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bundle', 'bundle', sinon.match.string, null, '.abc.com')).to.be.true;
+        expect(setCookieStub.calledWith('cto_bundle', 'bundle', sinon.match.string, null, '.www.abc.com')).to.be.false;
+        expect(cookies).to.deep.equal({ 'cto_bundle': 'bundle' });
 
         done();
       }, 0);

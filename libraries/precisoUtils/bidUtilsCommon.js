@@ -37,7 +37,7 @@ export function getBidFloor(bid) {
       mediaType: '*',
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (_) {
     return 0
   }
@@ -61,16 +61,6 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
     placements: placements
   };
   consentCheck(bidderRequest, request);
-
-  // if (bidderRequest) {
-  //   if (bidderRequest.uspConsent) {
-  //     request.ccpa = bidderRequest.uspConsent;
-  //   }
-  //   if (bidderRequest.gdprConsent) {
-  //     request.gdpr = bidderRequest.gdprConsent;
-  //   }
-  // }
-
   const len = validBidRequests.length;
   for (let i = 0; i < len; i++) {
     const bid = validBidRequests[i];
@@ -134,7 +124,6 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
   let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
   const isCk2trk = syncEndpoint.includes('ck.2trk.info');
 
-  // Base sync URL
   let syncUrl = isCk2trk ? syncEndpoint : `${syncEndpoint}/${syncType}?pbjs=1`;
 
   if (gdprConsent && gdprConsent.consentString) {

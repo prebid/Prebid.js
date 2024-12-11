@@ -1,6 +1,7 @@
 import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -152,7 +153,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     pbav: SUBLIME_VERSION,
     // Current Prebid params
     prebidVersion: '$prebid.version$',
-    currencyCode: config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY,
+    currencyCode: getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY,
     timeout: (typeof bidderRequest === 'object' && !!bidderRequest) ? bidderRequest.timeout : config.getConfig('bidderTimeout'),
   };
 

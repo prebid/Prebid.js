@@ -28,7 +28,7 @@ import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 import {BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS} from 'src/constants.js';
 import {getBidToRender} from '../../../src/adRendering.js';
-import { setBattrForAdUnit } from '../../../src/prebid.js';
+import {setBattrForAdUnit} from '../../../src/prebid.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -237,9 +237,21 @@ describe('Unit: Prebid Module', function () {
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
-  it('should insert a locator frame on the page', () => {
-    $$PREBID_GLOBAL$$.processQueue();
-    expect(window.frames[PB_LOCATOR]).to.exist;
+  describe('processQueue', () => {
+    it('should insert a locator frame on the page', () => {
+      $$PREBID_GLOBAL$$.processQueue();
+      expect(window.frames[PB_LOCATOR]).to.exist;
+    });
+
+    ['cmd', 'que'].forEach(prop => {
+      it(`should patch ${prop}.push`, () => {
+        $$PREBID_GLOBAL$$[prop].push = false;
+        $$PREBID_GLOBAL$$.processQueue();
+        let ran = false;
+        $$PREBID_GLOBAL$$[prop].push(() => { ran = true; });
+        expect(ran).to.be.true;
+      })
+    })
   })
 
   describe('and global adUnits', () => {
@@ -262,10 +274,10 @@ describe('Unit: Prebid Module', function () {
 
     beforeEach(() => {
       $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
-      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
       hookRan = new Promise((resolve) => {
         done = resolve;
       });
+      $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length, ...startingAdUnits);
     });
 
     afterEach(() => {
@@ -1316,6 +1328,16 @@ describe('Unit: Prebid Module', function () {
       return renderAd(document, bidId).then(() => {
         const error = `Error rendering ad (id: ${bidId}): renderAd was prevented from writing to the main document.`;
         assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+      });
+    });
+
+    it('should emit AD_RENDER_SUCCEEDED', () => {
+      sandbox.stub(events, 'emit');
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
+      });
+      return renderAd(document, bidId).then(() => {
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({adId: bidId}));
       });
     });
 
@@ -3531,7 +3553,7 @@ describe('Unit: Prebid Module', function () {
   if (FEATURES.VIDEO) {
     describe('markWinningBidAsUsed', function () {
       const adUnitCode = '/19968336/header-bid-tag-0';
-      let winningBid;
+      let winningBid, markedBid;
 
       beforeEach(() => {
         const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
@@ -3540,20 +3562,56 @@ describe('Unit: Prebid Module', function () {
         // mark the bid and verify the state has changed to RENDERED
         winningBid = targeting.getWinningBids(adUnitCode)[0];
         auction.getAuctionId = function() { return winningBid.auctionId };
+        sandbox.stub(events, 'emit');
+        markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
+          bid => bid.adId === winningBid.adId);
       })
 
       afterEach(() => {
         resetAuction();
       })
 
-      it('marks the bid object as used for the given adUnitCode/adId combination', function () {
-        // make sure the auction has "state" and does not reload the fixtures
-        $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: winningBid.adId });
-        const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
-          bid => bid.adId === winningBid.adId);
-
+      function checkBidRendered() {
         expect(markedBid.status).to.equal(BID_STATUS.RENDERED);
-      });
+      }
+
+      Object.entries({
+        'analytics=true': {
+          mark(options = {}) {
+            $$PREBID_GLOBAL$$.markWinningBidAsUsed(Object.assign({analytics: true}, options))
+          },
+          checkBidWon() {
+            sinon.assert.calledWith(events.emit, EVENTS.BID_WON, markedBid);
+          }
+        },
+        'analytics=false': {
+          mark(options = {}) {
+            $$PREBID_GLOBAL$$.markWinningBidAsUsed(options)
+          },
+          checkBidWon() {
+            sinon.assert.notCalled(events.emit)
+          }
+        }
+      }).forEach(([t, {mark, checkBidWon}]) => {
+        describe(`when ${t}`, () => {
+          it('marks the bid object as used for the given adUnitCode/adId combination', function () {
+            mark({ adUnitCode, adId: winningBid.adId });
+            checkBidRendered();
+            checkBidWon();
+          });
+          it('marks the winning bid object as used for the given adUnitCode', function () {
+            mark({ adUnitCode });
+            checkBidRendered();
+            checkBidWon();
+          });
+
+          it('marks a bid object as used for the given adId', function () {
+            mark({ adId: winningBid.adId });
+            checkBidRendered();
+            checkBidWon();
+          });
+        })
+      })
 
       it('try and mark the bid object, but fail because we supplied the wrong adId', function () {
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
@@ -3561,24 +3619,6 @@ describe('Unit: Prebid Module', function () {
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.not.equal(BID_STATUS.RENDERED);
-      });
-
-      it('marks the winning bid object as used for the given adUnitCode', function () {
-        // make sure the auction has "state" and does not reload the fixtures
-        $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode });
-        const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
-          bid => bid.adId === winningBid.adId);
-
-        expect(markedBid.status).to.equal(BID_STATUS.RENDERED);
-      });
-
-      it('marks a bid object as used for the given adId', function () {
-        // make sure the auction has "state" and does not reload the fixtures
-        $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adId: winningBid.adId });
-        const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
-          bid => bid.adId === winningBid.adId);
-
-        expect(markedBid.status).to.equal(BID_STATUS.RENDERED);
       });
     });
   }
@@ -3746,71 +3786,4 @@ describe('Unit: Prebid Module', function () {
       expect(auctionManager.getBidsReceived().length).to.equal(0);
     });
   });
-
-  describe('setBattrForAdUnit', () => {
-    it('should set copy battr to both places', () => {
-      const adUnit = {
-        ortb2Imp: {
-          video: {
-            battr: 'banned attribute'
-          }
-        },
-        mediaTypes: {
-          video: {}
-        }
-      }
-
-      setBattrForAdUnit(adUnit, 'video');
-
-      expect(adUnit.mediaTypes.video.battr).to.deep.equal('banned attribute');
-      expect(adUnit.ortb2Imp.video.battr).to.deep.equal('banned attribute');
-
-      const adUnit2 = {
-        mediaTypes: {
-          video: {
-            battr: 'banned attribute'
-          }
-        },
-        ortb2Imp: {
-          video: {}
-        }
-      }
-
-      setBattrForAdUnit(adUnit2, 'video');
-
-      expect(adUnit2.ortb2Imp.video.battr).to.deep.equal('banned attribute');
-      expect(adUnit2.mediaTypes.video.battr).to.deep.equal('banned attribute');
-    })
-
-    it('should log warn if both are specified and differ from eachother', () => {
-      let spyLogWarn = sinon.spy(utils, 'logWarn');
-      const adUnit = {
-        mediaTypes: {
-          native: {
-            battr: 'banned attribute'
-          }
-        },
-        ortb2Imp: {
-          native: {
-            battr: 'banned attribute 2'
-          }
-        }
-      }
-      setBattrForAdUnit(adUnit, 'native');
-      sinon.assert.calledOnce(spyLogWarn);
-      spyLogWarn.resetHistory();
-      utils.logWarn.restore();
-    })
-
-    it('should not copy for undefined battr', () => {
-      const adUnit = {
-        mediaTypes: {
-          native: {}
-        }
-      }
-      setBattrForAdUnit(adUnit, 'native');
-      expect(adUnit.mediaTypes.native).to.deep.equal({});
-      expect(adUnit.mediaTypes.ortb2Imp).to.not.exist;
-    })
-  })
 });

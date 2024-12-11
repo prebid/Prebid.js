@@ -345,6 +345,14 @@ describe('config API', function () {
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
 
+  it('sets auctionOptions suppressExpiredRender', function () {
+    const auctionOptionsConfig = {
+      'suppressExpiredRender': true
+    }
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
   it('should log warning for the wrong value passed to auctionOptions', function () {
     setConfig({ auctionOptions: '' });
     expect(logWarnSpy.calledOnce).to.equal(true);
@@ -367,6 +375,15 @@ describe('config API', function () {
     }});
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options suppressStaleRender must be of type boolean';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionOptions suppress expired render', function () {
+    setConfig({ auctionOptions: {
+      'suppressExpiredRender': 'test',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options suppressExpiredRender must be of type boolean';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 

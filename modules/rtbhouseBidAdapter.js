@@ -5,6 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {config} from '../src/config.js';
+import { interpretNativeBid, OPENRTB } from '../libraries/precisoUtils/bidNativeUtils.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -23,29 +24,6 @@ const DSA_ATTRIBUTES = [
   { name: 'pubrender', 'min': 0, 'max': 2 },
   { name: 'datatopub', 'min': 0, 'max': 2 }
 ];
-
-// Codes defined by OpenRTB Native Ads 1.1 specification
-export const OPENRTB = {
-  NATIVE: {
-    IMAGE_TYPE: {
-      ICON: 1,
-      MAIN: 3,
-    },
-    ASSET_ID: {
-      TITLE: 1,
-      IMAGE: 2,
-      ICON: 3,
-      BODY: 4,
-      SPONSORED: 5,
-      CTA: 6
-    },
-    DATA_ASSET_TYPE: {
-      SPONSORED: 1,
-      DESC: 2,
-      CTA_TEXT: 12,
-    },
-  }
-};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -237,7 +215,7 @@ function applyFloor(slot) {
   if (typeof slot.getFloor === 'function') {
     Object.keys(slot.mediaTypes).forEach(type => {
       if (includes(SUPPORTED_MEDIA_TYPES, type)) {
-        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' }).floor);
+        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' })?.floor);
       }
     });
   }
@@ -487,71 +465,6 @@ function interpretBannerBid(serverBid) {
     netRevenue: true,
     currency: 'USD'
   }
-}
-
-/**
- * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
- * @returns {object} Prebid native bidObject
- */
-function interpretNativeBid(serverBid) {
-  return {
-    requestId: serverBid.impid,
-    mediaType: NATIVE,
-    cpm: serverBid.price,
-    creativeId: serverBid.adid,
-    width: 1,
-    height: 1,
-    ttl: TTL,
-    meta: {
-      advertiserDomains: serverBid.adomain
-    },
-    netRevenue: true,
-    currency: 'USD',
-    native: interpretNativeAd(serverBid.adm),
-  }
-}
-
-/**
- * @param {string} adm JSON-encoded Request by OpenRTB Native Ads 1.1 §4.1
- * @returns {object} Prebid bidObject.native
- */
-function interpretNativeAd(adm) {
-  const native = JSON.parse(adm).native;
-  const result = {
-    clickUrl: encodeURI(native.link.url),
-    impressionTrackers: native.imptrackers
-  };
-  native.assets.forEach(asset => {
-    switch (asset.id) {
-      case OPENRTB.NATIVE.ASSET_ID.TITLE:
-        result.title = asset.title.text;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.IMAGE:
-        result.image = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.ICON:
-        result.icon = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.BODY:
-        result.body = asset.data.value;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
-        result.sponsoredBy = asset.data.value;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.CTA:
-        result.cta = asset.data.value;
-        break;
-    }
-  });
-  return result;
 }
 
 /**
