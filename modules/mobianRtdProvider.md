@@ -6,6 +6,8 @@ Module Name: Mobian Rtd Provider
 Module Type: Rtd Provider
 Maintainer: rich.rodriguez@themobian.com
 
+The Mobian Real-Time Data (RTD) Module is a plug-and-play Prebid.js adapter that is designed to provide Mobian Contextual results on the publisher’s page.
+
 ## Description
 
 RTD provider for themobian Brand Safety determinations. Publishers
