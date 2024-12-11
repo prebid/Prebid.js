@@ -37,6 +37,7 @@ import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
 import {MODULE_TYPE_PREBID} from '../../../src/activities/modules.js';
+import {getPBSBidderConfig} from "../../../modules/prebidServerBidAdapter/bidderConfig.js";
 
 let CONFIG = {
   accountId: '1',
@@ -4305,4 +4306,164 @@ describe('S2S Adapter', function () {
       expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: true, floorMin: 1, floorMinCur: 'CUR' });
     });
   });
+  describe('getPBSBidderConfig', () => {
+    [
+      {
+        t: 'does not alter config when there are no conflicts',
+        global: {
+          k1: 'val'
+        },
+        bidder: {
+          bidderA: {
+            k2: 'val'
+          }
+        },
+        expected: {
+          bidderA: {
+            k2: 'val'
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (scalar/object)',
+        global: {
+          k1: 'val',
+          k2: 'val'
+        },
+        bidder: {
+          bidderA: {
+            k1: {k3: 'val'}
+          }
+        },
+        expected: {
+          bidderA: {
+            k1: {k3: 'val'}
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (array/object)',
+        global: {
+          k: [1, 2]
+        },
+        bidder: {
+          bidderA: {
+            k: {inner: 'val'}
+          }
+        },
+        expected: {
+          bidderA: {
+            k: {inner: 'val'}
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (object/array)',
+        global: {
+          k: {inner: 'val'}
+        },
+        bidder: {
+          bidderA: {
+            k: [1, 2]
+          }
+        },
+        expected: {
+          bidderA: {
+            k: [1, 2]
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (array/null)',
+        global: {
+          k: [1, 2]
+        },
+        bidder: {
+          bidderA: {
+            k: null
+          }
+        },
+        expected: {
+          bidderA: {
+            k: null
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (null/array)',
+        global: {},
+        bidder: {
+          bidderA: {
+            k: [1, 2]
+          }
+        },
+        expected: {
+          bidderA: {
+            k: [1, 2]
+          }
+        }
+      },
+      {
+        t: 'concatenates arrays',
+        global: {
+          key: 'value',
+          array: [1]
+        },
+        bidder: {
+          bidderA: {
+            array: [2]
+          }
+        },
+        expected: {
+          bidderA: {
+            array: [1, 2]
+          }
+        }
+      },
+      {
+        t: 'concatenates nested arrays',
+        global: {
+          nested: {
+            array: [1]
+          }
+        },
+        bidder: {
+          bidderA: {
+            key: 'value',
+            nested: {
+              array: [2]
+            }
+          }
+        },
+        expected: {
+          bidderA: {
+            key: 'value',
+            nested: {
+              array: [1, 2]
+            }
+          }
+        }
+      },
+      {
+        t: 'does not repeat equal elements',
+        global: {
+          array: [{id: 1}]
+        },
+        bidder: {
+          bidderA: {
+            array: [{id: 1}, {id: 2}]
+          }
+        },
+        expected: {
+          bidderA: {
+            array: [{id: 1}, {id: 2}]
+          }
+        }
+      }
+    ].forEach(({t, global, bidder, expected}) => {
+      it(t, () => {
+        expect(getPBSBidderConfig({global, bidder})).to.eql(expected);
+      })
+    })
+  })
 });
