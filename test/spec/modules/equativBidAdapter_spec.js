@@ -560,88 +560,96 @@ describe('Equativ bid adapter tests', () => {
     });
 
     it('should build a native request properly under normal circumstances', () => {
-      // ASSEMBLE
-      const expectedResult = true;
+      if (FEATURES.NATIVE) {
+        // ASSEMBLE
+        const expectedResult = true;
 
-      // ACT
-      const request = spec.buildRequests(DEFAULT_NATIVE_BID_REQUESTS, DEFAULT_NATIVE_BIDDER_REQUEST)[0].data;
+        // ACT
+        const request = spec.buildRequests(DEFAULT_NATIVE_BID_REQUESTS, {})[0].data;
 
-      // ASSERT
-      expect(request.imp[0]).to.have.property('native');
+        // ASSERT
+        expect(request.imp[0]).to.have.property('native');
 
-      const nativeObj = request.imp[0].native;
-      expect(nativeObj).to.have.property('ver').and.to.equal('1.2');
-      expect(nativeObj).to.have.property('request').and.to.be.a('string');
+        const nativeObj = request.imp[0].native;
+        expect(nativeObj).to.have.property('ver').and.to.equal('1.2');
+        expect(nativeObj).to.have.property('request').and.to.be.a('string');
 
-      const requestObj = JSON.parse(nativeObj.request);
-      expect(requestObj).to.have.property('assets').and.to.be.an('array');
-      expect(requestObj).to.have.property('eventtrackers').and.to.be.an('array');
-      expect(requestObj).to.have.property('plcmttype').and.to.equal(1);
-      expect(requestObj).to.have.property('privacy').and.to.equal(1);
-      expect(requestObj).to.have.property('ver').and.to.equal('1.2');
+        const requestObj = JSON.parse(nativeObj.request);
+        expect(requestObj).to.have.property('assets').and.to.be.an('array');
+        expect(requestObj).to.have.property('eventtrackers').and.to.be.an('array');
+        expect(requestObj).to.have.property('plcmttype').and.to.equal(1);
+        expect(requestObj).to.have.property('privacy').and.to.equal(1);
+        expect(requestObj).to.have.property('ver').and.to.equal('1.2');
+      }
     });
 
     it('should not send a native request when it has an empty body and no other impressions with any media types are defined', () => {
-      // ASSEMBLE
-      const emptyNativeRequest = {
-        ...DEFAULT_NATIVE_BID_REQUESTS[0],
-        mediaTypes: {
-          native: {}
-        }
-      };
-      const bidRequests = [ emptyNativeRequest ];
-      const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
+      if (FEATURES.NATIVE) {
+        // ASSEMBLE
+        const emptyNativeRequest = {
+          ...DEFAULT_NATIVE_BID_REQUESTS[0],
+          mediaTypes: {
+            native: {}
+          }
+        };
+        const bidRequests = [ emptyNativeRequest ];
+        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
-      // ACT
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+        // ACT
+        const request = spec.buildRequests(bidRequests, bidderRequest);
 
-      // ASSERT
-      expect(utils.logError.calledOnce).to.equal(true);
-      expect(utils.logError.args[0][0]).to.satisfy(arg => arg.includes('No request'));
-      expect(request).to.be.undefined;
+        // ASSERT
+        expect(utils.logError.calledOnce).to.equal(true);
+        expect(utils.logError.args[0][0]).to.satisfy(arg => arg.includes('No request'));
+        expect(request).to.be.undefined;
+      }
     });
 
     it('should warn about missing "assets" property for native requests', () => {
-      // ASSEMBLE
-      const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
+      if (FEATURES.NATIVE) {
+        // ASSEMBLE
+        const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
 
-      // removing just "assets" for this test
-      delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
-      const bidRequests = [ missingRequiredNativeRequest ];
-      const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
+        // removing just "assets" for this test
+        delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
+        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
-      // this value comes from native.js, part of the ortbConverter library
-      const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.'
+        // this value comes from native.js, part of the ortbConverter library
+        const warningMsgFromLibrary = 'mediaTypes.native is set, but no assets were specified. Native request skipped.'
 
-      // ACT
-      spec.buildRequests(bidRequests, bidderRequest);
+        // ACT
+        spec.buildRequests(bidRequests, bidderRequest);
 
-      // ASSERT
-      expect(utils.logWarn.callCount).to.equal(1)
-      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes(warningMsgFromLibrary));
+        // ASSERT
+        expect(utils.logWarn.callCount).to.equal(1)
+        expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes(warningMsgFromLibrary));
+      }
     });
 
     it('should warn about other missing required properties for native requests', () => {
-      // ASSEMBLE
-      const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
+      if (FEATURES.NATIVE) {
+        // ASSEMBLE
+        const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
 
-      // ortbConverter library will warn about missing assets; we supply warnings for these properties here
-      delete missingRequiredNativeRequest.mediaTypes.native.ortb.eventtrackers;
-      delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
-      delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
+        // ortbConverter library will warn about missing assets; we supply warnings for these properties here
+        delete missingRequiredNativeRequest.mediaTypes.native.ortb.eventtrackers;
+        delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
+        delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
 
-      const bidRequests = [ missingRequiredNativeRequest ];
-      const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
+        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
-      // ACT
-      spec.buildRequests(bidRequests, bidderRequest);
+        // ACT
+        spec.buildRequests(bidRequests, bidderRequest);
 
-      // ASSERT
-      expect(utils.logWarn.callCount).to.equal(4); // the first message, regarding missing assets, is supplied by the ortbConverter library
-      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'));
-      expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"privacy" is missing'));
-      expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"plcmttype" is missing'));
-      expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"eventtrackers" is missing'));
+        // ASSERT
+        expect(utils.logWarn.callCount).to.equal(4); // the first message, regarding missing assets, is supplied by the ortbConverter library
+        expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'));
+        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"privacy" is missing'));
+        expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"plcmttype" is missing'));
+        expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"eventtrackers" is missing'));
+      }
     });
   });
 
