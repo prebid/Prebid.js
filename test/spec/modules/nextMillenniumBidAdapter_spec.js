@@ -129,7 +129,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
       },
-      
+
       {
         title: 'imp with pbadslot',
         data: {
