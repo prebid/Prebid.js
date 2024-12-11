@@ -16,7 +16,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
 import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
 import {s2sDefaultConfig} from './index.js';
-import {getPBSBidderConfig, premergeFpd} from "./bidderConfig.js";
+import {premergeFpd} from './bidderConfig.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
