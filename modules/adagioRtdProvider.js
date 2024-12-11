@@ -37,7 +37,7 @@ const SUBMODULE_NAME = 'adagio';
 const ADAGIO_BIDDER_CODE = 'adagio';
 const GVLID = 617;
 const SCRIPT_URL = 'https://script.4dex.io/a/latest/adagio.js';
-const SESS_DURATION = 30 * 60 * 1000;
+const LATEST_ABTEST_VERSION = 2;
 export const PLACEMENT_SOURCES = {
   ORTB: 'ortb', // implicit default, not used atm.
   ADUNITCODE: 'code',
@@ -66,42 +66,47 @@ const _SESSION = (function() {
   return {
     init: () => {
       // helper function to determine if the session is new.
-      const isNewSession = (lastActivity) => {
-        const now = Date.now();
-        return (!isNumber(lastActivity) || (now - lastActivity) > SESS_DURATION);
+      const isNewSession = (expiry) => {
+        return (!isNumber(expiry) || Date.now() > expiry);
       };
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew = false, vwSmplg, vwSmplgNxt, lastActivityTime, id, testName, testVersion, initiator, pages } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, vwSmplg, vwSmplgNxt, expiry, lastActivityTime, id, pages, testName: legacyTestName, testVersion: legacyTestVersion } = _internal.getSessionFromLocalStorage(storageValue);
 
-        // isNew can be `true` if the session has been initialized by the A/B test snippet (external)
-        const isNewSess = (initiator === 'snippet') ? isNew : isNewSession(lastActivityTime);
+        const isNewSess = isNewSession(expiry);
+
+        // if lastActivityTime is defined it means that the website is using the original version of the snippet
+        const v = !lastActivityTime ? LATEST_ABTEST_VERSION : undefined;
 
         data.session = {
+          v,
           rnd,
           pages: pages || 1,
           new: isNewSess, // legacy: `new` was used but the choosen name is not good.
           // Don't use values if they are not defined.
           ...(vwSmplg !== undefined && { vwSmplg }),
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
-          ...(lastActivityTime !== undefined && { lastActivityTime }),
+          ...(expiry !== undefined && { expiry }),
+          ...(lastActivityTime !== undefined && { lastActivityTime }), // legacy: used by older version of the snippet
           ...(id !== undefined && { id }),
-          ...(testName !== undefined && { testName }),
-          ...(testVersion !== undefined && { testVersion }),
-          ...(initiator !== undefined && { initiator }),
         };
 
-        // `initiator` is a pseudo flag used to know if the session has been initialized by the A/B test snippet (external).
-        // If the AB Test snippet has not been used, then `initiator` value is `adgjs` or `undefined`.
-        // The check on `testName` is used to ensure that the A/B test values are removed.
-        if (initiator !== 'snippet' && (isNewSess || testName)) {
+        if (isNewSess) {
           data.session.new = true;
           data.session.id = generateUUID();
           data.session.rnd = Math.random();
-          // Ensure that the A/B test values are removed.
-          delete data.session.testName;
-          delete data.session.testVersion;
+        }
+
+        const { testName, testVersion, expiry: abTestExpiry, sessionId } = _internal.getAbTestFromLocalStorage(storageValue);
+        if (v === LATEST_ABTEST_VERSION) {
+          if (abTestExpiry && abTestExpiry > Date.now() && (!sessionId || sessionId === data.session.id)) { // if AbTest didn't set a session id, it's probably because it's a new one and it didn't retrieve it yet, assume it's okay to get test Name and Version.
+            data.session.testName = testName;
+            data.session.testVersion = testVersion;
+          }
+        } else {
+          data.session.testName = legacyTestName;
+          data.session.testVersion = legacyTestVersion;
         }
 
         _internal.getAdagioNs().queue.push({
@@ -196,13 +201,35 @@ export const _internal = {
       rnd: Math.random()
     };
 
-    const obj = JSON.parse(storageValue, function(name, value) {
+    const obj = this.getObjFromStorageValue(storageValue);
+
+    return (!obj || !obj.session) ? _default : obj.session;
+  },
+
+  /**
+   * Returns the abTest data from the localStorage.
+   *
+   * @param {string} storageValue - The value stored in the localStorage.
+   * @returns {AbTest}
+   */
+  getAbTestFromLocalStorage: function(storageValue) {
+    const obj = this.getObjFromStorageValue(storageValue);
+
+    return (!obj || !obj.abTest) ? {} : obj.abTest;
+  },
+
+  /**
+   * Returns the parsed data from the localStorage.
+   *
+   * @param {string} storageValue - The value stored in the localStorage.
+   * @returns {Object}
+   */
+  getObjFromStorageValue: function(storageValue) {
+    return JSON.parse(storageValue, function(name, value) {
       if (name.charAt(0) !== '_' || name === '') {
         return value;
       }
     });
-
-    return (!obj || !obj.session) ? _default : obj.session;
   }
 };
 
@@ -681,12 +708,24 @@ function registerEventsForAdServers(config) {
 
 /**
  * @typedef {Object} Session
+ * @property {string} id - uuid of the session.
  * @property {boolean} new - True if the session is new.
  * @property {number} rnd - Random number used to determine if the session is new.
  * @property {number} vwSmplg - View sampling rate.
  * @property {number} vwSmplgNxt - Next view sampling rate.
+ * @property {number} expiry - Timestamp after which session should be considered expired.
  * @property {number} lastActivityTime - Last activity time.
  * @property {number} pages - current number of pages seen.
+ * @property {string} testName - The test name defined by the publisher. Legacy only present for websites with older abTest snippet.
+ * @property {string} testVersion - 'clt', 'srv'. Legacy only present for websites with older abTest snippet.
+ */
+
+/**
+ * @typedef {Object} AbTest
+ * @property {string} testName - The test name defined by the publisher.
+ * @property {string} testVersion - 'clt', 'srv'.
+ * @property {string} sessionId - uuid of the session.
+ * @property {number} expiry - Timestamp after which session should be considered expired.
  */
 
 /**
