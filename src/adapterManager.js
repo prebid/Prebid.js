@@ -1,7 +1,6 @@
 /** @module adaptermanger */
 
 import {
-  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -128,7 +127,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
           adUnitId: adUnit.adUnitId,
-          sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
+          sizes: mediaTypes?.banner?.sizes || mediaTypes?.video?.playerSize || [],
           bidId: bid.bid_id || getUniqueIdentifierStr(),
           bidderRequestId,
           auctionId,

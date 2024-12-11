@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import {
   getImp,
+  getSourceObj,
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
@@ -19,6 +20,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bid: {
             mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
             adUnitCode: 'test-banner-1',
+            bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
@@ -31,7 +33,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'test-banner-1',
+          id: 'e36ea395f67f',
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
@@ -47,6 +49,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bid: {
             mediaTypes: {video: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1}},
             adUnitCode: 'test-video-1',
+            bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
@@ -58,7 +61,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'test-video-1',
+          id: 'e36ea395f67f',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {
@@ -79,7 +82,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
           bid: {
             mediaTypes: {video: {w: 640, h: 480}},
-            adUnitCode: 'test-video-2',
+            bidId: 'e36ea395f67f',
           },
 
           mediaTypes: {
@@ -91,7 +94,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         },
 
         expected: {
-          id: 'test-video-2',
+          id: 'e36ea395f67f',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {w: 640, h: 480, mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript']},
@@ -104,6 +107,112 @@ describe('nextMillenniumBidAdapterTests', () => {
         const {bid, id, mediaTypes, postBody} = data;
         const imp = getImp(bid, id, mediaTypes, postBody);
         expect(imp).to.deep.equal(expected);
+      });
+    }
+  });
+
+  describe('function getSourceObj', () => {
+    const dataTests = [
+      {
+        title: 'schain is empty',
+        validBidRequests: [{}],
+        bidderRequest: {},
+        expected: undefined,
+      },
+
+      {
+        title: 'schain is validBidReequest',
+        bidderRequest: {},
+        validBidRequests: [{
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        }],
+
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+
+      {
+        title: 'schain is bidderReequest.ortb2.source.ext.schain',
+        bidderRequest: {
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        validBidRequests: [{}],
+        expected: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+            },
+          },
+        },
+      },
+    ];
+
+    for (let {title, validBidRequests, bidderRequest, expected} of dataTests) {
+      it(title, () => {
+        const source = getSourceObj(validBidRequests, bidderRequest);
+        expect(source).to.deep.equal(expected);
       });
     }
   });
@@ -682,17 +791,17 @@ describe('nextMillenniumBidAdapterTests', () => {
   describe('Check ext.next_mil_imps', function() {
     const expectedNextMilImps = [
       {
-        impId: 'nmi-test-0',
+        impId: 'bid1234',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'nmi-test-1',
+        impId: 'bid1235',
         nextMillennium: {refresh_count: 1},
       },
 
       {
-        impId: 'nmi-test-2',
+        impId: 'bid1236',
         nextMillennium: {refresh_count: 1},
       },
     ];
@@ -948,7 +1057,6 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: {
           id: 'mock-uuid',
-          bidIds: {'test-div': 'bid1234', 'test-div-2': 'bid1235'},
           impSize: 2,
           requestSize: 1,
           domain: 'example.com',
@@ -961,7 +1069,6 @@ describe('nextMillenniumBidAdapterTests', () => {
       it(title, () => {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.length).to.equal(expected.requestSize);
-        expect(request[0].bidIds).to.deep.equal(expected.bidIds);
 
         const requestData = JSON.parse(request[0].data);
         expect(requestData.id).to.equal(expected.id);
@@ -983,7 +1090,7 @@ describe('nextMillenniumBidAdapterTests', () => {
                 bid: [
                   {
                     id: '7457329903666272789-0',
-                    impid: 'ad-unit-0',
+                    impid: '700ce0a43f72',
                     price: 0.5,
                     adm: 'Hello! It\'s a test ad!',
                     adid: '96846035-0',
@@ -994,7 +1101,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
                   {
                     id: '7457329903666272789-1',
-                    impid: 'ad-unit-1',
+                    impid: '700ce0a43f73',
                     price: 0.7,
                     adm: 'https://some_vast_host.com/vast.xml',
                     adid: '96846035-1',
@@ -1006,7 +1113,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
                   {
                     id: '7457329903666272789-2',
-                    impid: 'ad-unit-3',
+                    impid: '700ce0a43f74',
                     price: 1.0,
                     adm: '<vast><ad></ad></vast>',
                     adid: '96846035-3',
@@ -1022,19 +1129,10 @@ describe('nextMillenniumBidAdapterTests', () => {
           },
         },
 
-        bidRequest: {
-          bidIds: {
-            'ad-unit-0': 'bid-id-0',
-            'ad-unit-1': 'bid-id-1',
-            'ad-unit-2': 'bid-id-2',
-            'ad-unit-3': 'bid-id-3',
-          },
-        },
-
         expected: [
           {
             title: 'banner',
-            requestId: 'bid-id-0',
+            requestId: '700ce0a43f72',
             creativeId: '96846035-0',
             ad: 'Hello! It\'s a test ad!',
             vastUrl: undefined,
@@ -1047,7 +1145,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
           {
             title: 'video - vastUrl',
-            requestId: 'bid-id-1',
+            requestId: '700ce0a43f73',
             creativeId: '96846035-1',
             ad: undefined,
             vastUrl: 'https://some_vast_host.com/vast.xml',
@@ -1060,7 +1158,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
           {
             title: 'video - vastXml',
-            requestId: 'bid-id-3',
+            requestId: '700ce0a43f74',
             creativeId: '96846035-3',
             ad: undefined,
             vastUrl: undefined,

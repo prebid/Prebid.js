@@ -11,6 +11,7 @@ import {
   parseUrl,
   triggerPixel,
 } from '../src/utils.js';
+
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
@@ -20,7 +21,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '4.1.0';
+const NM_VERSION = '4.2.1';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -86,10 +87,10 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const requests = [];
-    const bidIds = {};
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
     const device = getDeviceObj();
+    const source = getSourceObj(validBidRequests, bidderRequest);
     const tmax = deepAccess(bidderRequest, 'timeout') || DEFAULT_TMAX;
 
     const postBody = {
@@ -101,6 +102,7 @@ export const spec = {
 
       device,
       site,
+      source,
       imp: [],
     };
 
@@ -118,8 +120,6 @@ export const spec = {
       if (i === 0) postBody.cur = cur;
       postBody.imp.push(getImp(bid, id, mediaTypes));
       postBody.ext.next_mil_imps.push(getExtNextMilImp(bid));
-
-      bidIds[bid.adUnitCode] = bid.bidId;
     });
 
     this.getUrlPixelMetric(EVENTS.BID_REQUESTED, validBidRequests);
@@ -132,21 +132,19 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: true,
       },
-
-      bidIds,
     });
 
     return requests;
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse) {
     const response = serverResponse.body;
     const bidResponses = [];
 
     const bids = [];
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
-        const requestId = bidRequest.bidIds[bid.impid];
+        const requestId = bid.impid;
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
@@ -268,7 +266,7 @@ export const spec = {
 function getExtNextMilImp(bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
   const nextMilImp = {
-    impId: bid.adUnitCode,
+    impId: bid.bidId,
     nextMillennium: {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
@@ -283,7 +281,7 @@ function getExtNextMilImp(bid) {
 export function getImp(bid, id, mediaTypes) {
   const {banner, video} = mediaTypes;
   const imp = {
-    id: bid.adUnitCode,
+    id: bid.bidId,
     ext: {
       prebid: {
         storedrequest: {
@@ -421,8 +419,8 @@ function getCurrency(bid = {}) {
 
     if (typeof bid.getFloor === 'function') {
       let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
-      mediaTypes[mediaType].bidfloorcur = floorInfo.currency;
-      mediaTypes[mediaType].bidfloor = floorInfo.floor;
+      mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
+      mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
       mediaTypes[mediaType].bidfloorcur = currency;
     };
@@ -493,6 +491,19 @@ function getDeviceObj() {
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
   };
+}
+
+export function getSourceObj(validBidRequests, bidderRequest) {
+  const schain = validBidRequests?.[0]?.schain ||
+    (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
+
+  if (!schain) return;
+
+  const source = {
+    schain,
+  };
+
+  return source;
 }
 
 function getSua() {
