@@ -56,8 +56,9 @@ export function extractEids({global, bidder}) {
       entries.push(entry);
     }
     if (bySource[eid.source] == null) {
-      bySource[eid.source] = eid;
-    } else if (!conflicts.has(eid.source) && !deepEqual(bySource[eid.source], eid)) {
+      bySource[eid.source] = entry.eid;
+    } else if (entry.eid === eid) {
+      // if this is the first time we see this eid, but not the first time we see its source, we have a conflict
       conflicts.add(eid.source);
     }
     return entry;
@@ -138,19 +139,20 @@ function replaceEids({global, bidder}) {
   }
   Object.entries(consolidated.bidder).forEach(([bidderCode, bidderEids]) => {
     if (bidderEids.length) {
-      deepSetValue(bidder[bidderCode], 'user.ext.eids', consolidated.global.concat(bidderEids));
+      deepSetValue(bidder[bidderCode], 'user.ext.eids', bidderEids);
     }
   })
   return {global, bidder}
 }
 
 export function premergeFpd(ortb2Fragments) {
-  if (ortb2Fragments == null || ortb2Fragments.bidder == null) {
+  if (ortb2Fragments == null || Object.keys(ortb2Fragments.bidder || {}).length === 0) {
     return ortb2Fragments;
   } else {
-    return replaceEids({
+    ortb2Fragments = replaceEids(ortb2Fragments);
+    return {
       ...ortb2Fragments,
       bidder: getPBSBidderConfig(ortb2Fragments)
-    })
+    };
   }
 }

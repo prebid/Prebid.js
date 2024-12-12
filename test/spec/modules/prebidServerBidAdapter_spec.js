@@ -2070,41 +2070,95 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('should pass user.ext.eids from FPD', function () {
-      config.setConfig({s2sConfig: CONFIG});
-      const req = {
-        ...REQUEST,
-        ortb2Fragments: {
-          global: {
-            user: {
-              ext: {
-                eids: [{source: '1', id: 1}, {source: '2', id: 2}]
-              }
-            }
-          },
-          bidder: {
-            appnexus: {
+    describe('user.ext.eids', () => {
+      let req;
+      beforeEach(() => {
+        const s2sConfig = {
+          ...CONFIG,
+          bidders: ['appnexus', 'rubicon']
+        }
+        config.setConfig({s2sConfig});
+        req = {
+          ...REQUEST,
+          s2sConfig,
+          ortb2Fragments: {
+            global: {
               user: {
                 ext: {
-                  eids: [{source: '3', id: 3}]
+                  eids: [{source: 'idA', id: 1}, {source: 'idB', id: 2}]
+                }
+              }
+            },
+            bidder: {
+              appnexus: {
+                user: {
+                  ext: {
+                    eids: [{source: 'idC', id: 3}]
+                  }
                 }
               }
             }
           }
         }
-      }
-      adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
-      const payload = JSON.parse(server.requests[0].requestBody);
-      expect(payload.user.ext.eids).to.eql([
-        {source: '1', id: 1},
-        {source: '2', id: 2},
-        {source: '3', id: 3}
-      ]);
-      expect(payload.ext.prebid.data.eidpermissions).to.eql([{
-        bidders: ['appnexus'],
-        source: '3'
-      }]);
-    });
+      })
+      it('should get picked up from from FPD', function () {
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        expect(payload.user.ext.eids).to.eql([
+          {source: 'idA', id: 1},
+          {source: 'idB', id: 2},
+          {source: 'idC', id: 3}
+        ]);
+        expect(payload.ext.prebid.data.eidpermissions).to.eql([{
+          bidders: ['appnexus'],
+          source: 'idC'
+        }]);
+      });
+
+      it('should repeat global EIDs when bidder-specific EIDs conflict', () => {
+        BID_REQUESTS.push({
+          ...BID_REQUESTS[0],
+          bidderCode: 'rubicon',
+          bids: [{
+            bidder: 'rubicon',
+            params: {}
+          }]
+        })
+        req.ortb2Fragments.bidder.rubicon = {
+          user: {
+            ext: {
+              eids: [{source: 'idC', id: 4}]
+            }
+          }
+        }
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        const globalEids = [
+          {source: 'idA', id: 1},
+          {source: 'idB', id: 2},
+        ]
+        expect(payload.user.ext.eids).to.eql(globalEids);
+        expect(payload.ext.prebid?.data?.eidpermissions).to.not.exist;
+        expect(payload.ext.prebid.bidderconfig).to.have.deep.members([
+          {
+            bidders: ['appnexus'],
+            config: {
+              ortb2: {
+                user: {ext: {eids: globalEids.concat([{source: 'idC', id: 3}])}}
+              }
+            }
+          },
+          {
+            bidders: ['rubicon'],
+            config: {
+              ortb2: {
+                user: {ext: {eids: globalEids.concat([{source: 'idC', id: 4}])}}
+              }
+            }
+          }
+        ])
+      })
+    })
 
     it('when config \'currency.adServerCurrency\' value is a string: ORTB has property \'cur\' value set to a single item array', function () {
       config.setConfig({
