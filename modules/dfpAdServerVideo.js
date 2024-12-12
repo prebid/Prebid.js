@@ -241,8 +241,13 @@ function getCustParams(bid, options, urlCustParams) {
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');
-  const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
-  let encodedParams = encodeURIComponent(formatQS(targetingSet));
+  const customParamsSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
+
+  if (config.getConfig('cache.useLocal') && bid.vastUrl.startsWith('blob:')) {
+    customParamsSet.hb_blob = bid.vastUrl;
+  }
+
+  let encodedParams = encodeURIComponent(formatQS(customParamsSet));
   if (urlCustParams) {
     encodedParams = urlCustParams + '%26' + encodedParams;
   }
