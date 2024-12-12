@@ -6,24 +6,24 @@ import { spec } from 'modules/adtrgtmeBidAdapter.js';
 const DEFAULT_SID = '1220291391';
 const DEFAULT_ZID = '1836455615';
 const DEFAULT_BID_ID = '84ab500420319d';
-
+const DEFAULT_PIXEL_URL = 'https://cdn.adtarget.me/libs/1x1.gif';
+const DEFAULT_BANNER_URL = 'https://cdn.adtarget.me/libs/banner/300x250.jpg';
 const DEFAULT_AD_UNIT_CODE = '/1220291391/header-banner';
 const DEFAULT_AD_UNIT_TYPE = BANNER;
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const PREBID_VERSION = '$prebid.version$';
-const INTEGRATION_METHOD = 'prebid.js';
 
 // Utility functions
-const generateBidRequest = ({bidId, adUnitCode, bidOverrideObject, zid, ortb2}) => {
+const createBidRequest = ({bidId, adUnitCode, bidOverrideObject, zid, ortb2}) => {
   const bidRequest = {
+    auctionId: 'f3c594t-3o0ch1b0rm-ayn93c3o0ch1b0rm',
     adUnitCode,
-    auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
     bidId,
     bidderRequestsCount: 1,
     bidder: 'adtrgtme',
-    bidderRequestId: '7101db09af0db2',
+    bidderRequestId: 'dn8sskid7t546q',
     bidderWinsCount: 0,
     mediaTypes: {},
     params: {
@@ -49,7 +49,7 @@ const generateBidRequest = ({bidId, adUnitCode, bidOverrideObject, zid, ortb2}) 
   return bidRequest;
 }
 
-let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
+let createBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
   const bidderRequest = {
     adUnitCode: adUnitCode || 'default-adUnitCode',
     auctionId: 'd4c83a3b-18e4-4208-b98b-63848449c7aa',
@@ -58,11 +58,11 @@ let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
     bidderRequestId: '112f1c7c5d399a',
     bids: bidRequestArray,
     refererInfo: {
-      page: 'https://publisher-test.com',
+      page: 'https://site.com',
       reachedTop: true,
       isAmp: false,
       numIframes: 0,
-      stack: ['https://publisher-test.com'],
+      stack: ['https://site.com'],
     },
     gdprConsent: {
       consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
@@ -77,7 +77,7 @@ let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
   return bidderRequest;
 };
 
-const generateBuildRequestMock = ({bidId, adUnitCode, adUnitType, zid, bidOverrideObject, pubIdMode, ortb2}) => {
+const createBuildRequestMock = ({bidId, adUnitCode, adUnitType, zid, bidOverrideObject, pubIdMode, ortb2}) => {
   const bidRequestConfig = {
     bidId: bidId || DEFAULT_BID_ID,
     adUnitCode: adUnitCode || DEFAULT_AD_UNIT_CODE,
@@ -88,44 +88,44 @@ const generateBuildRequestMock = ({bidId, adUnitCode, adUnitType, zid, bidOverri
     pubIdMode: pubIdMode || false,
     ortb2: ortb2 || {}
   };
-  const bidRequest = generateBidRequest(bidRequestConfig);
+  const bidRequest = createBidRequest(bidRequestConfig);
   const validBidRequests = [bidRequest];
-  const bidderRequest = generateBidderRequest(validBidRequests, adUnitCode, ortb2);
+  const bidderRequest = createBidderRequest(validBidRequests, adUnitCode, ortb2);
 
   return { bidRequest, validBidRequests, bidderRequest }
 };
 
-const generateAdmPayload = (admPayloadType) => {
-  let ADM_PAYLOAD;
-  switch (admPayloadType) {
+const createAdm = (type) => {
+  let ADM;
+  switch (type) {
     case 'banner':
-      ADM_PAYLOAD = '<script>logInfo(\'ad\'); AdPlacement </script>'; // banner
+      ADM = `<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
+      <img src="${DEFAULT_BANNER_URL}" />`; // banner
       break;
-    default: '<script>logInfo(\'ad\'); AdPlacement </script>'; break;
+    default: '<span>Ad is here</span>'; break;
   };
-
-  return ADM_PAYLOAD;
+  return ADM;
 };
 
-const generateResponseMock = (admPayloadType) => {
+const createResponseMock = (type) => {
   const bidResponse = {
-    id: 'fc0c35df-21fb-4f93-9ebd-88759dbe31f9',
-    impid: '274395c06a24e5',
-    adm: generateAdmPayload(admPayloadType),
+    id: '5qtvluj7bk6jhzmqwu4zzulv',
+    impid: 'y7v7iu0uljj94rbjcw9',
+    adm: createAdm(type),
     price: 1,
     w: 300,
     h: 250,
-    crid: 'ssp-placement-name',
-    adomain: ['advertiser-domain.com']
+    crid: 'creativeid',
+    adomain: ['some-advertiser-domain.com']
   };
 
   const serverResponse = {
     body: {
-      id: 'fc0c35df-21fb-4f93-9ebd-88759dbe31f9',
-      seatbid: [{ bid: [ bidResponse ], seat: 13107 }]
+      id: '5qtvluj7bk6jhzmqwu4zzulv',
+      seatbid: [{ bid: [ bidResponse ], seat: 12345 }]
     }
   };
-  const { validBidRequests, bidderRequest } = generateBuildRequestMock({adUnitType: admPayloadType});
+  const { validBidRequests, bidderRequest } = createBuildRequestMock({adUnitType: type});
   const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
 
   return {serverResponse, data, bidderRequest};
@@ -145,18 +145,23 @@ describe('adtrgtme Bid Adapter:', () => {
   });
 
   describe('getUserSyncs()', () => {
-    const IMAGE_PIXEL_URL = 'http://image-pixel.com/foo/bar?1234&baz=true';
-    const IFRAME_ONE_URL = 'http://image-iframe.com/foo/bar?1234&baz=true';
-    const IFRAME_TWO_URL = 'http://image-iframe-two.com/foo/bar?1234&baz=true';
+    const INVALID_SYNC_URL = 'cdn.adtarget.me/libs/1x1.gif?image&rnd=5fr55r';
+    const IMAGE_SYNC_URL = `${DEFAULT_PIXEL_URL}?image&rnd=5fr55r`;
+    const IFRAME_SYNC_ONE_URL = `${DEFAULT_PIXEL_URL}?iframe1&rnd=5fr55r`;
+    const IFRAME_SYNC_TWO_URL = `${DEFAULT_PIXEL_URL}?iframe2&rnd=5fr55r`;
 
     let serverResponses = [];
     beforeEach(() => {
       serverResponses[0] = {
         body: {
           ext: {
-            pixels: `<script>document.write('<iframe src="${IFRAME_ONE_URL}"></iframe>` +
-                    `<img src="${IMAGE_PIXEL_URL}"></iframe>` +
-                    `<iframe src="${IFRAME_TWO_URL}"></iframe>');</script>`
+            pixels: [
+              ['image', INVALID_SYNC_URL],
+              ['invalid', IMAGE_SYNC_URL],
+              ['image', IMAGE_SYNC_URL],
+              ['iframe', IFRAME_SYNC_ONE_URL],
+              ['iframe', IFRAME_SYNC_TWO_URL]
+            ]
           }
         }
       }
@@ -166,54 +171,62 @@ describe('adtrgtme Bid Adapter:', () => {
       serverResponses = undefined;
     });
 
-    it('for only iframe enabled syncs', () => {
+    it('sync check invalid url and type in pixels', () => {
+      let syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true
+      };
+      let pixels = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(pixels.length).to.equal(3);
+    });
+
+    it('sync check for iframe only', () => {
       let syncOptions = {
         iframeEnabled: true,
         pixelEnabled: false
       };
-      let pixelsObjects = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(pixelsObjects.length).to.equal(2);
-      expect(pixelsObjects).to.deep.equal(
+      let pixels = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(pixels.length).to.equal(2);
+      expect(pixels).to.deep.equal(
         [
-          {type: 'iframe', 'url': IFRAME_ONE_URL},
-          {type: 'iframe', 'url': IFRAME_TWO_URL}
+          {type: 'iframe', 'url': IFRAME_SYNC_ONE_URL},
+          {type: 'iframe', 'url': IFRAME_SYNC_TWO_URL}
         ]
       )
     });
 
-    it('for only pixel enabled syncs', () => {
+    it('sync check for image only', () => {
       let syncOptions = {
         iframeEnabled: false,
         pixelEnabled: true
       };
-      let pixelsObjects = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(pixelsObjects.length).to.equal(1);
-      expect(pixelsObjects).to.deep.equal(
+      let pixels = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(pixels.length).to.equal(1);
+      expect(pixels).to.deep.equal(
         [
-          {type: 'image', 'url': IMAGE_PIXEL_URL}
+          {type: 'image', 'url': IMAGE_SYNC_URL}
         ]
       )
     });
 
-    it('for both pixel and iframe enabled syncs', () => {
+    it('Sync for iframe and image', () => {
       let syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      let pixelsObjects = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(pixelsObjects.length).to.equal(3);
-      expect(pixelsObjects).to.deep.equal(
+      let pixels = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(pixels.length).to.equal(3);
+      expect(pixels).to.deep.equal(
         [
-          {type: 'iframe', 'url': IFRAME_ONE_URL},
-          {type: 'image', 'url': IMAGE_PIXEL_URL},
-          {type: 'iframe', 'url': IFRAME_TWO_URL}
+          {type: 'image', 'url': IMAGE_SYNC_URL},
+          {type: 'iframe', 'url': IFRAME_SYNC_ONE_URL},
+          {type: 'iframe', 'url': IFRAME_SYNC_TWO_URL}
         ]
       )
     });
   });
 
-  // Validate Bid Requests
-  describe('isBidRequestValid()', () => {
+  describe('Validate bid request. isBidRequestValid()', () => {
     const INVALID_INPUT = [
       {},
       {params: {}},
@@ -225,7 +238,7 @@ describe('adtrgtme Bid Adapter:', () => {
     ];
 
     INVALID_INPUT.forEach(input => {
-      it(`should determine that the bid is INVALID for the input ${JSON.stringify(input)}`, () => {
+      it(`should determine INVALID bid for ${JSON.stringify(input)}`, () => {
         expect(spec.isBidRequestValid(input)).to.be.false;
       });
     });
@@ -238,16 +251,16 @@ describe('adtrgtme Bid Adapter:', () => {
     ];
 
     VALID_INPUT.forEach(input => {
-      it(`should determine that the bid is VALID for the input ${JSON.stringify(input)}`, () => {
+      it(`should determine VALID bid for ${JSON.stringify(input)}`, () => {
         expect(spec.isBidRequestValid(input)).to.be.true;
       });
     });
   });
 
-  describe('Price Floor module support:', () => {
+  describe('Bidfloor support:', () => {
     it('should get bidfloor from getFloor method', () => {
-      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
-      bidRequest.params.bidOverride = {cur: 'EUR'};
+      const { bidRequest, validBidRequests, bidderRequest } = createBuildRequestMock({});
+      bidRequest.params.bidOverride = {cur: 'AUD'};
       bidRequest.getFloor = (floorObj) => {
         return {
           floor: bidRequest.floors.values[floorObj.mediaType + '|300x250'],
@@ -256,27 +269,27 @@ describe('adtrgtme Bid Adapter:', () => {
         }
       };
       bidRequest.floors = {
-        currency: 'EUR',
+        currency: 'AUD',
         values: {
-          'banner|300x250': 5.55
+          'banner|300x250': 1.111
         }
       };
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      expect(data.cur).to.deep.equal(['EUR']);
+      expect(data.cur).to.deep.equal(['AUD']);
       expect(data.imp[0].bidfloor).is.a('number');
-      expect(data.imp[0].bidfloor).to.equal(5.55);
+      expect(data.imp[0].bidfloor).to.equal(1.111);
     });
   });
 
   describe('Schain module support:', () => {
-    it('should send Global or Bidder specific schain', function () {
-      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+    it('should send schains', function () {
+      const { bidRequest, validBidRequests, bidderRequest } = createBuildRequestMock({});
       const globalSchain = {
         ver: '1.0',
         complete: 1,
         nodes: [{
-          asi: 'some-platform.com',
-          sid: '111111',
+          asi: 'adtarget-partner.com',
+          sid: '1234567890',
           rid: bidRequest.bidId,
           hp: 1
         }]
@@ -290,12 +303,11 @@ describe('adtrgtme Bid Adapter:', () => {
   });
 
   describe('First party data module - "Site" support (ortb2):', () => {
-    // Should not allow invalid "site" data types
-    const INVALID_ORTB2_TYPES = [ null, [], 123, 'unsupportedKeyName', true, false, undefined ];
+    const INVALID_ORTB2_TYPES = [ null, [], 123, 'invalidID', true, false, undefined ];
     INVALID_ORTB2_TYPES.forEach(param => {
-      it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
+      it(`should remove invalid site: ${JSON.stringify(param)}`, () => {
         const ortb2 = { site: param }
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.be.undefined;
       });
@@ -312,7 +324,7 @@ describe('adtrgtme Bid Adapter:', () => {
             [param]: 'something'
           }
         };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.exist;
         expect(data.site[param]).to.be.a('string');
@@ -327,7 +339,7 @@ describe('adtrgtme Bid Adapter:', () => {
             [param]: ['something']
           }
         };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.exist;
         expect(data.site[param]).to.be.a('array');
@@ -343,7 +355,7 @@ describe('adtrgtme Bid Adapter:', () => {
             content: param
           }
         };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content).to.be.undefined;
       });
@@ -360,7 +372,7 @@ describe('adtrgtme Bid Adapter:', () => {
           }
         }
       };
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.content).to.be.a('object');
     });
@@ -376,7 +388,7 @@ describe('adtrgtme Bid Adapter:', () => {
             }
           }
         };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.exist;
         expect(data.site.content[param]).to.be.a('string');
@@ -394,7 +406,7 @@ describe('adtrgtme Bid Adapter:', () => {
             }
           }
         };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.be.a('array');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
@@ -409,7 +421,7 @@ describe('adtrgtme Bid Adapter:', () => {
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = { user: param }
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.be.undefined;
       });
@@ -424,7 +436,7 @@ describe('adtrgtme Bid Adapter:', () => {
             [param]: 'something'
           }
         };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
         expect(data.user[param]).to.be.a('string');
@@ -440,7 +452,7 @@ describe('adtrgtme Bid Adapter:', () => {
             [param]: {a: '123', b: '456'}
           }
         };
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const { validBidRequests, bidderRequest } = createBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
         expect(data.user[param]).to.be.a('object');
@@ -451,7 +463,7 @@ describe('adtrgtme Bid Adapter:', () => {
 
     // adUnit.ortb2Imp.ext.data
     it(`should allow adUnit.ortb2Imp.ext.data object to be added to the bid-request`, () => {
-      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      let { validBidRequests, bidderRequest } = createBuildRequestMock({})
       validBidRequests[0].ortb2Imp = {
         ext: {
           data: {
@@ -465,7 +477,7 @@ describe('adtrgtme Bid Adapter:', () => {
     });
     // adUnit.ortb2Imp.instl
     it(`should allow adUnit.ortb2Imp.instl numeric boolean "1" to be added to the bid-request`, () => {
-      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      let { validBidRequests, bidderRequest } = createBuildRequestMock({})
       validBidRequests[0].ortb2Imp = {
         instl: 1
       };
@@ -474,7 +486,7 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "true" to be added to the bid-request`, () => {
-      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      let { validBidRequests, bidderRequest } = createBuildRequestMock({})
       validBidRequests[0].ortb2Imp = {
         instl: true
       };
@@ -483,7 +495,7 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     it(`should prevent adUnit.ortb2Imp.instl boolean "false" to be added to the bid-request`, () => {
-      let { validBidRequests, bidderRequest } = generateBuildRequestMock({})
+      let { validBidRequests, bidderRequest } = createBuildRequestMock({})
       validBidRequests[0].ortb2Imp = {
         instl: false
       };
@@ -494,7 +506,7 @@ describe('adtrgtme Bid Adapter:', () => {
 
   describe('GDPR & Consent:', () => {
     it('should return request objects that do not send cookies if purpose 1 consent is not provided', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       bidderRequest.gdprConsent = {
         consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
         apiVersion: 2,
@@ -514,7 +526,7 @@ describe('adtrgtme Bid Adapter:', () => {
 
   describe('Endpoint & Impression Request Mode:', () => {
     it('should route request to config override endpoint', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       const sid = validBidRequests[0].params.sid;
       const testOverrideEndpoint = 'http://new_bidder_host.com/ssp?s=';
       config.setConfig({
@@ -534,7 +546,7 @@ describe('adtrgtme Bid Adapter:', () => {
       config.setConfig({
         adtrgtme: {}
       });
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       const sid = validBidRequests[0].params.sid;
       const response = spec.buildRequests(validBidRequests, bidderRequest);
       expect(response[0]).to.deep.include({
@@ -544,11 +556,11 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     it('should return a single request object for single request mode', () => {
-      let { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
-      const BID_ID_2 = '84ab50xxxxx';
+      let { bidRequest, validBidRequests, bidderRequest } = createBuildRequestMock({});
+      const BID_ID_2 = '6heos7ks8z0j';
       const BID_ZID_2 = '98876543210';
-      const AD_UNIT_CODE_2 = 'test-ad-unit-code-123';
-      const { bidRequest: bidRequest2 } = generateBuildRequestMock({bidId: BID_ID_2, zid: BID_ZID_2, adUnitCode: AD_UNIT_CODE_2});
+      const AD_UNIT_CODE_2 = 'ad-unit';
+      const { bidRequest: bidRequest2 } = createBuildRequestMock({bidId: BID_ID_2, zid: BID_ZID_2, adUnitCode: AD_UNIT_CODE_2});
       validBidRequests = [bidRequest, bidRequest2];
       bidderRequest.bids = validBidRequests;
 
@@ -586,7 +598,7 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     it('buildRequests(): should return an array with the correct amount of request objects', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       const response = spec.buildRequests(validBidRequests, bidderRequest).bidderRequest;
       expect(response.bids).to.be.an('array').to.have.lengthOf(1);
     });
@@ -594,7 +606,7 @@ describe('adtrgtme Bid Adapter:', () => {
 
   describe('Request Headers validation:', () => {
     it('should return request objects with the relevant custom headers and content type declaration', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       bidderRequest.gdprConsent.gdprApplies = false;
       const options = spec.buildRequests(validBidRequests, bidderRequest).options;
       expect(options).to.deep.equal(
@@ -608,9 +620,9 @@ describe('adtrgtme Bid Adapter:', () => {
     });
   });
 
-  describe('Request Payload oRTB bid validation:', () => {
-    it('should generate a valid openRTB bid-request object in the data field', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+  describe('Request data oRTB bid validation:', () => {
+    it('should create a valid openRTB bid-request object in the data field', () => {
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site).to.deep.include({
         id: bidderRequest.bids[0].params.sid,
@@ -635,10 +647,6 @@ describe('adtrgtme Bid Adapter:', () => {
           hb: 1,
           adapterver: ADAPTER_VERSION,
           prebidver: PREBID_VERSION,
-          integration: {
-            name: INTEGRATION_METHOD,
-            ver: PREBID_VERSION
-          }
         },
         fd: 1
       });
@@ -646,8 +654,8 @@ describe('adtrgtme Bid Adapter:', () => {
       expect(data.cur).to.deep.equal(['USD']);
     });
 
-    it('should generate a valid openRTB imp.ext object in the bid-request', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+    it('should create a valid openRTB imp.ext object in the bid-request', () => {
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       const bid = validBidRequests[0];
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.imp[0].ext).to.deep.equal({
@@ -656,14 +664,14 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     it('should use siteId value as site.id in the outbound bid-request when using "pubId" integration mode', () => {
-      let { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true});
+      let { validBidRequests, bidderRequest } = createBuildRequestMock({pubIdMode: true});
       validBidRequests[0].params.sid = '9876543210';
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site.id).to.equal('9876543210');
     });
 
     it('should use placementId value as imp.tagid in the outbound bid-request when using "zid"', () => {
-      let { validBidRequests, bidderRequest } = generateBuildRequestMock({}),
+      let { validBidRequests, bidderRequest } = createBuildRequestMock({}),
         TEST_ZID = '54321';
       validBidRequests[0].params.zid = TEST_ZID;
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
@@ -673,11 +681,11 @@ describe('adtrgtme Bid Adapter:', () => {
 
   describe('Request Payload oRTB bid.imp validation:', () => {
     // Validate Banner imp imp when adtrgtme.mode=undefined
-    it('should generate a valid "Banner" imp object', () => {
+    it('should create a valid "Banner" imp object', () => {
       config.setConfig({
         adtrgtme: {}
       });
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].banner).to.deep.equal({
         mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
@@ -686,11 +694,11 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     // Validate Banner imp
-    it('should generate a valid "Banner" imp object', () => {
+    it('should create a valid "Banner" imp object', () => {
       config.setConfig({
         adtrgtme: { mode: 'banner' }
       });
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = createBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.imp[0].banner).to.deep.equal({
         mimes: ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
@@ -702,25 +710,26 @@ describe('adtrgtme Bid Adapter:', () => {
   describe('interpretResponse()', () => {
     describe('for mediaTypes: "banner"', () => {
       it('should insert banner payload into response[0].ad', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const { serverResponse, bidderRequest } = createResponseMock('banner');
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
-        expect(response[0].ad).to.equal('<script>logInfo(\'ad\'); AdPlacement </script>');
+        expect(response[0].ad).to.equal(`<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
+      <img src="${DEFAULT_BANNER_URL}" />`);
         expect(response[0].mediaType).to.equal('banner');
       })
     });
 
-    describe('Support Advertiser domains', () => {
+    describe('Support adomains', () => {
       it('should append bid-response adomain to meta.advertiserDomains', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const { serverResponse, bidderRequest } = createResponseMock('banner');
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].meta.advertiserDomains).to.be.a('array');
-        expect(response[0].meta.advertiserDomains[0]).to.equal('advertiser-domain.com');
+        expect(response[0].meta.advertiserDomains[0]).to.equal('some-advertiser-domain.com');
       })
     });
 
     describe('bid response Ad ID / Creative ID', () => {
       it('should use adId if it exists in the bid-response', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const { serverResponse, bidderRequest } = createResponseMock('banner');
         const adId = 'bid-response-adId';
         serverResponse.body.seatbid[0].bid[0].adId = adId;
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
@@ -728,15 +737,15 @@ describe('adtrgtme Bid Adapter:', () => {
       });
 
       it('should use impid if adId does not exist in the bid-response', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('banner');
-        const impid = '25b6c429c1f52f';
+        const { serverResponse, bidderRequest } = createResponseMock('banner');
+        const impid = 'y7v7iu0uljj94rbjcw9';
         serverResponse.body.seatbid[0].bid[0].impid = impid;
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].adId).to.equal(impid);
       });
 
       it('should use crid if adId & impid do not exist in the bid-response', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const { serverResponse, bidderRequest } = createResponseMock('banner');
         const crid = 'passback-12579';
         serverResponse.body.seatbid[0].bid[0].impid = undefined;
         serverResponse.body.seatbid[0].bid[0].crid = crid;
@@ -746,10 +755,10 @@ describe('adtrgtme Bid Adapter:', () => {
     });
 
     describe('Time To Live (ttl)', () => {
-      const UNSUPPORTED_TTL_FORMATS = ['string', [1, 2, 3], true, false, null, undefined];
-      UNSUPPORTED_TTL_FORMATS.forEach(param => {
+      const INVALID_TTL_FORMATS = ['string', [1, 2, 3], true, false, null, undefined];
+      INVALID_TTL_FORMATS.forEach(param => {
         it('should not allow unsupported global adtrgtme.ttl formats and default to 300', () => {
-          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          const { serverResponse, bidderRequest } = createResponseMock('banner');
           config.setConfig({
             adtrgtme: { ttl: param }
           });
@@ -758,17 +767,17 @@ describe('adtrgtme Bid Adapter:', () => {
         });
 
         it('should not allow unsupported params.ttl formats and default to 300', () => {
-          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          const { serverResponse, bidderRequest } = createResponseMock('banner');
           bidderRequest.bids[0].params.ttl = param;
           const response = spec.interpretResponse(serverResponse, {bidderRequest});
           expect(response[0].ttl).to.equal(300);
         });
       });
 
-      const UNSUPPORTED_TTL_VALUES = [-1, 3601];
-      UNSUPPORTED_TTL_VALUES.forEach(param => {
+      const INVALID_TTL_VALUES = [-1, 12345];
+      INVALID_TTL_VALUES.forEach(param => {
         it('should not allow invalid global adtrgtme.ttl values 3600 < ttl < 0 and default to 300', () => {
-          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          const { serverResponse, bidderRequest } = createResponseMock('banner');
           config.setConfig({
             adtrgtme: { ttl: param }
           });
@@ -777,7 +786,7 @@ describe('adtrgtme Bid Adapter:', () => {
         });
 
         it('should not allow invalid params.ttl values 3600 < ttl < 0 and default to 300', () => {
-          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          const { serverResponse, bidderRequest } = createResponseMock('banner');
           bidderRequest.bids[0].params.ttl = param;
           const response = spec.interpretResponse(serverResponse, {bidderRequest});
           expect(response[0].ttl).to.equal(300);
@@ -785,7 +794,7 @@ describe('adtrgtme Bid Adapter:', () => {
       });
 
       it('should give presedence to Gloabl ttl over params.ttl ', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const { serverResponse, bidderRequest } = createResponseMock('banner');
         config.setConfig({
           adtrgtme: { ttl: 500 }
         });
@@ -797,7 +806,7 @@ describe('adtrgtme Bid Adapter:', () => {
 
     describe('Aliasing support', () => {
       it('should return undefined as the bidder code value', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const { serverResponse, bidderRequest } = createResponseMock('banner');
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].bidderCode).to.be.undefined;
       });
