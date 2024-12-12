@@ -162,7 +162,7 @@
                 <li>Filter by combinations of `t1` (treatment) and `t0` (control) for each ID module (e.g., `id1:t1`, `id1:t0`).</li>
                 <li>Compare performance metrics (eg Impressions, Revenue) for the `t1` vs. `t0` values.</li>
                 <li>Calculate lift for each module using the formula:
-                    <pre>Lift (%) = ((Treatment Metric - Control Metric) / Control Metric) * 100</pre>
+                    <pre>Lift (%) = ((Treatment Metric / Treatment Rate - Control Metric / Control Rate) / (Control Metric / Control Rate)) * 100</pre>
                     Replace "Metric" with the relevant performance metric.
                 </li>
             </ul>
