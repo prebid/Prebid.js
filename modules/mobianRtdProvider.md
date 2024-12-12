@@ -3,7 +3,9 @@
 ## Overview
 
 Module Name: Mobian Rtd Provider
+
 Module Type: Rtd Provider
+
 Maintainer: rich.rodriguez@themobian.com
 
 The Mobian Real-Time Data (RTD) Module is a plug-and-play Prebid.js adapter that is designed to provide Mobian Contextual results on the publisher’s page.
@@ -36,9 +38,9 @@ Content Categories:
 
 Key: mobianContentCategories
 
-Possible values: Adult Content, Arms, Crime, Death & Injury, Debated Issue, Hate Speech, Drugs & Alcohol, Obscenity, Piracy, Spam, Terrorism
+Possible values: "adult_content", "arms", "crime", "death_injury", "debated_issue", "hate_speech", "drugs_alcohol", "obscenity", "piracy", "spam", "terrorism"
 
-Description: Content Categories contain results based on the legacy GARM framework. GARM no longer is a standard and does not factor into our risk assessment but it is included due to client requests.
+Description: Content Categories contain results based on the legacy GARM framework. GARM no longer is a standard and does not factor into our risk assessment but is included for posterity.
 
 ------------------
 
@@ -56,9 +58,9 @@ Emotion:
 
 Key: mobianEmotions
 
-Possible values: Affection, Cheerfulness, Contentment, Disappointment, Disgust, Enthrallment, Envy, Exasperation, Horror, Irritability, Longing, Lust, Neglect, Nervousness, Optimism, Pride, Rage, Sadness, Shame, Suffering, Surprise, Sympathy, Torment, Zest
+Possible values: "love", "joy", "surprise", "anger", "sadness", "fear"
 
-Description: The Mobian AI assesses the emotions exuded from the content, taking into account the context. A given piece of content can have multiple emotions. The current list of emotions is all possible emotions available but this will be updated to be more freeform in a future release.
+Description: The Mobian AI assesses the emotions exuded from the content, taking into account the context. A given piece of content can have multiple emotions. The current list of emotions is all possible emotions available but this will be updated to be more freeform and varied in a future release.
 
 ------------------
 
@@ -66,7 +68,7 @@ Tone:
 
 Key: mobianTones
 
-Possible values: Various, but some examples include "Comedic", "Serious" or "Emotional"
+Possible values: Various, but some examples include "comedic", "serious" or "emotional"
 
 Description: While the Mobian emotion classification looks at the emotions exuded from the content, tone examines the overall presentation of the content and determines the overall mood of the work. A given piece of content can have multiple tones.
 
@@ -76,7 +78,7 @@ Theme:
 
 Key: mobianThemes
 
-Possible values: Various, but some examples include "Skincare", "Food" and "Nightlife"
+Possible values: Various, but some examples include "skincare", "food" and "nightlife"
 
 Description: Themes are a wide classification of content categorization, taking into account the content and context to label the content with a theme. A given piece of content can have multiple themes.
 
@@ -86,7 +88,7 @@ Genre:
 
 Key: mobianGenre
 
-Possible values: Various, but some examples include "Journalism", "Gaming" or "How-to"
+Possible values: Various, but some examples include "journalism", "gaming" or "how-to"
 
 Description: Genres are a more narrow classification of content categorization, aiming to label the content towards its overall purpose and audience. A given piece of content can have multiple genres.
 
@@ -96,7 +98,9 @@ AP Values
 
 Keys: ap_a0, ap_a1, ap_p0, ap_p1
 
-Possible values: Various, numerically id-based and customizable based on Mobian Persona Settings. -Description: Mobian AI Personas are custom created based on prompts to find a specific audience. Please contact your Mobian contact directly for more information on this tool. The difference between the keys is below:
+Possible values: Various, numerically id-based and customizable based on Mobian Persona Settings.
+
+Description: Mobian AI Personas are custom created based on prompts to find a specific audience. Please contact your Mobian contact directly for more information on this tool. The difference between the keys is below:
 
 a0 = Advertisers (via Campaign IDs) in this list should NOT want to advertise on this page
 
@@ -117,11 +121,11 @@ window.googletag.cmd.push(() => {
   window.googletag.pubads().setTargeting(key, value);
 ```
 
-"key" and "value" will be replaced with the various classifications as described previously. Notably, this function runs before ad calls are made to GAM, which enables the keys and value to be used for targeting or blocking in GAM.
+"key" and "value" will be replaced with the various classifications as described in the previous section. Notably, this function runs before ad calls are made to GAM, which enables the keys and value to be used for targeting or blocking in GAM.
 
 For more details on how to set up key-value pairs in GAM, please see this documentation from Google: https://support.google.com/admanager/answer/9796369?sjid=12535178383871274096-NA
 
-For example, if you wanted to target articles where mobianRisk is low, the Key to set in GAM would be "mobianRisk" and the value would be "low". Once these keys and values are set within the Inventory section in GAM as listed by their documentation, you can then reference the key value pair in Custom Targeting for any line item you create.
+For example, if you wanted to target articles where mobianRisk is "low", the key to set in GAM would be "mobianRisk" and the value would be "low". Once these keys and values are set within the Inventory section in GAM as listed by their documentation, you can then reference the key value pair in Custom Targeting for any line item you create.
 
 ## Configuration Highlight
 
