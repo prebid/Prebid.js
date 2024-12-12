@@ -115,6 +115,27 @@
 
 <h4>Generated EIDs</h4>
 <pre id="eids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
+  <!-- Instructions Section -->
+    <h3>Instructions</h3>
+    <ol>
+        <li>Ensure that the `IDMOD_REPORTING_KEY` is defined in the code as a key to measure the performance.</li>
+        <li>In Google Ad Manager (GAM), create a report with the following setup:
+            <ul>
+                <li>Dimensions: Ad Unit, Key-Value Targeting (e.g., the IDMOD_REPORTING_KEY).</li>
+                <li>Metrics: Impressions, Clicks, Revenue.</li>
+                <li>Filters: Ensure that targeting for <code>id_mod1</code> is included in the report.</li>
+            </ul>
+        </li>
+        <li>Analyze the report:
+            <ul>
+                <li>Compare performance for `t1` (treatment group) versus `t0` (control group) values of the key.</li>
+                <li>Calculate lift using the formula: 
+                    <pre>Lift (%) = ((Treatment Metric - Control Metric) / Control Metric) * 100</pre>
+                    Replace "Metric" with Impressions, Clicks, or Revenue as needed.
+                </li>
+            </ul>
+        </li>
+    </ol>
 </body>
 
 </html>
