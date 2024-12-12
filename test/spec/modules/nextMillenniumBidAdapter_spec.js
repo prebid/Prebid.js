@@ -100,6 +100,72 @@ describe('nextMillenniumBidAdapterTests', () => {
           video: {w: 640, h: 480, mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript']},
         },
       },
+
+      {
+        title: 'imp with gpid',
+        data: {
+          id: '123',
+          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
+          bid: {
+            mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
+            adUnitCode: 'test-gpid-1',
+            bidId: 'e36ea395f67a',
+            ortb2Imp: {ext: {gpid: 'imp-gpid-123'}},
+          },
+
+          mediaTypes: {
+            banner: {
+              data: {sizes: [[300, 250], [320, 250]]},
+            },
+          },
+        },
+
+        expected: {
+          id: 'e36ea395f67a',
+          ext: {
+            prebid: {storedrequest: {id: '123'}},
+            gpid: 'imp-gpid-123'
+          },
+          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+        },
+      },
+
+      {
+        title: 'imp with pbadslot',
+        data: {
+          id: '123',
+          postBody: {ext: {nextMillennium: {refresh_counts: {}, elemOffsets: {}}}},
+          bid: {
+            mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
+            adUnitCode: 'test-gpid-1',
+            bidId: 'e36ea395f67a',
+            ortb2Imp: {
+              ext: {
+                data: {
+                  pbadslot: 'slot-123'
+                }
+              }
+            },
+          },
+
+          mediaTypes: {
+            banner: {
+              data: {sizes: [[300, 250], [320, 250]]},
+            },
+          },
+        },
+
+        expected: {
+          id: 'e36ea395f67a',
+          ext: {
+            prebid: {storedrequest: {id: '123'}},
+            data: {
+              pbadslot: 'slot-123'
+            }
+          },
+          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+        },
+      },
     ];
 
     for (let {title, data, expected} of dataTests) {
