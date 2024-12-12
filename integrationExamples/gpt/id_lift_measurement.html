@@ -2,9 +2,13 @@
 <html lang="en">
 
 <head>
-    <title>Measure lift of ID Example</title>
+    <title>Measure Lift of Multiple ID Modules</title>
     <script>
         const FAILSAFE_TIMEOUT = 2000;
+        const ID_MODULES = ["id1", "id2", "id3"];
+        const TREATMENT_RATE = 0.95; // 95% chance to include an ID module
+        const targetingArray = [];
+
         const adUnits = [
             {
                 code: 'test-div',
@@ -25,40 +29,45 @@
                 ]
             }
         ];
+
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
-    </script>
-    <script src="../../build/dev/prebid.js" async></script>
 
-    <script>
-        const IDMOD_REPORTING_KEY = "id_mod1";
-        const TREATMENT_RATE = 0.95;
-        window.idModuleEnabled = Math.random() < TREATMENT_RATE;
         var googletag = googletag || {};
         googletag.cmd = googletag.cmd || [];
+
+        // Randomly enable each ID module based on dice rolls
+        ID_MODULES.forEach(id => {
+            const isEnabled = Math.random() < TREATMENT_RATE;
+            targetingArray.push(`${id}:${isEnabled ? 't1' : 't0'}`);
+
+            if (isEnabled) {
+                pbjs.que.push(function () {
+                    pbjs.mergeConfig({
+                        userSync: {
+                            userIds: [
+                                {
+                                    name: id,
+                                }
+                            ],
+                            syncDelay: 5000,
+                            auctionDelay: 1000,
+                        }
+                    });
+                });
+            }
+        });
+
         googletag.cmd.push(function () {
             googletag.pubads().disableInitialLoad();
-            let targeting = window.idModuleEnabled ? "t1" : "t0";
-            googletag.pubads().setTargeting(IDMOD_REPORTING_KEY, targeting);
+            googletag.pubads().setTargeting("abg", targetingArray);
         });
-      
+
         pbjs.que.push(function () {
             pbjs.setConfig({ debug: true });
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest
-            });
-            if (window.idModuleEnabled) {
-              pbjs.mergeConfig({
-                userSync: {
-                    userIds: [
-                        {
-                            name: 'rewardedInterestId',
-                        },
-                    ],
-                    syncDelay: 5000,
-                    auctionDelay: 1000,
-                }
             });
         });
 
@@ -66,10 +75,8 @@
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
             googletag.cmd.push(function () {
-                pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                });
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh();
             });
         }
 
@@ -99,39 +106,41 @@
 </head>
 
 <body>
-<script>
-    pbjs.que.push(function () {
-        pbjs.getUserIdsAsync().then(ids => {
-            document.getElementById('ids-div').innerHTML = JSON.stringify(ids, null, ' ');
-            document.getElementById('eids-div').innerHTML = JSON.stringify(pbjs.getUserIdsAsEids(), null, ' ');
+    <script>
+        pbjs.que.push(function () {
+            pbjs.getUserIdsAsync().then(ids => {
+                document.getElementById('ids-div').innerHTML = JSON.stringify(ids, null, ' ');
+                document.getElementById('eids-div').innerHTML = JSON.stringify(pbjs.getUserIdsAsEids(), null, ' ');
+            });
         });
-    });
-</script>
+    </script>
 
-<h2>Rewarded Interest ID Example</h2>
+    <h2>Measure Lift of Multiple ID Modules</h2>
 
-<h4>Generated IDs:</h4>
-<pre id="ids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
+    <h4>Generated IDs:</h4>
+    <pre id="ids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
 
-<h4>Generated EIDs</h4>
-<pre id="eids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
-  <!-- Instructions Section -->
+    <h4>Generated EIDs:</h4>
+    <pre id="eids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
+
+    <!-- Instructions Section -->
     <h3>Instructions</h3>
     <ol>
-        <li>Ensure that the `IDMOD_REPORTING_KEY` is defined in the code as a key to measure the performance.</li>
+        <li>Ensure that the `abg` key is set in GAM targeting. Each value will be a combination of `id1:t0 or t1`, `id2:t0 or t1`, and `id3:t0 or t1`.</li>
         <li>In Google Ad Manager (GAM), create a report with the following setup:
             <ul>
-                <li>Dimensions: Ad Unit, Key-Value Targeting (e.g., the IDMOD_REPORTING_KEY).</li>
-                <li>Metrics: Impressions, Clicks, Revenue.</li>
-                <li>Filters: Ensure that targeting for <code>id_mod1</code> is included in the report.</li>
+                <li><strong>Dimensions</strong>: Ad Unit, Key-Value Targeting (`abg`).</li>
+                <li><strong>Metrics</strong>: Impressions, Clicks, Revenue.</li>
+                <li><strong>Filters</strong>: Include the `abg` key in the report.</li>
             </ul>
         </li>
-        <li>Analyze the report:
+        <li>Analyze the report for each ID module:
             <ul>
-                <li>Compare performance for `t1` (treatment group) versus `t0` (control group) values of the key.</li>
-                <li>Calculate lift using the formula: 
+                <li>Filter by combinations of `t1` (treatment) and `t0` (control) for each ID module (e.g., `id1:t1`, `id1:t0`).</li>
+                <li>Compare performance metrics (Impressions, Clicks, Revenue) for the `t1` vs. `t0` values.</li>
+                <li>Calculate lift for each module using the formula:
                     <pre>Lift (%) = ((Treatment Metric - Control Metric) / Control Metric) * 100</pre>
-                    Replace "Metric" with Impressions, Clicks, or Revenue as needed.
+                    Replace "Metric" with the relevant performance metric.
                 </li>
             </ul>
         </li>
