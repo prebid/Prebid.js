@@ -1839,6 +1839,29 @@ describe('Unit: Prebid Module', function () {
           }));
         });
 
+        it('that cannot alter global config', () => {
+          configObj.setConfig({ortb2: {value: 'old'}});
+          startAuctionStub.callsFake(({ortb2Fragments}) => {
+            ortb2Fragments.global.value = 'new'
+          });
+          $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+          expect(configObj.getAnyConfig('ortb2').value).to.eql('old');
+        });
+
+        it('that cannot alter bidder config', () => {
+          configObj.setBidderConfig({
+            bidders: ['mockBidder'],
+            config: {
+              ortb2: {value: 'old'}
+            }
+          })
+          startAuctionStub.callsFake(({ortb2Fragments}) => {
+            ortb2Fragments.bidder.mockBidder.value = 'new';
+          })
+          $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+          expect(configObj.getBidderConfig().mockBidder.ortb2.value).to.eql('old');
+        })
+
         it('enriched through enrichFPD', () => {
           function enrich(next, fpd) {
             next.bail(fpd.then(ortb2 => {
