@@ -15,11 +15,11 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'adtrgtme';
-const ENDPOINT = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
-const ADAPTER_VERSION = '1.0.2';
-const PREBID_VERSION = '$prebid.version$';
-const DEFAULT_BID_TTL = 300;
-const DEFAULT_CURRENCY = 'USD';
+const BIDDER_VERSION = '1.0.3';
+const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
+const PREBIDJS_VERSION = '$prebid.version$';
+const DEFAULT_TTL = 300;
+const DEFAULT_CUR = 'USD';
 
 function getFormat(s) {
   const parseSize = ([w, h]) => ({ w: parseInt(w, 10), h: parseInt(h, 10) });
@@ -54,36 +54,36 @@ function appObj(
   return res;
 }
 
-function getTtl(bidderRequest) {
+function getTtl(bR) {
   const t = config.getConfig('adtrgtme.ttl');
-  const validate = (t) => (isNumber(t) && t > 0 && t < 3000) ? t : DEFAULT_BID_TTL;
+  const validate = (t) => (isNumber(t) && t > 0 && t < 3000) ? t : DEFAULT_TTL;
   return t
     ? validate(t)
-    : validate(deepAccess(bidderRequest, 'params.ttl'));
+    : validate(deepAccess(bR, 'params.ttl'));
 }
 
-function getBidfloorData(bid) {
-  return isFn(bid.getFloor) ? bid.getFloor({
-    currency: deepAccess(bid, 'params.bidOverride.cur') ?? DEFAULT_CURRENCY,
+function getBidfloorData(b) {
+  return isFn(b.getFloor) ? b.getFloor({
+    currency: deepAccess(b, 'params.bidOverride.cur') ?? DEFAULT_CUR,
     mediaType: BANNER,
     size: '*'}) : false;
 }
 
-function createORTB(bidderRequest, bid) {
-  if (!bidderRequest) return;
+function createORTB(bR, bid) {
+  if (!bR) return;
 
-  const { currency = deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY } = getBidfloorData(bidderRequest);
+  const { currency = deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CUR } = getBidfloorData(bR);
   const ip = deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip');
-  const gdpr = bidderRequest.gdprConsent?.gdprApplies ? 1 : 0;
-  const consentString = gdpr ? bidderRequest.gdprConsent?.consentString : '';
-  const usPrivacy = bidderRequest.uspConsent || '';
+  const gdpr = bR.gdprConsent?.gdprApplies ? 1 : 0;
+  const consentString = gdpr ? bR.gdprConsent?.consentString : '';
+  const usPrivacy = bR.uspConsent || '';
 
-  let outRequest = {
+  let oR = {
     id: generateUUID(),
     cur: [currency],
     imp: [],
     site: {
-      page: deepAccess(bidderRequest, 'refererInfo.page'),
+      page: deepAccess(bR, 'refererInfo.page'),
       id: String(bid.params.sid),
     },
     device: {
@@ -100,8 +100,8 @@ function createORTB(bidderRequest, bid) {
     source: {
       ext: {
         hb: 1,
-        adapterver: ADAPTER_VERSION,
-        prebidver: PREBID_VERSION,
+        bidderver: BIDDER_VERSION,
+        prebidjsver: PREBIDJS_VERSION,
         ...(deepAccess(bid, 'schain') && { schain: bid.schain }),
       },
       fd: 1,
@@ -113,15 +113,15 @@ function createORTB(bidderRequest, bid) {
     },
   };
 
-  if (bidderRequest.ortb2) {
-    outRequest = appendSiteData(outRequest, bid);
+  if (bR.ortb2) {
+    oR = appendSiteData(oR, bid);
   }
 
   if (deepAccess(bid, 'schain')) {
-    outRequest.source.ext.schain.nodes[0].rid = outRequest.id;
+    oR.source.ext.schain.nodes[0].rid = oR.id;
   }
 
-  return outRequest;
+  return oR;
 }
 
 function appendImp(bid, oRtb) {
@@ -156,7 +156,7 @@ function appendImp(bid, oRtb) {
   oRtb.imp.push(impObject);
 };
 
-function appendSiteData(outRequest, bid) {
+function appendSiteData(oR, bid) {
   const site = deepAccess(bid.ortb2, 'site') || undefined;
   const content = deepAccess(site, 'content') || undefined;
   const user = deepAccess(bid.ortb2, 'user') || undefined;
@@ -170,73 +170,67 @@ function appendSiteData(outRequest, bid) {
       'ref',
       'keywords',
     ];
-    const allowedSiteArrayKeys = ['cat', 'sectioncat', 'pagecat'];
-    const allowedSiteObjectKeys = ['ext'];
-    outRequest.site = appObj(
+    oR.site = appObj(
       isStr,
       keys,
       site,
-      outRequest.site
+      oR.site
     );
-    outRequest.site = appObj(
+    oR.site = appObj(
       isArray,
-      allowedSiteArrayKeys,
+      ['cat', 'sectioncat', 'pagecat'],
       site,
-      outRequest.site
+      oR.site
     );
-    outRequest.site = appObj(
+    oR.site = appObj(
       isPlainObject,
-      allowedSiteObjectKeys,
+      ['ext'],
       site,
-      outRequest.site
+      oR.site
     );
   }
 
   if (content && isPlainObject(content)) {
-    const allowedContentStringKeys = ['id', 'title', 'language', 'keywords'];
-    const allowedContentArrayKeys = ['cat'];
-    outRequest.site.content = appObj(
+    oR.site.content = appObj(
       isStr,
-      allowedContentStringKeys,
+      ['id', 'title', 'language', 'keywords'],
       content,
-      outRequest.site.content
+      oR.site.content
     );
-    outRequest.site.content = appObj(
+    oR.site.content = appObj(
       isArray,
-      allowedContentArrayKeys,
+      ['cat'],
       content,
-      outRequest.site.content
+      oR.site.content
     );
   }
 
   if (user && isPlainObject(user)) {
-    const allowedUserStrings = [
-      'id',
-      'buyeruid',
-      'gender',
-      'keywords',
-      'customdata',
-    ];
-    const allowedUserObjects = ['ext'];
-    outRequest.user = appObj(
+    oR.user = appObj(
       isStr,
-      allowedUserStrings,
+      [
+        'id',
+        'buyeruid',
+        'gender',
+        'keywords',
+        'customdata',
+      ],
       user,
-      outRequest.user
+      oR.user
     );
-    outRequest.user.ext = appObj(
+    oR.user.ext = appObj(
       isPlainObject,
-      allowedUserObjects,
+      ['ext'],
       user,
-      outRequest.user.ext
+      oR.user.ext
     );
   }
-  return outRequest;
+  return oR;
 }
 
 function createRequest({ data, options, bidderRequest }) {
   return {
-    url: `${config.getConfig('adtrgtme.endpoint') || ENDPOINT}${data.site?.id || ''}`,
+    url: `${config.getConfig('adtrgtme.endpoint') || BIDDER_URL}${data.site?.id || ''}`,
     method: 'POST',
     data,
     options,
@@ -249,7 +243,7 @@ export const spec = {
   aliases: [],
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: function (bid) {
+  isOK: function (bid) {
     const params = bid.params;
     if (
       isPlainObject(params) &&
@@ -262,113 +256,104 @@ export const spec = {
     ) {
       return true;
     } else {
-      logWarn('Adtrgtme bidder params missing or incorrect');
+      logWarn('Adtrgtme request invalid');
       return false;
     }
   },
 
-  buildRequests: function (validBidRequests, bidderRequest) {
-    if (isEmpty(validBidRequests) || isEmpty(bidderRequest)) {
+  buildRequests: function (bR, aR) {
+    if (isEmpty(bR) || isEmpty(aR)) {
       logWarn('Adtrgtme Adapter: buildRequests called with empty request');
       return undefined;
     }
 
     const options = {
       contentType: 'application/json',
-      customHeaders: {
-        'x-openrtb-version': '2.5',
-      },
       withCredentials: hasPurpose1Consent(
-        bidderRequest.gdprConsent
+        aR.gdprConsent
       )
     };
 
     if (config.getConfig('adtrgtme.singleRequestMode') === true) {
-      const data = createORTB(bidderRequest, validBidRequests[0]);
-      validBidRequests.forEach((bid) => {
+      const data = createORTB(aR, bR[0]);
+      bR.forEach((bid) => {
         appendImp(bid, data);
       });
 
-      return createRequest({ data, options, bidderRequest });
+      return createRequest({ data, options, bidderRequest: aR });
     }
 
-    return validBidRequests.map((bid) => {
-      const clone = createORTB(bidderRequest, bid);
-      appendImp(bid, clone);
+    return bR.map((b) => {
+      const data = createORTB(aR, b);
+      appendImp(b, data);
 
       return createRequest({
-        data: clone,
+        data,
         options,
-        bidderRequest: bid,
+        bidderRequest: b,
       });
     });
   },
 
-  interpretResponse: function (serverResponse, { data, bidderRequest }) {
-    const response = [];
-    if (!serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) {
-      return response;
+  interpretResponse: function (sR, { data, bidderRequest }) {
+    const res = [];
+    if (!sR.body || !Array.isArray(sR.body.seatbid)) {
+      return res;
     }
 
-    let seatbids = serverResponse.body.seatbid;
-    seatbids.forEach((seatbid) => {
-      let bid;
-
+    sR.body.seatbid.forEach((sb) => {
       try {
-        bid = seatbid.bid[0];
-      } catch (e) {
-        return response;
-      }
+        let b = sb.bid[0];
 
-      let cpm = bid.price;
-
-      let bidResponse = {
-        adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
-        ad: bid.adm,
-        adUnitCode: bidderRequest.adUnitCode,
-        requestId: bid.impid,
-        cpm: cpm,
-        width: bid.w,
-        height: bid.h,
-        mediaType: BANNER,
-        creativeId: bid.crid || 0,
-        currency: bid.cur || DEFAULT_CURRENCY,
-        dealId: bid.dealid ? bid.dealid : null,
-        netRevenue: true,
-        ttl: getTtl(bidderRequest),
-        meta: {
-          advertiserDomains: bid.adomain || [],
+        res.push({
+          adId: deepAccess(b, 'adId') ? b.adId : b.impid || b.crid,
+          ad: b.adm,
+          adUnitCode: bidderRequest.adUnitCode,
+          requestId: b.impid,
+          cpm: b.price,
+          width: b.w,
+          height: b.h,
           mediaType: BANNER,
-        },
-      };
-      response.push(bidResponse);
+          creativeId: b.crid || 0,
+          currency: b.cur || DEFAULT_CUR,
+          dealId: b.dealid ? b.dealid : null,
+          netRevenue: true,
+          ttl: getTtl(bidderRequest),
+          meta: {
+            advertiserDomains: b.adomain || [],
+            mediaType: BANNER,
+          },
+        });
+      } catch (e) {
+        return res;
+      }
     });
 
-    return response;
+    return res;
   },
-  getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = [];
-    if (!syncOptions.pixelEnabled && !syncOptions.iframeEnabled) {
-      return syncs;
+  getUserSyncs: function (options, sR) {
+    const s = [];
+    if (!options.pixelEnabled && !options.iframeEnabled) {
+      return s;
     }
-    if (Array.isArray(serverResponses)) {
-      serverResponses.forEach((response) => {
-        const pixels = response.body?.ext?.pixels;
-        if (Array.isArray(pixels)) {
-          pixels.forEach(([synctype, url]) => {
-            const type = synctype.toLowerCase();
+    if (Array.isArray(sR)) {
+      sR.forEach((response) => {
+        const p = response.body?.ext?.pixels;
+        if (Array.isArray(p)) {
+          p.forEach(([stype, url]) => {
+            const type = stype.toLowerCase();
             if (
               typeof url === 'string' && url.startsWith('http') &&
-              ((type === 'image' && syncOptions.pixelEnabled) ||
-              (type === 'iframe' && syncOptions.iframeEnabled))
+              (((type === 'image' || type === 'img') && options.pixelEnabled) ||
+              (type === 'iframe' && options.iframeEnabled))
             ) {
-              syncs.push({type, url});
+              s.push({type, url});
             }
           });
         }
       });
     }
-    return syncs;
+    return s;
   }
 };
 
