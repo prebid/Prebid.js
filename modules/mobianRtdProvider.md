@@ -8,7 +8,7 @@ Maintainer: rich.rodriguez@themobian.com
 
 The Mobian Real-Time Data (RTD) Module is a plug-and-play Prebid.js adapter that is designed to provide Mobian Contextual results on the publisher’s page.
 
-## Downloading and Configuring the Mobian RTD module:
+## Downloading and Configuring the Mobian RTD module
 
 Navigate to https://docs.prebid.org/download.html and check the box labeled Mobian Prebid Contextual Evaluation. If you have installed Prebid.js on your site previously, please be sure to select any other modules and adaptors to suit your needs. When clicking the "Get Prebid.js" button at the bottom of the page, the site will build a version of Prebid.js with all of your selections.
 
@@ -16,11 +16,11 @@ Direct link to the Mobian module in the Prebid.js repository: https://github.com
 
 The client will need to provide Mobian with all the domains that would be using the prebid module so that Mobian can whitelist those domains. Failure to whitelist the domains will yield a 404 when making a request to the Mobian Contextual API at https://prebid.outcomes.net/.
 
-## Functionality:
+## Functionality
 
 At a high level, the Mobian RTD Module is designed to call the Mobian Contextal API on page load, requesting the Mobian classifications and results for the URL. The classifications and results are designed to be picked up by any SSP or DSP in the Prebid.js ecosystem. The module also supports placing the Mobian classifications on each ad slot on the page, thus allowing for targeting within GAM.
 
-## Available Classifications:
+## Available Classifications
 
 Risk:
 
@@ -64,7 +64,7 @@ Description: The Mobian AI assesses the emotions exuded from the content, taking
 
 Tone:
 
-Key: mobianTones,
+Key: mobianTones
 
 Possible values: Various, but some examples include "Comedic", "Serious" or "Emotional"
 
@@ -74,7 +74,7 @@ Description: While the Mobian emotion classification looks at the emotions exude
 
 Theme:
 
-Key: mobianThemes,
+Key: mobianThemes
 
 Possible values: Various, but some examples include "Skincare", "Food" and "Nightlife"
 
@@ -84,7 +84,7 @@ Description: Themes are a wide classification of content categorization, taking 
 
 Genre:
 
-Key: mobianGenre,
+Key: mobianGenre
 
 Possible values: Various, but some examples include "Journalism", "Gaming" or "How-to"
 
@@ -112,14 +112,16 @@ p1 = Advertisers (via Campaign IDs) should target these personas
 
 On each page load, the Mobian RTD module finds each ad slot on the page and performs the following function:
 
-window.googletag.cmd.push(() => {
+```window.googletag.cmd.push(() => {
   window.googletag.pubads().setTargeting(key, value);
+```
 
 "key" and "value" will be replaced with the various classifications as described previously. Notably, this function runs before ad calls are made to GAM, which enables the keys and value to be used for targeting or blocking in GAM.
 
 For more details on how to set up key-value pairs in GAM, please see this documentation from Google: https://support.google.com/admanager/answer/9796369?sjid=12535178383871274096-NA
 
 For example, if you wanted to target articles where mobianRisk is low, the Key to set in GAM would be "mobianRisk" and the value would be "low". Once these keys and values are set within the Inventory section in GAM as listed by their documentation, you can then reference the key value pair in Custom Targeting for any line item you create.
+
 ## Configuration Highlight
 
 ```js
