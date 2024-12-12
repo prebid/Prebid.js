@@ -112,7 +112,8 @@ p1 = Advertisers (via Campaign IDs) should target these personas
 
 On each page load, the Mobian RTD module finds each ad slot on the page and performs the following function:
 
-```window.googletag.cmd.push(() => {
+```js
+window.googletag.cmd.push(() => {
   window.googletag.pubads().setTargeting(key, value);
 ```
 
