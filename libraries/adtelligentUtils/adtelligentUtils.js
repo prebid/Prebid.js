@@ -2,14 +2,13 @@ import {deepAccess, isArray} from '../../src/utils.js';
 import { config } from '../../src/config.js';
 import {BANNER, VIDEO} from '../../src/mediaTypes.js';
 
-const syncsCache = {};
 export const supportedMediaTypes = [VIDEO, BANNER]
 
 export function isBidRequestValid (bid) {
   return !!deepAccess(bid, 'params.aid');
 }
 
-export function getUserSyncs (syncOptions, serverResponses) {
+export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
   const syncs = [];
 
   function addSyncs(bid) {

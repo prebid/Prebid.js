@@ -6,11 +6,10 @@ import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 import {
-  createTag, getUserSyncs,
+  createTag, getUserSyncsFn,
   isBidRequestValid,
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
-
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -43,6 +42,7 @@ const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstr
 const BIDDER_CODE = 'adtelligent';
 const OUTSTREAM = 'outstream';
 const DISPLAY = 'display';
+const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -58,7 +58,9 @@ export const spec = {
   ],
   supportedMediaTypes,
   isBidRequestValid,
-  getUserSyncs,
+  getUserSyncs: function (syncOptions, serverResponses) {
+    getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+  },
   /**
    * Make a server request from the list of BidRequests
    * @param bidRequests
@@ -250,6 +252,7 @@ function createBid(bidResponse, bidRequest) {
 /**
  * Create Adtelligent renderer
  * @param requestId
+ * @param bidderParams
  * @returns {*}
  */
 function newRenderer(requestId, bidderParams) {

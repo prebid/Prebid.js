@@ -4,7 +4,7 @@ import {VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {findIndex} from '../src/polyfill.js';
 import {
-  getUserSyncs,
+  getUserSyncsFn,
   isBidRequestValid,
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
@@ -14,6 +14,7 @@ const OUTSTREAM_SRC = 'https://player.sync.viewdeos.com/outstream-unit/2.01/outs
 const BIDDER_CODE = 'viewdeosDX';
 const OUTSTREAM = 'outstream';
 const DISPLAY = 'display';
+const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,7 +22,9 @@ export const spec = {
   gvlid: 924,
   supportedMediaTypes,
   isBidRequestValid,
-  getUserSyncs,
+  getUserSyncs: function (syncOptions, serverResponses) {
+    getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+  },
   /**
    * Make a server request from the list of BidRequests
    * @param bidRequests
@@ -186,6 +189,7 @@ function createBid(bidResponse, mediaType, bidderParams) {
 /**
  * Create  renderer
  * @param requestId
+ * @param bidderParams
  * @returns {*}
  */
 function newRenderer(requestId, bidderParams) {

@@ -5,8 +5,7 @@ import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 import {
-  createTag,
-  getUserSyncs,
+  createTag, getUserSyncsFn,
   isBidRequestValid,
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
@@ -14,13 +13,16 @@ import {
 const ENDPOINT = 'https://ghb.console.adtarget.com.tr/v2/auction/';
 const BIDDER_CODE = 'adtarget';
 const DISPLAY = 'display';
+const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 779,
   supportedMediaTypes,
   isBidRequestValid,
-  getUserSyncs,
+  getUserSyncs: function (syncOptions, serverResponses) {
+    getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+  },
 
   buildRequests: function (bidRequests, adapterRequest) {
     const adapterSettings = config.getConfig(adapterRequest.bidderCode)
