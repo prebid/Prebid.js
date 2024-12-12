@@ -23,47 +23,89 @@ At a high level, the Mobian RTD Module is designed to call the Mobian Contextal 
 ## Available Classifications:
 
 Risk:
--Key: mobianRisk
--Possible values: "none", "low", "medium" or "high"
--Description: Risk will contain Mobian’s brand safety assessment of the page. Brand Safety is determined via the Mobian AI models taking into account a semantic analysis of the content while understanding the context. A more detailed description of the reasoning for a given URL can be observed by going to mbs.themobian.com and entering the URL.
+
+Key: mobianRisk
+
+Possible values: "none", "low", "medium" or "high"
+
+Description: Risk will contain Mobian’s brand safety assessment of the page. Brand Safety is determined via the Mobian AI models taking into account a semantic analysis of the content while understanding the context. A more detailed description of the reasoning for a given URL can be observed by going to mbs.themobian.com and entering the URL.
+
+------------------
 
 Content Categories:
--Key: mobianContentCategories
--Possible values: Adult Content, Arms, Crime, Death & Injury, Debated Issue, Hate Speech, Drugs & Alcohol, Obscenity, Piracy, Spam, Terrorism
--Description: Content Categories contain results based on the legacy GARM framework. GARM no longer is a standard and does not factor into our risk assessment but it is included due to client requests.
+
+Key: mobianContentCategories
+
+Possible values: Adult Content, Arms, Crime, Death & Injury, Debated Issue, Hate Speech, Drugs & Alcohol, Obscenity, Piracy, Spam, Terrorism
+
+Description: Content Categories contain results based on the legacy GARM framework. GARM no longer is a standard and does not factor into our risk assessment but it is included due to client requests.
+
+------------------
 
 Sentiment:
--Key: mobianSentiment
--Possible values: "negative", "neutral" or "positive"
--Description: Sentiment can only be one of the three values listed, and is determined via the Mobian AI analyzing the content and making one of these three determinations.
+
+Key: mobianSentiment
+
+Possible values: "negative", "neutral" or "positive"
+
+Description: Sentiment can only be one of the three values listed, and is determined via the Mobian AI analyzing the content and making one of these three determinations.
+
+------------------
 
 Emotion:
--Key: mobianEmotions
--Possible values: Affection, Cheerfulness, Contentment, Disappointment, Disgust, Enthrallment, Envy, Exasperation, Horror, Irritability, Longing, Lust, Neglect, Nervousness, Optimism, Pride, Rage, Sadness, Shame, Suffering, Surprise, Sympathy, Torment, Zest
--Description: The Mobian AI assesses the emotions exuded from the content, taking into account the context. A given piece of content can have multiple emotions. The current list of emotions is all possible emotions available but this will be updated to be more freeform in a future release.
+
+Key: mobianEmotions
+
+Possible values: Affection, Cheerfulness, Contentment, Disappointment, Disgust, Enthrallment, Envy, Exasperation, Horror, Irritability, Longing, Lust, Neglect, Nervousness, Optimism, Pride, Rage, Sadness, Shame, Suffering, Surprise, Sympathy, Torment, Zest
+
+Description: The Mobian AI assesses the emotions exuded from the content, taking into account the context. A given piece of content can have multiple emotions. The current list of emotions is all possible emotions available but this will be updated to be more freeform in a future release.
+
+------------------
 
 Tone:
--Key: mobianTones,
--Possible values: Various, but some examples include "Comedic", "Serious" or "Emotional"
--Description: While the Mobian emotion classification looks at the emotions exuded from the content, tone examines the overall presentation of the content and determines the overall mood of the work. A given piece of content can have multiple tones.
+
+Key: mobianTones,
+
+Possible values: Various, but some examples include "Comedic", "Serious" or "Emotional"
+
+Description: While the Mobian emotion classification looks at the emotions exuded from the content, tone examines the overall presentation of the content and determines the overall mood of the work. A given piece of content can have multiple tones.
+
+------------------
 
 Theme:
--Key: mobianThemes,
--Possible values: Various, but some examples include "Skincare", "Food" and "Nightlife"
--Description: Themes are a wide classification of content categorization, taking into account the content and context to label the content with a theme. A given piece of content can have multiple themes.
+
+Key: mobianThemes,
+
+Possible values: Various, but some examples include "Skincare", "Food" and "Nightlife"
+
+Description: Themes are a wide classification of content categorization, taking into account the content and context to label the content with a theme. A given piece of content can have multiple themes.
+
+------------------
 
 Genre:
--Key: mobianGenre,
--Possible values: Various, but some examples include "Journalism", "Gaming" or "How-to"
--Description: Genres are a more narrow classification of content categorization, aiming to label the content towards its overall purpose and audience. A given piece of content can have multiple genres.
+
+Key: mobianGenre,
+
+Possible values: Various, but some examples include "Journalism", "Gaming" or "How-to"
+
+Description: Genres are a more narrow classification of content categorization, aiming to label the content towards its overall purpose and audience. A given piece of content can have multiple genres.
+
+------------------
 
 AP Values
--Keys: ap_a0, ap_a1, ap_p0, ap_p1
--Possible values: Various, numerically id-based and customizable based on Mobian Persona Settings. -Description: Mobian AI Personas are custom created based on prompts to find a specific audience. Please contact your Mobian contact directly for more information on this tool. The difference between the keys is below:
+
+Keys: ap_a0, ap_a1, ap_p0, ap_p1
+
+Possible values: Various, numerically id-based and customizable based on Mobian Persona Settings. -Description: Mobian AI Personas are custom created based on prompts to find a specific audience. Please contact your Mobian contact directly for more information on this tool. The difference between the keys is below:
+
 a0 = Advertisers (via Campaign IDs) in this list should NOT want to advertise on this page
+
 a1 = Advertisers (via Campaign IDs) should want to advertise on this page
+
 p0 = Advertisers (via Campaign IDs) should AVOID targeting these personas
+
 p1 = Advertisers (via Campaign IDs) should target these personas
+
 *AP Values is in the early stages of testing and is subject to change.
 
 ## GAM Targeting:
