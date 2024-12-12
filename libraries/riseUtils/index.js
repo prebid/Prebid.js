@@ -290,6 +290,10 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     generalParams.user_metadata = JSON.stringify(ortb2Metadata.user);
   }
 
+  if (ortb2Metadata.device) {
+    generalParams.device = ortb2Metadata.device;
+  }
+
   if (syncEnabled) {
     const allowedSyncMethod = getAllowedSyncMethod(filterSettings, bidderCode);
     if (allowedSyncMethod) {
