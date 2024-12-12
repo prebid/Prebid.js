@@ -198,6 +198,7 @@ describe('adnuntiusBidAdapter', function () {
       'urlsEsc': {
         'destination': 'https%3A%2F%2Fads.adnuntius.delivery%2Fc%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg%3Fct%3D673%26r%3Dhttp%253A%252F%252Fadnuntius.com'
       },
+      'advertiserDomains': ['fred.com', 'george.com'],
       'destinationUrls': {
         'destination': 'https://adnuntius.com'
       },
@@ -1255,8 +1256,9 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].currency).to.equal(deal.bid.currency);
       expect(interpretedResponse[0].netRevenue).to.equal(false);
       expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
-      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
-      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('adnuntius.com');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(2);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('fred.com');
+      expect(interpretedResponse[0].meta.advertiserDomains[1]).to.equal('george.com');
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.adUnits[0].deals[0].html);
       expect(interpretedResponse[0].ttl).to.equal(360);
       expect(interpretedResponse[0].dealId).to.equal('abc123xyz');
