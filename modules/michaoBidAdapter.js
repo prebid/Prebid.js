@@ -183,6 +183,10 @@ const converter = ortbConverter({
       deepSetValue(openRTBBidRequest, 'source.schain', bidRequest.schain);
     }
 
+    if (bidRequest.params.partner) {
+      deepSetValue(openRTBBidRequest, 'site.publisher.ext.partner', bidRequest.params.partner.toString())
+    }
+
     return openRTBBidRequest;
   },
 

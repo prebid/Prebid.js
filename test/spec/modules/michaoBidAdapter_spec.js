@@ -352,6 +352,41 @@ describe('the michao bidder adapter', () => {
           'data.imp[0].bidfloor': 1,
         });
       });
+
+      it('Partner ID is set from Partner ID parameter', () => {
+        const bidRequest = {
+          adUnitCode: 'test-div',
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          bidId: '22c4871113f461',
+          bidder: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0,
+          mediaTypes: { banner: [[300, 250]] },
+          params: {
+            site: 123,
+            placement: '456',
+            partner: 11,
+          },
+        };
+        const bidderRequest = {
+          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+          auctionStart: 1579746300522,
+          bidderCode: 'michao',
+          bidderRequestId: '15246a574e859f',
+          bids: [bidRequest],
+        };
+        config.setConfig({
+          debug: true,
+        });
+
+        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+
+        expect(result).to.nested.include({
+          'data.site.publisher.ext.partner': '11',
+        });
+      });
     });
 
     describe('interpret response', () => {
