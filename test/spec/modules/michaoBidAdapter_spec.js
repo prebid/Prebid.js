@@ -372,7 +372,7 @@ describe('Michao Bid Adapter', () => {
 
         expect(result.length).to.equal(1);
         expect(result[0].data.imp.length).to.equal(1);
-        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+        expect(result[0].data.imp[0]).to.have.property(
           'banner'
         );
       });
@@ -388,9 +388,7 @@ describe('Michao Bid Adapter', () => {
 
         expect(result.length).to.equal(1);
         expect(result[0].data.imp.length).to.equal(1);
-        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
-          'video'
-        );
+        expect(result[0].data.imp[0]).to.have.property('video');
       });
 
       it('creates native-specific bid request from bid request containing one native format', () => {
@@ -427,10 +425,10 @@ describe('Michao Bid Adapter', () => {
 
         expect(result.length).to.equal(1);
         expect(result[0].data.imp.length).to.equal(2);
-        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+        expect(result[0].data.imp[0]).to.have.property(
           'banner'
         );
-        expect(result[0].data.imp[1]).to.have.haveOwnPropertyDescriptor(
+        expect(result[0].data.imp[1]).to.have.property(
           'video'
         );
       });
@@ -454,7 +452,7 @@ describe('Michao Bid Adapter', () => {
 
         expect(result.length).to.equal(1);
         expect(result[0].data.imp.length).to.equal(2);
-        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+        expect(result[0].data.imp[0]).to.have.property(
           'banner'
         );
       });
@@ -478,9 +476,7 @@ describe('Michao Bid Adapter', () => {
 
         expect(result.length).to.equal(1);
         expect(result[0].data.imp.length).to.equal(2);
-        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
-          'video'
-        );
+        expect(result[0].data.imp[0]).to.have.property('video');
       });
 
       it('creates banner, video and native bid request with three impressions from bid request containing all three formats', () => {
@@ -503,10 +499,10 @@ describe('Michao Bid Adapter', () => {
 
         expect(result.length).to.equal(1);
         expect(result[0].data.imp.length).to.equal(3);
-        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+        expect(result[0].data.imp[0]).to.have.property(
           'banner'
         );
-        expect(result[0].data.imp[1]).to.have.haveOwnPropertyDescriptor(
+        expect(result[0].data.imp[1]).to.have.property(
           'video'
         );
       });
