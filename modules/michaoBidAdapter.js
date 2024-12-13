@@ -20,7 +20,7 @@ const ENV = {
   ENDPOINT: 'https://rtb.michao-ssp.com/openrtb/prebid',
   NET_REVENUE: true,
   DEFAULT_CURRENCY: 'USD',
-  RENDERER_URL:
+  OUTSTREAM_RENDERER_URL:
     'https://cdn.jsdelivr.net/npm/in-renderer-js@latest/dist/in-video-renderer.umd.min.js',
 };
 
@@ -326,7 +326,7 @@ const converter = ortbConverter({
     ) {
       bidResponse.vastXml = bid.adm;
       const renderer = Renderer.install({
-        url: ENV.RENDERER_URL,
+        url: ENV.OUTSTREAM_RENDERER_URL,
         id: bidRequest.bidId,
         adUnitCode: bidRequest.adUnitCode,
       });
