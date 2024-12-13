@@ -1057,7 +1057,8 @@ describe('Adf adapter', function () {
                     }],
                     adrender: 1
                   }
-                }
+                },
+                cat: [ 'IAB1', 'IAB2' ]
               }
             ]
           }],
@@ -1117,6 +1118,8 @@ describe('Adf adapter', function () {
       assert.deepEqual(bids[0].currency, serverResponse.body.cur);
       assert.deepEqual(bids[0].mediaType, 'native');
       assert.deepEqual(bids[0].meta.mediaType, 'native');
+      assert.deepEqual(bids[0].meta.primaryCatId, 'IAB1');
+      assert.deepEqual(bids[0].meta.secondaryCatIds, [ 'IAB2' ]);
       assert.deepEqual(bids[0].meta.advertiserDomains, [ 'demo.com' ]);
       assert.deepEqual(bids[0].meta.dsa, {
         behalf: 'some-behalf',

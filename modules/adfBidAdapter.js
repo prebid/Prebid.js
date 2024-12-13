@@ -214,7 +214,9 @@ export const spec = {
           meta: {
             mediaType,
             advertiserDomains: bidResponse.adomain,
-            dsa
+            dsa,
+            primaryCatId: bidResponse.cat?.[0],
+            secondaryCatIds: bidResponse.cat?.slice(1)
           }
         };
 
