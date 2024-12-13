@@ -304,7 +304,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     OK_SITE_ARR.forEach(key => {
-      it(`should determine that the ortb2.site key is ok and append to the bid request: ${JSON.stringify(key)}`, () => {
+      it(`should determine valid keys of the ortb2 site and append to the bid request: ${JSON.stringify(key)}`, () => {
         const ortb2 = {
           site: {
             [key]: ['some value here']
@@ -319,7 +319,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
 
     BAD_ORTB2_TYPES.forEach(key => {
-      it(`should determine that the ortb2.site.content key is bad and should not be added to bid request: ${JSON.stringify(key)}`, () => {
+      it(`should determine bad keys of the ortb2 site content key and should not be added to bid request: ${JSON.stringify(key)}`, () => {
         const ortb2 = {
           site: {
             content: key
@@ -382,7 +382,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
   });
 
-  describe('Check User obj support (ortb2):', () => {
+  describe('Check ortb2 user support:', () => {
     const BAD_ORTB2_TYPES = [ null, [], 'unsupportedKeyName', true, false, undefined ];
     BAD_ORTB2_TYPES.forEach(key => {
       it(`should not allow bad site types to be added to bid request: ${JSON.stringify(key)}`, () => {
@@ -395,7 +395,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
     const OK_USER_STR = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
     OK_USER_STR.forEach(key => {
-      it(`should allow supported user string keys to be added bid request: ${JSON.stringify(key)}`, () => {
+      it(`should allow valid keys of the user to be added to bid request: ${JSON.stringify(key)}`, () => {
         const ortb2 = {
           user: {
             [key]: 'some value here'
@@ -411,7 +411,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
     const OK_USER_OBJECTS = ['ext'];
     OK_USER_OBJECTS.forEach(key => {
-      it(`should allow supported user extObject keys to be added to the bid request: ${JSON.stringify(key)}`, () => {
+      it(`should allow user ext to be added to the bid request: ${JSON.stringify(key)}`, () => {
         const ortb2 = {
           user: {
             [key]: {a: '123', b: '456'}
@@ -471,7 +471,7 @@ describe('Adtrgtme Bid Adapter:', () => {
     it('should return request objects that do not send cookies if purpose 1 consent is not provided', () => {
       const { validBR, bidderRequest } = createRequestMock({});
       bidderRequest.gdprConsent = {
-        consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
+        consentString: 'BOtmiBKO234234tmiBKABABAEN234AFAAAAACeAAA',
         apiVersion: 2,
         vendorData: {
           purpose: {
@@ -564,8 +564,8 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
   });
 
-  describe('Request Headers validation:', () => {
-    it('should return request objects with the relevant custom headers and content type declaration', () => {
+  describe('Validate request headers:', () => {
+    it('should return request objects with the custom headers and content type', () => {
       const { validBR, bidderRequest } = createRequestMock({});
       bidderRequest.gdprConsent.gdprApplies = false;
       const opt = spec.buildRequests(validBR, bidderRequest).options;
@@ -578,7 +578,7 @@ describe('Adtrgtme Bid Adapter:', () => {
   });
 
   describe('Request data oRTB bid validation:', () => {
-    it('should create a ok openRTB bid request object in the data field', () => {
+    it('should create valid oRTB bid request object in the data field', () => {
       const { validBR, bidderRequest } = createRequestMock({});
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.site).to.deep.include({
@@ -611,7 +611,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(data.cur).to.deep.equal(['USD']);
     });
 
-    it('should create a ok openRTB imp.ext object in the bid request', () => {
+    it('should create valid oRTB imp.ext in the bid request', () => {
       const { validBR, bidderRequest } = createRequestMock({});
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.imp[0].ext).to.deep.equal({
@@ -619,14 +619,14 @@ describe('Adtrgtme Bid Adapter:', () => {
       });
     });
 
-    it('should use siteId value as site.id in the outbound bid request when using "pubId" integration mode', () => {
+    it('should use siteId value as site.id', () => {
       let { validBR, bidderRequest } = createRequestMock({pubIdMode: true});
       validBR[0].params.sid = '9876543210';
       const data = spec.buildRequests(validBR, bidderRequest).data;
       expect(data.site.id).to.equal('9876543210');
     });
 
-    it('should use placementId value as imp.tagid in the outbound bid request when using "zid"', () => {
+    it('should use placementId value as imp.tagid when using "zid"', () => {
       let { validBR, bidderRequest } = createRequestMock({}),
         TEST_ZID = '54321';
       validBR[0].params.zid = TEST_ZID;
@@ -635,8 +635,8 @@ describe('Adtrgtme Bid Adapter:', () => {
     });
   });
 
-  describe('Request Payload oRTB bid.imp validation:', () => {
-    it('should create a ok Banner imp object', () => {
+  describe('Request oRTB bid.imp validation:', () => {
+    it('should create valid default Banner imp', () => {
       config.setConfig({
         adtrgtme: {}
       });
@@ -648,7 +648,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       });
     });
 
-    it('should create a ok Banner imp object', () => {
+    it('should create valid Banner imp', () => {
       config.setConfig({
         adtrgtme: { mode: 'banner' }
       });
@@ -663,7 +663,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
   describe('interpretResponse()', () => {
     describe('for mediaTypes: "banner"', () => {
-      it('should insert banner payload into response[0].ad', () => {
+      it('should insert banner object into response[0].ad', () => {
         const { sR, bidderRequest } = createResponseMock('banner');
         const response = spec.interpretResponse(sR, {bidderRequest});
         expect(response[0].ad).to.equal(`<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
@@ -681,7 +681,7 @@ describe('Adtrgtme Bid Adapter:', () => {
       })
     });
 
-    describe('bid response Ad ID / Creative ID', () => {
+    describe('Check response Ad ID / Creative ID', () => {
       it('should use adId if it exists in the bid-response', () => {
         const { sR, bidderRequest } = createResponseMock('banner');
         const adId = 'bid-response-adId';
@@ -720,7 +720,7 @@ describe('Adtrgtme Bid Adapter:', () => {
           expect(response[0].ttl).to.equal(300);
         });
 
-        it('should not allow unsupported keys.ttl formats and default to 300', () => {
+        it('should not set unsupported ttl formats and check default to 300', () => {
           const { sR, bidderRequest } = createResponseMock('banner');
           bidderRequest.bids[0].params.ttl = key;
           const response = spec.interpretResponse(sR, {bidderRequest});
@@ -730,7 +730,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
       const BAD_TTL_VALUES = [-1, 12345];
       BAD_TTL_VALUES.forEach(key => {
-        it('should not allow bad global adtrgtme.ttl values 3600 < ttl < 0 and default to 300', () => {
+        it('should not set bad global adtrgtme.ttl and check default to 300', () => {
           const { sR, bidderRequest } = createResponseMock('banner');
           config.setConfig({
             adtrgtme: { ttl: key }
@@ -739,7 +739,7 @@ describe('Adtrgtme Bid Adapter:', () => {
           expect(response[0].ttl).to.equal(300);
         });
 
-        it('should not allow bad keys.ttl values 3600 < ttl < 0 and default to 300', () => {
+        it('should not set bad keys.ttl values', () => {
           const { sR, bidderRequest } = createResponseMock('banner');
           bidderRequest.bids[0].params.ttl = key;
           const response = spec.interpretResponse(sR, {bidderRequest});
@@ -747,7 +747,7 @@ describe('Adtrgtme Bid Adapter:', () => {
         });
       });
 
-      it('should give presedence to gloabl ttl over params.ttl ', () => {
+      it('should set gloabl ttl over params.ttl if it presents', () => {
         const { sR, bidderRequest } = createResponseMock('banner');
         config.setConfig({
           adtrgtme: { ttl: 500 }
