@@ -28,8 +28,6 @@ function request(buildRequest, imps, bidderRequest, context) {
 
 function imp(buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
-  // eslint-disable-next-line no-console
-  console.log(JSON.stringify(imp, null, 2));
   imp.bidfloor = bidRequest.params.bidFloor;
   imp.bidfloorcur = bidRequest.params.currency;
   imp.tagid = bidRequest.params.placementId;
@@ -43,8 +41,6 @@ export const spec = {
 
   // Validate bid request
   isBidRequestValid: function (bid) {
-    // eslint-disable-next-line no-console
-    console.log(bid);
     return (
       !!bid.params.placementId && !!bid.params.publisherId
       // !!bid.params.params.bidFloor &&
