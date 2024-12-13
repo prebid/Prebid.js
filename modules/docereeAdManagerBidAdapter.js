@@ -81,7 +81,7 @@ export function getPageUrl() {
 
 const handleConsent = (consentValue) => {
   try {
-    if (consentValue === 0 || consentValue === "0") {
+    if (consentValue === 0 || consentValue === '0') {
       consentValue = '0';
     }
   } catch (error) {
