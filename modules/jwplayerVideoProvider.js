@@ -652,7 +652,7 @@ export const utils = {
       return {};
     }
 
-    const containerElement = player.getContainer();
+    const containerElement = player.getContainer && player.getContainer();
     if (!containerElement) {
       return {};
     }

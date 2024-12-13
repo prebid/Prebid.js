@@ -690,6 +690,53 @@ describe('utils', function () {
       expect(jwConfig.advertising).to.have.property('client', 'vast');
     });
   });
+
+  describe('getPlayerHeight', function () {
+    it('should return height from API when defined', function () {
+
+    });
+
+    it('should return height from config when API returns undefined', function () {
+
+    });
+  });
+
+  describe('getPlayerWidth', function () {
+    it('should return width from API when defined', function () {
+
+    });
+
+    it('should return width from config when API returns undefined', function () {
+
+    });
+
+    it('should return undefined when width is string', function () {
+
+    });
+  });
+
+  describe('getPlayerSizeFromAspectRatio', function () {
+    it('should return an empty object when width and aspectratio are not strings', function () {
+
+    });
+
+    it('should return an empty object when aspectratio is malformed', function () {
+
+    });
+
+    it('should return an empty object when player container cannot be obtained', function () {
+
+    });
+
+    it('should calculate the size give the width percentage and aspect ratio', function () {
+
+    });
+
+    it('should return the container height when smaller than the calculated height', function () {
+
+    });
+  });
+
   describe('getSkipParams', function () {
     const getSkipParams = utils.getSkipParams;
 
