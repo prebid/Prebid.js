@@ -66,7 +66,7 @@ function getBidfloorData(b) {
   return isFn(b.getFloor) ? b.getFloor({
     currency: deepAccess(b, 'params.bidOverride.cur') ?? DEFAULT_CUR,
     mediaType: BANNER,
-    size: '*'}) : false;
+    size: '*'}) : false
 }
 
 function createORTB(bR, bid) {
