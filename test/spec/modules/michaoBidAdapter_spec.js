@@ -1,847 +1,957 @@
-import { expect } from 'chai';
-import {
-  addRenderer,
-  billBid,
-  buildRequest,
-  domainLogger,
-  interpretResponse,
-  spec,
-  syncUser,
-  validateMichaoParams,
-} from '../../../modules/michaoBidAdapter';
-import * as utils from 'src/utils.js';
-import { config } from '../../../src/config';
+import { cloneDeep } from 'lodash';
+import { domainLogger, spec } from '../../../modules/michaoBidAdapter';
+import * as utils from '../../../src/utils.js';
 
-describe('the michao bidder adapter', () => {
+describe('Michao Bid Adapter', () => {
+  let bannerBidRequest;
+  let videoBidRequest;
+  let nativeBidRequest;
+  let videoServerResponse;
+  let bannerServerResponse;
+  let domainLoggerMock;
+  let sandbox;
+  let triggerPixelSpy;
+
   beforeEach(() => {
-    config.resetConfig();
+    bannerBidRequest = cloneDeep(_bannerBidRequest);
+    videoBidRequest = cloneDeep(_videoBidRequest);
+    nativeBidRequest = cloneDeep(_nativeBidRequest);
+    videoServerResponse = cloneDeep(_videoServerResponse);
+    bannerServerResponse = cloneDeep(_bannerServerResponse);
+    sandbox = sinon.sandbox.create();
+    domainLoggerMock = sandbox.stub(domainLogger);
+    triggerPixelSpy = sandbox.spy(utils, 'triggerPixel');
   });
 
-  describe('unit', () => {
-    describe('validate bid request', () => {
-      const invalidBidParams = [
-        { site: '123', placement: 'super-placement' },
-        { site: '123', placement: 456 },
-        { site: Infinity, placement: 456 },
-      ];
-      invalidBidParams.forEach((params) => {
-        it('Detecting incorrect parameters', () => {
-          const result = validateMichaoParams(params);
+  afterEach(() => {
+    sandbox.restore();
+  });
 
-          expect(result).to.be.false;
-        });
-      });
-
-      it('If the site ID and placement ID are correct, the verification succeeds.', () => {
-        const params = {
+  describe('`isBidRequestValid`', () => {
+    describe('Required parameter behavior', () => {
+      it('passes when siteId is a number', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
           site: 123,
-          placement: 'placement'
         };
 
-        const result = validateMichaoParams(params);
+        const result = spec.isBidRequestValid(bannerBidRequest);
 
         expect(result).to.be.true;
+        expect(domainLoggerMock.invalidSiteError.calledOnce).to.be.false;
+      });
+
+      it('detects invalid input when siteId is not a number', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          site: '123',
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidSiteError.calledOnce).to.be.true;
+      });
+
+      it('passes when placementId is a string', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          placement: '123',
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidPlacementError.calledOnce).to.be.false;
+      });
+
+      it('detects invalid input when placementId is not a string', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          placement: 123,
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidPlacementError.calledOnce).to.be.true;
       });
     });
 
-    describe('build bid request', () => {
-      it('Banner bid requests are converted to banner server request objects', () => {
-        const bannerBidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-          },
-        };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bannerBidRequest],
+    describe('mediaTypes behavior', () => {
+      it('passes when video context is instream', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          context: 'instream',
         };
 
-        const result = buildRequest(bannerBidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          url: 'https://rtb.michao-ssp.com/openrtb/prebid',
-          'options.contentType': 'application/json',
-          'options.withCredentials': true,
-          method: 'POST',
-          'data.cur[0]': 'USD',
-          'data.imp[0].ext.placement': '456',
-          'data.site.id': '123',
-          'data.test': 0,
-        });
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidVideoContext.calledOnce).to.be.false;
       });
 
-      it('Video bid requests are converted to video server request objects', () => {
-        const videoBidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: {
-            video: {
-              context: 'outstream',
-              playerSize: [640, 480],
-              mimes: ['video/mp4'],
-            },
-          },
-          params: {
-            site: 123,
-            placement: '456',
-          },
-        };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [videoBidRequest],
+      it('passes when video playerSize is valid array', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          playerSize: [[640, 480]],
         };
 
-        const result = buildRequest(videoBidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          url: 'https://rtb.michao-ssp.com/openrtb/prebid',
-          'options.contentType': 'application/json',
-          'options.withCredentials': true,
-          method: 'POST',
-          'data.cur[0]': 'USD',
-          'data.imp[0].ext.placement': '456',
-          'data.site.id': '123',
-          'data.test': 0,
-        });
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidVideoPlayerSize.calledOnce).to.be.false;
       });
 
-      it('Native bid requests are converted to video server request objects', () => {
-        const nativeBidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: {
-            native: {
-              ortb: {
-                assets: [
-                  {
-                    id: 2,
-                    required: 1,
-                    title: {
-                      len: 80
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          params: {
-            site: 123,
-            placement: '456',
-          },
-        };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [nativeBidRequest],
+      it('passes when valid video minDuration is set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          minduration: 5,
         };
 
-        const result = buildRequest(nativeBidRequest, bidderRequest, 'native');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          url: 'https://rtb.michao-ssp.com/openrtb/prebid',
-          'options.contentType': 'application/json',
-          'options.withCredentials': true,
-          method: 'POST',
-          'data.cur[0]': 'USD',
-          'data.imp[0].ext.placement': '456',
-          'data.site.id': '123',
-          'data.test': 0,
-        });
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidVideoMinDuration.calledOnce).to.be.false;
       });
 
-      it('Converted to server request object for testing in debug mode', () => {
-        const bidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-          },
+      it('passes when valid video maxDuration is set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          maxduration: 30,
         };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bidRequest],
-        };
-        config.setConfig({
-          debug: true,
-        });
 
-        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          'data.test': 1,
-        });
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidVideoMaxDuration.calledOnce).to.be.false;
       });
 
-      it('Specifying a reward builds a bid request for the reward', () => {
-        const bidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-            reward: true,
-          },
+      it('passes when valid video mimes are set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          mimes: ['video/mp4'],
         };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bidRequest],
-        };
-        config.setConfig({
-          debug: true,
-        });
 
-        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          'data.imp[0].rwdd': 1,
-        });
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidVideoMimes.calledOnce).to.be.false;
       });
 
-      it('Block categories are set in the bid request through parameters', () => {
-        const bidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-            bcat: ['IAB2']
-          },
+      it('detects invalid input when video context is not set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          context: undefined,
         };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bidRequest],
-        };
-        config.setConfig({
-          debug: true,
-        });
 
-        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          'data.bcat[0]': 'IAB2',
-        });
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidVideoContext.calledOnce).to.be.true;
       });
 
-      it('Block advertisers set in bid request through parameters', () => {
-        const bidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-            badv: ['adomain.com']
-          },
+      it('detects invalid input when video playerSize is not set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          playerSize: undefined,
         };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bidRequest],
-        };
-        config.setConfig({
-          debug: true,
-        });
 
-        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          'data.badv[0]': 'adomain.com',
-        });
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidVideoPlayerSize.calledOnce).to.be.true;
       });
 
-      it('The lowest bid will be set', () => {
-        const bidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-            bidFloor: 1,
-          },
+      it('detects invalid input when video minDuration is not set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          minduration: undefined,
         };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bidRequest],
-        };
-        config.setConfig({
-          debug: true,
-        });
 
-        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          'data.imp[0].bidfloor': 1,
-        });
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidVideoMinDuration.calledOnce).to.be.true;
       });
 
-      it('Partner ID is set from Partner ID parameter', () => {
-        const bidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-            partner: 11,
-          },
+      it('detects invalid input when video maxDuration is not set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          maxduration: undefined,
         };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bidRequest],
+
+        const result = spec.isBidRequestValid(videoBidRequest);
+
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidVideoMaxDuration.calledOnce).to.be.true;
+      });
+
+      it('detects invalid input when video mimes is not set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          mimes: undefined,
         };
-        config.setConfig({
-          debug: true,
-        });
 
-        const result = buildRequest(bidRequest, bidderRequest, 'banner');
+        const result = spec.isBidRequestValid(videoBidRequest);
 
-        expect(result).to.nested.include({
-          'data.site.publisher.ext.partner': '11',
-        });
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidVideoMimes.calledOnce).to.be.true;
+      });
+
+      it('detects invalid input when video protocols is not set', () => {
+        videoBidRequest.mediaTypes.video = {
+          ...videoBidRequest.mediaTypes.video,
+          protocols: undefined,
+        };
+
+        const result = spec.isBidRequestValid(videoBidRequest);
+
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidVideoProtocols.calledOnce).to.be.true;
       });
     });
 
-    describe('interpret response', () => {
-      it('Server response is interpreted as a bid.', () => {
-        const response = {
-          headers: null,
-          body: {
-            id: 'requestId',
-            seatbid: [
-              {
-                bid: [
-                  {
-                    id: 'bidId1',
-                    impid: 'bidId1',
-                    price: 0.18,
-                    adm: '<script>adm</script>',
-                    adid: '144762342',
-                    adomain: ['https://dummydomain.com'],
-                    iurl: 'iurl',
-                    cid: '109',
-                    crid: 'creativeId',
-                    cat: [],
-                    w: 300,
-                    h: 250,
-                    mtype: 1,
-                  },
-                ],
-                seat: 'seat',
-              },
-            ],
-            cur: 'USD',
-          },
+    describe('Optional parameter behavior', () => {
+      it('passes when partnerId is not specified', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          partner: undefined,
         };
-        const bannerBidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: 'bidId1',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-          },
-        };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bannerBidRequest],
-        };
-        const request = buildRequest(bannerBidRequest, bidderRequest, 'banner');
 
-        const result = interpretResponse(response, request);
+        const result = spec.isBidRequestValid(bannerBidRequest);
 
-        expect(result).to.be.an('array');
-        expect(result[0]).to.have.property('currency', 'USD');
-        expect(result[0]).to.have.property('requestId', 'bidId1');
-        expect(result[0]).to.have.property('cpm', 0.18);
-        expect(result[0]).to.have.property('width', 300);
-        expect(result[0]).to.have.property('height', 250);
-        expect(result[0]).to.have.property('ad', '<script>adm</script>');
-        expect(result[0]).to.have.property('creativeId', 'creativeId');
-        expect(result[0]).to.have.property('netRevenue', true);
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidPartnerError.calledOnce).to.be.false;
       });
 
-      it('Empty server responses are interpreted as empty bids', () => {
-        const response = { body: {} };
-        const bannerBidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '22c4871113f461',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: { banner: [[300, 250]] },
-          params: {
-            site: 123,
-            placement: '456',
-          },
+      it('passes when partnerId is a number', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          partner: 6789,
         };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [bannerBidRequest],
-        };
-        const request = buildRequest(bannerBidRequest, bidderRequest, 'banner');
 
-        const result = interpretResponse(response, request);
+        const result = spec.isBidRequestValid(bannerBidRequest);
 
-        expect(result).to.be.an('array');
-        expect(result.length).to.equal(0);
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidPartnerError.calledOnce).to.be.false;
       });
 
-      it('Set renderer with outstream video ads', () => {
-        const response = {
-          headers: null,
-          body: {
-            id: 'requestId',
-            seatbid: [
-              {
-                bid: [
-                  {
-                    id: 'bidId1',
-                    impid: 'bidId1',
-                    price: 0.18,
-                    adm: '<VAST></VAST>',
-                    adid: '144762342',
-                    adomain: ['https://dummydomain.com'],
-                    iurl: 'iurl',
-                    cid: '109',
-                    crid: 'creativeId',
-                    cat: [],
-                    w: 300,
-                    h: 250,
-                    mtype: 1,
-                  },
-                ],
-                seat: 'seat',
-              },
-            ],
-            cur: 'USD',
-          },
+      it('detects invalid input when partnerId is not a number', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          partner: '6789',
         };
-        const videoBidRequest = {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: 'bidId1',
-          bidder: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bidRequestsCount: 1,
-          bidderRequestsCount: 1,
-          bidderWinsCount: 0,
-          mediaTypes: {
-            video: {
-              context: 'outstream',
-              playerSize: [640, 480],
-              minduration: 0,
-              maxduration: 30,
-              protocols: [7]
-            },
-          },
-          params: {
-            site: 123,
-            placement: '456',
-          },
-        };
-        const bidderRequest = {
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          auctionStart: 1579746300522,
-          bidderCode: 'michao',
-          bidderRequestId: '15246a574e859f',
-          bids: [videoBidRequest],
-        };
-        const request = buildRequest(videoBidRequest, bidderRequest, 'video');
 
-        const result = interpretResponse(response, request);
+        const result = spec.isBidRequestValid(bannerBidRequest);
 
-        expect(result).to.be.an('array');
-        expect(result[0]).to.have.property('currency', 'USD');
-        expect(result[0]).to.have.property('requestId', 'bidId1');
-        expect(result[0]).to.have.property('cpm', 0.18);
-        expect(result[0]).to.have.property('width', 300);
-        expect(result[0]).to.have.property('height', 250);
-        expect(result[0]).to.have.property('vastXml', '<VAST></VAST>');
-        expect(result[0]).to.have.property('creativeId', 'creativeId');
-        expect(result[0]).to.have.property('netRevenue', true);
-        expect(result[0]).to.have.property('mediaType', 'video');
-        expect(result[0]).to.have.property('renderer');
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidPartnerError.calledOnce).to.be.true;
       });
-    });
 
-    describe('user syncs', () => {
-      it('Sync Users', () => {
-        const gdprConsent = {
-          gdprApplies: false,
-          consentString: '',
+      it('passes when blockCategories is not specified', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          bcat: undefined,
         };
 
-        const result = syncUser(gdprConsent);
+        const result = spec.isBidRequestValid(bannerBidRequest);
 
-        expect(result).to.deep.equal({
-          type: 'iframe',
-          url: 'https://sync.michao-ssp.com/cookie-syncs?gdpr=0&gdpr_consent=',
-        });
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidBcatError.calledOnce).to.be.false;
       });
-    });
 
-    describe('bill a bid', () => {
-      const triggerPixelSpy = sinon.spy(utils, 'triggerPixel');
-      const bid = {
-        adUnitCode: 'test-div',
-        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-        bidId: '22c4871113f461',
-        bidder: 'michao',
-        bidderRequestId: '15246a574e859f',
-        bidRequestsCount: 1,
-        bidderRequestsCount: 1,
-        bidderWinsCount: 0,
-        mediaTypes: { banner: [[300, 250]] },
-        params: {
-          site: 123,
-          placement: '456',
-        },
-        burl: 'https://example.com/burl',
-      };
-
-      billBid(bid);
-
-      expect(triggerPixelSpy.calledWith('https://example.com/burl')).to.true;
-      triggerPixelSpy.restore();
-    });
-
-    describe('renderer', () => {
-      it('Set outstream renderer', () => {
-        const bid = {
-          renderer: [],
+      it('passes when blockCategories is an array', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          bcat: ['IAB2'],
         };
 
-        addRenderer(bid);
+        const result = spec.isBidRequestValid(bannerBidRequest);
 
-        expect(bid.renderer[0]).that.is.a('function');
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidBcatError.calledOnce).to.be.false;
+      });
+
+      it('detects invalid input when blockCategories is not an array', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          bcat: 'IAB2',
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidBcatError.calledOnce).to.be.true;
+      });
+
+      it('passes when blockAdvertisers is not specified', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          badv: undefined,
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidBadvError.calledOnce).to.be.false;
+      });
+
+      it('passes when blockAdvertisers is an array', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          badv: ['adomain.com'],
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidBadvError.calledOnce).to.be.false;
+      });
+
+      it('detects invalid input when blockAdvertisers is not an array', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          badv: 'adomain.com',
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidBadvError.calledOnce).to.be.true;
+      });
+
+      it('passes when reward is not specified', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          reward: undefined,
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidRewardError.calledOnce).to.be.false;
+      });
+
+      it('passes when reward is a boolean', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          reward: true,
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.true;
+        expect(domainLoggerMock.invalidRewardError.calledOnce).to.be.false;
+      });
+
+      it('detects invalid input when reward is not a boolean', () => {
+        bannerBidRequest.params = {
+          ...bannerBidRequest.params,
+          reward: 'true',
+        };
+
+        const result = spec.isBidRequestValid(bannerBidRequest);
+
+        expect(result).to.be.false;
+        expect(domainLoggerMock.invalidRewardError.calledOnce).to.be.true;
       });
     });
   });
 
-  describe('integration', () => {
-    describe('`isBidRequestValid`', () => {
-      it('Happy path', () => {
-        const validBidRequest = {
-          params: {
-            placement: '124',
-            site: 234,
-          },
+  describe('`buildRequest`', () => {
+    describe('Bid request format behavior', () => {
+      it('creates banner-specific bid request from bid request containing one banner format', () => {
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
         };
 
-        const result = spec.isBidRequestValid(validBidRequest);
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-        expect(result).to.true;
+        expect(result.length).to.equal(1);
+        expect(result[0].data.imp.length).to.equal(1);
+        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+          'banner'
+        );
       });
 
-      it('If the parameter is invalid, it will be logged', () => {
-        const validationErrorLog = sinon.spy(domainLogger, 'bidRequestValidationError');
-        const validBidRequest = {
-          params: {
-            placement: '124',
-            site: '234',
-          },
+      it('creates video-specific bid request from bid request containing one video format', () => {
+        const bidderRequest = {
+          bids: [videoBidRequest],
+          auctionId: videoBidRequest.auctionId,
+          bidderRequestId: videoBidRequest.bidderRequestId,
         };
 
-        const result = spec.isBidRequestValid(validBidRequest);
+        const result = spec.buildRequests([videoBidRequest], bidderRequest);
 
-        expect(result).to.false;
-        expect(validationErrorLog.calledOnce).to.true;
-        validationErrorLog.restore();
+        expect(result.length).to.equal(1);
+        expect(result[0].data.imp.length).to.equal(1);
+        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+          'video'
+        );
+      });
+
+      it('creates native-specific bid request from bid request containing one native format', () => {
+        const bidderRequest = {
+          bids: [nativeBidRequest],
+          auctionId: nativeBidRequest.auctionId,
+          bidderRequestId: nativeBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([nativeBidRequest], bidderRequest);
+
+        expect(result.length).to.equal(1);
+        expect(result[0].data.imp.length).to.equal(1);
       });
     });
 
-    it('`buildRequests`', () => {
-      const validBidRequests = [
-        {
-          adUnitCode: 'test-div',
-          auctionId: 'auction-1',
-          bidId: 'bid-1',
-          bidder: 'michao',
-          bidderRequestId: 'bidder-request-1',
+    describe('Multiple format combination behavior', () => {
+      it('creates banner and video bid request with two impressions from bid request containing both banner and video formats', () => {
+        const multiFormatRequest = {
+          ...bannerBidRequest,
           mediaTypes: {
-            banner: {
-              sizes: [[300, 250]],
-            },
+            ...bannerBidRequest.mediaTypes,
+            video: videoBidRequest.mediaTypes.video,
           },
-          params: {
-            site: 12,
-            placement: '12',
-          },
-        },
-        {
-          adUnitCode: 'test-div',
-          auctionId: 'auction-2',
-          bidId: 'bid-2',
-          bidder: 'michao',
-          bidderRequestId: 'bidder-request-2',
-          mediaTypes: {
-            video: {
-              context: 'outstream',
-              playerSize: [640, 480],
-              mimes: ['video/mp4'],
-            },
-          },
-          params: {
-            site: 12,
-            placement: '12',
-          },
-        },
-        {
-          adUnitCode: 'test-div',
-          auctionId: 'auction-2',
-          bidId: 'bid-2',
-          bidder: 'michao',
-          bidderRequestId: 'bidder-request-2',
-          mediaTypes: {
-            native: {
-              ortb: {
-                assets: [
-                  {
-                    id: 2,
-                    required: 1,
-                    title: {
-                      len: 80
-                    }
-                  }
-                ]
-              }
-            },
-          },
-          params: {
-            site: 12,
-            placement: '12',
-          },
-        },
-      ];
-      const bidderRequest = {
-        auctionId: 'auction-1',
-        auctionStart: 1579746300522,
-        bidderCode: 'michao',
-        bidderRequestId: 'bidder-request-1',
-      };
+        };
 
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidderRequest = {
+          bids: [multiFormatRequest],
+          auctionId: multiFormatRequest.auctionId,
+          bidderRequestId: multiFormatRequest.bidderRequestId,
+        };
 
-      expect(result.length).to.equal(3);
+        const result = spec.buildRequests([multiFormatRequest], bidderRequest);
+
+        expect(result.length).to.equal(1);
+        expect(result[0].data.imp.length).to.equal(2);
+        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+          'banner'
+        );
+        expect(result[0].data.imp[1]).to.have.haveOwnPropertyDescriptor(
+          'video'
+        );
+      });
+
+      it('creates banner and native bid request with two impressions from bid request containing both banner and native formats', () => {
+        const multiFormatRequest = {
+          ...bannerBidRequest,
+          mediaTypes: {
+            ...bannerBidRequest.mediaTypes,
+            native: nativeBidRequest.mediaTypes.native,
+          },
+        };
+
+        const bidderRequest = {
+          bids: [multiFormatRequest],
+          auctionId: multiFormatRequest.auctionId,
+          bidderRequestId: multiFormatRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([multiFormatRequest], bidderRequest);
+
+        expect(result.length).to.equal(1);
+        expect(result[0].data.imp.length).to.equal(2);
+        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+          'banner'
+        );
+      });
+
+      it('creates video and native bid request with two impressions from bid request containing both video and native formats', () => {
+        const multiFormatRequest = {
+          ...videoBidRequest,
+          mediaTypes: {
+            ...videoBidRequest.mediaTypes,
+            native: nativeBidRequest.mediaTypes.native,
+          },
+        };
+
+        const bidderRequest = {
+          bids: [multiFormatRequest],
+          auctionId: multiFormatRequest.auctionId,
+          bidderRequestId: multiFormatRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([multiFormatRequest], bidderRequest);
+
+        expect(result.length).to.equal(1);
+        expect(result[0].data.imp.length).to.equal(2);
+        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+          'video'
+        );
+      });
+
+      it('creates banner, video and native bid request with three impressions from bid request containing all three formats', () => {
+        const multiFormatRequest = {
+          ...bannerBidRequest,
+          mediaTypes: {
+            ...bannerBidRequest.mediaTypes,
+            video: videoBidRequest.mediaTypes.video,
+            native: nativeBidRequest.mediaTypes.native,
+          },
+        };
+
+        const bidderRequest = {
+          bids: [multiFormatRequest],
+          auctionId: multiFormatRequest.auctionId,
+          bidderRequestId: multiFormatRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([multiFormatRequest], bidderRequest);
+
+        expect(result.length).to.equal(1);
+        expect(result[0].data.imp.length).to.equal(3);
+        expect(result[0].data.imp[0]).to.have.haveOwnPropertyDescriptor(
+          'banner'
+        );
+        expect(result[0].data.imp[1]).to.have.haveOwnPropertyDescriptor(
+          'video'
+        );
+      });
     });
 
-    it('`interpretResponse`', () => {
-      const response = {
-        headers: null,
-        body: {
-          id: 'requestId',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: 'bidId1',
-                  impid: 'bidId1',
-                  price: 0.18,
-                  adm: '<div>ad</div>',
-                  adid: '144762342',
-                  adomain: ['https://dummydomain.com'],
-                  iurl: 'iurl',
-                  cid: '109',
-                  crid: 'creativeId',
-                  cat: [],
-                  w: 640,
-                  h: 480,
-                  mtype: 1,
-                },
-              ],
-              seat: 'seat',
-            },
-          ],
-          cur: 'USD',
-        },
-      };
-      const bannerBidRequest = {
-        adUnitCode: 'test-div',
-        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-        bidId: 'bidId1',
-        bidder: 'michao',
-        bidderRequestId: '15246a574e859f',
-        bidRequestsCount: 1,
-        bidderRequestsCount: 1,
-        bidderWinsCount: 0,
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250]]
-          },
-        },
-        params: {
-          site: 123,
-          placement: '456',
-        },
+    describe('Required parameter behavior', () => {
+      it('sets siteId in site object', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.site.id).to.equal('456');
+      });
+
+      it('sets placementId in impression object', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.imp[0].ext.placement).to.equal('123');
+      });
+    });
+
+    describe('Optional parameter behavior', () => {
+      it('sets partnerId in publisher when specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+          partner: 123,
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.site.publisher.ext.partner).to.equal('123');
+      });
+
+      it('does not set publisher when partnerId is not specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.site.publisher).to.be.undefined;
+      });
+
+      it('sets reward enabled parameter in impression object when reward is specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+          reward: true,
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.imp[0].rwdd).to.equal(1);
+      });
+
+      it('sets reward disabled parameter in impression object when reward is not specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.imp[0].rwdd).to.equal(0);
+      });
+
+      it('sets bid floor in impression object when specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+          bidFloor: 0.2,
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.imp[0].bidfloor).to.equal(0.2);
+      });
+
+      it('sets bid floor to 0 in impression object when not specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.imp[0].bidfloor).to.equal(0);
+      });
+
+      it('sets block categories in bid request when specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+          bcat: ['IAB2'],
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.bcat).to.deep.equal(['IAB2']);
+      });
+
+      it('sets block advertisers in bid request when specified', () => {
+        bannerBidRequest.params = {
+          site: 456,
+          placement: '123',
+          badv: ['adomain.com'],
+        };
+        const bidderRequest = {
+          bids: [bannerBidRequest],
+          auctionId: bannerBidRequest.auctionId,
+          bidderRequestId: bannerBidRequest.bidderRequestId,
+        };
+
+        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
+
+        expect(result[0].data.badv).to.deep.equal(['adomain.com']);
+      });
+    });
+  });
+
+  describe('`interpretResponse`', () => {
+    it('sets renderer for video bid response when bid request was outstream', () => {
+      videoBidRequest.mediaTypes.video = {
+        ...videoBidRequest.mediaTypes.video,
+        context: 'outstream',
       };
       const bidderRequest = {
-        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-        auctionStart: 1579746300522,
+        bids: [videoBidRequest],
+        auctionId: videoBidRequest.auctionId,
         bidderCode: 'michao',
-        bidderRequestId: '15246a574e859f',
+        bidderRequestId: videoBidRequest.bidderRequestId,
+      };
+      const request = spec.buildRequests([videoBidRequest], bidderRequest);
+
+      const result = spec.interpretResponse(videoServerResponse, request[0]);
+
+      expect(result[0].renderer.url).to.equal(
+        'https://cdn.jsdelivr.net/npm/in-renderer-js@latest/dist/in-video-renderer.umd.min.js'
+      );
+    });
+
+    it('does not set renderer for video bid response when bid request was instream', () => {
+      videoBidRequest.mediaTypes.video = {
+        ...videoBidRequest.mediaTypes.video,
+        context: 'instream',
+      };
+      const bidderRequest = {
+        bids: [videoBidRequest],
+        auctionId: videoBidRequest.auctionId,
+        bidderCode: 'michao',
+        bidderRequestId: videoBidRequest.bidderRequestId,
+      };
+      const request = spec.buildRequests([videoBidRequest], bidderRequest);
+
+      const result = spec.interpretResponse(videoServerResponse, request[0]);
+
+      expect(result[0].renderer).to.be.undefined;
+    });
+
+    it('does not set renderer for banner bid response', () => {
+      const bidderRequest = {
         bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderCode: 'michao',
+        bidderRequestId: bannerBidRequest.bidderRequestId,
       };
-      const request = buildRequest(bannerBidRequest, bidderRequest, 'banner');
+      const request = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-      const result = interpretResponse(response, request);
+      const result = spec.interpretResponse(bannerServerResponse, request[0]);
 
-      expect(result).to.be.an('array');
-      expect(result[0]).to.have.property('currency', 'USD');
-      expect(result[0]).to.have.property('requestId', 'bidId1');
-      expect(result[0]).to.have.property('cpm', 0.18);
-      expect(result[0]).to.have.property('width', 640);
-      expect(result[0]).to.have.property('height', 480);
-      expect(result[0]).to.have.property('ad', '<div>ad</div>');
-      expect(result[0]).to.have.property('creativeId', 'creativeId');
-      expect(result[0]).to.have.property('netRevenue', true);
+      expect(result[0].renderer).to.be.undefined;
+    });
+  });
+
+  describe('`getUserSyncs`', () => {
+    it('performs iframe user sync when iframe is enabled', () => {
+      const syncOptions = {
+        iframeEnabled: true,
+      };
+
+      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
+
+      expect(result[0].url).to.equal(
+        'https://sync.michao-ssp.com/cookie-syncs?'
+      );
+      expect(result[0].type).to.equal('iframe');
     });
 
-    it('`getUserSyncs`', () => {
+    it('does not perform iframe user sync when iframe is disabled', () => {
+      const syncOptions = {
+        iframeEnabled: false,
+      };
+
+      const result = spec.getUserSyncs(syncOptions, {}, {}, {});
+
+      expect(result.length).to.equal(0);
+    });
+
+    it('sets GDPR parameters in user sync URL when GDPR applies', () => {
       const syncOptions = {
         iframeEnabled: true,
       };
       const gdprConsent = {
         gdprApplies: true,
-        consentString:
-          'CQIhBPbQIhBPbEkAAAENCZCAAAAAAAAAAAAAAAAAAAAA.II7Nd_X__bX9n-_7_6ft0eY1f9_r37uQzDhfNs-8F3L_W_LwX32E7NF36tq4KmR4ku1bBIQNtHMnUDUmxaolVrzHsak2cpyNKJ_JkknsZe2dYGF9Pn9lD-YKZ7_5_9_f52T_9_9_-39z3_9f___dv_-__-vjf_599n_v9fV_78_Kf9______-____________8A',
+        consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
       };
 
-      const result = spec.getUserSyncs(syncOptions, {}, gdprConsent);
+      const result = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
 
-      expect(result).to.deep.equal([
-        {
-          type: 'iframe',
-          url: 'https://sync.michao-ssp.com/cookie-syncs?gdpr=1&gdpr_consent=CQIhBPbQIhBPbEkAAAENCZCAAAAAAAAAAAAAAAAAAAAA.II7Nd_X__bX9n-_7_6ft0eY1f9_r37uQzDhfNs-8F3L_W_LwX32E7NF36tq4KmR4ku1bBIQNtHMnUDUmxaolVrzHsak2cpyNKJ_JkknsZe2dYGF9Pn9lD-YKZ7_5_9_f52T_9_9_-39z3_9f___dv_-__-vjf_599n_v9fV_78_Kf9______-____________8A',
-        },
-      ]);
+      expect(result[0].url).to.equal(
+        'https://sync.michao-ssp.com/cookie-syncs?gdpr=1&gdpr_consent=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
+      );
+      expect(result[0].type).to.equal('iframe');
     });
 
-    it('`onBidBillable`', () => {
-      const triggerPixelSpy = sinon.spy(utils, 'triggerPixel');
+    it('does not set GDPR parameters in user sync URL when GDPR does not apply', () => {
+      const syncOptions = {
+        iframeEnabled: true,
+      };
+      const gdrpConsent = {
+        gdrpApplies: false,
+      };
+
+      const result = spec.getUserSyncs(syncOptions, {}, gdrpConsent, {});
+
+      expect(result[0].url).to.equal(
+        'https://sync.michao-ssp.com/cookie-syncs?'
+      );
+      expect(result[0].type).to.equal('iframe');
+    });
+  });
+
+  describe('`onBidBillable`', () => {
+    it('does not generate billing when billing URL is not included in bid', () => {
+      const bid = {};
+
+      spec.onBidBillable(bid);
+
+      expect(triggerPixelSpy.calledOnce).to.be.false;
+    });
+
+    it('generates billing when billing URL is a string', () => {
       const bid = {
-        adUnitCode: 'test-div',
-        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-        bidId: '22c4871113f461',
-        bidder: 'michao',
-        bidderRequestId: '15246a574e859f',
-        bidRequestsCount: 1,
-        bidderRequestsCount: 1,
-        bidderWinsCount: 0,
-        mediaTypes: { banner: [[300, 250]] },
-        params: {
-          site: 123,
-          placement: '456',
-        },
         burl: 'https://example.com/burl',
+        cpm: 1,
       };
 
       spec.onBidBillable(bid);
 
-      expect(triggerPixelSpy.calledWith('https://example.com/burl')).to.true;
-      triggerPixelSpy.restore();
+      expect(triggerPixelSpy.calledOnce).to.be.true;
+    });
+
+    it('does not generate billing when billing URL is not a string', () => {
+      const bid = {
+        burl: 123,
+      };
+
+      spec.onBidBillable(bid);
+
+      expect(triggerPixelSpy.calledOnce).to.be.false;
     });
   });
 });
+
+const _bannerBidRequest = {
+  adUnitCode: 'test-div',
+  auctionId: 'banner-auction-id',
+  bidId: 'banner-bid-id',
+  bidder: 'michao',
+  bidderRequestId: 'banner-bidder-request-id',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0,
+  mediaTypes: { banner: [[300, 250]] },
+  params: {
+    site: 123,
+    placement: '456',
+  },
+};
+
+const _videoBidRequest = {
+  adUnitCode: 'test-div',
+  auctionId: 'video-auction-request-id',
+  bidId: 'video-bid-id',
+  bidder: 'michao',
+  bidderRequestId: 'video-bidder-request-id',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0,
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [640, 480],
+      mimes: ['video/mp4'],
+      minduration: 0,
+      maxduration: 120,
+      protocols: [2]
+    },
+  },
+  params: {
+    site: 123,
+    placement: '456',
+  },
+};
+
+const _nativeBidRequest = {
+  adUnitCode: 'test-div',
+  auctionId: 'native-auction-id',
+  bidId: 'native-bid-id',
+  bidder: 'michao',
+  bidderRequestId: 'native-bidder-request-id',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0,
+  mediaTypes: {
+    native: {
+      ortb: {
+        assets: [
+          {
+            id: 1,
+            title: {
+              len: 30,
+            },
+          },
+        ],
+      },
+    },
+  },
+  params: {
+    site: 123,
+    placement: '456',
+  },
+};
+
+const _videoServerResponse = {
+  headers: null,
+  body: {
+    id: 'video-server-response-id',
+    seatbid: [
+      {
+        bid: [
+          {
+            id: 'video-bid-id',
+            impid: 'video-bid-id',
+            price: 0.18,
+            adm: '<VAST></VAST>',
+            adid: '144762342',
+            adomain: ['https://dummydomain.com'],
+            iurl: 'iurl',
+            cid: '109',
+            crid: 'creativeId',
+            cat: [],
+            w: 300,
+            h: 250,
+            mtype: 2,
+          },
+        ],
+        seat: 'seat',
+      },
+    ],
+    cur: 'USD',
+  },
+};
+
+const _bannerServerResponse = {
+  headers: null,
+  body: {
+    id: 'banner-server-response-id',
+    seatbid: [
+      {
+        bid: [
+          {
+            id: 'banner-bid-id',
+            impid: 'banner-bid-id',
+            price: 0.18,
+            adm: '<div>ad</div>',
+            adid: '144762342',
+            adomain: ['https://dummydomain.com'],
+            iurl: 'iurl',
+            cid: '109',
+            crid: 'creativeId',
+            cat: [],
+            w: 300,
+            h: 250,
+            mtype: 1,
+          },
+        ],
+        seat: 'seat',
+      },
+    ],
+    cur: 'USD',
+  },
+};

@@ -5,6 +5,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {
   deepSetValue,
+  isArray,
+  isBoolean,
   isNumber,
   isStr,
   logError,
@@ -27,13 +29,77 @@ export const spec = {
   supportedMediaTypes: ENV.SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function (bid) {
-    if (!hasParamsObject(bid)) {
+    const params = bid.params;
+
+    if (!isNumber(params?.site)) {
+      domainLogger.invalidSiteError(params?.site);
       return false;
     }
 
-    if (!validateMichaoParams(bid.params)) {
-      domainLogger.bidRequestValidationError();
+    if (!isStr(params?.placement)) {
+      domainLogger.invalidPlacementError(params?.placement);
       return false;
+    }
+
+    if (params?.partner) {
+      if (!isNumber(params?.partner)) {
+        domainLogger.invalidPartnerError(params?.partner);
+        return false;
+      }
+    }
+
+    if (params?.badv) {
+      if (!isArray(params?.badv)) {
+        domainLogger.invalidBadvError(params?.badv);
+        return false;
+      }
+    }
+
+    if (params?.bcat) {
+      if (!isArray(params?.bcat)) {
+        domainLogger.invalidBcatError(params?.bcat);
+        return false;
+      }
+    }
+
+    if (bid.params?.reward) {
+      if (!isBoolean(params?.reward)) {
+        domainLogger.invalidRewardError(params?.reward);
+        return false;
+      }
+    }
+
+    const video = bid.mediaTypes?.video;
+    if (video) {
+      if (!video.context) {
+        domainLogger.invalidVideoContext();
+        return false;
+      }
+
+      if (!video.playerSize || !Array.isArray(video.playerSize)) {
+        domainLogger.invalidVideoPlayerSize();
+        return false;
+      }
+
+      if (!isNumber(video.minduration)) {
+        domainLogger.invalidVideoMinDuration();
+        return false;
+      }
+
+      if (!isNumber(video.maxduration)) {
+        domainLogger.invalidVideoMaxDuration();
+        return false;
+      }
+
+      if (!Array.isArray(video.mimes) || video.mimes.length === 0) {
+        domainLogger.invalidVideoMimes();
+        return false;
+      }
+
+      if (!Array.isArray(video.protocols) || video.protocols.length === 0) {
+        domainLogger.invalidVideoProtocols();
+        return false;
+      }
     }
 
     return true;
@@ -43,28 +109,46 @@ export const spec = {
     const bidRequests = [];
 
     validBidRequests.forEach((validBidRequest) => {
-      if (hasVideoMediaType(validBidRequest)) {
-        bidRequests.push(buildRequest(validBidRequest, bidderRequest, 'video'));
+      let bidRequestEachFormat = [];
+
+      if (validBidRequest.mediaTypes?.banner) {
+        bidRequestEachFormat.push({
+          ...validBidRequest,
+          mediaTypes: {
+            banner: validBidRequest.mediaTypes.banner,
+          },
+        });
       }
 
-      if (hasBannerMediaType(validBidRequest)) {
-        bidRequests.push(
-          buildRequest(validBidRequest, bidderRequest, 'banner')
-        );
+      if (validBidRequest.mediaTypes?.video) {
+        bidRequestEachFormat.push({
+          ...validBidRequest,
+          mediaTypes: {
+            video: validBidRequest.mediaTypes.video,
+          },
+        });
       }
 
-      if (hasNativeMediaType(validBidRequest)) {
-        bidRequests.push(
-          buildRequest(validBidRequest, bidderRequest, 'native')
-        );
+      if (validBidRequest.mediaTypes?.native) {
+        bidRequestEachFormat.push({
+          ...validBidRequest,
+          mediaTypes: {
+            native: validBidRequest.mediaTypes.native,
+          },
+        });
       }
+
+      bidRequests.push(buildRequest(bidRequestEachFormat, bidderRequest));
     });
 
     return bidRequests;
   },
 
   interpretResponse: function (serverResponse, request) {
-    return interpretResponse(serverResponse, request);
+    return converter.fromORTB({
+      response: serverResponse.body,
+      request: request.data,
+    }).bids;
   },
 
   getUserSyncs: function (
@@ -74,30 +158,92 @@ export const spec = {
     uspConsent
   ) {
     if (syncOptions.iframeEnabled) {
-      return [syncUser(gdprConsent)];
+      return [
+        {
+          type: 'iframe',
+          url:
+            'https://sync.michao-ssp.com/cookie-syncs?' +
+            generateGdprParams(gdprConsent),
+        },
+      ];
     }
+
+    return [];
   },
 
   onBidBillable: function (bid) {
     if (bid.burl && isStr(bid.burl)) {
-      billBid(bid);
+      triggerPixel(generateBillableUrl(bid));
     }
   },
 };
 
 export const domainLogger = {
-  bidRequestValidationError() {
-    logError('Michao Bid Adapter: wrong format of site or placement.');
+  invalidSiteError(value) {
+    logError(
+      `Michao Bid Adapter: Invalid site ID. Expected number, got ${typeof value}. Value: ${value}`
+    );
+  },
+
+  invalidPlacementError(value) {
+    logError(
+      `Michao Bid Adapter: Invalid placement. Expected string, got ${typeof value}. Value: ${value}`
+    );
+  },
+
+  invalidPartnerError(value) {
+    logError(
+      `Michao Bid Adapter: Invalid partner ID. Expected number, got ${typeof value}. Value: ${value}`
+    );
+  },
+
+  invalidBadvError(value) {
+    logError(
+      `Michao Bid Adapter: Invalid badv. Expected array, got ${typeof value}`
+    );
+  },
+
+  invalidBcatError(value) {
+    logError(
+      `Michao Bid Adapter: Invalid bcat. Expected array, got ${typeof value}`
+    );
+  },
+
+  invalidRewardError(value) {
+    logError(
+      `Michao Bid Adapter: Invalid reward. Expected boolean, got ${typeof value}. Value: ${value}`
+    );
+  },
+
+  invalidVideoContext() {
+    logError('Michao Bid Adapter: Video context is not set');
+  },
+
+  invalidVideoPlayerSize() {
+    logError('Michao Bid Adapter: Video playerSize is not set or invalid');
+  },
+
+  invalidVideoMinDuration() {
+    logError('Michao Bid Adapter: Video minDuration is not set or invalid');
+  },
+
+  invalidVideoMaxDuration() {
+    logError('Michao Bid Adapter: Video maxDuration is not set or invalid');
+  },
+
+  invalidVideoMimes() {
+    logError('Michao Bid Adapter: Video mimes is not set or invalid');
+  },
+
+  invalidVideoProtocols() {
+    logError('Michao Bid Adapter: Video protocols is not set or invalid');
   },
 };
 
-export function buildRequest(bidRequest, bidderRequest, mediaType) {
+function buildRequest(bidRequests, bidderRequest) {
   const openRTBBidRequest = converter.toORTB({
-    bidRequests: [bidRequest],
+    bidRequests: bidRequests,
     bidderRequest,
-    context: {
-      mediaType: mediaType,
-    },
   });
 
   return {
@@ -108,62 +254,22 @@ export function buildRequest(bidRequest, bidderRequest, mediaType) {
   };
 }
 
-export function interpretResponse(response, request) {
-  const bids = converter.fromORTB({
-    response: response.body,
-    request: request.data,
-  }).bids;
-
-  return bids;
-}
-
-export function syncUser(gdprConsent) {
+function generateGdprParams(gdprConsent) {
   let gdprParams = '';
 
   if (typeof gdprConsent === 'object') {
-    if (typeof gdprConsent.gdprApplies === 'boolean') {
+    if (gdprConsent?.gdprApplies) {
       gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
-        gdprConsent.consentString
+        gdprConsent.consentString || ''
       }`;
-    } else {
-      gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
     }
   }
 
-  return {
-    type: 'iframe',
-    url: 'https://sync.michao-ssp.com/cookie-syncs?' + gdprParams,
-  };
+  return gdprParams;
 }
 
-export function addRenderer(bid) {
-  bid.renderer.push(() => {
-    const inRenderer = new window.InVideoRenderer();
-    inRenderer.render(bid.adUnitCode, bid);
-  });
-}
-
-export function hasParamsObject(bid) {
-  return typeof bid.params === 'object';
-}
-
-export function validateMichaoParams(params) {
-  let valid = true;
-
-  if (!isNumber(params?.site)) {
-    valid = false;
-  }
-
-  if (!isStr(params?.placement)) {
-    valid = false;
-  }
-
-  return valid
-}
-
-export function billBid(bid) {
-  bid.burl = replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm);
-  triggerPixel(bid.burl);
+function generateBillableUrl(bid) {
+  return replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm);
 }
 
 const converter = ortbConverter({
@@ -184,7 +290,11 @@ const converter = ortbConverter({
     }
 
     if (bidRequest.params.partner) {
-      deepSetValue(openRTBBidRequest, 'site.publisher.ext.partner', bidRequest.params.partner.toString())
+      deepSetValue(
+        openRTBBidRequest,
+        'site.publisher.ext.partner',
+        bidRequest.params.partner.toString()
+      );
     }
 
     return openRTBBidRequest;
@@ -194,25 +304,35 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.placement', bidRequest.params.placement.toString());
     deepSetValue(imp, 'rwdd', bidRequest.params?.reward ? 1 : 0);
-    deepSetValue(imp, 'bidfloor', isNumber(bidRequest.params?.bidFloor) ? bidRequest.params?.bidFloor : 0);
+    deepSetValue(
+      imp,
+      'bidfloor',
+      isNumber(bidRequest.params?.bidFloor) ? bidRequest.params?.bidFloor : 0
+    );
 
     return imp;
   },
 
   bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
     const { bidRequest } = context;
-    let bidResponse = buildBidResponse(bid, context);
-    if (hasVideoMediaType(bidRequest)) {
+    if (
+      bidResponse.mediaType === VIDEO &&
+      bidRequest.mediaTypes.video.context === 'outstream'
+    ) {
       bidResponse.vastXml = bid.adm;
-      if (bidRequest.mediaTypes.video?.context === 'outstream') {
-        const renderer = Renderer.install({
-          id: bid.bidId,
-          url: ENV.RENDERER_URL,
-          adUnitCode: bid.adUnitCode,
+      const renderer = Renderer.install({
+        url: ENV.RENDERER_URL,
+        id: bidRequest.bidId,
+        adUnitCode: bidRequest.adUnitCode,
+      });
+      renderer.render(() => {
+        bid.renderer.push(() => {
+          const inRenderer = new window.InVideoRenderer();
+          inRenderer.render(bid.adUnitCode, bid);
         });
-        renderer.setRender(addRenderer);
-        bidResponse.renderer = renderer;
-      }
+      });
+      bidResponse.renderer = renderer;
     }
 
     return bidResponse;
@@ -224,21 +344,5 @@ const converter = ortbConverter({
     ttl: 360,
   },
 });
-
-function hasBannerMediaType(bid) {
-  return hasMediaType(bid, 'banner');
-}
-
-function hasVideoMediaType(bid) {
-  return hasMediaType(bid, 'video');
-}
-
-function hasNativeMediaType(bid) {
-  return hasMediaType(bid, 'native');
-}
-
-function hasMediaType(bid, mediaType) {
-  return bid.mediaTypes.hasOwnProperty(mediaType);
-}
 
 registerBidder(spec);
