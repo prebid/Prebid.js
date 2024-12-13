@@ -10,7 +10,6 @@ export function isBidRequestValid (bid) {
 
 export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
   const syncs = [];
-
   function addSyncs(bid) {
     const uris = bid.cookieURLs;
     const types = bid.cookieURLSTypes || [];
@@ -20,8 +19,8 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
         const type = types[i] || 'image';
 
         if ((!syncOptions.pixelEnabled && type === 'image') ||
-          (!syncOptions.iframeEnabled && type === 'iframe') ||
-          syncsCache[uri]) {
+            (!syncOptions.iframeEnabled && type === 'iframe') ||
+            syncsCache[uri]) {
           return;
         }
 

@@ -21,7 +21,7 @@ export const spec = {
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
   },
 
   buildRequests: function (bidRequests, adapterRequest) {

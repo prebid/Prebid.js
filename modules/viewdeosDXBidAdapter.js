@@ -23,7 +23,7 @@ export const spec = {
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
   },
   /**
    * Make a server request from the list of BidRequests
