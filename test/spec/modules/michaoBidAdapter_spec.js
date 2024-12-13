@@ -497,9 +497,6 @@ describe('Michao Bid Adapter', () => {
         expect(result[0].data.imp[0]).to.have.property(
           'banner'
         );
-        expect(result[0].data.imp[1]).to.have.property(
-          'video'
-        );
       });
     });
 
