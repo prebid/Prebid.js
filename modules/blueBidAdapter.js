@@ -16,7 +16,7 @@ const converter = ortbConverter({
     ttl: 100, // Default time-to-live for bid responses
   },
   imp,
-  request
+  request,
 });
 
 function request(buildRequest, imps, bidderRequest, context) {
@@ -42,22 +42,25 @@ export const spec = {
   // Validate bid request
   isBidRequestValid: function (bid) {
     return (
-      !!bid.params.placementId && !!bid.params.publisherId
-      // !!bid.params.params.bidFloor &&
-      // !!bid.params.params.currency
+      !!bid.params.placementId &&
+      !!bid.params.publisherId &&
+      !!bid.params.params.bidFloor &&
+      !!bid.params.params.currency
     );
   },
 
   // Build OpenRTB requests using `ortbConverter`
   buildRequests: function (validBidRequests, bidderRequest) {
     const context = {
-      publisherId: validBidRequests.find(bidRequest => bidRequest.params?.publisherId)?.params.publisherId,
-    }
+      publisherId: validBidRequests.find(
+        (bidRequest) => bidRequest.params?.publisherId
+      )?.params.publisherId,
+    };
 
     const ortbRequest = converter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest,
-      context
+      context,
     });
 
     // Add GVLID and cookie ID to the request
