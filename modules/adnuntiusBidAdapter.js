@@ -356,10 +356,12 @@ export const spec = {
     }
 
     function buildAdResponse(bidderCode, ad, adUnit, dealCount) {
-      const destinationUrls = ad.destinationUrls || {};
-      const advertiserDomains = [];
-      for (const value of Object.values(destinationUrls)) {
-        advertiserDomains.push(value.split('/')[2])
+      const advertiserDomains = ad.advertiserDomains || [];
+      if (advertiserDomains.length === 0) {
+        const destinationUrls = ad.destinationUrls || {};
+        for (const value of Object.values(destinationUrls)) {
+          advertiserDomains.push(value.split('/')[2])
+        }
       }
       const adResponse = {
         bidderCode: bidderCode,
