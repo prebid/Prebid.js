@@ -137,7 +137,7 @@ export const spec = {
           SYNC_URL = 'https://static.cdn.admatic.de/admaticde/sync.html';
           break;
         case 'adt':
-          SYNC_URL = 'https://static.cdn.adtarget.org/adt/sync.html';
+          SYNC_URL = 'https://static.cdn.adtarget.biz/adt/sync.html';
           break;
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
