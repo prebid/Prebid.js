@@ -23,16 +23,18 @@
                     sizes: [[300, 250]],
                 }
             },
-
             // Replace this object to test a new Adapter!
             bids: [{
-                bidder: 'appnexus',
+                bidder: 'blue',
                 params: {
-                    placementId: 13144370
+                    bidFloor: 0.05,
+                    currency: 'USD',
+                    placementId: 13144370,
+                    publisherId: 13144370
                 }
             }]
-
-        }];
+        },
+        ];
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
