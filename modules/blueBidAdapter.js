@@ -44,8 +44,8 @@ export const spec = {
     return (
       !!bid.params.placementId &&
       !!bid.params.publisherId &&
-      !!bid.params.params.bidFloor &&
-      !!bid.params.params.currency
+      !!bid.params.bidFloor &&
+      !!bid.params.currency
     );
   },
 
