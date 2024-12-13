@@ -310,6 +310,10 @@ const converter = ortbConverter({
       isNumber(bidRequest.params?.bidFloor) ? bidRequest.params?.bidFloor : 0
     );
 
+    if (!bidRequest.mediaTypes?.native) {
+      delete imp.native;
+    }
+
     return imp;
   },
 
