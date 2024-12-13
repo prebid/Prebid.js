@@ -8,6 +8,7 @@
 -->
 
 <html>
+
 <head>
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
@@ -22,6 +23,7 @@
                     sizes: [[300, 250]],
                 }
             },
+
             // Replace this object to test a new Adapter!
             bids: [{
                 bidder: 'appnexus',
@@ -44,7 +46,7 @@
             googletag.pubads().disableInitialLoad();
         });
 
-        pbjs.que.push(function() {
+        pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
