@@ -210,7 +210,7 @@ function slotParams(bidRequest, bidderRequests) {
     transactionId: bidRequest.ortb2Imp?.ext?.tid,
     ext: {
       dfp_id: bidRequest.adUnitCode,
-      display_count: bidRequest.bidRequestsCount
+      display_count: bidRequest.auctionsCount
     },
     all: bidRequest.params
   };
