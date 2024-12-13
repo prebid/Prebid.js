@@ -48,6 +48,7 @@
 
         pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
+
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT
@@ -90,4 +91,5 @@
         </script>
     </div>
 </body>
+
 </html>
