@@ -19,7 +19,6 @@ const SIMPLE_BID_REQUEST = {
   params: {
     sourceId: 'sourceId',
     accountId: 'accountId',
-    subdomain: 'bidder_us',
   },
   mediaTypes: {
     banner: {
@@ -49,7 +48,6 @@ const BANNER_BID_REQUEST = {
   params: {
     sourceId: 'sourceId',
     accountId: 'accountId',
-    subdomain: 'bidder_us',
   },
   mediaTypes: {
     banner: {
@@ -88,7 +86,6 @@ const VIDEO_BID_REQUEST = {
   params: {
     sourceId: '123',
     accountId: '123',
-    subdomain: 'bidder_us',
   },
   adUnitCode: '/adunit-code/test-path',
   bidderRequestId: 'test-bid-request-1',
@@ -131,7 +128,6 @@ const NATIVE_BID_REQUEST = {
   params: {
     sourceId: 'sourceId',
     accountId: 'accountId',
-    subdomain: 'bidder_us',
   },
   adUnitCode: '/adunit-code/test-path',
   bidId: 'test-bid-id-1',

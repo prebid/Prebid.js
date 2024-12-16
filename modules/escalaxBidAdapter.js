@@ -17,7 +17,6 @@ function createImp(buildImp, bidRequest, context) {
     [BIDDER_CODE]: {
       sourceId: bidRequest.params.sourceId,
       accountId: bidRequest.params.accountId,
-      subdomain: bidRequest.params.subdomain || ESCALAX_DEFAULT_SUBDOMAIN,
     }
   };
   if (!imp.bidfloor) imp.bidfloor = bidRequest.params.bidfloor;
@@ -36,6 +35,29 @@ function createBidResponse(buildBidResponse, bid, context) {
   const bidResponse = buildBidResponse(bid, context);
   bidResponse.cur = 'USD';
   return bidResponse;
+}
+
+function getSubdomain() {
+  const regionMap = {
+    'Europe': 'bidder_eu',
+    'Africa': 'bidder_eu',
+    'Atlantic': 'bidder_eu',
+    'Arctic': 'bidder_eu',
+    'Asia': 'bidder_apac',
+    'Australia': 'bidder_apac',
+    'Antarctica': 'bidder_apac',
+    'Pacific': 'bidder_apac',
+    'Indian': 'bidder_apac',
+    'America': 'bidder_us'
+  };
+
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const region = timezone.split('/')[0];
+    return regionMap[region] || 'bidder_us';
+  } catch (err) {
+    return 'bidder_us';
+  }
 }
 
 const converter = ortbConverter({
@@ -59,7 +81,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests && validBidRequests.length === 0) return [];
     const { sourceId, accountId } = validBidRequests[0].params;
-    const subdomain = validBidRequests[0].params.subdomain;
+    const subdomain = getSubdomain();
     const endpointURL = ESCALAX_URL
       .replace(ESCALAX_SUBDOMAIN_MACRO, subdomain || ESCALAX_DEFAULT_SUBDOMAIN)
       .replace(ESCALAX_ACCOUNT_ID_MACRO, sourceId)

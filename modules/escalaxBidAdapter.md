@@ -30,7 +30,6 @@ const adUnits = [
         params: {
           accountId: "hash",
           sourceId: "sourceId",
-          subdomain: "subdomain",
         },
       },
     ],
@@ -46,7 +45,6 @@ const adUnits = [
         params: {
           accountId: "hash",
           sourceId: "sourceId",
-          subdomain: "subdomain",
         },
       },
     ],
@@ -74,7 +72,6 @@ const adUnits = [
         params: {
           accountId: "hash",
           sourceId: "sourceId",
-          subdomain: "subdomain",
         },
       },
     ],
