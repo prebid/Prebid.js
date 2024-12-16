@@ -42,8 +42,9 @@ const adUnits = [
       {
         bidder: 'akcelo',
         params: {
-          siteId: 42, // required
-          adUnitId: 142, // required
+          siteId: 763, // required
+          adUnitId: 7965, // required
+          test: 1, // optional, use 0 to disable test creatives
         },
       },
     ],
