@@ -329,6 +329,79 @@ function bundle(dev, moduleArr) {
   const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+  // change output filename if argument --tag given
+  if (argv.tag && argv.tag.length) {
+    outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
+  }
+  gutil.log('Concatenating files:\n', entries);
+  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  gutil.log('Generating bundle:', outputFileName);
+  const wrap = wrapWithHeaderAndFooter(dev, modules);
+  return wrap(gulp.src(entries))
+    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
+    .pipe(concat(outputFileName))
+    .pipe(gulpif(sm, sourcemaps.write('.')));
+}
+
+/* gu-mod-start */
+/* Custom Guardian gulp functions to build separate versions of Prebid for different regions */
+
+function guMakeWebpackPkg(version = 'uk', config = webpackConfig) {
+  var cloned = _.cloneDeep(config)
+  if (!argv.sourceMaps) {
+    delete cloned.devtool;
+  }
+
+  return function buildBundle() {
+    return prebidSource(cloned)
+      /* gu-mod-start */
+      // Surface exceptions from webpack
+      .on('error', (err) => {
+        console.error(err);
+      })
+      /* gu-mod-end */
+      .pipe(gulp.dest(`build/dist/${version}`));
+  }
+}
+
+function guClean() {
+  return gulp.src(['build/dist/' + argv.version], {
+    read: false,
+    allowEmpty: true
+  })
+    .pipe(gulpClean());
+}
+
+function guGulpBundle(dev, version) {
+  return guBundle(dev, version).pipe(gulp.dest('build/' + (dev ? 'dev/' : 'dist/') + version));
+}
+
+function guBundle(dev, version, moduleArr) {
+  var modules = moduleArr || helpers.getArgModules();
+  var allModules = helpers.getModuleNames(modules);
+  const sm = dev || argv.sourceMaps;
+
+  if (modules.length === 0) {
+    modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
+  } else {
+    var diff = _.difference(modules, allModules);
+    if (diff.length !== 0) {
+      throw new gutil.PluginError({
+        plugin: 'bundle',
+        message: 'invalid modules: ' + diff.join(', ')
+      });
+    }
+  }
+  const coreFile = helpers.guGetBuiltPrebidCoreFile(dev, version);
+  const moduleFiles = helpers.guGetBuiltModules(dev, modules, version);
+  const depGraph = require(helpers.guGetBuiltPath(dev, 'dependencies.json', version));
+  const dependencies = new Set();
+  [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
+    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.guGetBuiltPath(dev, dep, version)));
+  });
+  const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
+
+  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
@@ -345,6 +418,8 @@ function bundle(dev, moduleArr) {
     .pipe(concat(outputFileName))
     .pipe(gulpif(sm, sourcemaps.write('.')));
 }
+
+/* gu-mod-end */
 
 // Run the unit tests.
 //
@@ -538,6 +613,11 @@ gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRend
 
 gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
 gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
+
+/* gu-mod-start */
+gulp.task('gu-build-bundle-prod', gulp.series('build-creative-prod', guMakeWebpackPkg(argv.version, standaloneDebuggingConfig), guMakeWebpackPkg(argv.version), guGulpBundle.bind(null, false, argv.version)));
+/* gu-mod-end */
+
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, true)));
@@ -553,6 +633,11 @@ gulp.task(viewCoverage);
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+
+/* gu-mod-start */
+gulp.task('gu-build', gulp.series(guClean, 'gu-build-bundle-prod', updateCreativeExample));
+/* gu-mod-end */
+
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));

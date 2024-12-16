@@ -1,9 +1,20 @@
 # Built Files
 node_modules/
-build
 # gu-mod-start #
-# we install prebid as a dependency via this built file
-!build/dist/prebid.js
+# need to be granular otherwise it ignores the build files that we need
+build/dist/uk/*
+build/dist/us/*
+build/dist/aus-nz/*
+build/dist/row/*
+build/dist/all/*
+build/creative
+
+# we install prebid as a dependency via these built files
+!build/dist/uk/prebid.js
+!build/dist/us/prebid.js
+!build/dist/aus-nz/prebid.js
+!build/dist/row/prebid.js
+!build/dist/all/prebid.js
 # gu-mod-end #
 
 # Test Files

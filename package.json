@@ -1,6 +1,6 @@
 {
   "name": "@guardian/prebid.js",
-  "version": "8.52.0-8",
+  "version": "8.52.0-9",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "files": [
@@ -10,7 +10,13 @@
     "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint",
-    "build": "gulp build --modules=modules.json"
+    "build": "gulp build --modules=modules.json",
+    "gu-build": "gulp gu-build --modules=modules.json --version=all",
+    "gu-build:uk": "gulp gu-build --modules=modules-uk.json --version=uk",
+    "gu-build:us": "gulp gu-build --modules=modules-us.json --version=us",
+    "gu-build:aus-nz": "gulp gu-build --modules=modules-aus-nz.json --version=aus-nz",
+    "gu-build:row": "gulp gu-build --modules=modules-row.json --version=row",
+    "gu-build:all": "gulp gu-build --modules=modules-uk.json --version=uk && gulp gu-build --modules=modules-us.json --version=us && gulp gu-build --modules=modules-aus-nz.json --version=aus-nz && gulp gu-build --modules=modules-row.json --version=row"
   },
   "repository": {
     "type": "git",

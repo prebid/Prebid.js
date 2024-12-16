@@ -1,0 +1,16 @@
+[
+  "adyoulikeBidAdapter",
+  "appnexusBidAdapter",
+  "consentManagement",
+  "consentManagementUsp",
+  "criteoBidAdapter",
+  "guAnalyticsAdapter",
+  "ixBidAdapter",
+  "openxBidAdapter",
+  "permutiveRtdProvider",
+  "prebidServerBidAdapter",
+  "pubmaticBidAdapter",
+  "sharedIdSystem",
+  "tripleliftBidAdapter",
+  "rubiconBidAdapter"
+]
