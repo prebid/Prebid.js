@@ -922,7 +922,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         keepalive: true,
       });
       expect(fetchArgs[1]?.headers).to.deep.equal({
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
       });
     });
 
@@ -973,7 +973,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         keepalive: true,
       });
       expect(fetchArgs[1]?.headers).to.deep.equal({
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
       });
     });
 
@@ -1025,7 +1025,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         keepalive: true,
       });
       expect(fetchArgs[1]?.headers).to.deep.equal({
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
       });
     });
 
@@ -1076,7 +1076,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         keepalive: true,
       });
       expect(fetchArgs[1]?.headers).to.deep.equal({
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
       });
     });
 
@@ -1127,7 +1127,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         keepalive: true,
       });
       expect(fetchArgs[1]?.headers).to.deep.equal({
-        'Content-Type': 'text/plain',
+        'Content-Type': 'application/json',
       });
     });
 

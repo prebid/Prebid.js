@@ -16,7 +16,7 @@ export const ADAPTER_VERSION = 1.0;
 export const BIDDER_CODE = 'sonarads';
 export const GVLID = 1300;
 export const DEFAULT_CUR = 'USD';
-export const SERVER_PATH_US1_BID = 'https://prebidjs-bids-us1.sonar-ads.com/bids';
+export const SERVER_PATH_US1_BID = 'https://prebidjs-bids-us1.sonar-ads.com/analyze_request/bids';
 export const SERVER_PATH_US1_EVENTS = 'https://prebidjs-events-us1.sonar-ads.com/events';
 export const SERVER_PATH_US1_SYNC = 'https://prebidjs-sync-us1.sonar-ads.com/sync';
 
@@ -41,7 +41,7 @@ function reportEvents(eventType, eventData) {
     credentials: 'include',
     method: 'POST',
     headers: {
-      'Content-Type': 'text/plain'
+      'Content-Type': 'application/json'
     }
   }).catch((_e) => {
     // ignore errors for now
@@ -178,7 +178,7 @@ export const spec = {
         url: SERVER_PATH_US1_BID,
         data: data,
         options: {
-          contentType: 'text/plain',
+          contentType: 'application/json',
           crossOrigin: true,
           withCredentials: true
         }
