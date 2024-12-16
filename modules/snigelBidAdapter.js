@@ -2,8 +2,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'snigel';
@@ -17,6 +16,7 @@ const SESSION_ID_KEY = '_sn_session_pba';
 const getConfig = config.getConfig;
 const storageManager = getStorageManager({bidderCode: BIDDER_CODE});
 const refreshes = {};
+const placementCounters = {};
 const pageViewId = generateUUID();
 const pageViewStart = new Date().getTime();
 let auctionCounter = 0;
@@ -46,7 +46,8 @@ export const spec = {
         gdprConsent: gdprApplies === true ? hasFullGdprConsent(deepAccess(bidderRequest, 'gdprConsent')) : false,
         cur: getCurrencies(),
         test: getTestFlag(),
-        version: getGlobal().version,
+        version: 'v' + '$prebid.version$',
+        adapterVersion: '2.0',
         gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || deepAccess(bidderRequest, 'ortb2.regs.gpp'),
         gpp_sid:
           deepAccess(bidderRequest, 'gppConsent.applicableSections') || deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'),
@@ -72,6 +73,7 @@ export const spec = {
             gpid: deepAccess(r, 'ortb2Imp.ext.gpid'),
             pbadslot: deepAccess(r, 'ortb2Imp.ext.data.pbadslot') || deepAccess(r, 'ortb2Imp.ext.gpid'),
             name: r.params.placement,
+            counter: getPlacementCounter(r.params.placement),
             sizes: r.sizes,
             floor: getPriceFloor(r, BANNER, FLOOR_MATCH_ALL_SIZES),
             refresh: getRefreshInformation(r.adUnitCode),
@@ -181,6 +183,17 @@ function getRefreshInformation(adUnitCode) {
     count: refresh.count,
     time: timeDifferenceSeconds,
   };
+}
+
+function getPlacementCounter(placement) {
+  const counter = placementCounters[placement];
+  if (counter === undefined) {
+    placementCounters[placement] = 0;
+    return 0;
+  }
+
+  placementCounters[placement]++;
+  return placementCounters[placement];
 }
 
 function mapIdToRequestId(id, bidRequest) {

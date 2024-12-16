@@ -1,5 +1,5 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
-import {logInfo, getWindowLocation, _each, getBidIdParameter} from '../src/utils.js';
+import {logInfo, getWindowLocation, _each, getBidIdParameter, isPlainObject} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -188,12 +188,12 @@ function _getFloor(bid, currencyPar, sizes) {
       size: isSize ? sizes : '*'
     });
 
-    if (typeof floorInfo === 'object' &&
-      !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) &&
+      !isNaN(parseFloat(floorInfo?.floor))) {
       floor = floorInfo.floor;
     }
 
-    if (typeof floorInfo === 'object' && floorInfo.currency) {
+    if (isPlainObject(floorInfo) && floorInfo.currency) {
       currencyResult = floorInfo.currency;
     }
   }

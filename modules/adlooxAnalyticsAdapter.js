@@ -28,6 +28,7 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
 
@@ -232,6 +233,7 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   link.setAttribute('href', `${uri.protocol}://${uri.host}${uri.pathname}`);
   link.setAttribute('rel', 'preload');
   link.setAttribute('as', 'script');
+  // TODO fix rules violation
   insertElement(link);
 }
 
@@ -261,7 +263,7 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
     [ 'creatype', '%%creatype%%' ]
   ]);
 
-  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), 'adloox');
+  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
 }
 
 adapterManager.registerAnalyticsAdapter({

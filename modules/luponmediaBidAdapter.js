@@ -6,10 +6,13 @@ import {
   isArray,
   isEmpty,
   isFn,
+  isPlainObject,
   logError,
   logMessage,
   logWarn,
-  parseSizesInput
+  parseSizesInput,
+  sizeTupleToRtbSize,
+  sizesToSizeTuples
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -271,16 +274,8 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   let bannerSizes = [];
 
   if (bannerParams && bannerParams.sizes) {
-    const sizes = parseSizesInput(bannerParams.sizes);
-
     // get banner sizes in form [{ w: <int>, h: <int> }, ...]
-    const format = sizes.map(size => {
-      const [ width, height ] = size.split('x');
-      const w = parseInt(width, 10);
-      const h = parseInt(height, 10);
-      return { w, h };
-    });
-
+    const format = sizesToSizeTuples(bannerParams.sizes).map(sizeTupleToRtbSize);
     bannerSizes = format;
   }
 
@@ -326,7 +321,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     } catch (e) {
       logError('LuponMedia: getFloor threw an error: ', e);
     }
-    bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
+    bidFloor = isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
   } else {
     bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
   }

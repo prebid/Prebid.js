@@ -12,6 +12,8 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 
+const SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
+
 const ADTYPE_IMG = 'Img';
 const ADTYPE_VIDEO = 'Video';
 const ADTYPE_NATIVE = 'Native';
@@ -172,6 +174,7 @@ describe('smaatoBidAdapterTest', () => {
             id: 'bidId',
             banner: BANNER_OPENRTB_IMP,
             tagid: 'adspaceId',
+            secure: 1
           }
         ]);
       });
@@ -1667,8 +1670,41 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('getUserSyncs', () => {
-    it('returns no pixels', () => {
+    it('when pixelEnabled false then returns no pixels', () => {
       expect(spec.getUserSyncs()).to.be.empty
+    })
+
+    it('when pixelEnabled true then returns pixel', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, null, null)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: SYNC_URL
+          }
+        ]
+      )
+    })
+
+    it('when pixelEnabled true and gdprConsent then returns pixel with gdpr params', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, {gdprApplies: true, consentString: CONSENT_STRING}, null)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
+      )
+    })
+
+    it('when pixelEnabled true and gdprConsent without gdpr then returns pixel with gdpr_consent', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, {consentString: CONSENT_STRING}, null), null).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
+      )
     })
   })
 });

@@ -30,6 +30,7 @@ pbjs.setConfig({
       params: {
         organizationId: '1000' // Required. Provided by Adagio
         site: 'my-site' // Required. Provided by Adagio
+        placementSource: 'ortb' // Optional. Where to find the "placement" value. Possible values: 'ortb'<default> | 'code' | 'gpid'
       }
     }]
   }

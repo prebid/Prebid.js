@@ -5,7 +5,8 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';
 
 const BIDDER_CODE = 'viant';
-const ENDPOINT = 'https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder'
+const ENDPOINT = 'https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder'
+const ADAPTER_VERSION = '2.0.0';
 
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -85,6 +86,25 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     if (!data.regs.ext) data.regs.ext = {};
     data.regs.ext.us_privacy = bidderRequest.uspConsent;
   }
+  let imp = data.imp || [];
+  let dealsMap = new Map();
+  if (bidderRequest.bids) {
+    bidderRequest.bids.forEach(bid => {
+      if (bid.ortb2Imp && bid.ortb2Imp.pmp) {
+        dealsMap.set(bid.bidId, bid.ortb2Imp.pmp);
+      }
+    });
+  }
+  imp.forEach((element) => {
+    let deals = dealsMap.get(element.id);
+    if (deals) {
+      element.pmp = deals;
+    }
+  });
+  data.ext = data.ext || {};
+  data.ext.viant = {
+    adapterVersion: ADAPTER_VERSION
+  };
   return {
     method: 'POST',
     url: ENDPOINT,

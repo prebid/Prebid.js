@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -12,13 +12,20 @@ const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
-const DEFAULT_VAST_VERSION = 'vast4'
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
 const METADATA_KEY_SEPARATOR = '@@@';
 
 export const misc = {
+  findHighestPrice: function(arr, bidType) {
+    return arr.reduce((highest, cur) => {
+      const currentBid = cur[bidType];
+      const highestBid = highest[bidType]
+      return currentBid.currency === highestBid.currency && currentBid.amount > highestBid.amount ? cur : highest;
+    }, arr[0]);
+  }
 };
 
 const storageTool = (function () {
@@ -219,7 +226,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: BIDDER_CODE_DEAL_ALIASES,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function (bid) {
     // The auId MUST be a hexadecimal string
     const validAuId = AU_ID_REGEX.test(bid.params.auId);
@@ -237,6 +244,13 @@ export const spec = {
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
     }
+    const win = getWindowTop() || window;
+    if (win.screen && win.screen.availHeight) {
+      queryParamsAndValues.push('screen=' + win.screen.availWidth + 'x' + win.screen.availHeight);
+    }
+    if (win.innerWidth) {
+      queryParamsAndValues.push('viewport=' + win.innerWidth + 'x' + win.innerHeight);
+    }
 
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has('script-override')) {
@@ -252,6 +266,7 @@ export const spec = {
 
     const bidderConfig = config.getConfig();
     if (bidderConfig.useCookie === false) queryParamsAndValues.push('noCookies=true');
+    if (bidderConfig.advertiserTransparency === true) queryParamsAndValues.push('advertiserTransparency=true');
     if (bidderConfig.maxDeals > 0) queryParamsAndValues.push('ds=' + Math.min(bidderConfig.maxDeals, MAXIMUM_DEALS_LIMIT));
 
     const bidRequests = {};
@@ -265,16 +280,19 @@ export const spec = {
       }
 
       let network = bid.params.network || 'network';
-      if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context !== 'outstream') {
-        network += '_video'
-      }
-
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
-      if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
+
+      const refererInfo = bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo : {};
+      if (refererInfo.page) {
+        networks[network].context = bidderRequest.refererInfo.page;
+      }
+      if (refererInfo.canonicalUrl) {
+        networks[network].canonical = bidderRequest.refererInfo.canonicalUrl;
+      }
 
       const payloadRelatedData = storageTool.getPayloadRelatedData(bid.params.network);
       if (Object.keys(payloadRelatedData).length > 0) {
@@ -283,20 +301,40 @@ export const spec = {
 
       const bidTargeting = {...bid.params.targeting || {}};
       targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest);
-      const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: bid.params.targetId || bid.bidId };
-      const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
-      if (maxDeals > 0) {
-        adUnit.maxDeals = maxDeals;
+      const mediaTypes = bid.mediaTypes || {};
+      const validMediaTypes = SUPPORTED_MEDIA_TYPES.filter(mt => {
+        return mediaTypes[mt];
+      }) || [];
+      if (validMediaTypes.length === 0) {
+        // banner ads by default if nothing specified, dimensions to be derived from the ad unit within adnuntius system
+        validMediaTypes.push(BANNER);
       }
-      if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) adUnit.dimensions = bid.mediaTypes.banner.sizes
-      networks[network].adUnits.push(adUnit);
+      const isSingleFormat = validMediaTypes.length === 1;
+      validMediaTypes.forEach(mediaType => {
+        const mediaTypeData = mediaTypes[mediaType];
+        if (mediaType === VIDEO && mediaTypeData && mediaTypeData.context === 'outstream') {
+          return;
+        }
+        const targetId = (bid.params.targetId || bid.bidId) + (isSingleFormat || mediaType === BANNER ? '' : ('-' + mediaType));
+        const adUnit = {...bidTargeting, auId: bid.params.auId, targetId: targetId};
+        if (mediaType === VIDEO) {
+          adUnit.adType = 'VAST';
+        }
+        const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
+        if (maxDeals > 0) {
+          adUnit.maxDeals = maxDeals;
+        }
+        if (mediaType === BANNER && mediaTypeData && mediaTypeData.sizes) {
+          adUnit.dimensions = mediaTypeData.sizes;
+        }
+        networks[network].adUnits.push(adUnit);
+      });
     }
 
     const requests = [];
     const networkKeys = Object.keys(networks);
     for (let j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
-      if (network.indexOf('_video') > -1) { queryParamsAndValues.push('tt=' + DEFAULT_VAST_VERSION) }
       const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
       requests.push({
         method: 'POST',
@@ -313,7 +351,7 @@ export const spec = {
     if (serverResponse.body.metaData) {
       storageTool.saveToStorage(serverResponse.body.metaData, serverResponse.body.network);
     }
-    const adUnits = serverResponse.body.adUnits;
+    const responseAdUnits = serverResponse.body.adUnits;
 
     let validatedBidType = validateBidType(config.getConfig().bidType);
     if (bidRequest.bid) {
@@ -325,10 +363,12 @@ export const spec = {
     }
 
     function buildAdResponse(bidderCode, ad, adUnit, dealCount) {
-      const destinationUrls = ad.destinationUrls || {};
-      const advertiserDomains = [];
-      for (const value of Object.values(destinationUrls)) {
-        advertiserDomains.push(value.split('/')[2])
+      const advertiserDomains = ad.advertiserDomains || [];
+      if (advertiserDomains.length === 0) {
+        const destinationUrls = ad.destinationUrls || {};
+        for (const value of Object.values(destinationUrls)) {
+          advertiserDomains.push(value.split('/')[2])
+        }
       }
       const adResponse = {
         bidderCode: bidderCode,
@@ -359,6 +399,35 @@ export const spec = {
       return adResponse;
     }
 
+    const highestYieldingAdUnits = [];
+    if (responseAdUnits.length === 1) {
+      highestYieldingAdUnits.push(responseAdUnits[0]);
+    } else if (responseAdUnits.length > 1) {
+      bidRequest.bid.forEach((resp) => {
+        const multiFormatAdUnits = [];
+        SUPPORTED_MEDIA_TYPES.forEach((mediaType) => {
+          const suffix = mediaType === BANNER ? '' : '-' + mediaType;
+          const targetId = (resp?.params?.targetId || resp.bidId) + suffix;
+
+          const au = responseAdUnits.find((rAu) => {
+            return rAu.targetId === targetId && rAu.matchedAdCount > 0;
+          });
+          if (au) {
+            multiFormatAdUnits.push(au);
+          }
+        });
+        if (multiFormatAdUnits.length > 0) {
+          const highestYield = multiFormatAdUnits.length === 1 ? multiFormatAdUnits[0] : multiFormatAdUnits.reduce((highest, cur) => {
+            const highestBid = misc.findHighestPrice(highest.ads, validatedBidType)[validatedBidType];
+            const curBid = misc.findHighestPrice(cur.ads, validatedBidType)[validatedBidType];
+            return curBid.currency === highestBid.currency && curBid.amount > highestBid.amount ? cur : highest;
+          }, multiFormatAdUnits[0]);
+          highestYield.targetId = resp.bidId;
+          highestYieldingAdUnits.push(highestYield);
+        }
+      });
+    }
+
     const bidsById = bidRequest.bid.reduce((response, bid) => {
       return {
         ...response,
@@ -366,7 +435,7 @@ export const spec = {
       };
     }, {});
 
-    const hasBidAdUnits = adUnits.filter((au) => {
+    const hasBidAdUnits = highestYieldingAdUnits.filter((au) => {
       const bid = bidsById[au.targetId];
       if (bid && bid.bidder && BIDDER_CODE_DEAL_ALIASES.indexOf(bid.bidder) < 0) {
         return au.matchedAdCount > 0;
@@ -376,7 +445,7 @@ export const spec = {
         return false;
       }
     });
-    const hasDealsAdUnits = adUnits.filter((au) => {
+    const hasDealsAdUnits = highestYieldingAdUnits.filter((au) => {
       return au.deals && au.deals.length > 0;
     });
 

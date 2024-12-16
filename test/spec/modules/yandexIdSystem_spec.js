@@ -1,6 +1,18 @@
 // @ts-check
 
-import { yandexIdSubmodule, PREBID_STORAGE, BIDDER_CODE, YANDEX_USER_ID_KEY, YANDEX_COOKIE_STORAGE_TYPE, YANDEX_MIN_EXPIRE_DAYS } from '../../../modules/yandexIdSystem.js';
+import {
+  BIDDER_EID_KEY,
+  YANDEX_ID_KEY,
+  YANDEX_EXT_COOKIE_NAMES,
+  BIDDER_CODE,
+  YANDEX_USER_ID_KEY,
+  YANDEX_STORAGE_TYPE,
+  YANDEX_MIN_EXPIRE_DAYS,
+  PREBID_STORAGE,
+  yandexIdSubmodule,
+} from '../../../modules/yandexIdSystem.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 import {createSandbox} from 'sinon'
 import * as utils from '../../../src/utils.js';
 
@@ -18,7 +30,7 @@ const CORRECT_SUBMODULE_CONFIG = {
   storage: {
     expires: YANDEX_MIN_EXPIRE_DAYS,
     name: YANDEX_USER_ID_KEY,
-    type: YANDEX_COOKIE_STORAGE_TYPE,
+    type: YANDEX_STORAGE_TYPE,
     refreshInSeconds: undefined,
   },
   params: undefined,
@@ -50,6 +62,8 @@ const INCORRECT_SUBMODULE_CONFIGS = [
   },
 ];
 
+const YANDEX_EXT_COOKIE_VALUE = 'ext_cookie_value';
+
 describe('YandexId module', () => {
   /** @type {SinonSandbox} */
   let sandbox;
@@ -57,11 +71,17 @@ describe('YandexId module', () => {
   let getCryptoRandomValuesStub;
   /** @type {SinonStub} */
   let randomStub;
+  /** @type {SinonStub} */
+  let getCookieStub;
+  /** @type {SinonStub} */
+  let cookiesAreEnabledStub;
   /** @type {SinonSpy} */
   let logErrorSpy;
 
   beforeEach(() => {
     sandbox = createSandbox();
+    getCookieStub = sandbox.stub(PREBID_STORAGE, 'getCookie').returns(YANDEX_EXT_COOKIE_VALUE);
+    cookiesAreEnabledStub = sandbox.stub(PREBID_STORAGE, 'cookiesAreEnabled');
     logErrorSpy = sandbox.spy(utils, 'logError');
 
     getCryptoRandomValuesStub = sandbox
@@ -110,12 +130,17 @@ describe('YandexId module', () => {
 
     describe('crypto', () => {
       it('uses Math.random when crypto is not available', () => {
-        sandbox.stub(window, 'crypto').value(undefined);
+        const cryptoTmp = window.crypto;
+
+        // @ts-expect-error -- Crypto is always defined in modern JS. TS yells when trying to delete non-nullable property.
+        delete window.crypto;
 
         yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG);
 
         expect(randomStub.calledOnce).to.be.true;
         expect(getCryptoRandomValuesStub.called).to.be.false;
+
+        window.crypto = cryptoTmp;
       });
 
       it('uses crypto when it is available', () => {
@@ -132,6 +157,45 @@ describe('YandexId module', () => {
       const value = 'test value';
 
       expect(yandexIdSubmodule.decode(value).yandexId).to.equal(value);
+    });
+  });
+
+  describe('eid', () => {
+    const id = '11111111111111111';
+    const userId = { [YANDEX_ID_KEY]: id };
+
+    before(() => {
+      attachIdSystem(yandexIdSubmodule);
+    });
+
+    it('with enabled cookies', () => {
+      cookiesAreEnabledStub.returns(true);
+      const [eid] = createEidsArray(userId);
+
+      expect(eid).to.deep.equal({
+        source: BIDDER_EID_KEY,
+        uids: [{
+          id,
+          atype: 1,
+          ext: YANDEX_EXT_COOKIE_NAMES.reduce((acc, cookieName) => ({
+            ...acc,
+            [cookieName]: YANDEX_EXT_COOKIE_VALUE,
+          }), {}),
+        }]
+      });
+    });
+
+    it('with disabled cookies', () => {
+      cookiesAreEnabledStub.returns(false);
+      const [eid] = createEidsArray(userId);
+
+      expect(eid).to.deep.equal({
+        source: BIDDER_EID_KEY,
+        uids: [{
+          id,
+          atype: 1,
+        }]
+      });
     });
   });
 });

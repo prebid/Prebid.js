@@ -130,7 +130,7 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
 export function getCachedTopics() {
   let cachedTopicData = [];
   const topics = config.getConfig('userSync.topics');
-  const bidderList = topics.bidders || [];
+  const bidderList = topics?.bidders || [];
   let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
