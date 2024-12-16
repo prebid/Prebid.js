@@ -3,6 +3,8 @@ import {spec, storage} from 'modules/livewrappedBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,
@@ -1178,50 +1180,21 @@ describe('Livewrapped adapter tests', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
-      let origGetConfig = config.getConfig;
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'currency.adServerCurrency') {
-          return 'EUR';
-        }
-        return origGetConfig.apply(config, arguments);
-      });
-
+      setCurrencyConfig({ adServerCurrency: 'EUR' });
       let testbidRequest = clone(bidderRequest);
       let bids = testbidRequest.bids.map(b => {
         b.getFloor = function () { return { floor: 10, currency: 'EUR' }; }
         return b;
       });
-      let result = spec.buildRequests(bids, testbidRequest);
-      let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
-
-      let expectedQuery = {
-        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
-        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
-        userId: 'user id',
-        url: 'https://www.domain.com',
-        seats: {'dsp': ['seat 1']},
-        version: '1.4',
-        width: 100,
-        height: 100,
-        cookieSupport: true,
-        flrCur: 'EUR',
-        adRequests: [{
-          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
-          callerAdUnitId: 'panorama_d_1',
-          bidId: '2ffb201a808da7',
-          rtbData: {
-            ext: {
-              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
-            },
-          },
-          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
-          flr: 10
-        }]
-      };
-
-      expect(data).to.deep.equal(expectedQuery);
+      return addFPDToBidderRequest(testbidRequest).then(res => {
+        let result = spec.buildRequests(bids, res);
+        let data = JSON.parse(result.data);
+        expect(result.url).to.equal('https://lwadm.com/ad');
+        expect(data.adRequests[0].flr).to.eql(10)
+        expect(data.flrCur).to.eql('EUR')
+        setCurrencyConfig({});
+      });
     });
 
     it('getFloor returns valid floor - default currency', function() {

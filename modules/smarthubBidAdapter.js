@@ -9,6 +9,7 @@ import {
 
 const BIDDER_CODE = 'smarthub';
 const ALIASES = [
+  {code: 'attekmi', skipPbsAliasing: true},
   {code: 'markapp', skipPbsAliasing: true},
   {code: 'jdpmedia', skipPbsAliasing: true},
   {code: 'tredio', skipPbsAliasing: true},
@@ -16,12 +17,13 @@ const ALIASES = [
   {code: 'vimayx', skipPbsAliasing: true},
 ];
 const BASE_URLS = {
-  smarthub: 'https://prebid.smart-hub.io/pbjs',
-  markapp: 'https://markapp-prebid.smart-hub.io/pbjs',
-  jdpmedia: 'https://jdpmedia-prebid.smart-hub.io/pbjs',
-  tredio: 'https://tredio-prebid.smart-hub.io/pbjs',
-  felixads: 'https://felixads-prebid.smart-hub.io/pbjs',
-  vimayx: 'https://vimayx-prebid.smart-hub.io/pbjs',
+  attekmi: 'https://prebid.attekmi.com/pbjs',
+  smarthub: 'https://prebid.attekmi.com/pbjs',
+  markapp: 'https://markapp-prebid.attekmi.com/pbjs',
+  jdpmedia: 'https://jdpmedia-prebid.attekmi.com/pbjs',
+  tredio: 'https://tredio-prebid.attekmi.com/pbjs',
+  felixads: 'https://felixads-prebid.attekmi.com/pbjs',
+  vimayx: 'https://vimayx-prebid.attekmi.com/pbjs',
 };
 
 const _getUrl = (partnerName) => {
