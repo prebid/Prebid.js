@@ -26,6 +26,7 @@ function getPlayerMock() {
     getVolume: function () {},
     getConfig: function () {},
     getHeight: function () {},
+    getContainer: function () {},
     getWidth: function () {},
     getFullscreen: function () {},
     getPlaylistItem: function () {},
@@ -51,6 +52,9 @@ function makePlayerFactoryMock(playerMock_) {
 function getUtilsMock() {
   return {
     getJwConfig: function () {},
+    getPlayerHeight: function () {},
+    getPlayerWidth: function () {},
+    getPlayerSizeFromAspectRatio: function () {},
     getSupportedMediaTypes: function () {},
     getStartDelay: function () {},
     getPlacement: function () {},
@@ -212,6 +216,8 @@ describe('JWPlayerProvider', function () {
       player.getWidth = () => test_width;
       player.getFullscreen = () => true; //
 
+      utils.getPlayerHeight = () => 100;
+      utils.getPlayerWidth = () => 200;
       utils.getSupportedMediaTypes = () => [test_media_type];
       utils.getStartDelay = () => test_start_delay;
       utils.getPlacement = () => test_placement;
