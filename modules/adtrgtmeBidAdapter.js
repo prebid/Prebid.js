@@ -54,6 +54,12 @@ function appObj(
   return res;
 }
 
+function getBidfloor(b) {
+  return isFn(b.getFloor) ? b.getFloor({size: '*',
+    currency: deepAccess(b, 'params.bidOverride.cur') ?? DEFAULT_CUR,
+    mediaType: BANNER}) : false
+}
+
 function getTtl(bR) {
   const t = config.getConfig('adtrgtme.ttl');
   const validate = (t) => (isNumber(t) && t > 0 && t < 3000) ? t : DEFAULT_TTL;
@@ -62,17 +68,10 @@ function getTtl(bR) {
     : validate(deepAccess(bR, 'params.ttl'));
 }
 
-function getBidfloorData(b) {
-  return isFn(b.getFloor) ? b.getFloor({
-    currency: deepAccess(b, 'params.bidOverride.cur') ?? DEFAULT_CUR,
-    mediaType: BANNER,
-    size: '*'}) : false
-}
-
 function createORTB(bR, bid) {
   if (!bR) return;
 
-  const { currency = deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CUR } = getBidfloorData(bR);
+  const { currency = deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CUR } = getBidfloor(bR);
   const ip = deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip');
   const gdpr = bR.gdprConsent?.gdprApplies ? 1 : 0;
   const consentString = gdpr ? bR.gdprConsent?.consentString : '';
@@ -128,7 +127,7 @@ function appendImp(bid, oRtb) {
   if (!oRtb || !bid) return;
 
   const type = getType(bid);
-  const { floor: bidfloor = 0, currency: bidfloorcur = '' } = getBidfloorData(bid);
+  const { floor: bidfloor = 0, currency: bidfloorcur = '' } = getBidfloor(bid);
   const overrideFloor = deepAccess(bid, 'params.bidOverride.imp.bidfloor') || bidfloor;
   const overrideCurrency = deepAccess(bid, 'params.bidOverride.imp.bidfloorcur') || bidfloorcur;
 
