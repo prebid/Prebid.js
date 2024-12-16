@@ -347,7 +347,7 @@ export function buildBidResponse(adUnit) {
   } else if (adUnit.mediaType === BANNER) {
     bidResponse.ad = adUnit.ad;
   } else if (adUnit.mediaType === NATIVE) {
-    bidResponse.native = adUnit.native;
+    bidResponse.native = {ortb: adUnit.native};
   }
 
   if (adUnit.adomain && adUnit.adomain.length) {
