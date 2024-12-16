@@ -906,20 +906,22 @@ describe('33acrossIdSystem', () => {
       });
     });
 
-    context('when a hashed email is present in local storage', () => {
+    context('when a hashed email is provided via configuration options', () => {
       it('should call endpoint with the hashed email included', () => {
         const completeCallback = () => {};
         const { callback } = thirtyThreeAcrossIdSubmodule.getId({
           params: {
-            pid: '12345'
+            pid: '12345',
+            hem: '33acrossIdHmValue+'
           },
           enabledStorageTypes: [ 'html5' ],
           storage: {}
         });
 
+        // Prioritizes the hem given via config options over the one stored in LS.
         sinon.stub(storage, 'getDataFromLocalStorage')
           .withArgs('33acrossIdHm')
-          .returns('33acrossIdHmValue+');
+          .returns('33acrossIdHmValueLS');
 
         callback(completeCallback);
 
@@ -931,45 +933,72 @@ describe('33acrossIdSystem', () => {
       });
     });
 
-    context('when a hashed email is present in cookie storage', () => {
-      it('should call endpoint with the hashed email included', () => {
-        const completeCallback = () => {};
-        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
-          params: {
-            pid: '12345'
-          },
-          enabledStorageTypes: [ 'cookie' ],
-          storage: {}
+    context('when a hashed email is NOT provided via configuration options', () => {
+      context('but it\'s provided via local storage', () => {
+        it('should call endpoint with the hashed email included', () => {
+          const completeCallback = () => {};
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            },
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
+          });
+
+          sinon.stub(storage, 'getDataFromLocalStorage')
+            .withArgs('33acrossIdHm')
+            .returns('33acrossIdHmValue+');
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).to.contain('sha256=33acrossIdHmValue%2B');
+
+          storage.getDataFromLocalStorage.restore();
         });
-
-        sinon.stub(storage, 'getCookie')
-          .withArgs('33acrossIdHm')
-          .returns('33acrossIdHmValue');
-
-        callback(completeCallback);
-
-        const [request] = server.requests;
-
-        expect(request.url).to.contain('sha256=33acrossIdHmValue');
-
-        storage.getCookie.restore();
       });
-    });
 
-    context('when a hashed email is not present in storage', () => {
-      it('should not call endpoint with the hashed email included', () => {
-        const completeCallback = () => {};
-        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
-          params: {
-            pid: '12345'
-          }
+      context('but it\'s provided via cookie storage', () => {
+        it('should call endpoint with the hashed email included', () => {
+          const completeCallback = () => {};
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            },
+            enabledStorageTypes: [ 'cookie' ],
+            storage: {}
+          });
+
+          sinon.stub(storage, 'getCookie')
+            .withArgs('33acrossIdHm')
+            .returns('33acrossIdHmValue');
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).to.contain('sha256=33acrossIdHmValue');
+
+          storage.getCookie.restore();
         });
+      });
 
-        callback(completeCallback);
+      context('and hashed email is not present in storage', () => {
+        it('should not call endpoint with the hashed email included', () => {
+          const completeCallback = () => {};
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
 
-        const [request] = server.requests;
+          callback(completeCallback);
 
-        expect(request.url).not.to.contain('sha256=');
+          const [request] = server.requests;
+
+          expect(request.url).not.to.contain('sha256=');
+        });
       });
     });
 

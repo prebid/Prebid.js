@@ -60,7 +60,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
+function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -98,9 +98,9 @@ function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
     params.tp = encodeURIComponent(tp);
   }
 
-  const hem = getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
-  if (hem) {
-    params.sha256 = encodeURIComponent(hem);
+  const hemParam = hem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
+  if (hemParam) {
+    params.sha256 = encodeURIComponent(hemParam);
   }
 
   return params;
@@ -194,7 +194,11 @@ export const thirtyThreeAcrossIdSubmodule = {
       return;
     }
 
-    const { pid, storeFpid = DEFAULT_1PID_SUPPORT, storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL } = params;
+    const {
+      storeFpid = DEFAULT_1PID_SUPPORT,
+      storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL,
+      ...options
+    } = params;
 
     return {
       callback(cb) {
@@ -235,7 +239,7 @@ export const thirtyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes), {
+        }, calculateQueryStringParams(options, gdprConsentData, enabledStorageTypes), {
           method: 'GET',
           withCredentials: true
         });
