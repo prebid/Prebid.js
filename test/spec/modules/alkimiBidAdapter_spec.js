@@ -68,7 +68,7 @@ const BIDDER_VIDEO_RESPONSE = {
     'ttl': 200,
     'creativeId': 2,
     'netRevenue': true,
-    'winUrl': 'http://test.com',
+    'winUrl': 'http://test.com?price=${AUCTION_PRICE}',
     'mediaType': 'video',
     'adomain': ['test.com']
   }]
@@ -91,11 +91,11 @@ describe('alkimiBidAdapter', function () {
     })
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, REQUEST)
+      let bid = JSON.parse(JSON.stringify(REQUEST))
       delete bid.params.token
       expect(spec.isBidRequestValid(bid)).to.equal(false)
 
-      bid = Object.assign({}, REQUEST)
+      bid = JSON.parse(JSON.stringify(REQUEST))
       delete bid.params
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
@@ -115,29 +115,35 @@ describe('alkimiBidAdapter', function () {
       uspConsent: 'uspConsent',
       ortb2: {
         site: {
-          keywords: 'test1, test2'
+          keywords: 'test1, test2',
+          cat: ['IAB2'],
+          pagecat: ['IAB3'],
+          sectioncat: ['IAB4']
         },
         at: 2,
         bcat: ['BSW1', 'BSW2'],
         wseat: ['16', '165']
       }
     }
-    const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
     it('should return a properly formatted request with eids defined', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.data.eids).to.deep.equal(REQUEST.userIdAsEids)
     })
 
     it('should return a properly formatted request with gdpr defined', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.data.gdprConsent.consentRequired).to.equal(true)
       expect(bidderRequest.data.gdprConsent.consentString).to.equal('test-consent')
     })
 
     it('should return a properly formatted request with uspConsent defined', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.data.uspConsent).to.equal('uspConsent')
     })
 
     it('sends bid request to ENDPOINT via POST', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.not.equal(undefined)
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
@@ -146,7 +152,7 @@ describe('alkimiBidAdapter', function () {
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)
-      expect(bidderRequest.data.ortb2).to.deep.contains({ at: 2, wseat: ['16', '165'], bcat: ['BSW1', 'BSW2'], site: { keywords: 'test1, test2' }, })
+      expect(bidderRequest.data.ortb2).to.deep.contains({ at: 2, wseat: ['16', '165'], bcat: ['BSW1', 'BSW2'], site: { keywords: 'test1, test2', cat: ['IAB2'], pagecat: ['IAB3'], sectioncat: ['IAB4'] } })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)
@@ -195,9 +201,9 @@ describe('alkimiBidAdapter', function () {
       expect(result[0]).to.have.property('ttl').equal(200)
       expect(result[0]).to.have.property('creativeId').equal(2)
       expect(result[0]).to.have.property('netRevenue').equal(true)
-      expect(result[0]).to.have.property('winUrl').equal('http://test.com')
+      expect(result[0]).to.have.property('winUrl').equal('http://test.com?price=${AUCTION_PRICE}')
       expect(result[0]).to.have.property('mediaType').equal('video')
-      expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
+      expect(result[0]).to.have.property('vastUrl').equal('http://test.com?price=800.4')
       expect(result[0].meta).to.exist.property('advertiserDomains')
       expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
     })

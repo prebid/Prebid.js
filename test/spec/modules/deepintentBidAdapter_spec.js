@@ -252,6 +252,22 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].displaymanager).to.equal('di_prebid');
       expect(data.imp[0].displaymanagerver).to.equal('1.0.0');
     });
+    it('bid request check: bidfloor check', function() {
+      const requestClone = utils.deepClone(request);
+      let bRequest = spec.buildRequests(requestClone);
+      let data = JSON.parse(bRequest.data);
+      expect(data.imp[0].bidfloor).to.not.exist;
+
+      requestClone[0].params.bidfloor = 0;
+      bRequest = spec.buildRequests(requestClone);
+      data = JSON.parse(bRequest.data);
+      expect(data.imp[0].bidfloor).to.equal(0);
+
+      requestClone[0].params.bidfloor = 1.2;
+      bRequest = spec.buildRequests(requestClone);
+      data = JSON.parse(bRequest.data);
+      expect(data.imp[0].bidfloor).to.equal(1.2);
+    });
     it('bid request check: user object check', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
@@ -357,5 +373,34 @@ describe('Deepintent adapter', function () {
       let response = spec.interpretResponse(invalidResponse, bRequest);
       expect(response[0].mediaType).to.equal(undefined);
     });
-  })
+  });
+  describe('GPP and coppa', function() {
+    it('Request params check with GPP Consent', function () {
+      let bidderReq = {gppConsent: {gppString: 'gpp-string-test', applicableSections: [5]}};
+      let bRequest = spec.buildRequests(request, bidderReq);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.gpp).to.equal('gpp-string-test');
+      expect(data.regs.gpp_sid[0]).to.equal(5);
+    });
+    it('Request params check with GPP Consent read from ortb2', function () {
+      let bidderReq = {
+        ortb2: {
+          regs: {
+            gpp: 'gpp-test-string',
+            gpp_sid: [5]
+          }
+        }
+      };
+      let bRequest = spec.buildRequests(request, bidderReq);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.gpp).to.equal('gpp-test-string');
+      expect(data.regs.gpp_sid[0]).to.equal(5);
+    });
+    it('should include coppa flag in bid request if coppa is set to true', () => {
+      let bidderReq = {ortb2: {regs: {coppa: 1}}};
+      let bRequest = spec.buildRequests(request, bidderReq);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.coppa).to.equal(1);
+    });
+  });
 });

@@ -1,14 +1,12 @@
 import { expect } from 'chai';
 import { spec } from 'modules/incrxBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
-describe('IncrementX', function () {
-  const METHOD = 'POST';
-  const URL = 'https://hb.incrementxserv.com/vzhbidder/bid';
-
-  const bidRequest = {
-    bidder: 'IncrementX',
+describe('incrementx', function () {
+  const bannerBidRequest = {
+    bidder: 'incrementx',
     params: {
-      placementId: 'PNX-HB-F796830VCF3C4B'
+      placementId: 'IX-HB-12345'
     },
     mediaTypes: {
       banner: {
@@ -19,86 +17,125 @@ describe('IncrementX', function () {
       [300, 250],
       [300, 600]
     ],
-    bidId: 'bid-id-123456',
-    adUnitCode: 'ad-unit-code-1',
-    bidderRequestId: 'bidder-request-id-123456',
-    auctionId: 'auction-id-123456',
-    transactionId: 'transaction-id-123456'
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    bidId: '2faedf3e89d123',
+    bidderRequestId: '1c78fb49cc71c6',
+    auctionId: 'b4f81e8e36232',
+    transactionId: '0d95b2c1-a834-4e50-a962-9b6aa0e1c8fb'
   };
-
+  const videoBidRequest = {
+    bidder: 'incrementx',
+    params: {
+      placementId: 'IX-HB-12346'
+    },
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: ['640x480']
+      }
+    },
+    adUnitCode: 'div-gpt-ad-1460505748561-1',
+    bidId: '2faedf3e89d124',
+    bidderRequestId: '1c78fb49cc71c7',
+    auctionId: 'b4f81e8e36233',
+    transactionId: '0d95b2c1-a834-4e50-a962-9b6aa0e1c8fc'
+  };
   describe('isBidRequestValid', function () {
-    it('should return true where required params found', function () {
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    it('should return true when required params are found', function () {
+      expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(true);
+      expect(spec.isBidRequestValid(videoBidRequest)).to.equal(true);
     });
   });
 
   describe('buildRequests', function () {
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
-        page: 'https://www.test.com',
-        reachedTop: true,
-        isAmp: false,
-        numIframes: 0,
-        stack: [
-          'https://www.test.com'
-        ],
-        canonicalUrl: null
+        page: 'https://someurl.com'
       }
     };
-
-    it('should build correct POST request for banner bid', function () {
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      expect(request).to.be.an('object');
-      expect(request.method).to.equal(METHOD);
-      expect(request.url).to.equal(URL);
-
-      const payload = JSON.parse(decodeURI(request.data.q));
-      expect(payload).to.be.an('object');
-      expect(payload._vzPlacementId).to.be.a('string');
-      expect(payload.sizes).to.be.an('array');
-      expect(payload._slotBidId).to.be.a('string');
-      expect(payload._rqsrc).to.be.a('string');
+    it('should build banner request', function () {
+      const requests = spec.buildRequests([bannerBidRequest], bidderRequest);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal('https://hb.incrementxserv.com/vzhbidder/bid');
+      const data = JSON.parse(decodeURI(requests[0].data.q));
+      expect(data._vzPlacementId).to.equal('IX-HB-12345');
+      expect(data.sizes).to.to.a('array');
+      expect(data.mChannel).to.equal(1);
+    });
+    it('should build video request', function () {
+      const requests = spec.buildRequests([videoBidRequest], bidderRequest);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal('https://hb.incrementxserv.com/vzhbidder/bid');
+      const data = JSON.parse(decodeURI(requests[0].data.q));
+      expect(data._vzPlacementId).to.equal('IX-HB-12346');
+      expect(data.sizes).to.be.a('array');
+      expect(data.mChannel).to.equal(2);
     });
   });
-
   describe('interpretResponse', function () {
-    let serverResponse = {
+    const bannerServerResponse = {
       body: {
-        vzhPlacementId: 'PNX-HB-F796830VCF3C4B',
-        bid: 'BID-XXXX-XXXX',
-        adWidth: '300',
-        adHeight: '250',
-        cpm: '0.7',
-        ad: '<html><h1>Ad from IncrementX</h1></html>',
-        slotBidId: 'bid-id-123456',
-        adType: '1',
-        settings: '1,2',
-        nurl: 'htt://nurl.com',
-        statusText: 'Success'
+        slotBidId: '2faedf3e89d123',
+        cpm: 0.5,
+        adWidth: 300,
+        adHeight: 250,
+        ad: '<div>Banner Ad</div>',
+        mediaType: BANNER,
+        netRevenue: true,
+        currency: 'USD',
+        advertiserDomains: ['example.com']
       }
     };
-
-    let expectedResponse = [{
-      requestId: 'bid-id-123456',
-      cpm: '0.7',
-      currency: 'USD',
-      adType: '1',
-      settings: '1,2',
-      netRevenue: false,
-      width: '300',
-      height: '250',
-      creativeId: 0,
-      ttl: 300,
-      ad: '<html><h1>Ad from IncrementX</h1></html>',
-      meta: {
-        mediaType: 'banner',
-        advertiserDomains: []
+    const videoServerResponse = {
+      body: {
+        slotBidId: '2faedf3e89d124',
+        cpm: 1.0,
+        adWidth: 640,
+        adHeight: 480,
+        ad: '<VAST>Test VAST</VAST>',
+        mediaType: VIDEO,
+        netRevenue: true,
+        currency: 'USD',
+        rUrl: 'https://example.com/vast.xml',
+        advertiserDomains: ['example.com']
       }
-    }];
-
-    it('should correctly interpret valid banner response', function () {
-      let result = spec.interpretResponse(serverResponse);
-      expect(result).to.deep.equal(expectedResponse);
+    };
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://someurl.com'
+      },
+      data: {
+        bidderRequestData: {
+          bids: [videoBidRequest]
+        }
+      }
+    };
+    it('should handle banner response', function () {
+      const bidResponses = spec.interpretResponse(bannerServerResponse, bidderRequest);
+      expect(bidResponses).to.have.lengthOf(1);
+      const bid = bidResponses[0];
+      expect(bid.requestId).to.equal('2faedf3e89d123');
+      expect(bid.cpm).to.equal(0.5);
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.ad).to.equal('<div>Banner Ad</div>');
+      expect(bid.mediaType).to.equal(BANNER);
+      expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
+    it('should handle video response', function () {
+      const bidResponses = spec.interpretResponse(videoServerResponse, bidderRequest);
+      expect(bidResponses).to.have.lengthOf(1);
+      const bid = bidResponses[0];
+      expect(bid.requestId).to.equal('2faedf3e89d124');
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.width).to.equal(640);
+      expect(bid.height).to.equal(480);
+      expect(bid.vastXml).to.equal('<VAST>Test VAST</VAST>');
+      expect(bid.renderer).to.exist;
+      expect(bid.mediaType).to.equal(VIDEO);
+      expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });
   });
 });

@@ -1,8 +1,8 @@
 import {defaultHandler, GenericAnalytics} from '../../../modules/genericAnalyticsAdapter.js';
 import * as events from 'src/events.js';
-import * as CONSTANTS from 'src/constants.json';
+import {EVENTS} from 'src/constants.js';
 
-const {AUCTION_INIT, BID_RESPONSE} = CONSTANTS.EVENTS;
+const {AUCTION_INIT, BID_RESPONSE} = EVENTS;
 
 describe('Generic analytics', () => {
   describe('adapter', () => {
@@ -75,7 +75,7 @@ describe('Generic analytics', () => {
             options: {
               url: 'mock',
               events: {
-                bidResponse: null
+                mockEvent: null
               }
             }
           });
@@ -265,7 +265,7 @@ describe('Generic analytics', () => {
           handler([payload, {}]);
           sinon.assert.calledWith(ajax, url, sinon.match.any,
             sinon.match(data => sinon.match(payload).test(parse(data))),
-            {method}
+            {method, keepalive: true}
           );
         });
 
@@ -275,7 +275,7 @@ describe('Generic analytics', () => {
           handler(payload);
           sinon.assert.calledWith(ajax, url, sinon.match.any,
             sinon.match(data => sinon.match(payload).test(parse(data))),
-            {method}
+            {method, keepalive: true}
           );
         });
       });

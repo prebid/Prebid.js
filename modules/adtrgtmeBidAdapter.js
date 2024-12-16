@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'adtrgtme';
@@ -55,7 +55,7 @@ function extractUserSyncUrls(syncOptions, pixels) {
 }
 
 function isSecure(bid) {
-  return deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
+  return deepAccess(bid, 'params.bidOverride.imp.secure') ?? deepAccess(bid, 'ortb2Imp.secure') ?? 1;
 };
 
 function getMediaType(bid) {
@@ -90,7 +90,7 @@ function getFloorModuleData(bid) {
     mediaType: BANNER,
     size: '*'
   };
-  return (isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
+  return (isFn(bid.getFloor)) ? (bid.getFloor(getFloorRequestObject) || {}) : false;
 };
 
 function generateOpenRtbObject(bidderRequest, bid) {

@@ -47,10 +47,17 @@ export function toFetchRequest(url, data, options = {}) {
   if (options.withCredentials) {
     rqOpts.credentials = 'include';
   }
-  if (options.browsingTopics && isSecureContext) {
-    // the Request constructor will throw an exception if the browser supports topics
-    // but we're not in a secure context
-    rqOpts.browsingTopics = true;
+  if (isSecureContext) {
+    ['browsingTopics', 'adAuctionHeaders'].forEach(opt => {
+      // the Request constructor will throw an exception if the browser supports topics/fledge
+      // but we're not in a secure context
+      if (options[opt]) {
+        rqOpts[opt] = true;
+      }
+    })
+  }
+  if (options.keepalive) {
+    rqOpts.keepalive = true;
   }
   return dep.makeRequest(url, rqOpts);
 }
@@ -89,7 +96,19 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
 
 function toXHR({status, statusText = '', headers, url}, responseText) {
   let xml = 0;
+  function getXML(onError) {
+    if (xml === 0) {
+      try {
+        xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
+      } catch (e) {
+        xml = null;
+        onError && onError(e)
+      }
+    }
+    return xml;
+  }
   return {
+    // eslint-disable-next-line prebid/no-global
     readyState: XMLHttpRequest.DONE,
     status,
     statusText,
@@ -98,17 +117,13 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
     responseType: '',
     responseURL: url,
     get responseXML() {
-      if (xml === 0) {
-        try {
-          xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
-        } catch (e) {
-          xml = null;
-          logError(e);
-        }
-      }
-      return xml;
+      return getXML(logError);
     },
     getResponseHeader: (header) => headers?.has(header) ? headers.get(header) : null,
+    toJSON() {
+      return Object.assign({responseXML: getXML()}, this)
+    },
+    timedOut: false
   }
 }
 
@@ -120,11 +135,14 @@ export function attachCallbacks(fetchPm, callback) {
     success: typeof callback === 'function' ? callback : () => null,
     error: (e, x) => logError('Network error', e, x)
   };
-  fetchPm.then(response => response.text().then((responseText) => [response, responseText]))
+  return fetchPm.then(response => response.text().then((responseText) => [response, responseText]))
     .then(([response, responseText]) => {
       const xhr = toXHR(response, responseText);
       response.ok || response.status === 304 ? success(responseText, xhr) : error(response.statusText, xhr);
-    }, () => error('', toXHR({status: 0}, '')));
+    }, (reason) => error('', Object.assign(
+      toXHR({status: 0}, ''),
+      {reason, timedOut: reason?.name === 'AbortError'}))
+    );
 }
 
 export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
@@ -132,6 +150,20 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
   return function (url, callback, data, options = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
   };
+}
+
+/**
+ * simple wrapper around sendBeacon such that invocations of navigator.sendBeacon can be centrally maintained.
+ * verifies that the navigator and sendBeacon are defined for maximum compatibility
+ * @param {string} url The URL that will receive the data. Can be relative or absolute.
+ * @param {*} data An ArrayBuffer, a TypedArray, a DataView, a Blob, a string literal or object, a FormData or a URLSearchParams object containing the data to send.
+ * @returns {boolean} true if the user agent successfully queued the data for transfer. Otherwise, it returns false.
+ */
+export function sendBeacon(url, data) {
+  if (!window.navigator || !window.navigator.sendBeacon) {
+    return false;
+  }
+  return window.navigator.sendBeacon(url, data);
 }
 
 export const ajax = ajaxBuilder();

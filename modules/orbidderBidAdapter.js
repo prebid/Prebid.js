@@ -3,8 +3,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { getGlobal } from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 const storageManager = getStorageManager({ bidderCode: 'orbidder' });
 
 /**
@@ -89,6 +92,9 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.page || '';
       }
+      if (bidRequest?.mediaTypes?.video) {
+        delete bidRequest.mediaTypes.video;
+      }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
@@ -97,17 +103,9 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
-          v: getGlobal().version,
+          v: 'v' + '$prebid.version$',
           pageUrl: referer,
-          bidId: bidRequest.bidId,
-          auctionId: bidRequest.auctionId,
-          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-          transactionId: bidRequest.ortb2Imp?.ext?.tid,
-          adUnitCode: bidRequest.adUnitCode,
-          bidRequestCount: bidRequest.bidRequestCount,
-          params: bidRequest.params,
-          sizes: bidRequest.sizes,
-          mediaTypes: bidRequest.mediaTypes
+          ...bidRequest // get all data provided by bid request
         }
       };
 

@@ -4,8 +4,12 @@ import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
 
 const subdomainSuffixes = ['', 1, 2];
 const AUCTION_PATH = '/v2/auction/';
@@ -21,7 +25,7 @@ const HOST_GETTERS = {
   janet: () => 'ghb.bidder.jmgads.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
-  copper6: () => 'ghb.app.copper6.com'
+  indicue: () => 'ghb.console.indicue.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -43,7 +47,7 @@ export const spec = {
     { code: 'selectmedia', gvlid: 775 },
     { code: 'ocm', gvlid: 1148 },
     '9dotsmedia',
-    'copper6',
+    'indicue',
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -113,7 +117,7 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids
    * @param serverResponse
-   * @param bidderRequest
+   * @param adapterRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, { adapterRequest }) {
@@ -131,11 +135,6 @@ export const spec = {
     return bids;
   },
 
-  transformBidParams(params) {
-    return convertTypes({
-      'aid': 'number',
-    }, params);
-  }
 };
 
 function parseRTBResponse(serverResponse, adapterRequest) {

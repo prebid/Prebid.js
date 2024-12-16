@@ -1,12 +1,12 @@
 /**
-*
-*********************************************************
-*
-* Optimon.io Prebid Analytics Adapter
-*
-*********************************************************
-*
-*/
+ *
+ *********************************************************
+ *
+ * Optimon.io Prebid Analytics Adapter
+ *
+ *********************************************************
+ *
+ */
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';

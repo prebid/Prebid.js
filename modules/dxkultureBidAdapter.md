@@ -30,7 +30,8 @@ var adUnits = [
             params: {
                 placementId: 'test',
                 publisherId: 'test',
-                networkId: '123'
+                bidfloor: 2.7,
+                bidfloorcur: 'USD'
             }
         }]
     }
@@ -43,7 +44,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 - 'mimes',
 - 'minduration',
 - 'maxduration',
-- 'placement',
+- 'plcmt',
 - 'protocols',
 - 'startdelay',
 - 'skip',
@@ -74,7 +75,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
                   delivery: [2],
                   minduration: 10,
                   maxduration: 30,
-                  placement: 1,
+                  plcmt: 1,
                   playbackmethod: [1,5],
             }
           },
@@ -84,8 +85,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
               params: {
                 bidfloor: 0.5,
                 publisherId: '12345',
-                placementId: '6789',
-                networkId" '123'
+                placementId: '6789'
               }
             }
           ]
