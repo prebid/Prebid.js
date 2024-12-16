@@ -1,0 +1,40 @@
+name: Prebid.js CI
+
+on:
+  pull_request_target:
+    branches:
+      - master    
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install dependencies
+        run: npm install
+      - name: Install gulp cli
+        run: sudo npm install -g gulp-cli
+  unit-test:
+    name: Run unit tests
+    runs-on: ubuntu-22.04
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run unit tests
+        run: gulp test --browserstack --nolintfix
+  e2e-test:
+    name: Run e2e tests
+    runs-on: ubuntu-22.04
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run e2e tests
+        run: gulp e2e-test
