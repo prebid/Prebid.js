@@ -51,7 +51,9 @@ import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './v
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 
-const pbjsInstance = getGlobal();
+declare const FEATURES: any;
+
+const pbjsInstance: any = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -83,7 +85,7 @@ pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 pbjsInstance.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
-  var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
+  const adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
     .reduce(flatten)
     .filter(uniques);
 
@@ -95,7 +97,7 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
-function validateSizes(sizes, targLength) {
+function validateSizes(sizes, targLength?: number) {
   let cleanSizes = [];
   if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
     // check if an array of arrays or array of numbers
@@ -164,7 +166,7 @@ function validateVideoMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const video = validatedAdUnit.mediaTypes.video;
   if (video.playerSize) {
-    let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
+    const tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
 
     const videoSizes = validateSizes(video.playerSize, tarPlayerSizeLen);
     if (videoSizes.length > 0) {
@@ -216,7 +218,7 @@ function validateNativeMediaType(adUnit) {
       intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
     }
   } else {
-    checkDeprecated(key => `mediaTypes.native.${key} is deprecated, consider using native ORTB instead`, adUnit);
+    checkDeprecated(key => `mediaTypes.native.${key} is deprecated, consider using native ORTB instead`);
   }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
@@ -234,10 +236,10 @@ function validateNativeMediaType(adUnit) {
 }
 
 function validateAdUnitPos(adUnit, mediaType) {
-  let pos = adUnit?.mediaTypes?.[mediaType]?.pos;
+  const pos = adUnit?.mediaTypes?.[mediaType]?.pos;
 
   if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
-    let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
+    const warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
     delete adUnit.mediaTypes[mediaType].pos;
@@ -279,7 +281,7 @@ export const adUnitSetupChecks = {
 };
 
 if (FEATURES.NATIVE) {
-  Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+  Object.assign(adUnitSetupChecks, { validateNativeMediaType });
 }
 
 if (FEATURES.VIDEO) {
@@ -341,7 +343,7 @@ pbjsInstance.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 
   // call to retrieve bids array
   if (adunitCode) {
-    var res = pbjsInstance.getAdserverTargetingForAdUnitCode(adunitCode);
+    const res = pbjsInstance.getAdserverTargetingForAdUnitCode(adunitCode);
     return transformAdServerTargetingObj(res);
   } else {
     logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
@@ -533,6 +535,20 @@ pbjsInstance.removeAdUnit = function (adUnitCode) {
   });
 };
 
+export type RequestOptions = {
+  bidsBackHandler?: Function;
+  ttlBuffer?: number;
+  timeout?: number;
+  adUnits?: any[];
+  adUnitCodes?: string[];
+  labels?: string[];
+  auctionId?: string;
+  metrics?: any;
+  defer?: any;
+  ortb2Fragments?: any; // this seems to be only available for the startAuction method
+  ortb2?: any; // this seems to be only available for the requestBids method
+}
+
 /**
  * @param {Object} requestOptions
  * @param {function} requestOptions.bidsBackHandler
@@ -544,7 +560,7 @@ pbjsInstance.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 pbjsInstance.requestBids = (function() {
-  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = {}) {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer }: RequestOptions = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -561,7 +577,7 @@ pbjsInstance.requestBids = (function() {
     adUnitCodes = adUnitCodes.filter(uniques);
     const ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
-      bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
+      bidder: Object.fromEntries(Object.entries<any>(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
     }
     return enrichFPD(GreedyPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
@@ -569,30 +585,30 @@ pbjsInstance.requestBids = (function() {
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, function requestBids(req = {}) {
+  return wrapHook(delegate, function requestBids(req: any = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    let adUnits = req.adUnits || pbjsInstance.adUnits;
+    const adUnits = req.adUnits || pbjsInstance.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
     req.metrics = newMetrics();
     req.metrics.checkpoint('requestBids');
-    req.defer = defer({promiseFactory: (r) => new Promise(r)})
+    req.defer = defer({ promiseFactory: (r) => new Promise(r) as any }) // the promiseFactory is inferred to return a GreedyPromise, but a Promise is not a GreedyPromise and is missing two fields, which is why we need to cast it to any
     delegate.call(this, req);
     return req.defer.promise;
   });
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: RequestOptions = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
-  function auctionDone(bids, timedOut, auctionId) {
+  function auctionDone(bids?: any, timedOut?: boolean, auctionId?: string) {
     if (typeof bidsBackHandler === 'function') {
       try {
         bidsBackHandler(bids, timedOut, auctionId);
@@ -600,7 +616,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
         logError('Error executing bidsBackHandler', null, e);
       }
     }
-    defer.resolve({bids, timedOut, auctionId})
+    defer.resolve({ bids, timedOut, auctionId })
   }
 
   const tids = {};
@@ -623,6 +639,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     adUnit.adUnitId = generateUUID();
     const tid = adUnit.ortb2Imp?.ext?.tid;
     if (tid) {
+      // eslint-disable-next-line no-prototype-builtins
       if (tids.hasOwnProperty(adUnit.code)) {
         logWarn(`Multiple distinct ortb2Imp.ext.tid were provided for twin ad units '${adUnit.code}'`)
       } else {
@@ -670,7 +687,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       metrics,
     });
 
-    let adUnitsLen = adUnits.length;
+    const adUnitsLen = adUnits.length;
     if (adUnitsLen > 15) {
       logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
     }
@@ -686,7 +703,7 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
   fn.call(this, reqBidsConfigObj);
 
   function runAll(queue) {
-    var queued;
+    let queued;
     while ((queued = queue.shift())) {
       queued();
     }
