@@ -8,7 +8,7 @@ const AD_URL = 'https://prebid.admanmedia.com/pbjs';
 const SYNC_URL = 'https://cs.admanmedia.com';
 
 export const spec = {
-  code: BIDDER_CODE,  
+  code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
