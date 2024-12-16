@@ -1,4 +1,4 @@
-[![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
+[![Prebid CI](https://github.com/prebid/Prebid.js/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/prebid/Prebid.js/actions/workflows/test.yml)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](https://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
 
