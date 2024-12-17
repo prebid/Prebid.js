@@ -16,6 +16,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
 import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
 import {s2sDefaultConfig} from './index.js';
+import {premergeFpd} from './bidderConfig.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -296,7 +297,10 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
       ttl: s2sBidRequest.s2sConfig.defaultTtl || DEFAULT_S2S_TTL,
       requestTimestamp,
-      s2sBidRequest,
+      s2sBidRequest: {
+        ...s2sBidRequest,
+        ortb2Fragments: premergeFpd(s2sBidRequest.ortb2Fragments)
+      },
       requestedBidders,
       actualBidderRequests: bidderRequests,
       nativeRequest: s2sBidRequest.s2sConfig.ortbNative,
