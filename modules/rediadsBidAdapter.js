@@ -2,7 +2,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, logWarn, logError } from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'rediads';
 const ENDPOINT_URL = 'https://bidding.rediads.com/openrtb2/auction';
@@ -56,6 +55,7 @@ export const spec = {
   },
   buildRequests(bidRequests, bidderRequest) {
     const params = bidRequests[0]?.params || {};
+    const siteContent = bidRequests[0]?.site?.content || null;
     let data = {};
     let FINAL_ENDPOINT_URL = params.endpoint || ENDPOINT_URL
     try {
@@ -66,9 +66,8 @@ export const spec = {
       if (stagingEnvRequested) {
         FINAL_ENDPOINT_URL = STAGING_ENDPOINT_URL;
       }
-
       deepSetValue(data, 'ext.rediads.params', params);
-      deepSetValue(data, 'site.content', config.getConfig('content'));
+      deepSetValue(data, 'site.content', siteContent);
 
       if (testBidsRequested) {
         deepSetValue(data, 'test', 1);
