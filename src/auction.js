@@ -417,7 +417,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
     end: done.promise,
-    requestsDone: requestsDone.promise
+    requestsDone: requestsDone.promise,
+    getProperties
   };
 }
 
