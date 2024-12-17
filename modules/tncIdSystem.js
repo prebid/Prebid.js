@@ -104,7 +104,6 @@ const tncCallback = async function(cb) {
       logMessage('tncId Module - tncid already exists', tncid);
       window[tncNS].ready(() => window[tncNS].getTNCID('prebid'));
     }
-
     return cb(tncid);
   } catch (err) {
     logMessage('tncId Module', err);
