@@ -13,6 +13,8 @@ import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { config } from '../src/config.js';
+import { LOCAL_CACHE_MOCK_URL, vastsLocalCache } from '../src/videoCache.js';
 /**
  * @typedef {import('../libraries/video/shared/state.js').State} State
  */
@@ -207,8 +209,21 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
     // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
     try {
-      player.ima.changeAdTag(adTagUrl);
-      player.ima.requestAds();
+      if (config.getConfig('cache.useLocal')) {
+        const url = new URL(adTagUrl);
+        const custParams = new URLSearchParams(url.searchParams.get('cust_params'));
+        const hb_bidder = custParams.get('hb_bidder');
+        fetch(url).then(response => response.text()).then((vastWrapper) => {
+          const bidVastDataUri = vastsLocalCache.get(hb_bidder);
+          const mockUrl = LOCAL_CACHE_MOCK_URL + hb_bidder;
+          const combinedVast = vastWrapper.replace(mockUrl, bidVastDataUri);
+          player.ima.controller.settings.adsResponse = combinedVast;
+          player.ima.requestAds();
+        })
+      } else {
+        player.ima.changeAdTag(adTagUrl);
+        player.ima.requestAds();
+      }
     } catch (e) {
       /*
       Handling is not required; ad errors are emitted automatically by video.js

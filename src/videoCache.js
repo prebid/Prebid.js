@@ -62,6 +62,10 @@ function wrapURI(uri, impTrackerURLs) {
   </VAST>`;
 }
 
+export const vastsLocalCache = new Map();
+
+export const LOCAL_CACHE_MOCK_URL = 'https://local.prebid.org/cache?bidder=';
+
 /**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
  * the bid can't be converted cleanly.
@@ -168,8 +172,9 @@ export function getCacheUrl(id) {
 
 export const storeLocally = (bid) => {
   const vastValue = getVastValue(bid);
-  const url = URL.createObjectURL(new Blob([vastValue], { type: 'text/xml' }));
-  bid.vastUrl = url;
+  const dataUri = 'data:text/xml;base64,' + btoa(vastValue);
+  bid.vastUrl = dataUri;
+  vastsLocalCache.set(bid.bidderCode, dataUri); 
 };
 
 export const _internal = {
