@@ -24,7 +24,8 @@ export const spec = {
     {code: 'pixad', gvlid: 1281},
     {code: 'monetixads', gvlid: 1281},
     {code: 'netaddiction', gvlid: 1281},
-    {code: 'adt', gvlid: 779}
+    {code: 'adt', gvlid: 779},
+    {code: 'yobee', gvlid: 1281}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -138,6 +139,9 @@ export const spec = {
           break;
         case 'adt':
           SYNC_URL = 'https://static.cdn.adtarget.biz/adt/sync.html';
+          break;
+        case 'yobee':
+          SYNC_URL = 'https://static.cdn.yobee.it/yobee/sync.html';
           break;
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
