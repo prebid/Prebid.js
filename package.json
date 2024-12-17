@@ -11,12 +11,12 @@
     "test": "gulp test",
     "lint": "gulp lint",
     "build": "gulp build --modules=modules.json",
-    "gu-build": "gulp gu-build --modules=modules.json --version=all",
+    "gu-build": "npm-run-all --parallel gu-build:*",
+    "gu-build:all": "gulp gu-build --modules=modules.json --version=all",
     "gu-build:uk": "gulp gu-build --modules=modules-uk.json --version=uk",
     "gu-build:us": "gulp gu-build --modules=modules-us.json --version=us",
     "gu-build:aus-nz": "gulp gu-build --modules=modules-aus-nz.json --version=aus-nz",
-    "gu-build:row": "gulp gu-build --modules=modules-row.json --version=row",
-    "gu-build:all": "gulp gu-build --modules=modules-uk.json --version=uk && gulp gu-build --modules=modules-us.json --version=us && gulp gu-build --modules=modules-aus-nz.json --version=aus-nz && gulp gu-build --modules=modules-row.json --version=row"
+    "gu-build:row": "gulp gu-build --modules=modules-row.json --version=row"
   },
   "repository": {
     "type": "git",
@@ -112,6 +112,7 @@
     "mocha": "^10.0.0",
     "morgan": "^1.10.0",
     "node-html-parser": "^6.1.5",
+    "npm-run-all": "^4.1.5",
     "opn": "^5.4.0",
     "resolve-from": "^5.0.0",
     "sinon": "^4.1.3",
