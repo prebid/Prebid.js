@@ -299,7 +299,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       requestTimestamp,
       s2sBidRequest: {
         ...s2sBidRequest,
-        ortb2Fragments: premergeFpd(s2sBidRequest.ortb2Fragments)
+        ortb2Fragments: premergeFpd(s2sBidRequest.ortb2Fragments, requestedBidders)
       },
       requestedBidders,
       actualBidderRequests: bidderRequests,
