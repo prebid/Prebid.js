@@ -4650,7 +4650,7 @@ describe('S2S Adapter', function () {
           },
           expected: {
             eids: [
-              eidEntry('id', 'id',['bidderA'])
+              eidEntry('id', 'id', ['bidderA'])
             ]
           }
         }
