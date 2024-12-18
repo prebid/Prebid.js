@@ -4,11 +4,11 @@ import * as ajax from 'src/ajax.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import {
   CONTEXT_KEYS,
-  contextDataToKeyValues,
   extendBidRequestConfig,
   fetchContextData,
   getConfig,
   getContextData,
+  makeContextDataToKeyValuesReducer,
   makeDataFromResponse,
   setTargeting,
 } from 'modules/mobianRtdProvider.js';
@@ -259,26 +259,19 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  describe('contextDataToKeyValues', function () {
+  describe('makeContextDataToKeyValuesReducer', function () {
     it('should format context data to key-value pairs', function () {
       const config = getConfig({
         name: 'mobianBrandSafety',
         params: {
-          prefix: 'mobiantest',
+          prefix: 'mobian',
           publisherTargeting: true,
           advertiserTargeting: true,
         }
       });
-      const mockKeyValues = {
-        'mobiantest_ap_a1': [2313, 12],
-        'mobiantest_ap_p0': [1231231, 212],
-        'mobiantest_ap_p1': [231, 419],
-        'mobiantest_emotions': ['affection'],
-        'mobiantest_risk': 'low',
-        'mobiantest_sentiment': 'positive',
-      };
-      const keyValues = contextDataToKeyValues(config, mockContextData);
-      expect(keyValues).to.deep.equal(mockKeyValues);
+      const keyValues = Object.entries(mockContextData).reduce(makeContextDataToKeyValuesReducer(config), []);
+      const keyValuesObject = Object.fromEntries(keyValues);
+      expect(keyValuesObject).to.deep.equal(mockKeyValues);
     });
   });
 });

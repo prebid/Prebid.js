@@ -84,32 +84,7 @@ export const getContextData = makeMemoizedFetch();
 
 const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value });
 
-/**
- * @param {MobianConfig} config
- * @param {MobianContextData} contextData
- * @returns {Object}
- */
-export function contextDataToKeyValues(config, contextData) {
-  const { prefix } = config;
-  const keyValues = CONTEXT_KEYS.reduce((acc, key) => {
-    const newAcc = { ...acc };
-    if (key === AP_VALUES) {
-      AP_KEYS.forEach((apKey) => {
-        if (!contextData[key]?.[apKey]?.length) return;
-        newAcc[`${prefix}_ap_${apKey}`] = contextData[key][apKey]
-      });
-      return newAcc;
-    }
-
-    if (contextData[key]?.length) {
-      newAcc[`${prefix}_${key}`] = contextData[key];
-    }
-    return newAcc;
-  }, {});
-  return keyValues;
-}
-
-function makeContextDataToKeyValuesReducer(config) {
+export function makeContextDataToKeyValuesReducer(config) {
   const { prefix } = config;
   return function contextDataToKeyValuesReducer(keyValues, [key, value]) {
     if (key === AP_VALUES) {
