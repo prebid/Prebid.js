@@ -2115,6 +2115,23 @@ describe('S2S Adapter', function () {
         }]);
       });
 
+      it('should not set eidpermissions for unrequested bidders', () => {
+        req.ortb2Fragments.bidder.unknown = {
+          user: {
+            eids: [{source: 'idC', id: 3}, {source: 'idD', id: 4}]
+          }
+        }
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        expect(payload.ext.prebid.data.eidpermissions).to.eql([{
+          bidders: ['appnexus'],
+          source: 'idC'
+        }, {
+          bidders: [],
+          source: 'idD'
+        }]);
+      })
+
       it('should repeat global EIDs when bidder-specific EIDs conflict', () => {
         BID_REQUESTS.push({
           ...BID_REQUESTS[0],
@@ -4710,8 +4727,8 @@ describe('S2S Adapter', function () {
           bidder: {
             bidderA: [mkEid('idA', 'idA2')]
           }
-        })
-      })
+        });
+      });
     })
   });
 });
