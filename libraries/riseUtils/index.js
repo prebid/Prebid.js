@@ -5,7 +5,8 @@ import {
   isEmpty,
   contains,
   isInteger,
-  getBidIdParameter
+  getBidIdParameter,
+  isPlainObject
 } from '../../src/utils.js';
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import {config} from '../../src/config.js';
@@ -19,7 +20,7 @@ export function getFloor(bid, mediaType) {
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
+  return isPlainObject(floorResult) && floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
 }
 
 export function getSizesArray(bid, mediaType) {
@@ -287,6 +288,10 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
   }
   if (ortb2Metadata.user) {
     generalParams.user_metadata = JSON.stringify(ortb2Metadata.user);
+  }
+
+  if (ortb2Metadata.device) {
+    generalParams.device = ortb2Metadata.device;
   }
 
   if (syncEnabled) {

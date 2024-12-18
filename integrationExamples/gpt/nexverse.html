@@ -1,0 +1,126 @@
+<!--
+  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
+  Prebid with the Google Publisher Tag.
+  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
+  bids array inside the adUnits, and it will use your adapter to load an ad.
+  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
+  set an alias in your /etc/hosts file so that you can load this page from a different domain.
+-->
+
+<html>
+
+<head>
+    <title>NexVerse Prebid.Js Demo</title>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 1000;
+
+        var adUnits = [{
+            code: 'div-banner-native-1',
+            mediaTypes: {
+                banner: {
+                    sizes: [[970, 90]],
+                }
+            },
+
+            // Replace this object to test a new Adapter!
+            bids: [{
+                bidder: 'nexverse',
+                params: {
+                    uid: '77d4a2eb3d209ce6c7691dc79fcab358',
+                    pubId: '24051',
+                    pubEpid: '34561'
+                },
+                isDebug: false // Optional, i.e True for debug mode
+            }]
+
+        },{
+            code: 'div-banner-native-2',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]],
+                }
+            },
+
+            // Replace this object to test a new Adapter!
+            bids: [{
+                bidder: 'nexverse',
+                params: {
+                    uid: '77d4a2eb3d209ce6c7691dc79fcab358',
+                    pubId: '24051',
+                    pubEpid: '34561'
+                },
+                isDebug: false // Optional, i.e True for debug mode
+            }]
+
+        }];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[970, 90]], 'div-banner-native-1').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-1', [[300, 250]], 'div-banner-native-2').addService(googletag.pubads());
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+    <h2>Nexverse Prebid.js Test</h2>
+    <h5>Div-1</h5>
+    <div id='div-banner-native-1'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-banner-native-1'); });
+        </script>
+    </div>
+
+    <h5>Div-2</h5>
+    <div id='div-banner-native-2'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-banner-native-2'); });
+        </script>
+    </div>
+</body>
+
+</html>

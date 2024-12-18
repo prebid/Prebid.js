@@ -210,7 +210,7 @@ function slotParams(bidRequest, bidderRequests) {
     transactionId: bidRequest.ortb2Imp?.ext?.tid,
     ext: {
       dfp_id: bidRequest.adUnitCode,
-      display_count: bidRequest.bidRequestsCount
+      display_count: bidRequest.auctionsCount
     },
     all: bidRequest.params
   };
@@ -291,7 +291,7 @@ function getBidFloorByType(bidRequest) {
   return floorInfo;
 }
 function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
-  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size});
+  let floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);

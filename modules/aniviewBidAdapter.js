@@ -126,7 +126,7 @@ export const spec = {
           method: 'POST',
           url: endpoint,
           bids: [bidRequest],
-          options: { withCredentials: false },
+          options: { withCredentials: true },
           data: converter.toORTB({
             bidderRequest,
             bidRequests: [bidRequest],

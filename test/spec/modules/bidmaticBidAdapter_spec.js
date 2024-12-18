@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { END_POINT, spec } from 'modules/bidmaticBidAdapter.js';
+import { END_POINT, SYNC_URL, spec, createUserSyncs } from 'modules/bidmaticBidAdapter.js';
 import { deepClone, deepSetValue, mergeDeep } from '../../../src/utils';
 
 const expectedImp = {
@@ -162,6 +162,46 @@ describe('Bidmatic Bid Adapter', () => {
       });
 
       expect(ortbRequest.data.imp[0].tagid).eq(GPID_RTB_EXT.ortb2Imp.ext.gpid)
+    });
+  })
+
+  describe('syncs creation', () => {
+    const syncOptions = { iframeEnabled: true };
+
+    it('should not operate without syncs enabled', () => {
+      const syncs = createUserSyncs({});
+      expect(syncs).to.eq(undefined);
+    });
+
+    it('should call uniq and unused sources only', () => {
+      const sources = { 111: 0, 222: 0, 333: 1 }
+      const syncs = createUserSyncs(sources, syncOptions);
+
+      expect(syncs.length).to.eq(2);
+
+      expect(syncs[0].type).to.eq('iframe');
+      expect(syncs[0].url).to.eq(`${SYNC_URL}?aid=111`);
+      expect(syncs[1].type).to.eq('iframe');
+      expect(syncs[1].url).to.eq(`${SYNC_URL}?aid=222`);
+
+      expect(sources[111]).to.eq(1);
+      expect(sources[222]).to.eq(1);
+
+      const syncs2 = createUserSyncs(sources, syncOptions);
+      expect(syncs2.length).to.eq(0);
+    });
+
+    it('should add consent info', () => {
+      const [{ url: syncUrl }] = createUserSyncs(
+        { 111: 0 },
+        syncOptions,
+        { gdprApplies: true, consentString: '111' },
+        'yyy',
+        { gppString: '222', applicableSections: [1, 2] });
+
+      expect(syncUrl.includes('gdpr=1&gdpr_consent=111')).to.eq(true);
+      expect(syncUrl.includes('usp=yyy')).to.eq(true);
+      expect(syncUrl.includes('gpp=222&gpp_sid=1,2')).to.eq(true);
     });
   })
 

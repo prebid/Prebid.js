@@ -9,7 +9,7 @@ const VIDEO_ENDPOINT_URL = 'https://pbs.prebrid.tv/openrtb2/auction';
 const SYNC_URL = 'https://bppb.link/static/';
 const VIDEO_PARAMS = [
   'api', 'linearity', 'maxduration', 'mimes', 'minduration',
-  'plcmt', 'playbackmethod', 'protocols', 'startdelay'
+  'plcmt', 'playbackmethod', 'protocols', 'startdelay', 'placement'
 ];
 
 export {
