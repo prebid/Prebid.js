@@ -2130,7 +2130,7 @@ describe('S2S Adapter', function () {
           bidders: [],
           source: 'idD'
         }]);
-      })
+      });
 
       it('should repeat global EIDs when bidder-specific EIDs conflict', () => {
         BID_REQUESTS.push({
@@ -4637,6 +4637,21 @@ describe('S2S Adapter', function () {
               eidEntry('idD', 'idD', ['bidderA', 'bidderB'])
             ],
             conflicts: ['idA', 'idB']
+          }
+        },
+        {
+          t: 'duplicated bidder-specific eids',
+          bidder: {
+            bidderA: {
+              user: {
+                eids: [mkEid('id'), mkEid('id')]
+              }
+            }
+          },
+          expected: {
+            eids: [
+              eidEntry('id', 'id', ['bidderA'])
+            ]
           }
         }
       ].forEach(({t, global = {}, bidder = {}, expected}) => {
