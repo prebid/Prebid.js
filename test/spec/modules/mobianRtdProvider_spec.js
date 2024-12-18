@@ -13,6 +13,8 @@ import {
   setTargeting,
 } from 'modules/mobianRtdProvider.js';
 
+const { AP_VALUES, CATEGORIES, EMOTIONS, GENRES, RISK, SENTIMENT, THEMES, TONES } = CONTEXT_KEYS;
+
 describe('Mobian RTD Submodule', function () {
   let ajaxStub;
   let bidReqConfig;
@@ -36,14 +38,14 @@ describe('Mobian RTD Submodule', function () {
   });
 
   const mockContextData = {
-    apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
-    categories: [],
-    emotions: ['affection'],
-    genres: [],
-    risk: 'low',
-    sentiment: 'positive',
-    themes: [],
-    tones: [],
+    [AP_VALUES]: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
+    [CATEGORIES]: [],
+    [EMOTIONS]: ['affection'],
+    [GENRES]: [],
+    [RISK]: 'low',
+    [SENTIMENT]: 'positive',
+    [THEMES]: [],
+    [TONES]: [],
   }
 
   const mockKeyValues = {
@@ -57,8 +59,8 @@ describe('Mobian RTD Submodule', function () {
 
   const mockConfig = {
     prefix: 'mobian',
-    publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
-    advertiserTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+    publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
+    advertiserTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
   }
 
   beforeEach(function () {
@@ -119,7 +121,7 @@ describe('Mobian RTD Submodule', function () {
     it('should set targeting key-value pairs as per config', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
       };
       setTargeting(parsedConfig, mockContextData);
 
@@ -140,7 +142,7 @@ describe('Mobian RTD Submodule', function () {
     it('should not set key-value pairs if context data is empty', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
       };
       setTargeting(parsedConfig, {});
 
@@ -150,7 +152,7 @@ describe('Mobian RTD Submodule', function () {
     it('should only set key-value pairs for the keys specified in config', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: ['emotions', 'risk'],
+        publisherTargeting: [EMOTIONS, RISK],
       };
 
       setTargeting(parsedConfig, mockContextData);
@@ -200,14 +202,14 @@ describe('Mobian RTD Submodule', function () {
         name: 'mobianBrandSafety',
         params: {
           prefix: 'mobiantest',
-          publisherTargeting: ['apValues'],
-          advertiserTargeting: ['emotions'],
+          publisherTargeting: [AP_VALUES],
+          advertiserTargeting: [EMOTIONS],
         }
       });
       expect(config).to.deep.equal({
         prefix: 'mobiantest',
-        publisherTargeting: ['apValues'],
-        advertiserTargeting: ['emotions'],
+        publisherTargeting: [AP_VALUES],
+        advertiserTargeting: [EMOTIONS],
       });
     });
 
@@ -215,12 +217,12 @@ describe('Mobian RTD Submodule', function () {
       const config = getConfig({
         name: 'mobianBrandSafety',
         params: {
-          publisherTargeting: ['apValues'],
+          publisherTargeting: [AP_VALUES],
         }
       });
       expect(config).to.deep.equal({
         prefix: 'mobian',
-        publisherTargeting: ['apValues'],
+        publisherTargeting: [AP_VALUES],
         advertiserTargeting: [],
       });
     });
