@@ -57,7 +57,7 @@ export const spec = {
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     let host = getValue(validBidRequests[0].params, 'host');
-    const currency = getCurrencyFromBidderRequest(bidderRequest) || 'TRY';
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || null;
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -87,6 +87,7 @@ export const spec = {
     };
 
     payload.ext.cur = currency;
+
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
