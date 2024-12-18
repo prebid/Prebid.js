@@ -1,7 +1,6 @@
 import { find } from '../../src/polyfill.js';
 import { vastXmlEditorFactory } from '../../libraries/video/shared/vastXmlEditor.js';
 import { generateUUID } from '../../src/utils.js';
-import { config } from '../../src/config.js';
 
 export const PB_PREFIX = 'pb_';
 export const UUID_MARKER = PB_PREFIX + 'uuid';
@@ -66,9 +65,7 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 
     if (vastUrl) {
       const url = new URL(vastUrl);
-      if (!config.getConfig('cache.useLocal')) {
-        url.searchParams.append(UUID_MARKER, uuid);
-      }
+      url.searchParams.append(UUID_MARKER, uuid);
       bid.vastUrl = url.toString();
     } else if (vastXml) {
       bid.vastXml = vastXmlEditor.getVastXmlWithTracking(vastXml, uuid);

@@ -190,7 +190,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       return;
     }
 
-    player.playAd(adTagUrl || options.adXml, options);
+    if (adTagUrl) {
+      player.playAd(adTagUrl, options);
+    } else {
+      player.loadAdXml(options.adXml, options);
+    }
   }
 
   function onEvent(externalEventName, callback, basePayload) {

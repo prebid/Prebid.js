@@ -174,8 +174,31 @@ export const storeLocally = (bid) => {
   const vastValue = getVastValue(bid);
   const dataUri = 'data:text/xml;base64,' + btoa(vastValue);
   bid.vastUrl = dataUri;
-  vastsLocalCache.set(bid.bidderCode, dataUri); 
+  //@todo: think of wrapping it with [if (adServer)]
+  vastsLocalCache.set(getLocalCacheBidId(bid), dataUri);
 };
+
+export async function getLocalCachedBidWithGam(adTagUrl) {
+  const gamAdTagUrl = new URL(adTagUrl);
+  const custParams = new URLSearchParams(gamAdTagUrl.searchParams.get('cust_params'));
+  const hb_bidder = custParams.get('hb_bidder');
+  const hb_adid = custParams.get('hb_adid');
+  const response = await fetch(gamAdTagUrl);
+
+  if (!response.ok) {
+    logError('Unable to fetch valid response from Google Ad Manager');
+    return;
+  }
+
+  const gamVastWrapper = await response.text();
+  const bidVastDataUri = vastsLocalCache.get(`${hb_bidder}_${hb_adid}`);
+  const mockUrl = LOCAL_CACHE_MOCK_URL + hb_bidder;
+  const combinedVast = gamVastWrapper.replace(mockUrl, bidVastDataUri);
+
+  return combinedVast;
+}
+
+const getLocalCacheBidId = (bid) => `${bid.bidderCode}_${bid.adId}`;
 
 export const _internal = {
   store
@@ -223,7 +246,7 @@ if (FEATURES.VIDEO) {
     if (cache.useLocal && !cleanupHandler) {
       cleanupHandler = auctionManager.onExpiry((auction) => {
         auction.getBidsReceived()
-          .forEach(({vastUrl}) => URL.revokeObjectURL(vastUrl))
+          .forEach((bid) => vastsLocalCache.delete(getLocalCacheBidId(bid)))
       });
     }
   });
