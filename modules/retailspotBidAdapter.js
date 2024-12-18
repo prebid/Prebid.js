@@ -8,14 +8,17 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'retailspot';
-const DEFAULT_SUBDOMAIN = 'ssp';
-const PREPROD_SUBDOMAIN = 'ssp-preprod';
-const HOST = 'retail-spot.io';
-const ENDPOINT = '/prebid';
-const DEV_URL = 'http://localhost:8090/prebid';
+const GVL_ID = 1319;
+
+const DEFAULT_SUBDOMAIN = 'hbapi';
+const PREPROD_SUBDOMAIN = 'hbapi-preprod';
+const HOST = 'retailspotads.com';
+const ENDPOINT = '/';
+const DEV_URL = 'http://localhost:8090/';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['rs'], // short code
   /**
