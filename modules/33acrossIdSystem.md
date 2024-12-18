@@ -51,5 +51,10 @@ The following settings are available in the `params` property in `userSync.userI
 | Param name | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
 | pid | Required | String | Partner ID provided by 33Across | `"0010b00002GYU4eBAH"` |
+| hem | Optional | String | Hashed email address in sha256 format | `"ba4235544d6c91865fbf70fa1bdb70f2d375ded1b2b946b21c675dcbe9968cdc"` |
 | storeFpid | Optional | Boolean | Indicates whether a supplemental first-party ID may be stored to improve addressability, this feature is enabled by default | `true` (default) or `false` |
 | storeTpid | Optional | Boolean | Indicates whether a supplemental third-party ID may be stored to improve addressability, this feature is enabled by default | `true` (default) or `false` |
+
+### HEM Collection
+
+33Across ID System supports user's hashed email, if available in storage.
