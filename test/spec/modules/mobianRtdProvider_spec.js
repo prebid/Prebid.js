@@ -4,6 +4,7 @@ import * as ajax from 'src/ajax.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import {
   CONTEXT_KEYS,
+  contextDataToKeyValues,
   extendBidRequestConfig,
   fetchContextData,
   getConfig,
@@ -43,6 +44,21 @@ describe('Mobian RTD Submodule', function () {
     sentiment: 'positive',
     themes: [],
     tones: [],
+  }
+
+  const mockKeyValues = {
+    'mobian_ap_a1': [2313, 12],
+    'mobian_ap_p0': [1231231, 212],
+    'mobian_ap_p1': [231, 419],
+    'mobian_emotions': ['affection'],
+    'mobian_risk': 'low',
+    'mobian_sentiment': 'positive',
+  }
+
+  const mockConfig = {
+    prefix: 'mobian',
+    publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+    advertiserTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
   }
 
   beforeEach(function () {
@@ -155,8 +171,8 @@ describe('Mobian RTD Submodule', function () {
 
   describe('extendBidRequestConfig', function () {
     it('should extend bid request config with context data', function () {
-      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
-      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockContextData);
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData, mockConfig);
+      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockKeyValues);
     });
 
     it('should not override existing data', function () {
@@ -164,17 +180,17 @@ describe('Mobian RTD Submodule', function () {
         existing: 'data'
       };
 
-      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData, mockConfig);
       expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal({
         existing: 'data',
-        ...mockContextData
+        ...mockKeyValues
       });
     });
 
     it('should create data object if missing', function () {
       delete bidReqConfig.ortb2Fragments.global.site.ext.data;
-      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
-      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockContextData);
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData, mockConfig);
+      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockKeyValues);
     });
   });
 
@@ -240,6 +256,29 @@ describe('Mobian RTD Submodule', function () {
         publisherTargeting: CONTEXT_KEYS,
         advertiserTargeting: CONTEXT_KEYS,
       });
+    });
+  });
+
+  describe('contextDataToKeyValues', function () {
+    it('should format context data to key-value pairs', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          prefix: 'mobiantest',
+          publisherTargeting: true,
+          advertiserTargeting: true,
+        }
+      });
+      const mockKeyValues = {
+        'mobiantest_ap_a1': [2313, 12],
+        'mobiantest_ap_p0': [1231231, 212],
+        'mobiantest_ap_p1': [231, 419],
+        'mobiantest_emotions': ['affection'],
+        'mobiantest_risk': 'low',
+        'mobiantest_sentiment': 'positive',
+      };
+      const keyValues = contextDataToKeyValues(config, mockContextData);
+      expect(keyValues).to.deep.equal(mockKeyValues);
     });
   });
 });
