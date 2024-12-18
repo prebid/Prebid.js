@@ -82,6 +82,8 @@ function makeMemoizedFetch() {
 
 export const getContextData = makeMemoizedFetch();
 
+const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value });
+
 /**
  * @param {MobianConfig} config
  * @param {MobianContextData} contextData
@@ -105,6 +107,22 @@ export function contextDataToKeyValues(config, contextData) {
     return newAcc;
   }, {});
   return keyValues;
+}
+
+function makeContextDataToKeyValuesReducer(config) {
+  const { prefix } = config;
+  return function contextDataToKeyValuesReducer(keyValues, [key, value]) {
+    if (key === AP_VALUES) {
+      AP_KEYS.forEach((apKey) => {
+        if (!value?.[apKey]?.length) return;
+        keyValues.push([`${prefix}_ap_${apKey}`, value[apKey]]);
+      });
+    }
+    if (value?.length) {
+      keyValues.push([`${prefix}_${key}`, value]);
+    }
+    return keyValues;
+  }
 }
 
 export async function fetchContextData() {
@@ -140,10 +158,11 @@ export function getConfig(config) {
  */
 export function setTargeting(config, contextData) {
   logMessage('context', contextData);
-  const filteredContextData = Object.entries(contextData).filter(([key]) => config.publisherTargeting.includes(key));
-  const data = Object.fromEntries(filteredContextData);
-  const keyValues = contextDataToKeyValues(config, data);
-  Object.entries(keyValues).forEach(([key, value]) => setKeyValue(key, value));
+  const keyValues = Object.entries(contextData)
+    .filter(([key]) => config.publisherTargeting.includes(key))
+    .reduce(makeContextDataToKeyValuesReducer(config), [])
+
+  keyValues.forEach(([key, value]) => setKeyValue(key, value));
 }
 
 /**
@@ -176,9 +195,10 @@ export function makeDataFromResponse(contextData) {
 export function extendBidRequestConfig(bidReqConfig, contextData, config) {
   logMessage('extendBidRequestConfig', bidReqConfig, contextData);
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
-
-  const filteredContextData = Object.entries(contextData).filter(([key]) => config.advertiserTargeting.includes(key));
-  const keyValues = contextDataToKeyValues(config, filteredContextData);
+  const keyValues = Object.entries(contextData)
+    .filter(([key]) => config.advertiserTargeting.includes(key))
+    .reduce(makeContextDataToKeyValuesReducer(config), [])
+    .reduce(entriesToObjectReducer, {});
 
   ortb2Site.ext = ortb2Site.ext || {};
   ortb2Site.ext.data = {
@@ -195,13 +215,10 @@ export function extendBidRequestConfig(bidReqConfig, contextData, config) {
  */
 function init(rawConfig) {
   logMessage('init', rawConfig);
-
   const config = getConfig(rawConfig);
-
   if (config.publisherTargeting.length) {
     getContextData().then((contextData) => setTargeting(config, contextData));
   }
-
   return true;
 }
 
