@@ -14,7 +14,7 @@ const DEFAULT_SUBDOMAIN = 'hbapi';
 const PREPROD_SUBDOMAIN = 'hbapi-preprod';
 const HOST = 'retailspotads.com';
 const ENDPOINT = '/';
-const DEV_URL = 'http://localhost:8090/';
+const DEV_URL = 'http://localhost:3030/';
 
 export const spec = {
   code: BIDDER_CODE,
