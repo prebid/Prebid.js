@@ -8,9 +8,12 @@ import {
   fetchContextData,
   getConfig,
   getContextData,
+  makeContextDataToKeyValuesReducer,
   makeDataFromResponse,
   setTargeting,
 } from 'modules/mobianRtdProvider.js';
+
+const { AP_VALUES, CATEGORIES, EMOTIONS, GENRES, RISK, SENTIMENT, THEMES, TONES } = CONTEXT_KEYS;
 
 describe('Mobian RTD Submodule', function () {
   let ajaxStub;
@@ -35,14 +38,29 @@ describe('Mobian RTD Submodule', function () {
   });
 
   const mockContextData = {
-    apValues: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
-    categories: [],
-    emotions: ['affection'],
-    genres: [],
-    risk: 'low',
-    sentiment: 'positive',
-    themes: [],
-    tones: [],
+    [AP_VALUES]: { a0: [], a1: [2313, 12], p0: [1231231, 212], p1: [231, 419] },
+    [CATEGORIES]: [],
+    [EMOTIONS]: ['affection'],
+    [GENRES]: [],
+    [RISK]: 'low',
+    [SENTIMENT]: 'positive',
+    [THEMES]: [],
+    [TONES]: [],
+  }
+
+  const mockKeyValues = {
+    'mobian_ap_a1': [2313, 12],
+    'mobian_ap_p0': [1231231, 212],
+    'mobian_ap_p1': [231, 419],
+    'mobian_emotions': ['affection'],
+    'mobian_risk': 'low',
+    'mobian_sentiment': 'positive',
+  }
+
+  const mockConfig = {
+    prefix: 'mobian',
+    publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
+    advertiserTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
   }
 
   beforeEach(function () {
@@ -103,7 +121,7 @@ describe('Mobian RTD Submodule', function () {
     it('should set targeting key-value pairs as per config', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
       };
       setTargeting(parsedConfig, mockContextData);
 
@@ -124,7 +142,7 @@ describe('Mobian RTD Submodule', function () {
     it('should not set key-value pairs if context data is empty', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: ['apValues', 'emotions', 'risk', 'sentiment', 'themes', 'tones', 'genres'],
+        publisherTargeting: [AP_VALUES, EMOTIONS, RISK, SENTIMENT, THEMES, TONES, GENRES],
       };
       setTargeting(parsedConfig, {});
 
@@ -134,7 +152,7 @@ describe('Mobian RTD Submodule', function () {
     it('should only set key-value pairs for the keys specified in config', function () {
       const parsedConfig = {
         prefix: 'mobian',
-        publisherTargeting: ['emotions', 'risk'],
+        publisherTargeting: [EMOTIONS, RISK],
       };
 
       setTargeting(parsedConfig, mockContextData);
@@ -155,8 +173,8 @@ describe('Mobian RTD Submodule', function () {
 
   describe('extendBidRequestConfig', function () {
     it('should extend bid request config with context data', function () {
-      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
-      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockContextData);
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData, mockConfig);
+      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockKeyValues);
     });
 
     it('should not override existing data', function () {
@@ -164,17 +182,17 @@ describe('Mobian RTD Submodule', function () {
         existing: 'data'
       };
 
-      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData, mockConfig);
       expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal({
         existing: 'data',
-        ...mockContextData
+        ...mockKeyValues
       });
     });
 
     it('should create data object if missing', function () {
       delete bidReqConfig.ortb2Fragments.global.site.ext.data;
-      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData);
-      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockContextData);
+      const extendedConfig = extendBidRequestConfig(bidReqConfig, mockContextData, mockConfig);
+      expect(extendedConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockKeyValues);
     });
   });
 
@@ -184,14 +202,14 @@ describe('Mobian RTD Submodule', function () {
         name: 'mobianBrandSafety',
         params: {
           prefix: 'mobiantest',
-          publisherTargeting: ['apValues'],
-          advertiserTargeting: ['emotions'],
+          publisherTargeting: [AP_VALUES],
+          advertiserTargeting: [EMOTIONS],
         }
       });
       expect(config).to.deep.equal({
         prefix: 'mobiantest',
-        publisherTargeting: ['apValues'],
-        advertiserTargeting: ['emotions'],
+        publisherTargeting: [AP_VALUES],
+        advertiserTargeting: [EMOTIONS],
       });
     });
 
@@ -199,12 +217,12 @@ describe('Mobian RTD Submodule', function () {
       const config = getConfig({
         name: 'mobianBrandSafety',
         params: {
-          publisherTargeting: ['apValues'],
+          publisherTargeting: [AP_VALUES],
         }
       });
       expect(config).to.deep.equal({
         prefix: 'mobian',
-        publisherTargeting: ['apValues'],
+        publisherTargeting: [AP_VALUES],
         advertiserTargeting: [],
       });
     });
@@ -240,6 +258,22 @@ describe('Mobian RTD Submodule', function () {
         publisherTargeting: CONTEXT_KEYS,
         advertiserTargeting: CONTEXT_KEYS,
       });
+    });
+  });
+
+  describe('makeContextDataToKeyValuesReducer', function () {
+    it('should format context data to key-value pairs', function () {
+      const config = getConfig({
+        name: 'mobianBrandSafety',
+        params: {
+          prefix: 'mobian',
+          publisherTargeting: true,
+          advertiserTargeting: true,
+        }
+      });
+      const keyValues = Object.entries(mockContextData).reduce(makeContextDataToKeyValuesReducer(config), []);
+      const keyValuesObject = Object.fromEntries(keyValues);
+      expect(keyValuesObject).to.deep.equal(mockKeyValues);
     });
   });
 });
