@@ -2,6 +2,7 @@ import {
   API_FRAMEWORKS,
   PLACEMENT,
   PLAYBACK_METHODS,
+  PLCMT,
   PROTOCOLS,
   VIDEO_MIME_TYPE,
   VPAID_MIME_TYPE
@@ -109,6 +110,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         API_FRAMEWORKS.VPAID_2_0,
         API_FRAMEWORKS.OMID_1_0
       ],
+      plcmt: utils.getPlcmt(playerConfig)
     };
 
     return video;
@@ -347,6 +349,16 @@ export const utils = {
       return mute ? PLAYBACK_METHODS.AUTOPLAY_MUTED : PLAYBACK_METHODS.AUTOPLAY;
     }
     return PLAYBACK_METHODS.CLICK_TO_PLAY;
+  },
+
+  getPlcmt: function ({type, autoplay, muted, file}) {
+    type = type || 'inStream';
+    if (!file) {
+      // INTERSTITIAL: primary focus of the page and take up the majority of the viewport and cannot be scrolled out of view.
+      return type === 'rewarded' || type === 'inView' ? PLCMT.INTERSTITIAL : PLCMT.OUTSTREAM;
+    }
+    // INSTREAM must be set to “sound on” by default at player start
+    return type === 'inStream' && (!muted || !autoplay) ? PLCMT.INSTREAM : PLCMT.ACCOMPANYING_CONTENT;
   }
 }
 
