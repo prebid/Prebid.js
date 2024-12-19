@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/viewdeosDXBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {cloneDeep} from 'lodash';
 
 const ENDPOINT = 'https://ghb.sync.viewdeos.com/auction/';
 
@@ -176,13 +177,15 @@ describe('viewdeosDXBidAdapter', function () {
 
   describe('user syncs with both types', function () {
     it('should be returned if pixel and iframe enabled', function () {
+      const mockedServerResponse = cloneDeep(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS);
+      mockedServerResponse.cookieURLs = ['link7', 'link8'];
       const syncs = spec.getUserSyncs({
         iframeEnabled: true,
-        pixelEnabled: true
-      }, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+        pixelEnabled: true,
+      }, [{body: mockedServerResponse}]);
 
-      expect(syncs.map(s => s.url)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs);
-      expect(syncs.map(s => s.type)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLSTypes);
+      expect(syncs.map(s => s.url)).to.deep.equal(mockedServerResponse.cookieURLs);
+      expect(syncs.map(s => s.type)).to.deep.equal(mockedServerResponse.cookieURLSTypes);
     })
   })
 
