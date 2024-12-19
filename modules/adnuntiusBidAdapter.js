@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray} from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -244,6 +244,13 @@ export const spec = {
       queryParamsAndValues.push('consentString=' + consentString);
       queryParamsAndValues.push('gdpr=' + flag);
     }
+    const win = getWindowTop() || window;
+    if (win.screen && win.screen.availHeight) {
+      queryParamsAndValues.push('screen=' + win.screen.availWidth + 'x' + win.screen.availHeight);
+    }
+    if (win.innerWidth) {
+      queryParamsAndValues.push('viewport=' + win.innerWidth + 'x' + win.innerHeight);
+    }
 
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has('script-override')) {
@@ -356,10 +363,12 @@ export const spec = {
     }
 
     function buildAdResponse(bidderCode, ad, adUnit, dealCount) {
-      const destinationUrls = ad.destinationUrls || {};
-      const advertiserDomains = [];
-      for (const value of Object.values(destinationUrls)) {
-        advertiserDomains.push(value.split('/')[2])
+      const advertiserDomains = ad.advertiserDomains || [];
+      if (advertiserDomains.length === 0) {
+        const destinationUrls = ad.destinationUrls || {};
+        for (const value of Object.values(destinationUrls)) {
+          advertiserDomains.push(value.split('/')[2])
+        }
       }
       const adResponse = {
         bidderCode: bidderCode,

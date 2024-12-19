@@ -1,5 +1,4 @@
 import {
-  deepAccess,
   deepClone, getDefinedParams,
   insertHtmlIntoIframe,
   isArray,
@@ -129,7 +128,7 @@ export function processNativeAdUnitParams(params) {
 export function decorateAdUnitsWithNativeParams(adUnits) {
   adUnits.forEach(adUnit => {
     const nativeParams =
-      adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
+      adUnit.nativeParams || adUnit?.mediaTypes?.native;
     if (nativeParams) {
       adUnit.nativeParams = processNativeAdUnitParams(nativeParams);
     }
@@ -213,7 +212,7 @@ function typeIsSupported(type) {
  */
 export const nativeAdUnit = adUnit => {
   const mediaType = adUnit.mediaType === 'native';
-  const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
+  const mediaTypes = adUnit?.mediaTypes?.native;
   return mediaType || mediaTypes;
 }
 export const nativeBidder = bid => includes(nativeAdapters, bid.bidder);
@@ -236,7 +235,7 @@ export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
 }
 
 export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
-  if (!deepAccess(bidORTB, 'link.url')) {
+  if (!bidORTB?.link?.url) {
     logError(`native response doesn't have 'link' property. Ortb response: `, bidORTB);
     return false;
   }
@@ -364,10 +363,7 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   let keyValues = {};
   const adUnit = index.getAdUnit(bid);
 
-  const globalSendTargetingKeys = adUnit?.nativeParams?.ortb == null && deepAccess(
-    adUnit,
-    `nativeParams.sendTargetingKeys`
-  ) !== false;
+  const globalSendTargetingKeys = adUnit?.nativeParams?.ortb == null && adUnit?.nativeParams?.sendTargetingKeys !== false;
 
   const nativeKeys = getNativeKeys(adUnit);
 
@@ -376,15 +372,15 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
 
   Object.keys(flatBidNativeKeys).forEach(asset => {
     const key = nativeKeys[asset];
-    let value = getAssetValue(bid.native[asset]) || getAssetValue(deepAccess(bid, `native.ext.${asset}`));
+    let value = getAssetValue(bid.native[asset]) || getAssetValue(bid?.native?.ext?.[asset]);
 
     if (asset === 'adTemplate' || !key || !value) {
       return;
     }
 
-    let sendPlaceholder = deepAccess(adUnit, `nativeParams.${asset}.sendId`);
+    let sendPlaceholder = adUnit?.nativeParams?.[asset]?.sendId;
     if (typeof sendPlaceholder !== 'boolean') {
-      sendPlaceholder = deepAccess(adUnit, `nativeParams.ext.${asset}.sendId`);
+      sendPlaceholder = adUnit?.nativeParams?.ext?.[asset]?.sendId;
     }
 
     if (sendPlaceholder) {
@@ -392,9 +388,9 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
       value = placeholder;
     }
 
-    let assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.${asset}.sendTargetingKeys`);
+    let assetSendTargetingKeys = adUnit?.nativeParams?.[asset]?.sendTargetingKeys;
     if (typeof assetSendTargetingKeys !== 'boolean') {
-      assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.ext.${asset}.sendTargetingKeys`);
+      assetSendTargetingKeys = adUnit?.nativeParams?.ext?.[asset]?.sendTargetingKeys;
     }
 
     const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
@@ -482,7 +478,7 @@ function getAssetValue(value) {
 function getNativeKeys(adUnit) {
   const extraNativeKeys = {}
 
-  if (deepAccess(adUnit, 'nativeParams.ext')) {
+  if (adUnit?.nativeParams?.ext) {
     Object.keys(adUnit.nativeParams.ext).forEach(extKey => {
       extraNativeKeys[extKey] = `hb_native_${extKey}`;
     })

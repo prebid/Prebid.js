@@ -555,7 +555,7 @@ function getBidFloor(bid, sizes) {
     mediaType: mediaType !== undefined && spec.supportedMediaTypes.includes(mediaType) ? mediaType : '*',
     size: sizes.length !== 1 ? '*' : sizes[0].split(DIMENSION_SIGN),
   });
-  if (floor.currency === CURRENCY_CODE) {
+  if (floor?.currency === CURRENCY_CODE) {
     return (floor.floor * 100).toFixed(0);
   }
   return undefined;

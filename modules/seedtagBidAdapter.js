@@ -18,12 +18,6 @@ const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
 const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
 const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout';
-const ALLOWED_DISPLAY_PLACEMENTS = [
-  'inScreen',
-  'inImage',
-  'inArticle',
-  'inBanner',
-];
 
 // Global Vendor List Id
 // https://iabeurope.eu/vendor-list-tcf-v2-0/
@@ -53,7 +47,7 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  return floorInfo.floor;
+  return floorInfo?.floor;
 }
 
 const getConnectionType = () => {
@@ -95,8 +89,7 @@ function hasMandatoryDisplayParams(bid) {
   const p = bid.params;
   return (
     !!p.publisherId &&
-    !!p.adUnitId &&
-    ALLOWED_DISPLAY_PLACEMENTS.indexOf(p.placement) > -1
+    !!p.adUnitId
   );
 }
 
@@ -111,19 +104,7 @@ function hasMandatoryVideoParams(bid) {
     isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0;
 
-  switch (bid.params.placement) {
-    // instream accept only video format
-    case 'inStream':
-      return isValid && videoParams.context === 'instream';
-    // outstream accept banner/native/video format
-    default:
-      return (
-        isValid &&
-        videoParams.context === 'outstream' &&
-        hasBannerMediaType(bid) &&
-        hasMandatoryDisplayParams(bid)
-      );
-  }
+  return isValid
 }
 
 function buildBidRequest(validBidRequest) {
@@ -170,6 +151,10 @@ function getVideoParams(validBidRequest) {
   }
 
   return videoParams;
+}
+
+function isVideoOutstream(validBidRequest) {
+  return getVideoParams(validBidRequest).context === 'outstream';
 }
 
 function buildBidResponse(seedtagBid) {
@@ -286,9 +271,19 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return hasVideoMediaType(bid)
-      ? hasMandatoryVideoParams(bid)
-      : hasMandatoryDisplayParams(bid);
+    const hasVideo = hasVideoMediaType(bid);
+    const hasBanner = hasBannerMediaType(bid);
+
+    // when accept both mediatype but it must be outstream
+    if (hasVideo && hasBanner) {
+      return hasMandatoryVideoParams(bid) && isVideoOutstream(bid) && hasMandatoryDisplayParams(bid);
+    } else if (hasVideo) {
+      return hasMandatoryVideoParams(bid);
+    } else if (hasBanner) {
+      return hasMandatoryDisplayParams(bid);
+    } else {
+      return false;
+    }
   },
 
   /**

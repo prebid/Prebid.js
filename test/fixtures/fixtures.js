@@ -822,6 +822,68 @@ export function getAdUnits() {
   ];
 };
 
+export function getTwinAdUnits() {
+  return [
+    {
+      'code': '/19968336/header-bid-tag1',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [
+              728,
+              90
+            ]
+          ]
+        }
+      },
+      'bids': [
+        {
+          'bidder': 'pubmatic',
+          'params': {
+            'publisherId': 1234567,
+            'adSlot': '1234567@728x90'
+          }
+        },
+        {
+          'bidder': 'medianet',
+          'params': {
+            'cid': '8CUWQS47C',
+            'crid': '241882766'
+          },
+        },
+      ]
+    },
+    {
+      'code': '/19968336/header-bid-tag1',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [
+              970,
+              90
+            ]
+          ]
+        }
+      },
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '543221'
+          }
+        },
+        {
+          'bidder': 'medianet',
+          'params': {
+            'cid': '8CUWQS47C',
+            'crid': '241882764'
+          },
+        },
+      ]
+    }
+  ]
+}
+
 export function getBidResponsesFromAPI() {
   return {
     '/19968336/header-bid-tag-0': {
