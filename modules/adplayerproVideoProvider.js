@@ -352,13 +352,13 @@ export const utils = {
   },
 
   getPlcmt: function ({type, autoplay, muted, file}) {
-    type = type || "inStream";
+    type = type || 'inStream';
     if (!file) {
-      //INTERSTITIAL: primary focus of the page and take up the majority of the viewport and cannot be scrolled out of view.
-      return type === "rewarded" || type === "inView" ? PLCMT.INTERSTITIAL : PLCMT.OUTSTREAM;
+      // INTERSTITIAL: primary focus of the page and take up the majority of the viewport and cannot be scrolled out of view.
+      return type === 'rewarded' || type === 'inView' ? PLCMT.INTERSTITIAL : PLCMT.OUTSTREAM;
     }
-    //INSTREAM must be set to “sound on” by default at player start
-    return type === "inStream" && (!muted || !autoplay) ? PLCMT.INSTREAM : PLCMT.ACCOMPANYING_CONTENT;
+    // INSTREAM must be set to “sound on” by default at player start
+    return type === 'inStream' && (!muted || !autoplay) ? PLCMT.INSTREAM : PLCMT.ACCOMPANYING_CONTENT;
   }
 }
 

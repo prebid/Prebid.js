@@ -420,15 +420,15 @@ describe('AdPlayerProProvider utils', function () {
       expect(utils.getPlcmt({type, autoplay, muted, file})).to.be.equal(expected);
     }
 
-    test("inStream", false, false, "f", PLCMT.INSTREAM);
-    test(undefined, false, false, "f", PLCMT.INSTREAM);
-    test("inStream", false, true, "f", PLCMT.INSTREAM);
-    test("inStream", true, false, "f", PLCMT.INSTREAM);
-    test("inStream", true, true, "f", PLCMT.ACCOMPANYING_CONTENT);
+    test('inStream', false, false, 'f', PLCMT.INSTREAM);
+    test(undefined, false, false, 'f', PLCMT.INSTREAM);
+    test('inStream', false, true, 'f', PLCMT.INSTREAM);
+    test('inStream', true, false, 'f', PLCMT.INSTREAM);
+    test('inStream', true, true, 'f', PLCMT.ACCOMPANYING_CONTENT);
 
-    test("rewarded", true, false, undefined, PLCMT.INTERSTITIAL);
-    test("inView", true, false, undefined, PLCMT.INTERSTITIAL);
-    test("InPage", true, false, undefined, PLCMT.OUTSTREAM);
+    test('rewarded', true, false, undefined, PLCMT.INTERSTITIAL);
+    test('inView', true, false, undefined, PLCMT.INTERSTITIAL);
+    test('InPage', true, false, undefined, PLCMT.OUTSTREAM);
   });
 });
 
