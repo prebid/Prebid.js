@@ -144,6 +144,7 @@ export const spec = {
         case 'yobee':
           SYNC_URL = 'https://static.cdn.yobee.it/yobee/sync.html';
           break;
+        case 'admatic':
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
           break;
