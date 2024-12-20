@@ -25,7 +25,7 @@ Banner and Video ad formats are supported.
     bids: [{
       bidder: "retailspot",
       params: {
-        placement: "test-12345"
+        placement: "eq-609785-1856964-125234"
       }
     }]
   };
