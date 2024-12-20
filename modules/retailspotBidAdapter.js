@@ -5,6 +5,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
 const BIDDER_CODE = 'retailspot';
@@ -36,7 +37,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequests} - bidRequests.bids[] is an array of AdUnits and bids
+   * @param {BidRequest} bidRequests is an array of AdUnits and bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
@@ -99,11 +101,10 @@ export const spec = {
   }
 }
 
-
 /* Get parsed size from request size */
 function getSize(bid) {
   let inputSize = bid.sizes || [];
-  
+
   if (bid.mediaTypes?.banner) {
     inputSize = bid.mediaTypes.banner.sizes || [];
   }
@@ -119,7 +120,7 @@ function getSize(bid) {
   const sizesArray = parseSizesInput(inputSize);
   const parsed = {};
 
-  // Use the first size as the main requested one 
+  // Use the first size as the main requested one
   const size = sizesArray[0];
 
   // size is ready
@@ -128,7 +129,7 @@ function getSize(bid) {
   }
 
   // size is given as string "wwwxhhh" or "www*hhh"
-  const parsedSize = size.includes('*') ? size.split('*') :  size.toUpperCase().split('X');
+  const parsedSize = size.includes('*') ? size.split('*') : size.toUpperCase().split('X');
   const width = parseInt(parsedSize[0], 10);
   if (width) {
     parsed.width = width;
