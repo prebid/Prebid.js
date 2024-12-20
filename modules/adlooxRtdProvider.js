@@ -9,7 +9,6 @@
  * @optional module:modules/intersectionRtdProvider
  */
 
-/* eslint standard/no-callback-literal: "off" */
 /* eslint prebid/validate-imports: "off" */
 
 import {auctionManager} from '../src/auctionManager.js';
