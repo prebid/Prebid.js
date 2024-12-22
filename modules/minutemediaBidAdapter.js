@@ -4,6 +4,7 @@ import {makeBaseSpec} from '../libraries/riseUtils/index.js';
 
 const BIDDER_CODE = 'minutemedia';
 const BASE_URL = 'https://hb.minutemedia-prebid.com/';
+const GVLID = 918;
 const MODES = {
   PRODUCTION: 'hb-mm-multi',
   TEST: 'hb-multi-mm-test'
@@ -12,7 +13,7 @@ const MODES = {
 export const spec = {
   ...makeBaseSpec(BASE_URL, MODES),
   code: BIDDER_CODE,
-  gvlid: 918,
+  gvlid: GVLID,
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params) {
       logWarn('no params have been set to MinuteMedia adapter');

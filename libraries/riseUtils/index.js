@@ -90,18 +90,18 @@ export function getBidRequestMediaTypes(bidRequest) {
 }
 
 export function getPos(bidRequest) {
-  const mediaTypes = getBidRequestMediaTypes(bidRequest)
-  const firstMediaType = mediaTypes[0]
+  const mediaTypes = getBidRequestMediaTypes(bidRequest);
+  const firstMediaType = mediaTypes[0];
   if (mediaTypes.length === 1) {
-    return deepAccess(bidRequest, `mediaTypes.${firstMediaType}.pos`)
+    return deepAccess(bidRequest, `mediaTypes.${firstMediaType}.pos`);
   }
 }
 
 export function getName(bidRequest) {
-  const mediaTypes = getBidRequestMediaTypes(bidRequest)
-  const firstMediaType = mediaTypes[0]
+  const mediaTypes = getBidRequestMediaTypes(bidRequest);
+  const firstMediaType = mediaTypes[0];
   if (mediaTypes.length === 1) {
-    return deepAccess(bidRequest, `mediaTypes.${firstMediaType}.name`)
+    return deepAccess(bidRequest, `mediaTypes.${firstMediaType}.name`);
   }
 }
 
@@ -111,7 +111,7 @@ export function getFloor(bid) {
   }
 
   const mediaTypes = getBidRequestMediaTypes(bid)
-  const firstMediaType = mediaTypes[0]
+  const firstMediaType = mediaTypes[0];
 
   let floorResult = bid.getFloor({
     currency: 'USD',
@@ -124,8 +124,8 @@ export function getFloor(bid) {
 export function getSizesArray(bid) {
   let sizesArray = [];
 
-  const mediaTypes = getBidRequestMediaTypes(bid)
-  const firstMediaType = mediaTypes[0]
+  const mediaTypes = getBidRequestMediaTypes(bid);
+  const firstMediaType = mediaTypes[0];
 
   if (mediaTypes.length === 1 && deepAccess(bid, `mediaTypes.${firstMediaType}.sizes`)) {
     sizesArray = bid.mediaTypes[firstMediaType].sizes;
@@ -230,9 +230,9 @@ export function generateBidParameters(bid, bidderRequest) {
     coppa: 0,
   };
 
-  const pos = getPos(bid)
-  if (pos) {
-    bidObject.pos = pos
+  const pos = getPos(bid);
+  if (isInteger(pos)) {
+    bidObject.pos = pos;
   }
 
   const gpid = deepAccess(bid, `ortb2Imp.ext.gpid`);
@@ -318,7 +318,7 @@ export function generateBidParameters(bid, bidderRequest) {
   if (mediaTypes.includes(NATIVE)) {
     const nativeOrtbRequest = deepAccess(bid, `nativeOrtbRequest`);
     if (nativeOrtbRequest) {
-      bidObject.nativeOrtbRequest = nativeOrtbRequest
+      bidObject.nativeOrtbRequest = nativeOrtbRequest;
     }
   }
 

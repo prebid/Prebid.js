@@ -4,6 +4,7 @@ import {makeBaseSpec} from '../libraries/riseUtils/index.js';
 
 const BIDDER_CODE = 'openweb';
 const BASE_URL = 'https://hb.openwebmp.com/';
+const GVLID = 280;
 const MODES = {
   PRODUCTION: 'hb-multi',
   TEST: 'hb-multi-test'
@@ -12,7 +13,7 @@ const MODES = {
 export const spec = {
   ...makeBaseSpec(BASE_URL, MODES),
   code: BIDDER_CODE,
-  gvlid: 280,
+  gvlid: GVLID,
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest.params) {
       logWarn('no params have been set to OpenWeb adapter');
