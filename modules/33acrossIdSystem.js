@@ -98,9 +98,9 @@ function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorag
     params.tp = encodeURIComponent(tp);
   }
 
-  const hemParam = hem || window._33across?.hem?.sha256 || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
-  if (hemParam) {
-    params.sha256 = encodeURIComponent(hemParam);
+  const hashedEmail = hem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
+  if (hashedEmail) {
+    params.sha256 = encodeURIComponent(hashedEmail);
   }
 
   return params;
@@ -145,10 +145,35 @@ function getStoredValue(key, enabledStorageTypes) {
   return storedValue;
 }
 
+function calculateSupplementalIds({ tp, fp }, { storeFpid, storeTpid }) {
+  const ids = {};
+
+  if (storeFpid) {
+    ids[STORAGE_FPID_KEY] = fp;
+  }
+
+  if (storeTpid) {
+    ids[STORAGE_TPID_KEY] = tp;
+  }
+
+  return ids;
+}
+
 function handleSupplementalId(key, id, storageConfig) {
   id
     ? storeValue(key, id, storageConfig)
     : deleteFromStorage(key);
+}
+
+function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }) {
+  const supplementalIds = calculateSupplementalIds(ids, options);
+
+  Object.entries(supplementalIds).forEach(([ storageKey, value ]) => {
+    handleSupplementalId(storageKey, value, {
+      enabledStorageTypes,
+      expires
+    })
+  });
 }
 
 /** @type {Submodule} */
@@ -197,7 +222,8 @@ export const thirtyThreeAcrossIdSubmodule = {
     const {
       storeFpid = DEFAULT_1PID_SUPPORT,
       storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL,
-      ...options
+      pid,
+      hem = window._33across?.hem?.sha256
     } = params;
 
     return {
@@ -218,19 +244,15 @@ export const thirtyThreeAcrossIdSubmodule = {
               });
             }
 
-            if (storeFpid) {
-              handleSupplementalId(STORAGE_FPID_KEY, responseObj.fp, {
-                enabledStorageTypes,
-                expires: storageConfig.expires
-              });
-            }
-
-            if (storeTpid) {
-              handleSupplementalId(STORAGE_TPID_KEY, responseObj.tp, {
-                enabledStorageTypes,
-                expires: storageConfig.expires
-              });
-            }
+            handleSupplementalIds({
+              fp: responseObj.fp,
+              tp: responseObj.tp
+            }, {
+              storeFpid,
+              storeTpid,
+              enabledStorageTypes,
+              expires: storageConfig.expires
+            });
 
             cb(responseObj.envelope);
           },
@@ -239,7 +261,7 @@ export const thirtyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(options, gdprConsentData, enabledStorageTypes), {
+        }, calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorageTypes), {
           method: 'GET',
           withCredentials: true
         });
