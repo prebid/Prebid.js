@@ -1,7 +1,6 @@
 let autoplayEnabled = null;
 
 /**
- * DEVELOPER WARNING: IMPORTING THIS LIBRARY MAY MAKE YOUR ADAPTER NO LONGER COMPATIBLE WITH APP PUBLISHERS USING WKWEBVIEW
  * Note: this function returns true if detection is not done yet. This is by design: if autoplay is not allowed,
  * the call to video.play() will fail immediately, otherwise it may not terminate.
  * @returns true if autoplay is not forbidden
@@ -41,8 +40,12 @@ function startDetection() {
       // if the video is played on a WebView with playsinline = false, this stops the video, to prevent it from being displayed fullscreen
       videoElement.src = '';
     })
-    .catch(() => {
-      autoplayEnabled = false;
+    .catch((error) => {
+      if (error instanceof DOMException && error.name === 'NotSupportedError') {
+        // ignore this error caused by a Content Security Policy that disables data: scheme for media URLs
+      } else {
+        autoplayEnabled = false;
+      }
     });
 }
 
