@@ -120,20 +120,20 @@ export const spec = {
         });
       }
 
-      if (validBidRequest.mediaTypes?.video) {
-        bidRequestEachFormat.push({
-          ...validBidRequest,
-          mediaTypes: {
-            video: validBidRequest.mediaTypes.video,
-          },
-        });
-      }
-
       if (validBidRequest.mediaTypes?.native) {
         bidRequestEachFormat.push({
           ...validBidRequest,
           mediaTypes: {
             native: validBidRequest.mediaTypes.native,
+          },
+        });
+      }
+
+      if (validBidRequest.mediaTypes?.video) {
+        bidRequestEachFormat.push({
+          ...validBidRequest,
+          mediaTypes: {
+            video: validBidRequest.mediaTypes.video,
           },
         });
       }
