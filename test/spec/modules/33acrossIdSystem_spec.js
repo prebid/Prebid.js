@@ -934,6 +934,39 @@ describe('33acrossIdSystem', () => {
     });
 
     context('when a hashed email is NOT provided via configuration options', () => {
+      context('but it\'s provided via global 33across object', () => {
+        it('should call endpoint with the hashed email included', () => {
+          window._33across = {
+            hem: {
+              sha256: 'fake-sha256-hashed-email+'
+            }
+          }
+          const completeCallback = () => {};
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+              // No hashed email via config option.
+            },
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
+          });
+
+          // Prioritizes the hashed email given via global object over the one stored in LS.
+          sinon.stub(storage, 'getDataFromLocalStorage')
+            .withArgs('33acrossIdHm')
+            .returns('33acrossIdHmValueLS');
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).to.contain('sha256=fake-sha256-hashed-email%2B');
+
+          delete window._33across;
+          storage.getDataFromLocalStorage.restore();
+        });
+      });
+
       context('but it\'s provided via local storage', () => {
         it('should call endpoint with the hashed email included', () => {
           const completeCallback = () => {};

@@ -98,7 +98,7 @@ function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorag
     params.tp = encodeURIComponent(tp);
   }
 
-  const hemParam = hem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
+  const hemParam = hem || window._33across?.hem?.sha256 || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
   if (hemParam) {
     params.sha256 = encodeURIComponent(hemParam);
   }
