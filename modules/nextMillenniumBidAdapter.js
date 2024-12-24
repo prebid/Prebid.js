@@ -308,7 +308,7 @@ export function getImpBanner(imp, banner) {
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
   if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
 
-  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} });
   const {w, h} = (format[0] || {})
   imp.banner = {
     w,
