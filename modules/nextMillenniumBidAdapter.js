@@ -315,6 +315,8 @@ export function getImpBanner(imp, banner) {
     h,
     format,
   };
+
+  setImpPos(imp.banner, banner?.pos);
 };
 
 export function getImpVideo(imp, video) {
@@ -336,6 +338,12 @@ export function getImpVideo(imp, video) {
     imp.video.w = video.data.w;
     imp.video.h = video.data.h;
   };
+
+  setImpPos(imp.video, video?.pos);
+};
+
+export function setImpPos(obj, pos) {
+  if (typeof pos === 'number' && pos >= 0 && pos <= 7) obj.pos = pos;
 };
 
 export function setConsentStrings(postBody = {}, bidderRequest) {
