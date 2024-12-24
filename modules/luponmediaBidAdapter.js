@@ -170,7 +170,10 @@ export const spec = {
                 ttl: 300,
                 referrer: parsedReferrer,
                 ad: bid.adm,
-                adomain: bid.adomain || []
+                adomain: bid.adomain || [],
+                meta: { 
+                  advertiserDomains: bid && bid.adomain ? bid.adomain : [] 
+                }
               };
 
               bidResponses.push(newBid);
