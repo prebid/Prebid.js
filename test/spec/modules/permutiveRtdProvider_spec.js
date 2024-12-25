@@ -8,6 +8,9 @@ import {
   getModuleConfig,
   PERMUTIVE_SUBMODULE_CONFIG_KEY,
   readAndSetCohorts,
+  PERMUTIVE_STANDARD_KEYWORD,
+  PERMUTIVE_STANDARD_AUD_KEYWORD,
+  PERMUTIVE_CUSTOM_COHORTS_KEYWORD,
 } from 'modules/permutiveRtdProvider.js'
 import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
@@ -209,6 +212,28 @@ describe('permutiveRtdProvider', function () {
               return { id: seg }
             }),
           },
+          {
+            name: 'permutive.com',
+            ext: {
+              segtax: 600
+            },
+            segment: [
+              { id: '1' },
+              { id: '2' },
+              { id: '3' },
+            ],
+          },
+          {
+            name: 'permutive.com',
+            ext: {
+              segtax: 601
+            },
+            segment: [
+              { id: '100' },
+              { id: '101' },
+              { id: '102' },
+            ],
+          },
         ])
       })
     })
@@ -365,9 +390,23 @@ describe('permutiveRtdProvider', function () {
       setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
       acBidders.forEach(bidder => {
+        const customCohortsData = segmentsData[bidder] || []
+        const keywordGroups = {
+          [PERMUTIVE_STANDARD_KEYWORD]: segmentsData.ac,
+          [PERMUTIVE_STANDARD_AUD_KEYWORD]: segmentsData.ssp.cohorts,
+          [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData
+        }
+
+        // Transform groups of key-values into a single array of strings
+        // i.e { permutive: ['1', '2'], p_standard: ['3', '4'] } => ['permutive=1', 'permutive=2', 'p_standard=3',' p_standard=4']
+        const transformedKeywordGroups = Object.entries(keywordGroups)
+          .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`))
+
+        const keywords = `${sampleOrtbConfig.user.keywords},${transformedKeywordGroups.join(',')}`
+
         expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
         expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
-        expect(bidderConfig[bidder].user.keywords).to.deep.equal('a,b,p_standard_aud=123,p_standard_aud=abc')
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal(keywords)
       })
     })
     it('should merge ortb2 correctly for ac and ssps', function () {
@@ -445,7 +484,9 @@ describe('permutiveRtdProvider', function () {
           _psegs: [],
           _ppam: [],
           _pcrprs: [],
-          _pssps: { ssps: [], cohorts: [] }
+          _pindexs: [],
+          _pssps: { ssps: [], cohorts: [] },
+          _ppsts: {},
         })
 
         setBidderRtb(bidderConfig, moduleConfig, segmentsData)
@@ -529,6 +570,7 @@ describe('permutiveRtdProvider', function () {
       const data = transformedTargeting()
       expect(getSegments(250)).to.deep.equal(data)
     })
+
     it('should enforce max segments', function () {
       const max = 1
       const segments = getSegments(max)
@@ -536,49 +578,34 @@ describe('permutiveRtdProvider', function () {
       for (const key in segments) {
         if (key === 'ssp') {
           expect(segments[key].cohorts).to.have.length(max)
+        } else if (key === 'topics') {
+          for (const topic in segments[key]) {
+            expect(segments[key][topic]).to.have.length(max)
+          }
         } else {
           expect(segments[key]).to.have.length(max)
         }
       }
     })
-  })
 
-  describe('Default segment targeting', function () {
-    it('sets segment targeting for Xandr', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
+    it('should coerce numbers to strings', function () {
+      setLocalStorage({ _prubicons: [1, 2, 3], _pssps: { ssps: ['foo', 'bar'], cohorts: [4, 5, 6] } })
 
-      readAndSetCohorts({ adUnits }, config)
+      const segments = getSegments(200)
 
-      adUnits.forEach(adUnit => {
-        adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
-
-          if (bidder === 'appnexus') {
-            expect(deepAccess(params, 'keywords.permutive')).to.eql(data.appnexus)
-            expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-          }
-        })
-      })
+      expect(segments.rubicon).to.deep.equal(['1', '2', '3'])
+      expect(segments.ssp.ssps).to.deep.equal(['foo', 'bar'])
+      expect(segments.ssp.cohorts).to.deep.equal(['4', '5', '6'])
     })
 
-    it('sets segment targeting for Ozone', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
+    it('should return empty values on unexpected format', function () {
+      setLocalStorage({ _prubicons: 'a string instead?', _pssps: 123 })
 
-      readAndSetCohorts({ adUnits }, config)
+      const segments = getSegments(200)
 
-      adUnits.forEach(adUnit => {
-        adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
-
-          if (bidder === 'ozone') {
-            expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-          }
-        })
-      })
+      expect(segments.rubicon).to.deep.equal([])
+      expect(segments.ssp.ssps).to.deep.equal([])
+      expect(segments.ssp.cohorts).to.deep.equal([])
     })
   })
 
@@ -699,13 +726,25 @@ function getConfig () {
 }
 
 function transformedTargeting (data = getTargetingData()) {
+  const topics = (() => {
+    const topics = {}
+    for (const topic in data._ppsts) {
+      topics[topic] = data._ppsts[topic].map(String)
+    }
+    return topics
+  })()
+
   return {
-    ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
-    appnexus: data._papns,
-    ix: data._pindexs,
-    rubicon: data._prubicons,
-    gam: data._pdfps,
-    ssp: data._pssps,
+    ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)].map(String),
+    appnexus: data._papns.map(String),
+    ix: data._pindexs.map(String),
+    rubicon: data._prubicons.map(String),
+    gam: data._pdfps.map(String),
+    ssp: {
+      ssps: data._pssps.ssps.map(String),
+      cohorts: data._pssps.cohorts.map(String)
+    },
+    topics,
   }
 }
 
@@ -718,7 +757,8 @@ function getTargetingData () {
     _ppam: ['ppam1', 'ppam2'],
     _pindexs: ['pindex1', 'pindex2'],
     _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
-    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] }
+    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] },
+    _ppsts: { '600': [1, 2, 3], '601': [100, 101, 102] },
   }
 }
 

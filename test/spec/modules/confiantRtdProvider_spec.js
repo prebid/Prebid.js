@@ -1,7 +1,7 @@
 import * as utils from '../../../src/utils.js';
 import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 
 import confiantModule from '../../../modules/confiantRtdProvider.js';
 
@@ -46,8 +46,9 @@ describe('Confiant RTD module', function () {
       let listenerCallback;
       const mockWindow = { addEventListener: (a, cb) => (listenerCallback = cb) };
       let billableEventsCounter = 0;
+      const propertyId = 'fff';
 
-      events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, (e) => {
+      events.on(EVENTS.BILLABLE_EVENT, (e) => {
         if (e.vendor === 'confiant') {
           billableEventsCounter++;
           expect(e.type).to.equal('impression');
@@ -57,15 +58,17 @@ describe('Confiant RTD module', function () {
         }
       });
 
-      subscribeToConfiantCommFrame(mockWindow);
+      subscribeToConfiantCommFrame(mockWindow, propertyId);
       listenerCallback({
         data: {
+          type: 'cnft:reportBillableEvent:' + propertyId,
           auctionId: 'auctionId',
           transactionId: 'transactionId'
         }
       });
       listenerCallback({
         data: {
+          type: 'cnft:reportBillableEvent:' + propertyId,
           auctionId: 'auctionId',
           transactionId: 'transactionId'
         }

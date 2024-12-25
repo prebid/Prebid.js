@@ -1,6 +1,16 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getAdUnitSizes, parseSizesInput} from '../src/utils.js';
+import {parseSizesInput} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'between';
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
@@ -22,7 +32,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequest?pbjs_debug=trues[]} - an array of bids
+   * @param {validBidRequests} validBidRequests an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -43,7 +53,8 @@ export const spec = {
         rr: getRr(),
         s: i.params && i.params.s,
         bidid: i.bidId,
-        transactionid: i.transactionId,
+        transactionid: i.ortb2Imp?.ext?.tid,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionid: i.auctionId
       };
 

@@ -100,13 +100,13 @@ export const spec = {
       pageUrl: IS_DEV ? TEST_PAGE_URL : refererInfo.page,
       gdprConsent: gdprConsent,
       bidRequests: validBidRequests.map(validBidRequest => {
-        const {bidId, transactionId, sizes, params: {
+        const {bidId, ortb2Imp, sizes, params: {
           placeId, placeType, imageUrl, imageWidth, imageHeight
         }} = validBidRequest
         bidRequestMap[bidId] = validBidRequest
         const bidRequest = {
           bidId,
-          transactionId,
+          transactionId: ortb2Imp?.ext?.tid,
           sizes,
           placeId,
         }

@@ -1,4 +1,5 @@
 import {assert, expect} from 'chai';
+import * as utils from 'src/utils.js';
 import {spec} from 'modules/unicornBidAdapter.js';
 import * as _ from 'lodash';
 
@@ -461,7 +462,7 @@ const interpretedBids = [
     ad: '<div>test</div>',
     ttl: 1000,
     creativeId: 'ABCDE',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'JPY'
   }, {
     requestId: '31e2b28ced2475',
@@ -471,7 +472,7 @@ const interpretedBids = [
     ad: '<div>test</div>',
     ttl: 1000,
     creativeId: 'abcde',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'JPY'
   }, {
     requestId: '40a333e047a9bd',
@@ -481,7 +482,7 @@ const interpretedBids = [
     ad: '<div>test</div>',
     ttl: 1000,
     creativeId: 'XYZXYZ',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'JPY'
   }
 ];
@@ -496,6 +497,17 @@ describe('unicornBidAdapterTest', () => {
   });
 
   describe('buildBidRequest', () => {
+    const removeUntestableAttrs = data => {
+      delete data['device'];
+      delete data['site']['domain'];
+      delete data['site']['page'];
+      delete data['id'];
+      data['imp'].forEach(imp => {
+        delete imp['id'];
+      })
+      delete data['user']['id'];
+      return data;
+    };
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         unicorn: {
@@ -508,17 +520,6 @@ describe('unicornBidAdapterTest', () => {
     });
     it('buildBidRequest', () => {
       const req = spec.buildRequests(validBidRequests, bidderRequest);
-      const removeUntestableAttrs = data => {
-        delete data['device'];
-        delete data['site']['domain'];
-        delete data['site']['page'];
-        delete data['id'];
-        data['imp'].forEach(imp => {
-          delete imp['id'];
-        })
-        delete data['user']['id'];
-        return data;
-      };
       const uid = JSON.parse(req.data)['user']['id'];
       const reqData = removeUntestableAttrs(JSON.parse(req.data));
       const openRTBRequestData = removeUntestableAttrs(openRTBRequest);
@@ -527,6 +528,28 @@ describe('unicornBidAdapterTest', () => {
       const uid2 = JSON.parse(req2.data)['user']['id'];
       assert.deepStrictEqual(uid, uid2);
     });
+    it('test if contains ID5', () => {
+      let _validBidRequests = utils.deepClone(validBidRequests);
+      _validBidRequests[0].userId = {
+        id5id: {
+          uid: 'id5_XXXXX'
+        }
+      }
+      const req = spec.buildRequests(_validBidRequests, bidderRequest);
+      const reqData = removeUntestableAttrs(JSON.parse(req.data));
+      const openRTBRequestData = removeUntestableAttrs(utils.deepClone(openRTBRequest));
+      openRTBRequestData.user.eids = [
+        {
+          source: 'id5-sync.com',
+          uids: [
+            {
+              id: 'id5_XXXXX'
+            }
+          ]
+        }
+      ]
+      assert.deepStrictEqual(reqData, openRTBRequestData);
+    })
   });
 
   describe('interpretResponse', () => {

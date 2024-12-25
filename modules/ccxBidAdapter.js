@@ -65,7 +65,7 @@ function _validateSizes (sizeObj, type) {
   return true
 }
 
-function _buildBid (bid) {
+function _buildBid (bid, bidderRequest) {
   let placement = {}
   placement.id = bid.bidId
   placement.secure = 1
@@ -104,6 +104,10 @@ function _buildBid (bid) {
   }
 
   placement.ext = {'pid': bid.params.placementId}
+
+  if (bidderRequest.paapi?.enabled) {
+    placement.ext.ae = bid?.ortb2Imp?.ext?.ae
+  }
 
   return placement
 }
@@ -178,7 +182,7 @@ export const spec = {
       requestBody.imp = []
       requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
-      requestBody.id = bidderRequest.bids[0].auctionId
+      requestBody.id = bidderRequest.bidderRequestId;
       requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
 
       // Attaching GDPR Consent Params
@@ -197,7 +201,7 @@ export const spec = {
       }
 
       _each(validBidRequests, function (bid) {
-        requestBody.imp.push(_buildBid(bid))
+        requestBody.imp.push(_buildBid(bid, bidderRequest))
       })
       // Return the server request
       return {

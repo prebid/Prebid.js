@@ -64,9 +64,10 @@ function newBidRequest(bid, bidderRequest) {
   const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 
   return {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
     bidderRequestId: bid.bidderRequestId,
-    transactionId: bid.transactionId,
+    transactionId: bid.ortb2Imp?.ext?.tid,
     adUnitCode: bid.adUnitCode,
     bidId: bid.bidId,
     mediaTypes: bid.mediaTypes,

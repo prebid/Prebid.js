@@ -2,6 +2,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { logInfo, logError } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'c1x';
 const URL = 'https://hb-stg.c1exchange.com/ht';
 // const PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
@@ -181,7 +185,7 @@ function getBidFloor(bidRequest) {
   }
 
   let floor =
-    floorInfo.floor ||
+    floorInfo?.floor ||
     bidRequest.params.bidfloor ||
     bidRequest.params.floorPriceMap ||
     0;

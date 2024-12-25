@@ -251,17 +251,31 @@
             {
               "name": "uid2",
               "params": {
+                "uid2ApiBase": "https://operator-integ.uidapi.com", // Omit this setting for production
                 "uid2Token": {
-                  "advertising_token": "example token",
-                  "refresh_token": "aslkdjaslkjdaslkhj",
-                  "identity_expires": Date.now() + 60*1000,
+                  "advertising_token": "advertising token goes here",
+                  "refresh_token": "refresh token goes here",
+                  "identity_expires": Date.now() + 60*1000, // These timestamps should be from the token generate response
                   "refresh_from": Date.now() - 10*1000,
                   "refresh_expires": Date.now() + 12*60*60*1000,
-                  "refresh_response_key": null
+                  "refresh_response_key": "refresh key goes here"
                 }
               }
-            }
-            ,
+            },
+            {
+              "name": "euid",
+              "params": {
+                "euidApiBase": "https://integ.euid.eu", // Omit this setting for production
+                "euidToken": {
+                  "advertising_token": "advertising token goes here",
+                  "refresh_token": "refresh token goes here",
+                  "identity_expires": Date.now() + 60*1000, // These timestamps should be from the token generate response
+                  "refresh_from": Date.now() - 10*1000,
+                  "refresh_expires": Date.now() + 12*60*60*1000,
+                  "refresh_response_key": "refresh key goes here"
+                }
+              }
+            },
             {
               "name": "imuid",
               "params": {

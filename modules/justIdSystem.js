@@ -9,6 +9,14 @@ import * as utils from '../src/utils.js'
 import { submodule } from '../src/hook.js'
 import { loadExternalScript } from '../src/adloader.js'
 import {includes} from '../src/polyfill.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'justId';
 const EXTERNAL_SCRIPT_MODULE_CODE = 'justtag';
@@ -91,6 +99,12 @@ export const justIdSubmodule = {
         }
       }
     };
+  },
+  eids: {
+    'justId': {
+      source: 'justtag.com',
+      atype: 1
+    },
   }
 };
 
@@ -141,7 +155,7 @@ const CombinedUidProvider = function(configWrapper, consentData, cacheIdObj) {
   const url = configWrapper.getUrl();
 
   this.getUid = function(idCallback, errCallback) {
-    const scriptTag = loadExternalScript(url, EXTERNAL_SCRIPT_MODULE_CODE, () => {
+    const scriptTag = loadExternalScript(url, MODULE_TYPE_UID, EXTERNAL_SCRIPT_MODULE_CODE, () => {
       utils.logInfo(LOG_PREFIX, 'script loaded', url);
 
       const eventDetails = {

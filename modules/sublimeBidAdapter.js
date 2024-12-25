@@ -1,6 +1,13 @@
 import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
 
 const BIDDER_CODE = 'sublime';
 const BIDDER_GVLID = 114;
@@ -146,7 +153,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     pbav: SUBLIME_VERSION,
     // Current Prebid params
     prebidVersion: '$prebid.version$',
-    currencyCode: config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY,
+    currencyCode: getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY,
     timeout: (typeof bidderRequest === 'object' && !!bidderRequest) ? bidderRequest.timeout : config.getConfig('bidderTimeout'),
   };
 
@@ -179,6 +186,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const bidPayload = {
       adUnitCode: bid.adUnitCode,
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bid.auctionId,
       bidder: bid.bidder,
       bidderRequestId: bid.bidderRequestId,

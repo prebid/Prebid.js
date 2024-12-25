@@ -18,8 +18,8 @@ setupTest({
   url: TEST_PAGE_URL,
   waitFor: ALERT_BOX_CSS_SELECTOR,
 }, 'Prebid.js Instream Video Ad Test', function () {
-  it('should load the targeting keys with correct values', function () {
-    const result = browser.execute(function () {
+  it('should load the targeting keys with correct values', async function () {
+    const result = await browser.execute(function () {
       return window.top.pbjs.getAdserverTargeting('video1');
     });
 

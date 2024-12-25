@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 const BIDDER_CODE = 'orbitsoft';
 let styleParamsMap = {
@@ -40,18 +40,16 @@ export const spec = {
     }
     return true;
   },
-  buildRequests: function (validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests) {
     let bidRequest;
     let serverRequests = [];
-    let ortb2 = bidderRequest.ortb2 || {};
     for (let i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
       let bidRequestParams = bidRequest.params;
-      let placementId = utils.getBidIdParameter('placementId', bidRequestParams);
-      let requestUrl = utils.getBidIdParameter('requestUrl', bidRequestParams);
-      let referrer = utils.getBidIdParameter('ref', bidRequestParams);
-      let location = utils.getBidIdParameter('loc', bidRequestParams);
-      let currency = ortb2.currency || '';
+      let placementId = getBidIdParameter('placementId', bidRequestParams);
+      let requestUrl = getBidIdParameter('requestUrl', bidRequestParams);
+      let referrer = getBidIdParameter('ref', bidRequestParams);
+      let location = getBidIdParameter('loc', bidRequestParams);
       // Append location & referrer
       if (location === '') {
         location = utils.getWindowLocation();
@@ -61,7 +59,7 @@ export const spec = {
       }
 
       // Styles params
-      let stylesParams = utils.getBidIdParameter('style', bidRequestParams);
+      let stylesParams = getBidIdParameter('style', bidRequestParams);
       let stylesParamsArray = {};
       for (let currentValue in stylesParams) {
         if (stylesParams.hasOwnProperty(currentValue)) {
@@ -77,7 +75,7 @@ export const spec = {
         }
       }
       // Custom params
-      let customParams = utils.getBidIdParameter('customParams', bidRequestParams);
+      let customParams = getBidIdParameter('customParams', bidRequestParams);
       let customParamsArray = {};
       for (let customField in customParams) {
         if (customParams.hasOwnProperty(customField)) {
@@ -95,9 +93,6 @@ export const spec = {
         'ref': referrer,
         'size': parsedSizes
       }, stylesParamsArray, customParamsArray);
-      if (currency !== '') {
-        requestData.currency = currency;
-      }
 
       serverRequests.push({
         method: 'POST',
@@ -127,8 +122,7 @@ export const spec = {
     const HEIGHT = serverBody.height;
     const CREATIVE = serverBody.content_url;
     const CALLBACK_UID = serverBody.callback_uid;
-    const CURRENCY = serverBody.currency || 'USD';
-    const TIME_TO_LIVE = config.getConfig('_bidderTimeout');
+    const TIME_TO_LIVE = 60;
     const REFERER = utils.getWindowTop();
     let bidRequest = request.bidRequest;
     if (CPM > 0 && WIDTH > 0 && HEIGHT > 0) {
@@ -140,7 +134,7 @@ export const spec = {
         creativeId: CALLBACK_UID,
         ttl: TIME_TO_LIVE,
         referrer: REFERER,
-        currency: CURRENCY,
+        currency: 'USD',
         netRevenue: true,
         adUrl: CREATIVE,
         meta: {

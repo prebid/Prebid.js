@@ -2,6 +2,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'malltv';
 const ENDPOINT_URL = 'https://central.mall.tv/bid';
 const DIMENSION_SEPARATOR = 'x';
@@ -68,6 +75,7 @@ export const spec = {
     });
 
     let body = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: auctionId,
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
@@ -123,11 +131,11 @@ export const spec = {
 };
 
 /**
-* Generate size param for bid request using sizes array
-*
-* @param {Array} sizes Possible sizes for the ad unit.
-* @return {string} Processed sizes param to be used for the bid request.
-*/
+ * Generate size param for bid request using sizes array
+ *
+ * @param {Array} sizes Possible sizes for the ad unit.
+ * @return {string} Processed sizes param to be used for the bid request.
+ */
 function generateSizeParam(sizes) {
   return sizes.map(size => size.join(DIMENSION_SEPARATOR)).join(SIZE_SEPARATOR);
 }

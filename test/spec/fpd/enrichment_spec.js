@@ -2,6 +2,11 @@ import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
 import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import * as activities from 'src/activities/rules.js'
+import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../../../src/activities/activities.js';
+import {ACTIVITY_PARAM_COMPONENT} from '../../../src/activities/params.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -29,7 +34,11 @@ describe('FPD enrichment', () => {
       },
       document: {
         querySelector: sinon.stub()
-      }
+      },
+      screen: {
+        width: 1,
+        height: 1,
+      },
     };
   }
 
@@ -48,50 +57,86 @@ describe('FPD enrichment', () => {
     });
   }
 
+  CLIENT_SECTIONS.forEach(section => {
+    describe(`${section}, when set`, () => {
+      const ORTB2 = {[section]: {ext: {}}}
+
+      it('sets domain and publisher.domain', () => {
+        const refererInfo = {
+          page: 'www.example.com',
+        };
+        sandbox.stub(dep, 'getRefererInfo').callsFake(() => refererInfo);
+        sandbox.stub(dep, 'findRootDomain').callsFake((dom) => `publisher.${dom}`);
+        return fpd(ORTB2).then(ortb2 => {
+          sinon.assert.match(ortb2[section], {
+            domain: 'example.com',
+            publisher: {
+              domain: 'publisher.example.com'
+            }
+          });
+        });
+      })
+
+      describe('keywords', () => {
+        let metaTag;
+        beforeEach(() => {
+          metaTag = document.createElement('meta');
+          metaTag.name = 'keywords';
+          metaTag.content = 'kw1, kw2';
+          document.head.appendChild(metaTag);
+        });
+        afterEach(() => {
+          document.head.removeChild(metaTag);
+        });
+
+        testWindows(() => window, () => {
+          it(`sets kewwords from meta tag`, () => {
+            return fpd(ORTB2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.eql('kw1,kw2');
+            });
+          });
+        });
+      });
+
+      it('should not set keywords if meta tag is not present', () => {
+        return fpd(ORTB2).then(ortb2 => {
+          expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
+        });
+      });
+    })
+  })
+
   describe('site', () => {
-    it('sets page, ref, domain, and publisher.domain', () => {
+    describe('when mixed with app/dooh', () => {
+      beforeEach(() => {
+        sinon.stub(utils, 'logWarn');
+      });
+
+      afterEach(() => {
+        utils.logWarn.restore();
+      });
+
+      ['dooh', 'app'].forEach(prop => {
+        it(`should not be set when ${prop} is set`, () => {
+          return fpd({[prop]: {foo: 'bar'}}).then(ortb2 => {
+            expect(ortb2.site).to.not.exist;
+            sinon.assert.notCalled(utils.logWarn); // make sure we don't generate "both site and app are set" warnings
+          })
+        })
+      })
+    })
+
+    it('sets page, ref', () => {
       const refererInfo = {
         page: 'www.example.com',
         ref: 'referrer.com'
       };
       sandbox.stub(dep, 'getRefererInfo').callsFake(() => refererInfo);
-      sandbox.stub(dep, 'findRootDomain').callsFake((dom) => `publisher.${dom}`);
       return fpd().then(ortb2 => {
         sinon.assert.match(ortb2.site, {
           page: 'www.example.com',
-          domain: 'example.com',
           ref: 'referrer.com',
-          publisher: {
-            domain: 'publisher.example.com'
-          }
         });
-      });
-    });
-
-    describe('keywords', () => {
-      let metaTag;
-      beforeEach(() => {
-        metaTag = document.createElement('meta');
-        metaTag.name = 'keywords';
-        metaTag.content = 'kw1, kw2';
-        document.head.appendChild(metaTag);
-      });
-      afterEach(() => {
-        document.head.removeChild(metaTag);
-      });
-
-      testWindows(() => window, () => {
-        it(`sets kewwords from meta tag`, () => {
-          return fpd().then(ortb2 => {
-            expect(ortb2.site.keywords).to.eql('kw1,kw2');
-          });
-        });
-      });
-    });
-
-    it('should not set keywords if meta tag is not present', () => {
-      return fpd().then(ortb2 => {
-        expect(ortb2.site.hasOwnProperty('keywords')).to.be.false;
       });
     });
 
@@ -115,12 +160,38 @@ describe('FPD enrichment', () => {
     });
     testWindows(() => win, () => {
       it('sets w/h', () => {
-        win.innerHeight = 123;
-        win.innerWidth = 321;
+        win.screen.width = 321;
+        win.screen.height = 123;
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
             h: 123,
+          });
+        });
+      });
+
+      it('sets ext.vpw/vph', () => {
+        win.innerWidth = 12;
+        win.innerHeight = 21;
+        return fpd().then(ortb2 => {
+          sinon.assert.match(ortb2.device.ext, {
+            vpw: 12,
+            vph: 21,
+          });
+        });
+      });
+
+      describe('ext.webdriver', () => {
+        it('when navigator.webdriver is available', () => {
+          win.navigator.webdriver = true;
+          return fpd().then(ortb2 => {
+            expect(ortb2.device.ext?.webdriver).to.eql(true);
+          });
+        });
+
+        it('when navigator.webdriver is not present', () => {
+          return fpd().then(ortb2 => {
+            expect(ortb2.device.ext?.webdriver).to.not.exist;
           });
         });
       });
@@ -151,7 +222,7 @@ describe('FPD enrichment', () => {
         it('is set if globalPrivacyControl is set', () => {
           win.navigator.globalPrivacyControl = true;
           return fpd().then(ortb2 => {
-            expect(ortb2.regs.ext.gpc).to.eql(1);
+            expect(ortb2.regs.ext.gpc).to.eql('1');
           });
         });
 
@@ -182,7 +253,13 @@ describe('FPD enrichment', () => {
 
   describe('sua', () => {
     it('does not set device.sua if resolved sua is null', () => {
-      sandbox.stub(dep, 'getHighEntropySUA').returns(Promise.resolve())
+      sandbox.stub(dep, 'getHighEntropySUA').returns(Promise.resolve());
+      // Add hints so it will attempt to retrieve high entropy values
+      config.setConfig({
+        firstPartyData: {
+          uaHints: ['bitness'],
+        }
+      });
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.not.exist;
       })
@@ -210,4 +287,83 @@ describe('FPD enrichment', () => {
       })
     });
   });
+
+  describe('privacy sandbox cookieDeprecationLabel', () => {
+    let isAllowed, cdep, shouldCleanupNav = false;
+
+    before(() => {
+      if (!navigator.cookieDeprecationLabel) {
+        navigator.cookieDeprecationLabel = {};
+        shouldCleanupNav = true;
+      }
+    });
+
+    after(() => {
+      if (shouldCleanupNav) {
+        delete navigator.cookieDeprecationLabel;
+      }
+    });
+
+    beforeEach(() => {
+      isAllowed = true;
+      sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
+        if (activity === ACTIVITY_ACCESS_DEVICE && params[ACTIVITY_PARAM_COMPONENT] === 'prebid.cdep') {
+          return isAllowed;
+        } else {
+          throw new Error('Unexpected activity check');
+        }
+      });
+      sandbox.stub(window.navigator, 'cookieDeprecationLabel').value({
+        getValue: sinon.stub().callsFake(() => cdep)
+      })
+    })
+
+    it('enrichment sets device.ext.cdep when allowed and navigator.getCookieDeprecationLabel exists', () => {
+      cdep = Promise.resolve('example-test-label');
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext.cdep).to.eql('example-test-label');
+      })
+    });
+
+    Object.entries({
+      'not allowed'() {
+        isAllowed = false;
+      },
+      'not supported'() {
+        delete navigator.cookieDeprecationLabel
+      }
+    }).forEach(([t, setup]) => {
+      it(`if ${t}, the navigator API is not called and no enrichment happens`, () => {
+        setup();
+        cdep = Promise.resolve('example-test-label');
+        return fpd().then(ortb2 => {
+          expect(ortb2.device.ext?.cdep).to.not.exist;
+          if (navigator.cookieDeprecationLabel) {
+            sinon.assert.notCalled(navigator.cookieDeprecationLabel.getValue);
+          }
+        })
+      });
+    })
+
+    it('if the navigator API returns a promise that rejects, the enrichment does not halt forever', () => {
+      cdep = Promise.reject(new Error('oops, something went wrong'));
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext?.cdep).to.not.exist;
+      })
+    });
+  });
+
+  it('leaves only one of app, site, dooh', () => {
+    return fpd({
+      app: {p: 'val'},
+      site: {p: 'val'},
+      dooh: {p: 'val'}
+    }).then(ortb2 => {
+      expect(ortb2.app).to.not.exist;
+      expect(ortb2.site).to.not.exist;
+      sinon.assert.match(ortb2.dooh, {
+        p: 'val'
+      })
+    });
+  })
 });

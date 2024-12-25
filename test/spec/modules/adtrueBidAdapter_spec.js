@@ -28,7 +28,11 @@ describe('AdTrueBidAdapter', function () {
         bidId: '23acc48ad47af5',
         requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+        ortb2Imp: {
+          ext: {
+            tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+          }
+        },
         schain: {
           'ver': '1.0',
           'complete': 1,
@@ -280,8 +284,8 @@ describe('AdTrueBidAdapter', function () {
         expect(data.cur[0]).to.equal('USD'); // currency
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
+        expect(data.source.tid).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.reserve); // reverse
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
@@ -303,8 +307,8 @@ describe('AdTrueBidAdapter', function () {
         expect(data.cur[0]).to.equal('USD'); // currency
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
+        expect(data.source.tid).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.reserve)); // reverse
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
@@ -323,8 +327,8 @@ describe('AdTrueBidAdapter', function () {
         expect(data.cur[0]).to.equal('USD'); // currency
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
+        expect(data.source.tid).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.reserve)); // reverse
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId

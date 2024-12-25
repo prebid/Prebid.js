@@ -26,6 +26,7 @@ export const spec = {
       method: 'POST',
       url: `${ENDPOINT}`,
       data: {
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidderRequest.auctionId,
         refererInfo: {
           // TODO: this collects everything it finds, except for canonicalUrl

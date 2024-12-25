@@ -1,6 +1,7 @@
-import {buildUrl, deepAccess, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -49,9 +50,8 @@ export const spec = {
     const refererInfo = bidderRequest.refererInfo;
 
     const basePayload = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       ref: refererInfo.ref,
-      ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
@@ -68,11 +68,20 @@ export const spec = {
 
     const gdprConsent = bidderRequest.gdprConsent;
 
-    if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
+    if (gdprConsent) {
       basePayload.gdpr = {
-        consent: bidderRequest.gdprConsent.consentString, applies: bidderRequest.gdprConsent.gdprApplies
+        consent: gdprConsent.consentString,
+        applies: gdprConsent.gdprApplies
       };
     }
+
+    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep', 'site.ext'];
+    ORTB2_KEYS.forEach(key => {
+      const value = deepAccess(bidderRequest.ortb2, key);
+      if (value !== undefined) {
+        deepSetValue(basePayload, `ortb2.${key}`, value);
+      }
+    });
 
     const bannerBids = validBidRequests
       .filter(hasBanner)
@@ -106,7 +115,9 @@ export const spec = {
           netRevenue: true,
           creativeId: '',
           meta: {
-            advertiserDomains: bidResponse.adomain
+            advertiserDomains: bidResponse.adomain,
+            dsa: bidResponse.dsa,
+            campaignType: bidResponse.campaignType,
           },
           mediaType,
         };
@@ -135,8 +146,6 @@ export const spec = {
     return [];
   }
 };
-
-const isSecureWindow = () => getWindowSelf().location.protocol === 'https:';
 
 const isMainPageAccessible = () => {
   try {
@@ -208,14 +217,19 @@ const mapToPayloadBaseBid = (bidRequest) => ({
   bid: bidRequest.bidId,
   sid: bidRequest.params.sid,
   viz: elementInView(bidRequest.adUnitCode),
+  sfp: bidRequest.params.sfp,
 });
 
-const mapToPayloadBannerBid = (bidRequest) => ({
-  ban: {
-    siz: deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [],
-  },
-  ...mapToPayloadBaseBid(bidRequest)
-});
+const mapToPayloadBannerBid = (bidRequest) => {
+  const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
+  return ({
+    ban: {
+      siz: sizes,
+      fp: createFloorPriceObject(BANNER, sizes, bidRequest)
+    },
+    ...mapToPayloadBaseBid(bidRequest)
+  });
+};
 
 const mapToPayloadVideoBid = (bidRequest) => {
   const video = deepAccess(bidRequest, 'mediaTypes.video') || {};
@@ -224,9 +238,53 @@ const mapToPayloadVideoBid = (bidRequest) => {
       ctx: video.context,
       siz: video.playerSize,
       mim: video.mimes,
+      fp: createFloorPriceObject(VIDEO, [video.playerSize], bidRequest),
     },
     ...mapToPayloadBaseBid(bidRequest)
   };
 };
+
+const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
+  if (!bidRequest.getFloor) {
+    return undefined;
+  }
+
+  const defaultFloor = bidRequest.getFloor({
+    currency: 'EUR',
+    mediaType: mediaType,
+    size: '*'
+  }) || {};
+
+  const sizeFloors = sizes.map(size => {
+    const floor = bidRequest.getFloor({
+      currency: 'EUR',
+      mediaType: mediaType,
+      size: [size[0], size[1]]
+    }) || {};
+    return {...floor, size};
+  });
+
+  const floorWithCurrency = find([defaultFloor].concat(sizeFloors), floor => floor.currency);
+
+  if (!floorWithCurrency) {
+    return undefined;
+  }
+
+  const currency = floorWithCurrency.currency;
+  const defaultFloorPrice = defaultFloor.currency === currency ? defaultFloor.floor : undefined;
+
+  return {
+    def: defaultFloorPrice,
+    cur: currency,
+    siz: sizeFloors
+      .filter(sizeFloor => sizeFloor.currency === currency)
+      .filter(sizeFloor => sizeFloor.floor !== defaultFloorPrice)
+      .map(sizeFloor => ({
+        w: sizeFloor.size[0],
+        h: sizeFloor.size[1],
+        p: sizeFloor.floor
+      }))
+  };
+}
 
 registerBidder(spec);

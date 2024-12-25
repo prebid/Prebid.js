@@ -1,8 +1,7 @@
 import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -51,9 +50,9 @@ export const spec = {
       // TODO: is 'page' the right value here?
       const referrer = bidderRequest.refererInfo.page;
       const bidId = bidRequest.bidId;
-      const transactionId = bidRequest.transactionId;
+      const transactionId = bidRequest.ortb2Imp?.ext?.tid;
       const unitCode = bidRequest.adUnitCode;
-      const timeout = config.getConfig('bidderTimeout');
+      const timeout = bidderRequest.timeout;
       const language = window.navigator.language;
       const screenSize = window.screen.width + 'x' + window.screen.height;
       const payload = {
@@ -147,7 +146,7 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: 60,
         referrer: referrer,
         meta: {
           advertiserDomains: response.adomain ? response.adomain : []

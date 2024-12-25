@@ -34,6 +34,13 @@
           divId: 'player', // required to indicate which player is being used to render this ad unit.
         },
         bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
           bidder: 'ix',
           params: {
             siteId: '300',
@@ -123,7 +130,7 @@
           console.log('An Ad Impression came from a Bid: ', e);
         });
 
-        pbjs.requestBids(adUnits);
+        pbjs.requestBids();
       });
     </script>
 </head>

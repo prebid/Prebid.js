@@ -25,7 +25,6 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
-  getGptSlotInfoForAdUnitCode,
   isArray,
   isBoolean,
   isInteger,
@@ -37,6 +36,7 @@ import {
   parseUrl,
   safeJSONParse
 } from '../src/utils.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE_NAME = 'adloox';
 const MODULE = `${MODULE_NAME}RtdProvider`;
@@ -106,7 +106,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
   // buildUrl creates PHP style multi-parameters and includes undefined... (╯°□°)╯ ┻━┻
   const url = buildUrl(mergeDeep(parseUrl(`${API_ORIGIN}/q`), { search: {
-    'v': `pbjs-${getGlobal().version}`,
+    'v': 'pbjs-v' + '$prebid.version$',
     'c': config.params.clientid,
     'p': config.params.platformid,
     't': config.params.tagid,

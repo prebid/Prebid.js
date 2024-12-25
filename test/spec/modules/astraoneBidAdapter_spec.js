@@ -8,7 +8,11 @@ function getSlotConfigs(mediaTypes, params) {
     bidId: '2df8c0733f284e',
     bidder: 'astraone',
     mediaTypes: mediaTypes,
-    transactionId: '31a58515-3634-4e90-9c96-f86196db1459'
+    ortb2Imp: {
+      ext: {
+        tid: '31a58515-3634-4e90-9c96-f86196db1459'
+      }
+    }
   }
 }
 

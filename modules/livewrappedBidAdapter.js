@@ -4,7 +4,12 @@ import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'livewrapped';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -47,9 +52,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    // convert Native ORTB definition to old-style prebid native definition
-    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
-
     const userId = find(bidRequests, hasUserId);
     const pubcid = find(bidRequests, hasPubcid);
     const publisherId = find(bidRequests, hasPublisherId);
@@ -68,7 +70,7 @@ export const spec = {
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-    const currency = config.getConfig('currency.adServerCurrency') || 'USD';
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || 'USD';
     var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
     const adRequestsContainFloors = adRequests.some(r => r.flr !== undefined);
 
@@ -77,6 +79,7 @@ export const spec = {
     }
 
     const payload = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: auctionId ? auctionId.auctionId : undefined,
       publisherId: publisherId ? publisherId.params.publisherId : undefined,
       userId: userId ? userId.params.userId : (pubcid ? pubcid.crumbs.pubcid : undefined),
@@ -130,7 +133,6 @@ export const spec = {
     serverResponse.body.ads.forEach(function(ad) {
       var bidResponse = {
         requestId: ad.bidId,
-        bidderCode: BIDDER_CODE,
         cpm: ad.cpmBid,
         width: ad.width,
         height: ad.height,
@@ -231,9 +233,9 @@ function bidToAdRequest(bid, currency) {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
-    transactionId: bid.transactionId,
     formats: getSizes(bid).map(sizeToFormat),
     flr: getBidFloor(bid, currency),
+    rtbData: bid.ortb2Imp,
     options: bid.params.options
   };
 
