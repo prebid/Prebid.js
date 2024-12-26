@@ -171,8 +171,8 @@ export const spec = {
                 referrer: parsedReferrer,
                 ad: bid.adm,
                 adomain: bid.adomain || [],
-                meta: { 
-                  advertiserDomains: bid && bid.adomain ? bid.adomain : [] 
+                meta: {
+                  advertiserDomains: bid && bid.adomain ? bid.adomain : []
                 }
               };
 
