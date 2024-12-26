@@ -90,7 +90,7 @@ export function makeContextDataToKeyValuesReducer(config) {
     if (key === AP_VALUES) {
       AP_KEYS.forEach((apKey) => {
         if (!value?.[apKey]?.length) return;
-        keyValues.push([`${prefix}_ap_${apKey}`, value[apKey]]);
+        keyValues.push([`${prefix}_ap_${apKey}`, value[apKey].map((v) => String(v))]);
       });
     }
     if (value?.length) {
