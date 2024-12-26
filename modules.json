@@ -1,7 +1,5 @@
 [
     "33acrossIdSystem",
-    "adprimeBidAdapter",
-    "adyoulikeBidAdapter",
     "airgridRtdProvider",
     "appnexusBidAdapter",
     "atsAnalyticsAdapter",
@@ -24,7 +22,6 @@
     "id5IdSystem",
     "identityLinkIdSystem",
     "insticatorBidAdapter",
-    "intentIqIdSystem",
     "ixBidAdapter",
     "justpremiumBidAdapter",
     "kargoBidAdapter",
@@ -61,6 +58,5 @@
     "yahooAdsBidAdapter",
     "yieldmoBidAdapter",
     "pulsepointBidAdapter",
-    "pulsepointAnalyticsAdapter",
     "sovrnBidAdapter"
 ]
