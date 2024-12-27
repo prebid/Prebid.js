@@ -172,7 +172,11 @@ export const spec = {
                 netRevenue: false,
                 ttl: 300,
                 referrer: parsedReferrer,
-                ad: bid.adm
+                ad: bid.adm,
+                adomain: bid.adomain || [],
+                meta: {
+                  advertiserDomains: bid && bid.adomain ? bid.adomain : []
+                }
               };
 
               bidResponses.push(newBid);
