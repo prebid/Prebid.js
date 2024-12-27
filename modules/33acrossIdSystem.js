@@ -60,7 +60,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorageTypes) {
+function calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -98,9 +98,9 @@ function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorag
     params.tp = encodeURIComponent(tp);
   }
 
-  const hashedEmail = hem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
-  if (hashedEmail) {
-    params.sha256 = encodeURIComponent(hashedEmail);
+  const hem = pubProvidedHem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
+  if (hem) {
+    params.sha256 = encodeURIComponent(hem);
   }
 
   return params;
@@ -239,8 +239,9 @@ export const thirtyThreeAcrossIdSubmodule = {
       storeFpid = DEFAULT_1PID_SUPPORT,
       storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL,
       pid,
-      hem = window._33across?.hem?.sha256
+      hem
     } = params;
+    const pubProvidedHem = hem || window._33across?.hem?.sha256;
 
     return {
       callback(cb) {
@@ -263,7 +264,7 @@ export const thirtyThreeAcrossIdSubmodule = {
             handleSupplementalIds({
               fp: responseObj.fp,
               tp: responseObj.tp,
-              hem
+              hem: pubProvidedHem
             }, {
               storeFpid,
               storeTpid,
@@ -279,7 +280,7 @@ export const thirtyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorageTypes), {
+        }, calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes), {
           method: 'GET',
           withCredentials: true
         });
