@@ -6,7 +6,7 @@ import { deepSetValue } from "../src/utils.js";
 
 const BIDDER_CODE = "bms";
 const ENDPOINT_URL =
-  "https://api.prebid.int.us-east-2.bluemsdev.team/v1/postback";
+  "https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid"; //TODO: Atualizar com o endpoint de produção
 const GVLID = 620; // GVLID para o seu bidder
 const COOKIE_NAME = "ckid"; // Nome do cookie para identificação de usuários
 
@@ -90,7 +90,7 @@ export const spec = {
     }
 
     return {
-      method: "GET",
+      method: "POST",
       url: ENDPOINT_URL,
       data: ortbRequest,
       options: {
@@ -150,7 +150,6 @@ function extractGeoLocation(bidderRequest) {
     }
   }
 
-  // Prioridade 3: IP geolocation ou localização padrão
   return null;
 }
 
