@@ -21,7 +21,7 @@ describe('33acrossIdSystem', () => {
   });
 
   describe('getId', () => {
-    it('should call endpoint and handle valid response', () => {
+    it('should call endpoint', () => {
       const completeCallback = sinon.spy();
 
       const { callback } = thirtyThreeAcrossIdSubmodule.getId({
@@ -50,7 +50,34 @@ describe('33acrossIdSystem', () => {
       const regExp = new RegExp('https://lexicon.33across.com/v1/envelope\\?pid=12345&gdpr=\\d&src=pbjs&ver=$prebid.version$');
 
       expect(request.url).to.match(regExp);
-      expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
+    });
+
+    context('when there\'s a successful response containing an ID', () => {
+      it('should execute the callback and pass the ID', () => {
+        const completeCallback = sinon.spy();
+
+        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            envelope: 'foo'
+          },
+          expires: 1645667805067
+        }));
+
+        expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
+      });
     });
 
     const additionalOptions = {
