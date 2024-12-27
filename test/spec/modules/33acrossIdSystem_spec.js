@@ -78,6 +78,43 @@ describe('33acrossIdSystem', () => {
 
         expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
       });
+
+      it('should NOT wipe any stored hashed email', () => {
+        const completeCallback = () => {};
+
+        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            envelope: 'foo'
+          },
+          expires: 1645667805067
+        }));
+
+        expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdHm')).to.be.false;
+        expect(setCookie.calledWithExactly('33acrossIdHm', '', sinon.match.string, 'Lax', 'foo.com')).to.be.false;
+
+        removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        domainUtils.domainOverride.restore();
+      });
     });
 
     const additionalOptions = {
@@ -1416,6 +1453,43 @@ describe('33acrossIdSystem', () => {
         }));
 
         expect(completeCallback.calledOnceWithExactly(undefined)).to.be.true;
+      });
+
+      it('should wipe any stored hashed email', () => {
+        const completeCallback = () => {};
+
+        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            // no envelope field
+          },
+          expires: 1645667805067
+        }));
+
+        expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdHm')).to.be.true;
+        expect(setCookie.calledWithExactly('33acrossIdHm', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+        removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        domainUtils.domainOverride.restore();
       });
     });
 

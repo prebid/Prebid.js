@@ -145,7 +145,7 @@ function getStoredValue(key, enabledStorageTypes) {
   return storedValue;
 }
 
-function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid }) {
+function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, privacyConsent }) {
   const ids = [];
 
   if (storeFpid) {
@@ -158,7 +158,7 @@ function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid })
        * ]
        */
       [STORAGE_FPID_KEY, fp, true],
-      [STORAGE_HEM_KEY, hem, false]
+      [STORAGE_HEM_KEY, hem, privacyConsent === false] // hashed email should be cleared if there's no privacy consent.
     );
   }
 
@@ -267,6 +267,7 @@ export const thirtyThreeAcrossIdSubmodule = {
             }, {
               storeFpid,
               storeTpid,
+              privacyConsent: !!responseObj.envelope,
               enabledStorageTypes,
               expires: storageConfig.expires
             });
