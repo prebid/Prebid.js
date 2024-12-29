@@ -687,7 +687,7 @@ describe('Michao Bid Adapter', () => {
       const result = spec.interpretResponse(videoServerResponse, request[0]);
 
       expect(result[0].renderer.url).to.equal(
-        'https://cdn.jsdelivr.net/npm/in-renderer-js@latest/dist/in-video-renderer.umd.min.js'
+        'https://cdn.jsdelivr.net/npm/in-renderer-js@1.0.6/dist/in-video-renderer.umd.min.js'
       );
     });
 
