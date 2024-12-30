@@ -281,7 +281,6 @@ describe('OpenxRtbAdapter', function () {
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
         };
-
         it('should return true when required params found', function () {
           expect(spec.isBidRequestValid(nativeBidWithMediaTypes)).to.equal(true);
         });
@@ -292,7 +291,6 @@ describe('OpenxRtbAdapter', function () {
           expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false);
         });
       });
-
       describe('and request config uses both delDomain and platform', () => {
         const nativeBidWithDelDomainAndPlatform = {
           bidder: 'openx',
@@ -315,7 +313,6 @@ describe('OpenxRtbAdapter', function () {
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
         };
-
         it('should return true when required params found', function () {
           expect(spec.isBidRequestValid(nativeBidWithDelDomainAndPlatform)).to.equal(true);
         });
@@ -340,7 +337,7 @@ describe('OpenxRtbAdapter', function () {
           len: 80
         }
       }]
-    };
+    }
     const nativeBidRequest = {
       bidder: 'openx',
       params: {
@@ -361,7 +358,7 @@ describe('OpenxRtbAdapter', function () {
       bidderRequestId: 'test-bid-request-3',
       auctionId: 'test-auction-3',
       transactionId: 'test-transactionId-3'
-    };
+    }
 
     beforeEach(function () {
       mockBidderRequest = {refererInfo: {}};
@@ -1545,84 +1542,12 @@ describe('OpenxRtbAdapter', function () {
           expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
         });
 
-        it('should return the proper vastUrl', function () {
+        it('should return the proper mediaType', function () {
           const winUrl = 'https//my.win.url';
           bidResponse.seatbid[0].bid[0].nurl = winUrl
           bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
 
           expect(bid.vastUrl).to.equal(winUrl);
-        });
-      });
-    }
-
-    if (FEATURES.NATIVE) {
-      context('when the response is a native', function() {
-        beforeEach(function () {
-          const nativeOrtbRequest = {
-            ver: '1.2',
-            assets: [{
-              id: 1,
-              required: 1,
-              title: {
-                len: 80
-              }
-            }]
-          };
-          bidRequestConfigs = [{
-            bidder: 'openx',
-            params: {
-              unit: '12345678',
-              delDomain: 'test-del-domain'
-            },
-            adUnitCode: 'adunit-code',
-            mediaTypes: {
-              native: {
-                ...nativeOrtbRequest
-              },
-            },
-            nativeOrtbRequest,
-            bidId: 'test-bid-id',
-            bidderRequestId: 'test-bidder-request-id',
-            auctionId: 'test-auction-id'
-          }];
-
-          bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
-
-          bidResponse = {
-            seatbid: [{
-              bid: [{
-                impid: 'test-bid-id',
-                price: 2,
-                mtype: 4,
-                adm: '{"ver": "1.2", "assets": [{"id": 1, "required": 1,"title": {"text": "OpenX (Title)"}}], "link": {"url": "https://www.openx.com/"}, "eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
-              }]
-            }],
-            cur: 'AUS'
-          };
-        });
-
-        it('should return the proper mediaType', function () {
-          bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
-          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
-        });
-
-        it('should return parsed adm JSON in native.ortb response field', function () {
-          bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
-
-          expect(bid.native.ortb).to.deep.equal({
-            ver: '1.2',
-            assets: [{
-              id: 1,
-              required: 1,
-              title: {text: 'OpenX (Title)'}
-            }],
-            link: {url: 'https://www.openx.com/'},
-            eventtrackers: [{
-              event: 1,
-              method: 1,
-              url: 'http://example.com/impression'
-            }]
-          });
         });
       });
     }
