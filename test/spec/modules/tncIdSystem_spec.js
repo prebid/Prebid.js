@@ -1,7 +1,6 @@
 import { tncidSubModule } from 'modules/tncIdSystem';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const consentData = {
   gdprApplies: true,
@@ -40,39 +39,38 @@ describe('TNCID tests', function () {
       expect(res).to.be.undefined;
     });
 
-    it('GDPR is OK and page has no TNC script on page, script goes in error, no TNCID is returned', function () {
+    it('Should NOT give TNCID if there is no TNC script on page and no fallback url in configuration', async function () {
       const completeCallback = sinon.spy();
       const {callback} = tncidSubModule.getId({}, consentData);
 
-      return callback(completeCallback).then(() => {
-        expect(completeCallback.calledOnce).to.be.true;
-      })
+      await callback(completeCallback);
+      expect(callback).to.be.an('function');
+      expect(completeCallback.calledOnceWithExactly()).to.be.true;
     });
 
-    it('GDPR is OK and page has TNC script with ns: __tnc, present TNCID is returned', function () {
+    it('Should NOT give TNCID if fallback script is not loaded correctly', async function () {
+      const completeCallback = sinon.spy();
+      const {callback} = tncidSubModule.getId({
+        params: { url: 'www.thenewco.tech' }
+      }, consentData);
+
+      await callback(completeCallback);
+      expect(completeCallback.calledOnceWithExactly()).to.be.true;
+    });
+
+    it(`Should call external script if TNC is not loaded on page`, async function() {
+      const completeCallback = sinon.spy();
+      const {callback} = tncidSubModule.getId({params: {url: 'https://www.thenewco.tech?providerId=test'}}, { gdprApplies: false });
+
+      await callback(completeCallback);
+      expect(window).to.contain.property('__tncPbjs');
+    });
+
+    it('TNCID is returned if page has TNC script with ns: __tnc', async function () {
       Object.defineProperty(window, '__tnc', {
         value: {
           ready: (readyFunc) => { readyFunc() },
-          tncid: 'TNCID_TEST_ID_1',
-          providerId: 'TEST_PROVIDER_ID_1',
-        },
-        configurable: true
-      });
-
-      const completeCallback = sinon.spy();
-      const {callback} = tncidSubModule.getId({}, { gdprApplies: false });
-
-      return callback(completeCallback).then(() => {
-        expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_1')).to.be.true;
-      })
-    });
-
-    it('GDPR is OK and page has TNC script with ns: __tnc but not loaded, TNCID is assigned and returned', function () {
-      Object.defineProperty(window, '__tnc', {
-        value: {
-          ready: async (readyFunc) => { await readyFunc() },
           getTNCID: async (name) => { return 'TNCID_TEST_ID_1' },
-          providerId: 'TEST_PROVIDER_ID_1',
         },
         configurable: true
       });
@@ -80,17 +78,23 @@ describe('TNCID tests', function () {
       const completeCallback = sinon.spy();
       const {callback} = tncidSubModule.getId({}, { gdprApplies: false });
 
-      return callback(completeCallback).then(() => {
-        expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_1')).to.be.true;
-      })
+      await callback(completeCallback);
+      expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_1')).to.be.true;
     });
 
-    it('GDPR is OK and page has TNC script with ns: __tncPbjs, TNCID is returned', function () {
+    it('TNC script with ns __tncPbjs is created', async function () {
+      const completeCallback = sinon.spy();
+      const {callback} = tncidSubModule.getId({params: {url: 'TEST_URL'}}, consentData);
+
+      await callback(completeCallback);
+      expect(window).to.contain.property('__tncPbjs');
+    });
+
+    it('TNCID is returned if page has TNC script with ns: __tncPbjs', async function () {
       Object.defineProperty(window, '__tncPbjs', {
         value: {
-          ready: async (readyFunc) => { await readyFunc() },
+          ready: (readyFunc) => { readyFunc() },
           getTNCID: async (name) => { return 'TNCID_TEST_ID_2' },
-          providerId: 'TEST_PROVIDER_ID_1',
           options: {},
         },
         configurable: true,
@@ -98,13 +102,13 @@ describe('TNCID tests', function () {
       });
 
       const completeCallback = sinon.spy();
-      const {callback} = tncidSubModule.getId({params: {url: 'TEST_URL'}}, consentData);
+      const {callback} = tncidSubModule.getId({params: {url: 'www.thenewco.tech'}}, consentData);
 
-      return callback(completeCallback).then(() => {
-        expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_2')).to.be.true;
-      })
+      await callback(completeCallback);
+      expect(completeCallback.calledOnceWithExactly('TNCID_TEST_ID_2')).to.be.true;
     });
   });
+
   describe('eid', () => {
     before(() => {
       attachIdSystem(tncidSubModule);

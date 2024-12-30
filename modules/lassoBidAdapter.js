@@ -32,6 +32,22 @@ export const spec = {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       }
 
+      const { params } = bidRequest;
+
+      let npi = params.npi || '';
+      let dgid = params.dgid || '';
+      let test = false;
+
+      if (params.testNPI) {
+        npi = params.testNPI;
+        test = true;
+      }
+
+      if (params.testDGID) {
+        dgid = params.testDGID;
+        test = true;
+      }
+
       const payload = {
         auctionStart: bidderRequest.auctionStart,
         url: encodeURIComponent(window.location.href),
@@ -44,14 +60,16 @@ export const spec = {
         sizes,
         aimXR,
         uid: '$UID',
-        npi: bidRequest.params.npi || '',
-        npi_hash: bidRequest.params.npiHash || '',
+        npi,
+        dgid,
+        npi_hash: params.npiHash || '',
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
         version: 4,
         coppa: config.getConfig('coppa') == true ? 1 : 0,
-        ccpa: bidderRequest.uspConsent || undefined
+        ccpa: bidderRequest.uspConsent || undefined,
+        test
       }
 
       if (
@@ -130,7 +148,7 @@ function getBidRequestUrl(aimXR, params) {
   if (params && params.dtc) {
     path = '/dtc-request';
   }
-  if (aimXR || params.npi || params.npiHash) {
+  if (aimXR || params.npi || params.dgid || params.npiHash || params.testNPI || params.testDGID) {
     return ENDPOINT_URL + path;
   }
   return GET_IUD_URL + ENDPOINT_URL + path;
