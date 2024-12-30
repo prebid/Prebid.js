@@ -58,5 +58,6 @@
     "yahooAdsBidAdapter",
     "yieldmoBidAdapter",
     "pulsepointBidAdapter",
-    "sovrnBidAdapter"
+    "sovrnBidAdapter",
+    "gameraRtdProvider"
 ]
