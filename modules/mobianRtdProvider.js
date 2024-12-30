@@ -37,14 +37,14 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
 
-const AP_VALUES = 'apValues';
-const CATEGORIES = 'categories';
-const EMOTIONS = 'emotions';
-const GENRES = 'genres';
-const RISK = 'risk';
-const SENTIMENT = 'sentiment';
-const THEMES = 'themes';
-const TONES = 'tones';
+export const AP_VALUES = 'apValues';
+export const CATEGORIES = 'categories';
+export const EMOTIONS = 'emotions';
+export const GENRES = 'genres';
+export const RISK = 'risk';
+export const SENTIMENT = 'sentiment';
+export const THEMES = 'themes';
+export const TONES = 'tones';
 
 export const CONTEXT_KEYS = [
   AP_VALUES,

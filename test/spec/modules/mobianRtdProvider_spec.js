@@ -4,6 +4,14 @@ import * as ajax from 'src/ajax.js';
 import * as gptUtils from 'libraries/gptUtils/gptUtils.js';
 import {
   CONTEXT_KEYS,
+  AP_VALUES,
+  CATEGORIES,
+  EMOTIONS,
+  GENRES,
+  RISK,
+  SENTIMENT,
+  THEMES,
+  TONES,
   extendBidRequestConfig,
   fetchContextData,
   getConfig,
@@ -12,8 +20,6 @@ import {
   makeDataFromResponse,
   setTargeting,
 } from 'modules/mobianRtdProvider.js';
-
-const { AP_VALUES, CATEGORIES, EMOTIONS, GENRES, RISK, SENTIMENT, THEMES, TONES } = CONTEXT_KEYS;
 
 describe('Mobian RTD Submodule', function () {
   let ajaxStub;
@@ -49,9 +55,9 @@ describe('Mobian RTD Submodule', function () {
   }
 
   const mockKeyValues = {
-    'mobian_ap_a1': [2313, 12],
-    'mobian_ap_p0': [1231231, 212],
-    'mobian_ap_p1': [231, 419],
+    'mobian_ap_a1': ['2313', '12'],
+    'mobian_ap_p0': ['1231231', '212'],
+    'mobian_ap_p1': ['231', '419'],
     'mobian_emotions': ['affection'],
     'mobian_risk': 'low',
     'mobian_sentiment': 'positive',
@@ -97,10 +103,6 @@ describe('Mobian RTD Submodule', function () {
 
   describe('makeDataFromResponse', function () {
     it('should format context data response', async function () {
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
-        callbacks.success(mockResponse);
-      });
-
       const data = makeDataFromResponse(mockResponse);
       expect(data).to.deep.equal(mockContextData);
     });
@@ -126,9 +128,9 @@ describe('Mobian RTD Submodule', function () {
       setTargeting(parsedConfig, mockContextData);
 
       expect(setKeyValueSpy.callCount).to.equal(6);
-      expect(setKeyValueSpy.calledWith('mobian_ap_a1', [2313, 12])).to.equal(true);
-      expect(setKeyValueSpy.calledWith('mobian_ap_p0', [1231231, 212])).to.equal(true);
-      expect(setKeyValueSpy.calledWith('mobian_ap_p1', [231, 419])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_ap_a1', ['2313', '12'])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_ap_p0', ['1231231', '212'])).to.equal(true);
+      expect(setKeyValueSpy.calledWith('mobian_ap_p1', ['231', '419'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_emotions', ['affection'])).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_risk', 'low')).to.equal(true);
       expect(setKeyValueSpy.calledWith('mobian_sentiment', 'positive')).to.equal(true);
