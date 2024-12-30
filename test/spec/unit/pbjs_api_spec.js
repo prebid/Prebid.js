@@ -1839,6 +1839,29 @@ describe('Unit: Prebid Module', function () {
           }));
         });
 
+        it('that cannot alter global config', () => {
+          configObj.setConfig({ortb2: {value: 'old'}});
+          startAuctionStub.callsFake(({ortb2Fragments}) => {
+            ortb2Fragments.global.value = 'new'
+          });
+          $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+          expect(configObj.getAnyConfig('ortb2').value).to.eql('old');
+        });
+
+        it('that cannot alter bidder config', () => {
+          configObj.setBidderConfig({
+            bidders: ['mockBidder'],
+            config: {
+              ortb2: {value: 'old'}
+            }
+          })
+          startAuctionStub.callsFake(({ortb2Fragments}) => {
+            ortb2Fragments.bidder.mockBidder.value = 'new';
+          })
+          $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+          expect(configObj.getBidderConfig().mockBidder.ortb2.value).to.eql('old');
+        })
+
         it('enriched through enrichFPD', () => {
           function enrich(next, fpd) {
             next.bail(fpd.then(ortb2 => {
@@ -3786,71 +3809,4 @@ describe('Unit: Prebid Module', function () {
       expect(auctionManager.getBidsReceived().length).to.equal(0);
     });
   });
-
-  describe('setBattrForAdUnit', () => {
-    it('should set copy battr to both places', () => {
-      const adUnit = {
-        ortb2Imp: {
-          video: {
-            battr: 'banned attribute'
-          }
-        },
-        mediaTypes: {
-          video: {}
-        }
-      }
-
-      setBattrForAdUnit(adUnit, 'video');
-
-      expect(adUnit.mediaTypes.video.battr).to.deep.equal('banned attribute');
-      expect(adUnit.ortb2Imp.video.battr).to.deep.equal('banned attribute');
-
-      const adUnit2 = {
-        mediaTypes: {
-          video: {
-            battr: 'banned attribute'
-          }
-        },
-        ortb2Imp: {
-          video: {}
-        }
-      }
-
-      setBattrForAdUnit(adUnit2, 'video');
-
-      expect(adUnit2.ortb2Imp.video.battr).to.deep.equal('banned attribute');
-      expect(adUnit2.mediaTypes.video.battr).to.deep.equal('banned attribute');
-    })
-
-    it('should log warn if both are specified and differ from eachother', () => {
-      let spyLogWarn = sinon.spy(utils, 'logWarn');
-      const adUnit = {
-        mediaTypes: {
-          native: {
-            battr: 'banned attribute'
-          }
-        },
-        ortb2Imp: {
-          native: {
-            battr: 'banned attribute 2'
-          }
-        }
-      }
-      setBattrForAdUnit(adUnit, 'native');
-      sinon.assert.calledOnce(spyLogWarn);
-      spyLogWarn.resetHistory();
-      utils.logWarn.restore();
-    })
-
-    it('should not copy for undefined battr', () => {
-      const adUnit = {
-        mediaTypes: {
-          native: {}
-        }
-      }
-      setBattrForAdUnit(adUnit, 'native');
-      expect(adUnit.mediaTypes.native).to.deep.equal({});
-      expect(adUnit.mediaTypes.ortb2Imp).to.not.exist;
-    })
-  })
 });
