@@ -185,7 +185,7 @@ export function extendBidRequestConfig(bidReqConfig, contextData, config) {
 }
 
 /**
- * @param {MobianConfig} config
+ * @param {MobianConfig} rawConfig
  * @returns {boolean}
  */
 function init(rawConfig) {
