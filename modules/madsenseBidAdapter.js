@@ -1,7 +1,7 @@
 import {
   logError,
+  logWarn,
   logMessage,
-  deepAccess,
   deepSetValue,
   mergeDeep,
 } from '../src/utils.js';
@@ -163,11 +163,11 @@ function filterValidBids(bids) {
 }
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner');
+  return !!bidRequest.mediaTypes?.banner;
 }
 
 function hasVideoMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.video');
+  return !!bidRequest.mediaTypes?.video;
 }
 
 function _validateParams(bidRequest) {
@@ -196,8 +196,10 @@ function _validateBanner(bidRequest) {
   if (!hasBannerMediaType(bidRequest)) {
     return true;
   }
-  const banner = deepAccess(bidRequest, 'mediaTypes.banner');
-  if (!Array.isArray(banner.sizes)) {
+
+  const bannerSizes = bidRequest.mediaTypes?.banner?.sizes;
+
+  if (!Array.isArray(bannerSizes)) {
     return false;
   }
 
@@ -209,9 +211,9 @@ function _validateVideo(bidRequest) {
     return true;
   }
 
-  const videoPlacement = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-  const params = deepAccess(bidRequest, 'params', {});
+  const videoPlacement = bidRequest.mediaTypes?.video || {};
+  const videoBidderParams = bidRequest.params?.video || {};
+  const params = bidRequest.params || {};
 
   if (params && params.test) {
     return true;
@@ -223,23 +225,27 @@ function _validateVideo(bidRequest) {
   };
 
   if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-    logError('Invalid MIME types (madSense)');
+    logWarn('Invalid MIME types (madSense)');
     return false;
   }
 
   if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-    logError('Invalid protocols (madSense)');
+    logWarn('Invalid protocols (madSense)');
     return false;
   }
 
   if (!videoParams.context) {
-    logError('Context not declared (madSense)');
+    logWarn('Context not declared (madSense)');
     return false;
   }
 
   if (videoParams.context !== 'instream') {
-    logError('Only instream context is supported (madSense)');
-    return false;
+    if (hasBannerMediaType(bidRequest)) {
+      logWarn('Context is not instream, preferring banner (madSense)');
+      return true;
+    } else {
+      logWarn('Only instream context is supported (madSense)');
+    }
   }
 
   if (
@@ -247,7 +253,7 @@ function _validateVideo(bidRequest) {
     !Array.isArray(videoParams.playerSize) ||
     !Array.isArray(videoParams.playerSize[0])
   ) {
-    logError('Player size not declared or not in [[w,h]] format');
+    logWarn('Player size not declared or not in [[w,h]] format');
     return false;
   }
 
