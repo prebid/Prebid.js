@@ -52,7 +52,7 @@ export function extractEids({global, bidder}) {
   function getEntry(eid) {
     let entry = entries.find((candidate) => deepEqual(candidate.eid, eid));
     if (entry == null) {
-      entry = {eid, bidders: []}
+      entry = {eid, bidders: new Set()}
       entries.push(entry);
     }
     if (bySource[eid.source] == null) {
@@ -74,12 +74,12 @@ export function extractEids({global, bidder}) {
       (deepAccess(bidderConfig, path) || []).forEach(eid => {
         const entry = getEntry(eid);
         if (entry.bidders !== false) {
-          entry.bidders.push(bidderCode);
+          entry.bidders.add(bidderCode);
         }
       })
     })
   })
-  return {eids: entries, conflicts};
+  return {eids: entries.map(({eid, bidders}) => ({eid, bidders: bidders && Array.from(bidders)})), conflicts};
 }
 
 /**
