@@ -29,7 +29,8 @@ Please reach out to support@rediads.com for more information.
                     params: {
                         account_id: '123',
                         site: 'rediads.com',
-                        slot: '321'
+                        slot: '321',
+                        ssi: true
                     }
                 }
             ]
