@@ -15,7 +15,7 @@ import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'bitmedia';
-export const ENDPOINT_URL = 'https://bmcdn7.com/prebid/';
+export const ENDPOINT_URL = 'https://cdn.bmcdn7.com/prebid/';
 const AVAILABLE_SIZES = [
   [320, 100], [125, 125], [250, 250], [728, 90], [468, 60],
   [300, 100], [300, 250], [120, 240], [320, 1200], [200, 200],
