@@ -57,7 +57,7 @@ export const spec = {
     const commonParams = bidRequests[0]?.params || {};
     const siteContent = bidRequests[0]?.site?.content || null;
     let data = {};
-    let FINAL_ENDPOINT_URL = params.endpoint || ENDPOINT_URL
+    let FINAL_ENDPOINT_URL = commonParams.endpoint || ENDPOINT_URL
     try {
       data = converter.toORTB({ bidRequests, bidderRequest });
       const testBidsRequested = location.hash.includes('rediads-test-bids');
@@ -84,7 +84,7 @@ export const spec = {
         impression.adUnitCode = bidRequest?.adUnitCode;
         if (bidRequest?.params?.ssi) {
           deepSetValue(
-            imp,
+            impression,
             'ext.prebid.storedrequest.id',
             `${bidRequest.params.account_id}_${bidRequest.params.site}${
               bidRequest.params.slot ? `_${bidRequest.params.slot}` : ""
