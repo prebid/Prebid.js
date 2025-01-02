@@ -164,7 +164,7 @@ function isBidRequestValid(bidRequest) {
 function buildRequests(bids, bidderRequest) {
   let videoBids = bids.filter(bid => isVideoBid(bid));
   let bannerAndNativeBids = bids.filter(bid => isBannerBid(bid) || isNativeBid(bid))
-    // In case of multi-format bids remove `video` from mediaTypes as for video separate bid request is sent
+    // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
     .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
 
   let requests = bannerAndNativeBids.length ? [createRequest(bannerAndNativeBids, bidderRequest, undefined)] : [];
