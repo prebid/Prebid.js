@@ -23,7 +23,7 @@ import sinon from 'sinon';
 const {AdPlayerProProvider, utils} = require('modules/adplayerproVideoProvider.js');
 
 const {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, VPAID_MIME_TYPE
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, VPAID_MIME_TYPE, PLCMT
 } = require('libraries/video/constants/ortb.js');
 
 function getPlayerMock() {
@@ -66,6 +66,8 @@ function getUtilsMock() {
     getPlacement: function () {
     },
     getPlaybackMethod: function () {
+    },
+    getPlcmt: function () {
     }
   };
 }
@@ -218,10 +220,12 @@ describe('AdPlayerProProvider', function () {
       const test_media_type = VIDEO_MIME_TYPE.MP4;
       const test_placement = PLACEMENT.ARTICLE;
       const test_playback_method = PLAYBACK_METHODS.CLICK_TO_PLAY;
+      const test_plcmt = PLCMT.OUTSTREAM;
 
       utilsMock.getSupportedMediaTypes = () => [test_media_type];
       utilsMock.getPlacement = () => test_placement;
       utilsMock.getPlaybackMethod = () => test_playback_method;
+      utilsMock.getPlcmt = () => test_plcmt;
 
       const provider = AdPlayerProProvider(config, null, null, utilsMock);
       provider.init();
@@ -242,7 +246,8 @@ describe('AdPlayerProProvider', function () {
       expect(video.playbackmethod).to.include(test_playback_method);
       expect(video.playbackend).to.equal(1);
       expect(video.api).to.have.length(2);
-      expect(video.api).to.include.members([API_FRAMEWORKS.VPAID_2_0, API_FRAMEWORKS.OMID_1_0]); //
+      expect(video.api).to.include.members([API_FRAMEWORKS.VPAID_2_0, API_FRAMEWORKS.OMID_1_0]);
+      expect(video.plcmt).to.equal(test_plcmt);
     });
   });
 
@@ -408,6 +413,22 @@ describe('AdPlayerProProvider utils', function () {
     test(false, true, PLAYBACK_METHODS.CLICK_TO_PLAY);
     test(true, false, PLAYBACK_METHODS.AUTOPLAY);
     test(true, true, PLAYBACK_METHODS.AUTOPLAY_MUTED);
+  });
+
+  it('getPlcmt', function () {
+    function test(type, autoplay, muted, file, expected) {
+      expect(utils.getPlcmt({type, autoplay, muted, file})).to.be.equal(expected);
+    }
+
+    test('inStream', false, false, 'f', PLCMT.INSTREAM);
+    test(undefined, false, false, 'f', PLCMT.INSTREAM);
+    test('inStream', false, true, 'f', PLCMT.INSTREAM);
+    test('inStream', true, false, 'f', PLCMT.INSTREAM);
+    test('inStream', true, true, 'f', PLCMT.ACCOMPANYING_CONTENT);
+
+    test('rewarded', true, false, undefined, PLCMT.INTERSTITIAL);
+    test('inView', true, false, undefined, PLCMT.INTERSTITIAL);
+    test('InPage', true, false, undefined, PLCMT.OUTSTREAM);
   });
 });
 

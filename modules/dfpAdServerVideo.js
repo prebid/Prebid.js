@@ -133,7 +133,7 @@ export function buildDfpVideoUrl(options) {
         return 'preroll';
       }
     },
-    vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.every(m => m === 7) ? '2' : undefined,
+    vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.some(m => m === 7) ? '2' : undefined,
     vpa() {
       // playbackmethod = 3 is play on click; 1, 2, 4, 5, 6 are autoplay
       if (Array.isArray(video?.playbackmethod)) {
