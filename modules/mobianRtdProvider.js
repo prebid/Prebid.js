@@ -37,24 +37,15 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
 
-export const AP_VALUES = 'apValues';
-export const CATEGORIES = 'categories';
-export const EMOTIONS = 'emotions';
-export const GENRES = 'genres';
-export const RISK = 'risk';
-export const SENTIMENT = 'sentiment';
-export const THEMES = 'themes';
-export const TONES = 'tones';
-
 export const CONTEXT_KEYS = [
-  AP_VALUES,
-  CATEGORIES,
-  EMOTIONS,
-  GENRES,
-  RISK,
-  SENTIMENT,
-  THEMES,
-  TONES
+  'apValues',
+  'categories',
+  'emotions',
+  'genres',
+  'risk',
+  'sentiment',
+  'themes',
+  'tones'
 ];
 
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
@@ -81,24 +72,6 @@ function makeMemoizedFetch() {
 }
 
 export const getContextData = makeMemoizedFetch();
-
-const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value });
-
-export function makeContextDataToKeyValuesReducer(config) {
-  const { prefix } = config;
-  return function contextDataToKeyValuesReducer(keyValues, [key, value]) {
-    if (key === AP_VALUES) {
-      AP_KEYS.forEach((apKey) => {
-        if (!value?.[apKey]?.length) return;
-        keyValues.push([`${prefix}_ap_${apKey}`, value[apKey].map((v) => String(v))]);
-      });
-    }
-    if (value?.length) {
-      keyValues.push([`${prefix}_${key}`, value]);
-    }
-    return keyValues;
-  }
-}
 
 export async function fetchContextData() {
   const pageUrl = encodeURIComponent(window.location.href);
@@ -128,22 +101,33 @@ export function getConfig(config) {
 }
 
 /**
- * @param {MobianConfig} config
+ * @param {MobianConfigParams} parsedConfig
  * @param {MobianContextData} contextData
+ * @returns {function}
  */
-export function setTargeting(config, contextData) {
+export function setTargeting(parsedConfig, contextData) {
+  const { publisherTargeting, prefix } = parsedConfig;
   logMessage('context', contextData);
-  const keyValues = Object.entries(contextData)
-    .filter(([key]) => config.publisherTargeting.includes(key))
-    .reduce(makeContextDataToKeyValuesReducer(config), [])
 
-  keyValues.forEach(([key, value]) => setKeyValue(key, value));
+  CONTEXT_KEYS.forEach((key) => {
+    if (!publisherTargeting.includes(key)) return;
+
+    if (key === 'apValues') {
+      AP_KEYS.forEach((apKey) => {
+        if (!contextData[key]?.[apKey]?.length) return;
+        logMessage(`${prefix}_ap_${apKey}`, contextData[key][apKey]);
+        setKeyValue(`${prefix}_ap_${apKey}`, contextData[key][apKey]);
+      });
+      return;
+    }
+
+    if (contextData[key]?.length) {
+      logMessage(`${prefix}_${key}`, contextData[key]);
+      setKeyValue(`${prefix}_${key}`, contextData[key]);
+    }
+  });
 }
 
-/**
- * @param {Object|string} contextData
- * @returns {MobianContextData}
- */
 export function makeDataFromResponse(contextData) {
   const data = typeof contextData === 'string' ? safeJSONParse(contextData) : contextData;
   const results = data.results;
@@ -151,57 +135,50 @@ export function makeDataFromResponse(contextData) {
     return {};
   }
   return {
-    [AP_VALUES]: results.ap || {},
-    [CATEGORIES]: results.mobianContentCategories,
-    [EMOTIONS]: results.mobianEmotions,
-    [GENRES]: results.mobianGenres,
-    [RISK]: results.mobianRisk || 'unknown',
-    [SENTIMENT]: results.mobianSentiment || 'unknown',
-    [THEMES]: results.mobianThemes,
-    [TONES]: results.mobianTones,
+    apValues: results.ap || {},
+    categories: results.mobianContentCategories,
+    emotions: results.mobianEmotions,
+    genres: results.mobianGenres,
+    risk: results.mobianRisk || 'unknown',
+    sentiment: results.mobianSentiment || 'unknown',
+    themes: results.mobianThemes,
+    tones: results.mobianTones,
   };
 }
 
-/**
- * @param {Object} bidReqConfig
- * @param {MobianContextData} contextData
- * @param {MobianConfig} config
- */
-export function extendBidRequestConfig(bidReqConfig, contextData, config) {
+export function extendBidRequestConfig(bidReqConfig, contextData) {
   logMessage('extendBidRequestConfig', bidReqConfig, contextData);
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
-  const keyValues = Object.entries(contextData)
-    .filter(([key]) => config.advertiserTargeting.includes(key))
-    .reduce(makeContextDataToKeyValuesReducer(config), [])
-    .reduce(entriesToObjectReducer, {});
 
   ortb2Site.ext = ortb2Site.ext || {};
   ortb2Site.ext.data = {
     ...(ortb2Site.ext.data || {}),
-    ...keyValues
+    ...contextData
   };
 
   return bidReqConfig;
 }
 
 /**
- * @param {MobianConfig} rawConfig
+ * @param {MobianConfig} config
  * @returns {boolean}
  */
-function init(rawConfig) {
-  logMessage('init', rawConfig);
-  const config = getConfig(rawConfig);
-  if (config.publisherTargeting.length) {
-    getContextData().then((contextData) => setTargeting(config, contextData));
+function init(config) {
+  logMessage('init', config);
+
+  const parsedConfig = getConfig(config);
+
+  if (parsedConfig.publisherTargeting.length) {
+    getContextData().then((contextData) => setTargeting(parsedConfig, contextData));
   }
+
   return true;
 }
 
-function getBidRequestData(bidReqConfig, callback, rawConfig) {
+function getBidRequestData(bidReqConfig, callback, config) {
   logMessage('getBidRequestData', bidReqConfig);
 
-  const config = getConfig(rawConfig);
-  const { advertiserTargeting } = config;
+  const { advertiserTargeting } = getConfig(config);
 
   if (!advertiserTargeting.length) {
     callback();
@@ -210,7 +187,7 @@ function getBidRequestData(bidReqConfig, callback, rawConfig) {
 
   getContextData()
     .then((contextData) => {
-      extendBidRequestConfig(bidReqConfig, contextData, config);
+      extendBidRequestConfig(bidReqConfig, contextData);
     })
     .catch(() => {})
     .finally(() => callback());

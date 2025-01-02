@@ -15,7 +15,6 @@ const ALIASES = [
   {code: 'tredio'},
   {code: 'felixads'},
   {code: 'vimayx'},
-  {code: 'artechnology'},
 ];
 const BASE_URLS = {
   attekmi: 'https://prebid.attekmi.com/pbjs',
@@ -25,7 +24,6 @@ const BASE_URLS = {
   tredio: 'https://tredio-prebid.attekmi.com/pbjs',
   felixads: 'https://felixads-prebid.attekmi.com/pbjs',
   vimayx: 'https://vimayx-prebid.attekmi.com/pbjs',
-  artechnology: 'https://artechnology-prebid.attekmi.com/pbjs',
 };
 
 const _getUrl = (partnerName) => {
