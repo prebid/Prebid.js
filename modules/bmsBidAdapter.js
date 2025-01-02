@@ -3,14 +3,26 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER } from "../src/mediaTypes.js";
 import { getStorageManager } from "../src/storageManager.js";
 import { deepSetValue } from "../src/utils.js";
+import { config } from "src/config.js";
 
 const BIDDER_CODE = "bms";
 const ENDPOINT_URL =
-  "https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid"; //TODO: Atualizar com o endpoint de produção
-const GVLID = 620; // GVLID para o seu bidder
-const COOKIE_NAME = "ckid"; // Nome do cookie para identificação de usuários
+  "https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid";
+const GVLID = 620;
+const COOKIE_NAME = "bmsCookieId";
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+// Configuração do consentimento
+config.setConfig({
+  consentManagement: {
+    gdpr: {
+      cmpApi: "iab",
+      timeout: 8000,
+      defaultGdprScope: true,
+    },
+  },
+});
 
 const converter = ortbConverter({
   context: {
@@ -83,10 +95,12 @@ export const spec = {
     ortbRequest.ext = ortbRequest.ext || {};
     deepSetValue(ortbRequest, "ext.gvlid", GVLID);
 
-    // Incluir ID do cookie do usuário, se disponível
-    const ckid = storage.getCookie(COOKIE_NAME) || null;
-    if (ckid) {
-      deepSetValue(ortbRequest, "user.ext.buyerid", ckid);
+    if (storage.localStorageIsEnabled()) {
+      // Incluir ID do cookie do usuário, se disponível
+      const ckid = storage.getDataFromLocalStorage(COOKIE_NAME) || null;
+      if (ckid) {
+        deepSetValue(ortbRequest, "user.ext.buyerid", ckid);
+      }
     }
 
     return {
