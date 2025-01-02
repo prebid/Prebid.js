@@ -281,6 +281,7 @@ describe('OpenxRtbAdapter', function () {
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
         };
+
         it('should return true when required params found', function () {
           expect(spec.isBidRequestValid(nativeBidWithMediaTypes)).to.equal(true);
         });
@@ -291,6 +292,7 @@ describe('OpenxRtbAdapter', function () {
           expect(spec.isBidRequestValid(invalidNativeBidWithMediaTypes)).to.equal(false);
         });
       });
+
       describe('and request config uses both delDomain and platform', () => {
         const nativeBidWithDelDomainAndPlatform = {
           bidder: 'openx',
@@ -313,6 +315,7 @@ describe('OpenxRtbAdapter', function () {
           auctionId: '1d1a030790a475',
           transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
         };
+
         it('should return true when required params found', function () {
           expect(spec.isBidRequestValid(nativeBidWithDelDomainAndPlatform)).to.equal(true);
         });
@@ -337,7 +340,7 @@ describe('OpenxRtbAdapter', function () {
           len: 80
         }
       }]
-    }
+    };
     const nativeBidRequest = {
       bidder: 'openx',
       params: {
@@ -358,7 +361,7 @@ describe('OpenxRtbAdapter', function () {
       bidderRequestId: 'test-bid-request-3',
       auctionId: 'test-auction-3',
       transactionId: 'test-transactionId-3'
-    }
+    };
 
     beforeEach(function () {
       mockBidderRequest = {refererInfo: {}};
