@@ -41,10 +41,11 @@ const determineMediaType = (bid) => {
     return VIDEO;
   }
 
-  if (hasVideoMediaType(bid)) {
-    return VIDEO;
+  if (bid.mtype === 1) {
+    return BANNER;
   }
 
+  logWarn('Unrecognized media type, defaulting to BANNER (madSense)');
   return BANNER;
 };
 
