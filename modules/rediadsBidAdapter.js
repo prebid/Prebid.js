@@ -66,10 +66,7 @@ export const spec = {
       if (stagingEnvRequested) {
         FINAL_ENDPOINT_URL = STAGING_ENDPOINT_URL;
       }
-      deepSetValue(data, 'ext.rediads.params', {
-        account_id: commonParams.account_id,
-        site: commonParams.site,
-      });
+      deepSetValue(data, 'site.publisher.id', commonParams.account_id);
       deepSetValue(data, 'site.content', siteContent);
 
       if (testBidsRequested) {
@@ -80,8 +77,7 @@ export const spec = {
       // handle impression/bid level requirements
       data.imp.forEach((impression, idx) => {
         const bidRequest = bidRequests[idx];
-        impression.slot = bidRequest?.params?.slot;
-        impression.adUnitCode = bidRequest?.adUnitCode;
+        impression.tagid = bidRequest?.params?.slot;
         if (bidRequest?.params?.ssi) {
           deepSetValue(
             impression,
