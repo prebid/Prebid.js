@@ -1,5 +1,5 @@
 import {DEFAULT_PROCESSORS} from '../../../libraries/ortbConverter/processors/default.js';
-import {BID_RESPONSE} from '../../../src/pbjsORTB.js';
+import {BID_RESPONSE, IMP} from '../../../src/pbjsORTB.js';
 
 describe('common processors', () => {
   describe('bid response properties', () => {
@@ -25,5 +25,20 @@ describe('common processors', () => {
         expect(resp.meta.dsa).to.eql(MOCK_DSA);
       })
     })
+  })
+  describe('bid imp fpd', () => {
+    const impFpd = DEFAULT_PROCESSORS[IMP].secure.fn;
+
+    it('should set secure as 1 if publisher did not set it', () => {
+      const imp = {};
+      impFpd(imp);
+      expect(imp.secure).to.eql(1);
+    });
+
+    it('should not overwrite secure if set by publisher', () => {
+      const imp = {secure: 0};
+      impFpd(imp);
+      expect(imp.secure).to.eql(0);
+    });
   })
 })

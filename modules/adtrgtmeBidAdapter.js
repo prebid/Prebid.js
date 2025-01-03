@@ -55,7 +55,7 @@ function extractUserSyncUrls(syncOptions, pixels) {
 }
 
 function isSecure(bid) {
-  return deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
+  return deepAccess(bid, 'params.bidOverride.imp.secure') ?? deepAccess(bid, 'ortb2Imp.secure') ?? 1;
 };
 
 function getMediaType(bid) {
@@ -90,7 +90,7 @@ function getFloorModuleData(bid) {
     mediaType: BANNER,
     size: '*'
   };
-  return (isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
+  return (isFn(bid.getFloor)) ? (bid.getFloor(getFloorRequestObject) || {}) : false;
 };
 
 function generateOpenRtbObject(bidderRequest, bid) {
