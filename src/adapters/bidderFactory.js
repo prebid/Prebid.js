@@ -25,7 +25,7 @@ import {useMetrics} from '../utils/perfMetrics.js';
 import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
-import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
+import {ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 
 /**
  * @typedef {import('../mediaTypes.js').MediaType} MediaType
@@ -523,10 +523,9 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
 export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
-    let filterConfig = config.getConfig('userSync.filterSettings');
     let syncs = spec.getUserSyncs({
-      iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
-      pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
+      iframeEnabled: isActivityAllowed(ACTIVITY_SYNC_USER, activityParams(MODULE_TYPE_BIDDER, spec.code, { syncType: 'iframe' })),
+      pixelEnabled: isActivityAllowed(ACTIVITY_SYNC_USER, activityParams(MODULE_TYPE_BIDDER, spec.code, { syncType: 'image' }))
     }, responses, gdprConsent, uspConsent, gppConsent);
     if (syncs) {
       if (!Array.isArray(syncs)) {
