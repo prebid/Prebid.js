@@ -280,6 +280,10 @@ export function newTargeting(auctionManager) {
   /**
    * Returns all ad server targeting for all ad units.
    * @param {string=} adUnitCode
+   * @param {number=} bidLimit
+   * @param  {Array=} bidsReceived - The received bids, defaulting to the result of getBidsReceived().
+   * @param  {function(Array<Object>): Array<Object>} [winReducer = getHighestCpm] - reducer method
+   * @param  {function(Array<Object>): Array<Object>} [winSorter = sortByHighestCpm] - sorter method
    * @return {Object.<string,targeting>} targeting
    */
   targeting.getAllTargeting = function(adUnitCode, bidLimit, bidsReceived, winReducer = getHighestCpm, winSorter = sortByHighestCpm) {
@@ -562,7 +566,7 @@ export function newTargeting(auctionManager) {
   /**
    * Returns top bids for a given adUnit or set of adUnits.
    * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
-   * @param  {(Array|undefined)} bids - The received bids, defaulting to the result of getBidsReceived().
+   * @param  {Array=} bids - The received bids, defaulting to the result of getBidsReceived().
    * @param  {function(Array<Object>): Array<Object>} [winReducer = getHighestCpm] - reducer method
    * @param  {function(Array<Object>): Array<Object>} [winSorter = sortByHighestCpm] - sorter method
    * @return {Array<Object>} - An array of winning bids.
