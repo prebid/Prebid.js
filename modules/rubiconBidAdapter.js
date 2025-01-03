@@ -214,7 +214,7 @@ export const converter = ortbConverter({
     bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
-    if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
+    if (bidRequest.params.bidOnMultiFormat === true && bidRequestType.length > 1) {
       deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
     }
 
@@ -297,7 +297,7 @@ export const spec = {
     filteredRequests = bidRequests.filter(req => {
       const mediaTypes = bidType(req) || [];
       const { length } = mediaTypes;
-      const { bidonmultiformat, video } = req.params || {};
+      const { bidOnMultiFormat, video } = req.params || {};
 
       return (
         // if there's just one mediaType and it's video or native, just send it!
@@ -306,8 +306,8 @@ export const spec = {
         (length === 2 && !mediaTypes.includes(BANNER)) ||
         // if it contains the video param and the Video mediaType, send Video to PBS (not native!)
         (video && mediaTypes.includes(VIDEO)) ||
-        // if bidonmultiformat is on, send everything to PBS
-        (bidonmultiformat && (mediaTypes.includes(VIDEO) || mediaTypes.includes(NATIVE)))
+        // if bidOnMultiFormat is on, send everything to PBS
+        (bidOnMultiFormat && (mediaTypes.includes(VIDEO) || mediaTypes.includes(NATIVE)))
       )
     });
 
@@ -325,18 +325,18 @@ export const spec = {
 
     const bannerBidRequests = bidRequests.filter((req) => {
       const mediaTypes = bidType(req) || [];
-      const {bidonmultiformat, video} = req.params || {};
+      const {bidOnMultiFormat, video} = req.params || {};
       return (
         // Send to fastlane if: it must include BANNER and...
         mediaTypes.includes(BANNER) && (
           // if it's just banner
           (mediaTypes.length === 1) ||
-          // if bidonmultiformat is true
-          bidonmultiformat ||
-          // if bidonmultiformat is false and there's no video parameter
-          (!bidonmultiformat && !video) ||
+          // if bidOnMultiFormat is true
+          bidOnMultiFormat ||
+          // if bidOnMultiFormat is false and there's no video parameter
+          (!bidOnMultiFormat && !video) ||
           // if there's video parameter, but there's no video mediatype
-          (!bidonmultiformat && video && !mediaTypes.includes(VIDEO))
+          (!bidOnMultiFormat && video && !mediaTypes.includes(VIDEO))
         )
       );
     });
@@ -525,7 +525,7 @@ export const spec = {
     }
 
     // Send multiformat data if requested
-    if (params.bidonmultiformat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
+    if (params.bidOnMultiFormat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
       data['p_formats'] = Object.keys(bidRequest.mediaTypes).join(',');
     }
 
@@ -1107,7 +1107,7 @@ export function classifiedAsVideo(bidRequest) {
   // based on whether or not there is a video object defined in the params
   // Given this legacy implementation, other code depends on params.video being defined
 
-  // if it's bidonmultiformat, we don't care of the video object
+  // if it's bidOnMultiFormat, we don't care of the video object
   if (isVideo && isBidOnMultiformat) return true;
 
   if (isBanner && isMissingVideoParams) {
