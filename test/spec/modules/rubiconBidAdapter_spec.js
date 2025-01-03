@@ -2909,7 +2909,7 @@ describe('the rubicon adapter', function () {
 
       if (FEATURES.NATIVE) {
         describe('when there is a native request', function () {
-          describe('and bidonmultiformat = undefined (false)', () => {
+          describe('and bidOnMultiFormat = undefined (false)', () => {
             it('should send only one native bid to PBS endpoint', function () {
               const bidReq = addNativeToBidRequest(bidderRequest);
               bidReq.bids[0].params = {
@@ -2967,7 +2967,7 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          describe('with bidonmultiformat === true', () => {
+          describe('with bidOnMultiFormat === true', () => {
             it('should send two requests,  to PBS with 2 imps', () => {
               const bidReq = addNativeToBidRequest(bidderRequest);
               // add second mediaType
@@ -2977,7 +2977,7 @@ describe('the rubicon adapter', function () {
                   sizes: [[300, 250]]
                 }
               };
-              bidReq.bids[0].params.bidonmultiformat = true;
+              bidReq.bids[0].params.bidOnMultiFormat = true;
               let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
               expect(pbsRequest.method).to.equal('POST');
               expect(pbsRequest.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
@@ -2994,7 +2994,7 @@ describe('the rubicon adapter', function () {
                   sizes: [[300, 250]]
                 }
               };
-              bidReq.bids[0].params.bidonmultiformat = true;
+              bidReq.bids[0].params.bidOnMultiFormat = true;
               let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
               expect(pbsRequest.data.imp[0].ext.prebid.bidder.rubicon.formats).to.deep.equal(['native', 'banner']);
             });
@@ -3008,13 +3008,13 @@ describe('the rubicon adapter', function () {
                   sizes: [[300, 250]]
                 }
               };
-              bidReq.bids[0].params.bidonmultiformat = true;
+              bidReq.bids[0].params.bidOnMultiFormat = true;
               let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
               let formatsIncluded = fastlanteRequest.data.indexOf('formats=native%2Cbanner') !== -1;
               expect(formatsIncluded).to.equal(true);
             });
           });
-          describe('with bidonmultiformat === false', () => {
+          describe('with bidOnMultiFormat === false', () => {
             it('should send only banner request because there\'s no params.video', () => {
               const bidReq = addNativeToBidRequest(bidderRequest);
               // add second mediaType
@@ -3039,7 +3039,7 @@ describe('the rubicon adapter', function () {
                   sizes: [[300, 250]]
                 }
               };
-              // by adding this, when bidonmultiformat is false, the native request will be sent to pbs
+              // by adding this, when bidOnMultiFormat is false, the native request will be sent to pbs
               bidReq.bids[0].params = {
                 video: {}
               }
@@ -4224,7 +4224,7 @@ describe('the rubicon adapter', function () {
           it('should render ad with Magnite renderer without video object', function () {
             const bidderRequest = createVideoBidderRequestOutstream();
             delete bidderRequest.bids[0].params.video;
-            bidderRequest.bids[0].params.bidonmultiformat = true;
+            bidderRequest.bids[0].params.bidOnMultiFormat = true;
             bidderRequest.bids[0].mediaTypes.video.placement = 3;
             bidderRequest.bids[0].mediaTypes.video.playerSize = [640, 480];
 
