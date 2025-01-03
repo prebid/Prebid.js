@@ -143,24 +143,19 @@ export const converter = ortbConverter({
     let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
     deepSetValue(req, env.replace('ortb2.', '') + '.id', deepAccess(bid, env + '.id') || bid.params.networkId);
 
-    if (deepAccess(bid, 'mediaTypes.video')) {
-      ['mimes', 'placement'].forEach(prop => {
-        if (!bid.mediaTypes.video[prop]) {
-          logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request`, bid);
-        }
-      });
-    }
-
-    // "assets" is not included as a property to check here because the
-    // ortbConverter library checks for it already and will skip processing
-    // the request if it is missing
-    if (deepAccess(bid, 'mediaTypes.native')) {
-      ['privacy', 'plcmttype', 'eventtrackers'].forEach(prop => {
-        if (!bid.mediaTypes.native.ortb[prop]) {
-          logWarn(`${LOG_PREFIX} Property "${prop}" is missing from request.  Request will proceed, but the use of ${prop} for native requests is strongly encouraged.`, bid);
-        }
-      });
-    }
+    [
+      { path: 'mediaTypes.video', props: ['mimes', 'placement'] },
+      { path: 'ortb2Imp.audio', props: ['mimes'] },
+      { path: 'mediaTypes.native.ortb', props: ['privacy', 'plcmttype', 'eventtrackers'] },
+    ].forEach(({ path, props }) => {
+      if (deepAccess(bid, path)) {
+        props.forEach(prop => {
+          if (!deepAccess(bid, `${path}.${prop}`)) {
+            logWarn(`${LOG_PREFIX} Property "${path}.${prop}" is missing from request.  Request will proceed, but the use of "${prop}" is strongly encouraged.`, bid);
+          }
+        });
+      }
+    });
 
     const pid = storage.getCookie(PID_COOKIE_NAME);
     if (pid) {
