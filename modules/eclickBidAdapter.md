@@ -1,12 +1,12 @@
 # Overview
 
-Module Name: EClickAds Bid Adapter
+Module Name: eClick Bid Adapter
 Type: Bidder Adapter
 Maintainer: vietlv14@fpt.com
 
 # Description
 
-This module connects to EClickAds exchange for bidding NATIVE ADS via prebid.js
+This module connects to eClick exchange for bidding NATIVE ADS via prebid.js
 
 # Test Parameters
 
@@ -36,7 +36,7 @@ var adUnits = [{
         }
     },
     bids: [{
-        bidder: 'eclickads',
+        bidder: 'eclick',
         params: {
 	    	zid:"7096"
         }
@@ -46,10 +46,10 @@ var adUnits = [{
 
 # Notes:
 
-- EClickAdsBidAdapter need serveral params inside bidder config as following
+- eClickBidAdapter need serveral params inside bidder config as following
   - user.myvne_id
   - site.orig_aid
   - site.fosp_aid
   - site.id
   - site.orig_aid
-- EClickAdsBidAdapter will set bid.adserverTargeting.hb_ad_eclickads targeting key while submitting bid to AdServer
+- eClickBidAdapter will set bid.adserverTargeting.hb_ad_eclick targeting key while submitting bid to AdServer
