@@ -1,7 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {
-  deepAccess,
   generateUUID,
   isEmpty,
   isFn,
@@ -11,7 +10,6 @@ import {
   triggerPixel
 } from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'bitmedia';
@@ -89,7 +87,7 @@ const CONVERTER = ortbConverter({
     const imps = validSizes.map(size => {
       const imp = {
         id: bidRequest.bidId,
-        tagid: deepAccess(bidRequest, 'params.adUnitID'),
+        tagid: bidRequest.params.adUnitID,
         banner: {
           w: size[0],
           h: size[1],
@@ -112,25 +110,16 @@ const CONVERTER = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     logInfo(BIDDER_CODE, 'Building request with imps and bidderRequest', imps, bidderRequest);
 
-    const requestIms = imps[0].imps;// Unpacking: each imp has the same id, but different banner size
+    const requestImps = imps[0].imps;// Unpacking: each imp has the same id, but different banner size
 
     const reqData = {
+      ...bidderRequest.ortb2,
       id: generateUUID(),
-      imp: requestIms,
-      site: {
-        domain: deepAccess(bidderRequest, 'ortb2.site.domain') || window.location.hostname,
-        page: deepAccess(bidderRequest, 'ortb2.site.page') || bidderRequest.refererInfo.page,
-        publisher: {
-          domain: deepAccess(bidderRequest, 'ortb2.site.publisher.domain') || window.location.hostname,
-        }
-      },
-      device: {
-        ua: deepAccess(bidderRequest, 'ortb2.device.ua') || navigator.userAgent,
-        language: deepAccess(bidderRequest, 'ortb2.device.language') || navigator.language
-      },
+      imp: requestImps,
       cur: [context.currency],
-      tmax: bidderRequest?.timeout || config.getConfig('bidderTimeout') || 500,
+      tmax: bidderRequest.timeout,
       ext: {
+        ...bidderRequest.ortb2.ext,
         adapter_version: ADAPTER_VERSION,
         prebid_version: PREBID_VERSION
       }
@@ -259,7 +248,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
 };
 
 const onBidWon = (bid) => {
-  const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
+  const cpm = bid.adserverTargeting?.hb_pb || '';
   logInfo(BIDDER_CODE, `-----Bid won-----`, {bid, cpm: cpm});
   _handleOnBidWon(bid.nurl);
 }
