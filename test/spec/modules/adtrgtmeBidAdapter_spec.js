@@ -6,7 +6,7 @@ const DEFAULT_SID = '1220291391';
 const DEFAULT_ZID = '1836455615';
 const DEFAULT_PIXEL_URL = 'https://cdn.adtarget.me/libs/1x1.gif';
 const DEFAULT_BANNER_URL = 'https://cdn.adtarget.me/libs/banner/300x250.jpg';
-const BIDDER_VERSION = '1.0.4';
+const BIDDER_VERSION = '1.0.5';
 const PREBIDJS_VERSION = '$prebid.version$';
 
 const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
@@ -318,34 +318,6 @@ describe('Adtrgtme Bid Adapter:', () => {
       });
     });
 
-    BAD_ORTB2_TYPES.forEach(key => {
-      it(`should determine bad keys of the ortb2 site content key and should not be added to bid request: ${JSON.stringify(key)}`, () => {
-        const ortb2 = {
-          site: {
-            content: key
-          }
-        };
-        const { validBR, bidderRequest } = createRequestMock({ortb2});
-        const data = spec.buildRequests(validBR, bidderRequest)[0].data;
-        expect(data.site.content).to.be.undefined;
-      });
-    });
-
-    it(`should not allow bad ortb2.site.content keys to be added to bid request: {custom object}`, () => {
-      const ortb2 = {
-        site: {
-          content: {
-            fake: 'news',
-            unreal: 'key',
-            counterfit: 'data'
-          }
-        }
-      };
-      const { validBR, bidderRequest } = createRequestMock({ortb2});
-      const data = spec.buildRequests(validBR, bidderRequest)[0].data;
-      expect(data.site.content).to.be.a('object');
-    });
-
     const OK_CONTENT_STR = ['id', 'title', 'language'];
     OK_CONTENT_STR.forEach(key => {
       it(`should determine that the ortb2.site String key is ok and append to the bid request: ${JSON.stringify(key)}`, () => {
@@ -421,7 +393,8 @@ describe('Adtrgtme Bid Adapter:', () => {
         const data = spec.buildRequests(validBR, bidderRequest)[0].data;
         expect(data.user[key]).to.exist;
         expect(data.user[key]).to.be.a('object');
-        expect(data.user[key]).to.be.deep.include({[key]: {a: '123', b: '456'}});
+        expect(data.user[key].a).to.be.equal('123');
+        expect(data.user[key].b).to.be.equal('456');
         config.setConfig({ortb2: {}});
       });
     });

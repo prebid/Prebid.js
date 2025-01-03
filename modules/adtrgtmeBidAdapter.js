@@ -1,25 +1,23 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { BANNER } from "../src/mediaTypes.js";
 import {
-  deepAccess,
   isFn,
   isStr,
   isNumber,
-  isArray,
   isEmpty,
   isPlainObject,
   generateUUID,
   logWarn,
-} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+} from "../src/utils.js";
+import { config } from "../src/config.js";
+import { hasPurpose1Consent } from "../src/utils/gdpr.js";
 
-const BIDDER_CODE = 'adtrgtme';
-const BIDDER_VERSION = '1.0.4';
-const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
-const PREBIDJS_VERSION = '$prebid.version$';
+const BIDDER_CODE = "adtrgtme";
+const BIDDER_VERSION = "1.0.5";
+const BIDDER_URL = "https://z.cdn.adtarget.market/ssp?prebid&s=";
+const PREBIDJS_VERSION = "$prebid.version$";
 const DEFAULT_TTL = 300;
-const DEFAULT_CUR = 'USD';
+const DEFAULT_CUR = "USD";
 
 function getFormat(s) {
   const parseSize = ([w, h]) => ({ w: parseInt(w, 10), h: parseInt(h, 10) });
@@ -28,66 +26,53 @@ function getFormat(s) {
     : s.map(parseSize);
 }
 
-function getType(bid) {
-  return deepAccess(bid, 'mediaTypes.banner') ? BANNER : false;
-}
-
-function appObj(
-  checker,
-  keys,
-  obj,
-  appObj
-) {
-  const res = {
-    ...appObj,
-  };
-  if (keys.length > 0 && typeof checker === 'function') {
-    for (const oKey in obj) {
-      if (
-        keys.indexOf(oKey) !== -1 &&
-        checker(obj[oKey])
-      ) {
-        res[oKey] = obj[oKey];
-      }
-    }
-  }
-  return res;
+function getType(b) {
+  return b?.mediaTypes?.banner ? BANNER : false;
 }
 
 function getBidfloor(b) {
-  return isFn(b.getFloor) ? b.getFloor({size: '*',
-    currency: deepAccess(b, 'params.bidOverride.cur') ?? DEFAULT_CUR,
-    mediaType: BANNER}) : false
+  return isFn(b.getFloor)
+    ? b.getFloor({
+        size: "*",
+        currency: b?.params?.bidOverride?.cur ?? DEFAULT_CUR,
+        mediaType: BANNER,
+      })
+    : false;
 }
 
-function getTtl(bR) {
-  const t = config.getConfig('adtrgtme.ttl');
-  const validate = (t) => (isNumber(t) && t > 0 && t < 3000) ? t : DEFAULT_TTL;
-  return t
-    ? validate(t)
-    : validate(deepAccess(bR, 'params.ttl'));
+function getTtl(b) {
+  const t = config.getConfig("adtrgtme.ttl");
+  const validate = (t) => (isNumber(t) && t > 0 && t < 3000 ? t : DEFAULT_TTL);
+  return t ? validate(t) : validate(b?.params?.ttl);
 }
 
 function createORTB(bR, bid) {
-  if (!bR) return;
+  if (!bR || !bid) return;
 
-  const { currency = deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CUR } = getBidfloor(bR);
-  const ip = deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip');
+  const { currency = bid.params?.bidOverride?.cur || DEFAULT_CUR } =
+    getBidfloor(bR);
+  const ip =
+    bid.params?.bidOverride?.device?.ip ||
+    bid.ortb2?.device?.ip ||
+    bid.params?.ext?.ip;
+  const site = bid.ortb2?.site || undefined;
+  const user = bid.ortb2?.user || undefined;
   const gdpr = bR.gdprConsent?.gdprApplies ? 1 : 0;
-  const consentString = gdpr ? bR.gdprConsent?.consentString : '';
-  const usPrivacy = bR.uspConsent || '';
+  const consentString = gdpr ? bR.gdprConsent?.consentString : "";
+  const usPrivacy = bR.uspConsent || "";
 
   let oR = {
     id: generateUUID(),
     cur: [currency],
     imp: [],
     site: {
-      page: deepAccess(bR, 'refererInfo.page'),
-      id: String(bid.params.sid),
+      id: String(bid.params?.sid),
+      page: bR.refererInfo?.page || "",
+      ...site,
     },
     device: {
-      dnt: 0,
-      ua: navigator.userAgent,
+      dnt: bid?.params?.dnt ? 1 : 0,
+      ua: bid?.params?.ua || navigator.userAgent,
       ip,
     },
     regs: {
@@ -101,22 +86,20 @@ function createORTB(bR, bid) {
         hb: 1,
         bidderver: BIDDER_VERSION,
         prebidjsver: PREBIDJS_VERSION,
-        ...(deepAccess(bid, 'schain') && { schain: bid.schain }),
+        ...(bid?.schain && { schain: bid.schain }),
       },
       fd: 1,
     },
     user: {
+      ...user,
       ext: {
         consent: consentString,
+        ...(user?.ext || {}),
       },
     },
   };
 
-  if (bR.ortb2) {
-    oR = appendSiteData(oR, bid);
-  }
-
-  if (deepAccess(bid, 'schain')) {
+  if (bid?.schain) {
     oR.source.ext.schain.nodes[0].rid = oR.id;
   }
 
@@ -127,114 +110,50 @@ function appendImp(bid, oRtb) {
   if (!oRtb || !bid) return;
 
   const type = getType(bid);
-  const { floor: bidfloor = 0, currency: bidfloorcur = '' } = getBidfloor(bid);
-  const overrideFloor = deepAccess(bid, 'params.bidOverride.imp.bidfloor') || bidfloor;
-  const overrideCurrency = deepAccess(bid, 'params.bidOverride.imp.bidfloorcur') || bidfloorcur;
+  const { floor: bidfloor = 0, currency: bidfloorcur = "" } = getBidfloor(bid);
 
   const impObject = {
     id: bid.bidId,
     secure: 1,
-    bidfloor: overrideFloor,
-    bidfloorcur: overrideCurrency,
+    bidfloor: bid?.params?.bidOverride?.imp?.bidfloor || bidfloor,
+    bidfloorcur: bid?.params?.bidOverride?.imp?.bidfloorcur || bidfloorcur,
     ext: {
       dfp_ad_unit_code: bid.adUnitCode,
-      ...(deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.ortb2Imp.ext.data) && { data: bid.ortb2Imp.ext.data })
+      ...(bid?.ortb2Imp?.ext?.data &&
+        isPlainObject(bid.ortb2Imp.ext.data) && {
+          data: bid.ortb2Imp.ext.data,
+        }),
     },
-    ...(deepAccess(bid, 'params.zid') && { tagid: String(bid.params.zid) }),
-    ...(deepAccess(bid, 'ortb2Imp.instl') === 1 && { instl: 1 }),
+    ...(bid?.params?.zid && { tagid: String(bid.params.zid) }),
+    ...(bid?.ortb2Imp?.instl === 1 && { instl: 1 }),
   };
 
   if (type === BANNER) {
     impObject.banner = {
-      mimes: bid.mediaTypes.banner.mimes || ['text/html', 'text/javascript', 'application/javascript', 'image/jpg'],
+      mimes: bid.mediaTypes.banner.mimes || [
+        "text/html",
+        "text/javascript",
+        "application/javascript",
+        "image/jpg",
+      ],
       format: getFormat(bid.sizes),
       ...(bid.mediaTypes.banner.pos && { pos: bid.mediaTypes.banner.pos }),
     };
   }
 
   oRtb.imp.push(impObject);
-};
-
-function appendSiteData(oR, bid) {
-  const site = deepAccess(bid.ortb2, 'site') || undefined;
-  const content = deepAccess(site, 'content') || undefined;
-  const user = deepAccess(bid.ortb2, 'user') || undefined;
-
-  if (site && isPlainObject(site)) {
-    const keys = [
-      'id',
-      'name',
-      'domain',
-      'page',
-      'ref',
-      'keywords',
-    ];
-    oR.site = appObj(
-      isStr,
-      keys,
-      site,
-      oR.site
-    );
-    oR.site = appObj(
-      isArray,
-      ['cat', 'sectioncat', 'pagecat'],
-      site,
-      oR.site
-    );
-    oR.site = appObj(
-      isPlainObject,
-      ['ext'],
-      site,
-      oR.site
-    );
-  }
-
-  if (content && isPlainObject(content)) {
-    oR.site.content = appObj(
-      isStr,
-      ['id', 'title', 'language', 'keywords'],
-      content,
-      oR.site.content
-    );
-    oR.site.content = appObj(
-      isArray,
-      ['cat'],
-      content,
-      oR.site.content
-    );
-  }
-
-  if (user && isPlainObject(user)) {
-    oR.user = appObj(
-      isStr,
-      [
-        'id',
-        'buyeruid',
-        'gender',
-        'keywords',
-        'customdata',
-      ],
-      user,
-      oR.user
-    );
-    oR.user.ext = appObj(
-      isPlainObject,
-      ['ext'],
-      user,
-      oR.user.ext
-    );
-  }
-  return oR;
 }
 
 function createRequest({ data, options, bidderRequest }) {
   return {
-    url: `${config.getConfig('adtrgtme.endpoint') || BIDDER_URL}${data.site?.id || ''}`,
-    method: 'POST',
+    url: `${config.getConfig("adtrgtme.endpoint") || BIDDER_URL}${
+      data.site?.id || ""
+    }`,
+    method: "POST",
     data,
     options,
     bidderRequest,
-  }
+  };
 }
 
 export const spec = {
@@ -255,25 +174,23 @@ export const spec = {
     ) {
       return true;
     } else {
-      logWarn('Adtrgtme request invalid');
+      logWarn("Adtrgtme request invalid");
       return false;
     }
   },
 
   buildRequests: function (bR, aR) {
     if (isEmpty(bR) || isEmpty(aR)) {
-      logWarn('Adtrgtme Adapter: buildRequests called with empty request');
+      logWarn("Adtrgtme Adapter: buildRequests called with empty request");
       return undefined;
     }
 
     const options = {
-      contentType: 'application/json',
-      withCredentials: hasPurpose1Consent(
-        aR.gdprConsent
-      )
+      contentType: "application/json",
+      withCredentials: hasPurpose1Consent(aR.gdprConsent),
     };
 
-    if (config.getConfig('adtrgtme.singleRequestMode') === true) {
+    if (config.getConfig("adtrgtme.singleRequestMode") === true) {
       const data = createORTB(aR, bR[0]);
       bR.forEach((bid) => {
         appendImp(bid, data);
@@ -305,7 +222,7 @@ export const spec = {
         let b = sb.bid[0];
 
         res.push({
-          adId: deepAccess(b, 'adId') ? b.adId : b.impid || b.crid,
+          adId: b?.adId ? b.adId : b.impid || b.crid,
           ad: b.adm,
           adUnitCode: bidderRequest.adUnitCode,
           requestId: b.impid,
@@ -330,30 +247,49 @@ export const spec = {
 
     return res;
   },
-  getUserSyncs: function (options, sR) {
+  getUserSyncs: function (options, res, gdprConsent, uspConsent, gppConsent) {
     const s = [];
     if (!options.pixelEnabled && !options.iframeEnabled) {
       return s;
     }
-    if (Array.isArray(sR)) {
-      sR.forEach((response) => {
+    if (Array.isArray(res)) {
+      res.forEach((response) => {
         const p = response.body?.ext?.pixels;
         if (Array.isArray(p)) {
           p.forEach(([stype, url]) => {
             const type = stype.toLowerCase();
             if (
-              typeof url === 'string' && url.startsWith('http') &&
-              (((type === 'image' || type === 'img') && options.pixelEnabled) ||
-              (type === 'iframe' && options.iframeEnabled))
+              typeof url === "string" &&
+              url.startsWith("http") &&
+              (((type === "image" || type === "img") && options.pixelEnabled) ||
+                (type === "iframe" && options.iframeEnabled))
             ) {
-              s.push({type, url});
+              s.push({ type, url: addConsentParams(url) });
             }
           });
         }
       });
     }
+    function addConsentParams(url) {
+      if (gdprConsent) {
+        url += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${
+          encodeURIComponent(gdprConsent.consentString) || ""
+        }`;
+      }
+      if (uspConsent) {
+        url += `&us_privacy=${encodeURIComponent(uspConsent)}`;
+      }
+      if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+        url += `&gpp=${encodeURIComponent(
+          gppConsent.gppString
+        )}&gpp_sid=${encodeURIComponent(
+          gppConsent.applicableSections?.join(",")
+        )}`;
+      }
+      return url;
+    }
     return s;
-  }
+  },
 };
 
 registerBidder(spec);
