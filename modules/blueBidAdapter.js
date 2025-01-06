@@ -24,7 +24,6 @@ const converter = ortbConverter({
 function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
   utils.deepSetValue(request, 'site.publisher.id', context.publisherId);
-  // eslint-disable-next-line no-console
   return request;
 }
 
