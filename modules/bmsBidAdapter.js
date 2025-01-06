@@ -2,27 +2,34 @@ import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER } from "../src/mediaTypes.js";
 import { getStorageManager } from "../src/storageManager.js";
-import { deepSetValue } from "../src/utils.js";
-import { config } from "src/config.js";
+import * as utils from "../src/utils.js";
 
 const BIDDER_CODE = "bms";
 const ENDPOINT_URL =
   "https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid";
 const GVLID = 620;
 const COOKIE_NAME = "bmsCookieId";
+const DEFAULT_CURRENCY = "USD";
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
-// Configuração do consentimento
-config.setConfig({
-  consentManagement: {
-    gdpr: {
-      cmpApi: "iab",
-      timeout: 8000,
-      defaultGdprScope: true,
-    },
-  },
-});
+function getBidFloor(bid) {
+  if (utils.isFn(bid.getFloor)) {
+    let floor = bid.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: BANNER,
+      size: "*",
+    });
+    if (
+      utils.isPlainObject(floor) &&
+      !isNaN(floor.floor) &&
+      floor.currency === DEFAULT_CURRENCY
+    ) {
+      return floor.floor;
+    }
+  }
+  return null;
+}
 
 const converter = ortbConverter({
   context: {
@@ -37,11 +44,11 @@ function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
 
   // Adiciona ID do publisher
-  deepSetValue(request, "site.publisher.id", context.publisherId);
+  utils.deepSetValue(request, "site.publisher.id", context.publisherId);
 
   // Adiciona geolocalização se disponível
   if (context.geo) {
-    deepSetValue(request, "device.geo", context.geo);
+    utils.deepSetValue(request, "device.geo", context.geo);
   }
 
   return request;
@@ -49,11 +56,13 @@ function request(buildRequest, imps, bidderRequest, context) {
 
 function imp(buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
-
-  // Configurações específicas do impression
-  imp.bidfloor = bidRequest.params.bidFloor;
-  imp.bidfloorcur = bidRequest.params.currency;
+  const floor = getBidFloor(bidRequest);
   imp.tagid = bidRequest.params.placementId;
+
+  if (floor) {
+    imp.bidfloor = floor;
+    imp.bidfloorcur = DEFAULT_CURRENCY;
+  }
 
   return imp;
 }
@@ -65,12 +74,7 @@ export const spec = {
 
   // Validar requisição de lance
   isBidRequestValid: function (bid) {
-    return (
-      !!bid.params.placementId &&
-      !!bid.params.publisherId &&
-      !!bid.params.bidFloor &&
-      !!bid.params.currency
-    );
+    return !!bid.params.placementId && !!bid.params.publisherId;
   },
 
   // Construir requisições OpenRTB usando `ortbConverter`
@@ -93,13 +97,13 @@ export const spec = {
 
     // Adicionar extensões à requisição
     ortbRequest.ext = ortbRequest.ext || {};
-    deepSetValue(ortbRequest, "ext.gvlid", GVLID);
+    utils.deepSetValue(ortbRequest, "ext.gvlid", GVLID);
 
     if (storage.localStorageIsEnabled()) {
       // Incluir ID do cookie do usuário, se disponível
       const ckid = storage.getDataFromLocalStorage(COOKIE_NAME) || null;
       if (ckid) {
-        deepSetValue(ortbRequest, "user.ext.buyerid", ckid);
+        utils.deepSetValue(ortbRequest, "user.ext.buyerid", ckid);
       }
     }
 
@@ -135,37 +139,10 @@ export const spec = {
 
 // Função auxiliar para extrair geolocalização
 function extractGeoLocation(bidderRequest) {
-  // Prioridade 1: Verificar geo no bidderRequest
   if (bidderRequest?.ortb2?.device?.geo) {
     return bidderRequest.ortb2.device.geo;
   }
-
-  // Prioridade 2: Tentar obter geolocalização do navegador
-  if (typeof navigator !== "undefined" && navigator.geolocation) {
-    try {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          return {
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-            type: 1, // GPS/Serviços de Localização
-            accuracy: position.coords.accuracy,
-          };
-        },
-        (error) => {
-          // eslint-disable-next-line no-console
-          console.warn("Erro na geolocalização:", error);
-          return null;
-        }
-      );
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.warn("Erro ao acessar geolocalização:", error);
-    }
-  }
-
   return null;
 }
 
-// Registrar o bidder
 registerBidder(spec);
