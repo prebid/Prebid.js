@@ -91,54 +91,53 @@ describe('bidderFactory', () => {
         sandbox.restore();
       });
 
-      it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: true
-          }
-        });
-        spec.code = 'fakeBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
-
-      it('should let registerSyncs run with valid alias and aliasSync enabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: true
-          }
-        });
-        spec.code = 'aliasBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
-
-      it('should let registerSyncs run with invalid alias and aliasSync disabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: false
-          }
-        });
-        spec.code = 'fakeBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
-
-      it('should not let registerSyncs run with valid alias and aliasSync disabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: false
-          }
-        });
-        spec.code = 'aliasBidder';
-        const bidder = newBidder(spec);
-        aliasRegistry = {[spec.code]: CODE};
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
-      });
+      [
+        {
+          t: 'invalid alias, aliasSync enabled',
+          alias: false,
+          aliasSyncEnabled: true,
+          shouldRegister: true
+        },
+        {
+          t: 'valid alias, aliasSync enabled',
+          alias: true,
+          aliasSyncEnabled: true,
+          shouldRegister: true
+        },
+        {
+          t: 'invalid alias, aliasSync disabled',
+          alias: false,
+          aliasSyncEnabled: false,
+          shouldRegister: true,
+        },
+        {
+          t: 'valid alias, aliasSync disabled',
+          alias: true,
+          aliasSyncEnabled: false,
+          shouldRegister: false
+        }
+      ].forEach(({t, alias, aliasSyncEnabled, shouldRegister}) => {
+        describe(t, () => {
+          it(shouldRegister ? 'should register sync' : 'should NOT register sync', () => {
+            config.setConfig({
+              userSync: {
+                aliasSyncEnabled
+              }
+            });
+            spec.code = 'someBidder';
+            if (alias) {
+              aliasRegistry[spec.code] = 'original';
+            }
+            const bidder = newBidder(spec);
+            bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+            if (shouldRegister) {
+              sinon.assert.called(spec.getUserSyncs);
+            } else {
+              sinon.assert.notCalled(spec.getUserSyncs);
+            }
+          })
+        })
+      })
 
       describe('transaction IDs', () => {
         beforeEach(() => {
