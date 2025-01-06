@@ -145,7 +145,7 @@ function getStoredValue(key, enabledStorageTypes) {
   return storedValue;
 }
 
-function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, privacyConsent }) {
+function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, envelopeAvailable }) {
   const ids = [];
 
   if (storeFpid) {
@@ -154,38 +154,38 @@ function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, p
        * [
        *   <storage key>,
        *   < ID value to store or remove >,
-       *   < clear flag: indicates if existing storage item should be removed or not when the new ID is falsy>
+       *   < clear flag: indicates if existing storage item should be removed or not based on certain condition>
        * ]
        */
-      [STORAGE_FPID_KEY, fp, true],
-      [STORAGE_HEM_KEY, hem, privacyConsent === false] // hashed email should be cleared if there's no privacy consent.
+      [STORAGE_FPID_KEY, fp, !fp],
+      [STORAGE_HEM_KEY, hem, !envelopeAvailable] // Clear hashed email if envelope is not available
     );
   }
 
   if (storeTpid) {
-    ids.push([STORAGE_TPID_KEY, tp, true]);
+    ids.push([STORAGE_TPID_KEY, tp, !tp]);
   }
 
   return ids;
 }
 
-function handleEnabledSupplementalId(supplementalId, storageConfig) {
+function updateSupplementalIdStorage(supplementalId, storageConfig) {
   const [ key, id, clear ] = supplementalId;
 
-  if (id) {
-    storeValue(key, id, storageConfig);
+  if (clear) {
+    deleteFromStorage(key);
 
     return;
   }
 
-  if (clear) {
-    deleteFromStorage(key);
+  if (id) {
+    storeValue(key, id, storageConfig);
   }
 }
 
 function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }) {
   filterEnabledSupplementalIds(ids, options).forEach((supplementalId) => {
-    handleEnabledSupplementalId(supplementalId, {
+    updateSupplementalIdStorage(supplementalId, {
       enabledStorageTypes,
       expires
     })
@@ -268,7 +268,7 @@ export const thirtyThreeAcrossIdSubmodule = {
             }, {
               storeFpid,
               storeTpid,
-              privacyConsent: !!responseObj.envelope,
+              envelopeAvailable: !!responseObj.envelope,
               enabledStorageTypes,
               expires: storageConfig.expires
             });
