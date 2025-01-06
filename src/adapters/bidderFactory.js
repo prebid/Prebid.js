@@ -5,7 +5,7 @@ import {createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
-import { EVENTS, STATUS, REJECTION_REASON } from '../constants.js';
+import {EVENTS, REJECTION_REASON, STATUS} from '../constants.js';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import {
@@ -13,9 +13,11 @@ import {
   isArray,
   isPlainObject,
   logError,
-  logWarn, memoize,
+  logWarn,
+  memoize,
   parseQueryStringParameters,
-  parseSizesInput, pick,
+  parseSizesInput,
+  pick,
   uniques
 } from '../utils.js';
 import {hook} from '../hook.js';
@@ -25,7 +27,7 @@ import {useMetrics} from '../utils/perfMetrics.js';
 import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
-import {ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
+import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 
 /**
  * @typedef {import('../mediaTypes.js').MediaType} MediaType
@@ -524,8 +526,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
     let syncs = spec.getUserSyncs({
-      iframeEnabled: isActivityAllowed(ACTIVITY_SYNC_USER, activityParams(MODULE_TYPE_BIDDER, spec.code, { syncType: 'iframe' })),
-      pixelEnabled: isActivityAllowed(ACTIVITY_SYNC_USER, activityParams(MODULE_TYPE_BIDDER, spec.code, { syncType: 'image' }))
+      iframeEnabled: userSync.canBidderRegisterSync('iframe', spec.code),
+      pixelEnabled: userSync.canBidderRegisterSync('image', spec.code),
     }, responses, gdprConsent, uspConsent, gppConsent);
     if (syncs) {
       if (!Array.isArray(syncs)) {

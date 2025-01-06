@@ -91,53 +91,131 @@ describe('bidderFactory', () => {
         sandbox.restore();
       });
 
-      [
-        {
-          t: 'invalid alias, aliasSync enabled',
-          alias: false,
-          aliasSyncEnabled: true,
-          shouldRegister: true
-        },
-        {
-          t: 'valid alias, aliasSync enabled',
-          alias: true,
-          aliasSyncEnabled: true,
-          shouldRegister: true
-        },
-        {
-          t: 'invalid alias, aliasSync disabled',
-          alias: false,
-          aliasSyncEnabled: false,
-          shouldRegister: true,
-        },
-        {
-          t: 'valid alias, aliasSync disabled',
-          alias: true,
-          aliasSyncEnabled: false,
-          shouldRegister: false
-        }
-      ].forEach(({t, alias, aliasSyncEnabled, shouldRegister}) => {
-        describe(t, () => {
-          it(shouldRegister ? 'should register sync' : 'should NOT register sync', () => {
-            config.setConfig({
-              userSync: {
-                aliasSyncEnabled
+      describe('user syncs', () => {
+        [
+          {
+            t: 'invalid alias, aliasSync enabled',
+            alias: false,
+            aliasSyncEnabled: true,
+            shouldRegister: true
+          },
+          {
+            t: 'valid alias, aliasSync enabled',
+            alias: true,
+            aliasSyncEnabled: true,
+            shouldRegister: true
+          },
+          {
+            t: 'invalid alias, aliasSync disabled',
+            alias: false,
+            aliasSyncEnabled: false,
+            shouldRegister: true,
+          },
+          {
+            t: 'valid alias, aliasSync disabled',
+            alias: true,
+            aliasSyncEnabled: false,
+            shouldRegister: false
+          }
+        ].forEach(({t, alias, aliasSyncEnabled, shouldRegister}) => {
+          describe(t, () => {
+            it(shouldRegister ? 'should register sync' : 'should NOT register sync', () => {
+              config.setConfig({
+                userSync: {
+                  aliasSyncEnabled
+                }
+              });
+              spec.code = 'someBidder';
+              if (alias) {
+                aliasRegistry[spec.code] = 'original';
+              }
+              const bidder = newBidder(spec);
+              bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+              if (shouldRegister) {
+                sinon.assert.called(spec.getUserSyncs);
+              } else {
+                sinon.assert.notCalled(spec.getUserSyncs);
               }
             });
-            spec.code = 'someBidder';
-            if (alias) {
-              aliasRegistry[spec.code] = 'original';
+          });
+        });
+
+        describe('getUserSyncs syncOptions', () => {
+          [
+            {
+              t: 'all image allowed, specific bidder denied iframe',
+              userSync: {
+                syncEnabled: true,
+                pixelEnabled: true,
+                iframeEnabled: true,
+                filterSettings: {
+                  image: {
+                    bidders: '*',
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['bidderB'],
+                    filter: 'include'
+                  }
+                }
+              },
+              expected: {
+                bidderA: {
+                  iframeEnabled: false,
+                  pixelEnabled: true
+                },
+                bidderB: {
+                  iframeEnabled: true,
+                  pixelEnabled: true,
+                }
+              }
+            },
+            {
+              t: 'specific bidders allowed specific methods',
+              userSync: {
+                syncEnabled: true,
+                pixelEnabled: true,
+                iframeEnabled: true,
+                filterSettings: {
+                  image: {
+                    bidders: ['bidderA'],
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['bidderB'],
+                    filter: 'include'
+                  }
+                },
+              },
+              expected: {
+                bidderA: {
+                  iframeEnabled: false,
+                  pixelEnabled: true
+                },
+                bidderB: {
+                  iframeEnabled: true,
+                  pixelEnabled: false,
+                }
+              }
             }
-            const bidder = newBidder(spec);
-            bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-            if (shouldRegister) {
-              sinon.assert.called(spec.getUserSyncs);
-            } else {
-              sinon.assert.notCalled(spec.getUserSyncs);
-            }
+          ].forEach(({t, userSync, expected}) => {
+            describe(`when ${t}`, () => {
+              beforeEach(() => {
+                config.setConfig({userSync});
+              });
+
+              Object.entries(expected).forEach(([bidderCode, syncOptions]) => {
+                it(`should pass ${JSON.stringify(syncOptions)} to ${bidderCode}`, () => {
+                  spec.code = bidderCode;
+                  const bidder = newBidder(spec);
+                  bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+                  sinon.assert.calledWith(spec.getUserSyncs, syncOptions);
+                })
+              })
+            })
           })
         })
-      })
+      });
 
       describe('transaction IDs', () => {
         beforeEach(() => {
