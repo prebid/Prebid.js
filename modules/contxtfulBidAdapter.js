@@ -16,6 +16,7 @@ const BIDDER_ENDPOINT = 'prebid.receptivity.io';
 const MONITORING_ENDPOINT = 'monitoring.receptivity.io';
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_TTL = 300;
+const DEFAULT_SAMPLING_RATE = 1.0;
 const PREBID_VERSION = '$prebid.version$';
 
 // ORTB conversion
@@ -147,7 +148,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 // Retrieve the sampling rate for events
 const getSamplingRate = (bidderConfig, eventType) => {
   const entry = Object.entries(bidderConfig?.contxtful?.sampling ?? {}).find(([key, value]) => key.toLowerCase() === eventType.toLowerCase());
-  return entry ? entry[1] : 0.001;
+  return entry ? entry[1] : DEFAULT_SAMPLING_RATE;
 };
 
 // Handles the logging of events
