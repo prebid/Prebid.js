@@ -9,12 +9,13 @@ import {
   DEFAULT_INCLUDE_EVENTS,
   setDebounceDelay
 } from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import {config} from 'src/config.js';
 
 const BID_WON = EVENTS.BID_WON;
 const NO_BID = EVENTS.NO_BID;
 
 const AnalyticsAdapter = require('libraries/analyticsAdapter/AnalyticsAdapter.js').default;
-const config = {
+const adapterConfig = {
   url: 'https://localhost:9999/endpoint',
   analyticsType: 'endpoint'
 };
@@ -29,7 +30,7 @@ FEATURE: Analytics Adapters API
   after(disableAjaxForAnalytics);
 
   beforeEach(function () {
-    adapter = new AnalyticsAdapter(config);
+    adapter = new AnalyticsAdapter(adapterConfig);
   });
 
   afterEach(function () {
@@ -52,7 +53,7 @@ FEATURE: Analytics Adapters API
     adapter.track({eventType, args});
 
     let result = JSON.parse(server.requests[0].requestBody);
-    expect(result).to.deep.equal({args: {some: 'data'}, eventType});
+    sinon.assert.match(result, {args: {some: 'data'}, eventType})
   });
 
   it(`SHOULD queue the event first and then track it WHEN an event occurs before tracking library is available`, function () {
@@ -65,8 +66,78 @@ FEATURE: Analytics Adapters API
     // As now AUCTION_DEBUG is triggered for WARNINGS too, the BID_RESPONSE goes last in the array
     const index = server.requests.length - 1;
     let result = JSON.parse(server.requests[index].requestBody);
-    expect(result).to.deep.equal({eventType, args: {wat: 'wot'}});
+    sinon.assert.match(result, {eventType, args: {wat: 'wot'}})
   });
+
+  describe('analyticsLabels', () => {
+    let analyticsLabels;
+    beforeEach(() => {
+      analyticsLabels = {
+        experiment_1: 'group_a',
+        experiment_2: 'group_b'
+      }
+      config.setConfig({
+        analyticsLabels
+      })
+    })
+
+    it('should be attached to payloads (type: endpoint)', () => {
+      events.emit(BID_WON, {foo: 'bar'});
+      adapter.enableAnalytics();
+      server.requests
+        .map(req => JSON.parse(req.requestBody))
+        .forEach(payload => sinon.assert.match(payload, {labels: analyticsLabels, args: sinon.match({analyticsLabels})}))
+    });
+
+    it('should be attached payloads (type: bundle)', () => {
+      adapter = new AnalyticsAdapter({
+        analyticsType: 'bundle',
+        global: 'analytics'
+      })
+      window.analytics = sinon.stub();
+      try {
+        events.emit(BID_WON, {foo: 'bar'})
+        adapter.enableAnalytics();
+        sinon.assert.calledWith(window.analytics, sinon.match.any, BID_WON, sinon.match({analyticsLabels}))
+      } finally {
+        delete window.analytics;
+      }
+    });
+
+    it('should be passed to custom track', () => {
+      Object.assign(adapter, {
+        track: sinon.stub()
+      });
+      events.emit(BID_WON, {foo: 'bar'});
+      adapter.enableAnalytics();
+      sinon.assert.calledWith(adapter.track, sinon.match({
+        eventType: BID_WON,
+        args: sinon.match({analyticsLabels}),
+        labels: analyticsLabels
+      }))
+    })
+
+    it('should not override the "analyticsLabels" property an event payload may have', () => {
+      adapter.track = sinon.stub();
+      events.emit(BID_WON, {analyticsLabels: 'not these ones'});
+      adapter.enableAnalytics();
+      sinon.assert.calledWith(adapter.track, sinon.match({
+        args: {analyticsLabels: 'not these ones'}
+      }));
+    });
+
+    it('should not modify event payloads when there are no labels', () => {
+      config.resetConfig();
+      adapter.track = sinon.stub();
+      events.emit(BID_WON, {'foo': 'bar'});
+      adapter.enableAnalytics();
+      sinon.assert.calledWith(adapter.track, {
+        labels: {},
+        args: {foo: 'bar'},
+        eventType: BID_WON
+      })
+    })
+  })
 
   describe('event filters', () => {
     function fireEvents() {
@@ -112,7 +183,7 @@ FEATURE: Analytics Adapters API
         events.emit(BID_WON, {})
       }
     })(adapter.track);
-    adapter.enableAnalytics(config);
+    adapter.enableAnalytics(adapterConfig);
     events.emit(BID_WON, {});
     expect(i >= 100).to.eql(false);
   })
@@ -176,7 +247,7 @@ FEATURE: Analytics Adapters API
 
         expect(server.requests.length).to.equal(1);
         let result = JSON.parse(server.requests[0].requestBody);
-        expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
+        sinon.assert.match(result, {args: {more: 'info'}, eventType: 'bidWon'})
       });
 
       it(`THEN should disable analytics when random number is outside sample range`, function () {
@@ -205,7 +276,7 @@ describe('Analytics asynchronous event tracking', () => {
 
   beforeEach(() => {
     clock = sinon.useFakeTimers();
-    adapter = new AnalyticsAdapter(config);
+    adapter = new AnalyticsAdapter(adapterConfig);
     adapter.track = sinon.stub();
     adapter.enableAnalytics({});
   });
@@ -224,7 +295,7 @@ describe('Analytics asynchronous event tracking', () => {
     sinon.assert.notCalled(adapter.track);
     clock.tick(100);
     sinon.assert.calledTwice(adapter.track);
-    sinon.assert.calledWith(adapter.track.firstCall, {eventType: BID_WON, args: {i: 0}});
-    sinon.assert.calledWith(adapter.track.secondCall, {eventType: BID_WON, args: {i: 1}});
+    sinon.assert.calledWith(adapter.track.firstCall, sinon.match({eventType: BID_WON, args: {i: 0}}));
+    sinon.assert.calledWith(adapter.track.secondCall, sinon.match({eventType: BID_WON, args: {i: 1}}));
   });
 })

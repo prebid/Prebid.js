@@ -1,5 +1,5 @@
 import { auctionManager } from './auctionManager.js';
-import { getTTL } from './bidTTL.js';
+import { getBufferedTTL } from './bidTTL.js';
 import { bidderSettings } from './bidderSettings.js';
 import { config } from './config.js';
 import {
@@ -48,7 +48,7 @@ export const TARGETING_KEYS_ARR = Object.keys(TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + getTTL(bid) * 1000) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 1000) > timestamp();
 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_STATUS.RENDERED], bid.status)) || !bid.status);
@@ -207,9 +207,7 @@ export function newTargeting(auctionManager) {
     });
   };
 
-  function addBidToTargeting(bids, bidderLevelTargetingEnabled = false, deals = false) {
-    if (!bidderLevelTargetingEnabled) return [];
-
+  function addBidToTargeting(bids, enableSendAllBids = false, deals = false) {
     const standardKeys = FEATURES.NATIVE ? TARGETING_KEYS_ARR.concat(NATIVE_TARGETING_KEYS) : TARGETING_KEYS_ARR.slice();
     const allowSendAllBidsTargetingKeys = config.getConfig('targetingControls.allowSendAllBidsTargetingKeys');
 
@@ -218,7 +216,7 @@ export function newTargeting(auctionManager) {
       : standardKeys;
 
     return bids.reduce((result, bid) => {
-      if ((!deals || bid.dealId)) {
+      if (enableSendAllBids || (deals && bid.dealId)) {
         const targetingValue = getTargetingMap(bid, standardKeys.filter(
           key => typeof bid.adserverTargeting[key] !== 'undefined' &&
           (deals || allowedSendAllBidTargeting.indexOf(key) !== -1)));
@@ -233,8 +231,8 @@ export function newTargeting(auctionManager) {
 
   function getBidderTargeting(bids) {
     const alwaysIncludeDeals = config.getConfig('targetingControls.alwaysIncludeDeals');
-    const bidderLevelTargetingEnabled = config.getConfig('enableSendAllBids') || alwaysIncludeDeals;
-    return addBidToTargeting(bids, bidderLevelTargetingEnabled, alwaysIncludeDeals);
+    const enableSendAllBids = config.getConfig('enableSendAllBids');
+    return addBidToTargeting(bids, enableSendAllBids, alwaysIncludeDeals);
   }
 
   /**

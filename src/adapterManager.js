@@ -1,7 +1,6 @@
 /** @module adaptermanger */
 
 import {
-  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -21,6 +20,7 @@ import {
   mergeDeep,
   shuffle,
   timestamp,
+  uniques,
 } from './utils.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
 import {newBidder} from './adapters/bidderFactory.js';
@@ -29,9 +29,11 @@ import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {
+  getAuctionsCounter,
   getBidderRequestsCounter,
   getBidderWinsCounter,
   getRequestsCounter,
+  incrementAuctionsCounter,
   incrementBidderRequestsCounter,
   incrementBidderWinsCounter,
   incrementRequestsCounter
@@ -128,12 +130,13 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
           adUnitId: adUnit.adUnitId,
-          sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
+          sizes: mediaTypes?.banner?.sizes || mediaTypes?.video?.playerSize || [],
           bidId: bid.bid_id || getUniqueIdentifierStr(),
           bidderRequestId,
           auctionId,
           src,
           metrics,
+          auctionsCount: getAuctionsCounter(adUnit.code),
           bidRequestsCount: getRequestsCounter(adUnit.code),
           bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
           bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
@@ -261,6 +264,10 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   if (FEATURES.NATIVE) {
     decorateAdUnitsWithNativeParams(adUnits);
   }
+  adUnits
+    .map(adUnit => adUnit.code)
+    .filter(uniques)
+    .forEach(incrementAuctionsCounter);
 
   adUnits.forEach(au => {
     if (!isPlainObject(au.mediaTypes)) {

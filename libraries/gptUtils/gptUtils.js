@@ -12,6 +12,18 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 }
 
 /**
+ * @summary Export a k-v pair to GAM
+ */
+export function setKeyValue(key, value) {
+  if (!key || typeof key !== 'string') return false;
+  window.googletag = window.googletag || {cmd: []};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(() => {
+    window.googletag.pubads().setTargeting(key, value);
+  });
+}
+
+/**
  * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
  */
 export function getGptSlotForAdUnitCode(adUnitCode) {
