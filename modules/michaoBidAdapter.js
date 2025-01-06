@@ -1,11 +1,9 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {
   deepSetValue,
-  isArray,
   isBoolean,
   isNumber,
   isStr,
@@ -48,56 +46,9 @@ export const spec = {
       }
     }
 
-    if (params?.badv) {
-      if (!isArray(params?.badv)) {
-        domainLogger.invalidBadvError(params?.badv);
-        return false;
-      }
-    }
-
-    if (params?.bcat) {
-      if (!isArray(params?.bcat)) {
-        domainLogger.invalidBcatError(params?.bcat);
-        return false;
-      }
-    }
-
-    if (bid.params?.reward) {
-      if (!isBoolean(params?.reward)) {
-        domainLogger.invalidRewardError(params?.reward);
-        return false;
-      }
-    }
-
-    const video = bid.mediaTypes?.video;
-    if (video) {
-      if (!video.context) {
-        domainLogger.invalidVideoContext();
-        return false;
-      }
-
-      if (!video.playerSize || !Array.isArray(video.playerSize)) {
-        domainLogger.invalidVideoPlayerSize();
-        return false;
-      }
-
-      if (!isNumber(video.minduration)) {
-        domainLogger.invalidVideoMinDuration();
-        return false;
-      }
-
-      if (!isNumber(video.maxduration)) {
-        domainLogger.invalidVideoMaxDuration();
-        return false;
-      }
-
-      if (!Array.isArray(video.mimes) || video.mimes.length === 0) {
-        domainLogger.invalidVideoMimes();
-        return false;
-      }
-
-      if (!Array.isArray(video.protocols) || video.protocols.length === 0) {
-        domainLogger.invalidVideoProtocols();
+    if (params?.test) {
+      if (!isBoolean(params?.test)) {
+        domainLogger.invalidTestParamError(params?.test);
         return false;
       }
     }
@@ -197,46 +148,10 @@ export const domainLogger = {
     );
   },
 
-  invalidBadvError(value) {
+  invalidTestParamError(value) {
     logError(
-      `Michao Bid Adapter: Invalid badv. Expected array, got ${typeof value}`
+      `Michao Bid Adapter: Invalid test parameter. Expected boolean, got ${typeof value}. Value: ${value}`
     );
-  },
-
-  invalidBcatError(value) {
-    logError(
-      `Michao Bid Adapter: Invalid bcat. Expected array, got ${typeof value}`
-    );
-  },
-
-  invalidRewardError(value) {
-    logError(
-      `Michao Bid Adapter: Invalid reward. Expected boolean, got ${typeof value}. Value: ${value}`
-    );
-  },
-
-  invalidVideoContext() {
-    logError('Michao Bid Adapter: Video context is not set');
-  },
-
-  invalidVideoPlayerSize() {
-    logError('Michao Bid Adapter: Video playerSize is not set or invalid');
-  },
-
-  invalidVideoMinDuration() {
-    logError('Michao Bid Adapter: Video minDuration is not set or invalid');
-  },
-
-  invalidVideoMaxDuration() {
-    logError('Michao Bid Adapter: Video maxDuration is not set or invalid');
-  },
-
-  invalidVideoMimes() {
-    logError('Michao Bid Adapter: Video mimes is not set or invalid');
-  },
-
-  invalidVideoProtocols() {
-    logError('Michao Bid Adapter: Video protocols is not set or invalid');
   },
 };
 
@@ -277,9 +192,8 @@ const converter = ortbConverter({
     const bidRequest = context.bidRequests[0];
     const openRTBBidRequest = buildRequest(imps, bidderRequest, context);
     openRTBBidRequest.cur = [ENV.DEFAULT_CURRENCY];
-    openRTBBidRequest.test = config.getConfig('debug') ? 1 : 0;
-    openRTBBidRequest.bcat = bidRequest.params?.bcat || [];
-    openRTBBidRequest.badv = bidRequest.params?.badv || [];
+    openRTBBidRequest.test = bidRequest.params?.test ? 1 : 0;
+
     deepSetValue(
       openRTBBidRequest,
       'site.id',
@@ -289,7 +203,7 @@ const converter = ortbConverter({
       deepSetValue(openRTBBidRequest, 'source.schain', bidRequest.schain);
     }
 
-    if (bidRequest.params.partner) {
+    if (bidRequest.params?.partner) {
       deepSetValue(
         openRTBBidRequest,
         'site.publisher.ext.partner',
@@ -303,12 +217,6 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.placement', bidRequest.params.placement.toString());
-    deepSetValue(imp, 'rwdd', bidRequest.params?.reward ? 1 : 0);
-    deepSetValue(
-      imp,
-      'bidfloor',
-      isNumber(bidRequest.params?.bidFloor) ? bidRequest.params?.bidFloor : 0
-    );
 
     if (!bidRequest.mediaTypes?.native) {
       delete imp.native;

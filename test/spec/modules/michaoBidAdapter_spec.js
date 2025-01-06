@@ -78,140 +78,6 @@ describe('Michao Bid Adapter', () => {
       });
     });
 
-    describe('mediaTypes behavior', () => {
-      it('passes when video context is instream', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          context: 'instream',
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidVideoContext.calledOnce).to.be.false;
-      });
-
-      it('passes when video playerSize is valid array', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          playerSize: [[640, 480]],
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidVideoPlayerSize.calledOnce).to.be.false;
-      });
-
-      it('passes when valid video minDuration is set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          minduration: 5,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidVideoMinDuration.calledOnce).to.be.false;
-      });
-
-      it('passes when valid video maxDuration is set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          maxduration: 30,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidVideoMaxDuration.calledOnce).to.be.false;
-      });
-
-      it('passes when valid video mimes are set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          mimes: ['video/mp4'],
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidVideoMimes.calledOnce).to.be.false;
-      });
-
-      it('detects invalid input when video context is not set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          context: undefined,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidVideoContext.calledOnce).to.be.true;
-      });
-
-      it('detects invalid input when video playerSize is not set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          playerSize: undefined,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidVideoPlayerSize.calledOnce).to.be.true;
-      });
-
-      it('detects invalid input when video minDuration is not set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          minduration: undefined,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidVideoMinDuration.calledOnce).to.be.true;
-      });
-
-      it('detects invalid input when video maxDuration is not set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          maxduration: undefined,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidVideoMaxDuration.calledOnce).to.be.true;
-      });
-
-      it('detects invalid input when video mimes is not set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          mimes: undefined,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidVideoMimes.calledOnce).to.be.true;
-      });
-
-      it('detects invalid input when video protocols is not set', () => {
-        videoBidRequest.mediaTypes.video = {
-          ...videoBidRequest.mediaTypes.video,
-          protocols: undefined,
-        };
-
-        const result = spec.isBidRequestValid(videoBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidVideoProtocols.calledOnce).to.be.true;
-      });
-    });
-
     describe('Optional parameter behavior', () => {
       it('passes when partnerId is not specified', () => {
         bannerBidRequest.params = {
@@ -249,112 +115,40 @@ describe('Michao Bid Adapter', () => {
         expect(domainLoggerMock.invalidPartnerError.calledOnce).to.be.true;
       });
 
-      it('passes when blockCategories is not specified', () => {
+      it('passes when test is not specified', () => {
         bannerBidRequest.params = {
           ...bannerBidRequest.params,
-          bcat: undefined,
+          test: undefined,
         };
 
         const result = spec.isBidRequestValid(bannerBidRequest);
 
         expect(result).to.be.true;
-        expect(domainLoggerMock.invalidBcatError.calledOnce).to.be.false;
+        expect(domainLoggerMock.invalidTestParamError.calledOnce).to.be.false;
       });
 
-      it('passes when blockCategories is an array', () => {
+      it('passes when test is a boolean', () => {
         bannerBidRequest.params = {
           ...bannerBidRequest.params,
-          bcat: ['IAB2'],
+          test: false,
         };
 
         const result = spec.isBidRequestValid(bannerBidRequest);
 
         expect(result).to.be.true;
-        expect(domainLoggerMock.invalidBcatError.calledOnce).to.be.false;
+        expect(domainLoggerMock.invalidTestParamError.calledOnce).to.be.false;
       });
 
-      it('detects invalid input when blockCategories is not an array', () => {
+      it('detects invalid input when test is not a boolean', () => {
         bannerBidRequest.params = {
           ...bannerBidRequest.params,
-          bcat: 'IAB2',
+          test: 'true',
         };
 
         const result = spec.isBidRequestValid(bannerBidRequest);
 
         expect(result).to.be.false;
-        expect(domainLoggerMock.invalidBcatError.calledOnce).to.be.true;
-      });
-
-      it('passes when blockAdvertisers is not specified', () => {
-        bannerBidRequest.params = {
-          ...bannerBidRequest.params,
-          badv: undefined,
-        };
-
-        const result = spec.isBidRequestValid(bannerBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidBadvError.calledOnce).to.be.false;
-      });
-
-      it('passes when blockAdvertisers is an array', () => {
-        bannerBidRequest.params = {
-          ...bannerBidRequest.params,
-          badv: ['adomain.com'],
-        };
-
-        const result = spec.isBidRequestValid(bannerBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidBadvError.calledOnce).to.be.false;
-      });
-
-      it('detects invalid input when blockAdvertisers is not an array', () => {
-        bannerBidRequest.params = {
-          ...bannerBidRequest.params,
-          badv: 'adomain.com',
-        };
-
-        const result = spec.isBidRequestValid(bannerBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidBadvError.calledOnce).to.be.true;
-      });
-
-      it('passes when reward is not specified', () => {
-        bannerBidRequest.params = {
-          ...bannerBidRequest.params,
-          reward: undefined,
-        };
-
-        const result = spec.isBidRequestValid(bannerBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidRewardError.calledOnce).to.be.false;
-      });
-
-      it('passes when reward is a boolean', () => {
-        bannerBidRequest.params = {
-          ...bannerBidRequest.params,
-          reward: true,
-        };
-
-        const result = spec.isBidRequestValid(bannerBidRequest);
-
-        expect(result).to.be.true;
-        expect(domainLoggerMock.invalidRewardError.calledOnce).to.be.false;
-      });
-
-      it('detects invalid input when reward is not a boolean', () => {
-        bannerBidRequest.params = {
-          ...bannerBidRequest.params,
-          reward: 'true',
-        };
-
-        const result = spec.isBidRequestValid(bannerBidRequest);
-
-        expect(result).to.be.false;
-        expect(domainLoggerMock.invalidRewardError.calledOnce).to.be.true;
+        expect(domainLoggerMock.invalidTestParamError.calledOnce).to.be.true;
       });
     });
   });
@@ -552,10 +346,11 @@ describe('Michao Bid Adapter', () => {
         expect(result[0].data.site.publisher.ext.partner).to.equal('123');
       });
 
-      it('does not set publisher when partnerId is not specified', () => {
+      it('sets test in publisher when specified', () => {
         bannerBidRequest.params = {
           site: 456,
           placement: '123',
+          test: true,
         };
         const bidderRequest = {
           bids: [bannerBidRequest],
@@ -565,107 +360,7 @@ describe('Michao Bid Adapter', () => {
 
         const result = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-        expect(result[0].data.site.publisher).to.be.undefined;
-      });
-
-      it('sets reward enabled parameter in impression object when reward is specified', () => {
-        bannerBidRequest.params = {
-          site: 456,
-          placement: '123',
-          reward: true,
-        };
-        const bidderRequest = {
-          bids: [bannerBidRequest],
-          auctionId: bannerBidRequest.auctionId,
-          bidderRequestId: bannerBidRequest.bidderRequestId,
-        };
-
-        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
-
-        expect(result[0].data.imp[0].rwdd).to.equal(1);
-      });
-
-      it('sets reward disabled parameter in impression object when reward is not specified', () => {
-        bannerBidRequest.params = {
-          site: 456,
-          placement: '123',
-        };
-        const bidderRequest = {
-          bids: [bannerBidRequest],
-          auctionId: bannerBidRequest.auctionId,
-          bidderRequestId: bannerBidRequest.bidderRequestId,
-        };
-
-        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
-
-        expect(result[0].data.imp[0].rwdd).to.equal(0);
-      });
-
-      it('sets bid floor in impression object when specified', () => {
-        bannerBidRequest.params = {
-          site: 456,
-          placement: '123',
-          bidFloor: 0.2,
-        };
-        const bidderRequest = {
-          bids: [bannerBidRequest],
-          auctionId: bannerBidRequest.auctionId,
-          bidderRequestId: bannerBidRequest.bidderRequestId,
-        };
-
-        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
-
-        expect(result[0].data.imp[0].bidfloor).to.equal(0.2);
-      });
-
-      it('sets bid floor to 0 in impression object when not specified', () => {
-        bannerBidRequest.params = {
-          site: 456,
-          placement: '123',
-        };
-        const bidderRequest = {
-          bids: [bannerBidRequest],
-          auctionId: bannerBidRequest.auctionId,
-          bidderRequestId: bannerBidRequest.bidderRequestId,
-        };
-
-        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
-
-        expect(result[0].data.imp[0].bidfloor).to.equal(0);
-      });
-
-      it('sets block categories in bid request when specified', () => {
-        bannerBidRequest.params = {
-          site: 456,
-          placement: '123',
-          bcat: ['IAB2'],
-        };
-        const bidderRequest = {
-          bids: [bannerBidRequest],
-          auctionId: bannerBidRequest.auctionId,
-          bidderRequestId: bannerBidRequest.bidderRequestId,
-        };
-
-        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
-
-        expect(result[0].data.bcat).to.deep.equal(['IAB2']);
-      });
-
-      it('sets block advertisers in bid request when specified', () => {
-        bannerBidRequest.params = {
-          site: 456,
-          placement: '123',
-          badv: ['adomain.com'],
-        };
-        const bidderRequest = {
-          bids: [bannerBidRequest],
-          auctionId: bannerBidRequest.auctionId,
-          bidderRequestId: bannerBidRequest.bidderRequestId,
-        };
-
-        const result = spec.buildRequests([bannerBidRequest], bidderRequest);
-
-        expect(result[0].data.badv).to.deep.equal(['adomain.com']);
+        expect(result[0].data.test).to.equal(1);
       });
     });
   });
