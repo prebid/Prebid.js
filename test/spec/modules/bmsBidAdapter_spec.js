@@ -88,38 +88,4 @@ describe("bmsBidAdapter:", function () {
       expect(ortbRequest.imp[0].bidfloor).to.be.undefined;
     });
   });
-
-  describe("interpretResponse:", function () {
-    // it("should interpret server response correctly", function () {
-    //   const serverResponse = {
-    //     body: {
-    //       seatbid: [
-    //         {
-    //           bid: [
-    //             {
-    //               impid: "bid1",
-    //               price: 1.5,
-    //               ad: "<div>Ad</div>",
-    //               meta: {},
-    //             },
-    //           ],
-    //         },
-    //       ],
-    //     },
-    //   };
-    //   const request = {
-    //     data: {},
-    //   };
-    //   const bids = spec.interpretResponse(serverResponse, request);
-    //   expect(bids).to.be.an("array").that.is.not.empty;
-    //   expect(bids[0].price).to.equal(1.5);
-    //   expect(bids[0].meta.adapterVersion).to.equal("1.0.0");
-    // });
-    // it("should return an empty array if no bids are present", function () {
-    //   const serverResponse = { body: { seatbid: [] } };
-    //   const request = { data: {} };
-    //   const bids = spec.interpretResponse(serverResponse, request);
-    //   expect(bids).to.be.an("array").that.is.empty;
-    // });
-  });
 });
