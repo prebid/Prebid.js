@@ -698,48 +698,75 @@ describe('utils', function () {
   });
 
   describe('getPlayerHeight', function () {
-    it('should return height from API when defined', function () {
+    const getPlayerHeight = utils.getPlayerHeight;
 
+    it('should return height from API when defined', function () {
+      const expectedHeight = 500;
+      const playerMock = { getHeight: () => expectedHeight };
+      expect(getPlayerHeight(playerMock, {})).to.equal(expectedHeight);
     });
 
     it('should return height from config when API returns undefined', function () {
-
+      const expectedHeight = 500;
+      const playerMock = { getHeight: () => undefined };
+      expect(getPlayerHeight(playerMock, { height: 500 })).to.equal(expectedHeight);
     });
   });
 
   describe('getPlayerWidth', function () {
-    it('should return width from API when defined', function () {
+    const getPlayerWidth = utils.getPlayerWidth;
 
+    it('should return width from API when defined', function () {
+      const expectedWidth = 1000;
+      const playerMock = { getWidth: () => expectedWidth };
+      expect(getPlayerWidth(playerMock, {})).to.equal(expectedWidth);
     });
 
     it('should return width from config when API returns undefined', function () {
-
+      const expectedWidth = 1000;
+      const playerMock = { getWidth: () => undefined };
+      expect(getPlayerWidth(playerMock, { width: expectedWidth })).to.equal(expectedWidth);
     });
 
     it('should return undefined when width is string', function () {
-
+      const playerMock = { getWidth: () => undefined };
+      expect(getPlayerWidth(playerMock, { width: '50%' })).to.be.undefined;
     });
   });
 
   describe('getPlayerSizeFromAspectRatio', function () {
-    it('should return an empty object when width and aspectratio are not strings', function () {
+    const getPlayerSizeFromAspectRatio = utils.getPlayerSizeFromAspectRatio;
+    const testContainer = document.createElement('div');
+    testContainer.style.width = '640px';
+    testContainer.style.height = '480px';
 
+    it('should return an empty object when width and aspectratio are not strings', function () {
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {width: 100})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:2', width: 100})).to.deep.equal({});
     });
 
     it('should return an empty object when aspectratio is malformed', function () {
-
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '0.5', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1-2', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: ':2', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: ':', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:2:3', width: '100%'})).to.deep.equal({});
     });
 
     it('should return an empty object when player container cannot be obtained', function () {
-
+      expect(getPlayerSizeFromAspectRatio({}, {aspectratio: '1:2', width: '100%'})).to.deep.equal({});
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => undefined }, {aspectratio: '1:2', width: '100%'})).to.deep.equal({});
     });
 
-    it('should calculate the size give the width percentage and aspect ratio', function () {
-
+    it('should calculate the size given the width percentage and aspect ratio', function () {
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:2', width: '100%'})).to.deep.equal({ height: 370, width: 640 });
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:4', width: '70%'})).to.deep.equal({ height: 112, width: 448 });
     });
 
     it('should return the container height when smaller than the calculated height', function () {
-
+      expect(getPlayerSizeFromAspectRatio({ getContainer: () => testContainer }, {aspectratio: '1:1', width: '100%'})).to.deep.equal({ height: 480, width: 640 });
     });
   });
 
