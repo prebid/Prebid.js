@@ -76,15 +76,17 @@ const _SESSION = (function() {
 
         const isNewSess = isNewSession(expiry);
 
-        // if lastActivityTime is defined it means that the website is using the original version of the snippet
-        const v = !lastActivityTime ? LATEST_ABTEST_VERSION : undefined;
+        const abTest = _internal.getAbTestFromLocalStorage(storageValue);
+
+        // if abTest is defined it means that the website is using the new version of the snippet
+        const v = abTest ? LATEST_ABTEST_VERSION : undefined;
 
         data.session = {
-          v,
           rnd,
           pages: pages || 1,
           new: isNewSess, // legacy: `new` was used but the choosen name is not good.
           // Don't use values if they are not defined.
+          ...(v !== undefined && { v }),
           ...(vwSmplg !== undefined && { vwSmplg }),
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
           ...(expiry !== undefined && { expiry }),
@@ -98,15 +100,19 @@ const _SESSION = (function() {
           data.session.rnd = Math.random();
         }
 
-        const { testName, testVersion, expiry: abTestExpiry, sessionId } = _internal.getAbTestFromLocalStorage(storageValue);
         if (v === LATEST_ABTEST_VERSION) {
+          const { testName, testVersion, expiry: abTestExpiry, sessionId } = abTest;
           if (abTestExpiry && abTestExpiry > Date.now() && (!sessionId || sessionId === data.session.id)) { // if AbTest didn't set a session id, it's probably because it's a new one and it didn't retrieve it yet, assume it's okay to get test Name and Version.
-            data.session.testName = testName;
-            data.session.testVersion = testVersion;
+            if (testName && testVersion) {
+              data.session.testName = testName;
+              data.session.testVersion = testVersion;
+            }
           }
         } else {
-          data.session.testName = legacyTestName;
-          data.session.testVersion = legacyTestVersion;
+          if (legacyTestName && legacyTestVersion) {
+            data.session.testName = legacyTestName;
+            data.session.testVersion = legacyTestVersion;
+          }
         }
 
         _internal.getAdagioNs().queue.push({
@@ -215,7 +221,7 @@ export const _internal = {
   getAbTestFromLocalStorage: function(storageValue) {
     const obj = this.getObjFromStorageValue(storageValue);
 
-    return (!obj || !obj.abTest) ? {} : obj.abTest;
+    return (!obj || !obj.abTest) ? null : obj.abTest;
   },
 
   /**
