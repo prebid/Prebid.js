@@ -45,6 +45,11 @@ describe('Adloox Analytics Adapter', function () {
     adapter: analyticsAdapter
   });
   describe('enableAnalytics', function () {
+    afterEach(function () {
+      analyticsAdapter.disableAnalytics();
+      expect(analyticsAdapter.context).is.null;
+    });
+
     describe('invalid options', function () {
       it('should require options', function (done) {
         adapterManager.enableAnalytics({
@@ -58,6 +63,32 @@ describe('Adloox Analytics Adapter', function () {
       it('should reject non-string options.js', function (done) {
         const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
         analyticsOptionsLocal.js = function () { };
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.null;
+
+        done();
+      });
+
+      it('should accept subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://test.adlooxtracking.com/test.js';
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.not.null;
+
+        done();
+      });
+
+      it('should reject non-subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://example.com/test.js';
 
         adapterManager.enableAnalytics({
           provider: analyticsAdapterName,

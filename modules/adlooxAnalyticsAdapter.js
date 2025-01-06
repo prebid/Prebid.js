@@ -109,6 +109,10 @@ analyticsAdapter.enableAnalytics = function(config) {
     logError(MODULE, 'invalid js options value');
     return;
   }
+  if (isStr(config.options.js) && !/\.adlooxtracking\.(com|ru)$/.test(parseUrl(config.options.js, { 'noDecodeWholeURL': true }).host)) {
+    logError(MODULE, "invalid js options value, must be a sub-domain of 'adlooxtracking.com'");
+    return;
+  }
   if (!(config.options.toselector === undefined || isFn(config.options.toselector))) {
     logError(MODULE, 'invalid toselector options value');
     return;
