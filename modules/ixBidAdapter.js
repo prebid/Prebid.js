@@ -753,6 +753,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         data: deepClone(r),
         options: {
           contentType: 'text/plain',
+          withCredentials: true
         },
         validBidRequests
       });
