@@ -2,12 +2,14 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepSetValue } from '../src/utils.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
 const GVLID = 620; // GVLID for your bidder
 const COOKIE_NAME = 'ckid'; // Cookie name for identifying users
+const CURRENCY = 'USD'; // Currency used in bid floors
+
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const converter = ortbConverter({
@@ -21,17 +23,37 @@ const converter = ortbConverter({
 
 function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
-  deepSetValue(request, 'site.publisher.id', context.publisherId);
+  utils.deepSetValue(request, 'site.publisher.id', context.publisherId);
   // eslint-disable-next-line no-console
   return request;
 }
 
 function imp(buildImp, bidRequest, context) {
-  let imp = buildImp(bidRequest, context);
-  imp.bidfloor = bidRequest.params.bidFloor;
-  imp.bidfloorcur = bidRequest.params.currency;
-  imp.tagid = bidRequest.params.placementId;
+  const imp = buildImp(bidRequest, context);
+  const floor = getBidFloor(bidRequest);
+  if (floor) {
+    imp.bidfloor = floor;
+    imp.bidfloorcur = CURRENCY;
+  }
   return imp;
+}
+
+function getBidFloor(bid) {
+  if (utils.isFn(bid.getFloor)) {
+    let floor = bid.getFloor({
+      currency: CURRENCY,
+      mediaType: BANNER,
+      size: '*',
+    });
+    if (
+      utils.isPlainObject(floor) &&
+      !isNaN(floor.floor) &&
+      floor.currency === CURRENCY
+    ) {
+      return floor.floor;
+    }
+  }
+  return null;
 }
 
 export const spec = {
@@ -41,12 +63,7 @@ export const spec = {
 
   // Validate bid request
   isBidRequestValid: function (bid) {
-    return (
-      !!bid.params.placementId &&
-      !!bid.params.publisherId &&
-      !!bid.params.bidFloor &&
-      !!bid.params.currency
-    );
+    return !!bid.params.placementId && !!bid.params.publisherId;
   },
 
   // Build OpenRTB requests using `ortbConverter`
@@ -65,20 +82,20 @@ export const spec = {
 
     // Add GVLID and cookie ID to the request
     ortbRequest.ext = ortbRequest.ext || {};
-    deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
+    utils.deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
 
     // Include user cookie if available
-    const ckid = storage.getCookie(COOKIE_NAME) || null;
+    const ckid = storage.getDataFromLocalStorage('blueID') || storage.getCookie(COOKIE_NAME) || null;
     if (ckid) {
-      deepSetValue(ortbRequest, 'user.ext.buyerid', ckid);
+      utils.deepSetValue(ortbRequest, 'user.ext.buyerid', ckid);
     }
 
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: ortbRequest,
+      data: JSON.stringify(ortbRequest),
       options: {
-        contentType: 'application/json',
+        contentType: 'test/plain',
       },
     };
   },
