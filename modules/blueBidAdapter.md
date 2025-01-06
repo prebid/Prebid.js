@@ -19,8 +19,6 @@ Module that connects to Blue's demand sources.
                     bidder: 'blue',
                     params: {
                         publisherId: "xpto",
-                        bidFloor: 0.5,
-                        currency: "USD",
                         placementId: "xpto",
                     }
                 }
