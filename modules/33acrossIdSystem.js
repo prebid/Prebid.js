@@ -27,6 +27,7 @@ const GVLID = 58;
 
 const STORAGE_FPID_KEY = '33acrossIdFp';
 const STORAGE_TPID_KEY = '33acrossIdTp';
+const STORAGE_HEM_KEY = '33acrossIdHm'
 const DEFAULT_1PID_SUPPORT = true;
 const DEFAULT_TPID_SUPPORT = true;
 
@@ -59,7 +60,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
+function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -95,6 +96,11 @@ function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
   const tp = getStoredValue(STORAGE_TPID_KEY, enabledStorageTypes);
   if (tp) {
     params.tp = encodeURIComponent(tp);
+  }
+
+  const hemParam = hem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
+  if (hemParam) {
+    params.sha256 = encodeURIComponent(hemParam);
   }
 
   return params;
@@ -146,7 +152,7 @@ function handleSupplementalId(key, id, storageConfig) {
 }
 
 /** @type {Submodule} */
-export const thirthyThreeAcrossIdSubmodule = {
+export const thirtyThreeAcrossIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -188,7 +194,11 @@ export const thirthyThreeAcrossIdSubmodule = {
       return;
     }
 
-    const { pid, storeFpid = DEFAULT_1PID_SUPPORT, storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL } = params;
+    const {
+      storeFpid = DEFAULT_1PID_SUPPORT,
+      storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL,
+      ...options
+    } = params;
 
     return {
       callback(cb) {
@@ -203,7 +213,9 @@ export const thirthyThreeAcrossIdSubmodule = {
             }
 
             if (!responseObj.envelope) {
-              deleteFromStorage(MODULE_NAME);
+              ['', '_last', '_exp', '_cst'].forEach(suffix => {
+                deleteFromStorage(`${MODULE_NAME}${suffix}`);
+              });
             }
 
             if (storeFpid) {
@@ -227,7 +239,7 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes), {
+        }, calculateQueryStringParams(options, gdprConsentData, enabledStorageTypes), {
           method: 'GET',
           withCredentials: true
         });
@@ -246,4 +258,4 @@ export const thirthyThreeAcrossIdSubmodule = {
   }
 };
 
-submodule('userId', thirthyThreeAcrossIdSubmodule);
+submodule('userId', thirtyThreeAcrossIdSubmodule);
