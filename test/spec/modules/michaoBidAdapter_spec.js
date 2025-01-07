@@ -142,7 +142,7 @@ describe('Michao Bid Adapter', () => {
       it('detects invalid input when test is not a boolean', () => {
         bannerBidRequest.params = {
           ...bannerBidRequest.params,
-          test: 'truee',
+          test: 'trueee',
         };
 
         const result = spec.isBidRequestValid(bannerBidRequest);
