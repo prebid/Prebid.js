@@ -642,7 +642,7 @@ export const utils = {
     const aspectRatio = config.aspectratio;
     let percentageWidth = config.width;
 
-    if (typeof aspectRatio !== 'string' && typeof percentageWidth !== 'string') {
+    if (typeof aspectRatio !== 'string' || typeof percentageWidth !== 'string') {
       return {};
     }
 
@@ -662,6 +662,11 @@ export const utils = {
 
     const xRatio = parseInt(ratios[0], 10);
     const yRatio = parseInt(ratios[1], 10);
+
+    if (isNaN(xRatio) || isNaN(yRatio)) {
+      return {};
+    }
+
     const numericWidthPercentage = parseInt(percentageWidth, 10);
 
     const desiredWidth = containerWidth * numericWidthPercentage / 100;
