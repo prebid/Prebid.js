@@ -165,7 +165,7 @@ const logEvent = (eventType, data) => {
     if (['onBidBillable', 'onAdRenderSucceeded'].includes(eventType)) {
       const randomNumber = Math.random();
       const samplingRate = getSamplingRate(bidderConfig, eventType);
-      if (randomNumber >= samplingRate) {
+      if (!(randomNumber <= samplingRate)) {
         return; // Don't sample
       }
     } else if (!['onTimeout', 'onBidderError', 'onBidWon'].includes(eventType)) {
