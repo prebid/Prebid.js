@@ -95,7 +95,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
     pathname: `/${version}/prebid/${customer}/bid`,
   });
 
-  // See https://docs.prebid.org/dev-docs/bidder-adaptor.html
+  // https://docs.prebid.org/dev-docs/bidder-adaptor.html
   let req = {
     url: adapterUrl,
     method: 'POST',
