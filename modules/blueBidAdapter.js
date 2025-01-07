@@ -2,7 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import * as utils from '../src/utils.js';
+import { deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
@@ -23,7 +23,7 @@ const converter = ortbConverter({
 
 function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
-  utils.deepSetValue(request, 'site.publisher.id', context.publisherId);
+  deepSetValue(request, 'site.publisher.id', context.publisherId);
   return request;
 }
 
@@ -38,14 +38,14 @@ function imp(buildImp, bidRequest, context) {
 }
 
 function getBidFloor(bid) {
-  if (utils.isFn(bid.getFloor)) {
+  if (isFn(bid.getFloor)) {
     let floor = bid.getFloor({
       currency: CURRENCY,
       mediaType: BANNER,
       size: '*',
     });
     if (
-      utils.isPlainObject(floor) &&
+      isPlainObject(floor) &&
       !isNaN(floor.floor) &&
       floor.currency === CURRENCY
     ) {
@@ -81,12 +81,12 @@ export const spec = {
 
     // Add GVLID and cookie ID to the request
     ortbRequest.ext = ortbRequest.ext || {};
-    utils.deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
+    deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
 
     // Include user cookie if available
     const ckid = storage.getDataFromLocalStorage('blueID') || storage.getCookie(COOKIE_NAME) || null;
     if (ckid) {
-      utils.deepSetValue(ortbRequest, 'user.ext.buyerid', ckid);
+      deepSetValue(ortbRequest, 'user.ext.buyerid', ckid);
     }
 
     return {
