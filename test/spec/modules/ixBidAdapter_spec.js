@@ -5007,6 +5007,7 @@ describe('IndexexchangeAdapter', function () {
       expect(result['b8c6b5d5-76a1-4a90-b635-0c7eae1bfaa7'].ixImps.length).to.equal(1);
     });
   });
+
   describe('apply floors test', function () {
     it('video test', function() {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
@@ -5371,6 +5372,7 @@ describe('IndexexchangeAdapter', function () {
       expect(removeSiteIDs(request)).to.deep.equal(expected);
     });
   });
+
   describe('addDeviceInfo', () => {
     it('should add device to request when device already exists', () => {
       let r = {
@@ -5389,4 +5391,44 @@ describe('IndexexchangeAdapter', function () {
       expect(r.device.h).to.exist;
     });
   });
+
+  describe('fetch requests', function () {
+    let fetchStub;
+
+    beforeEach(() => {
+      fetchStub = sinon.stub(window, 'fetch');
+    });
+
+    afterEach(() => {
+      fetchStub.restore();
+    });
+
+    it('should send the correct headers in the actual fetch call', async function () {
+      const requests = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+
+      requests.forEach((request) => {
+        fetch(request.url, {
+          method: request.method,
+          headers: {
+            'Content-Type': request.options.contentType,
+          },
+          credentials: request.options.withCredentials ? 'include' : 'omit',
+          body: JSON.stringify(request.data),
+        });
+      });
+
+      sinon.assert.called(fetchStub);
+
+      const fetchArgs = fetchStub.getCall(0).args;
+      const fetchUrl = fetchArgs[0];
+      const fetchOptions = fetchArgs[1];
+
+      expect(fetchUrl).to.equal(requests[0].url);
+      expect(fetchOptions.method).to.equal('POST');
+      expect(fetchOptions.credentials).to.equal('include');
+      expect(fetchOptions.headers['Content-Type']).to.equal('text/plain');
+    });
+  });
+
 });
+
