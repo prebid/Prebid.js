@@ -5430,4 +5430,3 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 });
-
