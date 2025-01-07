@@ -167,7 +167,7 @@ function buildRequests(bids, bidderRequest) {
     // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
     .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
 
-  let requests = bannerAndNativeBids.length ? [createRequest(bannerAndNativeBids, bidderRequest, undefined)] : [];
+  let requests = bannerAndNativeBids.length ? [createRequest(bannerAndNativeBids, bidderRequest, null)] : [];
   videoBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
@@ -191,7 +191,8 @@ function isNativeBid(bid) {
 }
 
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner') || (!isVideoBid(bid) && !isNativeBid(bid));
+  const isNotVideoOrNativeBid = !isVideoBid(bid) && !isNativeBid(bid)
+  return utils.deepAccess(bid, 'mediaTypes.banner') || isNotVideoOrNativeBid;
 }
 
 function interpretResponse(resp, req) {
