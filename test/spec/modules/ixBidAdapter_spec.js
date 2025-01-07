@@ -5429,6 +5429,5 @@ describe('IndexexchangeAdapter', function () {
       expect(fetchOptions.headers['Content-Type']).to.equal('text/plain');
     });
   });
-
 });
 
