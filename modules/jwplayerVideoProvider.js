@@ -103,7 +103,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     if (config.aspectratio && !height && !width) {
-      const size = utils.getPlayerSizeFromAspectRatio(config, divId);
+      const size = utils.getPlayerSizeFromAspectRatio(player, config);
       height = size.height;
       width = size.width;
     }
