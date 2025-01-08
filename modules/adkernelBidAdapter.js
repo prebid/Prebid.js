@@ -102,7 +102,8 @@ export const spec = {
     {code: 'revbid'},
     {code: 'spinx', gvlid: 1308},
     {code: 'oppamedia'},
-    {code: 'pixelpluses', gvlid: 1209}
+    {code: 'pixelpluses', gvlid: 1209},
+    {code: 'urekamedia'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
