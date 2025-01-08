@@ -43,7 +43,7 @@ export function attachScriptTagToDOM(rtdConfig) {
     edktInitializor.apiKey = rtdConfig.params.apiKey;
     edktInitializor.invoked = true;
     const moduleSrc = getModuleUrl(rtdConfig.params.accountId);
-    loadExternalScript(moduleSrc, SUBMODULE_NAME);
+    loadExternalScript(moduleSrc, MODULE_TYPE_RTD, SUBMODULE_NAME);
   }
 }
 
@@ -105,7 +105,7 @@ function init(rtdConfig, userConsent) {
 
 /**
  * Real-time data retrieval from AirGrid
- * @param {Object} reqBidsConfigObj
+ * @param {Object} bidConfig
  * @param {function} onDone
  * @param {Object} rtdConfig
  * @param {Object} userConsent

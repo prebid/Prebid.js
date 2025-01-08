@@ -3,17 +3,36 @@ import {
   spec,
   getPmgUID,
   storage,
-  getPageTitle,
-  getPageDescription,
-  getPageKeywords,
-  getConnectionDownLink,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
-  getCurrentTimeToUTCString
+  getCookieTimeToUTCString,
+  buildUTMTagData,
 } from 'modules/discoveryBidAdapter.js';
+import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
 import * as utils from 'src/utils.js';
+import {getHLen} from '../../../libraries/navigatorData/navigatorData.js';
 
 describe('discovery:BidAdapterTests', function () {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(utils, 'parseUrl').returns({
+      search: {
+        utm_source: 'example.com'
+      }
+    });
+    sandbox.stub(storage, 'cookiesAreEnabled');
+  })
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   let bidRequestData = {
     bidderCode: 'discovery',
     auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
@@ -88,6 +107,22 @@ describe('discovery:BidAdapterTests', function () {
         bidderWinsCount: 0,
       },
     ],
+    ortb2: {
+      user: {
+        data: {
+          segment: [
+            {
+              id: '412'
+            }
+          ],
+          name: 'test.popin.cc',
+          ext: {
+            segclass: '1',
+            segtax: 503
+          }
+        }
+      }
+    }
   };
   let request = [];
 
@@ -183,29 +218,22 @@ describe('discovery:BidAdapterTests', function () {
       })
     ).to.equal(true);
   });
-
   it('discovery:validate_generated_params', function () {
+    storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}');
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
   });
+  describe('first party data', function () {
+    it('should pass additional parameter in request for topics', function () {
+      const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+      let res = JSON.parse(request.data);
+      expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data);
+    });
+  });
 
   describe('discovery: buildRequests', function() {
     describe('getPmgUID function', function() {
-      let sandbox;
-
-      beforeEach(() => {
-        sandbox = sinon.sandbox.create();
-        sandbox.stub(storage, 'getCookie');
-        sandbox.stub(storage, 'setCookie');
-        sandbox.stub(utils, 'generateUUID').returns('new-uuid');
-        sandbox.stub(storage, 'cookiesAreEnabled');
-      })
-
-      afterEach(() => {
-        sandbox.restore();
-      });
-
       it('should generate new UUID and set cookie if not exists', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
@@ -219,13 +247,33 @@ describe('discovery:BidAdapterTests', function () {
         storage.getCookie.callsFake(() => 'existing-uuid');
         const uid = getPmgUID();
         expect(uid).to.equal('existing-uuid');
-        expect(storage.setCookie.called).to.be.false;
+        expect(storage.setCookie.called).to.be.true;
       });
 
       it('should not set new UUID when cookies are not enabled', () => {
         storage.cookiesAreEnabled.callsFake(() => false);
         storage.getCookie.callsFake(() => null);
         getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+      it('should return other ID from storage and cookie', () => {
+        spec.buildRequests(bidRequestData.bids, bidRequestData);
+        expect(storage.getCookie.called).to.be.true;
+        expect(storage.getDataFromLocalStorage.called).to.be.true;
+      });
+    })
+    describe('buildUTMTagData function', function() {
+      it('should set UTM cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
+
+      it('should not set UTM when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
     })
@@ -546,7 +594,7 @@ describe('discovery Bid Adapter Tests', function () {
 
         const response = event.data;
         if (!response.optout && response.mguid) {
-          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCookieTimeToUTCString());
         }
       }
 
@@ -587,6 +635,29 @@ describe('discovery Bid Adapter Tests', function () {
         expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
         expect(window.removeEventListener.notCalled).to.be.true;
         expect(storage.setCookie.notCalled).to.be.true;
+      });
+    });
+    describe('getHLen', () => {
+      it('should return the correct length of history when accessible', () => {
+        const mockWindow = {
+          top: {
+            history: {
+              length: 3
+            }
+          }
+        };
+        const result = getHLen(mockWindow);
+        expect(result).to.equal(3);
+      });
+
+      it('should return undefined when accessing win.top.history.length throws an error', () => {
+        const mockWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getHLen(mockWindow);
+        expect(result).be.undefined;
       });
     });
   });

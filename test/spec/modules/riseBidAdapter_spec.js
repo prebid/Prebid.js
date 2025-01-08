@@ -111,6 +111,7 @@ describe('riseAdapter', function () {
 
     const bidderRequest = {
       bidderCode: 'rise',
+      ortb2: {device: {}},
     }
     const placementId = '12345678';
     const api = [1, 2];
@@ -199,16 +200,6 @@ describe('riseAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].mediaType).to.equal(VIDEO)
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
-    });
-
-    it('should send the correct currency in bid request', function () {
-      const bid = utils.deepClone(bidRequests[0]);
-      bid.params = {
-        'currency': 'EUR'
-      };
-      const expectedCurrency = bid.params.currency;
-      const request = spec.buildRequests([bid], bidderRequest);
-      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
     });
 
     it('should respect syncEnabled option', function() {
@@ -324,6 +315,24 @@ describe('riseAdapter', function () {
       expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
     });
 
+    it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
+      const bidderRequestWithoutGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithoutGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gpp');
+      expect(request.data.params).to.not.have.property('gpp_sid');
+    });
+
+    it('should send the gpp param if gppConsent is true in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'gpp-consent', applicableSections: [7]}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      console.log('request.data.params');
+      console.log(request.data.params);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gpp', 'gpp-consent');
+      expect(request.data.params.gpp_sid[0]).to.be.equal(7);
+    });
+
     it('should have schain param if it is available in the bidRequest', () => {
       const schain = {
         ver: '1.0',
@@ -426,6 +435,31 @@ describe('riseAdapter', function () {
       expect(request.data.bids[0].sua).to.not.exist;
     });
 
+    it('should send ORTB2 device data in bid request', function() {
+      const ortb2 = {
+        device: {
+          w: 980,
+          h: 1720,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+          language: 'en',
+          devicetype: 1,
+          make: 'Apple',
+          model: 'iPhone 12 Pro Max',
+          os: 'iOS',
+          osv: '17.4',
+          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+        },
+      };
+
+      const request = spec.buildRequests(bidRequests, {
+        ...bidderRequest,
+        ortb2,
+      });
+
+      expect(request.data.params.device).to.deep.equal(ortb2.device);
+    });
+
     describe('COPPA Param', function() {
       it('should set coppa equal 0 in bid request if coppa is set to false', function() {
         const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -458,6 +492,8 @@ describe('riseAdapter', function () {
         height: 480,
         requestId: '21e12606d47ba7',
         adomain: ['abc.com'],
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         mediaType: VIDEO
       },
       {
@@ -467,6 +503,8 @@ describe('riseAdapter', function () {
         height: 250,
         requestId: '21e12606d47ba7',
         adomain: ['abc.com'],
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         mediaType: BANNER
       }]
     };
@@ -478,7 +516,7 @@ describe('riseAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: VIDEO,
@@ -493,10 +531,10 @@ describe('riseAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 640,
-      height: 480,
+      width: 300,
+      height: 250,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
@@ -509,8 +547,8 @@ describe('riseAdapter', function () {
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
-      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
+      expect(result[0]).to.deep.equal(expectedVideoResponse);
+      expect(result[1]).to.deep.equal(expectedBannerResponse);
     });
 
     it('video type should have vastXml key', function () {

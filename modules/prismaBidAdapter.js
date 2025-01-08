@@ -3,6 +3,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -19,33 +20,6 @@ const CACHE_URL = 'https://prisma.nexx360.io/cache';
 const METRICS_TRACKER_URL = 'https://prisma.nexx360.io/track-imp';
 
 const GVLID = 965;
-
-function getConnectionType() {
-  const connection = navigator.connection || navigator.webkitConnection;
-  if (!connection) {
-    return 0;
-  }
-  switch (connection.type) {
-    case 'ethernet':
-      return 1;
-    case 'wifi':
-      return 2;
-    case 'cellular':
-      switch (connection.effectiveType) {
-        case 'slow-2g':
-        case '2g':
-          return 4;
-        case '3g':
-          return 5;
-        case '4g':
-          return 6;
-        default:
-          return 3;
-      }
-    default:
-      return 0;
-  }
-}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -64,7 +38,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -189,7 +163,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid the bid that won the auction
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
