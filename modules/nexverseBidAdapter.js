@@ -12,7 +12,7 @@ import { getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
 
 const BIDDER_CODE = 'nexverse';
-const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai/';
+const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 const DEFAULT_CURRENCY = 'USD';
 const BID_TTL = 300;
