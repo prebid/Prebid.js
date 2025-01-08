@@ -5412,7 +5412,7 @@ describe('IndexexchangeAdapter', function () {
           headers: {
             'Content-Type': request.options.contentType,
           },
-          credentials: request.options.withCredentials ? 'include' : 'omit',
+          credentials: request.options.withCredentials,
           body: JSON.stringify(request.data),
         });
       });
@@ -5425,7 +5425,7 @@ describe('IndexexchangeAdapter', function () {
 
       expect(fetchUrl).to.equal(requests[0].url);
       expect(fetchOptions.method).to.equal('POST');
-      expect(fetchOptions.credentials).to.equal('include');
+      expect(fetchOptions.credentials).to.equal(true);
       expect(fetchOptions.headers['Content-Type']).to.equal('text/plain');
     });
   });
