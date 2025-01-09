@@ -4,7 +4,7 @@
   <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
   <script async src="../../../build/dev/prebid.js"></script>
 
-  <title>JW Player with Local Cache (No video module)</title>
+  <title>JW Player with Local Cache</title>
 
   <script>
     // Setup ad units
@@ -95,7 +95,7 @@
 
             const bid = bidResponse.bids[0];
 
-            pbjs.adServers.dfp.getLocallyCachedBidVast({
+            pbjs.adServers.dfp.getVast({
                 adUnit: 'div-gpt-ad-51545-0',
                 params: {
                   iu: '/41758329/localcache',

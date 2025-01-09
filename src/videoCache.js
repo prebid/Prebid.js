@@ -9,7 +9,7 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import {ajaxBuilder, fetch} from './ajax.js';
+import {ajaxBuilder} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
 import {generateUUID, logError, logWarn} from './utils.js';
@@ -22,8 +22,6 @@ import {addBidToAuction} from './auction.js';
 const ttlBufferInSeconds = 15;
 
 export const vastsLocalCache = new Map();
-
-export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
 export const localCacheStrategy = {
   BLOB: 'blob',
@@ -189,50 +187,6 @@ export const storeLocally = (bid) => {
   bid.videoCacheKey = generateUUID();
 
   vastsLocalCache.set(bid.videoCacheKey, bidVastUrl);
-};
-
-export async function getLocalCachedBidWithGam(adTagUrl, cacheMap = vastsLocalCache) {
-  const gamAdTagUrl = new URL(adTagUrl);
-  const custParams = new URLSearchParams(gamAdTagUrl.searchParams.get('cust_params'));
-  const videoCacheKey = custParams.get('hb_uuid');
-  const response = await fetch(gamAdTagUrl);
-
-  if (!response.ok) {
-    logError('Unable to fetch valid response from Google Ad Manager');
-    return;
-  }
-
-  const gamVastWrapper = await response.text();
-  const bidVastUri = cacheMap.get(videoCacheKey);
-
-  let combinedVast = gamVastWrapper;
-
-  if (gamVastWrapper.includes(videoCacheKey)) {
-    combinedVast = replaceVastAdTagUri(gamVastWrapper, bidVastUri);
-  }
-
-  return combinedVast;
-}
-
-export function replaceVastAdTagUri(xmlString, newContent) {
-  try {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
-    const vastAdTagUriElement = xmlDoc.querySelector(VAST_TAG_URI_TAGNAME);
-
-    if (vastAdTagUriElement) {
-      const cdata = xmlDoc.createCDATASection(newContent);
-      vastAdTagUriElement.textContent = '';
-      vastAdTagUriElement.appendChild(cdata);
-      const serializer = new XMLSerializer();
-      return serializer.serializeToString(xmlDoc);
-    } else {
-      throw new Error();
-    }
-  } catch (error) {
-    logError('Unable to process xml', error);
-    return xmlString;
-  }
 };
 
 export const _internal = {

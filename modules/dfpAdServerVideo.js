@@ -23,7 +23,8 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
-import { getLocalCachedBidWithGam } from '../src/videoCache.js';
+import { vastsLocalCache } from '../src/videoCache.js';
+import { fetch } from '../src/ajax.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -56,6 +57,8 @@ import { getLocalCachedBidWithGam } from '../src/videoCache.js';
 export const dep = {
   ri: getRefererInfo
 }
+
+export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
@@ -251,13 +254,57 @@ function getCustParams(bid, options, urlCustParams) {
   return encodedParams;
 }
 
-async function getLocallyCachedBidVast(options) {
+export async function getBidVastWithGam(adTagUrl, cacheMap = vastsLocalCache) {
+  const gamAdTagUrl = new URL(adTagUrl);
+  const custParams = new URLSearchParams(gamAdTagUrl.searchParams.get('cust_params'));
+  const videoCacheKey = custParams.get('hb_uuid');
+  const response = await fetch(gamAdTagUrl);
+
+  if (!response.ok) {
+    logError('Unable to fetch valid response from Google Ad Manager');
+    return;
+  }
+
+  const gamVastWrapper = await response.text();
+
+  let combinedVast = gamVastWrapper;
+
+  if (config.getConfig('cache.useLocal') && gamVastWrapper.includes(videoCacheKey)) {
+    const bidVastUri = cacheMap.get(videoCacheKey);
+    combinedVast = replaceVastAdTagUri(gamVastWrapper, bidVastUri);
+  }
+
+  return combinedVast;
+}
+
+export function replaceVastAdTagUri(xmlString, newContent) {
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+    const vastAdTagUriElement = xmlDoc.querySelector(VAST_TAG_URI_TAGNAME);
+
+    if (vastAdTagUriElement) {
+      const cdata = xmlDoc.createCDATASection(newContent);
+      vastAdTagUriElement.textContent = '';
+      vastAdTagUriElement.appendChild(cdata);
+      const serializer = new XMLSerializer();
+      return serializer.serializeToString(xmlDoc);
+    } else {
+      throw new Error();
+    }
+  } catch (error) {
+    logError('Unable to process xml', error);
+    return xmlString;
+  }
+};
+
+async function getVast(options) {
   const adTagUrl = buildDfpVideoUrl(options);
-  const vastXml = await getLocalCachedBidWithGam(adTagUrl);
+  const vastXml = await getBidVastWithGam(adTagUrl);
   return vastXml;
 }
 
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
-  getLocallyCachedBidVast
+  getVast
 });

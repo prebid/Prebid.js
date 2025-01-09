@@ -212,17 +212,9 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const divId = videoConfig.divId;
     const adServerConfig = getAdServerConfig(videoConfig);
     if (adServerConfig) {
-      if (config.getConfig('cache.useLocal')) {
-        gamSubmodule.getLocallyCachedBidVast(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params)
-          .then((vastXml) => loadAdTag(null, divId, {...options, adXml: vastXml}));
-        return;
-      }
-
-      const adUrl = gamSubmodule.getAdTagUrl(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params);
-      if (adUrl) {
-        loadAdTag(adUrl, divId, options);
-        return;
-      }
+      gamSubmodule.getVast(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params)
+        .then((vastXml) => loadAdTag(null, divId, {...options, adXml: vastXml}));
+      return;
     }
 
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
