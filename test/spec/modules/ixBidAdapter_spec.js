@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
+import * as ajaxLib from 'src/ajax.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
@@ -5393,40 +5394,51 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('fetch requests', function () {
-    let fetchStub;
+    let ajaxStub;
 
-    beforeEach(() => {
-      fetchStub = sinon.stub(window, 'fetch');
-    });
-
-    afterEach(() => {
-      fetchStub.restore();
-    });
-
-    it('should send the correct headers in the actual fetch call', async function () {
-      const requests = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
-
-      requests.forEach((request) => {
-        fetch(request.url, {
-          method: request.method,
-          headers: {
-            'Content-Type': request.options.contentType,
-          },
-          credentials: request.options.withCredentials ? 'include' : 'omit',
-          body: JSON.stringify(request.data),
+    beforeEach(function () {
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
+        return sinon.spy(function (url, callback, data, options) {
+          callback.success('OK');
         });
       });
+    });
 
-      sinon.assert.called(fetchStub);
+    afterEach(function () {
+      ajaxStub.restore();
+    });
 
-      const fetchArgs = fetchStub.getCall(0).args;
-      const fetchUrl = fetchArgs[0];
-      const fetchOptions = fetchArgs[1];
+    it('should send the correct headers in the actual fetch call', function (done) {
+      const requests = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const request = requests[0];
+      const ajax = ajaxLib.ajaxBuilder();
 
-      expect(fetchUrl).to.equal(requests[0].url);
-      expect(fetchOptions.method).to.equal('POST');
-      expect(fetchOptions.credentials).to.equal('include');
-      expect(fetchOptions.headers['Content-Type']).to.equal('text/plain');
+      ajax(
+        request.url,
+        {
+          success: () => {
+            try {
+              sinon.assert.calledOnce(ajaxStub);
+              const ajaxCall = ajaxStub.returnValues[0];
+              sinon.assert.calledOnce(ajaxCall);
+              const [calledUrl, callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
+
+              expect(calledUrl).to.equal(request.url);
+              expect(calledData).to.equal(request.data);
+
+              expect(calledOptions.contentType).to.equal('text/plain');
+              expect(calledOptions.withCredentials).to.be.true;
+
+              done();
+            } catch (err) {
+              done(err);
+            }
+          },
+          error: (err) => done(err || new Error('Ajax request failed')),
+        },
+        request.data,
+        request.options
+      );
     });
   });
 });
