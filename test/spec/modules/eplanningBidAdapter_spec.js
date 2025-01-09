@@ -53,6 +53,37 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBidWithcSchanin = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+    'schain': {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'directseller.com',
+          sid: '00001',
+          rid: 'BidRequest1',
+          hp: 1,
+          name: 'publisher',
+          domain: 'publisher.com'
+        },
+        {
+          asi: 'reseller.com',
+          sid: 'aaaaa',
+          rid: 'BidRequest2',
+          hp: 1,
+          name: 'publisher2',
+          domain: 'publisher2.com'
+        }
+      ]
+    }
+  };
   const ML = '1';
   const validBidMappingLinear = {
     'bidder': 'eplanning',
@@ -727,7 +758,14 @@ describe('E-Planning Adapter', function () {
       expect(data.vctx).to.equal(2);
       expect(data.vv).to.equal(3);
     });
-
+    it('should return sch parameter', function () {
+      sinon.stub(Math, 'random').returns(0);
+      let bidRequests = [validBidWithcSchanin], schainExpected, schain;
+      schain = validBidWithcSchanin.schain;
+      schainExpected = schain.ver + ',' + schain.complete + '!' + schain.nodes.map(node => node.asi + ',' + node.sid + ',' + node.hp + ',' + node.rid + ',' + node.name + ',' + node.domain).join('!');
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.sch).to.deep.equal(schainExpected);
+    });
     it('should return correct e parameter with linear mapping attribute with more than one adunit', function () {
       let bidRequestsML = [validBidMappingLinear];
       const NEW_CODE = ADUNIT_CODE + '2';
