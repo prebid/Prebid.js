@@ -572,7 +572,10 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
     ignoreBidderCacheKey
   } = config.getConfig('cache') || {};
 
-  if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
+  if (useLocal) {
+    // stores video bid vast as local blob in the browser
+    storeLocally(bidResponse);
+  } else if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || ignoreBidderCacheKey) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
@@ -580,10 +583,8 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
       logError('videoCacheKey specified but not required vastUrl for video bid');
       addBid = false;
     }
-  } else if (useLocal) {
-    // stores video bid vast as local blob in the browser
-    storeLocally(bidResponse);
   }
+  
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();
