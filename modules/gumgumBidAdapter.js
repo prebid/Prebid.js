@@ -233,7 +233,7 @@ function _getFloor(mediaTypes, staticBidFloor, bid) {
     const { currency, floor } = bid.getFloor({
       mediaType: curMediaType,
       size: '*'
-    });
+    }) || {};
     floor && (bidFloor.floor = floor);
     currency && (bidFloor.currency = currency);
 
@@ -245,6 +245,41 @@ function _getFloor(mediaTypes, staticBidFloor, bid) {
   }
 
   return bidFloor;
+}
+
+/**
+ * Retrieves the device data from the ORTB2 object
+ * @param {Object} ortb2Data ORTB2 object
+ * @returns {Object} Device data
+ */
+function _getDeviceData(ortb2Data) {
+  const _device = deepAccess(ortb2Data, 'device') || {};
+
+  // set device data params from ortb2
+  const _deviceRequestParams = {
+    ip: _device.ip,
+    ipv6: _device.ipv6,
+    ua: _device.ua,
+    dnt: _device.dnt,
+    os: _device.os,
+    osv: _device.osv,
+    dt: _device.devicetype,
+    lang: _device.language,
+    make: _device.make,
+    model: _device.model,
+    ppi: _device.ppi,
+    pxratio: _device.pxratio,
+    foddid: _device?.ext?.fiftyonedegrees_deviceId,
+  };
+
+  // return device data params with only non-empty values
+  return Object.keys(_deviceRequestParams)
+    .reduce((r, key) => {
+      if (_deviceRequestParams[key] !== undefined) {
+        r[key] = _deviceRequestParams[key];
+      }
+      return r;
+    }, {});
 }
 
 /**
@@ -437,6 +472,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
+    Object.assign(
+      data,
+      _getBrowserParams(topWindowUrl, mosttopLocation),
+      _getDeviceData(bidderRequest?.ortb2),
+    );
 
     bids.push({
       id: bidId,
@@ -447,7 +487,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl, mosttopLocation))
+      data
     });
   });
   return bids;

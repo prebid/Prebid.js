@@ -10,18 +10,14 @@ import { _map, isArray, triggerPixel } from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').bidderRequest} bidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
 const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
 const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout';
-const ALLOWED_DISPLAY_PLACEMENTS = [
-  'inScreen',
-  'inImage',
-  'inArticle',
-  'inBanner',
-];
 
 // Global Vendor List Id
 // https://iabeurope.eu/vendor-list-tcf-v2-0/
@@ -37,6 +33,22 @@ const deviceConnection = {
   MOBILE: 'mobile',
   UNKNOWN: 'unknown',
 };
+
+export const BIDFLOOR_CURRENCY = 'USD'
+
+function getBidFloor(bidRequest) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: BIDFLOOR_CURRENCY,
+      mediaType: '*',
+      size: '*'
+    });
+  }
+
+  return floorInfo?.floor;
+}
 
 const getConnectionType = () => {
   const connection =
@@ -77,8 +89,7 @@ function hasMandatoryDisplayParams(bid) {
   const p = bid.params;
   return (
     !!p.publisherId &&
-    !!p.adUnitId &&
-    ALLOWED_DISPLAY_PLACEMENTS.indexOf(p.placement) > -1
+    !!p.adUnitId
   );
 }
 
@@ -93,19 +104,7 @@ function hasMandatoryVideoParams(bid) {
     isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0;
 
-  switch (bid.params.placement) {
-    // instream accept only video format
-    case 'inStream':
-      return isValid && videoParams.context === 'instream';
-    // outstream accept banner/native/video format
-    default:
-      return (
-        isValid &&
-        videoParams.context === 'outstream' &&
-        hasBannerMediaType(bid) &&
-        hasMandatoryDisplayParams(bid)
-      );
-  }
+  return isValid
 }
 
 function buildBidRequest(validBidRequest) {
@@ -133,6 +132,11 @@ function buildBidRequest(validBidRequest) {
     bidRequest.videoParams = getVideoParams(validBidRequest);
   }
 
+  const bidFloor = getBidFloor(validBidRequest)
+  if (bidFloor) {
+    bidRequest.bidFloor = bidFloor;
+  }
+
   return bidRequest;
 }
 
@@ -147,6 +151,10 @@ function getVideoParams(validBidRequest) {
   }
 
   return videoParams;
+}
+
+function isVideoOutstream(validBidRequest) {
+  return getVideoParams(validBidRequest).context === 'outstream';
 }
 
 function buildBidResponse(seedtagBid) {
@@ -263,15 +271,26 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return hasVideoMediaType(bid)
-      ? hasMandatoryVideoParams(bid)
-      : hasMandatoryDisplayParams(bid);
+    const hasVideo = hasVideoMediaType(bid);
+    const hasBanner = hasBannerMediaType(bid);
+
+    // when accept both mediatype but it must be outstream
+    if (hasVideo && hasBanner) {
+      return hasMandatoryVideoParams(bid) && isVideoOutstream(bid) && hasMandatoryDisplayParams(bid);
+    } else if (hasVideo) {
+      return hasMandatoryVideoParams(bid);
+    } else if (hasBanner) {
+      return hasMandatoryDisplayParams(bid);
+    } else {
+      return false;
+    }
   },
 
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests an array of bids
+   * @param {bidderRequest} bidderRequest an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
@@ -395,7 +414,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {TimedOutBid} data Containing timeout specific data
    */
   onTimeout(data) {
     const url = getTimeoutUrl(data);
@@ -404,7 +423,7 @@ export const spec = {
 
   /**
    * Function to call when the adapter wins the auction
-   * @param {bid} Bid information received from the server
+   * @param {Bid} bid The bid information received from the server
    */
   onBidWon: function (bid) {
     if (bid && bid.nurl) {

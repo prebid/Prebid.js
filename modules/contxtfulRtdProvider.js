@@ -23,11 +23,12 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
-const CONTXTFUL_RECEPTIVITY_DOMAIN = 'api.receptivity.io';
+const CONTXTFUL_HOSTNAME_DEFAULT = 'api.receptivity.io';
+const CONTXTFUL_DEFER_DEFAULT = 0;
 
 const storageManager = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
-  moduleName: MODULE_NAME
+  moduleName: MODULE_NAME,
 });
 
 let rxApi = null;
@@ -43,14 +44,11 @@ function getRxEngineReceptivity(requester) {
 }
 
 function getItemFromSessionStorage(key) {
-  let value = null;
   try {
-    // Use the Storage Manager
-    value = storageManager.getDataFromSessionStorage(key, null);
+    return storageManager.getDataFromSessionStorage(key);
   } catch (error) {
+    logError(MODULE, error);
   }
-
-  return value;
 }
 
 function loadSessionReceptivity(requester) {
@@ -102,6 +100,9 @@ function init(config) {
 
   try {
     initCustomer(config);
+
+    observeLastCursorPosition();
+
     return true;
   } catch (error) {
     logError(MODULE, error);
@@ -128,9 +129,10 @@ export function extractParameters(config) {
     throw Error(`${MODULE}: params.customer should be a non-empty string`);
   }
 
-  const hostname = config?.params?.hostname || CONTXTFUL_RECEPTIVITY_DOMAIN;
+  const hostname = config?.params?.hostname || CONTXTFUL_HOSTNAME_DEFAULT;
+  const defer = config?.params?.defer || CONTXTFUL_DEFER_DEFAULT;
 
-  return { version, customer, hostname };
+  return { version, customer, hostname, defer };
 }
 
 /**
@@ -139,7 +141,7 @@ export function extractParameters(config) {
  * @param { String } config
  */
 function initCustomer(config) {
-  const { version, customer, hostname } = extractParameters(config);
+  const { version, customer, hostname, defer } = extractParameters(config);
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
     host: hostname,
@@ -147,7 +149,14 @@ function initCustomer(config) {
   });
 
   addConnectorEventListener(customer, config);
-  loadExternalScript(CONNECTOR_URL, MODULE_NAME);
+
+  const loadScript = () => loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME);
+  // Optionally defer the loading of the script
+  if (Number.isFinite(defer) && defer > 0) {
+    setTimeout(loadScript, defer);
+  } else {
+    loadScript();
+  }
 }
 
 /**
@@ -170,6 +179,9 @@ function addConnectorEventListener(tagId, prebidConfig) {
       }
       config['prebid'] = prebidConfig || {};
       rxApi = await rxApiBuilder(config);
+
+      // Remove listener now that we can use rxApi.
+      removeListeners();
     }
   );
 }
@@ -189,8 +201,11 @@ function getTargetingData(adUnits, config, _userConsent) {
     logInfo(MODULE, 'getTargetingData');
 
     const requester = config?.params?.customer;
-    const rx = getRxEngineReceptivity(requester) ||
-      loadSessionReceptivity(requester) || {};
+    const rx =
+      getRxEngineReceptivity(requester) ||
+      loadSessionReceptivity(requester) ||
+      {};
+
     if (isEmpty(rx)) {
       return {};
     }
@@ -215,9 +230,10 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   function onReturn() {
     if (isFirstBidRequestCall) {
       isFirstBidRequestCall = false;
-    };
+    }
     onDone();
   }
+
   logInfo(MODULE, 'getBidRequestData');
   const bidders = config?.params?.bidders || [];
   if (isEmpty(bidders) || !isArray(bidders)) {
@@ -225,46 +241,31 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
     return;
   }
 
-  let fromApiBatched = () => rxApi?.receptivityBatched?.(bidders);
-  let fromApiSingle = () => prepareBatch(bidders, getRxEngineReceptivity);
-  let fromStorage = () => prepareBatch(bidders, loadSessionReceptivity);
+  let fromApi = rxApi?.receptivityBatched?.(bidders) || {};
+  let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
 
-  function tryMethods(methods) {
-    for (let method of methods) {
-      try {
-        let batch = method();
-        if (!isEmpty(batch)) {
-          return batch;
-        }
-      } catch (error) { }
-    }
-    return {};
+  let sources = [fromStorage, fromApi];
+  if (isFirstBidRequestCall) {
+    sources.reverse();
   }
-  let rxBatch = {};
-  try {
-    if (isFirstBidRequestCall) {
-      rxBatch = tryMethods([fromStorage, fromApiBatched, fromApiSingle]);
-    } else {
-      rxBatch = tryMethods([fromApiBatched, fromApiSingle, fromStorage])
-    }
-  } catch (error) { }
 
+  let rxBatch = Object.assign(...sources);
+
+  let singlePointEvents;
   if (isEmpty(rxBatch)) {
-    onReturn();
-    return;
+    singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
   }
 
   bidders
-    .map((bidderCode) => ({ bidderCode, rx: rxBatch[bidderCode] }))
-    .filter(({ rx }) => !isEmpty(rx))
-    .forEach(({ bidderCode, rx }) => {
+    .forEach(bidderCode => {
       const ortb2 = {
         user: {
           data: [
             {
               name: MODULE_NAME,
               ext: {
-                rx,
+                rx: rxBatch[bidderCode],
+                events: singlePointEvents,
                 params: {
                   ev: config.params?.version,
                   ci: config.params?.customer,
@@ -274,13 +275,96 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
           ],
         },
       };
+
       mergeDeep(reqBidsConfigObj.ortb2Fragments?.bidder, {
         [bidderCode]: ortb2,
       });
     });
 
   onReturn();
-};
+}
+
+function getUiEvents() {
+  return {
+    position: lastCursorPosition,
+    screen: getScreen(),
+  };
+}
+
+function getScreen() {
+  function getInnerSize() {
+    let w = window?.innerWidth;
+    let h = window?.innerHeight;
+
+    if (w && h) {
+      return [w, h];
+    }
+  }
+
+  function getDocumentSize() {
+    let body = window?.document?.body;
+    let w = body.clientWidth;
+    let h = body.clientHeight;
+
+    if (w && h) {
+      return [w, h];
+    }
+  }
+
+  // If we cannot access or cast the window dimensions, we get None.
+  // If we cannot collect the size from the window we try to use the root document dimensions
+  let [width, height] = getInnerSize() || getDocumentSize() || [0, 0];
+  let topLeft = { x: window.scrollX, y: window.scrollY };
+
+  return {
+    topLeft,
+    width,
+    height,
+    timestampMs: performance.now(),
+  };
+}
+
+let lastCursorPosition;
+
+function observeLastCursorPosition() {
+  function pointerEventToPosition(event) {
+    lastCursorPosition = {
+      x: event.clientX,
+      y: event.clientY,
+      timestampMs: performance.now()
+    };
+  }
+
+  function touchEventToPosition(event) {
+    let touch = event.touches.item(0);
+    if (!touch) {
+      return;
+    }
+
+    lastCursorPosition = {
+      x: touch.clientX,
+      y: touch.clientY,
+      timestampMs: performance.now()
+    };
+  }
+
+  addListener('pointermove', pointerEventToPosition);
+  addListener('touchmove', touchEventToPosition);
+}
+
+let listeners = {};
+function addListener(name, listener) {
+  listeners[name] = listener;
+
+  window.addEventListener(name, listener);
+}
+
+function removeListeners() {
+  for (const name in listeners) {
+    window.removeEventListener(name, listeners[name]);
+    delete listeners[name];
+  }
+}
 
 export const contxtfulSubmodule = {
   name: MODULE_NAME,

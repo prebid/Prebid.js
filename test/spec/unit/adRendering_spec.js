@@ -16,6 +16,7 @@ import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import adapterManager from '../../../src/adapterManager.js';
+import {filters} from 'src/targeting.js';
 
 describe('adRendering', () => {
   let sandbox;
@@ -127,6 +128,12 @@ describe('adRendering', () => {
           sinon.assert.called(bidResponse.renderer.render);
         });
 
+        it('allows rendering on the main document', () => {
+          doRender({renderFn, bidResponse, isMainDocument: true});
+          sinon.assert.notCalled(renderFn);
+          sinon.assert.called(bidResponse.renderer.render);
+        })
+
         it('emits AD_RENDER_SUCCEDED', () => {
           doRender({renderFn, bidResponse});
           sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
@@ -143,6 +150,11 @@ describe('adRendering', () => {
           expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT)
         });
       }
+
+      it('should emit AD_RENDER_FAILED when renderer-less bid is being rendered on the main document', () => {
+        doRender({renderFn, bidResponse, isMainDocument: true});
+        expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT);
+      });
 
       it('invokes renderFn with rendering data', () => {
         const data = {ad: 'creative'};
@@ -294,6 +306,26 @@ describe('adRendering', () => {
         });
         it('should skip rendering if suppressStaleRender', () => {
           config.setConfig({auctionOptions: {suppressStaleRender: true}});
+          handleRender({adId, bidResponse});
+          sinon.assert.notCalled(doRenderStub);
+        })
+      });
+
+      describe('when bid has already expired', () => {
+        let isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
+        beforeEach(() => {
+          isBidNotExpiredStub.returns(false);
+        });
+        afterEach(() => {
+          isBidNotExpiredStub.restore();
+        })
+        it('should emit EXPIRED_RENDER', () => {
+          handleRender({adId, bidResponse});
+          sinon.assert.calledWith(events.emit, EVENTS.EXPIRED_RENDER, bidResponse);
+          sinon.assert.called(doRenderStub);
+        });
+        it('should skip rendering if suppressExpiredRender', () => {
+          config.setConfig({auctionOptions: {suppressExpiredRender: true}});
           handleRender({adId, bidResponse});
           sinon.assert.notCalled(doRenderStub);
         })

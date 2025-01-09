@@ -86,7 +86,9 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
             window.dapCalculateEntropy(resolve, reject);
           } else {
             if (rtdConfig && rtdConfig.params && dapUtils.isValidHttpsUrl(rtdConfig.params.dapEntropyUrl)) {
-              loadExternalScript(rtdConfig.params.dapEntropyUrl, MODULE_CODE, () => { dapUtils.dapGetEntropy(resolve, reject) });
+              loadExternalScript(rtdConfig.params.dapEntropyUrl, MODULE_TYPE_RTD, MODULE_CODE, () => {
+                dapUtils.dapGetEntropy(resolve, reject)
+              });
             } else {
               reject(Error('Please check if dapEntropyUrl is specified and is valid under config.params'));
             }
@@ -114,7 +116,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     dapRetryTokenize = 0;
     var jsonData = null;
     if (rtdConfig && isPlainObject(rtdConfig.params)) {
-      if (rtdConfig.params.segtax == 504) {
+      if (rtdConfig.params.segtax == 710) {
         let encMembership = dapUtils.dapGetEncryptedMembershipFromLocalStorage();
         if (encMembership) {
           jsonData = dapUtils.dapGetEncryptedRtdObj(encMembership, rtdConfig.params.segtax)
@@ -191,7 +193,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         const ortb2 = bidConfig.ortb2Fragments.global;
         logMessage('token is: ', token);
         if (token !== null) { // If token is not null then check the membership in storage and add the RTD object
-          if (config.segtax == 504) { // Follow the encrypted membership path
+          if (config.segtax == 710) { // Follow the encrypted membership path
             dapUtils.dapRefreshEncryptedMembership(ortb2, config, token, onDone) // Get the encrypted membership from server
             refreshMembership = false;
           } else {
@@ -248,7 +250,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
             dapUtils.dapLog('Successfully stored DAP 100 Device ID: ' + deviceId100);
           }
           if (refreshMembership) {
-            if (config.segtax == 504) {
+            if (config.segtax == 710) {
               dapUtils.dapRefreshEncryptedMembership(ortb2, config, token, onDone);
             } else {
               dapUtils.dapRefreshMembership(ortb2, config, token, onDone);
@@ -449,7 +451,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
     checkAndAddRealtimeData: function(ortb2, data, segtax) {
       if (data.rtd) {
-        if (segtax == 504 && dapUtils.checkIfSegmentsAlreadyExist(ortb2, data.rtd, 504)) {
+        if (segtax == 710 && dapUtils.checkIfSegmentsAlreadyExist(ortb2, data.rtd, 710)) {
           logMessage('DEBUG(handleInit): rtb Object already added');
         } else {
           addRealTimeData(ortb2, data.rtd);
