@@ -470,8 +470,6 @@ describe('LiveIntentId', function() {
   });
 
   it('should decode the segments as part of lipb', function() {
-    const provider = 'liveintent.com'
-    refererInfoStub.returns({domain: provider})
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', 'segments': ['bar'] }, { params: defaultConfigParams });
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'segments': ['bar']}});
   });
