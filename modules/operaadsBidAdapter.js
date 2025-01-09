@@ -18,6 +18,13 @@ import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 const BIDDER_CODE = 'operaads';
 
 const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
@@ -518,7 +525,6 @@ function createImp(bidRequest) {
       playbackmethod: videoReq.playbackmethod || VIDEO_DEFAULTS.PLAYBACK_METHODS,
       delivery: videoReq.delivery || VIDEO_DEFAULTS.DELIVERY,
       api: videoReq.api || VIDEO_DEFAULTS.API,
-      placement: videoReq.context === OUTSTREAM ? 3 : 1,
     };
 
     mediaType = VIDEO;

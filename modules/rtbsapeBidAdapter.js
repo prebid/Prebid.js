@@ -4,6 +4,14 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 import {Renderer} from '../src/Renderer.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'rtbsape';
 const ENDPOINT = 'https://ssp-rtb.sape.ru/prebid';
 const RENDERER_SRC = 'https://cdn-rtb.sape.ru/js/player.js';

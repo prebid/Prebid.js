@@ -3,6 +3,10 @@ import { logInfo, logError } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const LOG_PREFIX = 'oxxionRtdProvider submodule: ';
 
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
@@ -23,6 +27,7 @@ function init(config, userConsent) {
 }
 
 function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
+  const moduleStarted = new Date();
   logInfo(LOG_PREFIX + 'started with ', config);
   if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') {
     let filteredBids;
@@ -47,6 +52,11 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
         });
       }
       if (typeof callback == 'function') { callback(); }
+      const timeToRun = new Date() - moduleStarted;
+      logInfo(LOG_PREFIX + ' time to run: ' + timeToRun);
+      if (getRandomNumber(50) == 1) {
+        ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId}), {method: 'POST', withCredentials: true});
+      }
     }).catch(error => logError(LOG_PREFIX, 'bidInterestError', error));
   }
 }

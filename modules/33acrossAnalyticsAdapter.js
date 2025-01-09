@@ -1,12 +1,11 @@
 import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-
 /**
- * @typedef {typeof import('../src/constants.json').EVENTS} EVENTS
+ * @typedef {typeof import('../src/constants.js').EVENTS} EVENTS
  */
-const { EVENTS } = CONSTANTS;
+import { EVENTS } from '../src/constants.js';
+import { sendBeacon } from '../src/ajax.js';
 
 /** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
 /**
@@ -631,7 +630,7 @@ function setCachedBidStatus(auctionId, bidId, status) {
  * @param {string} endpoint URL
  */
 function sendReport(report, endpoint) {
-  if (navigator.sendBeacon(endpoint, JSON.stringify(report))) {
+  if (sendBeacon(endpoint, JSON.stringify(report))) {
     log.info(`Analytics report sent to ${endpoint}`, report);
 
     return;

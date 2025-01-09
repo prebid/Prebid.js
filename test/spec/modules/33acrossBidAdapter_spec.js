@@ -121,7 +121,7 @@ describe('33acrossBidAdapter:', function () {
           video: {
             w: 300,
             h: 250,
-            placement: 2,
+            plcmt: 2,
             ...params
           }
         });
@@ -527,27 +527,6 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      it('returns false for invalid bidder name values', function() {
-        const invalidBidderName = [
-          undefined,
-          '33',
-          '33x',
-          'thirtythree',
-          ''
-        ];
-
-        invalidBidderName.forEach((bidderName) => {
-          const bid = {
-            bidder: bidderName,
-            params: {
-              siteId: 'sample33xGUID123456789'
-            }
-          };
-
-          expect(spec.isBidRequestValid(bid)).to.be.false;
-        });
-      });
-
       it('returns true for valid guid values', function() {
         // NOTE: We ignore whitespace at the start and end since
         // in our experience these are common typos
@@ -732,6 +711,11 @@ describe('33acrossBidAdapter:', function () {
           {},
           'foo'
         ];
+
+        invalidPlacement.forEach((placement) => {
+          this.bid.mediaTypes.video.plcmt = placement;
+          expect(spec.isBidRequestValid(this.bid)).to.be.false;
+        });
 
         invalidPlacement.forEach((placement) => {
           this.bid.mediaTypes.video.placement = placement;
@@ -1520,89 +1504,141 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when mediaType has video only and context is instream', function() {
-      it('builds instream request with default params', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'instream'})
-            .build()
-        );
+    context('when mediaType has video only', function() {
+      context('and context is instream', function() {
+        it('builds instream request with default params', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'instream'})
+              .build()
+          );
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withVideo()
-          .withProduct('instream')
-          .build();
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo()
+            .withProduct('instream')
+            .build();
 
-        ttxRequest.imp[0].video.placement = 1;
-        ttxRequest.imp[0].video.startdelay = 0;
+          ttxRequest.imp[0].video.startdelay = 0;
 
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-        validateBuiltServerRequest(builtServerRequest, serverRequest);
+          validateBuiltServerRequest(builtServerRequest, serverRequest);
+        });
+
+        it('builds instream request with params passed', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'instream', startdelay: -2})
+              .build()
+          );
+
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo({startdelay: -2})
+            .withProduct('instream')
+            .build();
+
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
+        });
+
+        context('when the placement is still specified in the DEPRECATED `placement` field', function() {
+          it('does not overwrite its value and does not set it in the recent `plcmt` field as well', function() {
+            const bidRequests = (
+              new BidRequestsBuilder()
+                .withVideo({
+                  placement: 2, // Incorrect placement for an instream video
+                  context: 'instream'
+                })
+                .build()
+            );
+
+            const ttxRequest = new TtxRequestBuilder()
+              .withVideo()
+              .withProduct('instream')
+              .build();
+
+            ttxRequest.imp[0].video.placement = 2;
+            ttxRequest.imp[0].video.startdelay = 0;
+
+            const serverRequest = new ServerRequestBuilder()
+              .withData(ttxRequest)
+              .build();
+            const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+            expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
+          });
+        });
       });
 
-      it('builds instream request with params passed', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'instream', startdelay: -2})
-            .build()
-        );
+      context('and context is outstream', function() {
+        it('builds siab request with video only with default params', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'outstream'})
+              .build()
+          );
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withVideo({startdelay: -2, placement: 1})
-          .withProduct('instream')
-          .build();
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo()
+            .withProduct('siab')
+            .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          // No placement specified, final value should default to 2.
+          ttxRequest.imp[0].video.plcmt = 2;
 
-        expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
-      });
-    });
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-    context('when mediaType has video only and context is outstream', function() {
-      it('builds siab request with video only with default params', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'outstream'})
-            .build()
-        );
+          validateBuiltServerRequest(builtServerRequest, serverRequest);
+        });
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withVideo()
-          .withProduct('siab')
-          .build();
+        it('builds siab request with video params passed', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'outstream', plcmt: 3, playbackmethod: [2]})
+              .build()
+          );
 
-        ttxRequest.imp[0].video.placement = 2;
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo({plcmt: 3, playbackmethod: [2]})
+            .withProduct('siab')
+            .build();
 
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-        validateBuiltServerRequest(builtServerRequest, serverRequest);
-      });
+          validateBuiltServerRequest(builtServerRequest, serverRequest);
+        });
 
-      it('builds siab request with video params passed', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'outstream', placement: 3, playbackmethod: [2]})
-            .build()
-        );
+        context('and the placement is specified in the DEPRECATED `placement` field', function() {
+          it('sets the recent `plcmt` field', function() {
+            const bidRequests = (
+              new BidRequestsBuilder()
+                .withVideo({context: 'outstream', placement: 3, playbackmethod: [2]})
+                .build()
+            );
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withVideo({placement: 3, playbackmethod: [2]})
-          .withProduct('siab')
-          .build();
+            const ttxRequest = new TtxRequestBuilder()
+              .withVideo({plcmt: 3, placement: 3, playbackmethod: [2]})
+              .withProduct('siab')
+              .build();
 
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+            const serverRequest = new ServerRequestBuilder()
+              .withData(ttxRequest)
+              .build();
+            const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-        validateBuiltServerRequest(builtServerRequest, serverRequest);
+            validateBuiltServerRequest(builtServerRequest, serverRequest);
+          });
+        });
       });
     });
 
@@ -1686,7 +1722,7 @@ describe('33acrossBidAdapter:', function () {
           .withProduct('siab')
           .build();
 
-        ttxRequest.imp[0].video.placement = 2;
+        ttxRequest.imp[0].video.plcmt = 2;
 
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)

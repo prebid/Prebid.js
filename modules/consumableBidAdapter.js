@@ -3,6 +3,12 @@ import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'consumable';
 
 const BASE_URI = 'https://e.serverbid.com/api/v2';
@@ -55,7 +61,8 @@ export const spec = {
       source: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
-      }]
+      }],
+      lang: bidderRequest.ortb2.device.language,
     }, validBidRequests[0].params);
 
     if (bidderRequest && bidderRequest.gdprConsent) {

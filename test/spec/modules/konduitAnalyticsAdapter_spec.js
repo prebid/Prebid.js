@@ -2,19 +2,19 @@ import konduitAnalyticsAdapter from 'modules/konduitAnalyticsAdapter';
 import { expect } from 'chai';
 import { config } from '../../../src/config.js';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let CONSTANTS = require('src/constants.json');
 
 const eventsData = {
-  [CONSTANTS.EVENTS.AUCTION_INIT]: {
+  [EVENTS.AUCTION_INIT]: {
     'auctionId': 'test_auction_id',
     'timestamp': Date.now(),
     'auctionStatus': 'inProgress',
     'adUnitCodes': ['video-test'],
     'timeout': 700
   },
-  [CONSTANTS.EVENTS.BID_REQUESTED]: {
+  [EVENTS.BID_REQUESTED]: {
     'bidderCode': 'test_bidder_code',
     'time': Date.now(),
     'bids': [{
@@ -25,13 +25,13 @@ const eventsData = {
       'params': { 'testParam': 'test_param' }
     }]
   },
-  [CONSTANTS.EVENTS.NO_BID]: {
+  [EVENTS.NO_BID]: {
     'bidderCode': 'test_bidder_code2',
     'transactionId': 'test_transaction_id',
     'adUnitCode': 'video-test',
     'bidId': 'test_bid_id'
   },
-  [CONSTANTS.EVENTS.BID_RESPONSE]: {
+  [EVENTS.BID_RESPONSE]: {
     'bidderCode': 'test_bidder_code',
     'adUnitCode': 'video-test',
     'statusMessage': 'Bid available',
@@ -44,7 +44,7 @@ const eventsData = {
     'requestId': 'test_request_id',
     'creativeId': 144876543
   },
-  [CONSTANTS.EVENTS.AUCTION_END]: {
+  [EVENTS.AUCTION_END]: {
     'auctionId': 'test_auction_id',
     'timestamp': Date.now(),
     'auctionEnd': Date.now() + 400,
@@ -52,7 +52,7 @@ const eventsData = {
     'adUnitCodes': ['video-test'],
     'timeout': 700
   },
-  [CONSTANTS.EVENTS.BID_WON]: {
+  [EVENTS.BID_WON]: {
     'bidderCode': 'test_bidder_code',
     'adUnitCode': 'video-test',
     'statusMessage': 'Bid available',
@@ -99,12 +99,12 @@ describe(`Konduit Analytics Adapter`, () => {
     expect(konduitAnalyticsAdapter.context.aggregatedEvents).to.be.an('array');
 
     const eventTypes = [
-      CONSTANTS.EVENTS.AUCTION_INIT,
-      CONSTANTS.EVENTS.BID_REQUESTED,
-      CONSTANTS.EVENTS.NO_BID,
-      CONSTANTS.EVENTS.BID_RESPONSE,
-      CONSTANTS.EVENTS.BID_WON,
-      CONSTANTS.EVENTS.AUCTION_END,
+      EVENTS.AUCTION_INIT,
+      EVENTS.BID_REQUESTED,
+      EVENTS.NO_BID,
+      EVENTS.BID_RESPONSE,
+      EVENTS.BID_WON,
+      EVENTS.AUCTION_END,
     ];
     const args = eventTypes.map(eventType => eventsData[eventType]);
 

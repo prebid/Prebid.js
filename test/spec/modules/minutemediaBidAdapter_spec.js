@@ -291,6 +291,22 @@ describe('minutemediaAdapter', function () {
       expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
     });
 
+    it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gpp');
+      expect(request.data.params).to.not.have.property('gpp_sid');
+    });
+
+    it('should send the gpp param if gppConsent is true in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: [7]}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gpp', 'test-consent-string');
+      expect(request.data.params.gpp_sid[0]).to.be.equal(7);
+    });
+
     it('should have schain param if it is available in the bidRequest', () => {
       const schain = {
         ver: '1.0',
@@ -424,6 +440,8 @@ describe('minutemediaAdapter', function () {
         width: 640,
         height: 480,
         requestId: '21e12606d47ba7',
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         adomain: ['abc.com'],
         mediaType: VIDEO
       },
@@ -433,6 +451,8 @@ describe('minutemediaAdapter', function () {
         width: 300,
         height: 250,
         requestId: '21e12606d47ba7',
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         adomain: ['abc.com'],
         mediaType: BANNER
       }]
@@ -445,7 +465,7 @@ describe('minutemediaAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: VIDEO,
@@ -460,10 +480,10 @@ describe('minutemediaAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 640,
-      height: 480,
+      width: 300,
+      height: 250,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
@@ -476,8 +496,8 @@ describe('minutemediaAdapter', function () {
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
-      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
+      expect(result[0]).to.deep.equal(expectedVideoResponse);
+      expect(result[1]).to.deep.equal(expectedBannerResponse);
     });
 
     it('video type should have vastXml key', function () {

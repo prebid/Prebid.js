@@ -12,6 +12,10 @@ import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
+/**
  * get keywords from api server. and set keywords.
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
@@ -97,6 +101,8 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
 
 export function readFpidFromLocalStrage() {
   try {
+    // TODO: use storageManager
+    // eslint-disable-next-line prebid/no-global
     const fpid = window.localStorage.getItem('ope_fpid');
     if (fpid) {
       return fpid;

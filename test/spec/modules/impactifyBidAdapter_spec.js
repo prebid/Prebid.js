@@ -36,7 +36,7 @@ describe('ImpactifyAdapter', function () {
     localStorageIsEnabledStub = sandbox.stub(STORAGE, 'localStorageIsEnabled');
   });
 
-  afterEach(function() {
+  afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     document.body.appendChild.restore();
     sandbox.restore();
@@ -57,7 +57,6 @@ describe('ImpactifyAdapter', function () {
         params: {
           appId: 'example.com',
           format: 'display',
-          size: '728x90',
           style: 'static'
         }
       }
@@ -282,7 +281,7 @@ describe('ImpactifyAdapter', function () {
     };
 
     it('should pass bidfloor', function () {
-      videoBidRequests[0].getFloor = function() {
+      videoBidRequests[0].getFloor = function () {
         return {
           currency: 'USD',
           floor: 1.23,
@@ -342,7 +341,7 @@ describe('ImpactifyAdapter', function () {
                 h: 1,
                 hash: 'test',
                 expiry: 166192938,
-                meta: {'advertiserDomains': ['testdomain.com']},
+                meta: { 'advertiserDomains': ['testdomain.com'] },
                 ext: {
                   prebid: {
                     'type': 'video'
@@ -418,7 +417,7 @@ describe('ImpactifyAdapter', function () {
           height: 1,
           hash: 'test',
           expiry: 166192938,
-          meta: {'advertiserDomains': ['testdomain.com']},
+          meta: { 'advertiserDomains': ['testdomain.com'] },
           ttl: 300,
           creativeId: '97517771'
         }
@@ -480,7 +479,7 @@ describe('ImpactifyAdapter', function () {
               h: 1,
               hash: 'test',
               expiry: 166192938,
-              meta: {'advertiserDomains': ['testdomain.com']},
+              meta: { 'advertiserDomains': ['testdomain.com'] },
               ext: {
                 prebid: {
                   'type': 'video'
@@ -536,8 +535,8 @@ describe('ImpactifyAdapter', function () {
       const result = spec.getUserSyncs('bad', [], gdprData);
       expect(result).to.be.empty;
     });
-    it('should append the various values if they exist', function() {
-      const result = spec.getUserSyncs({iframeEnabled: true}, validResponse, gdprData);
+    it('should append the various values if they exist', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true }, validResponse, gdprData);
       expect(result[0].url).to.include('gdpr=1');
       expect(result[0].url).to.include('gdpr_consent=BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');
     });

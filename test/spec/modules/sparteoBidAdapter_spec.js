@@ -6,13 +6,15 @@ const CURRENCY = 'EUR';
 const TTL = 60;
 const HTTP_METHOD = 'POST';
 const REQUEST_URL = 'https://bid.sparteo.com/auction';
+const USER_SYNC_URL_IFRAME = 'https://sync.sparteo.com/sync/iframe.html?from=prebidjs';
 
 const VALID_BID_BANNER = {
   bidder: 'sparteo',
   bidId: '1a2b3c4d',
   adUnitCode: 'id-1234',
   params: {
-    networkId: '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+    networkId: '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+    formats: ['corner']
   },
   mediaTypes: {
     banner: {
@@ -57,6 +59,7 @@ const VALID_REQUEST_BANNER = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -64,13 +67,23 @@ const VALID_REQUEST_BANNER = {
           'w': 1
         }],
         'topframe': 0
+      },
+      'ext': {
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
+            'formats': ['corner']
+          }
+        }
       }
     }],
     'site': {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -84,6 +97,7 @@ const VALID_REQUEST_VIDEO = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,
@@ -99,14 +113,21 @@ const VALID_REQUEST_VIDEO = {
         'maxduration': 30,
       },
       'ext': {
-        'pbadslot': 'video'
+        'pbadslot': 'video',
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
+          }
+        }
       }
     }],
     'site': {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -120,6 +141,7 @@ const VALID_REQUEST = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -127,8 +149,18 @@ const VALID_REQUEST = {
           'w': 1
         }],
         'topframe': 0
+      },
+      'ext': {
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-1234',
+            'formats': ['corner']
+          }
+        }
       }
     }, {
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,
@@ -144,14 +176,21 @@ const VALID_REQUEST = {
         'maxduration': 30,
       },
       'ext': {
-        'pbadslot': 'video'
+        'pbadslot': 'video',
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'adUnitCode': 'id-5678'
+          }
+        }
       }
     }],
     'site': {
       'publisher': {
         'ext': {
           'params': {
-            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'pbjsVersion': '$prebid.version$'
           }
         }
       }
@@ -296,7 +335,12 @@ describe('SparteoAdapter', function () {
             'price': 5,
             'ext': {
               'prebid': {
-                'type': 'video'
+                'type': 'video',
+                'cache': {
+                  'vastXml': {
+                    'url': 'https://pbs.tet.com/cache?uuid=1234'
+                  }
+                }
               }
             },
             'adm': 'tag',
@@ -341,7 +385,8 @@ describe('SparteoAdapter', function () {
             ttl: TTL,
             mediaType: 'video',
             meta: {},
-            vastUrl: 'https://t.bidder.sparteo.com/img',
+            nurl: 'https://t.bidder.sparteo.com/img',
+            vastUrl: 'https://pbs.tet.com/cache?uuid=1234',
             vastXml: 'tag'
           });
         }
@@ -402,6 +447,31 @@ describe('SparteoAdapter', function () {
         bids.forEach(function(bid) {
           expect(adapter.onBidWon.bind(adapter, bid)).to.not.throw();
         });
+      });
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    describe('Check methods succeed', function () {
+      it('should return the sync url', function() {
+        const syncOptions = {
+          'iframeEnabled': true,
+          'pixelEnabled': false
+        };
+        const gdprConsent = {
+          gdprApplies: 1,
+          consentString: 'tcfv2'
+        };
+        const uspConsent = {
+          consentString: '1Y---'
+        };
+
+        const syncUrls = [{
+          type: 'iframe',
+          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1Y---'
+        }];
+
+        expect(adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent)).to.deep.equal(syncUrls);
       });
     });
   });
