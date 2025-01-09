@@ -15,6 +15,7 @@ import {
   isEmpty,
   buildUrl,
   isArray,
+  generateUUID,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -26,13 +27,17 @@ const MODULE = `${MODULE_NAME}RtdProvider`;
 const CONTXTFUL_HOSTNAME_DEFAULT = 'api.receptivity.io';
 const CONTXTFUL_DEFER_DEFAULT = 0;
 
+let _sm;
+function sm() {
+  return _sm ??= generateUUID();
+}
+
 const storageManager = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: MODULE_NAME,
 });
 
 let rxApi = null;
-let isFirstBidRequestCall = true;
 
 /**
  * Return current receptivity value for the requester.
@@ -150,7 +155,7 @@ function initCustomer(config) {
 
   addConnectorEventListener(customer, config);
 
-  const loadScript = () => loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME);
+  const loadScript = () => loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME, undefined, undefined, { 'data-sm': sm() });
   // Optionally defer the loading of the script
   if (Number.isFinite(defer) && defer > 0) {
     setTimeout(loadScript, defer);
@@ -228,9 +233,6 @@ function getTargetingData(adUnits, config, _userConsent) {
  */
 function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   function onReturn() {
-    if (isFirstBidRequestCall) {
-      isFirstBidRequestCall = false;
-    }
     onDone();
   }
 
@@ -245,16 +247,10 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
 
   let sources = [fromStorage, fromApi];
-  if (isFirstBidRequestCall) {
-    sources.reverse();
-  }
 
   let rxBatch = Object.assign(...sources);
 
-  let singlePointEvents;
-  if (isEmpty(rxBatch)) {
-    singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
-  }
+  let singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
 
   bidders
     .forEach(bidderCode => {
@@ -266,6 +262,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
               ext: {
                 rx: rxBatch[bidderCode],
                 events: singlePointEvents,
+                sm: sm(),
                 params: {
                   ev: config.params?.version,
                   ci: config.params?.customer,
