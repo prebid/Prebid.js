@@ -23,6 +23,7 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
+import { getLocalCachedBidWithGam } from '../src/videoCache.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -250,6 +251,13 @@ function getCustParams(bid, options, urlCustParams) {
   return encodedParams;
 }
 
+async function getLocallyCachedBidVast(options) {
+  const adTagUrl = buildDfpVideoUrl(options);
+  const vastXml = await getLocalCachedBidWithGam(adTagUrl);
+  return vastXml;
+}
+
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
+  getLocallyCachedBidVast
 });

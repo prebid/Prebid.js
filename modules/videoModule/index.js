@@ -24,7 +24,6 @@ import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../l
 import {VIDEO} from '../../src/mediaTypes.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
-import { getLocalCachedBidWithGam } from '../../src/videoCache.js';
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
@@ -212,20 +211,18 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
     const adServerConfig = getAdServerConfig(videoConfig);
-    let adUrl;
     if (adServerConfig) {
-      adUrl = gamSubmodule.getAdTagUrl(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params);
-    }
-
-    if (adUrl) {
       if (config.getConfig('cache.useLocal')) {
-        getLocalCachedBidWithGam(adUrl).then((vastXml) => {
-          loadAdTag(null, divId, {...options, adXml: vastXml});
-        })
+        gamSubmodule.getLocallyCachedBidVast(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params)
+          .then((vastXml) => loadAdTag(null, divId, {...options, adXml: vastXml}));
         return;
       }
-      loadAdTag(adUrl, divId, options);
-      return;
+
+      const adUrl = gamSubmodule.getAdTagUrl(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params);
+      if (adUrl) {
+        loadAdTag(adUrl, divId, options);
+        return;
+      }
     }
 
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);

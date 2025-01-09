@@ -19,7 +19,7 @@
 
     <script async src="../../../build/dev/prebid.js"></script>
 
-    <title>VideoJS with GAM Ad Server Mediation</title>
+    <title>VideoJS with Local Cache & GAM Ad Server Mediation</title>
 
     <!--This demo configures the video provider to use GAM Ad Server as mediation. Listens to Video events that are fired when an ad impression or ad error came from a bid. -->
 
@@ -58,7 +58,8 @@
       pbjs.que.push(function () {
         pbjs.setConfig({
           cache: {
-            useLocal: true
+            useLocal: true,
+            strategy: 'data'
           },
           video: {
             providers: [{

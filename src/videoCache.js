@@ -9,10 +9,10 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import {ajaxBuilder} from './ajax.js';
+import {ajaxBuilder, fetch} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
-import {logError, logWarn} from './utils.js';
+import {generateUUID, logError, logWarn} from './utils.js';
 import {addBidToAuction} from './auction.js';
 
 /**
@@ -20,6 +20,17 @@ import {addBidToAuction} from './auction.js';
  * Depending on publisher needs
  */
 const ttlBufferInSeconds = 15;
+
+export const vastsLocalCache = new Map();
+
+export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
+
+export const localCacheStrategy = {
+  BLOB: 'blob',
+  DATA: 'data'
+};
+
+const { BLOB, DATA } = localCacheStrategy;
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -62,10 +73,6 @@ function wrapURI(uri, impTrackerURLs) {
   </VAST>`;
 }
 
-export const vastsLocalCache = new Map();
-
-export const LOCAL_CACHE_MOCK_URL = 'https://local.prebid.org/cache?bidder=';
-
 /**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
  * the bid can't be converted cleanly.
@@ -76,7 +83,7 @@ export const LOCAL_CACHE_MOCK_URL = 'https://local.prebid.org/cache?bidder=';
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
-  const vastValue = getVastValue(bid);
+  const vastValue = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   let payload = {
@@ -144,7 +151,7 @@ function shimStorageCallback(done) {
   }
 }
 
-function getVastValue(bid) {
+function getVastXml(bid) {
   return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
 };
 
@@ -171,18 +178,23 @@ export function getCacheUrl(id) {
 }
 
 export const storeLocally = (bid) => {
-  const vastValue = getVastValue(bid);
-  const dataUri = 'data:text/xml;base64,' + btoa(vastValue);
-  bid.vastUrl = dataUri;
-  //@todo: think of wrapping it with [if (adServer)]
-  vastsLocalCache.set(getLocalCacheBidId(bid), dataUri);
+  const vastValue = getVastXml(bid);
+  const strategy = config.getConfig('cache.strategy') || BLOB;
+  const bidVastUrl = {
+    [DATA]: (xml) => 'data:text/xml;base64,' + btoa(xml),
+    [BLOB]: (xml) => URL.createObjectURL(new Blob([xml], { type: 'text/xml' }))
+  }[strategy](vastValue);
+
+  bid.vastUrl = bidVastUrl;
+  bid.videoCacheKey = generateUUID();
+
+  vastsLocalCache.set(bid.videoCacheKey, bidVastUrl);
 };
 
-export async function getLocalCachedBidWithGam(adTagUrl) {
+export async function getLocalCachedBidWithGam(adTagUrl, cacheMap = vastsLocalCache) {
   const gamAdTagUrl = new URL(adTagUrl);
   const custParams = new URLSearchParams(gamAdTagUrl.searchParams.get('cust_params'));
-  const hb_bidder = custParams.get('hb_bidder');
-  const hb_adid = custParams.get('hb_adid');
+  const videoCacheKey = custParams.get('hb_uuid');
   const response = await fetch(gamAdTagUrl);
 
   if (!response.ok) {
@@ -191,14 +203,37 @@ export async function getLocalCachedBidWithGam(adTagUrl) {
   }
 
   const gamVastWrapper = await response.text();
-  const bidVastDataUri = vastsLocalCache.get(`${hb_bidder}_${hb_adid}`);
-  const mockUrl = LOCAL_CACHE_MOCK_URL + hb_bidder;
-  const combinedVast = gamVastWrapper.replace(mockUrl, bidVastDataUri);
+  const bidVastUri = cacheMap.get(videoCacheKey);
+
+  let combinedVast = gamVastWrapper;
+
+  if (gamVastWrapper.includes(videoCacheKey)) {
+    combinedVast = replaceVastAdTagUri(gamVastWrapper, bidVastUri);
+  }
 
   return combinedVast;
 }
 
-const getLocalCacheBidId = (bid) => `${bid.bidderCode}_${bid.adId}`;
+export function replaceVastAdTagUri(xmlString, newContent) {
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+    const vastAdTagUriElement = xmlDoc.querySelector(VAST_TAG_URI_TAGNAME);
+
+    if (vastAdTagUriElement) {
+      const cdata = xmlDoc.createCDATASection(newContent);
+      vastAdTagUriElement.textContent = '';
+      vastAdTagUriElement.appendChild(cdata);
+      const serializer = new XMLSerializer();
+      return serializer.serializeToString(xmlDoc);
+    } else {
+      throw new Error();
+    }
+  } catch (error) {
+    logError('Unable to process xml', error);
+    return xmlString;
+  }
+};
 
 export const _internal = {
   store
@@ -246,7 +281,13 @@ if (FEATURES.VIDEO) {
     if (cache.useLocal && !cleanupHandler) {
       cleanupHandler = auctionManager.onExpiry((auction) => {
         auction.getBidsReceived()
-          .forEach((bid) => vastsLocalCache.delete(getLocalCacheBidId(bid)))
+          .forEach((bid) => {
+            const vastUrl = vastsLocalCache.get(bid.videoCacheKey)
+            if (vastUrl && vastUrl.startsWith('blob')) {
+              URL.revokeObjectURL(vastUrl);
+            }
+            vastsLocalCache.delete(bid.videoCacheKey);
+          })
       });
     }
   });

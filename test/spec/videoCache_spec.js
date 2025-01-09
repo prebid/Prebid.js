@@ -5,6 +5,7 @@ import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import * as utils from 'src/utils.js';
+import { getLocalCachedBidWithGam, replaceVastAdTagUri, storeLocally } from '../../src/videoCache.js';
 
 const should = chai.should();
 
@@ -394,6 +395,103 @@ describe('The video cache', function () {
       expect(el.bidResponse.videoCacheKey).to.not.exist;
       sinon.assert.notCalled(batch[0].afterBidAdded);
       sinon.assert.called(utils.logError);
+    })
+  })
+
+  describe('local video cache', function() {
+    const bidCacheUrl = 'https://prebid-server-test-j.prebid.org/cache?uuid=1234'
+    const vastWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+
+    afterEach(function () {
+      config.resetConfig();
+    });
+
+    it('should replace vast ad tag uri properly', () => {
+      const blobUrl = 'blob:http://localhost:9999/uri';
+      const input = vastWrapper;
+
+      const expectedOutput = (
+        `<VAST version="3.0">` +
+          `<Ad>` +
+           `<Wrapper>` +
+              `<AdSystem>prebid.org wrapper</AdSystem>` +
+              `<VASTAdTagURI><![CDATA[${blobUrl}]]></VASTAdTagURI>` +
+            `</Wrapper>` +
+         `</Ad>` +
+        `</VAST>`
+      );
+
+      const output = replaceVastAdTagUri(input, blobUrl);
+
+      expect(output).to.deep.eql(expectedOutput);
+    });
+
+    it('should store bid vast locally with blob by default', () => {
+      const bid = {
+        vastXml: `<VAST version="3.0"></VAST>`
+      };
+
+      storeLocally(bid);
+
+      expect(bid.vastUrl.startsWith('blob:http://')).to.be.true;
+      expect(bid.videoCacheKey).to.not.be.empty;
+    });
+
+    it('should store bid vast locally with data when strategy set', () => {
+      config.setConfig({
+        cache: {
+          strategy: 'data'
+        }
+      });
+
+      const bid = {
+        vastXml: `<VAST version="3.0"></VAST>`
+      };
+
+      storeLocally(bid);
+
+      expect(bid.vastUrl.startsWith('data:')).to.be.true;
+      expect(bid.videoCacheKey).to.not.be.empty;
+    });
+
+    it('getLocalCachedBidWithGam', function(done) {
+      const cacheMap = new Map();
+
+      const uuid = '1234';
+      const blobUrl = 'blob:http://localhost:9999/uri';
+      const gamAdTagUrl = 'https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp&cust_params=hb_uuid%3D' + uuid
+
+      cacheMap.set(uuid, blobUrl);
+      server.respondWith(vastWrapper);
+
+      const expectedOutput = (
+        `<VAST version="3.0">` +
+          `<Ad>` +
+           `<Wrapper>` +
+              `<AdSystem>prebid.org wrapper</AdSystem>` +
+              `<VASTAdTagURI><![CDATA[${blobUrl}]]></VASTAdTagURI>` +
+            `</Wrapper>` +
+         `</Ad>` +
+        `</VAST>`
+      );
+
+      getLocalCachedBidWithGam(gamAdTagUrl, cacheMap)
+        .then((vastXml) => {
+          expect(expectedOutput).to.deep.eql(vastXml);
+          done();
+        })
+        .catch(done);
+
+      server.respond();
     })
   })
 });

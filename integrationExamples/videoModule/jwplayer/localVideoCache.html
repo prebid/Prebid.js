@@ -4,7 +4,7 @@
   <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
   <script async src="../../../build/dev/prebid.js"></script>
 
-  <title>JW Player with Local Cache</title>
+  <title>JW Player with Local Cache & GAM</title>
 
   <script>
     // Setup ad units
@@ -45,6 +45,10 @@
         },
         video: {
           providers: [{
+            adServer: {
+              vendorCode: 'gam',
+              baseAdTagUrl: 'https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp'
+            },
             divId: 'player',
             vendorCode: 1, // JW Player vendorCode
             playerConfig: {
@@ -123,7 +127,7 @@
 </head>
 
 <body>
-<h2>JW Player with Local cache</h2>
+<h2>JW Player with Local Cache & GAM</h2>
 
 <h5>Div-1: Player placeholder div</h5>
 <div id='player'></div>

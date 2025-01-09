@@ -5,7 +5,7 @@
   <script src="https://serving.stat-rock.com/player/prebidAdPlayerPro.js"></script>
   <script async src="../../../build/dev/prebid.js"></script>
 
-  <title>AdPlayer.Pro with Local Cache</title>
+  <title>AdPlayer.Pro with Local Cache & GAM</title>
 
   <script>
     // Setup ad units
@@ -56,6 +56,10 @@
                   // 'tag': {'client': 'googima'},
                 }
               }
+            },
+            adServer: {
+              vendorCode: 'gam',
+              baseAdTagUrl: 'https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp'
             },
           }]
         },
@@ -154,7 +158,7 @@
 </head>
 
 <body>
-<h2>AdPlayer.Pro with Local Cache</h2>
+<h2>AdPlayer.Pro with Local Cache & GAM</h2>
 
 <h5>Div-1: Player placeholder div</h5>
 <div id='player'></div>

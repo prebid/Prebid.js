@@ -12,8 +12,13 @@ function GamAdServerProvider(dfpModule_) {
     return dfp.buildVideoUrl({ adUnit: adUnit, url: baseAdTag, params });
   }
 
+  function getLocallyCachedBidVast(adUnit, baseAdTag, params) {
+    return dfp.getLocallyCachedBidVast({ adUnit: adUnit, url: baseAdTag, params });
+  }
+
   return {
-    getAdTagUrl
+    getAdTagUrl,
+    getLocallyCachedBidVast
   }
 }
 
