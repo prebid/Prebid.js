@@ -267,14 +267,12 @@ export async function getBidVastWithGam(adTagUrl, cacheMap = vastsLocalCache) {
 
   const gamVastWrapper = await response.text();
 
-  let combinedVast = gamVastWrapper;
-
   if (config.getConfig('cache.useLocal') && gamVastWrapper.includes(videoCacheKey)) {
     const bidVastUri = cacheMap.get(videoCacheKey);
-    combinedVast = replaceVastAdTagUri(gamVastWrapper, bidVastUri);
-  }
+    return replaceVastAdTagUri(gamVastWrapper, bidVastUri);
+  } 
 
-  return combinedVast;
+  return gamVastWrapper;
 }
 
 export function replaceVastAdTagUri(xmlString, newContent) {
