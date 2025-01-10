@@ -4,6 +4,12 @@
 import { submodule } from '../src/hook.js';
 import {deepAccess, deepSetValue} from '../src/utils.js'
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('../modules/rtdModule/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/rtdModule/index.js').UserConsentData} UserConsentData
+ */
+
 const SUBMODULE_NAME = 'liveintent';
 const GVLID = 148;
 
