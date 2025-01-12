@@ -271,7 +271,7 @@ describe('The DFP video support module', function () {
           video: {
             playbackmethod: [7, 1]
           },
-          expected: undefined
+          expected: '2'
         }
       ],
       vpa: [
