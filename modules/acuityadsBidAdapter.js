@@ -12,7 +12,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: isBidRequestValid(['placementId']),
+  isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)
