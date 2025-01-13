@@ -1,123 +1,185 @@
 <html>
-<head>
+  <head>
     <script async src="../../build/dev/prebid.js"></script>
-    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script
+      async
+      src="https://www.googletagservices.com/tag/js/gpt.js"
+    ></script>
     <script>
-        var FAILSAFE_TIMEOUT = 3300;
-        var PREBID_TIMEOUT = 1000;
+      var FAILSAFE_TIMEOUT = 3300;
+      var PREBID_TIMEOUT = 1000;
 
-        var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250]],
-                }
+      var adUnits = (adUnits = [
+        {
+          code: "test-div",
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]],
             },
-            bids: [{
-                bidder: 'bms',
+          },
+          bids: [
+            {
+              bidder: "blue",
+              params: {
+                bidFloor: 0.05,
+                currency: "USD",
+                placementId: 13144370,
+                publisherId: 13144370,
+              },
+            },
+          ],
+        },
+        {
+          code: "test-div2",
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [300, 600],
+              ],
+            },
+          },
+          floors: {
+            currency: "USD",
+            schema: {
+              delimiter: "|",
+              fields: ["mediaType", "size"],
+            },
+            values: {
+              "banner|300x250": 1.1,
+              "banner|300x600": 1.35,
+              "banner|*": 2,
+            },
+          },
+          bids: [
+            {
+              bidder: "bms",
+              params: {
+                bidFloor: 0.05,
+                currency: "USD",
+                placementId: 13144370,
+                publisherId: 13144370,
+              },
+            },
+          ],
+        },
+      ]);
+
+      var ortb2 = {
+        device: {
+          geo: {
+            lat: -23.5505,
+            lon: -46.6333,
+            type: 1, // GPS/Location Services
+            accuracy: 100, // Precisão em metros
+          },
+        },
+      };
+
+      const pbjs = window.pbjs || {};
+      pbjs.que = pbjs.que || [];
+    </script>
+
+    <script>
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      pbjs.que.push(() => {
+        pbjs.setConfig({
+          realTimeData: {
+            dataProviders: [
+              {
+                name: "geolocation",
+                waitForIt: true,
                 params: {
-                    bidFloor: 0.05,
-                    currency: 'USD',
-                    placementId: 13144370,
-                    publisherId: 13144370
-                }
-            }]
-        }];
-
-        var pbjs = pbjs || {};
-        pbjs.que = pbjs.que || [];
-
-        // Adiciona informações de geolocalização manualmente para teste
-        var ortb2 = {
-            device: {
-                geo: {
-                    lat: -23.5505,  // Exemplo: coordenada de São Paulo
-                    lon: -46.6333,
-                    type: 1,        // GPS/Location Services
-                    accuracy: 100   // Precisão em metros
-                }
-            }
+                  requestPermission: true,
+                },
+              },
+            ],
+          },
+          floors: {}, // Ativa o módulo
+          ortb2: ortb2,
+        });
+        pbjs.bidderSettings = {
+          standard: {
+            storageAllowed: true,
+          },
         };
+
+        pbjs.addAdUnits(adUnits);
+      });
+      function renderAllAdUnits() {
+        const winners = pbjs.getHighestCpmBids();
+        winners.forEach((winningBid) => renderOne(winningBid));
+      }
+
+      function renderOne(winningBid) {
+        if (winningBid && winningBid.adId) {
+          const div = document.getElementById(winningBid.adUnitCode);
+          if (div) {
+            const iframe = document.createElement("iframe");
+            iframe.scrolling = "no";
+            iframe.frameBorder = "0";
+            iframe.marginWidth = "0";
+            iframe.marginHeight = "0";
+            iframe.name = `prebid_ads_iframe_${winningBid.adUnitCode}`;
+            iframe.title = "3rd party ad content";
+            iframe.setAttribute(
+              "sandbox",
+              "allow-forms allow-popups allow-same-origin allow-scripts"
+            );
+            iframe.setAttribute("aria-label", "Advertisement");
+            iframe.style.border = "0";
+            iframe.style.margin = "0";
+            iframe.style.overflow = "hidden";
+
+            div.appendChild(iframe);
+            const iframeDoc = iframe.contentWindow.document;
+            pbjs.renderAd(iframeDoc, winningBid.adId);
+
+            const normalizeCss = `body { margin: 0; } /* Add other normalize.css styles if needed */`;
+            const iframeStyle = iframeDoc.createElement("style");
+            iframeStyle.appendChild(iframeDoc.createTextNode(normalizeCss));
+            iframeDoc.head.appendChild(iframeStyle);
+          }
+        }
+      }
+
+      pbjs.que.push(() => {
+        pbjs.requestBids({
+          timeout: 2000,
+          bidsBackHandler: renderAllAdUnits,
+        });
+      });
     </script>
 
     <script>
-        var googletag = googletag || {};
-        googletag.cmd = googletag.cmd || [];
-        googletag.cmd.push(function () {
-            googletag.pubads().disableInitialLoad();
-        });
-
-        pbjs.que.push(function () {
-            // Configura informações de geolocalização para o Prebid
-            pbjs.setConfig({
-                ortb2: ortb2
-            });
-
-            pbjs.addAdUnits(adUnits);
-
-            pbjs.requestBids({
-                bidsBackHandler: sendAdserverRequest,
-                timeout: PREBID_TIMEOUT,
-                ortb2: ortb2  // Adiciona geolocalização na requisição
-            });
-        });
-
-        function sendAdserverRequest() {
-            if (pbjs.adserverRequestSent) return;
-            pbjs.adserverRequestSent = true;
-            googletag.cmd.push(function () {
-                pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                });
-            });
-        }
-
-        setTimeout(function () {
-            sendAdserverRequest();
-        }, FAILSAFE_TIMEOUT);
-
-        // Função para depuração de geolocalização
-        function logGeolocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    console.log('Geolocalização do navegador:');
-                    console.log('Latitude: ' + position.coords.latitude);
-                    console.log('Longitude: ' + position.coords.longitude);
-                    console.log('Precisão: ' + position.coords.accuracy + ' metros');
-                }, function(error) {
-                    console.error('Erro na geolocalização:', error.message);
-                });
-            } else {
-                console.warn('Geolocalização não suportada');
-            }
-        }
-
-        // Chama a função de log de geolocalização quando a página carregar
-        window.onload = logGeolocation;
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot(
+            "/19968336/header-bid-tag-0",
+            [
+              [300, 250],
+              [300, 600],
+            ],
+            "div-gpt-ad-1460505748561-0"
+          )
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
     </script>
+  </head>
 
-    <script>
-        googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-            googletag.pubads().enableSingleRequest();
-            googletag.enableServices();
-        });
-    </script>
-</head>
-
-<body>
-    <h2>Prebid.js Test - Geolocation</h2>
-    <h5>Div-1</h5>
-    <div id='div-gpt-ad-1460505748561-0'>
-        <script type='text/javascript'>
-            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
-        </script>
+  <body>
+    <div>
+      <h5>test-div</h5>
+      <div id="test-div"></div>
+      <h5>test-div2</h5>
+      <div id="test-div2"></div>
     </div>
-
-    <div id="geolocation-info">
-        <h3>Geolocation Debug Information</h3>
-        <p>Check browser console for geolocation details</p>
-    </div>
-</body>
+  </body>
 </html>

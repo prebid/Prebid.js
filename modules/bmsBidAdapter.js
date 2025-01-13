@@ -3,7 +3,6 @@ import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { BANNER } from "../src/mediaTypes.js";
 import { getStorageManager } from "../src/storageManager.js";
 import * as utils from "../src/utils.js";
-
 const BIDDER_CODE = "bms";
 const ENDPOINT_URL =
   "https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid";
@@ -45,12 +44,6 @@ function request(buildRequest, imps, bidderRequest, context) {
 
   // Adiciona ID do publisher
   utils.deepSetValue(request, "site.publisher.id", context.publisherId);
-
-  // Adiciona geolocalização se disponível
-  if (context.geo) {
-    utils.deepSetValue(request, "device.geo", context.geo);
-  }
-
   return request;
 }
 
@@ -79,14 +72,10 @@ export const spec = {
 
   // Construir requisições OpenRTB usando `ortbConverter`
   buildRequests: function (validBidRequests, bidderRequest) {
-    // Extrair geolocalização
-    const geo = extractGeoLocation(bidderRequest);
-
     const context = {
       publisherId: validBidRequests.find(
         (bidRequest) => bidRequest.params?.publisherId
       )?.params.publisherId,
-      geo: geo, // Adiciona informações de geolocalização ao contexto
     };
 
     const ortbRequest = converter.toORTB({
@@ -136,13 +125,5 @@ export const spec = {
     return prebidResponses;
   },
 };
-
-// Função auxiliar para extrair geolocalização
-function extractGeoLocation(bidderRequest) {
-  if (bidderRequest?.ortb2?.device?.geo) {
-    return bidderRequest.ortb2.device.geo;
-  }
-  return null;
-}
 
 registerBidder(spec);
