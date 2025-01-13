@@ -70,7 +70,7 @@ describe('blueBidAdapter:', function () {
 
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT_URL);
-      expect(request.options.contentType).to.equal('test/plain');
+      expect(request.options.contentType).to.equal('text/plain');
 
       const ortbRequest = JSON.parse(request.data);
       expect(ortbRequest.ext.gvlid).to.equal(GVLID);
