@@ -908,10 +908,11 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 }
 
 export function adjustBids(bid) {
-  let bidPriceAdjusted = adjustCpm(bid.cpm, bid);
+  let bidPriceAdjusted = adjustCpm(bid, bid);
 
-  if (bidPriceAdjusted >= 0) {
-    bid.cpm = bidPriceAdjusted;
+  if (bidPriceAdjusted.cpm >= 0) {
+    bid.cpm = bidPriceAdjusted.cpm;
+    bid.currency = bidPriceAdjusted.currency
   }
 }
 
