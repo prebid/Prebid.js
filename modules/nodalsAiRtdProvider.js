@@ -3,9 +3,9 @@ import { loadExternalScript } from "../src/adloader.js";
 import { ajax } from "../src/ajax.js";
 import { submodule } from "../src/hook.js";
 import { getStorageManager } from "../src/storageManager.js";
-import { deepSetValue, mergeDeep, prefixLog } from "../src/utils.js";
+import { prefixLog } from "../src/utils.js";
 
-const MODULE_NAME = "nodalsAI";
+const MODULE_NAME = "nodalsAi";
 const GVLID = 1360;
 const PUB_ENDPOINT_ORIGIN = "https://i.d.nodals.io";
 const LOCAL_STORAGE_KEY = "signals.nodals.ai";
@@ -20,26 +20,10 @@ const fillTemplate = (strings, ...keys) => {
   };
 };
 
-const selectByWeighting = (weightedItems) => {
-  const randomValue = Math.random();
-  let cumulativeWeight = 0;
-
-  for (const item of weightedItems) {
-    cumulativeWeight += item.weighting;
-    if (randomValue <= cumulativeWeight) {
-      return item;
-    }
-  }
-};
-
 const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${"publisherId"}/config?${"consentParams"}`;
 const { logInfo, logWarn, logError } = prefixLog("[NodalsAiRTDProvider]");
 
-/**
- * TODO: Add post message listener, to send the data back to the Nodals creative tag
- */
-
-class NodalsRtdProvider {
+class NodalsAiRtdProvider {
   // Public properties
   name = MODULE_NAME;
   gvlid = GVLID;
@@ -59,7 +43,7 @@ class NodalsRtdProvider {
   // Public methods
 
   /**
-   * Initializes the class with the provided config and user consent.
+   * Initialises the class with the provided config and user consent.
    * @param {Object} config - Configuration object for targeting.
    * @param {Object} userConsent - User consent object for GDPR or other purposes.
    */
@@ -85,11 +69,6 @@ class NodalsRtdProvider {
     }
   }
 
-  #setOverrides(config) {
-    this.#overrides.storageTTL = config?.storage?.ttl;
-    this.#overrides.storageKey = config?.storage?.key;
-    this.#overrides.endpointOrigin = config?.endpoint?.origin;
-  }
   /**
    * Retrieves targeting data by fetching and processing signals.
    * @param {Array} adUnitArray - Array of ad units.
@@ -98,7 +77,7 @@ class NodalsRtdProvider {
    * @returns {Object} - Targeting data.
    */
   getTargetingData(adUnitArray, config, userConsent) {
-    const targetingData = {};
+    let targetingData = {};
     if (!this.#hasRequiredUserConsent(userConsent)) {
       return targetingData;
     }
@@ -108,34 +87,24 @@ class NodalsRtdProvider {
     if (storedData === null) {
       return targetingData;
     }
-    const facts = mergeDeep(
-      {},
-      storedData?.facts ?? {},
-      this.#fetchClientFacts(config)
-    );
+    const facts = storedData?.facts ?? {};
     const ads = storedData?.ads ?? [];
-    adUnitArray.forEach((adUnitPath) => {
-      const matchedAds = [];
-      ads.forEach((adData) => {
-        const ad = new Ad(adUnitPath, adData, facts);
-        if (ad.applicableKeyValues) {
-          matchedAds.push(ad);
-        }
-      });
-      const selectedAdForAdUnit = selectByWeighting(matchedAds);
-      if (selectedAdForAdUnit) {
-        deepSetValue(
-          targetingData,
-          adUnitPath,
-          selectedAdForAdUnit.applicableKeyValues
-        );
-      }
-    });
-
+    const targetingEngine = window.$nodals.AdTargetingEngine["latest"];
+    targetingEngine.init(config, facts);
+    try {
+      targetingData = targetingEngine.getTargetingData(adUnitArray, ads);
+    } catch (error) {
+      logError(`Error determining targeting keys: ${error}`);
+    }
     return targetingData;
   }
 
   // Private methods
+  #setOverrides(config) {
+    this.#overrides.storageTTL = config?.storage?.ttl;
+    this.#overrides.storageKey = config?.storage?.key;
+    this.#overrides.endpointOrigin = config?.endpoint?.origin;
+  }
 
   /**
    * Validates if the provided config is valid.
@@ -232,54 +201,6 @@ class NodalsRtdProvider {
     return currentTime - dataTime >= staleThreshold;
   }
 
-  /**
-   * Fetches relevant signals from the client.
-   * @returns {Object} - An object contaning fact key-value pairs.
-   */
-  #fetchClientFacts(config) {
-    let facts = {
-      "browser.lang": navigator?.language.toLowerCase(),
-      "browser.width": window?.visualViewport?.width,
-      "browser.height": window?.visualViewport?.height,
-    };
-    if (config?.integrations?.permutive?.enabled !== false) {
-      facts = mergeDeep(
-        facts,
-        this.#fetchPermutiveCohorts(config?.integrations?.permutive)
-      );
-    }
-    return facts;
-  }
-
-  /**
-   * Fetches Permutive cohort identifiers.
-   * @param {Object} config - The permutive integration configuration.
-   * @returns {Object} - A collection of Permutive cohort data.
-   */
-  #fetchPermutiveCohorts(config) {
-    const factKey = "permutive.cohort.ids";
-    const cohortFacts = {};
-    cohortFacts[factKey] = [];
-    if (config?.cohort?.ids && Array.isArray(config.cohorts)) {
-      cohortFacts[factKey] = config.cohorts;
-      return cohortFacts;
-    }
-    const localStorageKey = config?.storageKey ?? "permutive-app";
-    const entry = this.storage.getDataFromLocalStorage(localStorageKey);
-    if (entry) {
-      try {
-        const data = JSON.parse(entry);
-        cohortFacts[factKey] = data?.cohorts?.all ?? [];
-        return cohortFacts;
-      } catch (error) {
-        logError(`Error parsing Permutive data: ${error}`);
-      }
-    } else {
-      logError("Permutive cohort data not found in local storage.");
-    }
-    return cohortFacts;
-  }
-
   #getEndpointUrl(userConsent) {
     const endpoint_origin =
       this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN;
@@ -357,49 +278,6 @@ class NodalsRtdProvider {
   }
 }
 
-class Ad {
-  #adUnit;
-  #data;
-  #facts;
-  #matchedKeyValues = null;
+export const nodalsAiRtdSubmodule = new NodalsAiRtdProvider();
 
-  constructor(adUnit, adData, facts) {
-    this.#adUnit = adUnit;
-    this.#data = adData;
-    this.#facts = facts;
-  }
-
-  get adUnit() {
-    return this.#adUnit;
-  }
-
-  get weighting() {
-    return this.#data.onMatch.weighting;
-  }
-
-  get applicableKeyValues() {
-    if (this.#matchedKeyValues !== null) {
-      return this.#matchedKeyValues;
-    }
-    let targetingEngine =
-      window.$nodals.targetingEngine[this.#data.engine.version];
-    if (!targetingEngine) {
-      logError(
-        `Targeting engine version ${this.#data.engine.version} not found.`
-      );
-      return undefined;
-    }
-    this.#matchedKeyValues = targetingEngine.getTargetingKeyValueForAdSlot(
-      this.#adUnit,
-      this.#data,
-      this.#facts
-    );
-    return this.#matchedKeyValues;
-  }
-}
-
-export const nodalsRtdSubmodule = new NodalsRtdProvider();
-// Exported for testing
-export { selectByWeighting };
-
-submodule("realTimeData", nodalsRtdSubmodule);
+submodule("realTimeData", nodalsAiRtdSubmodule);
