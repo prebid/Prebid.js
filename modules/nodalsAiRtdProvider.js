@@ -101,7 +101,9 @@ class NodalsAiRtdProvider {
 
   // Private methods
   #setOverrides(config) {
-    this.#overrides.storageTTL = config?.storage?.ttl;
+    if (config?.storage?.ttl && typeof config.storage.ttl === "number") {
+      this.#overrides.storageTTL = config.storage.ttl * 1000;
+    }
     this.#overrides.storageKey = config?.storage?.key;
     this.#overrides.endpointOrigin = config?.endpoint?.origin;
   }
@@ -197,7 +199,7 @@ class NodalsAiRtdProvider {
   #dataIsStale(storedData) {
     const currentTime = Date.now();
     const dataTime = storedData.createdAt || 0;
-    const staleThreshold = STORAGE_TTL;
+    const staleThreshold = this.#overrides?.storageTTL ?? STORAGE_TTL;
     return currentTime - dataTime >= staleThreshold;
   }
 
