@@ -2,9 +2,9 @@ import {
   buildUrl,
   formatQS,
   generateUUID,
-  isArray,
   isFn,
   logInfo,
+  normalizeBannerSizes,
   safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
@@ -45,25 +45,6 @@ function getFloor(bidRequest) {
   if (!isNaN(bidFloors?.floor)) {
     return bidFloors;
   }
-}
-
-/* turn bid sizes into size object array */
-function normalizeSizes(bidSizes) {
-  let sizes = [];
-  if (isArray(bidSizes) && bidSizes.length === 2 && !isArray(bidSizes[0])) {
-    sizes.push({
-      width: parseInt(bidSizes[0], 10),
-      height: parseInt(bidSizes[1], 10),
-    });
-  } else if (isArray(bidSizes) && isArray(bidSizes[0])) {
-    bidSizes.forEach((size) => {
-      sizes.push({
-        width: parseInt(size[0], 10),
-        height: parseInt(size[1], 10),
-      });
-    });
-  }
-  return sizes;
 }
 
 /* Helper function that converts the prebid data to the payload expected by our servers */
@@ -107,7 +88,7 @@ function toPayload(bidRequest, bidderRequest) {
   payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
   payload.screen = { height: screen.height, width: screen.width };
-  payload.sizes = normalizeSizes(bidRequest.mediaTypes.banner.sizes);
+  payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
 
   return {
     method: 'POST',
