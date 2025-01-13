@@ -1,15 +1,15 @@
-import { expect } from "chai";
-import sinon from "sinon";
-import { spec, storage } from "modules/bmsBidAdapter.js";
+import { expect } from 'chai';
+import sinon from 'sinon';
+import { spec, storage } from 'modules/bmsBidAdapter.js';
 
-const BIDDER_CODE = "bms";
+const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
-  "https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid";
+  'https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid';
 const GVLID = 620;
-const COOKIE_NAME = "bmsCookieId";
-const CURRENCY = "USD";
+const COOKIE_NAME = 'bmsCookieId';
+const CURRENCY = 'USD';
 
-describe("bmsBidAdapter:", function () {
+describe('bmsBidAdapter:', function () {
   let sandbox;
 
   beforeEach(function () {
@@ -20,38 +20,38 @@ describe("bmsBidAdapter:", function () {
     sandbox.restore();
   });
 
-  describe("isBidRequestValid:", function () {
-    it("should return true for valid bid requests", function () {
+  describe('isBidRequestValid:', function () {
+    it('should return true for valid bid requests', function () {
       const validBid = {
         params: {
-          placementId: "12345",
-          publisherId: "67890",
+          placementId: '12345',
+          publisherId: '67890',
         },
       };
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
-    it("should return false for invalid bid requests", function () {
+    it('should return false for invalid bid requests', function () {
       const invalidBid = {
         params: {
-          placementId: "12345",
+          placementId: '12345',
         },
       };
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
   });
 
-  describe("buildRequests:", function () {
+  describe('buildRequests:', function () {
     let validBidRequests;
     let bidderRequest;
 
     beforeEach(function () {
       validBidRequests = [
         {
-          bidId: "bid1",
+          bidId: 'bid1',
           params: {
-            placementId: "12345",
-            publisherId: "67890",
+            placementId: '12345',
+            publisherId: '67890',
           },
           getFloor: () => ({ currency: CURRENCY, floor: 1.5 }),
         },
@@ -59,19 +59,19 @@ describe("bmsBidAdapter:", function () {
 
       bidderRequest = {
         refererInfo: {
-          page: "https://example.com",
+          page: 'https://example.com',
         },
       };
 
-      sandbox.stub(storage, "getDataFromLocalStorage").returns("testBuyerId");
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns('testBuyerId');
     });
 
-    it("should build a valid OpenRTB request", function () {
+    it('should build a valid OpenRTB request', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
 
-      expect(request.method).to.equal("POST");
+      expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT_URL);
-      expect(request.options.contentType).to.equal("application/json");
+      expect(request.options.contentType).to.equal('application/json');
 
       const ortbRequest = request.data;
       expect(ortbRequest.ext.gvlid).to.equal(GVLID);
@@ -79,7 +79,7 @@ describe("bmsBidAdapter:", function () {
       expect(ortbRequest.imp[0].bidfloorcur).to.equal(CURRENCY);
     });
 
-    it("should omit bidfloor if getFloor is not implemented", function () {
+    it('should omit bidfloor if getFloor is not implemented', function () {
       validBidRequests[0].getFloor = undefined;
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);

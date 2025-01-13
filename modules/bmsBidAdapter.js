@@ -5,8 +5,8 @@ import { getStorageManager } from "../src/storageManager.js";
 import * as utils from "../src/utils.js";
 const BIDDER_CODE = "bms";
 const ENDPOINT_URL =
-  "https://api.prebid.int.us-east-2.bluemsdev.team/v1/bid?exchangeId=prebid";
-const GVLID = 620;
+  "https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid";
+const GVLID = 1105;
 const COOKIE_NAME = "bmsCookieId";
 const DEFAULT_CURRENCY = "USD";
 
@@ -32,8 +32,8 @@ function getBidFloor(bid) {
 
 const converter = ortbConverter({
   context: {
-    netRevenue: true, // Configuração padrão de receita líquida
-    ttl: 100, // Tempo de vida padrão para respostas de lances
+    netRevenue: true, // Default net revenue configuration
+    ttl: 100, // Default time-to-live for bid responses
   },
   imp,
   request,
@@ -42,7 +42,7 @@ const converter = ortbConverter({
 function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
 
-  // Adiciona ID do publisher
+  // Add publisher ID
   utils.deepSetValue(request, "site.publisher.id", context.publisherId);
   return request;
 }
@@ -63,14 +63,14 @@ function imp(buildImp, bidRequest, context) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER], // Tipos de mídia suportados
+  supportedMediaTypes: [BANNER], // Supported media types
 
-  // Validar requisição de lance
+  // Validate bid request
   isBidRequestValid: function (bid) {
     return !!bid.params.placementId && !!bid.params.publisherId;
   },
 
-  // Construir requisições OpenRTB usando `ortbConverter`
+  // Build OpenRTB requests using `ortbConverter`
   buildRequests: function (validBidRequests, bidderRequest) {
     const context = {
       publisherId: validBidRequests.find(
@@ -84,12 +84,12 @@ export const spec = {
       context,
     });
 
-    // Adicionar extensões à requisição
+    // Add extensions to the request
     ortbRequest.ext = ortbRequest.ext || {};
     utils.deepSetValue(ortbRequest, "ext.gvlid", GVLID);
 
     if (storage.localStorageIsEnabled()) {
-      // Incluir ID do cookie do usuário, se disponível
+      // Include user cookie ID if available
       const ckid = storage.getDataFromLocalStorage(COOKIE_NAME) || null;
       if (ckid) {
         utils.deepSetValue(ortbRequest, "user.ext.buyerid", ckid);
@@ -101,22 +101,22 @@ export const spec = {
       url: ENDPOINT_URL,
       data: ortbRequest,
       options: {
-        contentType: "application/json",
+        contentType: "text/plain",
       },
     };
   },
 
-  // Interpretar respostas OpenRTB usando `ortbConverter`
+  // Interpret OpenRTB responses using `ortbConverter`
   interpretResponse: function (serverResponse, request) {
     const ortbResponse = serverResponse.body;
 
-    // Analisar resposta OpenRTB em respostas Prebid
+    // Parse OpenRTB response into Prebid responses
     const prebidResponses = converter.fromORTB({
       response: ortbResponse,
       request: request.data,
     }).bids;
 
-    // Adicionar metadados aos lances
+    // Add metadata to bids
     prebidResponses.forEach((bid) => {
       bid.meta = bid.meta || {};
       bid.meta.adapterVersion = "1.0.0";
