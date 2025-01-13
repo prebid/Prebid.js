@@ -484,7 +484,7 @@ describe('OpenxRtbAdapter', function () {
 
       it('should send platform id, if available', function () {
         bidRequestsWithMediaTypes[0].params.platform = '1cabba9e-cafe-3665-beef-f00f00f00f00';
-        bidRequestsWithMediaTypes[1].params.platform = '1cabba9e-cafe-3665-beef-f00f00f00f00';
+        bidRequestsWithMediaTypes[1].params.platform = '51ca3159-abc2-4035-8e00-fe26eaa09397';
 
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].data.ext.platform).to.equal(bidRequestsWithMediaTypes[0].params.platform);
