@@ -912,6 +912,7 @@ export function adjustBids(bid) {
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
+    bid.currency = adServerCurrency;
   }
 }
 
