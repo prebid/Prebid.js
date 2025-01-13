@@ -1,27 +1,27 @@
-import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
-import { loadExternalScript } from "../src/adloader.js";
-import { ajax } from "../src/ajax.js";
-import { submodule } from "../src/hook.js";
-import { getStorageManager } from "../src/storageManager.js";
-import { prefixLog } from "../src/utils.js";
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { prefixLog } from '../src/utils.js';
 
-const MODULE_NAME = "nodalsAi";
+const MODULE_NAME = 'nodalsAi';
 const GVLID = 1360;
-const PUB_ENDPOINT_ORIGIN = "https://nodals.io";
-const LOCAL_STORAGE_KEY = "signals.nodals.ai";
+const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
+const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
 const STORAGE_TTL = 3600000; // 1 hour in milliseconds
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
     return strings.reduce((result, str, i) => {
       const key = keys[i - 1];
-      return result + (key ? values[key] || "" : "") + str;
+      return result + (key ? values[key] || '' : '') + str;
     });
   };
 };
 
-const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${"publisherId"}/config?${"consentParams"}`;
-const { logInfo, logWarn, logError } = prefixLog("[NodalsAiRTDProvider]");
+const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${'publisherId'}/config?${'consentParams'}`;
+const { logInfo, logWarn, logError } = prefixLog('[NodalsAiRTDProvider]');
 
 class NodalsAiRtdProvider {
   // Public properties
@@ -64,7 +64,7 @@ class NodalsAiRtdProvider {
       }
       return true;
     } else {
-      logWarn("Invalid configuration or missing user consent.");
+      logWarn('Invalid configuration or missing user consent.');
       return false;
     }
   }
@@ -89,7 +89,7 @@ class NodalsAiRtdProvider {
     }
     const facts = storedData?.facts ?? {};
     const ads = storedData?.ads ?? [];
-    const targetingEngine = window.$nodals.AdTargetingEngine["latest"];
+    const targetingEngine = window.$nodals.AdTargetingEngine['latest'];
     targetingEngine.init(config, facts);
     try {
       targetingData = targetingEngine.getTargetingData(adUnitArray, ads);
@@ -101,7 +101,7 @@ class NodalsAiRtdProvider {
 
   // Private methods
   #setOverrides(config) {
-    if (config?.storage?.ttl && typeof config.storage.ttl === "number") {
+    if (config?.storage?.ttl && typeof config.storage.ttl === 'number') {
       this.#overrides.storageTTL = config.storage.ttl * 1000;
     }
     this.#overrides.storageKey = config?.storage?.key;
@@ -113,9 +113,10 @@ class NodalsAiRtdProvider {
    * @param {Object} config - Configuration object.
    * @returns {boolean} - True if config is valid, false otherwise.
    */
+  // eslint-disable-next-line no-dupe-class-members
   #isValidConfig(config) {
     // Basic validation logic
-    return typeof config === "object" && config?.publisherId;
+    return typeof config === 'object' && config?.publisherId;
   }
 
   /**
@@ -123,6 +124,7 @@ class NodalsAiRtdProvider {
    * @param {Object} userConsent - User consent object.
    * @returns {boolean} - True if the user consent is valid, false otherwise.
    */
+  // eslint-disable-next-line no-dupe-class-members
   #hasRequiredUserConsent(userConsent) {
     if (userConsent?.gdpr?.gdprApplies !== true) {
       return true;
@@ -141,6 +143,7 @@ class NodalsAiRtdProvider {
    * @param {string} key - The key of the data to retrieve.
    * @returns {string|null} - The data from localStorage, or null if not found.
    */
+  // eslint-disable-next-line no-dupe-class-members
   #readFromStorage(key) {
     if (
       this.storage.hasLocalStorage() &&
@@ -157,7 +160,7 @@ class NodalsAiRtdProvider {
           return null;
         }
         if (!dataEnvelope.data) {
-          throw new Error("Data envelope is missing 'data' property.");
+          throw new Error('Data envelope is missing \'data\' property.');
         }
         return dataEnvelope.data;
       } catch (error) {
@@ -165,7 +168,7 @@ class NodalsAiRtdProvider {
         return null;
       }
     } else {
-      logError("Local storage is not available or not enabled.");
+      logError('Local storage is not available or not enabled.');
       return null;
     }
   }
@@ -175,6 +178,7 @@ class NodalsAiRtdProvider {
    * @param {string} key - The key under which to store the data.
    * @param {Object} data - The data to store.
    */
+  // eslint-disable-next-line no-dupe-class-members
   #writeToStorage(key, data) {
     if (
       this.storage.hasLocalStorage() &&
@@ -187,15 +191,16 @@ class NodalsAiRtdProvider {
       this.storage.setDataInLocalStorage(key, JSON.stringify(storageObject));
       this.#loadAdLibraries(data.ads);
     } else {
-      logError("Local storage is not available or not enabled.");
+      logError('Local storage is not available or not enabled.');
     }
   }
 
   /**
    * Checks if the provided data is stale.
-   * @param {Object} data - The data to check.
+   * @param {Object} storedData - The data to check.
    * @returns {boolean} - True if the data is stale, false otherwise.
    */
+  // eslint-disable-next-line no-dupe-class-members
   #dataIsStale(storedData) {
     const currentTime = Date.now();
     const dataTime = storedData.createdAt || 0;
@@ -203,18 +208,19 @@ class NodalsAiRtdProvider {
     return currentTime - dataTime >= staleThreshold;
   }
 
+  // eslint-disable-next-line no-dupe-class-members
   #getEndpointUrl(userConsent) {
-    const endpoint_origin =
+    const endpointOrigin =
       this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN;
     const parameterMap = {
-      gdpr_consent: userConsent?.gdpr?.consentString ?? "",
-      gdpr: userConsent?.gdpr?.gdprApplies ? "1" : "0",
-      us_privacy: userConsent?.uspConsent ?? "",
-      gpp: userConsent?.gpp?.gppString ?? "",
+      gdpr_consent: userConsent?.gdpr?.consentString ?? '',
+      gdpr: userConsent?.gdpr?.gdprApplies ? '1' : '0',
+      us_privacy: userConsent?.uspConsent ?? '',
+      gpp: userConsent?.gpp?.gppString ?? '',
       gpp_sid:
         userConsent.gpp && Array.isArray(userConsent.gpp.applicableSections)
-          ? userConsent.gpp.applicableSections.join(",")
-          : "",
+          ? userConsent.gpp.applicableSections.join(',')
+          : '',
     };
     const querystring = new URLSearchParams(parameterMap).toString();
     const values = {
@@ -222,12 +228,13 @@ class NodalsAiRtdProvider {
       consentParams: querystring,
     };
     const path = PUB_ENDPOINT_PATH(values);
-    return `${endpoint_origin}${path}`;
+    return `${endpointOrigin}${path}`;
   }
 
   /**
    * Initiates the request to fetch ad rule data from the publisher endpoint.
    */
+  // eslint-disable-next-line no-dupe-class-members
   #fetchAdRules(userConsent) {
     const endpointUrl = this.#getEndpointUrl(userConsent);
 
@@ -241,7 +248,7 @@ class NodalsAiRtdProvider {
     };
 
     const options = {
-      method: "GET",
+      method: 'GET',
       withCredentials: false,
     };
 
@@ -254,6 +261,7 @@ class NodalsAiRtdProvider {
    * @param {Object} response - The server response object.
    * @returns {Object} - Processed data from the response.
    */
+  // eslint-disable-next-line no-dupe-class-members
   #handleServerResponse(response, req) {
     let data;
     try {
@@ -265,10 +273,12 @@ class NodalsAiRtdProvider {
     this.#loadAdLibraries(data.ads || []);
   }
 
+  // eslint-disable-next-line no-dupe-class-members
   #handleServerError(error, req) {
     logError(`Publisher endpoint response error: ${error}`);
   }
 
+  // eslint-disable-next-line no-dupe-class-members
   #loadAdLibraries(ads) {
     ads.forEach((ad) => {
       if (ad?.engine?.url) {
@@ -282,4 +292,4 @@ class NodalsAiRtdProvider {
 
 export const nodalsAiRtdSubmodule = new NodalsAiRtdProvider();
 
-submodule("realTimeData", nodalsAiRtdSubmodule);
+submodule('realTimeData', nodalsAiRtdSubmodule);
