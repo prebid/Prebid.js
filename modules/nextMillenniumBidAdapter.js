@@ -21,7 +21,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '4.2.1';
+const NM_VERSION = '4.3.0';
 const PBJS_VERSION = 'v$prebid.version$';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
@@ -308,13 +308,15 @@ export function getImpBanner(imp, banner) {
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
   if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
 
-  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} });
   const {w, h} = (format[0] || {})
   imp.banner = {
     w,
     h,
     format,
   };
+
+  setImpPos(imp.banner, banner?.pos);
 };
 
 export function getImpVideo(imp, video) {
@@ -336,6 +338,12 @@ export function getImpVideo(imp, video) {
     imp.video.w = video.data.w;
     imp.video.h = video.data.h;
   };
+
+  setImpPos(imp.video, video?.pos);
+};
+
+export function setImpPos(obj, pos) {
+  if (typeof pos === 'number' && pos >= 0 && pos <= 7) obj.pos = pos;
 };
 
 export function setConsentStrings(postBody = {}, bidderRequest) {
