@@ -47,7 +47,7 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  return floorInfo.floor;
+  return floorInfo?.floor;
 }
 
 const getConnectionType = () => {

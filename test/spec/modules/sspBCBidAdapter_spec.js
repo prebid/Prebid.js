@@ -4,7 +4,8 @@ import * as utils from 'src/utils.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
-const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 
 describe('SSPBC adapter', function () {
   function prepareTestData() {
@@ -649,6 +650,25 @@ describe('SSPBC adapter', function () {
       expect(extAssets1).to.have.property('pbsize').that.equals('750x200_1')
       expect(extAssets2).to.have.property('pbsize').that.equals('750x200_1')
     });
+
+    it('should send supply chain data', function () {
+      const supplyChain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'first-seller.com',
+            sid: '00001',
+            hp: 1
+          },
+        ]
+      }
+      const bidWithSupplyChain = Object.assign(bids[0], { schain: supplyChain });
+      const requestWithSupplyChain = spec.buildRequests([bidWithSupplyChain], bidRequest);
+      const payloadWithSupplyChain = requestWithSupplyChain ? JSON.parse(requestWithSupplyChain.data) : { site: false, imp: false };
+
+      expect(payloadWithSupplyChain.source).to.have.property('schain').that.has.keys('ver', 'complete', 'nodes');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -741,13 +761,18 @@ describe('SSPBC adapter', function () {
     let syncResultImage = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
     let syncResultNone = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
-    it('should provide correct url, if frame sync is allowed', function () {
+    it('should provide correct iframe url, if frame sync is allowed', function () {
       expect(syncResultAll).to.have.length(1);
-      expect(syncResultAll[0].url).to.have.string(SYNC_URL);
+      expect(syncResultAll[0].url).to.have.string(SYNC_URL_IFRAME);
     });
 
-    it('should send no syncs, if frame sync is not allowed', function () {
-      expect(syncResultImage).to.have.length(0);
+    it('should provide correct image url, if image sync is allowed', function () {
+      expect(syncResultImage).to.have.length(1);
+      expect(syncResultImage[0].url).to.have.string(SYNC_URL_IMAGE);
+    });
+
+    it('should send no syncs, if no sync is allowed', function () {
+      expect(syncResultNone).to.have.length(0);
       expect(syncResultNone).to.have.length(0);
     });
   });

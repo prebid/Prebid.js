@@ -274,7 +274,7 @@ function getFloorStr(bid) {
       currency: DOLLAR_CODE,
       mediaType: '*',
       size: '*'
-    });
+    }) || {};
 
     if (bidFloor.floor) {
       return '|' + encodeURIComponent(bidFloor.floor);

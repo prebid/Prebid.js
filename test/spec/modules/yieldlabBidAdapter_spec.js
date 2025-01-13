@@ -263,7 +263,7 @@ const REQPARAMS = {
 
 const REQPARAMS_GDPR = Object.assign({}, REQPARAMS, {
   gdpr: true,
-  consent: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
+  gdpr_consent: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',
 });
 
 const REQPARAMS_IAB_CONTENT = Object.assign({}, REQPARAMS, {
@@ -457,8 +457,8 @@ describe('yieldlabBidAdapter', () => {
         },
       });
 
-      expect(gdprRequest.url).to.include('consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
-      expect(gdprRequest.url).to.include('gdpr=true');
+      expect(gdprRequest.url).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
+      expect(gdprRequest.url).to.include('&gdpr=true');
     });
 
     describe('sizes handling', () => {
@@ -691,7 +691,7 @@ describe('yieldlabBidAdapter', () => {
       const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [bidRequest], queryParams: REQPARAMS_GDPR});
 
       expect(result[0].ad).to.include('&gdpr=true');
-      expect(result[0].ad).to.include('&consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
+      expect(result[0].ad).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
     });
 
     it('should append iab_content to adtag', () => {
@@ -814,7 +814,7 @@ describe('yieldlabBidAdapter', () => {
       const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST()], queryParams: REQPARAMS_GDPR});
 
       expect(result[0].vastUrl).to.include('&gdpr=true');
-      expect(result[0].vastUrl).to.include('&consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
+      expect(result[0].vastUrl).to.include('&gdpr_consent=BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA');
     });
 
     it('should add renderer if outstream context', () => {
