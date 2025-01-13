@@ -7,7 +7,7 @@ import { prefixLog } from "../src/utils.js";
 
 const MODULE_NAME = "nodalsAi";
 const GVLID = 1360;
-const PUB_ENDPOINT_ORIGIN = "https://i.d.nodals.io";
+const PUB_ENDPOINT_ORIGIN = "https://nodals.io";
 const LOCAL_STORAGE_KEY = "signals.nodals.ai";
 const STORAGE_TTL = 3600000; // 1 hour in milliseconds
 

@@ -200,7 +200,7 @@ describe("NodalsAI RTD Provider", () => {
         expect(request.method).to.equal("GET");
         expect(request.withCredentials).to.be.false;
         const requestUrl = new URL(request.url);
-        expect(requestUrl.origin).to.equal("https://i.d.nodals.io");
+        expect(requestUrl.origin).to.equal("https://nodals.io");
       });
 
       it("should construct the correct URL with the correct path", () => {
