@@ -10,7 +10,7 @@ let SID = null;
 let TOKEN = null;
 let region = '';
 
-const DEFAULT_BID_TTL = 30;
+const DEFAULT_BID_TTL = 1000;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const REGION = ['apac', 'use', 'euc']
