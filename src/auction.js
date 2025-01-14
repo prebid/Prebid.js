@@ -116,6 +116,7 @@ const sourceInfo = {};
 const queuedCalls = [];
 
 const pbjsInstance = getGlobal();
+var pbjs = pbjs || {};
 
 /**
  * Clear global state for tests
