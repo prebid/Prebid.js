@@ -32,35 +32,36 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    if (
-      Boolean(bid.params.sid) &&
-      Boolean(bid.params.token)
-    ) {
-      url = 'xyz.svr-algorix.com/rtb/sa?sid=' + bid.params.sid + '&token=' + bid.params.token;
-      region = bid.params.region ? bid.params.region.toLowerCase() + '.' : null;
-      ENDPOINT = ENDPOINT + (REGION.includes(region) ? region + url : url);
+    if (Boolean(bid.params.sid) && Boolean(bid.params.token)) {
+      url =
+        'xyz.svr-algorix.com/rtb/sa?sid=' +
+        bid.params.sid +
+        '&token=' +
+        bid.params.token;
+      region = bid.params.region ? bid.params.region.toLowerCase() : null;
+      ENDPOINT = ENDPOINT + (REGION.includes(region) ? region + '.' + url : url);
       return true;
     }
     return false;
   },
 
-  buildRequests(bidReq, bidderReq) {
-    let data = converter.toORTB({ bidReq, bidderReq });
+  buildRequests(bidRequests, bidderRequest) {
+    let data = converter.toORTB({ bidRequests, bidderRequest });
 
     return [
       {
-        url: ENDPOINT,
-        method: 'POST',
         options: { contentType: 'application/json;charset=utf-8' },
+        method: 'POST',
+        url: ENDPOINT,
         data,
       },
     ];
   },
 
-  interpretResponse(res, req) {
+  interpretResponse(response, request) {
     const bids = converter.fromORTB({
-      request: req.data,
-      response: res.body,
+      request: request.data,
+      response: response.body,
     }).bids;
     return bids;
   },
