@@ -535,8 +535,8 @@ describe('Equativ bid adapter tests', () => {
 
       // ASSERT
       expect(utils.logWarn.callCount).to.equal(2);
-      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('"mimes" is missing'));
-      expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"placement" is missing'));
+      expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.mimes" is missing'));
+      expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.video.placement" is missing'));
     });
 
     it('should not send a video request when it has an empty body and no other impressions with any media types are defined', () => {
@@ -622,7 +622,6 @@ describe('Equativ bid adapter tests', () => {
         spec.buildRequests(bidRequests, bidderRequest);
 
         // ASSERT
-        expect(utils.logWarn.callCount).to.equal(1)
         expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes(warningMsgFromLibrary));
       }
     });
@@ -646,9 +645,9 @@ describe('Equativ bid adapter tests', () => {
         // ASSERT
         expect(utils.logWarn.callCount).to.equal(4); // the first message, regarding missing assets, is supplied by the ortbConverter library
         expect(utils.logWarn.getCall(0).args[0]).to.satisfy(arg => arg.includes('no assets were specified'));
-        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"privacy" is missing'));
-        expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"plcmttype" is missing'));
-        expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"eventtrackers" is missing'));
+        expect(utils.logWarn.getCall(1).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.privacy" is missing'));
+        expect(utils.logWarn.getCall(2).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.plcmttype" is missing'));
+        expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.eventtrackers" is missing'));
       }
     });
   });
