@@ -14,9 +14,39 @@ The Mobian Real-Time Data (RTD) Module is a plug-and-play Prebid.js adapter that
 
 Navigate to https://docs.prebid.org/download.html and check the box labeled Mobian Prebid Contextual Evaluation. If you have installed Prebid.js on your site previously, please be sure to select any other modules and adaptors to suit your needs. When clicking the "Get Prebid.js" button at the bottom of the page, the site will build a version of Prebid.js with all of your selections.
 
-Direct link to the Mobian module in the Prebid.js repository: https://github.com/prebid/Prebid.js/blob/a9de3c15ac9a108b43a1e2df04abd6dfb5297530/modules/mobianRtdProvider.js
+Direct link to the Mobian module in the Prebid.js repository: https://github.com/prebid/Prebid.js/blob/master/modules/mobianRtdProvider.js
 
 The client will need to provide Mobian with all the domains that would be using the prebid module so that Mobian can whitelist those domains. Failure to whitelist the domains will yield a 404 when making a request to the Mobian Contextual API at https://prebid.outcomes.net/.
+
+## Configuration Highlight
+
+Below is Mobian's suggested default for configuration:
+
+```js
+pbjs.setConfig({
+  realTimeData: {
+    dataProviders: [{
+      name: 'mobianBrandSafety',
+      params: {
+        // Prefix for the targeting keys (default: 'mobian')
+        prefix: 'mobian',
+
+        // Enable targeting keys for advertiser data
+        advertiserTargeting: true,
+        // Or set it as an array to pick specific targeting keys:
+        // advertiserTargeting: ['genres', 'emotions', 'themes'],
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+
+        // Enable targeting keys for publisher data
+        publisherTargeting: true,
+        // Or set it as an array to pick specific targeting keys:
+        // publisherTargeting: ['tones', 'risk'],
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+      }
+    }]
+  }
+});
+```
 
 ## Functionality
 
@@ -24,81 +54,99 @@ At a high level, the Mobian RTD Module is designed to call the Mobian Contextal 
 
 ## Available Classifications
 
+NOTE: The examples below for targetable keys for GAM or otherwise in the ortb2 object assume that your prefix is the default of "mobian". The prefix in the targetable key will change based on your settings.
+
 Risk:
 
-Key: mobianRisk
+Prebid.outcomes.net endpoint key: mobianRisk
+
+Targetable Key: mobian_risk
 
 Possible values: "none", "low", "medium" or "high"
 
-Description: Risk will contain Mobian’s brand safety assessment of the page. Brand Safety is determined via the Mobian AI models taking into account a semantic analysis of the content while understanding the context. A more detailed description of the reasoning for a given URL can be observed by going to mbs.themobian.com and entering the URL.
+Description: This category assesses whether content contains any potential risks or concerns to advertisers and returns a determination of Low Risk, Medium Risk, or High Risk based on the inclusion of sensitive or high-risk topics. Content that might be categorized as unsafe may include violence, hate speech, misinformation, or sensitive topics that most advertisers would like to avoid. Content that is explicit or overly graphic in nature will be more likely to fall into the High Risk tier compared to content that describes similar subjects in a more informative or educational manner.
 
 ------------------
 
 Content Categories:
 
-Key: mobianContentCategories
+Prebid.outcomes.net endpoint key: mobianContentCategories
+
+Targetable Key: mobian_categories
 
 Possible values: "adult_content", "arms", "crime", "death_injury", "debated_issue", "hate_speech", "drugs_alcohol", "obscenity", "piracy", "spam", "terrorism"
 
-Description: Content Categories contain results based on the legacy GARM framework. GARM no longer is a standard and does not factor into our risk assessment but is included for posterity.
+Description: Brand Safety Categories contain categorical results for brand safety when relevant (e.g. Low Risk Adult Content). Note there can be Medium and High Risk content that is not associated to a specific brand safety category.
 
 ------------------
 
 Sentiment:
 
-Key: mobianSentiment
+Prebid.outcomes.net endpoint key: mobianSentiment
+
+Targetable Key: mobian_sentiment
 
 Possible values: "negative", "neutral" or "positive"
 
-Description: Sentiment can only be one of the three values listed, and is determined via the Mobian AI analyzing the content and making one of these three determinations.
+Description: This category analyzes the overall positivity, negativity, or neutrality of a piece of content. This is a broad categorization of the content’s tone; every piece of content receives one of three possible sentiment ratings: Positive, Negative, or Neutral.
 
 ------------------
 
 Emotion:
 
-Key: mobianEmotions
+Prebid.outcomes.net endpoint key: mobianEmotions
 
-Possible values: "love", "joy", "surprise", "anger", "sadness", "fear"
+Targetable Key: mobian_emotions
 
-Description: The Mobian AI assesses the emotions exuded from the content, taking into account the context. A given piece of content can have multiple emotions. The current list of emotions is all possible emotions available but this will be updated to be more freeform and varied in a future release.
+Possible values: Various but some examples include "love", "joy", "surprise", "anger", "sadness", "fear"
+
+Description: This category represents the specific feelings expressed or evoked through the content. Emotions are the reactions tied to the content’s presentation. Multiple emotions may be evoked by a single piece of content as this category reflects the way humans engage with the content.
 
 ------------------
 
 Tone:
 
-Key: mobianTones
+Prebid.outcomes.net endpoint key: mobianTones
+
+Targetable Key: mobian_tones
 
 Possible values: Various, but some examples include "comedic", "serious" or "emotional"
 
-Description: While the Mobian emotion classification looks at the emotions exuded from the content, tone examines the overall presentation of the content and determines the overall mood of the work. A given piece of content can have multiple tones.
+Description: This category represents the content’s stylistic attitude or perspective that is being conveyed. If the Genre classification above represents the more objective structure, the Tone classification represents the subjective form. This categorization influences the way audiences may receive the piece of content and how they could be impacted by it.
 
 ------------------
 
 Theme:
 
-Key: mobianThemes
+Prebid.outcomes.net endpoint key: mobianThemes
+
+Targetable Key: mobian_themes
 
 Possible values: Various, but some examples include "skincare", "food" and "nightlife"
 
-Description: Themes are a wide classification of content categorization, taking into account the content and context to label the content with a theme. A given piece of content can have multiple themes.
+Description: This category includes broad conceptual ideas or underlying topics that form the foundation of the content. Themes represent the central message or idea conveyed throughout, rather than the specific details of the subject. Themes are intended to be broad and high-level, describing the overall purpose and intent of the content, and can connect multiple pieces of content, even if they are not from the same property.
 
 ------------------
 
 Genre:
 
-Key: mobianGenre
+Prebid.outcomes.net endpoint key: mobianGenres
+
+Targetable Key: mobian_genres
 
 Possible values: Various, but some examples include "journalism", "gaming" or "how-to"
 
-Description: Genres are a more narrow classification of content categorization, aiming to label the content towards its overall purpose and audience. A given piece of content can have multiple genres.
+Description: This category represents the type or style of the content, focusing on the purpose, format, or presentation of the content. Genres group pieces of content into recognizable categories based on style and provide a framework for understanding the structure of the content.
 
 ------------------
 
 AP Values
 
-Keys: ap_a0, ap_a1, ap_p0, ap_p1
+Prebid.outcomes.net endpoint key: ap (an array, containing values of a0, a1, p0, p1)
 
-Possible values: Various, numerically id-based and customizable based on Mobian Persona Settings.
+Targetable Keys: mobian_ap_a0, mobian_ap_a1, mobian_ap_p0, mobian_ap_p1
+
+Possible values: Various, numerically id-based and customizable based on Mobian Context Settings.
 
 Description: Mobian AI Personas are custom created based on prompts to find a specific audience. Please contact your Mobian contact directly for more information on this tool. The difference between the keys is below:
 
@@ -123,34 +171,6 @@ window.googletag.cmd.push(() => {
 
 "key" and "value" will be replaced with the various classifications as described in the previous section. Notably, this function runs before ad calls are made to GAM, which enables the keys and value to be used for targeting or blocking in GAM.
 
-For more details on how to set up key-value pairs in GAM, please see this documentation from Google: https://support.google.com/admanager/answer/9796369?sjid=12535178383871274096-NA
+For more details on how to set up key-value pairs in GAM, please see this documentation from Google: https://support.google.com/admanager/answer/9796369
 
-For example, if you wanted to target articles where mobianRisk is "low", the key to set in GAM would be "mobianRisk" and the value would be "low". Once these keys and values are set within the Inventory section in GAM as listed by their documentation, you can then reference the key value pair in Custom Targeting for any line item you create.
-
-## Configuration Highlight
-
-```js
-pbjs.setConfig({
-  realTimeData: {
-    dataProviders: [{
-      name: 'mobianBrandSafety',
-      params: {
-        // Prefix for the targeting keys (default: 'mobian')
-        prefix: 'mobian',
-        
-        // Enable targeting keys for advertiser data
-        advertiserTargeting: true,
-        // Or set it as an array to pick specific targeting keys:
-        // advertiserTargeting: ['genres', 'emotions', 'themes'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
-
-        // Enable targeting keys for publisher data
-        publisherTargeting: true,
-        // Or set it as an array to pick specific targeting keys:
-        // publisherTargeting: ['tones', 'risk'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
-      }
-    }]
-  }
-});
-```
+For example, if you wanted to target articles where mobianRisk is "low", the key to set in GAM would be "mobian_risk" and the value would be "low". Once these keys and values are set within the Inventory section in GAM as listed by their documentation, you can then reference the key value pair in Custom Targeting for any line item you create.
