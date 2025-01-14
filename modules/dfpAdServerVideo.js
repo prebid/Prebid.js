@@ -269,7 +269,7 @@ export async function getBidVastWithGam(adTagUrl, cacheMap = vastsLocalCache) {
   if (config.getConfig('cache.useLocal') && gamVastWrapper.includes(videoCacheKey)) {
     const bidVastUri = cacheMap.get(videoCacheKey);
     return replaceVastAdTagUri(gamVastWrapper, bidVastUri);
-  } 
+  }
 
   return gamVastWrapper;
 }
