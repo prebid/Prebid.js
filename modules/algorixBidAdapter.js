@@ -44,23 +44,23 @@ export const spec = {
     return false;
   },
 
-  buildRequests(bidRequests, bidderRequest) {
-    let data = converter.toORTB({ bidRequests, bidderRequest });
+  buildRequests(bidReq, bidderReq) {
+    let data = converter.toORTB({ bidReq, bidderReq });
 
     return [
       {
-        method: 'POST',
         url: ENDPOINT,
-        data,
+        method: 'POST',
         options: { contentType: 'application/json;charset=utf-8' },
+        data,
       },
     ];
   },
 
-  interpretResponse(response, request) {
+  interpretResponse(res, req) {
     const bids = converter.fromORTB({
-      response: response.body,
-      request: request.data,
+      request: req.data,
+      response: res.body,
     }).bids;
     return bids;
   },
