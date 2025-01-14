@@ -4,7 +4,6 @@ import {
   generateUUID,
   isFn,
   logInfo,
-  normalizeBannerSizes,
   safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
@@ -13,6 +12,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
+import { normalizeBannerSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

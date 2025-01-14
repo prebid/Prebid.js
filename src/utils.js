@@ -1284,28 +1284,3 @@ export function triggerNurlWithCpm(bid, cpm) {
     triggerPixel(bid.nurl);
   }
 }
-
-/**
- * Normalize adUnit.mediaTypes.banner.sizes to Array.<Array.<number>>
- *
- * @param {Array.<number|string> | Array.<Array.<number|string>>} bidSizes - value of adUnit.mediaTypes.banner.sizes.
- * @returns {Array.<Array.<number>>} - Normalized value.
- */
-
-export function normalizeBannerSizes(bidSizes) {
-  let sizes = [];
-  if (isArray(bidSizes) && bidSizes.length === 2 && !isArray(bidSizes[0])) {
-    sizes.push({
-      width: parseInt(bidSizes[0], 10),
-      height: parseInt(bidSizes[1], 10),
-    });
-  } else if (isArray(bidSizes) && isArray(bidSizes[0])) {
-    bidSizes.forEach((size) => {
-      sizes.push({
-        width: parseInt(size[0], 10),
-        height: parseInt(size[1], 10),
-      });
-    });
-  }
-  return sizes;
-}
