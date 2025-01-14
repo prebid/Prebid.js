@@ -84,9 +84,9 @@ export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMark
       width: body.offsetWidth
     });
   }
-  const renderFrames = Array.from(win.document.querySelectorAll('iframe[srcdoc*="render"]'));
   function replaceMarkup(target, markup) {
     // do not remove the rendering logic if it's embedded in this window; things will break otherwise
+    const renderFrames = getRenderFrames(target);
     Array.from(target.childNodes).filter(node => !renderFrames.includes(node)).forEach(node => target.removeChild(node));
     target.insertAdjacentHTML('afterbegin', markup);
   }
