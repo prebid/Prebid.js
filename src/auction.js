@@ -101,9 +101,6 @@ import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 
 const { syncUsers } = userSync;
 
-const pbjsInstance = getGlobal();
-var pbjs = pbjs || {};
-
 export const AUCTION_STARTED = 'started';
 export const AUCTION_IN_PROGRESS = 'inProgress';
 export const AUCTION_COMPLETED = 'completed';
@@ -117,6 +114,15 @@ const MAX_REQUESTS_PER_ORIGIN = 4;
 const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
+
+const pbjsInstance = getGlobal();
+
+/**
+ * Get Prebid config options
+ * @param {Object} options
+ * @alias module:pbjs.getConfig
+ */
+pbjsInstance.getConfig = config.getAnyConfig;
 
 /**
  * Clear global state for tests
