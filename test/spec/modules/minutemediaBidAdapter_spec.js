@@ -593,16 +593,18 @@ describe('minutemediaAdapter', function () {
         advertiserDomains: ['abc.com']
       },
       native: {
-        body: 'Advertise with Rise',
-        clickUrl: 'https://risecodes.com',
-        cta: 'Start now',
-        image: {
-          width: 300,
-          height: 200,
-          url: 'https://sdk.streamrail.com/media/rise-image.jpg',
-        },
-        sponsoredBy: 'Rise',
-        title: 'Rise Ad Tech Solutions'
+        ortb: {
+          body: 'Advertise with Rise',
+          clickUrl: 'https://risecodes.com',
+          cta: 'Start now',
+          image: {
+            width: 300,
+            height: 200,
+            url: 'https://sdk.streamrail.com/media/rise-image.jpg',
+          },
+          sponsoredBy: 'Rise',
+          title: 'Rise Ad Tech Solutions'
+        }
       },
     };
 
