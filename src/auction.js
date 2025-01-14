@@ -912,7 +912,7 @@ export function adjustBids(bid) {
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
-    bid.currency = $$PREBID_GLOBAL$$.getConfig('currency').adServerCurrency;
+    bid.currency = pbjs.getConfig('currency')?.adServerCurrency;
   }
 }
 
