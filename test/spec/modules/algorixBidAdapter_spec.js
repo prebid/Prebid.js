@@ -30,10 +30,10 @@ const RESPONSE = {
           {
             id: 'bidId1',
             impid: 'bidId1',
-            adm: '<script>rixengine adm</script>',
+            adm: '<script>algorix adm</script>',
             cid: '24:17:18',
             crid: '40_37_66:30_32_132:31_27_70',
-            adomain: ['www.rixengine.com'],
+            adomain: ['www.algorix.co'],
             price: 10.00,
             bundle:
               'com.xinggame.cast.video.screenmirroring.casttotv:https://www.greysa.com.tw/Product/detail/pid/119/?utm_source=popIn&utm_medium=cpc&utm_campaign=neck_202307_300*250:https://www.avaige.top/',

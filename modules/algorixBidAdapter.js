@@ -5,10 +5,9 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'algorix';
 const ADAGIO_GVLID = 1176;
 
-let ENDPOINT = null;
-let SID = null;
-let TOKEN = null;
+let ENDPOINT = 'https://';
 let region = '';
+let url = null;
 
 const DEFAULT_BID_TTL = 1000;
 const DEFAULT_CURRENCY = 'USD';
@@ -37,13 +36,9 @@ export const spec = {
       Boolean(bid.params.sid) &&
       Boolean(bid.params.token)
     ) {
-      SID = bid.params.sid;
-      TOKEN = bid.params.token;
-      region = bid.params.region ? bid.params.region.toLowerCase() : null;
-      ENDPOINT =
-        REGION.includes(region)
-          ? 'https://' + region + '.xyz.svr-algorix.com/rtb/sa?sid=' + SID + '&token=' + TOKEN
-          : 'https://xyz.svr-algorix.com/rtb/sa?sid=' + SID + '&token=' + TOKEN;
+      url = 'xyz.svr-algorix.com/rtb/sa?sid=' + bid.params.sid + '&token=' + bid.params.token;
+      region = bid.params.region ? bid.params.region.toLowerCase() + '.' : null;
+      ENDPOINT = ENDPOINT + (REGION.includes(region) ? region + url : url);
       return true;
     }
     return false;
