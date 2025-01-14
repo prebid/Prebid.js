@@ -5,6 +5,7 @@ import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import * as utils from 'src/utils.js';
+import { storeLocally } from '../../src/videoCache.js';
 
 const should = chai.should();
 
@@ -395,6 +396,40 @@ describe('The video cache', function () {
       sinon.assert.notCalled(batch[0].afterBidAdded);
       sinon.assert.called(utils.logError);
     })
+  })
+
+  describe('local video cache', function() {
+    afterEach(function () {
+      config.resetConfig();
+    });
+
+    it('should store bid vast locally with blob by default', () => {
+      const bid = {
+        vastXml: `<VAST version="3.0"></VAST>`
+      };
+
+      storeLocally(bid);
+
+      expect(bid.vastUrl.startsWith('blob:http://')).to.be.true;
+      expect(bid.videoCacheKey).to.not.be.empty;
+    });
+
+    it('should store bid vast locally with data when strategy set', () => {
+      config.setConfig({
+        cache: {
+          strategy: 'data'
+        }
+      });
+
+      const bid = {
+        vastXml: `<VAST version="3.0"></VAST>`
+      };
+
+      storeLocally(bid);
+
+      expect(bid.vastUrl.startsWith('data:')).to.be.true;
+      expect(bid.videoCacheKey).to.not.be.empty;
+    });
   })
 });
 

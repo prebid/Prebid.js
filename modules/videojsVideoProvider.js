@@ -201,13 +201,17 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
   function setAdTagUrl(adTagUrl, options) {
-    if (!player.ima || !adTagUrl) {
+    if (!player.ima) {
       return;
     }
 
     // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
     try {
-      player.ima.changeAdTag(adTagUrl);
+      if (!adTagUrl && options.adXml) {
+        player.ima.controller.settings.adsResponse = options.adXml;
+      } else {
+        player.ima.changeAdTag(adTagUrl);
+      }
       player.ima.requestAds();
     } catch (e) {
       /*

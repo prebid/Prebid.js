@@ -211,13 +211,9 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
     const adServerConfig = getAdServerConfig(videoConfig);
-    let adUrl;
     if (adServerConfig) {
-      adUrl = gamSubmodule.getAdTagUrl(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params);
-    }
-
-    if (adUrl) {
-      loadAdTag(adUrl, divId, options);
+      gamSubmodule.getVast(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params)
+        .then((vastXml) => loadAdTag(null, divId, {...options, adXml: vastXml}));
       return;
     }
 
