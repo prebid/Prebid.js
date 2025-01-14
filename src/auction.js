@@ -100,6 +100,7 @@ import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 
 const { syncUsers } = userSync;
+var pbjs = pbjs || {};
 
 export const AUCTION_STARTED = 'started';
 export const AUCTION_IN_PROGRESS = 'inProgress';
@@ -116,7 +117,6 @@ const sourceInfo = {};
 const queuedCalls = [];
 
 const pbjsInstance = getGlobal();
-var pbjs = pbjs || {};
 
 /**
  * Clear global state for tests
