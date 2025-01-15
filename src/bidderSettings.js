@@ -17,12 +17,10 @@ export class ScopedSettings {
   getCurrencyAdjust(bidderCode) {
     // For bidder specific
     let currencyAdjust = this.get(bidderCode, JSON_MAPPING.CURRENCY_ADJUST);
-    
     // For standard
     if (typeof currencyAdjust === 'undefined') {
       currencyAdjust = this.get(this.defaultScope, JSON_MAPPING.CURRENCY_ADJUST);
     }
-    
     return currencyAdjust;
   }
 
