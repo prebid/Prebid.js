@@ -101,28 +101,45 @@ export const spec = {
       url: ENDPOINT_URL,
       data: ortbRequest,
       options: {
-        contentType: "text/plain",
+        contentType: "application/json",
       },
     };
   },
 
   // Interpret OpenRTB responses using `ortbConverter`
-  interpretResponse: function (serverResponse, request) {
-    const ortbResponse = serverResponse.body;
-
-    // Parse OpenRTB response into Prebid responses
-    const prebidResponses = converter.fromORTB({
-      response: ortbResponse,
-      request: request.data,
-    }).bids;
-
-    // Add metadata to bids
-    prebidResponses.forEach((bid) => {
-      bid.meta = bid.meta || {};
-      bid.meta.adapterVersion = "1.0.0";
+  interpretResponse: function (serverResponse, bidRequest) {
+    if (!serverResponse || !serverResponse.body) return [];
+    const parsedSeatbid = serverResponse.body.seatbid.map((seatbidItem) => {
+      const parsedBid = seatbidItem.bid.map((bidItem) => ({
+        ...bidItem,
+        adm: utils.replaceAuctionPrice(bidItem.adm, bidItem.price),
+        nurl: utils.replaceAuctionPrice(bidItem.nurl, bidItem.price),
+      }));
+      return { ...seatbidItem, bid: parsedBid };
     });
+    const responseBody = { ...serverResponse.body, seatbid: parsedSeatbid };
+    return converter.fromORTB({
+      response: responseBody,
+      request: bidRequest.data,
+    }).bids;
+  },
 
-    return prebidResponses;
+  onBidWon: function (bid) {
+    // eslint-disable-next-line no-console
+    console.log("🚀 ~ bid:", bid);
+    const { burl, nurl } = bid || {};
+
+    if (nurl) {
+      utils.triggerPixel(
+        utils.replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm)
+      );
+    }
+
+    if (burl) {
+      utils.triggerPixel(
+        utils.replaceAuctionPrice(burl, bid.originalCpm || bid.cpm)
+      );
+    }
   },
 };
 
