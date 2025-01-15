@@ -456,7 +456,7 @@ describe('LiveIntentExternalId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
-  it('should decode a tripleift id to a separate object when present', function() {
+  it('should decode a triplelift id to a separate object when present', function() {
     const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', triplelift: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'triplelift': 'bar'}, 'triplelift': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
