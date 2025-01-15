@@ -118,6 +118,13 @@ const queuedCalls = [];
 const pbjsInstance = getGlobal();
 
 /**
+ * Get Prebid config options
+ * @param {Object} options
+ * @alias module:pbjs.getConfig
+ */
+pbjsInstance.getConfig = config.getAnyConfig;
+
+/**
  * Clear global state for tests
  */
 export function resetAuctionState() {
@@ -912,6 +919,11 @@ export function adjustBids(bid) {
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
+    // Get the currency adjust setting for this bidder
+    const shouldAdjustCurrency = bidderSettings.getCurrencyAdjust(bid.bidderCode);
+    if (shouldAdjustCurrency === true) {
+      bid.currency = config.getConfig('currency')?.adServerCurrency;
+    }
   }
 }
 
