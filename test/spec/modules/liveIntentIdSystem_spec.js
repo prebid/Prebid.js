@@ -894,7 +894,7 @@ describe('LiveIntentId', function() {
 
     it('triplelift', function () {
       const userId = {
-        sonobi: { 'id': 'sample_id' }
+        triplelift: { 'id': 'sample_id' }
       };
       const newEids = createEidsArray(userId);
       expect(newEids.length).to.equal(1);
