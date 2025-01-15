@@ -541,6 +541,11 @@ describe('LiveIntentId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
+  it('should decode a triplelift id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', triplelift: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'triplelift': 'bar'}, 'triplelift': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
   it('should decode a vidazoo id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' }, { params: defaultConfigParams });
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
@@ -877,6 +882,39 @@ describe('LiveIntentId', function() {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'liveintent.sonobi.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
+
+    it('triplelift', function () {
+      const userId = {
+        sonobi: { 'id': 'sample_id' }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.triplelift.com',
+        uids: [{
+          id: 'sample_id',
+          atype: 3
+        }]
+      });
+    });
+
+    it('triplelift with ext', function () {
+      const userId = {
+        triplelift: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveintent.triplelift.com',
         uids: [{
           id: 'sample_id',
           atype: 3,
