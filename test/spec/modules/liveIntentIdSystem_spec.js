@@ -188,11 +188,6 @@ describe('LiveIntentId', function() {
     }, 300);
   });
 
-  it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
-    const result = liveIntentIdSubmodule.decode({ params: { fireEventDelay: 1, additionalData: 'data' } });
-    expect(result).to.be.eql({});
-  });
-
   it('should fire an event when decode', function(done) {
     liveIntentIdSubmodule.decode({}, { params: defaultConfigParams });
     setTimeout(() => {
@@ -422,9 +417,14 @@ describe('LiveIntentId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
+  it('should decode values with the segments but no nonId', function() {
+    const result = liveIntentIdSubmodule.decode({segments: ['tak']}, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'segments': ['tak']}});
+  });
+
   it('should decode values with uid2 but no nonId', function() {
     const result = liveIntentIdSubmodule.decode({ uid2: 'bar' }, { params: defaultConfigParams });
-    expect(result).to.eql({'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(result).to.eql({'lipb': {'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a bidswitch id to a separate object when present', function() {
@@ -467,6 +467,11 @@ describe('LiveIntentId', function() {
     refererInfoStub.returns({domain: provider})
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', thetradedesk: 'bar' }, { params: defaultConfigParams });
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'tdid': 'bar'}, 'tdid': {'id': 'bar', 'ext': {'rtiPartner': 'TDID', 'provider': provider}}});
+  });
+
+  it('should decode the segments as part of lipb', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', 'segments': ['bar'] }, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'segments': ['bar']}});
   });
 
   it('should allow disabling nonId resolution', function() {
