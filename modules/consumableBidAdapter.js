@@ -300,6 +300,7 @@ function retrieveAd(decision, unitId, unitName) {
 function handleEids(data, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
     deepSetValue(data, 'user.eids', bidUserIdAsEids);
   } else {
     deepSetValue(data, 'user.eids', undefined);
