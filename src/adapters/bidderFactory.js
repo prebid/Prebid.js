@@ -552,6 +552,12 @@ function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
     return true;
   }
 
+  if (bid.wratio != null && bid.hratio != null) {
+    bid.wratio = parseInt(bid.wratio, 10);
+    bid.hratio = parseInt(bid.hratio, 10);
+    return true;
+  }
+
   const bidRequest = index.getBidRequest(bid);
   const mediaTypes = index.getMediaTypes(bid);
 
