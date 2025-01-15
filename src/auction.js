@@ -919,7 +919,13 @@ export function adjustBids(bid) {
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;
-    bid.currency = config.getConfig('currency')?.adServerCurrency;
+    
+    // Get the currency adjust setting for this bidder
+    const shouldAdjustCurrency = bidderSettings.getCurrencyAdjust(bid.bidderCode);
+    
+    if (shouldAdjustCurrency === true) {
+      bid.currency = config.getConfig('currency')?.adServerCurrency;
+    }
   }
 }
 

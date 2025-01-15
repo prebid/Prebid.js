@@ -8,6 +8,24 @@ export class ScopedSettings {
     this.defaultScope = defaultScope;
   }
 
+  // To validate currency settings
+  validateCurrencyAdjust(value) {
+    return value === undefined || typeof value === 'boolean';
+  }
+
+  // Currency Adjust Method
+  getCurrencyAdjust(bidderCode) {
+    // For bidder specific
+    let currencyAdjust = this.get(bidderCode, JSON_MAPPING.CURRENCY_ADJUST);
+    
+    // For standard
+    if (typeof currencyAdjust === 'undefined') {
+      currencyAdjust = this.get(this.defaultScope, JSON_MAPPING.CURRENCY_ADJUST);
+    }
+    
+    return currencyAdjust;
+  }
+
   /**
    * Get setting value at `path` under the given scope, falling back to the default scope if needed.
    * If `scope` is `null`, get the setting's default value.

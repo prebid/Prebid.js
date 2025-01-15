@@ -6,7 +6,8 @@ export const JSON_MAPPING = {
   BD_ID: 'paramsd',
   BD_PL_ID: 'placementId',
   ADSERVER_TARGETING: 'adserverTargeting',
-  BD_SETTING_STANDARD: 'standard'
+  BD_SETTING_STANDARD: 'standard',
+  CURRENCY_ADJUST: 'adjustCurrency'
 };
 
 export const DEBUG_MODE = 'pbjs_debug';
