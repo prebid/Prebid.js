@@ -58,9 +58,9 @@ class NodalsAiRtdProvider {
         this.#overrides?.storageKey || this.STORAGE_KEY
       );
       if (storedData === null) {
-        this.#fetchAdRules(userConsent);
+        this.#fetchRules(userConsent);
       } else {
-        this.#loadAdLibraries(storedData.ads || []);
+        this.#loadAdLibraries(storedData.deps || []);
       }
       return true;
     } else {
@@ -88,11 +88,10 @@ class NodalsAiRtdProvider {
       return targetingData;
     }
     const facts = storedData?.facts ?? {};
-    const ads = storedData?.ads ?? [];
     const targetingEngine = window.$nodals.AdTargetingEngine['latest'];
     targetingEngine.init(config, facts);
     try {
-      targetingData = targetingEngine.getTargetingData(adUnitArray, ads);
+      targetingData = targetingEngine.getTargetingData(adUnitArray, storedData);
     } catch (error) {
       logError(`Error determining targeting keys: ${error}`);
     }
@@ -189,7 +188,6 @@ class NodalsAiRtdProvider {
         data,
       };
       this.storage.setDataInLocalStorage(key, JSON.stringify(storageObject));
-      this.#loadAdLibraries(data.ads);
     } else {
       logError('Local storage is not available or not enabled.');
     }
@@ -232,10 +230,10 @@ class NodalsAiRtdProvider {
   }
 
   /**
-   * Initiates the request to fetch ad rule data from the publisher endpoint.
+   * Initiates the request to fetch rule data from the publisher endpoint.
    */
   // eslint-disable-next-line no-dupe-class-members
-  #fetchAdRules(userConsent) {
+  #fetchRules(userConsent) {
     const endpointUrl = this.#getEndpointUrl(userConsent);
 
     const callback = {
@@ -270,7 +268,7 @@ class NodalsAiRtdProvider {
       throw `Error parsing response: ${error}`;
     }
     this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
-    this.#loadAdLibraries(data.ads || []);
+    this.#loadAdLibraries(data.deps || []);
   }
 
   // eslint-disable-next-line no-dupe-class-members
@@ -279,13 +277,14 @@ class NodalsAiRtdProvider {
   }
 
   // eslint-disable-next-line no-dupe-class-members
-  #loadAdLibraries(ads) {
-    ads.forEach((ad) => {
-      if (ad?.engine?.url) {
-        loadExternalScript(ad.engine.url, MODULE_TYPE_RTD, MODULE_NAME, () => {
-          // noop
-        });
-      }
+  #loadAdLibraries(deps) {
+    if (!Array.isArray(deps)) {
+      return;
+    }
+    deps.forEach((dep) => {
+      loadExternalScript(dep.url, MODULE_TYPE_RTD, MODULE_NAME, () => {
+        // noop
+      });
     });
   }
 }

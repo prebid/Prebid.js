@@ -10,17 +10,20 @@ const jsonResponseHeaders = {
 };
 
 const successPubEndpointResponse = {
+  deps: [
+    {version: '1.0.0', url: 'https://static.nodals.io/sdk/rule/1.0.0/engine.js'},
+    {version: '1.1.0', url: 'https://static.nodals.io/sdk/rule/1.1.0/engine.j'}
+  ],
   facts: {
     'browser.name': 'safari',
     'geo.country': 'AR',
   },
-  ads: [
-    {
-      engine: {
-        version: '1.0.0',
-        url: 'https://static.nodals.io/sdk/rule/1.0.0/engine.js',
-      },
-      onMatch: {
+  campaigns: [{
+    id: 1234,
+    ads: [
+      {
+        delivery_id: '1234',
+        property_id: 'fd32da',
         weighting: 1,
         kvs: [
           {
@@ -28,25 +31,30 @@ const successPubEndpointResponse = {
             v: '1',
           },
         ],
-      },
-      conditions: {
-        ANY: [
-          {
-            fact: 'id',
-            op: 'allin',
-            val: ['1', '2', '3'],
+        rules: {
+          engine: {
+            version: '1.0.0',
           },
-        ],
-        NONE: [
-          {
-            fact: 'ua.browser',
-            op: 'eq',
-            val: 'opera',
+          conditions: {
+            ANY: [
+              {
+                fact: 'id',
+                op: 'allin',
+                val: ['1', '2', '3'],
+              },
+            ],
+            NONE: [
+              {
+                fact: 'ua.browser',
+                op: 'eq',
+                val: 'opera',
+              },
+            ],
           },
-        ],
-      },
-    },
-  ],
+        },
+      }
+    ]
+  }]
 };
 
 const engineGetTargetingDataReturnValue = {
@@ -334,9 +342,17 @@ describe('NodalsAI RTD Provider', () => {
           JSON.stringify(successPubEndpointResponse)
         );
 
+        expect(loadExternalScriptStub.calledTwice).to.be.true;
         expect(
           loadExternalScriptStub.calledWith(
-            successPubEndpointResponse.ads[0].engine.url,
+            successPubEndpointResponse.deps[0].url,
+            MODULE_TYPE_RTD,
+            nodalsAiRtdSubmodule.name
+          )
+        ).to.be.true;
+        expect(
+          loadExternalScriptStub.calledWith(
+            successPubEndpointResponse.deps[1].url,
             MODULE_TYPE_RTD,
             nodalsAiRtdSubmodule.name
           )
@@ -432,7 +448,7 @@ describe('NodalsAI RTD Provider', () => {
       expect(engine.getTargetingData.called).to.be.true;
       const args = engine.getTargetingData.getCall(0).args;
       expect(args[0]).to.deep.equal(['adUnit1', 'adUnit2']);
-      expect(args[1]).to.deep.equal(successPubEndpointResponse.ads);
+      expect(args[1]).to.deep.equal(successPubEndpointResponse);
     });
 
     it('should return the response from engine.getTargetingData when data is available and we have consent under GDPR jurisdiction', () => {
