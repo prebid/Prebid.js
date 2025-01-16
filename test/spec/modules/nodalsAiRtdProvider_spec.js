@@ -12,7 +12,7 @@ const jsonResponseHeaders = {
 const successPubEndpointResponse = {
   deps: [
     {version: '1.0.0', url: 'https://static.nodals.io/sdk/rule/1.0.0/engine.js'},
-    {version: '1.1.0', url: 'https://static.nodals.io/sdk/rule/1.1.0/engine.j'}
+    {version: '1.1.0', url: 'https://static.nodals.io/sdk/rule/1.1.0/engine.js'}
   ],
   facts: {
     'browser.name': 'safari',
