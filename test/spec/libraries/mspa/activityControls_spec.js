@@ -115,8 +115,8 @@ describe('Consent interpretation', () => {
         },
         versions: [2]
       },
-      'status as victim of crime': {
-        flagNo: 13,
+      'status as transgender': {
+        flagNo: 15,
         consents: {
           1: true,
           2: true,
