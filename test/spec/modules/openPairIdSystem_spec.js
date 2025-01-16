@@ -10,7 +10,7 @@ import {
   setSubmoduleRegistry
 } from '../../../modules/userId/index.js';
 
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import {createEidsArray, getEids} from '../../../modules/userId/eids.js';
 
 describe('openPairId', function () {
   let sandbox;
@@ -123,20 +123,47 @@ describe('openPairId', function () {
     expect(id).to.equal(undefined)
   });
 
+  it('honors inserter, matcher', () => {
+    const config = {
+      inserter: 'some-domain.com',
+      matcher: 'another-domain.com'
+    };
+
+    const result = openPairIdSubmodule.eids.openPairId(['some-random-id-value'], config);
+
+    expect(result.length).to.equal(1);
+
+    expect(result[0]).to.deep.equal(
+      {
+        source: 'pair-protocol.com',
+        mm: 3,
+        inserter: 'some-domain.com',
+        matcher: 'another-domain.com',
+        uids: [
+          {
+            atype: 3,
+            id: 'some-random-id-value'
+          }
+        ]
+      }
+    );
+  });
+
   describe('eid', () => {
     before(() => {
       attachIdSystem(openPairIdSubmodule);
     });
 
-    it('generates the expected bid request', function() {
+    it('generates the minimal eids', function() {
       const userId = {
         openPairId: 'some-random-id-value'
       };
 
       const newEids = createEidsArray(userId);
+
       expect(newEids.length).to.equal(1);
 
-      expect(newEids[0]).to.deep.equal({
+      expect(newEids[0]).to.deep.include({
         source: 'pair-protocol.com',
         mm: 3,
         uids: [{ id: 'some-random-id-value', atype: 3 }]

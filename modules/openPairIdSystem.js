@@ -113,11 +113,16 @@ export const openPairIdSubmodule = {
     return {'id': ids};
   },
   eids: {
-    'openPairId': function(values) {
+    openPairId: function(values, config = {}) {
+      const inserter = config.inserter;
+      const matcher = config.matcher;
+
       return [
         {
           source: 'pair-protocol.com',
           mm: 3,
+          inserter: inserter,
+          matcher: matcher,
           uids: values.map(function(value) {
             return {
               id: value,
