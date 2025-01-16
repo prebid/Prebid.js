@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dreamlab-master
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install && npm install -g gulp
+
+      - name: Run tests
+        run: node_modules/.bin/gulp test --file test/spec/modules/ringieraxelspringerBidAdapter_spec.js,test/spec/modules/dasBidAdapter_spec.js
+
+      - name: build
+        run: node_modules/.bin/gulp build --modules=modules.json
+
+      - name: version
+        run: cat package.json | grep -e "\"version.*\"" | grep -oP "\d\.\d+\.\d+" > version.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebidjs
+          path: build/dist/prebid.js
+      - name: Upload version
+        uses: actions/upload-artifact@v4
+        with:
+          name: version
+          path: version.txt
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/dreamlab-master'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: prebidjs
+      - name: Download version
+        uses: actions/download-artifact@v4
+        with:
+          name: version
+      - name: Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BUCKET: ${{ secrets.BUCKET }}
+        run: |
+          version="$(cat version.txt)"
+          mkdir "${version}"
+          cp prebid.js "${version}"/
+          release="${version}_$(date +"%Y%m%d%H%M%S")"
+          echo "Uploading Prebid.js ver:${version} to OCDN"
+          echo -e "\e[32mRelease: ${release}\e[0m"
+          aws s3 sync "${version}" s3://${BUCKET}/prebid/prod/${release}/ --region ocdn --endpoint "https://ocdn.eu"

@@ -108,6 +108,9 @@ function setBrowsers(karmaConf, browserstack) {
 module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
   var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
+  if (file) {
+    file = file.split(',')
+  }
 
   var files = file ? ['test/test_deps.js', file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
