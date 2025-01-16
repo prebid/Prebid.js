@@ -72,7 +72,7 @@ export const spec = {
       if (pcrs) {
         params.crs = pcrs;
       }
-      if (Math.floor(Math.random() * 1000) === 0 && schain) {
+      if (schain && schain.nodes.length > 2) {
         params.sch = serializeSupplyChain(schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain']);
       }
       if (referrerUrl) {
