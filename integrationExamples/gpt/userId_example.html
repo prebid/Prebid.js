@@ -23,7 +23,23 @@
               siteId: '113932',
               zoneId: '535510'
             }
-          }
+          },
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '164074',
+              adSlot: '/43743431/owfledge',
+              pmzoneid: 'zone2',
+              kadpageurl: 'http://www.microsoft.com/key1=1&key2=2&fledge_type=1'
+            }
+          },
+          // {
+          //   bidder: 'pubmatic',
+          //   params: {
+          //     publisherId: '156276',
+          //     adSlot: 'pubmatic_test',
+          //   }
+          // }
         ]
       }
     ];
@@ -78,6 +94,7 @@
                   "91": true,     // criteo
                   "737": true,    // amxId
                   "58": true,     // 33acrossId
+                  "76": true,     // pubmaticId
                 }
               }
             }
@@ -287,6 +304,18 @@
             },
             {
               "name": "gravitompId"
+            },
+            {
+              name: "pubmaticId",
+              params: {
+                publisherId: 123456
+              },
+              storage: {
+                name: "pubmaticId",
+                type: "cookie&html5",
+                expires: 30,
+                refreshInSeconds: 86400
+              }
             }
           ],
           "syncDelay": 5000,

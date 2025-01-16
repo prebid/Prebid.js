@@ -1,0 +1,524 @@
+<html>
+  <style>
+    /* 
+    don't copy this CSS (just for styling purposes) 
+    non copiare questo CSS (solo per scopi dimostrativi)
+    */
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body { 
+      font: 18px/1.5 sans-serif;
+      color: #333;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 700px;
+      margin: auto;
+      padding: 0 30px;
+    }
+
+    header {
+      background: #1cc691;
+      color: #fff;
+      text-align: center;
+      padding: 100px 0;
+    }
+
+    header.tcf2 {
+      padding: 142px 0;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    header p {
+      font-size: 23px;
+      line-height: 1.2;
+      margin: 15px 0 0 0;
+    }
+
+    section.wrapper {
+      margin: 50px auto;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      line-height: 1.2;
+    }
+
+    hr {
+      border: 1px solid #ddd;
+      margin: 40px auto;
+    }
+
+    hr.short {
+      width: 20%;
+    }
+
+    ul.guides li {
+      margin: 6px auto;
+    }
+
+    div.note {
+      font-size: 90%;
+      border: 2px solid #ddd; 
+      border-radius: 4px;
+      margin: 40px 0;
+      padding-right: 20px;
+      word-wrap: break-word;
+    }
+
+    div.note p {
+      padding-left: 20px;
+    }
+
+    div.note ul li p {
+      padding-left: 0;
+    }
+
+    div.note ul li+li {
+      margin-top: 10px;
+    }
+
+    div.tip {
+      font-size: 90%;
+      border-radius: 4px;
+      padding: 15px 0;
+      margin: 25px 0;
+      word-wrap: break-word;
+      background: #eee;
+    }
+
+    div.tip p {
+      margin: auto 20px;
+    }
+
+    div.tip img {
+      margin: 15px 20px;
+      max-width: calc(100% - 40px);
+    }
+
+    div.tip ul, div.tip ol {
+      margin: 10px 20px auto;
+    }
+
+    div.scripts li span {
+      color: red;
+    }
+
+    div.scripts li span.activated {
+      color: green;
+    }
+
+    mark {
+      padding: 5px;
+      background: #fcf8e3 !important;
+    }
+
+    code {
+      font-size: 93%;
+      color: #e83e8c;
+      word-break: break-word;
+    }
+
+    a {
+      color: #1375cc;
+    }
+
+    a.iubenda-advertising-preferences-link.btn, 
+    a.iubenda-cs-preferences-link.btn,
+    button.btn {
+      color: #fff;
+      text-decoration: none;
+      font-size: 16px;
+      padding: 5px 8px;
+      border: 3px solid #36383f;
+      background: #36383f;
+      border-radius: 3px;
+      margin: 5px auto;
+      display: inline-block;
+    }
+
+    button.btn {
+      padding: 10px 15px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    button.btn:active {
+      top: 1px;
+    }
+
+    img { 
+      max-width: 100%; 
+      height: auto;
+      display: block;
+      margin: auto;
+    }
+
+    .fs90 {
+      font-size: 90% !important;
+    }
+
+    /* responsive video */
+    .embed-container { 
+      position: relative; 
+      padding-bottom: 56.25%; 
+      height: 0; 
+      overflow: hidden; 
+      max-width: 100%; 
+      margin: 25px auto;
+    } 
+
+    .embed-container iframe, 
+    .embed-container object, 
+    .embed-container embed { 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+    }
+      .reset-preferences-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      background-color: #0073ce;
+      padding: 6px 10px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+  </style>
+  <script type="text/javascript">
+    var _iub = _iub || [];
+    _iub.csConfiguration = {
+      "askConsentAtCookiePolicyUpdate": true,
+      "enableTcf": true,  //enable IAB TCF 
+      //"tcfVersion":"2.2", //use this parameter to switch the version of the TCF / use the new 2.2 version
+      //"tcfVendors":"628,1111,92", //use this parameter to select manually the vendors you're using
+
+      /*
+      (OPTIONAL) Limit the legal basis and choose which TCF purposes to prompt 
+      "tcfPurposes": {
+        "1":"true",
+        "2":"consent_only",
+        "3":"consent_only",
+        "4":"consent_only",
+        "5":"consent_only",
+        "6":"consent_only",
+        "7":"consent_only",
+        "8":"consent_only",
+        "9":"consent_only",
+        "10":"consent_only",
+        "11":"consent_only"
+      },
+      */
+      "floatingPreferencesButtonDisplay": "bottom-right",
+      "googleAdditionalConsentMode": true,
+      "lang": "en",
+      "perPurposeConsent": true, //enable per-category consent
+      "siteId": 3156898, //use your siteId
+      "cookiePolicyId": 36614288, //use your cookiePolicyId
+
+      "banner": {
+        "acceptButtonDisplay": true,
+        "closeButtonDisplay": false,
+        "customizeButtonDisplay": true,
+        "explicitWithdrawal": true,
+        "listPurposes": true,
+        "position": "float-top-center",
+        "rejectButtonDisplay": true
+      }
+    };
+  </script>
+  <script type="text/javascript" src="//cdn.iubenda.com/cs/tcf/beta/stub-v2.js"></script>
+  <script type="text/javascript" src="//cdn.iubenda.com/cs/tcf/beta/safe-tcf-v2.js"></script>
+  <script type="text/javascript" src="//cdn.iubenda.com/cs/beta/iubenda_cs.js" charset="UTF-8" async></script>
+  <script async src="http://localhost:9999/build/dev/prebid.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script>
+    var PREBID_TIMEOUT = 700;
+    var FAILSAFE_TIMEOUT = 2500;
+
+    var adUnits = [
+      {
+        code: 'test-div',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600], [728, 90]]
+          }
+        },
+        bids: [
+          {
+            bidder: 'rubicon',
+            params: {
+              accountId: '1001',
+              siteId: '113932',
+              zoneId: '535510'
+            }
+          }
+        ]
+      }
+    ];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+  </script>
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function () {
+      pbjs.addAdUnits(adUnits);
+      pbjs.setConfig({
+        consentManagement: {
+          // cmpApi: 'iab',
+          // timeout: 5000,
+
+          // gpp: {
+          //   cmpApi: 'iab',
+          //   timeout: 5000
+          // },
+          // gdpr: {
+          //   cmpApi: 'iab',
+          //   timeout: 5000
+          // },
+          // usp: {
+          //   cmpApi: 'iab',
+          //   timeout: 5000
+          // }
+
+          // gpp: {
+          //   cmpApi: 'iab', // or 'static' if you want to simulate consent data
+          //   timeout: 1000,
+          //   // allowAuctionWithoutConsent: true // or false based on your needs
+          // },
+          usp: {
+            cmpApi: 'iab', // Set the API based on the CMP you’re using
+            timeout: 8000,
+            // allowAuctionWithoutConsent: true
+          },
+          gdpr: {
+            cmpApi: 'iab',
+            timeout: 8000,
+            defaultGdprScope: true
+          }
+        },
+        userSync: {
+          userIds: [
+            {
+              name: "pubmaticId",
+              params: {
+                publisherId: 123456
+              },
+              storage: {
+                name: "pubmaticId",
+                type: "cookie&html5",
+                expires: 30,
+                refreshInSeconds: 86400
+              }
+            }
+          ]
+        },
+        // allowActivities: {
+        //   accessDevice: {
+        //       // default: false,
+        //       // rules: [{
+        //       //   condition(params) {
+        //       //       return params.componentName === 'bidderX'
+        //       //   },
+        //       //   allow: true
+        //       // }]
+        //   }
+        // },
+        // pubcid: {
+        //   enable: false
+        // }
+      });
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+      console.log('timeout in main pbjs fired');
+    }, FAILSAFE_TIMEOUT);
+  </script>
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250], [300, 600], [728, 90]], 'test-div').addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+  <body>
+    <h2>Prebid.js Test</h2>
+    <div id="test-div" style="border:1px solid #333; padding:5px;">
+      <script>
+        googletag.cmd.push(function () { googletag.display('test-div'); });
+      </script>
+    </div>
+    <button class="reset-preferences-btn" onclick="_iub.cs.api.resetCookies()">Remove preferences</button>
+    <header class="tcf2">
+      <div class="wrapper">
+        <h1>iubenda Privacy Controls and Cookie Solution</h1>
+        <p>IAB Transparency and Consent Framework v2.2</p>
+      </div>
+    </header>
+
+    <section class="wrapper">
+
+      <div class="note">
+        <ul>
+          <li>This is a sample for pure demonstrative purposes.</li>
+          <li>You can see the <a
+              href="https://codepen.io/iubenda/pen/vYQMvme/5da0eae8e9a64f8cf78ba3403e87fc4e?editors=1000"
+              target="_blank">code here</a></li>
+          <li>Remember to use your own credentials from <a href="https://www.iubenda.com/en/dashboard"
+              target="_blank">your iubenda account</a></li>
+          <li><strong>If you don't see the cookie banner on your first visit</strong>, you may have a consent cookie saved
+            from another demo: <a href="#"
+              onclick="_iub.cs.cookie.resetCookies({local: true,remote: true});alert('Consent cookie deleted. Now click on OK and refresh the page to return to the starting point.')">reset
+              consent</a> and refresh the page to make the cookie banner reappear or click on the "Remove preferences"
+            button in the top-right of the page.</li>
+        </ul>
+      </div>
+
+      <p>To meet evolving data protection requirements and expectations, the Transparency & Consent Framework (TCF)
+        Steering Group has approved updates to the Framework. The latest version, TCF 2.2, introduces significant changes
+        aimed at better meeting regulatory expectations and user needs.</p>
+      <p>Please refer <a
+          href="https://www.iubenda.com/en/help/129478-transitioning-to-tcf-2-2-what-you-need-to-know">here</a> to know
+        more about the changes of the new version.</p>
+      <hr />
+
+      <h3>Timeline</h3>
+      <ul>
+        <li>The configuration can <strong>now</strong> be tested via the CS configurator</li>
+        <li><strong>6th November</strong>: the Privacy Controls and Cookie Solution will change the default value of tcf
+          version to 2.2 → To use the version 2.1 after the 6th of November users have to select the version 2.1 on the CS
+          configurator or to declare the value <code>tcfVersion=“2”</code> on their CS configuration (see below for
+          further details).</li>
+        <li><strong>20th November</strong>: TC Strings created after 20 November 2023 under TCF v2.1 will be considered
+          invalid, so it's vital for publishers to be ready for this deadline</li>
+      </ul>
+      <hr />
+
+      <h3>How to set up the TCF version 2.2</h3>
+      <h4>1. Enable the IAB Transparency and Consent Framework</h4>
+      <p>On the configurator:</p>
+      <img src="https://personal.iubenda.com/matteo.guerriero/Screen-Shot-2023-09-25-17-18-58.53.png"
+        style="width: 360px;" />
+      <h4>2. Enable the v2.2</h4>
+      <p>Click on EDIT and select version 2.2 from the menu</p>
+      <img src="https://personal.iubenda.com/matteo.guerriero/Screen-Shot-2023-09-25-17-24-16.26.png"
+        style="width: 360px;" />
+      <hr />
+
+      <h3>Manage the Vendors number disclosure</h3>
+      <p>Consent Management Platforms (CMPs) are now obliged to display the total number of Vendors seeking a legal basis
+        on the first screen of their interfaces and the total number of Vendors for each purpose on the secondary layers.
+      </p>
+
+      <p>There are 2 ways to handle this</p>
+      <h4>1. Services added to the Privacy and Cookie Policy generator (suggested)</h4>
+      <p>If you add the TCF vendors via the Privacy and Cookie Policy generator, our Privacy Controls and Cookie Solution
+        will automatically detect them and show the relevant vendors in the banner and in the TCF preferences panel</p>
+      <p>
+        <img src="https://personal.iubenda.com/matteo.guerriero/Screen-Shot-2023-09-25-17-26-10.75.png"
+          style="width: 480px;" />
+      </p>
+      <p> Here you can see the cookie policy used for this demo and the vendors added here: <a
+          href="https://www.iubenda.com/privacy-policy/36614288/cookie-policy"
+          class="iubenda-white iubenda-noiframe iubenda-embed iubenda-noiframe " title="Cookie Policy ">Cookie Policy</a>
+        <script
+          type="text/javascript">(function (w, d) { var loader = function () { var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src = "https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s, tag); }; if (w.addEventListener) { w.addEventListener("load", loader, false); } else if (w.attachEvent) { w.attachEvent("onload", loader); } else { w.onload = loader; } })(window, document);</script>
+        </li>
+      <h4>2. Manually enter the list of TCF vendors</h4>
+      <p>When TCF vendors are not detected from the Privacy and Cookie Policy Generator, an alert will be shown
+      <p>
+        <img src="https://personal.iubenda.com/matteo.guerriero/Screen-Shot-2023-09-25-17-47-57.12.png"
+          style="width: 480px;" />
+      </p>
+
+      <p>At this point you can Manually enter the TCF vendors you work with using the related field.<br> IDs are listed in
+        the <a href="https://iabeurope.eu/vendor-list-tcf/">Global Vendor List</a> and the <a
+          href="https://vendor-list.consensu.org/v2/additional-vendor-information-list.json">aditional vendor information
+          list</a>. Enter the ids of the vendors you want to display, each one separated by a comma.</p>
+      <p>❗️<strong>If you don’t select any vendor neither in the Privacy and Cookie Policy Generator nor manually, the
+          whole GVL list will be used and you might be in breach of the latest TCF policies.</strong></p>
+      <hr />
+
+      <h3>Purposes update and new purpose 11</h3>
+      <p>You can configure the purposes updated with the new name and legal basis, along with the new purpose 11</p>
+      <img src="https://personal.iubenda.com/matteo.guerriero/Screen-Recording-2023-09-25-18-17-12.gif.gif"
+        style="width: 480px;" /></p>
+      <hr />
+
+      <h3>Provide a link/button that allows your users to reopen the consent modal and edit their preferences</h3>
+
+      <p>To implement, just add the <code>iubenda-advertising-preferences-link</code> class to a custom link or button:
+      </p>
+
+      <a href="#" class="iubenda-advertising-preferences-link btn">Update your advertising tracking preferences</a>
+
+      <p>Once clicked, the link above will trigger the opening of the advertising tracking settings modal.</p>
+
+      <div class="tip">
+        <p>⚠️ To meet IAB's requirements, please note that <strong>if you don't implement this class, we'll automatically
+            display a small widget that hovers on your pages</strong>.</p>
+      </div>
+
+      <hr />
+
+      <h3> Code configuration - parameters</h3>
+      <p><code>enableTcf</code> (boolean, default false) – If <code>true</code>, users will be able to manage their
+        advertising tracking preferences according to the IAB Transparency and Consent Framework.
+      <p><code>tcfVersion</code> (string, default "2") - Set it to 2.2 in order to enable the TCF version 2.2.<br>Please
+        note that from the 6th of November the default value of this parameter will become 2.2. To use the version 2.1
+        after the 6th of November you have set this parameter to: “2” </p>
+      <p><code>tcfVendors</code> (string, default null) - With this parameter you can declare the vendors you want to
+        display. IDs are listed in the <a href="https://iabeurope.eu/vendor-list-tcf/">Global Vendor List</a> and the <a
+          href="https://vendor-list.consensu.org/v2/additional-vendor-information-list.json">additional vendor information
+          list</a>. Enter the ids of the vendors you want to display, each one separated by a comma.</p>
+      <p><code>tcfPurposes (object)</code> – TCF v2.2 has 11 purposes, each having an id:
+      <p>
+      <ol>
+        <li>Store and/or access information on a device</li>
+        <li>Use limited data to select advertising</li>
+        <li>Create profiles for personalised advertising</li>
+        <li>Use profiles to select personalised advertising</li>
+        <li>Create profiles for personalised advertising</li>
+        <li>Create profiles to personalise content</li>
+        <li>Use profiles to select personalised content</li>
+        <li>Measure advertising performance</li>
+        <li>Understand audiences through statistics or combinations of data from different sources</li>
+        <li>Develop and improve services</li>
+        <li>Use limited data to select content</li>
+      </ol>
+
+  </body>
+</html>

@@ -209,6 +209,8 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @returns {{'33acrossId':{ envelope: string}}}
    */
   decode(id) {
+    // eslint-disable-next-line no-console
+    console.log('decode invoked', { id });
     return {
       [MODULE_NAME]: {
         envelope: id
@@ -223,6 +225,8 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsentData) {
+    // eslint-disable-next-line no-console
+    console.log('getId invoked', { params, enabledStorageTypes, storageConfig, gdprConsentData });
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -247,10 +251,14 @@ export const thirtyThreeAcrossIdSubmodule = {
       callback(cb) {
         ajaxBuilder(AJAX_TIMEOUT)(apiUrl, {
           success(response) {
+            // eslint-disable-next-line no-console
+            console.log('success invoked', { response });
             let responseObj = { };
 
             try {
               responseObj = calculateResponseObj(JSON.parse(response));
+              // eslint-disable-next-line no-console
+              console.log('success', { responseObj });
             } catch (err) {
               logError(`${MODULE_NAME}: ID reading error:`, err);
             }

@@ -92,6 +92,8 @@ function deleteFromAllStorages(key, hostname) {
 }
 
 function getCriteoDataFromStorage(submoduleConfig) {
+  // eslint-disable-next-line no-console
+  console.log('getCriteoDataFromStorage invoked', { submoduleConfig });
   return {
     bundle: getFromStorage(submoduleConfig, bundleStorageKey),
     dnaBundle: getFromStorage(submoduleConfig, dnaBundleStorageKey),
@@ -100,6 +102,8 @@ function getCriteoDataFromStorage(submoduleConfig) {
 }
 
 function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
+  // eslint-disable-next-line no-console
+  console.log('buildCriteoUsersyncUrl invoked', { topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent });
   let url = 'https://gum.criteo.com/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
@@ -126,10 +130,15 @@ function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWri
     url = url + `${gppConsent.applicableSections ? '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections) : ''}`;
   }
 
+  // eslint-disable-next-line no-console
+  console.log('buildCriteoUsersyncUrl', { url, usPrivacyString, gdprConsent, gppConsent });
+
   return url;
 }
 
 function callSyncPixel(submoduleConfig, domain, pixel) {
+  // eslint-disable-next-line no-console
+  console.log('callSyncPixel invoked', { submoduleConfig, domain, pixel });
   if (pixel.writeBundleInStorage && pixel.bundlePropertyName && pixel.storageKeyName) {
     ajax(
       pixel.pixelUrl,
@@ -155,6 +164,8 @@ function callSyncPixel(submoduleConfig, domain, pixel) {
 }
 
 function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
+  // eslint-disable-next-line no-console
+  console.log('callCriteoUserSync invoked', { submoduleConfig, parsedCriteoData, callback });
   const cw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) && storage.cookiesAreEnabled();
   const lsw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) && storage.localStorageIsEnabled();
   const topUrl = extractProtocolHost(getRefererInfo().page);
@@ -202,6 +213,9 @@ function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
     }
   };
 
+  // eslint-disable-next-line no-console
+  console.log('callCriteoUserSync', { cw, lsw, topUrl, domain, isPublishertagPresent, url, callbacks });
+
   ajax(url, callbacks, undefined, { method: 'GET', contentType: 'application/json', withCredentials: true });
 }
 
@@ -219,6 +233,8 @@ export const criteoIdSubmodule = {
    * @returns {{criteoId: string} | undefined}
    */
   decode(bidId) {
+    // eslint-disable-next-line no-console
+    console.log('decode invoked', { bidId });
     return bidId;
   },
   /**
@@ -229,10 +245,14 @@ export const criteoIdSubmodule = {
    * @returns {{id: {criteoId: string} | undefined}}}
    */
   getId(submoduleConfig) {
+    // eslint-disable-next-line no-console
+    console.log('getId invoked', { submoduleConfig });
     let localData = getCriteoDataFromStorage(submoduleConfig);
-
+    // eslint-disable-next-line no-console
+    console.log('getId', { localData });
     const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback);
-
+    // eslint-disable-next-line no-console
+    console.log('getId', { result });
     return {
       id: localData.bidId ? { criteoId: localData.bidId } : undefined,
       callback: result
