@@ -278,14 +278,13 @@ class NodalsAiRtdProvider {
 
   // eslint-disable-next-line no-dupe-class-members
   #loadAdLibraries(deps) {
-    if (!Array.isArray(deps)) {
-      return;
+    for (const [key, value] of Object.entries(deps)) {
+      if (typeof value === 'string') {
+        loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
+          // noop
+        });
+      }
     }
-    deps.forEach((dep) => {
-      loadExternalScript(dep.url, MODULE_TYPE_RTD, MODULE_NAME, () => {
-        // noop
-      });
-    });
   }
 }
 

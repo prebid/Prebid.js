@@ -10,10 +10,10 @@ const jsonResponseHeaders = {
 };
 
 const successPubEndpointResponse = {
-  deps: [
-    {version: '1.0.0', url: 'https://static.nodals.io/sdk/rule/1.0.0/engine.js'},
-    {version: '1.1.0', url: 'https://static.nodals.io/sdk/rule/1.1.0/engine.js'}
-  ],
+  deps: {
+   '1.0.0': 'https://static.nodals.io/sdk/rule/1.0.0/engine.js',
+   '1.1.0': 'https://static.nodals.io/sdk/rule/1.1.0/engine.js'
+  },
   facts: {
     'browser.name': 'safari',
     'geo.country': 'AR',
@@ -345,14 +345,14 @@ describe('NodalsAI RTD Provider', () => {
         expect(loadExternalScriptStub.calledTwice).to.be.true;
         expect(
           loadExternalScriptStub.calledWith(
-            successPubEndpointResponse.deps[0].url,
+            successPubEndpointResponse.deps['1.0.0'],
             MODULE_TYPE_RTD,
             nodalsAiRtdSubmodule.name
           )
         ).to.be.true;
         expect(
           loadExternalScriptStub.calledWith(
-            successPubEndpointResponse.deps[1].url,
+            successPubEndpointResponse.deps['1.1.0'],
             MODULE_TYPE_RTD,
             nodalsAiRtdSubmodule.name
           )
