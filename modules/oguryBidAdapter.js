@@ -26,6 +26,7 @@ export const converter = ortbConverter({
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
     deepSetValue(req, 'device.pxratio', window.devicePixelRatio);
+    deepSetValue(req, 'site.page', getWindowContext().location.href);
 
     req.ext = mergeDeep({}, req.ext, {
       adapterversion: ADAPTER_VERSION,

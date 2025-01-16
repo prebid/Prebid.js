@@ -1,13 +1,16 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
 
 describe('OguryBidAdapter', () => {
   let bidRequests, bidderRequestBase, ortb2;
+
+  const currentLocation = 'https://mwtt.ogury.tech/advanced';
 
   bidRequests = [
     {
@@ -76,8 +79,8 @@ describe('OguryBidAdapter', () => {
     site: {
       domain: 'mwtt.ogury.tech',
       publisher: { domain: 'ogury.tech', id: 'ca06d4199b92bf6808e5ce15b28c6d30' },
-      page: 'https://mwtt.ogury.tech/advanced',
-      ref: 'https://mwtt.ogury.tech/advanced'
+      page: currentLocation,
+      ref: 'https://google.com'
     },
     user: {
       ext: {
@@ -661,6 +664,7 @@ describe('OguryBidAdapter', () => {
   });
 
   describe('buildRequests', () => {
+    let windowTopStub;
     const stubbedCurrentTime = 1234567890
     const stubbedDevicePixelRatio = 1
     const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
@@ -703,6 +707,7 @@ describe('OguryBidAdapter', () => {
       expect(dataRequest.regs).to.deep.equal(ortb2.regs);
       expect(dataRequest.site).to.deep.equal({
         ...ortb2.site,
+        page: currentLocation,
         id: bidRequests[0].params.assetKey
       });
 
@@ -726,6 +731,15 @@ describe('OguryBidAdapter', () => {
       expect(dataRequest.regs.ext.gdpr).to.be.a('number');
       expect(dataRequest.device.pxratio).to.be.a('number');
     }
+
+    beforeEach(() => {
+      windowTopStub = sinon.stub(utils, 'getWindowTop');
+      windowTopStub.returns({ location: { href: currentLocation } });
+    });
+
+    afterEach(() => {
+      windowTopStub.restore();
+    });
 
     after(() => {
       stubbedCurrentTimeMethod.restore();
@@ -835,6 +849,14 @@ describe('OguryBidAdapter', () => {
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data.imp[0].ext.gpid).to.equal(bidRequests[0].adUnitCode);
+    });
+
+    it('should set the actual site location in site.page when the ORTB object contains the referrer instead of the current location', () => {
+      const bidderRequest = utils.deepClone(bidderRequestBase);
+      bidderRequest.ortb2.site.page = 'https://google.com';
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site.page).to.equal(currentLocation);
     });
   });
 
