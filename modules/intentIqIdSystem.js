@@ -10,12 +10,11 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {uspDataHandler} from '../src/consentHandler.js';
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
-import {getGppValue} from '../libraries/intentIqUtils/getGppValue.js';
+import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -24,6 +23,7 @@ import {
   BLACK_LIST,
   CLIENT_HINTS_KEY,
   EMPTY,
+  GVLID,
   VERSION
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 
@@ -185,6 +185,12 @@ export function handleClientHints(clientHints) {
   return Object.keys(chParams).length ? JSON.stringify(chParams) : '';
 }
 
+export function isCMPStringsIsSame(fpData, cmpData) {
+  const firstPartyDataCPString = `${fpData.gdprString}${fpData.gppString}${fpData.uspString}`;
+  const cmpDataString = `${cmpData.gdprString}${cmpData.gppString}${cmpData.uspString}`;
+  return firstPartyDataCPString === cmpDataString;
+}
+
 function defineStorageType(params) {
   if (!params || !Array.isArray(params)) return ['html5']; // use locale storage be default
   const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
@@ -198,6 +204,7 @@ export const intentIqIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: GVLID,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -218,9 +225,25 @@ export const intentIqIdSubmodule = {
     let decryptedData, callbackTimeoutID;
     let callbackFired = false;
     let runtimeEids = { eids: [] };
-
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
+    // Ensure provided values are initialized as empty strings if not defined
+    const providedGDPR = configParams.providedGDPR || '';
+    const providedGPP = configParams.providedGPP || '';
+    const providedUSP = configParams.providedUSP || '';
+    const allowGDPR = configParams.allowGDPR !== undefined ? configParams.allowGDPR : true;
+    const allowGPP = configParams.allowGPP !== undefined ? configParams.allowGPP : true;
+    const allowUSP = configParams.allowUSP !== undefined ? configParams.allowUSP : true;
+
+    // Define default flags and use user-provided values if available
+    const cmpConfig = {
+      providedGDPRString: allowGDPR ? providedGDPR : 'undefined',
+      providedGPPString: allowGPP ? providedGPP : 'undefined',
+      providedUSPString: allowUSP ? providedUSP : 'undefined',
+    };
+
+    // Get consent information with priority for user-provided data
+    const cmpData = getCmpData(cmpConfig);
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
 
@@ -244,7 +267,7 @@ export const intentIqIdSubmodule = {
       return;
     }
 
-    const FIRST_PARTY_DATA_KEY = `_iiq_fdata_${configParams.partner}`;
+    const FIRST_PARTY_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
     let rrttStrtTime = 0;
     let partnerData = {};
@@ -259,18 +282,6 @@ export const intentIqIdSubmodule = {
       if (configParams.callback) configParams.callback('', BLACK_LIST);
       return;
     }
-
-    // Get consent information
-    const cmpData = {};
-    const uspData = uspDataHandler.getConsentData();
-    const gppData = getGppValue();
-
-    if (uspData) {
-      cmpData.us_privacy = uspData;
-    }
-
-    cmpData.gpp = gppData.gppString;
-    cmpData.gpi = gppData.gpi;
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
@@ -302,8 +313,10 @@ export const intentIqIdSubmodule = {
         pcidDate: Date.now(),
         group: NOT_YET_DEFINED,
         cttl: 0,
-        uspapi_value: EMPTY,
-        gpp_value: EMPTY,
+        uspString: EMPTY,
+        gppString: EMPTY,
+        gdprString: EMPTY,
+        isOptedOut: true,
         date: Date.now()
       };
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
@@ -329,10 +342,10 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_string_value !== cmpData.gpp) {
-      firstPartyData.uspapi_value = cmpData.us_privacy;
-      firstPartyData.gpp_string_value = cmpData.gpp;
-      firstPartyData.isOptedOut = false
+    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || !isCMPStringsIsSame(firstPartyData, cmpData)) {
+      firstPartyData.uspString = cmpData.uspString;
+      firstPartyData.gppString = cmpData.gppString;
+      firstPartyData.gdprString = cmpData.gdprString;
       firstPartyData.cttl = 0
       shouldCallServer = true;
       partnerData.data = {}
@@ -340,6 +353,7 @@ export const intentIqIdSubmodule = {
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
       storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
     } else if (firstPartyData.isOptedOut) {
+      partnerData.data = runtimeEids = { eids: [] };
       firePartnerCallback()
     }
 
@@ -362,8 +376,10 @@ export const intentIqIdSubmodule = {
     url += (partnerData.cttl) ? '&cttl=' + encodeURIComponent(partnerData.cttl) : '';
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
-    url += cmpData.us_privacy ? '&pa=' + encodeURIComponent(cmpData.us_privacy) : '';
-    url += cmpData.gpp ? '&gpp=' + encodeURIComponent(cmpData.gpp) : '';
+    url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
+    url += cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) : '';
+    url += '&gdpr=' + (allowGDPR && cmpData.gdprString ? '1' : '0');
+    url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
     url += cmpData.gpi ? '&gpi=' + cmpData.gpi : '';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
@@ -414,8 +430,18 @@ export const intentIqIdSubmodule = {
               }
               if (respJson.isOptedOut === true) {
                 firstPartyData.group = OPT_OUT;
+                respJson.data = partnerData.data = runtimeEids = { eids: [] };
+
+                const keysToRemove = [
+                  FIRST_PARTY_DATA_KEY,
+                  CLIENT_HINTS_KEY
+                ];
+
+                keysToRemove.forEach(key => removeDataByKey(key, allowedStorage));
+
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                defineEmptyDataAndFireCallback()
+                firePartnerCallback();
+                callback(runtimeEids);
                 return
               }
             }
