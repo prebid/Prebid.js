@@ -5,6 +5,15 @@ import {
 import { config } from './config.js';
 import {includes} from './polyfill.js';
 import { getCoreStorageManager } from './storageManager.js';
+import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
+import {ACTIVITY_SYNC_USER} from './activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_SYNC_TYPE, ACTIVITY_PARAM_SYNC_URL
+} from './activities/params.js';
+import {MODULE_TYPE_BIDDER} from './activities/modules.js';
+import {activityParams} from './activities/activityParams.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
   syncEnabled: true,
@@ -16,7 +25,7 @@ export const USERSYNC_DEFAULT_CONFIG = {
   },
   syncsPerBidder: 5,
   syncDelay: 3000,
-  auctionDelay: 0
+  auctionDelay: 500
 };
 
 // Set userSync default values
@@ -29,10 +38,10 @@ const storage = getCoreStorageManager('usersync');
 /**
  * Factory function which creates a new UserSyncPool.
  *
- * @param {UserSyncDependencies} userSyncDependencies Configuration options and dependencies which the
+ * @param {} deps Configuration options and dependencies which the
  *   UserSync object needs in order to behave properly.
  */
-export function newUserSync(userSyncDependencies) {
+export function newUserSync(deps) {
   let publicApi = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
@@ -50,7 +59,7 @@ export function newUserSync(userSyncDependencies) {
   };
 
   // Use what is in config by default
-  let usConfig = userSyncDependencies.config;
+  let usConfig = deps.config;
   // Update if it's (re)set
   config.getConfig('userSync', (conf) => {
     // Added this logic for https://github.com/prebid/Prebid.js/issues/4864
@@ -68,6 +77,19 @@ export function newUserSync(userSyncDependencies) {
     }
 
     usConfig = Object.assign(usConfig, conf.userSync);
+  });
+
+  deps.regRule(ACTIVITY_SYNC_USER, 'userSync config', (params) => {
+    if (!usConfig.syncEnabled) {
+      return {allow: false, reason: 'syncs are disabled'}
+    }
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_BIDDER) {
+      const syncType = params[ACTIVITY_PARAM_SYNC_TYPE];
+      const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME];
+      if (!publicApi.canBidderRegisterSync(syncType, bidder)) {
+        return {allow: false, reason: `${syncType} syncs are not enabled for ${bidder}`}
+      }
+    }
   });
 
   /**
@@ -89,7 +111,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireSyncs() {
-    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies) {
+    if (!usConfig.syncEnabled || !deps.browserSupportsCookies) {
       return;
     }
 
@@ -109,10 +131,7 @@ export function newUserSync(userSyncDependencies) {
     // Randomize the order of the pixels before firing
     // This is to avoid giving any bidder who has registered multiple syncs
     // any preferential treatment and balancing them out
-    shuffle(queue).forEach((sync) => {
-      fn(sync);
-      hasFiredBidder.add(sync[0]);
-    });
+    shuffle(queue).forEach(fn);
   }
 
   /**
@@ -163,8 +182,8 @@ export function newUserSync(userSyncDependencies) {
    * @function incrementAdapterBids
    * @summary Increment the count of user syncs queue for the adapter
    * @private
-   * @params {object} numAdapterBids The object contain counts for all adapters
-   * @params {string} bidder The name of the bidder adding a sync
+   * @param {object} numAdapterBids The object contain counts for all adapters
+   * @param {string} bidder The name of the bidder adding a sync
    * @returns {object} The updated version of numAdapterBids
    */
   function incrementAdapterBids(numAdapterBids, bidder) {
@@ -180,10 +199,9 @@ export function newUserSync(userSyncDependencies) {
    * @function registerSync
    * @summary Add sync for this bidder to a queue to be fired later
    * @public
-   * @params {string} type The type of the sync including image, iframe
-   * @params {string} bidder The name of the adapter. e.g. "rubicon"
-   * @params {string} url Either the pixel url or iframe url depending on the type
-
+   * @param {string} type The type of the sync including image, iframe
+   * @param {string} bidder The name of the adapter. e.g. "rubicon"
+   * @param {string} url Either the pixel url or iframe url depending on the type
    * @example <caption>Using Image Sync</caption>
    * // registerSync(type, adapter, pixelUrl)
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
@@ -202,15 +220,21 @@ export function newUserSync(userSyncDependencies) {
       return logWarn(`Number of user syncs exceeded for "${bidder}"`);
     }
 
-    const canBidderRegisterSync = publicApi.canBidderRegisterSync(type, bidder);
-    if (!canBidderRegisterSync) {
-      return logWarn(`Bidder "${bidder}" not permitted to register their "${type}" userSync pixels.`);
+    if (deps.isAllowed(ACTIVITY_SYNC_USER, activityParams(MODULE_TYPE_BIDDER, bidder, {
+      [ACTIVITY_PARAM_SYNC_TYPE]: type,
+      [ACTIVITY_PARAM_SYNC_URL]: url
+    }))) {
+      // the bidder's pixel has passed all checks and is allowed to register
+      queue[type].push([bidder, url]);
+      numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
     }
-
-    // the bidder's pixel has passed all checks and is allowed to register
-    queue[type].push([bidder, url]);
-    numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
   };
+
+  /**
+   * Mark a bidder as done with its user syncs - no more will be accepted from them in this session.
+   * @param {string} bidderCode
+   */
+  publicApi.bidderDone = hasFiredBidder.add.bind(hasFiredBidder);
 
   /**
    * @function shouldBidderBeBlocked
@@ -219,7 +243,7 @@ export function newUserSync(userSyncDependencies) {
    * @param {string} type The type of the sync; either image or iframe
    * @param {string} bidder The name of the adapter. e.g. "rubicon"
    * @returns {boolean} true => bidder is not allowed to register; false => bidder can register
-    */
+   */
   function shouldBidderBeBlocked(type, bidder) {
     let filterConfig = usConfig.filterSettings;
 
@@ -284,7 +308,7 @@ export function newUserSync(userSyncDependencies) {
    * @function syncUsers
    * @summary Trigger all the user syncs based on publisher-defined timeout
    * @public
-   * @params {int} timeout The delay in ms before syncing data - default 0
+   * @param {number} timeout The delay in ms before syncing data - default 0
    */
   publicApi.syncUsers = (timeout = 0) => {
     if (timeout) {
@@ -317,6 +341,8 @@ export function newUserSync(userSyncDependencies) {
 
 export const userSync = newUserSync(Object.defineProperties({
   config: config.getConfig('userSync'),
+  isAllowed: isActivityAllowed,
+  regRule: registerActivityControl,
 }, {
   browserSupportsCookies: {
     get: function() {
@@ -327,18 +353,11 @@ export const userSync = newUserSync(Object.defineProperties({
 }));
 
 /**
- * @typedef {Object} UserSyncDependencies
- *
- * @property {UserSyncConfig} config
- * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
- */
-
-/**
  * @typedef {Object} UserSyncConfig
  *
  * @property {boolean} enableOverride
  * @property {boolean} syncEnabled
- * @property {int} syncsPerBidder
+ * @property {number} syncsPerBidder
  * @property {string[]} enabledBidders
  * @property {Object} filterSettings
  */

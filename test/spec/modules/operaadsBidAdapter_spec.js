@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/operaadsBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import {expect} from 'chai';
+import {spec} from 'modules/operaadsBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
@@ -234,7 +234,7 @@ describe('Opera Ads Bid Adapter', function () {
           requestData = JSON.parse(req.data);
         }).to.not.throw();
 
-        expect(requestData.id).to.equal(bidderRequest.auctionId);
+        expect(requestData.id).to.exist;
         expect(requestData.tmax).to.equal(bidderRequest.timeout);
         expect(requestData.test).to.equal(0);
         expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);
@@ -264,6 +264,95 @@ describe('Opera Ads Bid Adapter', function () {
           expect.fail('should not happen');
         }
       }
+    });
+
+    describe('test fulfilling inventory information', function () {
+      const bidRequest = {
+        adUnitCode: 'test-div',
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidId: '22c4871113f461',
+        bidder: 'operaads',
+        bidderRequestId: '15246a574e859f',
+        mediaTypes: {
+          banner: {sizes: [[300, 250]]}
+        },
+        params: {
+          placementId: 's12345678',
+          publisherId: 'pub12345678',
+          endpointId: 'ep12345678'
+        }
+      }
+
+      const getRequest = function () {
+        let reqs;
+        expect(function () {
+          reqs = spec.buildRequests([bidRequest], bidderRequest);
+        }).to.not.throw();
+        return JSON.parse(reqs[0].data);
+      }
+
+      it('test default case', function () {
+        let requestData = getRequest();
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.domain).to.not.be.empty;
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
+      });
+
+      it('test a case with site information specified', function () {
+        bidRequest.params = {
+          placementId: 's12345678',
+          publisherId: 'pub12345678',
+          endpointId: 'ep12345678',
+          site: {
+            name: 'test-site-1',
+            domain: 'www.test.com'
+          }
+        }
+        let requestData = getRequest();
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.name).to.equal('test-site-1');
+        expect(requestData.site.domain).to.equal('www.test.com');
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
+      });
+
+      it('test a case with app information specified', function () {
+        bidRequest.params = {
+          placementId: 's12345678',
+          publisherId: 'pub12345678',
+          endpointId: 'ep12345678',
+          app: {
+            name: 'test-app-1'
+          }
+        }
+        let requestData = getRequest();
+        expect(requestData.app).to.be.an('object');
+        expect(requestData.app.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.app.name).to.equal('test-app-1');
+        expect(requestData.app.domain).to.not.be.empty;
+      });
+
+      it('test a case with both site and app information specified', function () {
+        bidRequest.params = {
+          placementId: 's12345678',
+          publisherId: 'pub12345678',
+          endpointId: 'ep12345678',
+          site: {
+            name: 'test-site-2',
+            page: 'test-page'
+          },
+          app: {
+            name: 'test-app-1'
+          }
+        }
+        let requestData = getRequest();
+        expect(requestData.site).to.be.an('object');
+        expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
+        expect(requestData.site.name).to.equal('test-site-2');
+        expect(requestData.site.page).to.equal('test-page');
+        expect(requestData.site.domain).to.not.be.empty;
+      });
     });
 
     it('test getBidFloor', function() {

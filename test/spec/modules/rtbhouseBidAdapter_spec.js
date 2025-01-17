@@ -1,7 +1,9 @@
 import { expect } from 'chai';
-import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter.js';
+import { spec } from 'modules/rtbhouseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import { mergeDeep } from '../../../src/utils';
+import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
@@ -42,27 +44,29 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'someIncorrectParam': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
     let bidRequests;
-    const bidderRequest = {
-      'refererInfo': {
-        'numIframes': 0,
-        'reachedTop': true,
-        'referer': 'https://example.com',
-        'stack': ['https://example.com']
-      }
-    };
+    let bidderRequest;
 
     beforeEach(() => {
+      bidderRequest = {
+        'auctionId': 'bidderrequest-auction-id',
+        'refererInfo': {
+          'numIframes': 0,
+          'reachedTop': true,
+          'referer': 'https://example.com',
+          'stack': ['https://example.com']
+        }
+      };
       bidRequests = [
         {
           'bidder': 'rtbhouse',
@@ -82,6 +86,11 @@ describe('RTBHouseAdapter', () => {
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
           'transactionId': 'example-transaction-id',
+          'ortb2Imp': {
+            'ext': {
+              'tid': 'ortb2Imp-transaction-id-1'
+            }
+          },
           'schain': {
             'ver': '1.0',
             'complete': 1,
@@ -203,7 +212,7 @@ describe('RTBHouseAdapter', () => {
       const bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.source.tid).to.equal('example-transaction-id');
+      expect(data.source.tid).to.equal('bidderrequest-auction-id');
     });
 
     it('should include bidfloor from floor module if avaiable', () => {
@@ -256,6 +265,13 @@ describe('RTBHouseAdapter', () => {
       expect(data.source).to.have.deep.property('tid');
     });
 
+    it('should include impression level transaction id when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.tid).to.equal('ortb2Imp-transaction-id-1');
+    });
+
     it('should not include invalid schain', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].schain = {
@@ -268,6 +284,174 @@ describe('RTBHouseAdapter', () => {
       expect(data.source).to.not.have.property('ext');
     });
 
+    it('should include first party data', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      const localBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          bcat: ['IAB1', 'IAB2-1'],
+          badv: ['domain1.com', 'domain2.com'],
+          site: { ext: { data: 'some site data' } },
+          device: { ext: { data: 'some device data' } },
+          user: { ext: { data: 'some user data' } }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.bcat).to.deep.equal(localBidderRequest.ortb2.bcat);
+      expect(data.badv).to.deep.equal(localBidderRequest.ortb2.badv);
+      expect(data.site).to.nested.include({'ext.data': 'some site data'});
+      expect(data.device).to.nested.include({'ext.data': 'some device data'});
+      expect(data.user).to.nested.include({'ext.data': 'some user data'});
+    });
+
+    context('DSA', () => {
+      const validDSAObject = {
+        'dsarequired': 3,
+        'pubrender': 0,
+        'datatopub': 2,
+        'transparency': [
+          {
+            'domain': 'platform1domain.com',
+            'dsaparams': [1]
+          },
+          {
+            'domain': 'SSP2domain.com',
+            'dsaparams': [1, 2]
+          }
+        ]
+      };
+      const invalidDSAObjects = [
+        -1,
+        0,
+        '',
+        'x',
+        true,
+        [],
+        [1],
+        {},
+        {
+          'dsarequired': -1
+        },
+        {
+          'pubrender': -1
+        },
+        {
+          'datatopub': -1
+        },
+        {
+          'dsarequired': 4
+        },
+        {
+          'pubrender': 3
+        },
+        {
+          'datatopub': 3
+        },
+        {
+          'dsarequired': '1'
+        },
+        {
+          'pubrender': '1'
+        },
+        {
+          'datatopub': '1'
+        },
+        {
+          'transparency': '1'
+        },
+        {
+          'transparency': 2
+        },
+        {
+          'transparency': [
+            1, 2
+          ]
+        },
+        {
+          'transparency': [
+            {
+              domain: '',
+              dsaparams: []
+            }
+          ]
+        },
+        {
+          'transparency': [
+            {
+              domain: 'x',
+              dsaparams: null
+            }
+          ]
+        },
+        {
+          'transparency': [
+            {
+              domain: 'x',
+              dsaparams: [1, '2']
+            }
+          ]
+        },
+      ];
+      let bidRequest;
+
+      beforeEach(() => {
+        bidRequest = Object.assign([], bidRequests);
+      });
+
+      it('should add dsa information to the request via bidderRequest.ortb2.regs.ext.dsa', function () {
+        const localBidderRequest = {
+          ...bidderRequest,
+          ortb2: {
+            regs: {
+              ext: {
+                dsa: validDSAObject
+              }
+            }
+          }
+        };
+
+        const request = spec.buildRequests(bidRequest, localBidderRequest);
+        const data = JSON.parse(request.data);
+
+        expect(data).to.have.nested.property('regs.ext.dsa');
+        expect(data.regs.ext.dsa.dsarequired).to.equal(3);
+        expect(data.regs.ext.dsa.pubrender).to.equal(0);
+        expect(data.regs.ext.dsa.datatopub).to.equal(2);
+        expect(data.regs.ext.dsa.transparency).to.deep.equal([
+          {
+            'domain': 'platform1domain.com',
+            'dsaparams': [1]
+          },
+          {
+            'domain': 'SSP2domain.com',
+            'dsaparams': [1, 2]
+          }
+        ]);
+      });
+
+      invalidDSAObjects.forEach((invalidDSA, index) => {
+        it(`should not add dsa information to the request via bidderRequest.ortb2.regs.ext.dsa; test# ${index}`, function () {
+          const localBidderRequest = {
+            ...bidderRequest,
+            ortb2: {
+              regs: {
+                ext: {
+                  dsa: invalidDSA
+                }
+              }
+            }
+          };
+
+          const request = spec.buildRequests(bidRequest, localBidderRequest);
+          const data = JSON.parse(request.data);
+
+          expect(data).to.not.have.nested.property('regs.ext.dsa');
+        });
+      });
+    });
+
     context('FLEDGE', function() {
       afterEach(function () {
         config.resetConfig();
@@ -277,9 +461,87 @@ describe('RTBHouseAdapter', () => {
         let bidRequest = Object.assign([], bidRequests);
         delete bidRequest[0].params.test;
         config.setConfig({ fledgeConfig: true });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: { enabled: true } });
         expect(request.url).to.equal('https://prebid-eu.creativecdn.com/bidder/prebidfledge/bids');
         expect(request.method).to.equal('POST');
+      });
+
+      it('sets default fledgeConfig object values when none available from config', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+
+        config.setConfig({ fledgeConfig: false });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
+        const data = JSON.parse(request.data);
+        expect(data.ext).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl', 'sellerTimeout');
+        expect(data.ext.fledge_config.seller).to.equal('https://fledge-ssp.creativecdn.com');
+        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://fledge-ssp.creativecdn.com/component-seller-prebid.js');
+        expect(data.ext.fledge_config.sellerTimeout).to.equal(500);
+      });
+
+      it('sets request.ext.fledge_config object values when available from fledgeConfig', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+
+        config.setConfig({
+          fledgeConfig: {
+            seller: 'https://sellers.domain',
+            decisionLogicUrl: 'https://sellers.domain/decision.url'
+          }
+        });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
+        const data = JSON.parse(request.data);
+        expect(data.ext).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl');
+        expect(data.ext.fledge_config.seller).to.equal('https://sellers.domain');
+        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://sellers.domain/decision.url');
+        expect(data.ext.fledge_config.sellerTimeout).to.not.exist;
+      });
+
+      it('sets request.ext.fledge_config object values when available from paapiConfig', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+
+        config.setConfig({
+          paapiConfig: {
+            seller: 'https://sellers.domain',
+            decisionLogicUrl: 'https://sellers.domain/decision.url'
+          }
+        });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
+        const data = JSON.parse(request.data);
+        expect(data.ext).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl');
+        expect(data.ext.fledge_config.seller).to.equal('https://sellers.domain');
+        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://sellers.domain/decision.url');
+        expect(data.ext.fledge_config.sellerTimeout).to.not.exist;
+      });
+
+      it('sets request.ext.fledge_config object values when available from paapiConfig rather than from fledgeConfig if both exist', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+
+        config.setConfig({
+          paapiConfig: {
+            seller: 'https://paapiconfig.sellers.domain',
+            decisionLogicUrl: 'https://paapiconfig.sellers.domain/decision.url'
+          },
+          fledgeConfig: {
+            seller: 'https://fledgeconfig.sellers.domain',
+            decisionLogicUrl: 'https://fledgeconfig.sellers.domain/decision.url'
+          }
+        });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
+        const data = JSON.parse(request.data);
+        expect(data.ext).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl');
+        expect(data.ext.fledge_config.seller).to.equal('https://paapiconfig.sellers.domain');
+        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://paapiconfig.sellers.domain/decision.url');
       });
 
       it('when FLEDGE is disabled, should not send imp.ext.ae', function () {
@@ -288,7 +550,7 @@ describe('RTBHouseAdapter', () => {
         bidRequest[0].ortb2Imp = {
           ext: { ae: 2 }
         };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: false });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: false} });
         let data = JSON.parse(request.data);
         if (data.imp[0].ext) {
           expect(data.imp[0].ext).to.not.have.property('ae');
@@ -301,7 +563,7 @@ describe('RTBHouseAdapter', () => {
         bidRequest[0].ortb2Imp = {
           ext: { ae: 2 }
         };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         let data = JSON.parse(request.data);
         expect(data.imp[0].ext.ae).to.equal(2);
       });
@@ -492,17 +754,20 @@ describe('RTBHouseAdapter', () => {
   });
 
   describe('interpretResponse', function () {
-    let response = [{
-      'id': 'bidder_imp_identifier',
-      'impid': '552b8922e28f27',
-      'price': 0.5,
-      'adid': 'Ad_Identifier',
-      'adm': '<!-- test creative -->',
-      'adomain': ['rtbhouse.com'],
-      'cid': 'Ad_Identifier',
-      'w': 300,
-      'h': 250
-    }];
+    let response;
+    beforeEach(() => {
+      response = [{
+        'id': 'bidder_imp_identifier',
+        'impid': '552b8922e28f27',
+        'price': 0.5,
+        'adid': 'Ad_Identifier',
+        'adm': '<!-- test creative -->',
+        'adomain': ['rtbhouse.com'],
+        'cid': 'Ad_Identifier',
+        'w': 300,
+        'h': 250
+      }];
+    });
 
     let fledgeResponse = {
       'id': 'bid-identifier',
@@ -561,9 +826,84 @@ describe('RTBHouseAdapter', () => {
 
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test-bid-id');
+      });
+    });
+
+    context('when the response contains FLEDGE auction config and bid request has additional signals in paapiConfig', function () {
+      let bidderRequest;
+      config.setConfig({
+        paapiConfig: {
+          interestGroupBuyers: ['https://buyer1.com'],
+          perBuyerSignals: {
+            'https://buyer1.com': { signal: 1 }
+          },
+          customSignal: 1
+        }
+      });
+      let response = spec.interpretResponse({body: fledgeResponse}, {bidderRequest});
+
+      it('should have 2 buyers in interestGroupBuyers', function () {
+        expect(response.paapi[0].config.interestGroupBuyers.length).to.equal(2);
+        expect(response.paapi[0].config.interestGroupBuyers).to.have.members(['https://buyer1.com', 'https://buyer-domain.com']);
+      });
+
+      it('should have 2 perBuyerSignals with proper values', function () {
+        expect(response.paapi[0].config.perBuyerSignals).to.contain.keys('https://buyer1.com', 'https://buyer-domain.com');
+        expect(response.paapi[0].config.perBuyerSignals['https://buyer1.com']).to.deep.equal({ signal: 1 });
+        expect(response.paapi[0].config.perBuyerSignals['https://buyer-domain.com']).to.deep.equal({});
+      });
+
+      it('should contain any custom signal passed via paapiConfig', function () {
+        expect(response.paapi[0].config).to.contain.keys('customSignal');
+        expect(response.paapi[0].config.customSignal).to.equal(1);
+      });
+    });
+
+    context('when the response contains DSA object', function () {
+      it('should get correct bid response', function () {
+        const dsa = {
+          'dsa': {
+            'behalf': 'Advertiser',
+            'paid': 'Advertiser',
+            'transparency': [{
+              'domain': 'dsp1domain.com',
+              'dsaparams': [1, 2]
+            }],
+            'adrender': 1
+          }
+        };
+        mergeDeep(response[0], { ext: dsa });
+
+        const expectedResponse = [
+          {
+            'requestId': '552b8922e28f27',
+            'cpm': 0.5,
+            'creativeId': 29681110,
+            'width': 300,
+            'height': 250,
+            'ad': '<!-- test creative -->',
+            'mediaType': 'banner',
+            'currency': 'USD',
+            'ttl': 300,
+            'meta': {
+              'advertiserDomains': ['rtbhouse.com'],
+              ...dsa
+            },
+            'netRevenue': true,
+            ext: { ...dsa }
+          }
+        ];
+        let bidderRequest;
+        let result = spec.interpretResponse({body: response}, {bidderRequest});
+
+        expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+        expect(result[0]).to.have.nested.property('meta.dsa');
+        expect(result[0]).to.have.nested.property('ext.dsa');
+        expect(result[0].meta.dsa).to.deep.equal(expectedResponse[0].meta.dsa);
+        expect(result[0].ext.dsa).to.deep.equal(expectedResponse[0].meta.dsa);
       });
     });
 
@@ -617,10 +957,10 @@ describe('RTBHouseAdapter', () => {
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
-          clickUrl: encodeURIComponent('https://example.com'),
+          clickUrl: encodeURI('https://example.com'),
           impressionTrackers: ['https://example.com/imptracker'],
           image: {
-            url: encodeURIComponent('https://example.com/image.jpg'),
+            url: encodeURI('https://example.com/image.jpg'),
             width: 150,
             height: 50
           },

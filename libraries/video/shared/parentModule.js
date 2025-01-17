@@ -47,6 +47,7 @@ export function ParentModule(submoduleBuilder_) {
 }
 
 /**
+ * @typedef {import('../../../modules/videoModule/coreVideo.js').vendorSubmoduleDirectory} vendorSubmoduleDirectory
  * @typedef {Object} SubmoduleBuilder
  * @summary Instantiates submodules
  * @param {vendorSubmoduleDirectory} submoduleDirectory_

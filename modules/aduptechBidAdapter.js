@@ -1,9 +1,16 @@
-import {getAdUnitSizes, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
+import {deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
 
 export const BIDDER_CODE = 'aduptech';
+export const GVLID = 647;
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
 export const ENDPOINT_URL = 'https://rtb.d.adup-tech.com/prebid/' + ENDPOINT_URL_PUBLISHER_PLACEHOLDER + '_bid';
 export const ENDPOINT_METHOD = 'POST';
@@ -20,14 +27,14 @@ export const internal = {
    * @returns {null|Object.<string, string|boolean>}
    */
   extractGdpr: (bidderRequest) => {
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      return {
-        consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired: (isBoolean(bidderRequest.gdprConsent.gdprApplies)) ? bidderRequest.gdprConsent.gdprApplies : true
-      };
+    if (!bidderRequest?.gdprConsent) {
+      return null;
     }
 
-    return null;
+    return {
+      consentString: bidderRequest.gdprConsent.consentString,
+      consentRequired: (isBoolean(bidderRequest.gdprConsent.gdprApplies)) ? bidderRequest.gdprConsent.gdprApplies : true
+    };
   },
 
   /**
@@ -59,30 +66,34 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractBannerConfig: (bidRequest) => {
-    const sizes = getAdUnitSizes(bidRequest);
-    if (isArray(sizes) && !isEmpty(sizes)) {
-      const banner = { sizes: sizes };
-
-      // try to add floor for each banner size
-      banner.sizes.forEach(size => {
-        const floor = internal.getFloor(bidRequest, { mediaType: BANNER, size });
-        if (floor) {
-          size.push(floor.floor);
-          size.push(floor.currency);
-        }
-      });
-
-      // try to add default floor for banner
-      const floor = internal.getFloor(bidRequest, { mediaType: BANNER, size: '*' });
-      if (floor) {
-        banner.floorPrice = floor.floor;
-        banner.floorCurrency = floor.currency;
-      }
-
-      return banner;
+    const adUnitSizes = getAdUnitSizes(bidRequest);
+    if (!isArray(adUnitSizes) || isEmpty(adUnitSizes)) {
+      return null;
     }
 
-    return null;
+    const banner = { sizes: [] };
+
+    adUnitSizes.forEach(adUnitSize => {
+      const size = deepClone(adUnitSize);
+
+      // try to add floor for each banner size
+      const floor = internal.getFloor(bidRequest, { mediaType: BANNER, size: adUnitSize });
+      if (floor) {
+        size.push(floor.floor);
+        size.push(floor.currency);
+      }
+
+      banner.sizes.push(size);
+    });
+
+    // try to add default floor for banner
+    const floor = internal.getFloor(bidRequest, { mediaType: BANNER, size: '*' });
+    if (floor) {
+      banner.floorPrice = floor.floor;
+      banner.floorCurrency = floor.currency;
+    }
+
+    return banner;
   },
 
   /**
@@ -92,20 +103,20 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractNativeConfig: (bidRequest) => {
-    if (bidRequest?.mediaTypes?.native) {
-      const native = bidRequest.mediaTypes.native;
-
-      // try to add default floor for native
-      const floor = internal.getFloor(bidRequest, { mediaType: NATIVE, size: '*' });
-      if (floor) {
-        native.floorPrice = floor.floor;
-        native.floorCurrency = floor.currency;
-      }
-
-      return native;
+    if (!bidRequest?.mediaTypes?.native) {
+      return null;
     }
 
-    return null;
+    const native = deepClone(bidRequest.mediaTypes.native);
+
+    // try to add default floor for native
+    const floor = internal.getFloor(bidRequest, { mediaType: NATIVE, size: '*' });
+    if (floor) {
+      native.floorPrice = floor.floor;
+      native.floorCurrency = floor.currency;
+    }
+
+    return native;
   },
 
   /**
@@ -115,11 +126,11 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractParams: (bidRequest) => {
-    if (bidRequest && bidRequest.params) {
-      return bidRequest.params
+    if (!bidRequest?.params) {
+      return null;
     }
 
-    return null;
+    return deepClone(bidRequest.params);
   },
 
   /**
@@ -190,6 +201,7 @@ export const internal = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
+  gvlid: GVLID,
 
   /**
    * Validate given bid request
@@ -249,6 +261,7 @@ export const spec = {
         url: internal.buildEndpointUrl(publisher),
         method: ENDPOINT_METHOD,
         data: {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: auctionId,
           pageUrl: pageUrl,
           referrer: referrer,
@@ -265,7 +278,7 @@ export const spec = {
       groupedBidRequests[publisher].forEach(bidRequest => {
         const bid = {
           bidId: bidRequest.bidId,
-          transactionId: bidRequest.transactionId,
+          transactionId: bidRequest.ortb2Imp?.ext?.tid,
           adUnitCode: bidRequest.adUnitCode,
           params: internal.extractParams(bidRequest)
         };

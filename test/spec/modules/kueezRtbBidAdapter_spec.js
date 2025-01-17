@@ -1,8 +1,17 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import {
   spec as adapter,
-  SUPPORTED_ID_SYSTEMS,
   createDomain,
+  storage,
+  getAndSetFirstPartyData,
+  createFirstPartyData,
+} from 'modules/kueezRtbBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {version} from 'package.json';
+import {useFakeTimers} from 'sinon';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
+import {
   hashCode,
   extractPID,
   extractCID,
@@ -11,11 +20,9 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-} from 'modules/kueezRtbBidAdapter.js';
-import * as utils from 'src/utils.js';
-import { version } from 'package.json';
-import { useFakeTimers } from 'sinon';
-import { BANNER, VIDEO } from '../../../src/mediaTypes';
+} from '../../../libraries/vidazooUtils/bidderUtils.js';
+
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -36,9 +43,18 @@ const BID = {
   'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
-  'mediaTypes': [BANNER]
+  'mediaTypes': [BANNER],
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '0123456789'
+    }
+  }
 };
 
 const VIDEO_BID = {
@@ -46,6 +62,10 @@ const VIDEO_BID = {
   'adUnitCode': '63550ad1ff6642d368cba59dh5884270560',
   'bidderRequestId': '12a8ae9ada9c13',
   'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
   'params': {
     'subDomain': SUB_DOMAIN,
@@ -73,15 +93,60 @@ const VIDEO_BID = {
   }
 }
 
+const ORTB2_DEVICE = {
+  sua: {
+    'source': 2,
+    'platform': {
+      'brand': 'Android',
+      'version': ['8', '0', '0']
+    },
+    'browsers': [
+      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+    ],
+    'mobile': 1,
+    'model': 'SM-G955U',
+    'bitness': '64',
+    'architecture': ''
+  },
+  w: 980,
+  h: 1720,
+  dnt: 0,
+  ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+  language: 'en',
+  devicetype: 1,
+  make: 'Apple',
+  model: 'iPhone 12 Pro Max',
+  os: 'iOS',
+  osv: '17.4',
+  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+};
+
 const BIDDER_REQUEST = {
   'gdprConsent': {
     'consentString': 'consent_string',
     'gdprApplies': true
   },
+  'gppString': 'gpp_string',
+  'gppSid': [7],
   'uspConsent': 'consent_string',
   'refererInfo': {
     'page': 'https://www.greatsite.com',
     'ref': 'https://www.somereferrer.com'
+  },
+  'ortb2': {
+    'site': {
+      'content': {
+        'language': 'en'
+      }
+    },
+    'regs': {
+      'gpp': 'gpp_string',
+      'gpp_sid': [7],
+      'coppa': 0
+    },
+    'device': ORTB2_DEVICE,
   }
 };
 
@@ -134,7 +199,7 @@ const REQUEST = {
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -201,6 +266,7 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('build requests', function () {
     let sandbox;
+    let createFirstPartyDataStub;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         kueezrtb: {
@@ -209,10 +275,17 @@ describe('KueezRtbBidAdapter', function () {
       };
       sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
+      createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
+        pcid: 'pcid',
+        pcidDate: 1000
+      });
     });
 
     it('should build video request', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+      config.setConfig({
+        bidderTimeout: 3000
+      });
       const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
@@ -223,17 +296,45 @@ describe('KueezRtbBidAdapter', function () {
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
           bidderVersion: adapter.version,
+          bidderRequestId: '12a8ae9ada9c13',
           cb: 1000,
           gdpr: 1,
           gdprConsent: 'consent_string',
           usPrivacy: 'consent_string',
+          gppString: 'gpp_string',
+          gppSid: [7],
           prebidVersion: version,
+          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+          auctionId: 'auction_id',
+          bidRequestsCount: 4,
+          bidderRequestsCount: 3,
+          bidderWinsCount: 1,
+          bidderTimeout: 3000,
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           schain: VIDEO_BID.schain,
+          iiqpcid: 'pcid',
+          iiqpcidDate: 1000,
           sizes: ['545x307'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
+          device: ORTB2_DEVICE,
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           mediaTypes: {
@@ -252,13 +353,24 @@ describe('KueezRtbBidAdapter', function () {
               protocols: [2, 3, 5, 6],
               startdelay: 0
             }
-          }
+          },
+          gpid: '',
+          cat: [],
+          contentLang: 'en',
+          contentData: [],
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: [],
+          coppa: 0
         }
       });
     });
 
     it('should build banner request for each size', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+      config.setConfig({
+        bidderTimeout: 3000
+      });
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
@@ -267,8 +379,36 @@ describe('KueezRtbBidAdapter', function () {
         data: {
           gdprConsent: 'consent_string',
           gdpr: 1,
+          gppString: 'gpp_string',
+          gppSid: [7],
           usPrivacy: 'consent_string',
+          transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+          auctionId: 'auction_id',
+          bidRequestsCount: 4,
+          bidderRequestsCount: 3,
+          iiqpcid: 'pcid',
+          iiqpcidDate: 1000,
+          bidderWinsCount: 1,
+          bidderTimeout: 3000,
+          bidderRequestId: '1fdb5ff1b6eaa7',
           sizes: ['300x250', '300x600'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
+          device: ORTB2_DEVICE,
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           cb: 1000,
@@ -282,9 +422,17 @@ describe('KueezRtbBidAdapter', function () {
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           mediaTypes: [BANNER],
+          gpid: '0123456789',
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          cat: [],
+          contentLang: 'en',
+          contentData: [],
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: [],
+          coppa: 0
         }
       });
     });
@@ -296,7 +444,7 @@ describe('KueezRtbBidAdapter', function () {
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -305,7 +453,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
@@ -313,13 +461,32 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
         'type': 'image'
       }]);
-    })
+    });
+
+    it('should generate url with consent data', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent_string'
+      };
+      const uspConsent = 'usp_string';
+      const gppConsent = {
+        gppString: 'gpp_string',
+        applicableSections: [7]
+      }
+
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+
+      expect(result).to.deep.equal([{
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'type': 'image'
+      }]);
+    });
   });
 
   describe('interpret response', function () {
@@ -329,12 +496,12 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({ price: 1, ad: '' });
+      const responses = adapter.interpretResponse({price: 1, ad: ''});
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
+      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
       expect(responses).to.be.empty;
     });
 
@@ -354,6 +521,19 @@ describe('KueezRtbBidAdapter', function () {
         meta: {
           advertiserDomains: ['securepubads.g.doubleclick.net']
         }
+      });
+    });
+
+    it('should get meta from response metaData', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].metaData = {
+        advertiserDomains: ['kueezrtb.com'],
+        agencyName: 'Agency Name',
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses[0].meta).to.deep.equal({
+        advertiserDomains: ['kueezrtb.com'],
+        agencyName: 'Agency Name'
       });
     });
 
@@ -387,18 +567,16 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('user id system', function () {
-    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
       const id = Date.now().toString();
       const bid = utils.deepClone(BID);
 
       const userId = (function () {
         switch (idSystemProvider) {
           case 'lipb':
-            return { lipbid: id };
-          case 'parrableId':
-            return { eid: id };
+            return {lipbid: id};
           case 'id5id':
-            return { uid: id };
+            return {uid: id};
           default:
             return id;
         }
@@ -417,18 +595,18 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({ 'c_id': '1' });
-      const pid = extractPID({ 'p_id': '1' });
-      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
+      const cid = extractCID({'c_id': '1'});
+      const pid = extractPID({'p_id': '1'});
+      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({ 'cID': '1' });
-      const pid = extractPID({ 'Pid': '2' });
-      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
+      const cid = extractCID({'cID': '1'});
+      const pid = extractPID({'Pid': '2'});
+      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -449,13 +627,13 @@ describe('KueezRtbBidAdapter', function () {
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(key, 0);
+      uniqueDealId = getUniqueDealId(storage, key, 0);
     })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(key);
+        const current = getUniqueDealId(storage, key);
         expect(current).to.be.equal(uniqueDealId);
         done();
       }, 200);
@@ -463,7 +641,7 @@ describe('KueezRtbBidAdapter', function () {
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(key, 100);
+        const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
       }, 200)
@@ -487,8 +665,8 @@ describe('KueezRtbBidAdapter', function () {
         shouldAdvanceTime: true,
         now
       });
-      setStorageItem('myKey', 2020);
-      const { value, created } = getStorageItem('myKey');
+      setStorageItem(storage, 'myKey', 2020);
+      const {value, created} = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -499,13 +677,13 @@ describe('KueezRtbBidAdapter', function () {
     it('should get external stored value', function () {
       const value = 'superman'
       window.localStorage.setItem('myExternalKey', value);
-      const item = getStorageItem('myExternalKey');
+      const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({ event: 'send' });
-      const { event } = tryParseJSON(data);
+      const data = JSON.stringify({event: 'send'});
+      const {event} = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 
@@ -514,6 +692,38 @@ describe('KueezRtbBidAdapter', function () {
       const parsed = tryParseJSON(value);
       expect(typeof parsed).to.be.equal('number');
       expect(parsed).to.be.equal(value);
+    });
+  });
+
+  describe('First party data', () => {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kueezrtb: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      storage.removeDataFromLocalStorage('_iiq_fdata');
+    })
+
+    it('should create first party data', function () {
+      const data = createFirstPartyData();
+      expect(data).to.have.property('pcid');
+      expect(data).to.have.property('pcidDate');
+    });
+
+    it('should get and set first party data', function () {
+      storage.removeDataFromLocalStorage('_iiq_fdata');
+
+      const data = getAndSetFirstPartyData();
+      expect(data).to.have.property('pcid');
+      expect(data).to.have.property('pcidDate');
+
+      const stored = storage.getDataFromLocalStorage('_iiq_fdata');
+      const parsed = tryParseJSON(stored);
+      expect(parsed).to.deep.equal(data);
     });
   });
 });

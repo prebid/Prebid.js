@@ -63,9 +63,9 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
       /**
        * Get the tame passed since `checkpoint`, and optionally save it as a metric.
        *
-       * @param checkpoint checkpoint name
-       * @param metric? metric name
-       * @return {number} time between now and `checkpoint`
+       * @param {string} checkpoint checkpoint name
+       * @param {string} [metric] - The name of the metric to save. Optional.
+       * @returns {number|null} - The time in milliseconds between now and the checkpoint, or `null` if the checkpoint is not found.
        */
       function timeSince(checkpoint, metric) {
         const ts = getTimestamp(checkpoint);
@@ -79,10 +79,10 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
       /**
        * Get the time passed between `startCheckpoint` and `endCheckpoint`, optionally saving it as a metric.
        *
-       * @param startCheckpoint begin checkpoint
-       * @param endCheckpoint end checkpoint
-       * @param metric? metric name
-       * @return {number} time passed between `startCheckpoint` and `endCheckpoint`
+       * @param {string} startCheckpoint - The name of the starting checkpoint.
+       * @param {string} endCheckpoint - The name of the ending checkpoint.
+       * @param {string} [metric] - The name of the metric to save. Optional.
+       * @returns {number|null} - The time in milliseconds between `startCheckpoint` and `endCheckpoint`, or `null` if either checkpoint is not found.
        */
       function timeBetween(startCheckpoint, endCheckpoint, metric) {
         const start = getTimestamp(startCheckpoint);
@@ -128,12 +128,12 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
       }
 
       /**
-       * @typedef {function: T} HookFn
-       * @property {function(T): void} bail
+       * @typedef {Function} HookFn
+       * @property {Function(T): void} bail
        *
        * @template T
-       * @typedef {T: HookFn} TimedHookFn
-       * @property {function(): void} stopTiming
+       * @typedef {HookFn} TimedHookFn
+       * @property {Function(): void} stopTiming
        * @property {T} untimed
        */
 
@@ -141,12 +141,12 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * Convenience method for measuring time spent in a `.before` or `.after` hook.
        *
        * @template T
-       * @param name metric name
-       * @param {HookFn} next the hook's `next` (first) argument
-       * @param {function(TimedHookFn): T} fn a function that will be run immediately; it takes `next`,
+       * @param {string} name - The metric name.
+       * @param {HookFn} next - The hook's `next` (first) argument.
+       * @param {function(TimedHookFn): T} fn - A function that will be run immediately; it takes `next`,
        *    where both `next` and `next.bail` automatically
        *    call `stopTiming` before continuing with the original hook.
-       * @return {T} fn's return value
+       * @return {T} - The return value of `fn`.
        */
       function measureHookTime(name, next, fn) {
         const stopTiming = startTiming(name);
@@ -208,10 +208,11 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * ```
        *
        *
-       * @param propagate if false, the forked metrics will not be propagated here
-       * @param stopPropagation if true, propagation from the new metrics is stopped here - instead of
-       *   continuing up the chain (if for example these metrics were themselves created through `.fork()`)
-       * @param includeGroups if true, the forked metrics will also replicate metrics that were propagated
+       * @param {Object} [options={}] - Options for forking the metrics.
+       * @param {boolean} [options.propagate=true] - If false, the forked metrics will not be propagated here.
+       * @param {boolean} [options.stopPropagation=false] - If true, propagation from the new metrics is stopped here, instead of
+       *   continuing up the chain (if for example these metrics were themselves created through `.fork()`).
+       * @param {boolean} [options.includeGroups=false] - If true, the forked metrics will also replicate metrics that were propagated
        *   here from elsewhere. For example:
        *   ```
        *   const metrics = newMetrics();
@@ -222,6 +223,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *   withoutGroups.getMetrics() // {}
        *   withGroups.getMetrics() // {foo: ['bar']}
        *   ```
+       * @returns {Object} - The new metrics object.
        */
       function fork({propagate = true, stopPropagation = false, includeGroups = false} = {}) {
         return makeMetrics(mkNode([[self, {propagate, stopPropagation, includeGroups}]]), rename);

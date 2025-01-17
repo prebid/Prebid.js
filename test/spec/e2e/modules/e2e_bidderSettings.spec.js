@@ -26,8 +26,8 @@ setupTest({
   waitFor: CREATIVE_IFRAME_CSS_SELECTOR,
   expectGAMCreative: true
 }, 'Prebid.js Bidder Settings Ad Unit Test', function () {
-  it('should load the targeting keys with correct values', function () {
-    const result = browser.execute(function () {
+  it('should load the targeting keys with correct values', async function () {
+    const result = await browser.execute(function () {
       return window.pbjs.getAdserverTargeting('/19968336/prebid_native_example_2');
     });
 

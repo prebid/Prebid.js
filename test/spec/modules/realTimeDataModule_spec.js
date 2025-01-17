@@ -1,10 +1,12 @@
 import * as rtdModule from 'modules/rtdModule/index.js';
 import {config} from 'src/config.js';
 import * as sinon from 'sinon';
-import {default as CONSTANTS} from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
 import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';
+import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
+import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
@@ -84,6 +86,26 @@ describe('Real time module', function () {
     sandbox.restore();
   });
 
+  describe('GVL IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_GVLIDS, 'register');
+    });
+
+    afterEach(() => {
+      GDPR_GVLIDS.register.restore();
+    });
+
+    it('are registered when RTD module is registered', () => {
+      let mod;
+      try {
+        mod = attachRealTimeDataProvider({name: 'mockRtd', gvlid: 123});
+        sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
+      } finally {
+        mod && mod();
+      }
+    })
+  })
+
   describe('', () => {
     const PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
     let _detachers;
@@ -106,7 +128,7 @@ describe('Real time module', function () {
     it('should be able to modify bid request', function (done) {
       rtdModule.setBidRequestsData(() => {
         assert(getBidRequestDataSpy.calledTwice);
-        assert(getBidRequestDataSpy.calledWith({bidRequest: {}}));
+        assert(getBidRequestDataSpy.calledWith(sinon.match({bidRequest: {}})));
         done();
       }, {bidRequest: {}})
     });
@@ -233,11 +255,11 @@ describe('Real time module', function () {
   });
 
   describe('event', () => {
-    const EVENTS = {
-      [CONSTANTS.EVENTS.AUCTION_INIT]: 'onAuctionInitEvent',
-      [CONSTANTS.EVENTS.AUCTION_END]: 'onAuctionEndEvent',
-      [CONSTANTS.EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
-      [CONSTANTS.EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
+    const TEST_EVENTS = {
+      [EVENTS.AUCTION_INIT]: 'onAuctionInitEvent',
+      [EVENTS.AUCTION_END]: 'onAuctionEndEvent',
+      [EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
+      [EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
     }
     const conf = {
       'realTimeData': {
@@ -259,7 +281,7 @@ describe('Real time module', function () {
         name: name,
         init: () => true,
       }
-      Object.values(EVENTS).forEach((ev) => provider[ev] = sinon.spy());
+      Object.values(TEST_EVENTS).forEach((ev) => provider[ev] = sinon.spy());
       return provider;
     }
 
@@ -281,13 +303,13 @@ describe('Real time module', function () {
         adUnitCodes: ['a1'],
         adUnits: [{code: 'a1'}]
       };
-      mockEmitEvent(CONSTANTS.EVENTS.AUCTION_END, auction);
+      mockEmitEvent(EVENTS.AUCTION_END, auction);
       providers.forEach(p => {
         expect(p.getTargetingData.calledWith(auction.adUnitCodes)).to.be.true;
       });
     });
 
-    Object.entries(EVENTS).forEach(([event, hook]) => {
+    Object.entries(TEST_EVENTS).forEach(([event, hook]) => {
       it(`'${event}' should be propagated to providers through '${hook}'`, () => {
         const eventArg = {};
         mockEmitEvent(event, eventArg);

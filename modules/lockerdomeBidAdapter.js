@@ -1,6 +1,6 @@
-import { getBidIdParameter } from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 export const spec = {
   code: 'lockerdome',

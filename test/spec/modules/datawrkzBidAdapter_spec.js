@@ -36,26 +36,26 @@ describe('datawrkzAdapterTests', function () {
     });
 
     it('should return false when params not found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required site_id param not found', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {'bidfloor': '1.0'}
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {'bidfloor': '1.0'}
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when adunit is adpod video', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {'bidfloor': '1.0', 'site_id': SITE_ID};
-      bid.mediaTypes = {
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {'bidfloor': '1.0', 'site_id': SITE_ID};
+      invalidBid.mediaTypes = {
         'video': {
           'context': 'adpod'
         }
       }
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -462,7 +462,6 @@ describe('datawrkzAdapterTests', function () {
       expect(result[0].ad).to.equal(decodeURIComponent(serverResponse.body.seatbid[0].bid[0].adm + '<img src="' + serverResponse.body.seatbid[0].bid[0].nurl + '" height="0px" width="0px">'));
       expect(result[0].creativeId).to.equal('1');
       expect(result[0].bidderCode).to.equal(request.bidRequest.bidder);
-      expect(result[0].transactionId).to.equal(request.bidRequest.transactionId);
       expect(result[0].mediaType).to.equal('banner');
     });
 
@@ -540,7 +539,6 @@ describe('datawrkzAdapterTests', function () {
       expect(result[0].native.desc).to.equal('Test body');
       expect(result[0].creativeId).to.equal('1');
       expect(result[0].bidderCode).to.equal(request.bidRequest.bidder);
-      expect(result[0].transactionId).to.equal(request.bidRequest.transactionId);
       expect(result[0].mediaType).to.equal('native');
     });
 
@@ -610,7 +608,6 @@ describe('datawrkzAdapterTests', function () {
       expect(result[0].adserverTargeting.hb_protocol).to.equal('3');
       expect(result[0].creativeId).to.equal('1');
       expect(result[0].bidderCode).to.equal(request.bidRequest.bidder);
-      expect(result[0].transactionId).to.equal(request.bidRequest.transactionId);
       expect(result[0].mediaType).to.equal('video');
     });
 
@@ -649,7 +646,6 @@ describe('datawrkzAdapterTests', function () {
       expect(result[0].renderer).to.exist;
       expect(result[0].creativeId).to.equal('1');
       expect(result[0].bidderCode).to.equal(request.bidRequest.bidder);
-      expect(result[0].transactionId).to.equal(request.bidRequest.transactionId);
       expect(result[0].mediaType).to.equal('video');
     });
   });

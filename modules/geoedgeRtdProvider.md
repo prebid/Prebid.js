@@ -5,7 +5,7 @@ Module Type: Rtd Provider
 Maintainer: guy.books@geoedge.com
 
 The Geoedge Realtime module lets publishers block bad ads such as automatic redirects, malware, offensive creatives and landing pages.
-To use this module, you'll need to work with [Geoedge](https://www.geoedge.com/publishers-real-time-protection/) to get an account and cutomer key.
+To use this module, you'll need to work with [Geoedge](https://www.geoedge.com/publishers-real-time-protection/) to get an account and customer key.
 
 ## Integration
 
@@ -49,6 +49,7 @@ Parameters details:
 |params.key | String | Customer key |Required, contact Geoedge to get your key |
 |params.bidders | Object | Bidders to monitor |Optional, list of bidder to include / exclude from monitoring. Omitting this will monitor bids from all bidders. |
 |params.wap |Boolean |Wrap after preload |Optional, defaults to `false`. Set to `true` if you want to monitor only after the module has preloaded the monitoring client. |
+|params.gpt |Boolean |Wrap all GPT ad slots |Optional, defaults to `false`. Set to `true` if you want to monitor all Google Publisher Tag ad slots, regaedless if the winning bid comes from Prebid or Google Ad Manager (Direct, Adx, Adesnse, Open Bidding, etc). |
 
 ## Example
 

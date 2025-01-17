@@ -1,20 +1,18 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 const analyticsType = 'endpoint';
 const url = 'https://analytics.wmgroup.us/analytic/collection';
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_WON,
-    BID_TIMEOUT,
-    NO_BID,
-    BID_RESPONSE
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_WON,
+  BID_TIMEOUT,
+  NO_BID,
+  BID_RESPONSE
+} = EVENTS;
 
 let timestampInit = null;
 

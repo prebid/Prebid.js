@@ -35,6 +35,13 @@
       },
 
       bids: [{
+        bidder: 'jwplayer',
+        params: {
+          publisherId: 'test-publisher-id',
+          siteId: 'test-site-id',
+          placementId: 'test-placement-id'
+        }
+      }, {
         bidder: 'ix',
         params: {
           siteId: '300',
@@ -225,7 +232,7 @@
         console.log('videos pb bid Error: ', e);
       });
 
-      pbjs.requestBids(adUnits);
+      pbjs.requestBids();
     });
   </script>
 

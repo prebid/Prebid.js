@@ -6,7 +6,13 @@
  */
 import { isStr, isPlainObject } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_VENDOR_ID = 301;
@@ -21,7 +27,7 @@ function readFromLocalStorage() {
 }
 
 export function getStorage() {
-  return getStorageManager({gvlid: ZEOTAP_VENDOR_ID, moduleName: ZEOTAP_MODULE_NAME});
+  return getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: ZEOTAP_MODULE_NAME});
 }
 
 export const storage = getStorage();
@@ -59,6 +65,12 @@ export const zeotapIdPlusSubmodule = {
   getId() {
     const id = readCookie() || readFromLocalStorage();
     return id ? { id } : undefined;
+  },
+  eids: {
+    'IDP': {
+      source: 'zeotap.com',
+      atype: 1
+    },
   }
 };
 submodule('userId', zeotapIdPlusSubmodule);

@@ -266,8 +266,6 @@ describe('revcontent adapter', function () {
     it('should set correct native params', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];
 
-      assert.equal(result.bidder, 'revcontent');
-      assert.equal(result.bidderCode, 'revcontent');
       assert.equal(result.mediaType, 'native');
       assert.equal(result.requestId, '294a7f446202848');
       assert.equal(result.cpm, '0.1');
@@ -279,8 +277,6 @@ describe('revcontent adapter', function () {
       bidRequest.bid[0].params.size.height = 90;
 
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.bidder, 'revcontent');
-      assert.equal(result.bidderCode, 'revcontent');
       assert.equal(result.mediaType, 'native');
       assert.equal(result.requestId, '294a7f446202848');
       assert.equal(result.cpm, '0.1');
@@ -292,8 +288,6 @@ describe('revcontent adapter', function () {
       bidRequest.bid[0].params.size.height = 600;
 
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.bidder, 'revcontent');
-      assert.equal(result.bidderCode, 'revcontent');
       assert.equal(result.mediaType, 'native');
       assert.equal(result.requestId, '294a7f446202848');
       assert.equal(result.cpm, '0.1');
@@ -304,8 +298,6 @@ describe('revcontent adapter', function () {
       bidRequest.bid[0].params.template = '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 298px;    height: 248px;    display: block;"><div style="background-image:url({image});width: 300px;height: 165px;background-repeat: none;background-size: cover;"><div style="position: absolute;top: 160px;left:12px"><h1 style="color: #000;font-family: Arial, sans-serif;font-size: 19px; position: relative; width: 290px;">{title}</h1> <div style="border:1px solid #000;text-align:center;width:94%;font-family:Verdana;font-size:12px;color:#000">SEE MORE</div></div></div></a>';
 
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.bidder, 'revcontent');
-      assert.equal(result.bidderCode, 'revcontent');
       assert.equal(result.mediaType, 'native');
       assert.equal(result.requestId, '294a7f446202848');
       assert.equal(result.cpm, '0.1');
@@ -317,8 +309,6 @@ describe('revcontent adapter', function () {
       bidRequest.bid[0].params.size.height = 200;
 
       const result = spec.interpretResponse(serverResponse, bidRequest)[0];
-      assert.equal(result.bidder, 'revcontent');
-      assert.equal(result.bidderCode, 'revcontent');
       assert.equal(result.mediaType, 'native');
       assert.equal(result.requestId, '294a7f446202848');
       assert.equal(result.cpm, '0.1');

@@ -1,6 +1,9 @@
 import { quantcastIdSubmodule, storage, firePixel, hasCCPAConsent, hasGDPRConsent, checkTCFv2 } from 'modules/quantcastIdSystem.js';
 import * as utils from 'src/utils.js';
 import {coppaDataHandler} from 'src/adapterManager';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 describe('QuantcastId module', function () {
   beforeEach(function() {
@@ -380,4 +383,23 @@ describe('Quantcast GDPR consent check', function() {
       }
     })).to.equal(false);
   });
+  describe('eids', () => {
+    before(() => {
+      attachIdSystem(quantcastIdSubmodule);
+    });
+    it('quantcastId', function() {
+      const userId = {
+        quantcastId: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'quantcast.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1
+        }]
+      });
+    });
+  })
 });

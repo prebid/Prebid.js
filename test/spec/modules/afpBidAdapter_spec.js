@@ -125,7 +125,11 @@ const getTransformedConfig = ({mediaTypes, params}) => {
     bidId,
     bidder: BIDDER_CODE,
     mediaTypes: mediaTypes,
-    transactionId,
+    ortb2Imp: {
+      ext: {
+        tid: transactionId
+      }
+    }
   }
 }
 const validBidRequests = Object.keys(configByPlaceType).map(key => getTransformedConfig(configByPlaceType[key]))

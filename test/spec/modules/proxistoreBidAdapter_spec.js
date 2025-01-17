@@ -55,9 +55,9 @@ describe('ProxistoreBidAdapter', function () {
   });
   describe('buildRequests', function () {
     const url = {
-      cookieBase: 'https://abs.proxistore.com/v3/rtb/prebid/multi',
+      cookieBase: 'https://api.proxistore.com/v3/rtb/prebid/multi',
       cookieLess:
-        'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi',
+        'https://api.cookieless-proxistore.com/v3/rtb/prebid/multi',
     };
 
     let request = spec.buildRequests([bid], bidderRequest);
@@ -81,7 +81,7 @@ describe('ProxistoreBidAdapter', function () {
     it('should contain a valid url', function () {
       // has gdpr consent
       expect(request.url).equal(url.cookieBase);
-      // doens't have gpdr consent
+      // doens't have gdpr consent
       bidderRequest.gdprConsent.vendorData = null;
 
       request = spec.buildRequests([bid], bidderRequest);

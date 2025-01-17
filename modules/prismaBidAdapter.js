@@ -1,8 +1,18 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import { transformBidderParamKeywords } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'prisma';
 const BIDDER_URL = 'https://prisma.nexx360.io/prebid';
@@ -11,53 +21,26 @@ const METRICS_TRACKER_URL = 'https://prisma.nexx360.io/track-imp';
 
 const GVLID = 965;
 
-function getConnectionType() {
-  const connection = navigator.connection || navigator.webkitConnection;
-  if (!connection) {
-    return 0;
-  }
-  switch (connection.type) {
-    case 'ethernet':
-      return 1;
-    case 'wifi':
-      return 2;
-    case 'cellular':
-      switch (connection.effectiveType) {
-        case 'slow-2g':
-        case '2g':
-          return 4;
-        case '3g':
-          return 5;
-        case '4g':
-          return 6;
-        default:
-          return 3;
-      }
-    default:
-      return 0;
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: ['prismadirect'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
   /**
-         * Determines whether or not the given bid request is valid.
-         *
-         * @param {BidRequest} bid The bid params to validate.
-         * @return boolean True if this is a valid bid, and false otherwise.
-         */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params.account && bid.params.tagId);
   },
   /**
-         * Make a server request from the list of BidRequests.
-         *
-         * @param {validBidRequests[]} - an array of bids
-         * @return ServerRequest Info describing the request to the server.
-         */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const adUnits = [];
     const test = config.getConfig('debug') ? 1 : 0;
@@ -70,12 +53,13 @@ export const spec = {
         tagId: adunitValue.params.tagId,
         label: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.transactionId,
+        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
         bidfloor: 0,
         bidfloorCurrency: 'USD',
-        keywords: adunitValue.params.keywords ? transformBidderParamKeywords(adunitValue.params.keywords) : [],
+        keywords: getANKeywordParam(bidderRequest.ortb2, adunitValue.params.keywords)
       }
       adUnits.push(foo);
       if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;
@@ -108,11 +92,11 @@ export const spec = {
     };
   },
   /**
-         * Unpack the response from the server into a list of bids.
-         *
-         * @param {ServerResponse} serverResponse A successful response from the server.
-         * @return {Bid[]} An array of bids which were nested inside the server.
-         */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
     const bidResponses = [];
@@ -162,12 +146,12 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
@@ -178,9 +162,9 @@ export const spec = {
   },
 
   /**
-     * Register bidder specific code, which will execute if a bid from this bidder won the auction
-     * @param {Bid} The bid that won the auction
-     */
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * @param {Bid} bid the bid that won the auction
+   */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
     const params = { type: 'prebid', mediatype: 'banner' };

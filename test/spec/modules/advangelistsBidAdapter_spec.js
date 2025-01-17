@@ -44,19 +44,19 @@ describe('advangelistsBidAdapter', function () {
   describe('spec.buildRequests', function () {
     it('should create a POST request for each bid', function () {
       const bidRequest = bidRequests[0];
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
       expect(requests[0].method).to.equal('POST');
     });
 
     it('should create a POST request for each bid in video request', function () {
       const bidRequest = bidRequestsVid[0];
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
       expect(requests[0].method).to.equal('POST');
     });
 
     it('should have domain in request', function () {
       const bidRequest = bidRequests[0];
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
       expect(requests[0].data.site.domain).length !== 0;
     });
   });
@@ -93,7 +93,6 @@ describe('advangelistsBidAdapter', function () {
         delete bidResponseVid['ad'];
         expect(bidResponseVid).to.deep.equal({
           requestId: bidRequestsVid[0].bidId,
-          bidderCode: 'advangelists',
           creativeId: serverResponseVid.seatbid[0].bid[0].crid,
           cpm: serverResponseVid.seatbid[0].bid[0].price,
           width: serverResponseVid.seatbid[0].bid[0].w,

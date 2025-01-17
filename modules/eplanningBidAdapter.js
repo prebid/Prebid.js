@@ -1,8 +1,10 @@
-import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined, isSlotMatchingAdUnitCode} from '../src/utils.js';
+import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
 
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -24,6 +26,7 @@ const VAST_INSTREAM = 1;
 const VAST_OUTSTREAM = 2;
 const VAST_VERSION_DEFAULT = 3;
 const DEFAULT_SIZE_VAST = '640x480';
+const MAX_LEN_URL = 255;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -37,6 +40,7 @@ export const spec = {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
+    const schain = bidRequests[0].schain;
     let url;
     let params;
     const urlConfig = getUrlConfig(bidRequests);
@@ -60,7 +64,7 @@ export const spec = {
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: pageUrl || FILE,
+        ur: cutUrl(pageUrl || FILE),
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -68,9 +72,11 @@ export const spec = {
       if (pcrs) {
         params.crs = pcrs;
       }
-
+      if (schain && schain.nodes.length > 2) {
+        params.sch = serializeSupplyChain(schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain']);
+      }
       if (referrerUrl) {
-        params.fr = referrerUrl;
+        params.fr = cutUrl(referrerUrl);
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -266,6 +272,21 @@ function cleanName(name) {
   return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 
+function getFloorStr(bid) {
+  if (typeof bid.getFloor === 'function') {
+    let bidFloor = bid.getFloor({
+      currency: DOLLAR_CODE,
+      mediaType: '*',
+      size: '*'
+    }) || {};
+
+    if (bidFloor.floor) {
+      return '|' + encodeURIComponent(bidFloor.floor);
+    }
+  }
+  return '';
+}
+
 function getSpaces(bidRequests, ml) {
   let impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
   // Only one type of auction is supported at a time
@@ -285,7 +306,7 @@ function getSpaces(bidRequests, ml) {
       let sizeVast = firstSize ? firstSize.join('x') : DEFAULT_SIZE_VAST;
       name = 'video_' + sizeVast + '_' + i;
       es.map[name] = bid.bidId;
-      return name + ':' + sizeVast + ';1';
+      return name + ':' + sizeVast + ';1' + getFloorStr(bid);
     }
 
     if (ml) {
@@ -295,7 +316,7 @@ function getSpaces(bidRequests, ml) {
     }
 
     es.map[name] = bid.bidId;
-    return name + ':' + getSize(bid);
+    return name + ':' + getSize(bid) + getFloorStr(bid);
   }).join('+')).join('+');
   return es;
 }
@@ -489,6 +510,17 @@ function visibilityHandler(obj) {
     registerAuction(STORAGE_RENDER_PREFIX + obj.name);
     getViewabilityTracker().onView(obj.div, registerAuction.bind(undefined, STORAGE_VIEW_PREFIX + obj.name));
   }
+}
+
+function cutUrl (url) {
+  if (url.length > MAX_LEN_URL) {
+    url = url.split('?')[0];
+    if (url.length > MAX_LEN_URL) {
+      url = url.slice(0, MAX_LEN_URL);
+    }
+  }
+
+  return url;
 }
 
 function registerAuction(storageID) {

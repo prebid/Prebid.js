@@ -60,22 +60,22 @@ describe('AudienceRun bid adapter tests', function () {
     });
 
     it('should return true when zoneId is valid', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         zoneId: '12345abcde',
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
 
-      bid.params = {};
+      invalidBid.params = {};
 
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -218,16 +218,7 @@ describe('AudienceRun bid adapter tests', function () {
 
     it('should add userid eids information to the request', function () {
       const bid = Object.assign({}, bidRequest);
-      bid.userId = {
-        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-        unsuported: '666',
-      }
-
-      const request = spec.buildRequests([bid]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal([
+      bid.userIdAsEids = [
         {
           source: 'pubcid.org',
           uids: [
@@ -237,7 +228,13 @@ describe('AudienceRun bid adapter tests', function () {
             },
           ],
         },
-      ]);
+      ];
+
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.userId).to.exist;
+      expect(payload.userId).to.deep.equal(bid.userIdAsEids);
     });
 
     it('should add schain object if available', function() {

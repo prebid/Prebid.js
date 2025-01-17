@@ -16,11 +16,16 @@
  * @property {string} clientID
  * @property {string} optimeraKeyName
  * @property {string} device
+ * @property {string} apiVersion
  */
 
 import { logInfo, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -29,7 +34,8 @@ let _moduleParams = {};
  * Default Optimera Key Name
  * This can default to hb_deal_optimera for publishers
  * who used the previous Optimera Bidder Adapter.
- * @type {string} */
+ * @type {string}
+ */
 export let optimeraKeyName = 'hb_deal_optimera';
 
 /**
@@ -38,7 +44,10 @@ export let optimeraKeyName = 'hb_deal_optimera';
  * the targeting values.
  * @type {string}
  */
-export const scoresBaseURL = 'https://dyv1bugovvq1g.cloudfront.net/';
+export const scoresBaseURL = {
+  v0: 'https://dyv1bugovvq1g.cloudfront.net/',
+  v1: 'https://v1.oapi26b.com/',
+};
 
 /**
  * Optimera Score File URL.
@@ -57,6 +66,12 @@ export let clientID;
  * @type {string}
  */
 export let device = 'default';
+
+/**
+ * Optional apiVersion parameter.
+ * @type {string}
+ */
+export let apiVersion = 'v0';
 
 /**
  * Targeting object for all ad positions.
@@ -127,6 +142,7 @@ export function onAuctionInit(auctionDetails, config, userConsent) {
 
 /**
  * Initialize the Module.
+ * moduleConfig.params.apiVersion can be either v0 or v1.
  */
 export function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
@@ -137,6 +153,9 @@ export function init(moduleConfig) {
     }
     if (_moduleParams.device) {
       device = _moduleParams.device;
+    }
+    if (_moduleParams.apiVersion) {
+      apiVersion = (_moduleParams.apiVersion.includes('v1', 'v0')) ? _moduleParams.apiVersion : 'v0';
     }
     setScoresURL();
     scoreFileRequest();
@@ -162,7 +181,19 @@ export function init(moduleConfig) {
 export function setScoresURL() {
   const optimeraHost = window.location.host;
   const optimeraPathName = window.location.pathname;
-  const newScoresURL = `${scoresBaseURL}${clientID}/${optimeraHost}${optimeraPathName}.js`;
+  const baseUrl = scoresBaseURL[apiVersion] ? scoresBaseURL[apiVersion] : scoresBaseURL.v0;
+  let newScoresURL;
+
+  if (apiVersion === 'v1') {
+    newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`;
+  } else {
+    let encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
+      .replaceAll('%2F', '/')
+      .replaceAll('%20', '+');
+
+    newScoresURL = `${baseUrl}${clientID}/${encoded}.js`;
+  }
+
   if (scoresURL !== newScoresURL) {
     scoresURL = newScoresURL;
     fetchScoreFile = true;

@@ -1,8 +1,12 @@
 import {sharedIdSystemSubmodule, storage} from 'modules/sharedIdSystem.js';
 import {coppaDataHandler} from 'src/adapterManager';
+import {config} from 'src/config.js';
 
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {attachIdSystem, init} from '../../../modules/userId/index.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 let expect = require('chai').expect;
 
@@ -91,50 +95,42 @@ describe('SharedId System', function () {
       expect(result).to.be.undefined;
     });
   });
-
-  describe('SharedID System domainOverride', () => {
-    let sandbox, domain, cookies, rejectCookiesFor;
-
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(document, 'domain').get(() => domain);
-      cookies = {};
-      sandbox.stub(storage, 'getCookie').callsFake((key) => cookies[key]);
-      rejectCookiesFor = null;
-      sandbox.stub(storage, 'setCookie').callsFake((key, value, expires, sameSite, domain) => {
-        if (domain !== rejectCookiesFor) {
-          if (expires != null) {
-            expires = new Date(expires);
-          }
-          if (expires == null || expires > Date.now()) {
-            cookies[key] = value;
-          } else {
-            delete cookies[key];
-          }
-        }
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(sharedIdSystemSubmodule);
+    });
+    afterEach(() => {
+      config.resetConfig();
+    });
+    it('pubCommonId', function() {
+      const userId = {
+        pubcid: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'pubcid.org',
+        uids: [{id: 'some-random-id-value', atype: 1}]
       });
     });
 
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    it('should return TLD if cookies can be set there', () => {
-      domain = 'sub.domain.com';
-      rejectCookiesFor = 'com';
-      expect(sharedIdSystemSubmodule.domainOverride()).to.equal('domain.com');
-    });
-
-    it('should return undefined when cookies cannot be set', () => {
-      domain = 'sub.domain.com';
-      rejectCookiesFor = 'sub.domain.com';
-      expect(sharedIdSystemSubmodule.domainOverride()).to.be.undefined;
-    });
-
-    it('should return half-way domain if parent domain rejects cookies', () => {
-      domain = 'inner.outer.domain.com';
-      rejectCookiesFor = 'domain.com';
-      expect(sharedIdSystemSubmodule.domainOverride()).to.equal('outer.domain.com');
-    });
-  });
+    it('should set inserter, if provided in config', async () => {
+      config.setConfig({
+        userSync: {
+          userIds: [{
+            name: 'sharedId',
+            params: {
+              inserter: 'mock-inserter'
+            },
+            value: {pubcid: 'mock-id'}
+          }]
+        }
+      });
+      const eids = getGlobal().getUserIdsAsEids();
+      sinon.assert.match(eids[0], {
+        source: 'pubcid.org',
+        inserter: 'mock-inserter'
+      })
+    })
+  })
 });

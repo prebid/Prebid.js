@@ -53,6 +53,10 @@ const BIDDER_REQUEST_1 = {
     consentString: 'consent-test',
     gdprApplies: false
   },
+  gppConsent: {
+    applicableSections: [1, 2],
+    gppString: 'consent-string'
+  },
   refererInfo: {
     referer: 'http://example.com/page.html',
     reachedTop: true,
@@ -62,6 +66,11 @@ const BIDDER_REQUEST_1 = {
       'http://example.com/iframe1.html',
       'http://example.com/iframe2.html'
     ]
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -126,6 +135,11 @@ const BIDDER_REQUEST_2 = {
       'http://example.com/iframe1.html',
       'http://example.com/iframe2.html'
     ]
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -173,6 +187,11 @@ const BIDDER_REQUEST_VIDEO = {
       'http://example.com/iframe1.html',
       'http://example.com/iframe2.html'
     ]
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -184,6 +203,11 @@ const BIDDER_REQUEST_EMPTY = {
   gdprConsent: {
     consentString: 'consent-test',
     gdprApplies: false
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -515,6 +539,12 @@ describe('Consumable BidAdapter', function () {
       expect(data1.placements[0].bidfloor).to.equal(0.05);
       expect(data2.placements[0].bidfloor).to.equal(0.15);
     });
+    it('should contain the language param', function () {
+      let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+
+      expect(data.lang).to.equal('en');
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
@@ -647,10 +677,30 @@ describe('Consumable BidAdapter', function () {
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=0&gdpr_consent=GDPR_CONSENT_STRING');
     })
 
-    it('should return a sync url if iframe syncs are enabled and USP applies', function () {
-      let uspConsent = {
-        consentString: 'USP_CONSENT_STRING',
+    it('should return a sync url if iframe syncs are enabled and has GPP consent with applicable sections', function () {
+      let gppConsent = {
+        applicableSections: [1, 2],
+        gppString: 'GPP_CONSENT_STRING'
       }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING&gpp_sid=1%2C2');
+    })
+
+    it('should return a sync url if iframe syncs are enabled and has GPP consent without applicable sections', function () {
+      let gppConsent = {
+        applicableSections: [],
+        gppString: 'GPP_CONSENT_STRING'
+      }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING');
+    })
+
+    it('should return a sync url if iframe syncs are enabled and USP applies', function () {
+      let uspConsent = 'USP_CONSENT_STRING';
       let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, uspConsent);
 
       expect(opts.length).to.equal(1);
@@ -662,9 +712,7 @@ describe('Consumable BidAdapter', function () {
         consentString: 'GDPR_CONSENT_STRING',
         gdprApplies: true,
       }
-      let uspConsent = {
-        consentString: 'USP_CONSENT_STRING',
-      }
+      let uspConsent = 'USP_CONSENT_STRING';
       let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent, uspConsent);
 
       expect(opts.length).to.equal(1);
@@ -689,50 +737,22 @@ describe('Consumable BidAdapter', function () {
       sandbox.restore();
     });
 
-    it('Request should have unifiedId config params', function() {
+    it('Request should have EIDs', function() {
       bidderRequest.bidRequest[0].userId = {};
       bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
-      bidderRequest.bidRequest[0].userIdAsEids = createEidsArray(bidderRequest.bidRequest[0].userId);
-      let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
-      let data = JSON.parse(request.data);
-      expect(data.user.eids).to.deep.equal([{
+      bidderRequest.bidRequest[0].userIdAsEids = [{
         'source': 'adserver.org',
         'uids': [{
-          'id': 'TTD_ID',
+          'id': 'TTD_ID_FROM_USER_ID_MODULE',
           'atype': 1,
           'ext': {
             'rtiPartner': 'TDID'
           }
         }]
-      }]);
-    });
-
-    it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        var config = {
-          adsrvrOrgId: {
-            'TDID': 'TTD_ID_FROM_CONFIG',
-            'TDID_LOOKUP': 'TRUE',
-            'TDID_CREATED_AT': '2022-06-21T09:47:00'
-          }
-        };
-        return config[key];
-      });
-      bidderRequest.bidRequest[0].userId = {};
-      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
-      bidderRequest.bidRequest[0].userIdAsEids = createEidsArray(bidderRequest.bidRequest[0].userId);
+      }];
       let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
       let data = JSON.parse(request.data);
-      expect(data.user.eids).to.deep.equal([{
-        'source': 'adserver.org',
-        'uids': [{
-          'id': 'TTD_ID',
-          'atype': 1,
-          'ext': {
-            'rtiPartner': 'TDID'
-          }
-        }]
-      }]);
+      expect(data.user.eids).to.deep.equal(bidderRequest.bidRequest[0].userIdAsEids);
     });
 
     it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {

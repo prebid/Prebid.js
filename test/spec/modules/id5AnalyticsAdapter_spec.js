@@ -1,29 +1,23 @@
 import adapterManager from '../../../src/adapterManager.js';
 import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js';
 import { expect } from 'chai';
-import sinon from 'sinon';
 import * as events from '../../../src/events.js';
-import constants from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
 const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
 const INGEST_URL = 'https://test.me/ingest';
 
 describe('ID5 analytics adapter', () => {
-  let server;
   let config;
 
   beforeEach(() => {
-    server = sinon.createFakeServer();
     config = {
       options: {
         partnerId: 12349,
       }
     };
-  });
-
-  afterEach(() => {
-    server.restore();
   });
 
   it('registers itself with the adapter manager', () => {
@@ -104,11 +98,11 @@ describe('ID5 analytics adapter', () => {
     it('sends auction end events to the backend', () => {
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       // Why 3? 1: config, 2: tcfEnforcement, 3: auctionEnd
-      // tcfEnforcement? yes, gdprEnforcement module emits in reaction to auctionEnd
+      // tcfEnforcement? yes, tcfControl module emits in reaction to auctionEnd
       expect(server.requests).to.have.length(3);
 
       const body1 = JSON.parse(server.requests[1].requestBody);
@@ -313,7 +307,7 @@ describe('ID5 analytics adapter', () => {
 
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       expect(server.requests).to.have.length(3);
@@ -366,7 +360,7 @@ describe('ID5 analytics adapter', () => {
       ]);
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       expect(server.requests).to.have.length(2);
@@ -447,7 +441,7 @@ describe('ID5 analytics adapter', () => {
       ]);
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       expect(server.requests).to.have.length(3);

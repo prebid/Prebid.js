@@ -1,21 +1,21 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 import {
   deepAccess,
-  uniques,
-  isArray,
+  getWindowSelf,
   getWindowTop,
+  isArray,
   isGptPubadsDefined,
-  isSlotMatchingAdUnitCode,
   logInfo,
   logWarn,
-  getWindowSelf,
   mergeDeep,
-  pick
+  pick,
+  uniques
 } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
-// **************************** UTILS *************************** //
+// **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
 const BIDDER_ALIASES = ['33across_mgni'];
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -36,6 +36,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -72,9 +73,7 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
-
-  if (invalidBidderName || !bid.params) {
+  if (!bid.params) {
     return false;
   }
 
@@ -140,10 +139,10 @@ function _validateVideo(bid) {
   }
 
   // If placement if defined, it must be a number
-  if (
-    typeof videoParams.placement !== 'undefined' &&
-    typeof videoParams.placement !== 'number'
-  ) {
+  if ([ videoParams.placement, videoParams.plcmt ].some(value => (
+    typeof value !== 'undefined' &&
+    typeof value !== 'number'
+  ))) {
     return false;
   }
 
@@ -167,6 +166,7 @@ function buildRequests(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     uspConsent,
+    gppConsent,
     pageUrl,
     referer
   } = _buildRequestParams(bidRequests, bidderRequest);
@@ -181,9 +181,11 @@ function buildRequests(bidRequests, bidderRequest) {
         bidRequests: groupedRequests[key],
         gdprConsent,
         uspConsent,
+        gppConsent,
         pageUrl,
         referer,
-        ttxSettings
+        ttxSettings,
+        bidderRequest,
       })
     )
   }
@@ -199,20 +201,15 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest && bidderRequest.gdprConsent);
 
-  const uspConsent = bidderRequest && bidderRequest.uspConsent;
-
-  const pageUrl = bidderRequest?.refererInfo?.page;
-
-  const referer = bidderRequest?.refererInfo?.ref;
-
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
   return {
     ttxSettings,
     gdprConsent,
-    uspConsent,
-    pageUrl,
-    referer
+    uspConsent: bidderRequest?.uspConsent,
+    gppConsent: bidderRequest?.gppConsent,
+    pageUrl: bidderRequest?.refererInfo?.page,
+    referer: bidderRequest?.refererInfo?.ref
   }
 }
 
@@ -246,10 +243,11 @@ function _getMRAKey(bidRequest) {
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, referer, ttxSettings }) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppConsent = {}, pageUrl, referer, ttxSettings, bidderRequest }) {
   const ttxRequest = {};
   const firstBidRequest = bidRequests[0];
   const { siteId, test } = firstBidRequest.params;
+  const coppaValue = config.getConfig('coppa');
 
   /*
    * Infer data for the request payload
@@ -271,7 +269,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     ttxRequest.site.ref = referer;
   }
 
-  ttxRequest.id = firstBidRequest.auctionId;
+  ttxRequest.id = bidderRequest?.bidderRequestId;
 
   if (gdprConsent.consentString) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
@@ -293,6 +291,17 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     ttxRequest.regs = setExtensions(ttxRequest.regs, {
       'us_privacy': uspConsent
     });
+  }
+
+  if (gppConsent.gppString) {
+    Object.assign(ttxRequest.regs, {
+      'gpp': gppConsent.gppString,
+      'gpp_sid': gppConsent.applicableSections
+    });
+  }
+
+  if (coppaValue !== undefined) {
+    ttxRequest.regs.coppa = Number(!!coppaValue);
   }
 
   ttxRequest.ext = {
@@ -480,12 +489,24 @@ function _buildVideoORTB(bidRequest) {
 
   // Placement Inference Rules:
   // - If no placement is defined then default to 2 (In Banner)
-  // - If product is instream (for instream context) then override placement to 1
-  video.placement = video.placement || 2;
+  // - If the old deprecated field is defined, use its value for the recent placement field
+
+  const calculatePlacementValue = () => {
+    const IN_BANNER_PLACEMENT_VALUE = 2;
+
+    if (video.placement) {
+      logWarn('[33Across Adapter] The ORTB field `placement` is deprecated, please use `plcmt` instead');
+
+      return video.placement;
+    }
+
+    return IN_BANNER_PLACEMENT_VALUE;
+  }
+
+  video.plcmt ??= calculatePlacementValue();
 
   if (product === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
-    video.placement = 1;
   }
 
   // bidfloors
@@ -514,7 +535,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
     size: [ size.w, size.h ]
   });
 
-  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+  if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
     return bidFloors.floor;
   }
 }
@@ -681,7 +702,6 @@ function _createBidResponse(bid, cur) {
     bid.adomain && bid.adomain.length;
   const bidResponse = {
     requestId: bid.impid,
-    bidderCode: BIDDER_CODE,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
@@ -717,10 +737,10 @@ function _createBidResponse(bid, cur) {
 // Else no syncs
 // For logic on how we handle gdpr data see _createSyncs and module's unit tests
 // '33acrossBidAdapter#getUserSyncs'
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   const syncUrls = (
     (syncOptions.iframeEnabled)
-      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId }))
+      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, gppConsent, siteId }))
       : ([])
   );
 
@@ -731,15 +751,16 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent }) {
+function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent, gppConsent = {} }) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 
   const { consentString, gdprApplies } = gdprConsent;
+  const { gppString = '', applicableSections = [] } = gppConsent;
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}`
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}&gpp=${encodeURIComponent(gppString)}&gpp_sid=${encodeURIComponent(applicableSections.join(','))}`
   };
 
   if (typeof gdprApplies === 'boolean') {
@@ -765,7 +786,7 @@ function _buildDeviceORTB(device = {}) {
   }
 
   if (device.sua) {
-    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model' ]);
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model', 'mobile' ]);
   }
 
   return deviceProps;

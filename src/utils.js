@@ -1,12 +1,14 @@
-import { config } from './config.js';
-import clone from 'just-clone';
-import {find, includes} from './polyfill.js';
-import CONSTANTS from './constants.json';
+import {config} from './config.js';
+import {klona} from 'klona/json';
+import {includes} from './polyfill.js';
+import {EVENTS} from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
-export { default as deepAccess } from 'dlv/index.js';
+import {getGlobal} from './prebidGlobal.js';
+import { default as deepAccess } from 'dlv/index.js';
+
+export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 
-var tArr = 'Array';
 var tStr = 'String';
 var tFn = 'Function';
 var tNumb = 'Number';
@@ -20,6 +22,8 @@ let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
+
+const pbjsInstance = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -38,6 +42,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
+  canAccessWindowTop,
   getWindowLocation,
   insertUserSyncIframe,
   insertElement,
@@ -59,17 +64,6 @@ let prebidInternal = {};
 export function getPrebidInternal() {
   return prebidInternal;
 }
-
-var uniqueRef = {};
-export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
-  ? Function.prototype.bind
-  : function(bind) {
-    var self = this;
-    var args = Array.prototype.slice.call(arguments, 1);
-    return function() {
-      return self.apply(bind, args.concat(Array.prototype.slice.call(arguments)));
-    };
-  };
 
 /* utility method to get incremental integer starting from 1 */
 var getIncrementalInteger = (function () {
@@ -110,19 +104,7 @@ function _getRandomData() {
 }
 
 export function getBidIdParameter(key, paramsObj) {
-  if (paramsObj && paramsObj[key]) {
-    return paramsObj[key];
-  }
-
-  return '';
-}
-
-export function tryAppendQueryString(existingUrl, key, value) {
-  if (value) {
-    return existingUrl + key + '=' + encodeURIComponent(value) + '&';
-  }
-
-  return existingUrl;
+  return paramsObj?.[key] || '';
 }
 
 // parse a query string object passed in bid params
@@ -141,41 +123,31 @@ export function parseQueryStringParameters(queryObj) {
 export function transformAdServerTargetingObj(targeting) {
   // we expect to receive targeting for a single slot at a time
   if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
-    return getKeys(targeting)
-      .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`).join('&');
+    return Object.keys(targeting)
+      .map(key => `${key}=${encodeURIComponent(targeting[key])}`).join('&');
   } else {
     return '';
   }
 }
 
 /**
- * Read an adUnit object and return the sizes used in an [[728, 90]] format (even if they had [728, 90] defined)
- * Preference is given to the `adUnit.mediaTypes.banner.sizes` object over the `adUnit.sizes`
- * @param {object} adUnit one adUnit object from the normal list of adUnits
- * @returns {Array.<number[]>} array of arrays containing numeric sizes
+ * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of width, height tuples `[[300, 250]]` or '[[300,250], [970,90]]'
  */
-export function getAdUnitSizes(adUnit) {
-  if (!adUnit) {
-    return;
-  }
-
-  let sizes = [];
-  if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
-    let bannerSizes = adUnit.mediaTypes.banner.sizes;
-    if (Array.isArray(bannerSizes[0])) {
-      sizes = bannerSizes;
-    } else {
-      sizes.push(bannerSizes);
+export function sizesToSizeTuples(sizes) {
+  if (typeof sizes === 'string') {
+    // multiple sizes will be comma-separated
+    return sizes
+      .split(/\s*,\s*/)
+      .map(sz => sz.match(/^(\d+)x(\d+)$/i))
+      .filter(match => match)
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+  } else if (Array.isArray(sizes)) {
+    if (isValidGPTSingleSize(sizes)) {
+      return [sizes]
     }
-  // TODO - remove this else block when we're ready to deprecate adUnit.sizes for bidders
-  } else if (Array.isArray(adUnit.sizes)) {
-    if (Array.isArray(adUnit.sizes[0])) {
-      sizes = adUnit.sizes;
-    } else {
-      sizes.push(adUnit.sizes);
-    }
+    return sizes.filter(isValidGPTSingleSize);
   }
-  return sizes;
+  return [];
 }
 
 /**
@@ -184,56 +156,30 @@ export function getAdUnitSizes(adUnit) {
  * @return {Array.<string>}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
 export function parseSizesInput(sizeObj) {
-  var parsedSizes = [];
+  return sizesToSizeTuples(sizeObj).map(sizeTupleToSizeString);
+}
 
-  // if a string for now we can assume it is a single size, like "300x250"
-  if (typeof sizeObj === 'string') {
-    // multiple sizes will be comma-separated
-    var sizes = sizeObj.split(',');
-
-    // regular expression to match strigns like 300x250
-    // start of line, at least 1 number, an "x" , then at least 1 number, and the then end of the line
-    var sizeRegex = /^(\d)+x(\d)+$/i;
-    if (sizes) {
-      for (var curSizePos in sizes) {
-        if (hasOwn(sizes, curSizePos) && sizes[curSizePos].match(sizeRegex)) {
-          parsedSizes.push(sizes[curSizePos]);
-        }
-      }
-    }
-  } else if (typeof sizeObj === 'object') {
-    var sizeArrayLength = sizeObj.length;
-
-    // don't process empty array
-    if (sizeArrayLength > 0) {
-      // if we are a 2 item array of 2 numbers, we must be a SingleSize array
-      if (sizeArrayLength === 2 && typeof sizeObj[0] === 'number' && typeof sizeObj[1] === 'number') {
-        parsedSizes.push(parseGPTSingleSizeArray(sizeObj));
-      } else {
-        // otherwise, we must be a MultiSize array
-        for (var i = 0; i < sizeArrayLength; i++) {
-          parsedSizes.push(parseGPTSingleSizeArray(sizeObj[i]));
-        }
-      }
-    }
-  }
-
-  return parsedSizes;
+export function sizeTupleToSizeString(size) {
+  return size[0] + 'x' + size[1]
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into an AppNexus style string, (i.e. 300x250)
 export function parseGPTSingleSizeArray(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return singleSize[0] + 'x' + singleSize[1];
+    return sizeTupleToSizeString(singleSize);
   }
+}
+
+export function sizeTupleToRtbSize(size) {
+  return {w: size[0], h: size[1]};
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return {w: singleSize[0], h: singleSize[1]};
+    return sizeTupleToRtbSize(singleSize)
   }
 }
 
@@ -252,6 +198,16 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
+}
+
+export function canAccessWindowTop() {
+  try {
+    if (internal.getWindowTop().location.href) {
+      return true;
+    }
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
@@ -276,7 +232,7 @@ export function logWarn() {
     // eslint-disable-next-line no-console
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
 }
 
 export function logError() {
@@ -284,7 +240,7 @@ export function logError() {
     // eslint-disable-next-line no-console
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
 }
 
 export function prefixLog(prefix) {
@@ -326,22 +282,37 @@ export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
 
+export const createIframe = (() => {
+  const DEFAULTS = {
+    border: '0px',
+    hspace: '0',
+    vspace: '0',
+    marginWidth: '0',
+    marginHeight: '0',
+    scrolling: 'no',
+    frameBorder: '0',
+    allowtransparency: 'true'
+  }
+  return (doc, attrs, style = {}) => {
+    const f = doc.createElement('iframe');
+    Object.assign(f, Object.assign({}, DEFAULTS, attrs));
+    Object.assign(f.style, style);
+    return f;
+  }
+})();
+
 export function createInvisibleIframe() {
-  var f = document.createElement('iframe');
-  f.id = getUniqueIdentifierStr();
-  f.height = 0;
-  f.width = 0;
-  f.border = '0px';
-  f.hspace = '0';
-  f.vspace = '0';
-  f.marginWidth = '0';
-  f.marginHeight = '0';
-  f.style.border = '0';
-  f.scrolling = 'no';
-  f.frameBorder = '0';
-  f.src = 'about:blank';
-  f.style.display = 'none';
-  return f;
+  return createIframe(document, {
+    id: getUniqueIdentifierStr(),
+    width: 0,
+    height: 0,
+    src: 'about:blank'
+  }, {
+    display: 'none',
+    height: '0px',
+    width: '0px',
+    border: '0px'
+  });
 }
 
 /*
@@ -371,9 +342,7 @@ export function isStr(object) {
   return isA(object, tStr);
 }
 
-export function isArray(object) {
-  return isA(object, tArr);
-}
+export const isArray = Array.isArray.bind(Array);
 
 export function isNumber(object) {
   return isA(object, tNumb);
@@ -398,12 +367,7 @@ export function isEmpty(object) {
   if (isArray(object) || isStr(object)) {
     return !(object.length > 0);
   }
-
-  for (var k in object) {
-    if (hasOwnProperty.call(object, k)) return false;
-  }
-
-  return true;
+  return Object.keys(object).length <= 0;
 }
 
 /**
@@ -419,68 +383,29 @@ export function isEmptyStr(str) {
  * Iterate object with the function
  * falls back to es5 `forEach`
  * @param {Array|Object} object
- * @param {Function(value, key, object)} fn
+ * @param {Function} fn - The function to execute for each element. It receives three arguments: value, key, and the original object.
+ * @returns {void}
  */
 export function _each(object, fn) {
-  if (isEmpty(object)) return;
-  if (isFn(object.forEach)) return object.forEach(fn, this);
-
-  var k = 0;
-  var l = object.length;
-
-  if (l > 0) {
-    for (; k < l; k++) fn(object[k], k, object);
-  } else {
-    for (k in object) {
-      if (hasOwnProperty.call(object, k)) fn.call(this, object[k], k);
-    }
-  }
+  if (isFn(object?.forEach)) return object.forEach(fn, this);
+  Object.entries(object || {}).forEach(([k, v]) => fn.call(this, v, k));
 }
 
 export function contains(a, obj) {
-  if (isEmpty(a)) {
-    return false;
-  }
-
-  if (isFn(a.indexOf)) {
-    return a.indexOf(obj) !== -1;
-  }
-
-  var i = a.length;
-  while (i--) {
-    if (a[i] === obj) {
-      return true;
-    }
-  }
-
-  return false;
+  return isFn(a?.includes) && a.includes(obj);
 }
 
 /**
  * Map an array or object into another array
  * given a function
  * @param {Array|Object} object
- * @param {Function(value, key, object)} callback
+ * @param {Function} callback - The function to execute for each element. It receives three arguments: value, key, and the original object.
  * @return {Array}
  */
 export function _map(object, callback) {
-  if (isEmpty(object)) return [];
-  if (isFn(object.map)) return object.map(callback);
-  var output = [];
-  _each(object, function (value, key) {
-    output.push(callback(value, key, object));
-  });
-
-  return output;
+  if (isFn(object?.map)) return object.map(callback);
+  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
 }
-
-export function hasOwn(objectToCheck, propertyToCheckFor) {
-  if (objectToCheck.hasOwnProperty) {
-    return objectToCheck.hasOwnProperty(propertyToCheckFor);
-  } else {
-    return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
-  }
-};
 
 /*
 * Inserts an element(elm) as targets child, by default as first child
@@ -549,12 +474,6 @@ export function triggerPixel(url, done, timeout) {
   img.src = url;
 }
 
-export function callBurl({ source, burl }) {
-  if (source === CONSTANTS.S2S.SRC && burl) {
-    internal.triggerPixel(burl);
-  }
-}
-
 /**
  * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
  * (though could be for other purposes)
@@ -564,33 +483,19 @@ export function insertHtmlIntoIframe(htmlCode) {
   if (!htmlCode) {
     return;
   }
-
-  let iframe = document.createElement('iframe');
-  iframe.id = getUniqueIdentifierStr();
-  iframe.width = 0;
-  iframe.height = 0;
-  iframe.hspace = '0';
-  iframe.vspace = '0';
-  iframe.marginWidth = '0';
-  iframe.marginHeight = '0';
-  iframe.style.display = 'none';
-  iframe.style.height = '0px';
-  iframe.style.width = '0px';
-  iframe.scrolling = 'no';
-  iframe.frameBorder = '0';
-  iframe.allowtransparency = 'true';
-
+  const iframe = createInvisibleIframe();
   internal.insertElement(iframe, document, 'body');
 
-  iframe.contentWindow.document.open();
-  iframe.contentWindow.document.write(htmlCode);
-  iframe.contentWindow.document.close();
+  ((doc) => {
+    doc.open();
+    doc.write(htmlCode);
+    doc.close();
+  })(iframe.contentWindow.document);
 }
 
 /**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
@@ -608,18 +513,31 @@ export function insertUserSyncIframe(url, done, timeout) {
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
+ * @param encode
  * @return {string}     HTML snippet that contains the img src = set to `url`
  */
-export function createTrackPixelHtml(url) {
+export function createTrackPixelHtml(url, encode = encodeURI) {
   if (!url) {
     return '';
   }
 
-  let escapedUrl = encodeURI(url);
+  let escapedUrl = encode(url);
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
 };
+
+/**
+ * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ * @param url
+ * @return {string}
+ */
+export function encodeMacroURI(url) {
+  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
+  return macros.reduce((str, macro) => {
+    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
+  }, encodeURI(url))
+}
 
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
@@ -650,19 +568,6 @@ export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') 
     </iframe>`;
 }
 
-export function getValueString(param, val, defaultValue) {
-  if (val === undefined || val === null) {
-    return defaultValue;
-  }
-  if (isStr(val)) {
-    return val;
-  }
-  if (isNumber(val)) {
-    return val.toString();
-  }
-  internal.logWarn('Unsuported type for param: ' + param + ' required type: String');
-}
-
 export function uniques(value, index, arry) {
   return arry.indexOf(value) === index;
 }
@@ -675,42 +580,18 @@ export function getBidRequest(id, bidderRequests) {
   if (!id) {
     return;
   }
-  let bidRequest;
-  bidderRequests.some(bidderRequest => {
-    let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
-    if (result) {
-      bidRequest = result;
-    }
-    return result;
-  });
-  return bidRequest;
-}
-
-export function getKeys(obj) {
-  return Object.keys(obj);
+  return bidderRequests.flatMap(br => br.bids)
+    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id))
 }
 
 export function getValue(obj, key) {
   return obj[key];
 }
 
-/**
- * Get the key of an object for a given value
- */
-export function getKeyByValue(obj, value) {
-  for (let prop in obj) {
-    if (obj.hasOwnProperty(prop)) {
-      if (obj[prop] === value) {
-        return prop;
-      }
-    }
-  }
-}
-
-export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
+export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
 }
 
 export function isGptPubadsDefined() {
@@ -725,24 +606,8 @@ export function isApnGetTagDefined() {
   }
 }
 
-// This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
-export const getHighestCpm = getHighestCpmCallback('timeToRespond', (previous, current) => previous > current);
-
-// This function will get the oldest hightest cpm value bid, in case of tie it will return the bid which came in first
-// Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
-export const getOldestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous > current);
-
-// This function will get the latest hightest cpm value bid, in case of tie it will return the bid which came in last
-// Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
-export const getLatestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous < current);
-
-function getHighestCpmCallback(useTieBreakerProperty, tieBreakerCallback) {
-  return (previous, current) => {
-    if (previous.cpm === current.cpm) {
-      return tieBreakerCallback(previous[useTieBreakerProperty], current[useTieBreakerProperty]) ? current : previous;
-    }
-    return previous.cpm < current.cpm ? current : previous;
-  }
+export const sortByHighestCpm = (a, b) => {
+  return b.cpm - a.cpm;
 }
 
 /**
@@ -771,12 +636,8 @@ export function shuffle(array) {
   return array;
 }
 
-export function adUnitsFilter(filter, bid) {
-  return includes(filter, bid && bid.adUnitCode);
-}
-
 export function deepClone(obj) {
-  return clone(obj);
+  return klona(obj) || {};
 }
 
 export function inIframe() {
@@ -787,13 +648,46 @@ export function inIframe() {
   }
 }
 
+/**
+ * https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+ */
+export function isSafeFrameWindow() {
+  if (!inIframe()) {
+    return false;
+  }
+
+  const ws = internal.getWindowSelf();
+  return !!(ws.$sf && ws.$sf.ext);
+}
+
+/**
+ * Returns the result of calling the function $sf.ext.geom() if it exists
+ * @see https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf — 5.4 Function $sf.ext.geom
+ * @returns {Object | undefined} geometric information about the container
+ */
+export function getSafeframeGeometry() {
+  try {
+    const ws = getWindowSelf();
+    return (typeof ws.$sf.ext.geom === 'function') ? ws.$sf.ext.geom() : undefined;
+  } catch (e) {
+    logError('Error getting SafeFrame geometry', e);
+    return undefined;
+  }
+}
+
 export function isSafariBrowser() {
   return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
-export function replaceAuctionPrice(str, cpm) {
+export function replaceMacros(str, subs) {
   if (!str) return;
-  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
+  return Object.entries(subs).reduce((str, [key, val]) => {
+    return str.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), val || '');
+  }, str);
+}
+
+export function replaceAuctionPrice(str, cpm) {
+  return replaceMacros(str, {AUCTION_PRICE: cpm})
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -814,6 +708,33 @@ export function getPerformanceNow() {
 }
 
 /**
+ * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * This function uses the deprecated `Performance.timing` API and should be removed in future.
+ * It has not been updated yet because it is still used in some modules.
+ * @deprecated
+ * @param {Window} w The window object used to perform the api call. default to window.self
+ * @returns {number}
+ */
+export function getDomLoadingDuration(w) {
+  let domLoadingDuration = -1;
+
+  w = w || getWindowSelf();
+
+  const performance = w.performance;
+
+  if (w.performance?.timing) {
+    if (w.performance.timing.navigationStart > 0) {
+      const val = performance.timing.domLoading - performance.timing.navigationStart;
+      if (val > 0) {
+        domLoadingDuration = val;
+      }
+    }
+  }
+
+  return domLoadingDuration;
+}
+
+/**
  * When the deviceAccess flag config option is false, no cookies should be read or set
  * @returns {boolean}
  */
@@ -825,6 +746,7 @@ export function hasDeviceAccess() {
  * @returns {(boolean|undefined)}
  */
 export function checkCookieSupport() {
+  // eslint-disable-next-line prebid/no-member
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }
@@ -839,7 +761,7 @@ export function checkCookieSupport() {
  *
  * @param {function} func The function which should be executed, once the returned function has been executed
  *   numRequiredCalls times.
- * @param {int} numRequiredCalls The number of times which the returned function needs to be called before
+ * @param {number} numRequiredCalls The number of times which the returned function needs to be called before
  *   func is.
  */
 export function delayExecution(func, numRequiredCalls) {
@@ -857,8 +779,7 @@ export function delayExecution(func, numRequiredCalls) {
 
 /**
  * https://stackoverflow.com/a/34890276/428704
- * @export
- * @param {array} xs
+ * @param {Array} xs
  * @param {string} key
  * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
  */
@@ -904,7 +825,7 @@ export function isValidMediaTypes(mediaTypes) {
     return false;
   }
 
-  if (mediaTypes.video && mediaTypes.video.context) {
+  if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
     return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
   }
 
@@ -921,8 +842,7 @@ export function isValidMediaTypes(mediaTypes) {
 export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
   return adUnits
     .filter(adUnit => adUnit.code === adUnitCode)
-    .map((adUnit) => adUnit.bids)
-    .reduce(flatten, [])
+    .flatMap((adUnit) => adUnit.bids)
     .filter((bidderData) => bidderData.bidder === bidder)
     .map((bidderData) => bidderData.params || {});
 }
@@ -934,7 +854,7 @@ export function getDNT() {
   return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
-const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
+export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
 
 /**
  * Returns filter function to match adUnitCode in slot
@@ -944,41 +864,6 @@ const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnit
 export function isAdUnitCodeMatchingSlot(slot) {
   return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
 }
-
-/**
- * Returns filter function to match adUnitCode in slot
- * @param {string} adUnitCode AdUnit code
- * @return {function} filter function
- */
-export function isSlotMatchingAdUnitCode(adUnitCode) {
-  return (slot) => compareCodeAndSlot(slot, adUnitCode);
-}
-
-/**
- * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
- */
-export function getGptSlotForAdUnitCode(adUnitCode) {
-  let matchingSlot;
-  if (isGptPubadsDefined()) {
-    // find the first matching gpt slot on the page
-    matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
-  }
-  return matchingSlot;
-};
-
-/**
- * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
- */
-export function getGptSlotInfoForAdUnitCode(adUnitCode) {
-  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
-  if (matchingSlot) {
-    return {
-      gptSlot: matchingSlot.getAdUnitPath(),
-      divId: matchingSlot.getSlotElementId()
-    }
-  }
-  return {};
-};
 
 /**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
@@ -1001,33 +886,14 @@ export function unsupportedBidderMessage(adUnit, bidder) {
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
  * @param {*} value
  */
-export function isInteger(value) {
-  if (Number.isInteger) {
-    return Number.isInteger(value);
-  } else {
-    return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
-  }
-}
-
-/**
- * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
- * @param {string} value string value to convert
- */
-export function convertCamelToUnderscore(value) {
-  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
-}
+export const isInteger = Number.isInteger.bind(Number);
 
 /**
  * Returns a new object with undefined properties removed from given object
  * @param obj the object to clean
  */
 export function cleanObj(obj) {
-  return Object.keys(obj).reduce((newObj, key) => {
-    if (typeof obj[key] !== 'undefined') {
-      newObj[key] = obj[key];
-    }
-    return newObj;
-  }, {})
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'))
 }
 
 /**
@@ -1064,135 +930,8 @@ export function pick(obj, properties) {
   }, {});
 }
 
-/**
- * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
- * normally read from bidder params
- * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }
- * becomes [{ key: 'foo', value: ['bar', 'baz']}, {key: 'fizz', value: ['buzz']}]
- * @param {Object} keywords object of arrays representing keyvalue pairs
- * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
- */
-export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
-  let arrs = [];
-
-  _each(keywords, (v, k) => {
-    if (isArray(v)) {
-      let values = [];
-      _each(v, (val) => {
-        val = getValueString(paramName + '.' + k, val);
-        if (val || val === '') { values.push(val); }
-      });
-      v = values;
-    } else {
-      v = getValueString(paramName + '.' + k, v);
-      if (isStr(v)) {
-        v = [v];
-      } else {
-        return;
-      } // unsuported types - don't send a key
-    }
-    arrs.push({key: k, value: v});
-  });
-
-  return arrs;
-}
-
-/**
- * Try to convert a value to a type.
- * If it can't be done, the value will be returned.
- *
- * @param {string} typeToConvert The target type. e.g. "string", "number", etc.
- * @param {*} value The value to be converted into typeToConvert.
- */
-function tryConvertType(typeToConvert, value) {
-  if (typeToConvert === 'string') {
-    return value && value.toString();
-  } else if (typeToConvert === 'number') {
-    return Number(value);
-  } else {
-    return value;
-  }
-}
-
-export function convertTypes(types, params) {
-  Object.keys(types).forEach(key => {
-    if (params[key]) {
-      if (isFn(types[key])) {
-        params[key] = types[key](params[key]);
-      } else {
-        params[key] = tryConvertType(types[key], params[key]);
-      }
-
-      // don't send invalid values
-      if (isNaN(params[key])) {
-        delete params.key;
-      }
-    }
-  });
-  return params;
-}
-
 export function isArrayOfNums(val, size) {
   return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
-}
-
-/**
- * Creates an array of n length and fills each item with the given value
- */
-export function fill(value, length) {
-  let newArray = [];
-
-  for (let i = 0; i < length; i++) {
-    let valueToPush = isPlainObject(value) ? deepClone(value) : value;
-    newArray.push(valueToPush);
-  }
-
-  return newArray;
-}
-
-/**
- * http://npm.im/chunk
- * Returns an array with *size* chunks from given array
- *
- * Example:
- * ['a', 'b', 'c', 'd', 'e'] chunked by 2 =>
- * [['a', 'b'], ['c', 'd'], ['e']]
- */
-export function chunk(array, size) {
-  let newArray = [];
-
-  for (let i = 0; i < Math.ceil(array.length / size); i++) {
-    let start = i * size;
-    let end = start + size;
-    newArray.push(array.slice(start, end));
-  }
-
-  return newArray;
-}
-
-export function getMinValueFromArray(array) {
-  return Math.min(...array);
-}
-
-export function getMaxValueFromArray(array) {
-  return Math.max(...array);
-}
-
-/**
- * This function will create compare function to sort on object property
- * @param {string} property
- * @returns {function} compare function to be used in sorting
- */
-export function compareOn(property) {
-  return function compare(a, b) {
-    if (a[property] < b[property]) {
-      return 1;
-    }
-    if (a[property] > b[property]) {
-      return -1;
-    }
-    return 0;
-  }
 }
 
 export function parseQS(query) {
@@ -1255,9 +994,9 @@ export function buildUrl(obj) {
  * This function deeply compares two objects checking for their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
- * @param checkTypes {boolean} if set, two objects with identical properties but different constructors will *not*
- * be considered equivalent.
- * @returns {boolean}
+ * @param {Object} [options] - Options for comparison.
+ * @param {boolean} [options.checkTypes=false] - If set, two objects with identical properties but different constructors will *not* be considered equivalent.
+ * @returns {boolean} - Returns `true` if the objects are equivalent, `false` otherwise.
  */
 export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   if (obj1 === obj2) return true;
@@ -1266,8 +1005,9 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
     (typeof obj2 === 'object' && obj2 !== null) &&
     (!checkTypes || (obj1.constructor === obj2.constructor))
   ) {
-    if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
-    for (let prop in obj1) {
+    const props1 = Object.keys(obj1);
+    if (props1.length !== Object.keys(obj2).length) return false;
+    for (let prop of props1) {
       if (obj2.hasOwnProperty(prop)) {
         if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
           return false;
@@ -1358,15 +1098,6 @@ export function cyrb53Hash(str, seed = 0) {
 }
 
 /**
- * returns a window object, which holds the provided document or null
- * @param {Document} doc
- * @returns {Window}
- */
-export function getWindowFromDocument(doc) {
-  return (doc) ? doc.defaultView : null;
-}
-
-/**
  * returns the result of `JSON.parse(data)`, or undefined if that throws an error.
  * @param data
  * @returns {any}
@@ -1375,6 +1106,14 @@ export function safeJSONParse(data) {
   try {
     return JSON.parse(data);
   } catch (e) {}
+}
+
+export function safeJSONEncode(data) {
+  try {
+    return JSON.stringify(data);
+  } catch (e) {
+    return '';
+  }
 }
 
 /**
@@ -1399,41 +1138,149 @@ export function memoize(fn, key = function (arg) { return arg; }) {
 }
 
 /**
- * Sets dataset attributes on a script
- * @param {Script} script
- * @param {object} attributes
+ * Returns a Unix timestamp for given time value and unit.
+ * @param {number} timeValue numeric value, defaults to 0 (which means now)
+ * @param {string} timeUnit defaults to days (or 'd'), use 'm' for minutes. Any parameter that isn't 'd' or 'm' will return Date.now().
+ * @returns {number}
  */
-export function setScriptAttributes(script, attributes) {
-  for (let key in attributes) {
-    if (attributes.hasOwnProperty(key)) {
-      script.setAttribute(key, attributes[key]);
-    }
+export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
+  const acceptableUnits = ['m', 'd'];
+  if (acceptableUnits.indexOf(timeUnit) < 0) {
+    return Date.now();
   }
+  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
+  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
 }
 
 /**
- * Encode a string for inclusion in HTML.
- * See https://pragmaticwebsecurity.com/articles/spasecurity/json-stringify-xss.html and
- * https://codeql.github.com/codeql-query-help/javascript/js-bad-code-sanitization/
- * @return {string}
+ * Converts given object into an array, so {key: 1, anotherKey: 'fred', third: ['fred']} is turned
+ * into [{key: 1}, {anotherKey: 'fred'}, {third: ['fred']}]
+ * @param {Object} obj the object
+ * @returns {Array}
  */
-export const escapeUnsafeChars = (() => {
-  const escapes = {
-    '<': '\\u003C',
-    '>': '\\u003E',
-    '/': '\\u002F',
-    '\\': '\\\\',
-    '\b': '\\b',
-    '\f': '\\f',
-    '\n': '\\n',
-    '\r': '\\r',
-    '\t': '\\t',
-    '\0': '\\0',
-    '\u2028': '\\u2028',
-    '\u2029': '\\u2029'
-  };
+export function convertObjectToArray(obj) {
+  return Object.keys(obj).map(key => {
+    return {[key]: obj[key]};
+  });
+}
 
-  return function(str) {
-    return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x])
+/**
+ * Sets dataset attributes on a script
+ * @param {HTMLScriptElement} script
+ * @param {object} attributes
+ */
+export function setScriptAttributes(script, attributes) {
+  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v))
+}
+
+/**
+ * Perform a binary search for `el` on an ordered array `arr`.
+ *
+ * @returns the lowest nonnegative integer I that satisfies:
+ *   key(arr[i]) >= key(el) for each i between I and arr.length
+ *
+ *   (if one or more matches are found for `el`, returns the index of the first;
+ *   if the element is not found, return the index of the first element that's greater;
+ *   if no greater element exists, return `arr.length`)
+ */
+export function binarySearch(arr, el, key = (el) => el) {
+  let left = 0;
+  let right = arr.length && arr.length - 1;
+  const target = key(el);
+  while (right - left > 1) {
+    const middle = left + Math.round((right - left) / 2);
+    if (target > key(arr[middle])) {
+      left = middle;
+    } else {
+      right = middle;
+    }
   }
-})();
+  while (arr.length > left && target > key(arr[left])) {
+    left++;
+  }
+  return left;
+}
+
+/**
+ * Checks if an object has non-serializable properties.
+ * Non-serializable properties are functions and RegExp objects.
+ *
+ * @param {Object} obj - The object to check.
+ * @param {Set} checkedObjects - A set of properties that have already been checked.
+ * @returns {boolean} - Returns true if the object has non-serializable properties, false otherwise.
+ */
+export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
+  for (const key in obj) {
+    const value = obj[key];
+    const type = typeof value;
+
+    if (
+      value === undefined ||
+      type === 'function' ||
+      type === 'symbol' ||
+      value instanceof RegExp ||
+      value instanceof Map ||
+      value instanceof Set ||
+      value instanceof Date ||
+      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+    ) {
+      return true;
+    }
+    if (value !== null && type === 'object' && value.constructor === Object) {
+      if (checkedObjects.has(value)) {
+        // circular reference, means we have a non-serializable property
+        return true;
+      }
+      checkedObjects.add(value);
+      if (hasNonSerializableProperty(value, checkedObjects)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Returns the value of a nested property in an array of objects.
+ *
+ * @param {Array} collection - Array of objects.
+ * @param {String} key - Key of nested property.
+ * @returns {any, undefined} - Value of nested property.
+ */
+export function setOnAny(collection, key) {
+  for (let i = 0, result; i < collection.length; i++) {
+    result = deepAccess(collection[i], key);
+    if (result) {
+      return result;
+    }
+  }
+  return undefined;
+}
+
+export function extractDomainFromHost(pageHost) {
+  let domain = null;
+  try {
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+  } catch (e) {
+    domain = null;
+  }
+  return domain;
+}
+
+export function triggerNurlWithCpm(bid, cpm) {
+  if (isStr(bid.nurl) && bid.nurl !== '') {
+    bid.nurl = bid.nurl.replace(
+      /\${AUCTION_PRICE}/,
+      cpm
+    );
+    triggerPixel(bid.nurl);
+  }
+}

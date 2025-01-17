@@ -209,7 +209,7 @@ describe('mediasniperBidAdapter', function () {
 
       // openRTB 2.5
       expect(data.cur[0]).to.equal(DEFAULT_CURRENCY);
-      expect(data.id).to.equal(bidderRequest.auctionId);
+      expect(data.id).to.exist;
 
       expect(data.imp.length).to.equal(1);
       expect(data.imp[0].id).to.equal(bidRequests[0].bidId);

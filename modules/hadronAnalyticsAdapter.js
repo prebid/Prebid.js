@@ -2,9 +2,10 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-import CONSTANTS from '../src/constants.json';
-import { getStorageManager } from '../src/storageManager.js';
+import { EVENTS } from '../src/constants.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 /**
  * hadronAnalyticsAdapter.js - Audigent Hadron Analytics Adapter
@@ -14,8 +15,9 @@ const HADRON_ANALYTICS_URL = 'https://analytics.hadron.ad.gt/api/v1/analytics';
 const HADRONID_ANALYTICS_VER = 'pbadgt0';
 const DEFAULT_PARTNER_ID = 0;
 const AU_GVLID = 561;
+const MODULE_CODE = 'hadronAnalytics';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 var viewId = utils.generateUUID();
 
@@ -51,74 +53,74 @@ let analyticsType = 'endpoint';
 
 let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
   track({eventType, args}) {
-    args = args ? JSON.parse(JSON.stringify(args)) : {};
+    args = args ? utils.deepClone(args) : {};
     var data = {};
     if (!eventsToTrack.includes(eventType)) return;
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT: {
+      case EVENTS.AUCTION_INIT: {
         data = args;
         startAuction = data.timestamp;
         bidRequestTimeout = data.timeout;
         break;
       }
 
-      case CONSTANTS.EVENTS.AUCTION_END: {
+      case EVENTS.AUCTION_END: {
         data = args;
         data.start = startAuction;
         data.end = Date.now();
         break;
       }
 
-      case CONSTANTS.EVENTS.BID_ADJUSTMENT: {
+      case EVENTS.BID_ADJUSTMENT: {
         data.bidders = args;
         break;
       }
 
-      case CONSTANTS.EVENTS.BID_TIMEOUT: {
+      case EVENTS.BID_TIMEOUT: {
         data.bidders = args;
         data.duration = bidRequestTimeout;
         break;
       }
 
-      case CONSTANTS.EVENTS.BID_REQUESTED: {
+      case EVENTS.BID_REQUESTED: {
         data = args;
         break;
       }
 
-      case CONSTANTS.EVENTS.BID_RESPONSE: {
+      case EVENTS.BID_RESPONSE: {
         data = args;
         delete data.ad;
         break;
       }
 
-      case CONSTANTS.EVENTS.BID_WON: {
+      case EVENTS.BID_WON: {
         data = args;
         delete data.ad;
         delete data.adUrl;
         break;
       }
 
-      case CONSTANTS.EVENTS.BIDDER_DONE: {
+      case EVENTS.BIDDER_DONE: {
         data = args;
         break;
       }
 
-      case CONSTANTS.EVENTS.SET_TARGETING: {
+      case EVENTS.SET_TARGETING: {
         data.targetings = args;
         break;
       }
 
-      case CONSTANTS.EVENTS.REQUEST_BIDS: {
+      case EVENTS.REQUEST_BIDS: {
         data = args;
         break;
       }
 
-      case CONSTANTS.EVENTS.ADD_AD_UNITS: {
+      case EVENTS.ADD_AD_UNITS: {
         data = args;
         break;
       }
 
-      case CONSTANTS.EVENTS.AD_RENDER_FAILED: {
+      case EVENTS.AD_RENDER_FAILED: {
         data = args;
         break;
       }
@@ -184,14 +186,14 @@ function sendEvent(event) {
   eventQueue.push(event);
   utils.logInfo(`HADRON_ANALYTICS_EVENT ${event.eventType} `, event);
 
-  if (event.eventType === CONSTANTS.EVENTS.AUCTION_END) {
+  if (event.eventType === EVENTS.AUCTION_END) {
     flush();
   }
 }
 
 adapterManager.registerAnalyticsAdapter({
   adapter: hadronAnalyticsAdapter,
-  code: 'hadronAnalytics',
+  code: MODULE_CODE,
   gvlid: AU_GVLID
 });
 

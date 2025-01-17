@@ -35,23 +35,23 @@ describe('MediaFuseAdapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'member': '1234',
         'invCode': 'ABCD'
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placementId': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -811,8 +811,8 @@ describe('MediaFuseAdapter', function () {
         sha1udid: '4DFAA92388699AC6539885AEF1719293879985BF',
         windowsadid: '750c6be243f1c4b5c9912b95a5742fc5'
       });
-      expect(payload.device.geo).to.exist;
-      expect(payload.device.geo).to.deep.equal({
+      expect(payload.device.geo).to.not.exist;
+      expect(payload.device.geo).to.not.deep.equal({
         lat: 40.0964439,
         lng: -75.3009142
       });
@@ -1021,16 +1021,13 @@ describe('MediaFuseAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let bfStub;
     let bidderSettingsStorage;
 
     before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
       bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
     after(function() {
-      bfStub.restore();
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
@@ -1275,7 +1272,6 @@ describe('MediaFuseAdapter', function () {
           }
         }]
       };
-      bfStub.returns('1');
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');

@@ -1,6 +1,6 @@
 import AnalyticsAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {prefixLog, isPlainObject} from '../src/utils.js';
-import * as CONSTANTS from '../src/constants.json';
+import {has as hasEvent} from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
 
@@ -48,12 +48,12 @@ export function GenericAnalytics() {
         return false;
       }
       for (const [event, handler] of Object.entries(options.events)) {
-        if (!CONSTANTS.EVENTS.hasOwnProperty(event)) {
+        if (!hasEvent(event)) {
           logWarn(`options.events.${event} does not match any known Prebid event`);
-          if (typeof handler !== 'function') {
-            logError(`options.events.${event} must be a function`);
-            return false;
-          }
+        }
+        if (typeof handler !== 'function') {
+          logError(`options.events.${event} must be a function`);
+          return false;
         }
       }
     }
@@ -115,11 +115,6 @@ export function GenericAnalytics() {
         }
       },
       track(event) {
-        if (event.eventType === CONSTANTS.EVENTS.AUCTION_INIT && event.args.hasOwnProperty('config')) {
-          // clean up auctionInit event
-          // TODO: remove this special case in v8
-          delete event.args.config;
-        }
         const datum = translate(event);
         if (datum != null) {
           batch.push(datum);
@@ -147,7 +142,7 @@ export function defaultHandler({url, method, batchSize, ajax = ajaxBuilder()}) {
   const serialize = method === 'GET' ? (data) => ({data: JSON.stringify(data)}) : (data) => JSON.stringify(data);
 
   return function (events) {
-    ajax(url, callbacks, serialize(extract(events)), {method})
+    ajax(url, callbacks, serialize(extract(events)), {method, keepalive: true})
   }
 }
 

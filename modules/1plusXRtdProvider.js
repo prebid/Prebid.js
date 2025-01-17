@@ -1,10 +1,11 @@
 import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { ajax } from '../src/ajax.js';
+import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
 import {
   logMessage, logError,
-  deepAccess, mergeDeep,
-  isNumber, isArray, deepSetValue
+  deepAccess, deepSetValue, mergeDeep,
+  isNumber, isArray,
 } from '../src/utils.js';
 
 // Constants
@@ -14,7 +15,9 @@ const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 const OPE_FPID = 'ope_fpid'
-const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
+
+export const fpidStorage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
+
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
   AUDIENCE: 526,
@@ -55,7 +58,19 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
     throw new Error('No bidRequestConfig bidder found in moduleConfig bidders');
   }
 
-  return { customerId, timeout, bidders };
+  const fpidStorageType = deepAccess(moduleConfig, 'params.fpidStorageType',
+    STORAGE_TYPE_LOCALSTORAGE)
+
+  if (
+    fpidStorageType !== STORAGE_TYPE_COOKIES &&
+    fpidStorageType !== STORAGE_TYPE_LOCALSTORAGE
+  ) {
+    throw new Error(
+      `fpidStorageType must be ${STORAGE_TYPE_LOCALSTORAGE} or ${STORAGE_TYPE_COOKIES}`
+    )
+  }
+
+  return { customerId, timeout, bidders, fpidStorageType };
 }
 
 /**
@@ -83,16 +98,20 @@ export const extractConsent = ({ gdpr }) => {
 }
 
 /**
- * Extracts the OPE first party id field from local storage
+ * Extracts the OPE first party id field
+ * @param {string} fpidStorageType indicates where fpid should be read from
  * @returns fpid string if found, else null
  */
-export const extractFpid = () => {
+export const extractFpid = (fpidStorageType) => {
   try {
-    const fpid = window.localStorage.getItem(OPE_FPID);
-    if (fpid) {
-      return fpid;
+    switch (fpidStorageType) {
+      case STORAGE_TYPE_COOKIES: return fpidStorage.getCookie(OPE_FPID)
+      case STORAGE_TYPE_LOCALSTORAGE: return fpidStorage.getDataFromLocalStorage(OPE_FPID)
+      default: {
+        logError(`Got unknown fpidStorageType ${fpidStorageType}. Aborting...`)
+        return null
+      }
     }
-    return null;
   } catch (error) {
     return null;
   }
@@ -151,21 +170,11 @@ const getTargetingDataFromPapi = (papiUrl) => {
  * @param {string[]} topics Represents the topics of the page
  * @returns {Object} Object describing the updates to make on bidder configs
  */
-export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
-  // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
-  // Therefore, writing them in `site.keywords` until it's supported
-  // Other bidAdapters do fine with `site.content.data.segment`
-  const writeToLegacySiteKeywords = LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder);
-  if (writeToLegacySiteKeywords) {
-    const site = {
-      keywords: topics.join(',')
-    };
-    return { site };
-  }
-
+export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
   const userData = {
     name: ORTB2_NAME,
-    segment: segments.map((segmentId) => ({ id: segmentId }))
+    segment: segments.map((segmentId) => ({ id: segmentId })),
+    ext: { segtax: segtaxes.AUDIENCE }
   };
   const siteContentData = {
     name: ORTB2_NAME,
@@ -179,50 +188,33 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
  * Merges the targeting data with the existing config for bidder and updates
  * @param {string} bidder Bidder for which to set config
  * @param {Object} ortb2Updates Updates to be applied to bidder config
- * @param {Object} bidderConfigs All current bidder configs
- * @returns {Object} Updated bidder config
+ * @param {Object} biddersOrtb2 All current bidder configs
  */
-export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
-  const { site, siteContentData, userData } = ortb2Updates;
-  const bidderConfigCopy = mergeDeep({}, bidderConfigs[bidder]);
+export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
+  const { siteContentData, userData } = ortb2Updates;
+  mergeDeep(biddersOrtb2, { [bidder]: {} });
+  const bidderConfig = deepAccess(biddersOrtb2, bidder);
 
-  if (site) {
-    // Legacy : cf. comment on buildOrtb2Updates first lines
-    const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site');
-    const updatedSite = mergeDeep(currentSite, site);
-    deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
-  }
-
-  if (siteContentData) {
-    const siteDataPath = 'ortb2.site.content.data';
-    const currentSiteContentData = deepAccess(bidderConfigCopy, siteDataPath) || [];
+  {
+    const siteDataPath = 'site.content.data';
+    const currentSiteContentData = deepAccess(bidderConfig, siteDataPath) || [];
     const updatedSiteContentData = [
       ...currentSiteContentData.filter(({ name }) => name != siteContentData.name),
       siteContentData
     ];
-    deepSetValue(bidderConfigCopy, siteDataPath, updatedSiteContentData);
+    deepSetValue(bidderConfig, siteDataPath, updatedSiteContentData);
   }
 
-  if (userData) {
-    const userDataPath = 'ortb2.user.data';
-    const currentUserData = deepAccess(bidderConfigCopy, userDataPath) || [];
+  {
+    const userDataPath = 'user.data';
+    const currentUserData = deepAccess(bidderConfig, userDataPath) || [];
     const updatedUserData = [
       ...currentUserData.filter(({ name }) => name != userData.name),
       userData
     ];
-    deepSetValue(bidderConfigCopy, userDataPath, updatedUserData);
+    deepSetValue(bidderConfig, userDataPath, updatedUserData);
   }
-
-  return bidderConfigCopy;
 };
-
-const setAppnexusAudiences = (audiences) => {
-  config.setConfig({
-    appnexusAuctionKeywords: {
-      '1plusX': audiences,
-    },
-  });
-}
 
 /**
  * Updates bidder configs with the targeting data retreived from Profile API
@@ -230,23 +222,12 @@ const setAppnexusAudiences = (audiences) => {
  * @param {Object} config Module configuration
  * @param {string[]} config.bidders Bidders specified in module's configuration
  */
-export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
-  const bidderConfigs = config.getBidderConfig();
+export const setTargetingDataToConfig = (papiResponse, { bidders, biddersOrtb2 }) => {
   const { s: segments, t: topics } = papiResponse;
 
+  const ortb2Updates = buildOrtb2Updates({ segments, topics });
   for (const bidder of bidders) {
-    const ortb2Updates = buildOrtb2Updates({ segments, topics }, bidder);
-    const updatedBidderConfig = updateBidderConfig(bidder, ortb2Updates, bidderConfigs);
-    if (updatedBidderConfig) {
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: updatedBidderConfig
-      });
-    }
-    if (bidder === 'appnexus') {
-      // Do the legacy stuff for appnexus with segments
-      setAppnexusAudiences(segments);
-    }
+    updateBidderConfig(bidder, ortb2Updates, biddersOrtb2);
   }
 }
 
@@ -271,14 +252,15 @@ const init = (config, userConsent) => {
 const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
-    const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
+    const { customerId, bidders, fpidStorageType } = extractConfig(moduleConfig, reqBidsConfigObj);
+    const { ortb2Fragments: { bidder: biddersOrtb2 } } = reqBidsConfigObj;
     // Get PAPI URL
-    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid())
+    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid(fpidStorageType))
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
         logMessage(LOG_PREFIX, 'Get targeting data request successful');
-        setTargetingDataToConfig(papiResponse, { bidders });
+        setTargetingDataToConfig(papiResponse, { bidders, biddersOrtb2 });
         callback();
       })
   } catch (error) {

@@ -6,13 +6,16 @@ import {
 } from '../libraries/video/constants/events.js';
 // missing events: , AD_BREAK_START, , AD_BREAK_END, VIEWABLE, BUFFER, CAST, PLAYLIST_COMPLETE, RENDITION_UPDATE, PLAY_ATTEMPT_FAILED, AUTOSTART_BLOCKED
 import {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
 } from '../libraries/video/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+/**
+ * @typedef {import('../libraries/video/shared/state.js').State} State
+ */
 
 /*
 Plugins of interest:
@@ -35,7 +38,7 @@ https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module
 const setupFailMessage = 'Failed to instantiate the player';
 const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED];
 
-export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
+export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, callbackStorage_, utils) {
   let vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
@@ -46,7 +49,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   let player = null;
   let playerVersion = null;
   let playerIsSetup = false;
-  const {playerConfig, divId} = config;
+  const {playerConfig, divId} = providerConfig;
   let isMuted;
   let previousLastTimePosition = 0;
   let lastTimePosition = 0;
@@ -146,8 +149,9 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
+    // update: cannot infer instream ever, always need declarations
     if (player.src()) {
-      video.placement = PLACEMENT.INSTREAM;
+      video.plcmt = PLCMT.ACCOMPANYING_CONTENT;
     }
 
     // Placement according to IQG Guidelines 4.2.8
@@ -201,8 +205,15 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return;
     }
 
-    player.ima.changeAdTag(adTagUrl);
-    player.ima.requestAds();
+    // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
+    try {
+      player.ima.changeAdTag(adTagUrl);
+      player.ima.requestAds();
+    } catch (e) {
+      /*
+      Handling is not required; ad errors are emitted automatically by video.js
+       */
+    }
   }
 
   function onEvent(type, callback, payload) {
@@ -521,7 +532,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return;
     }
 
-    const adConfig = utils.getAdConfig(config);
+    const adConfig = utils.getAdConfig(playerConfig);
     player.ima(adConfig);
   }
 
@@ -628,6 +639,8 @@ export const utils = {
         return 'adserror';
       case CONTENT_LOADED:
         return 'loadstart';
+      case ERROR:
+        return ['error', 'aderror', 'contenterror'];
       case PLAY:
         return PLAY + 'ing';
       case PLAYBACK_REQUEST:
