@@ -278,6 +278,7 @@ class NodalsAiRtdProvider {
 
   // eslint-disable-next-line no-dupe-class-members
   #loadAdLibraries(deps) {
+    // eslint-disable-next-line no-unused-vars
     for (const [key, value] of Object.entries(deps)) {
       if (typeof value === 'string') {
         loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
