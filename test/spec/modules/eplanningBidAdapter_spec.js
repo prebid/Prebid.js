@@ -72,22 +72,6 @@ describe('E-Planning Adapter', function () {
           hp: 1,
           name: 'publisher',
           domain: 'publisher.com'
-        },
-        {
-          asi: 'reseller.com',
-          sid: 'aaaaa',
-          rid: 'BidRequest2',
-          hp: 1,
-          name: 'publisher2',
-          domain: 'publisher2.com'
-        },
-        {
-          asi: 'reseller3.com',
-          sid: 'aaaaab',
-          rid: 'BidRequest3',
-          hp: 1,
-          name: 'publisher3',
-          domain: 'publisher3.com'
         }
       ]
     }
@@ -111,6 +95,22 @@ describe('E-Planning Adapter', function () {
           hp: 1,
           name: 'publisher',
           domain: 'publisher.com'
+        },
+        {
+          asi: 'reseller.com',
+          sid: 'aaaaa',
+          rid: 'BidRequest2',
+          hp: 1,
+          name: 'publisher2',
+          domain: 'publisher2.com'
+        },
+        {
+          asi: 'reseller3.com',
+          sid: 'aaaaab',
+          rid: 'BidRequest3',
+          hp: 1,
+          name: 'publisher3',
+          domain: 'publisher3.com'
         }
       ]
     }
