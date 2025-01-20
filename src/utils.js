@@ -1048,7 +1048,7 @@ export function mergeDeep(target, ...sources) {
             }
           });
         }
-      } else {
+      } else if (source[key] !== undefined) {
         Object.assign(target, { [key]: source[key] });
       }
     }
