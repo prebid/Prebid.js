@@ -127,7 +127,7 @@ describe('Adagio Rtd Provider', function () {
       };
 
       it('store new session data for further usage', function () {
-        const storageValue = null;
+        const storageValue = JSON.stringify({abTest: {}});
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Date, 'now').returns(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
@@ -155,7 +155,7 @@ describe('Adagio Rtd Provider', function () {
       });
 
       it('store existing session data for further usage', function () {
-        const storageValue = JSON.stringify({session: session});
+        const storageValue = JSON.stringify({session: session, abTest: {}});
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Date, 'now').returns(1714116520710);
         sandbox.stub(Math, 'random').returns(0.8);
@@ -179,7 +179,7 @@ describe('Adagio Rtd Provider', function () {
       });
 
       it('store new session if old session has expired data for further usage', function () {
-        const storageValue = JSON.stringify({session: session});
+        const storageValue = JSON.stringify({session: session, abTest: {}});
         sandbox.stub(Date, 'now').returns(1715679344351);
         sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
         sandbox.stub(Math, 'random').returns(0.8);
@@ -195,6 +195,122 @@ describe('Adagio Rtd Provider', function () {
             new: true,
             id: utils.generateUUID(),
             rnd: Math.random(),
+          }
+        }
+        expect(spy.withArgs({
+          action: 'session',
+          ts: Date.now(),
+          data: expected,
+        }).calledOnce).to.be.true;
+      });
+    });
+
+    describe('store session data in localStorage for old snippet', function () {
+      it('store new session data for further usage', function () {
+        const storageValue = null;
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        sandbox.stub(Date, 'now').returns(1714116520710);
+        sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
+
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+
+        adagioRtdSubmodule.init(config);
+
+        const expected = {
+          session: {
+            new: true,
+            id: utils.generateUUID(),
+            rnd: Math.random(),
+            pages: 1
+          }
+        }
+
+        expect(spy.withArgs({
+          action: 'session',
+          ts: Date.now(),
+          data: expected,
+        }).calledOnce).to.be.true;
+      });
+
+      it('update session data for further usage', function () {
+        const storageValue = JSON.stringify({
+          session: {
+            new: true,
+            id: 'uid-1234',
+            rnd: 0.8,
+            pages: 1,
+            expiry: 1714116520710,
+            testName: 't',
+            testVersion: 'clt'
+          }
+        });
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        sandbox.stub(Date, 'now').returns(1714116520710);
+        sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
+
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+
+        adagioRtdSubmodule.init(config);
+
+        const expected = {
+          session: {
+            new: false,
+            expiry: 1714116520710,
+            id: utils.generateUUID(),
+            rnd: Math.random(),
+            pages: 1,
+            testName: 't',
+            testVersion: 'clt'
+          }
+        }
+
+        expect(spy.withArgs({
+          action: 'session',
+          ts: Date.now(),
+          data: expected,
+        }).calledOnce).to.be.true;
+      });
+    });
+
+    describe('update session data in localStorage from old snippet to new version', function () {
+      it('update session data for new snippet', function () {
+        const storageValue = JSON.stringify({
+          session: {
+            new: false,
+            id: 'uid-1234',
+            rnd: 0.8,
+            pages: 1,
+            expiry: 1714116520710,
+            testName: 't',
+            testVersion: 'clt'
+          },
+          abTest: {
+            expiry: 1714116520810,
+            testName: 't',
+            testVersion: 'srv'
+          }
+        });
+        sandbox.stub(storage, 'getDataFromLocalStorage').callsArgWith(1, storageValue);
+        sandbox.stub(Date, 'now').returns(1714116520710);
+        sandbox.stub(Math, 'random').returns(0.8);
+        sandbox.stub(utils, 'generateUUID').returns('uid-1234');
+
+        const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
+
+        adagioRtdSubmodule.init(config);
+
+        const expected = {
+          session: {
+            new: false,
+            expiry: 1714116520710,
+            id: utils.generateUUID(),
+            rnd: Math.random(),
+            pages: 1,
+            testName: 't',
+            testVersion: 'srv',
+            v: 2
           }
         }
 
