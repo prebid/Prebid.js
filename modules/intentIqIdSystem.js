@@ -19,7 +19,6 @@ import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
   NOT_YET_DEFINED,
-  OPT_OUT,
   BLACK_LIST,
   CLIENT_HINTS_KEY,
   EMPTY,
@@ -185,7 +184,7 @@ export function handleClientHints(clientHints) {
   return Object.keys(chParams).length ? JSON.stringify(chParams) : '';
 }
 
-export function isCMPStringsIsSame(fpData, cmpData) {
+export function isCMPStringTheSame(fpData, cmpData) {
   const firstPartyDataCPString = `${fpData.gdprString}${fpData.gppString}${fpData.uspString}`;
   const cmpDataString = `${cmpData.gdprString}${cmpData.gppString}${cmpData.uspString}`;
   return firstPartyDataCPString === cmpDataString;
@@ -227,23 +226,8 @@ export const intentIqIdSubmodule = {
     let runtimeEids = { eids: [] };
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
-    // Ensure provided values are initialized as empty strings if not defined
-    const providedGDPR = configParams.providedGDPR || '';
-    const providedGPP = configParams.providedGPP || '';
-    const providedUSP = configParams.providedUSP || '';
-    const allowGDPR = configParams.allowGDPR !== undefined ? configParams.allowGDPR : true;
-    const allowGPP = configParams.allowGPP !== undefined ? configParams.allowGPP : true;
-    const allowUSP = configParams.allowUSP !== undefined ? configParams.allowUSP : true;
-
-    // Define default flags and use user-provided values if available
-    const cmpConfig = {
-      providedGDPRString: allowGDPR ? providedGDPR : 'undefined',
-      providedGPPString: allowGPP ? providedGPP : 'undefined',
-      providedUSPString: allowUSP ? providedUSP : 'undefined',
-    };
-
     // Get consent information with priority for user-provided data
-    const cmpData = getCmpData(cmpConfig);
+    const cmpData = getCmpData(configParams);
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
 
@@ -316,7 +300,6 @@ export const intentIqIdSubmodule = {
         uspString: EMPTY,
         gppString: EMPTY,
         gdprString: EMPTY,
-        isOptedOut: true,
         date: Date.now()
       };
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
@@ -342,14 +325,12 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || !isCMPStringsIsSame(firstPartyData, cmpData)) {
+    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || !isCMPStringTheSame(firstPartyData, cmpData)) {
       firstPartyData.uspString = cmpData.uspString;
       firstPartyData.gppString = cmpData.gppString;
       firstPartyData.gdprString = cmpData.gdprString;
       firstPartyData.cttl = 0
       shouldCallServer = true;
-      partnerData.data = {}
-      partnerData.eidl = -1
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
       storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
     } else if (firstPartyData.isOptedOut) {
@@ -377,10 +358,9 @@ export const intentIqIdSubmodule = {
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
     url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
-    url += cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) : '';
-    url += '&gdpr=' + (allowGDPR && cmpData.gdprString ? '1' : '0');
     url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
-    url += cmpData.gpi ? '&gpi=' + cmpData.gpi : '';
+    url += cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) : '';
+    url += '&gdpr=' + (cmpData.allowGDPR && cmpData.gdprString ? '1' : '0');
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
@@ -429,7 +409,6 @@ export const intentIqIdSubmodule = {
                 firstPartyData.isOptedOut = respJson.isOptedOut;
               }
               if (respJson.isOptedOut === true) {
-                firstPartyData.group = OPT_OUT;
                 respJson.data = partnerData.data = runtimeEids = { eids: [] };
 
                 const keysToRemove = [

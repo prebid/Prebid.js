@@ -161,8 +161,6 @@ const _public = (function () {
     return eventsFired.toArray().map(val => Object.assign({}, val))
   };
 
-  window.prebidEvents = _public
-
   return _public;
 }());
 
