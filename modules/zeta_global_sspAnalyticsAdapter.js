@@ -29,8 +29,8 @@ function sendEvent(eventType, event) {
 function adRenderSucceededHandler(args) {
   const event = {
     zetaParams: zetaParams,
-    domain: args.doc?.location?.host,
-    page: args.doc?.location?.host + args.doc?.location?.pathname,
+    domain: args.doc?.location?.origin,
+    page: args.doc?.location?.href,
     bid: {
       adId: args.bid?.adId,
       requestId: args.bid?.requestId,

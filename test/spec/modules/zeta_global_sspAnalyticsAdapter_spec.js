@@ -292,14 +292,14 @@ const SAMPLE_EVENTS = {
   AD_RENDER_SUCCEEDED: {
     'doc': {
       'location': {
-        'href': 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
+        'href': 'http://test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html',
         'protocol': 'http:',
         'host': 'test-zeta-ssp.net',
         'hostname': 'localhost',
         'port': '63342',
         'pathname': '/zeta-ssp/ssp/_dev/examples/page_banner.html',
         'hash': '',
-        'origin': 'http://test-zeta-ssp.net:63342',
+        'origin': 'http://test-zeta-ssp.net',
         'ancestorOrigins': {
           '0': 'http://test-zeta-ssp.net:63342'
         }
@@ -624,8 +624,8 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           shortname: 'name'
         }
       });
-      expect(auctionSucceeded.domain).to.eql('test-zeta-ssp.net');
-      expect(auctionSucceeded.page).to.eql('test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html');
+      expect(auctionSucceeded.domain).to.eql('http://test-zeta-ssp.net');
+      expect(auctionSucceeded.page).to.eql('http://test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html');
       expect(auctionSucceeded.bid).to.be.deep.equal({
         adUnitCode: '/19968336/header-bid-tag-0',
         adId: '5759bb3ef7be1e8',
