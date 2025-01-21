@@ -1,9 +1,9 @@
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { safeEncodeBase64, spec } from 'modules/gumgumBidAdapter.js';
 
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/gumgumBidAdapter.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -1034,7 +1034,39 @@ describe('gumgumAdapter', function () {
       const videoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 7 } })[0];
       expect(videoBidResponse.vastXml).to.exist;
     });
-  })
+
+    it('should encode a string with an emdash character without failing', function () {
+      let serverResponse = {
+        'ad': {
+          'id': 2065333,
+          'height': 90,
+          'ipd': 2000,
+          'markup': 'This is a test string with an emdash – character', // non-Latin character
+          'ii': true,
+          'du': null,
+          'price': 1,
+          'zi': 0,
+          'impurl': 'http://g2.gumgum.com/ad/view',
+          'clsurl': 'http://g2.gumgum.com/ad/close'
+        },
+        'pag': {
+          't': 'ggumtest',
+          'pvid': 'aa8bbb65-427f-4689-8cee-e3eed0b89eec',
+        },
+        'thms': 10000
+      }
+
+      let result = spec.interpretResponse({ body: serverResponse }, bidRequest);
+      console.log(JSON.stringify(result));
+      expect(result[0].ad).to.exist;
+      expect(result[0].ad).to.contain('This is a test string with an emdash – character');
+
+      // Confirm that native btoa would have thrown an error on this response if used
+      const nativeBtoa = () => btoa(JSON.stringify(serverResponse));
+      expect(nativeBtoa).to.throw(Error);
+    });
+  });
+
   describe('getUserSyncs', function () {
     const syncOptions = {
       'iframeEnabled': 'true'
@@ -1057,19 +1089,4 @@ describe('gumgumAdapter', function () {
     expect(result[0].type).to.equal('image')
     expect(result[1].type).to.equal('iframe')
   })
-
-  describe('safeEncodeBase64', function() {
-    it('should encode a string with an emdash character without failing', function() {
-      const testString = 'This is a test string with an emdash – character.';
-      const nativeBtoa = () => btoa(testString);
-      const safeEncodedString = safeEncodeBase64(testString);
-
-      // Check that native btoa throws an error
-      expect(nativeBtoa).to.throw(Error);
-
-      // Check that safeEncodeBase64 does not throw an error and returns a valid base64 string
-      expect(safeEncodedString).to.be.a('string');
-      expect(() => atob(safeEncodedString)).to.not.throw(Error);
-    });
-  });
 });
