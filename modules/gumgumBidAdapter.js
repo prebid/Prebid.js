@@ -17,7 +17,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-const ALIAS_BIDDER_CODE = ['gg'];const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
+const ALIAS_BIDDER_CODE = ['gg']; const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
@@ -25,13 +25,6 @@ const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'live
 
 let invalidRequestIds = {};
 let pageViewId = null;
-
-/** HACKS FOR RTBSIM */
-const urlParams = new URLSearchParams(window.location.search);
-const ix = urlParams.get('index') || 0;
-
-const filter = urlParams.get('filter') ? '/' + urlParams.get('filter') : '';
-const variation = urlParams.get('v') ? '/' + urlParams.get('v') : '';
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams(topWindowUrl, mosttopLocation) {
@@ -113,16 +106,22 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   return browserParams;
 }
 
-function encodeBase64(str) {
-  // Convert the string to a proper UTF-8 byte sequence
-  var utf8Str = unescape(encodeURIComponent(str));
+function safeEncodeBase64(str) {
+  const encoder = new TextEncoder();
 
-  // Encode the UTF-8 byte sequence to base64
-  return btoa(utf8Str);
+  // Encode string to bytes (UTF-8)
+  const bytes = encoder.encode(str);
+  let safe = '';
+  bytes.forEach((byte) => {
+    safe += String.fromCharCode(byte);
+  });
+
+  // Then encode the bytes to base64
+  return btoa(safe);
 }
 
 function getWrapperCode(wrapper, data) {
-  return wrapper.replace('AD_JSON', encodeBase64(JSON.stringify(data)))
+  return wrapper.replace('AD_JSON', safeEncodeBase64(JSON.stringify(data)))
 }
 
 /**

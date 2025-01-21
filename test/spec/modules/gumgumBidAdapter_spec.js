@@ -1,9 +1,9 @@
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { safeEncodeBase64, spec } from 'modules/gumgumBidAdapter.js';
 
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec } from 'modules/gumgumBidAdapter.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -1057,4 +1057,19 @@ describe('gumgumAdapter', function () {
     expect(result[0].type).to.equal('image')
     expect(result[1].type).to.equal('iframe')
   })
+
+  describe('safeEncodeBase64', function() {
+    it('should encode a string with an emdash character without failing', function() {
+      const testString = 'This is a test string with an emdash – character.';
+      const nativeBtoa = () => btoa(testString);
+      const safeEncodedString = safeEncodeBase64(testString);
+
+      // Check that native btoa throws an error
+      expect(nativeBtoa).to.throw(Error);
+
+      // Check that safeEncodeBase64 does not throw an error and returns a valid base64 string
+      expect(safeEncodedString).to.be.a('string');
+      expect(() => atob(safeEncodedString)).to.not.throw(Error);
+    });
+  });
 });
