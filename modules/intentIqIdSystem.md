@@ -43,6 +43,12 @@ Please find below list of paramters that could be used in configuring Intent IQ 
 | params.browserBlackList        | Optional |  String  | This is the name of a browser that can be added to a blacklist.                                                                                                                                                                                                                                                                           | `"chrome"`                                    |
 | params.manualWinReportEnabled  | Optional | Boolean  | This variable determines whether the bidWon event is triggered automatically. If set to false, the event will occur automatically, and manual reporting with reportExternalWin will be disabled. If set to true, the event will not occur automatically, allowing manual reporting through reportExternalWin. The default value is false. | `true`|
 | params.domainName              | Optional | String   | Specifies the domain of the page in which the IntentIQ object is currently running and serving the impression. This domain will be used later in the revenue reporting breakdown by domain. For example, cnn.com. It identifies the primary source of requests to the IntentIQ servers, even within nested web pages.                     | `"currentDomain.com"`                         |
+| params.allowGDPR               | Optional | Boolean  | This flag determines whether the use of GDPR (General Data Protection Regulation) data is allowed. If set to true, the use of GDPR data will be allowed. The GDPR string can either be provided by the user or taken from the framework. If set to false, the use of GDPR data will be prohibited. By default, it is set to true.         | `true`|
+| params.allowGPP                | Optional | Boolean  | This flag determines whether the use of USP (US Privacy) data is allowed. If set to true, the use of USP data will be allowed. If set to false, the use of USP data will be prohibited. By default, it is set to true.                                                                                                                    | `true`|
+| params.allowUSP                | Optional | Boolean  | This flag determines whether the use of GPP (Global Privacy Platform) data is allowed. If set to true, the use of GPP data will be allowed. If set to false, the use of GPP data will be prohibited. By default, it is set to true.                                                                                                       | `true`|
+| params.providedGDPR            | Optional | String   | This parameter is used to provide the GDPR consent string by the user. If providedGDPR is empty, the consent string will be taken from the framework.                                                                                                                                                                                     | `"provided_gdpr_string"`|
+| params.providedGPP             | Optional | String   | This parameter is used to provide the GPP consent string by the user. If providedGPP is empty, the consent string will be taken from the framework.                                                                                                                                                                                       | `"provided_gpp_string"`|
+| params.providedUSP             | Optional | String   | This parameter is used to provide the USP consent string by the user. If providedUSP is empty, the consent string will be taken from the framework.                                                                                                                                                                                       | `"provided_usp_string"`|
 
 ### Configuration example
 
@@ -57,7 +63,10 @@ pbjs.setConfig({
                 browserBlackList: "chrome",
                 callback: (data, group) => window.pbjs.requestBids(),
                 manualWinReportEnabled: true,
-                domainName: "currentDomain.com"
+                domainName: "currentDomain.com",
+                providedGDPR: "provided_gdpr_string",
+                providedGPP: "provided_gpp_string",
+                providedUSP: "provided_usp_string"
             },
             storage: {
                 type: "html5",

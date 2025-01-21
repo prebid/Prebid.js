@@ -359,8 +359,9 @@ export const intentIqIdSubmodule = {
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
     url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
     url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
-    url += cmpData.gdprString ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) : '';
-    url += '&gdpr=' + (cmpData.allowGDPR && cmpData.gdprString ? '1' : '0');
+    url += cmpData.allowGDPR && cmpData.gdprString
+      ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
+      : '&gdpr=0';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
