@@ -88,9 +88,9 @@ class NodalsAiRtdProvider {
       return targetingData;
     }
     const facts = storedData?.facts ?? {};
-    const targetingEngine = window.$nodals.AdTargetingEngine['latest'];
-    targetingEngine.init(config, facts);
+    const targetingEngine = window?.$nodals?.adTargetingEngine['latest'];
     try {
+      targetingEngine.init(config, facts);
       targetingData = targetingEngine.getTargetingData(adUnitArray, storedData);
     } catch (error) {
       logError(`Error determining targeting keys: ${error}`);

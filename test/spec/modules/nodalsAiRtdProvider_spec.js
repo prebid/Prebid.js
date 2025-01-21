@@ -378,12 +378,12 @@ describe('NodalsAI RTD Provider', () => {
         getTargetingDataStub.returns(returnValue);
       }
       window.$nodals = window.$nodals || {};
-      window.$nodals.AdTargetingEngine = window.$nodals.AdTargetingEngine || {};
-      window.$nodals.AdTargetingEngine[version] = {
+      window.$nodals.adTargetingEngine = window.$nodals.adTargetingEngine || {};
+      window.$nodals.adTargetingEngine[version] = {
         init: initStub,
         getTargetingData: getTargetingDataStub,
       };
-      return window.$nodals.AdTargetingEngine[version];
+      return window.$nodals.adTargetingEngine[version];
     };
 
     it('should return an empty object when no data is available in local storage', () => {
