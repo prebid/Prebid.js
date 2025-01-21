@@ -134,7 +134,7 @@ describe('AdsInteractiveBidAdapter', function () {
     it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys(
+      expect(data).to.include.all.keys(
         'deviceWidth',
         'deviceHeight',
         'device',

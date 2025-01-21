@@ -1,14 +1,52 @@
-import { BID_ADV_DOMAINS_REJECTION_REASON, BID_ATTR_REJECTION_REASON, BID_CATEGORY_REJECTION_REASON, MODULE_NAME, PUBLISHER_FILTER_REJECTION_REASON, addBidResponseHook } from '../../../modules/bidResponseFilter';
-import { config } from '../../../src/config';
+import {
+  addBidResponseHook,
+  BID_ADV_DOMAINS_REJECTION_REASON,
+  BID_ATTR_REJECTION_REASON,
+  BID_CATEGORY_REJECTION_REASON,
+  init,
+  MODULE_NAME
+  , reset} from '../../../modules/bidResponseFilter';
+import {config} from '../../../src/config';
+import {addBidResponse} from '../../../src/auction.js';
 
 describe('bidResponseFilter', () => {
   let mockAuctionIndex
   beforeEach(() => {
-    config.resetConfig();
     mockAuctionIndex = {
-      getBidRequest: () => {},
-      getAdUnit: () => {}
+      getBidRequest: () => {
+      },
+      getAdUnit: () => {
+      }
     };
+  });
+  afterEach(() => {
+    config.resetConfig();
+    reset();
+  })
+
+  describe('enable/disable', () => {
+    let reject, dispatch;
+
+    beforeEach(() => {
+      reject = sinon.stub();
+      dispatch = sinon.stub();
+    });
+
+    it('should not run if not configured', () => {
+      reset();
+      addBidResponse.call({dispatch}, 'au', {}, reject);
+      sinon.assert.notCalled(reject);
+      sinon.assert.called(dispatch);
+    });
+
+    it('should run if configured', () => {
+      config.setConfig({
+        bidResponseFilter: {}
+      });
+      addBidResponse.call({dispatch}, 'au', {}, reject);
+      sinon.assert.called(reject);
+      sinon.assert.notCalled(dispatch);
+    })
   });
 
   it('should pass the bid after successful ortb2 rules validation', () => {
@@ -26,7 +64,8 @@ describe('bidResponseFilter', () => {
       }
     };
 
-    addBidResponseHook(call, 'adcode', bid, () => {}, mockAuctionIndex);
+    addBidResponseHook(call, 'adcode', bid, () => {
+    }, mockAuctionIndex);
     sinon.assert.calledOnce(call);
   });
 
@@ -109,7 +148,8 @@ describe('bidResponseFilter', () => {
 
     config.setConfig({[MODULE_NAME]: {cat: {enforce: false}}});
 
-    addBidResponseHook(call, 'adcode', bid, () => {}, mockAuctionIndex);
+    addBidResponseHook(call, 'adcode', bid, () => {
+    }, mockAuctionIndex);
     sinon.assert.calledOnce(call);
   });
 
@@ -129,7 +169,8 @@ describe('bidResponseFilter', () => {
 
     config.setConfig({[MODULE_NAME]: {cat: {blockUnknown: false}}});
 
-    addBidResponseHook(call, 'adcode', bid, () => {});
+    addBidResponseHook(call, 'adcode', bid, () => {
+    });
     sinon.assert.calledOnce(call);
   });
 })

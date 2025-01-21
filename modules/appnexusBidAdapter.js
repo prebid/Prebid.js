@@ -710,6 +710,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
     // Custom fields
     bid[NATIVE].ext = {
+      video: nativeAd.video,
       customImage1: nativeAd.image1 && {
         url: nativeAd.image1.url,
         height: nativeAd.image1.height,

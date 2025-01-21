@@ -101,13 +101,12 @@ function enrichBidderRequests(reqBidsConfigObj, bidders, wjsResponse) {
       // inject WURFL data
       enrichedBidders.add(bidderCode);
       const data = bidderData(wjsResponse.WURFL, caps, authBidders[bidderCode]);
-      logger.logMessage(`injecting data for ${bidderCode}: `, data);
+      data['enrich_device'] = true;
       enrichBidderRequest(reqBidsConfigObj, bidderCode, data);
       return;
     }
     // inject WURFL low entropy data
     const data = lowEntropyData(wjsResponse.WURFL, wjsResponse.wurfl_pbjs?.low_entropy_caps);
-    logger.logMessage(`injecting low entropy data for ${bidderCode}: `, data);
     enrichBidderRequest(reqBidsConfigObj, bidderCode, data);
   });
 }
@@ -147,9 +146,14 @@ export const lowEntropyData = (wurflData, lowEntropyCaps) => {
     }
     data[cap] = value;
   });
+  if ('model_name' in wurflData) {
+    data['model_name'] = wurflData.model_name.replace(/(iP(hone|ad|od)).*/, 'iP$2');
+  }
+  if ('brand_name' in wurflData) {
+    data['brand_name'] = wurflData.brand_name;
+  }
   return data;
 }
-
 /**
  * enrichBidderRequest enriches the bidder request with WURFL data
  * @param {Object} reqBidsConfigObj Bid request configuration object
@@ -159,12 +163,80 @@ export const lowEntropyData = (wurflData, lowEntropyCaps) => {
 export const enrichBidderRequest = (reqBidsConfigObj, bidderCode, wurflData) => {
   const ortb2data = {
     'device': {
-      'ext': {
-        'wurfl': wurflData,
-      }
+      'ext': {},
     },
   };
+
+  const device = reqBidsConfigObj.ortb2Fragments.global.device;
+  enrichOrtb2DeviceData('make', wurflData.brand_name, device, ortb2data);
+  enrichOrtb2DeviceData('model', wurflData.model_name, device, ortb2data);
+  if (wurflData.enrich_device) {
+    delete wurflData.enrich_device;
+    enrichOrtb2DeviceData('devicetype', makeOrtb2DeviceType(wurflData), device, ortb2data);
+    enrichOrtb2DeviceData('os', wurflData.advertised_device_os, device, ortb2data);
+    enrichOrtb2DeviceData('osv', wurflData.advertised_device_os_version, device, ortb2data);
+    enrichOrtb2DeviceData('hwv', wurflData.model_name, device, ortb2data);
+    enrichOrtb2DeviceData('h', wurflData.resolution_height, device, ortb2data);
+    enrichOrtb2DeviceData('w', wurflData.resolution_width, device, ortb2data);
+    enrichOrtb2DeviceData('ppi', wurflData.pixel_density, device, ortb2data);
+    enrichOrtb2DeviceData('pxratio', wurflData.density_class, device, ortb2data);
+    enrichOrtb2DeviceData('js', wurflData.ajax_support_javascript, device, ortb2data);
+  }
+  ortb2data.device.ext['wurfl'] = wurflData
   mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: ortb2data });
+}
+
+/**
+ * makeOrtb2DeviceType returns the ortb2 device type based on WURFL data
+ * @param {Object} wurflData WURFL data
+ * @returns {Number} ortb2 device type
+ * @see https://www.scientiamobile.com/how-to-populate-iab-openrtb-device-object/
+ */
+export function makeOrtb2DeviceType(wurflData) {
+  if (wurflData.is_mobile) {
+    if (!('is_phone' in wurflData) || !('is_tablet' in wurflData)) {
+      return undefined;
+    }
+    if (wurflData.is_phone || wurflData.is_tablet) {
+      return 1;
+    }
+    return 6;
+  }
+  if (wurflData.is_full_desktop) {
+    return 2;
+  }
+  if (wurflData.is_connected_tv) {
+    return 3;
+  }
+  if (wurflData.is_phone) {
+    return 4;
+  }
+  if (wurflData.is_tablet) {
+    return 5;
+  }
+  if (wurflData.is_ott) {
+    return 7;
+  }
+  return undefined;
+}
+
+/**
+ * enrichOrtb2DeviceData enriches the ortb2data device data with WURFL data.
+ * Note: it does not overrides properties set by Prebid.js
+ * @param {String} key the device property key
+ * @param {any} value the value of the device property
+ * @param {Object} device the ortb2 device object from Prebid.js
+ * @param {Object} ortb2data the ortb2 device data enrchiced with WURFL data
+ */
+function enrichOrtb2DeviceData(key, value, device, ortb2data) {
+  if (device?.[key] !== undefined) {
+    // value already defined by Prebid.js, do not overrides
+    return;
+  }
+  if (value === undefined) {
+    return;
+  }
+  ortb2data.device[key] = value;
 }
 
 /**

@@ -7,14 +7,29 @@ export const BID_CATEGORY_REJECTION_REASON = 'Category is not allowed';
 export const BID_ADV_DOMAINS_REJECTION_REASON = 'Adv domain is not allowed';
 export const BID_ATTR_REJECTION_REASON = 'Attr is not allowed';
 
+let moduleConfig;
+let enabled = false;
+
 function init() {
-  getHook('addBidResponse').before(addBidResponseHook);
-};
+  config.getConfig(MODULE_NAME, (cfg) => {
+    moduleConfig = cfg[MODULE_NAME];
+    if (enabled && !moduleConfig) {
+      reset();
+    } else if (!enabled && moduleConfig) {
+      enabled = true;
+      getHook('addBidResponse').before(addBidResponseHook);
+    }
+  })
+}
+
+export function reset() {
+  enabled = false;
+  getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+}
 
 export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
   const {bcat = [], badv = []} = index.getOrtb2(bid) || {};
   const battr = index.getBidRequest(bid)?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
-  const moduleConfig = config.getConfig(MODULE_NAME);
 
   const catConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {})};
   const advConfig = {enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {})};

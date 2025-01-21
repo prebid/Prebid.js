@@ -1,5 +1,5 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
@@ -128,7 +128,7 @@ export const spec = {
       timeout = bidderRequest.timeout;
     }
 
-    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;

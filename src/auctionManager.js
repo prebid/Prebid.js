@@ -26,10 +26,7 @@ import {AuctionIndex} from './auctionIndex.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {ttlCollection} from './utils/ttlCollection.js';
-import {getTTL, onTTLBufferChange} from './bidTTL.js';
-import {config} from './config.js';
-
-const CACHE_TTL_SETTING = 'minBidCacheTTL';
+import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -38,27 +35,14 @@ const CACHE_TTL_SETTING = 'minBidCacheTTL';
  * @returns {AuctionManager} auctionManagerInstance
  */
 export function newAuctionManager() {
-  let minCacheTTL = null;
-
   const _auctions = ttlCollection({
     startTime: (au) => au.end.then(() => au.getAuctionEnd()),
-    ttl: (au) => minCacheTTL == null ? null : au.end.then(() => {
-      return Math.max(minCacheTTL, ...au.getBidsReceived().map(getTTL)) * 1000
+    ttl: (au) => getMinBidCacheTTL() == null ? null : au.end.then(() => {
+      return Math.max(getMinBidCacheTTL(), ...au.getBidsReceived().map(bid => bid.ttl)) * 1000
     }),
   });
 
-  onTTLBufferChange(() => {
-    if (minCacheTTL != null) _auctions.refresh();
-  })
-
-  config.getConfig(CACHE_TTL_SETTING, (cfg) => {
-    const prev = minCacheTTL;
-    minCacheTTL = cfg?.[CACHE_TTL_SETTING];
-    minCacheTTL = typeof minCacheTTL === 'number' ? minCacheTTL : null;
-    if (prev !== minCacheTTL) {
-      _auctions.refresh();
-    }
-  })
+  onMinBidCacheTTLChange(() => _auctions.refresh());
 
   const auctionManager = {
     onExpiry: _auctions.onExpiry

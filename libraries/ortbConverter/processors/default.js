@@ -61,6 +61,12 @@ export const DEFAULT_PROCESSORS = {
           delete imp.ext?.data?.pbadslot;
         }
       }
+    },
+    secure: {
+      // should set imp.secure to 1 unless publisher has set it
+      fn(imp, bidRequest) {
+        imp.secure = imp.secure ?? 1;
+      }
     }
   },
   [BID_RESPONSE]: {

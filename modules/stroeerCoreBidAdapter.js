@@ -75,7 +75,7 @@ export const spec = {
       };
     }
 
-    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep'];
+    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep', 'site.ext'];
     ORTB2_KEYS.forEach(key => {
       const value = deepAccess(bidderRequest.ortb2, key);
       if (value !== undefined) {
@@ -116,7 +116,8 @@ export const spec = {
           creativeId: '',
           meta: {
             advertiserDomains: bidResponse.adomain,
-            dsa: bidResponse.dsa
+            dsa: bidResponse.dsa,
+            campaignType: bidResponse.campaignType,
           },
           mediaType,
         };
@@ -252,14 +253,14 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
     currency: 'EUR',
     mediaType: mediaType,
     size: '*'
-  });
+  }) || {};
 
   const sizeFloors = sizes.map(size => {
     const floor = bidRequest.getFloor({
       currency: 'EUR',
       mediaType: mediaType,
       size: [size[0], size[1]]
-    });
+    }) || {};
     return {...floor, size};
   });
 

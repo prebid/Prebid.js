@@ -369,7 +369,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   imp.id = validBidRequests.bidId;
   imp.tagid = tagid;
-  imp.secure = 1;
+  imp.secure = validBidRequests.ortb2Imp?.secure ?? 1;
 
   imp.bidfloor = deepAccess(validBidRequests, 'params.bidfloor');
   if (isFn(validBidRequests.getFloor)) {

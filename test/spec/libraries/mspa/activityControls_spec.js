@@ -181,13 +181,18 @@ describe('mspaRule', () => {
       expect(mkRule()().allow).to.equal(false);
     });
 
+    it('should deny when consent is using version != 1', () => {
+      consent = {Version: 2};
+      expect(mkRule()().allow).to.equal(false);
+    })
+
     Object.entries({
       'denies': true,
       'allows': false
     }).forEach(([t, denied]) => {
       it(`should check if deny fn ${t}`, () => {
         denies.returns(denied);
-        consent = {mock: 'value'};
+        consent = {mock: 'value', Version: 1};
         const result = mkRule()();
         sinon.assert.calledWith(denies, consent);
         if (denied) {
@@ -212,6 +217,7 @@ describe('setupRules', () => {
       parsedSections: {
         mockApi: [
           {
+            Version: 1,
             mock: 'consent'
           }
         ]
@@ -226,8 +232,15 @@ describe('setupRules', () => {
   it('should use flatten section data for the given api', () => {
     runSetup('mockApi', [1]);
     expect(isAllowed('mockActivity', {})).to.equal(false);
-    sinon.assert.calledWith(rules.mockActivity, {mock: 'consent'})
+    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi[0])
   });
+
+  it('should accept already flattened section data', () => {
+    consent.parsedSections.mockApi = {flat: 'consent', Version: 1};
+    runSetup('mockApi', [1]);
+    isAllowed('mockActivity', {});
+    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi)
+  })
 
   it('should not choke when no consent data is available', () => {
     consent = null;
@@ -241,11 +254,11 @@ describe('setupRules', () => {
   });
 
   it('should pass flattened consent through normalizeConsent', () => {
-    const normalize = sinon.stub().returns({normalized: 'consent'})
+    const normalize = sinon.stub().returns({normalized: 'consent', Version: 1})
     runSetup('mockApi', [1], normalize);
     expect(isAllowed('mockActivity', {})).to.equal(false);
-    sinon.assert.calledWith(normalize, {mock: 'consent'});
-    sinon.assert.calledWith(rules.mockActivity, {normalized: 'consent'});
+    sinon.assert.calledWith(normalize, {mock: 'consent', Version: 1});
+    sinon.assert.calledWith(rules.mockActivity, {normalized: 'consent', Version: 1});
   });
 
   it('should return a function that unregisters activity controls', () => {

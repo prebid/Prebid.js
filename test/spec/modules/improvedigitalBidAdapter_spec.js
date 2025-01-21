@@ -238,7 +238,7 @@ describe('Improve Digital Adapter Tests', function () {
       sinon.assert.match(payload.imp, [
         sinon.match({
           id: '33e9500b21129f',
-          secure: 0,
+          secure: 1,
           ext: {
             bidder: {
               placementId: 1053688,
@@ -265,7 +265,7 @@ describe('Improve Digital Adapter Tests', function () {
       sinon.assert.match(payload.imp, [
         sinon.match({
           id: '33e9500b21129f',
-          secure: 0,
+          secure: 1,
           ext: {
             bidder: {
               placementId: 1053688,
