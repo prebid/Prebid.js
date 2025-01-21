@@ -17,7 +17,9 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-const ALIAS_BIDDER_CODE = ['gg']; const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
+const ALIAS_BIDDER_CODE = ['gg'];
+const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
@@ -497,7 +499,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       pi: data.pi,
       selector: params.selector,
       sizes,
-      url: `hbid/${ix}${filter}${variation}`,
+      url: BID_ENDPOINT,
       method: 'GET',
       data
     });
