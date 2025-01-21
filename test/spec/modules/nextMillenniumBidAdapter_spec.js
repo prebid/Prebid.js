@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import {
   getImp,
+  setImpPos,
   getSourceObj,
   replaceUsersyncMacros,
   setConsentStrings,
@@ -28,6 +29,7 @@ describe('nextMillenniumBidAdapterTests', () => {
               data: {sizes: [[300, 250], [320, 250]]},
               bidfloorcur: 'EUR',
               bidfloor: 1.11,
+              pos: 3,
             },
           },
         },
@@ -37,7 +39,12 @@ describe('nextMillenniumBidAdapterTests', () => {
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
-          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+          banner: {
+            pos: 3,
+            w: 300,
+            h: 250,
+            format: [{w: 300, h: 250}, {w: 320, h: 250}],
+          },
         },
       },
 
@@ -56,6 +63,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             video: {
               data: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1},
               bidfloorcur: 'USD',
+              pos: 0,
             },
           },
         },
@@ -71,6 +79,7 @@ describe('nextMillenniumBidAdapterTests', () => {
             plcmt: 1,
             w: 400,
             h: 300,
+            pos: 0,
           },
         },
       },
@@ -175,6 +184,35 @@ describe('nextMillenniumBidAdapterTests', () => {
         expect(imp).to.deep.equal(expected);
       });
     }
+  });
+
+  describe('function setImpPos', () => {
+    const tests = [
+      {
+        title: 'position is - 1',
+        pos: 0,
+        expected: {pos: 0},
+      },
+
+      {
+        title: 'position is - 2',
+        pos: 7,
+        expected: {pos: 7},
+      },
+
+      {
+        title: 'position is empty',
+        expected: {},
+      },
+    ];
+
+    for (const {title, pos, expected} of tests) {
+      it(title, () => {
+        const obj = {};
+        setImpPos(obj, pos);
+        expect(obj).to.deep.equal(expected);
+      });
+    };
   });
 
   describe('function getSourceObj', () => {

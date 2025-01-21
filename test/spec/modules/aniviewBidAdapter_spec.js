@@ -265,9 +265,8 @@ describe('Aniview Bid Adapter', function () {
         const bids = spec.interpretResponse(bidderResponse, bidRequests[0]);
         const bid = bids[0];
 
-        expect(bid.width).to.not.exist;
-        expect(bid.height).to.not.exist;
-        expect(bid.creativeId).to.not.exist;
+        expect(bid.renderer).to.not.exist;
+        expect(bid.ad).to.not.exist;
       });
 
       it('should return empty bids array if no bids in response', function () {

@@ -402,7 +402,8 @@ describe('native.js', function () {
       'returns native data': {
         renderDataHook(next, bidResponse) {
           next.bail({
-            native: getNativeRenderingData(bidResponse, adUnit)
+            native: getNativeRenderingData(bidResponse, adUnit),
+            rendererVersion: 'native-render-version'
           });
         },
         renderSourceHook(next) {
@@ -433,8 +434,9 @@ describe('native.js', function () {
         function checkRenderer(message) {
           if (withRenderer) {
             expect(message.renderer).to.eql('mock-native-renderer')
+            expect(message.rendererVersion).to.eql('native-render-version');
             Object.entries(message).forEach(([key, val]) => {
-              if (!['native', 'adId', 'message', 'assets', 'renderer'].includes(key)) {
+              if (!['native', 'adId', 'message', 'assets', 'renderer', 'rendererVersion'].includes(key)) {
                 expect(message.native[key]).to.eql(val);
               }
             })
