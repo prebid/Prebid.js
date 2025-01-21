@@ -755,18 +755,18 @@ describe('Consumable BidAdapter', function () {
       expect(data.user.eids).to.deep.equal(bidderRequest.bidRequest[0].userIdAsEids);
     });
 
-    it("Request should remove non-objects for userIdAsEids", function () {
+    it('Request should remove non-objects for userIdAsEids', function () {
       bidderRequest.bidRequest[0].userId = {};
-      bidderRequest.bidRequest[0].userId.tdid = "TTD_ID";
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
       bidderRequest.bidRequest[0].userIdAsEids = [
         {
-          source: "adserver.org",
+          source: 'adserver.org',
           uids: [
             {
-              id: "TTD_ID_FROM_USER_ID_MODULE",
+              id: 'TTD_ID_FROM_USER_ID_MODULE',
               atype: 1,
               ext: {
-                rtiPartner: "TDID",
+                rtiPartner: 'TDID',
               },
             },
           ],
@@ -775,13 +775,13 @@ describe('Consumable BidAdapter', function () {
       ];
       let scrubbedEids = [
         {
-          source: "adserver.org",
+          source: 'adserver.org',
           uids: [
             {
-              id: "TTD_ID_FROM_USER_ID_MODULE",
+              id: 'TTD_ID_FROM_USER_ID_MODULE',
               atype: 1,
               ext: {
-                rtiPartner: "TDID",
+                rtiPartner: 'TDID',
               },
             },
           ],
