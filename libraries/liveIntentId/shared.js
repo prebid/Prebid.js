@@ -73,6 +73,10 @@ export function composeIdObject(value) {
     result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
+  if (value.triplelift) {
+    result.triplelift = { 'id': value.triplelift, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
   if (value.medianet) {
     result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
@@ -248,6 +252,18 @@ export const eids = {
   },
   'sonobi': {
     source: 'liveintent.sonobi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'triplelift': {
+    source: 'liveintent.triplelift.com',
     atype: 3,
     getValue: function(data) {
       return data.id;
