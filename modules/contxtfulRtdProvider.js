@@ -15,16 +15,29 @@ import {
   isEmpty,
   buildUrl,
   isArray,
+  generateUUID,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
-const CONTXTFUL_RECEPTIVITY_DOMAIN = 'api.receptivity.io';
+const CONTXTFUL_HOSTNAME_DEFAULT = 'api.receptivity.io';
+const CONTXTFUL_DEFER_DEFAULT = 0;
+
+let _sm;
+function sm() {
+  return _sm ??= generateUUID();
+}
+
+const storageManager = getStorageManager({
+  moduleType: MODULE_TYPE_RTD,
+  moduleName: MODULE_NAME,
+});
 
 let rxApi = null;
-let isFirstBidRequestCall = true;
 
 /**
  * Return current receptivity value for the requester.
@@ -35,8 +48,16 @@ function getRxEngineReceptivity(requester) {
   return rxApi?.receptivity(requester);
 }
 
+function getItemFromSessionStorage(key) {
+  try {
+    return storageManager.getDataFromSessionStorage(key);
+  } catch (error) {
+    logError(MODULE, error);
+  }
+}
+
 function loadSessionReceptivity(requester) {
-  let sessionStorageValue = sessionStorage.getItem(requester);
+  let sessionStorageValue = getItemFromSessionStorage(requester);
   if (!sessionStorageValue) {
     return null;
   }
@@ -54,7 +75,7 @@ function loadSessionReceptivity(requester) {
   } catch {
     return null;
   }
-};
+}
 
 /**
  * Prepare a receptivity batch
@@ -83,8 +104,10 @@ function init(config) {
   rxApi = null;
 
   try {
-    const { version, customer, hostname } = extractParameters(config);
-    initCustomer(version, customer, hostname);
+    initCustomer(config);
+
+    observeLastCursorPosition();
+
     return true;
   } catch (error) {
     logError(MODULE, error);
@@ -111,44 +134,59 @@ export function extractParameters(config) {
     throw Error(`${MODULE}: params.customer should be a non-empty string`);
   }
 
-  const hostname = config?.params?.hostname || CONTXTFUL_RECEPTIVITY_DOMAIN;
+  const hostname = config?.params?.hostname || CONTXTFUL_HOSTNAME_DEFAULT;
+  const defer = config?.params?.defer || CONTXTFUL_DEFER_DEFAULT;
 
-  return { version, customer, hostname };
+  return { version, customer, hostname, defer };
 }
 
 /**
  * Initialize sub module for a customer.
  * This will load the external resources for the sub module.
- * @param { String } version
- * @param { String } customer
- * @param { String } hostname
+ * @param { String } config
  */
-function initCustomer(version, customer, hostname) {
+function initCustomer(config) {
+  const { version, customer, hostname, defer } = extractParameters(config);
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
     host: hostname,
     pathname: `/${version}/prebid/${customer}/connector/rxConnector.js`,
   });
 
-  const externalScript = loadExternalScript(CONNECTOR_URL, MODULE_NAME);
-  addExternalScriptEventListener(externalScript, customer);
+  addConnectorEventListener(customer, config);
+
+  const loadScript = () => loadExternalScript(CONNECTOR_URL, MODULE_TYPE_RTD, MODULE_NAME, undefined, undefined, { 'data-sm': sm() });
+  // Optionally defer the loading of the script
+  if (Number.isFinite(defer) && defer > 0) {
+    setTimeout(loadScript, defer);
+  } else {
+    loadScript();
+  }
 }
 
 /**
  * Add event listener to the script tag for the expected events from the external script.
- * @param { HTMLScriptElement } script
+ * @param { String } tagId
+ * @param { String } prebidConfig
  */
-function addExternalScriptEventListener(script, tagId) {
-  script.addEventListener(
+function addConnectorEventListener(tagId, prebidConfig) {
+  window.addEventListener(
     'rxConnectorIsReady',
-    async ({ detail: rxConnector }) => {
+    async ({ detail: { [tagId]: rxConnector } }) => {
+      if (!rxConnector) {
+        return;
+      }
       // Fetch the customer configuration
       const { rxApiBuilder, fetchConfig } = rxConnector;
       let config = await fetchConfig(tagId);
       if (!config) {
         return;
       }
+      config['prebid'] = prebidConfig || {};
       rxApi = await rxApiBuilder(config);
+
+      // Remove listener now that we can use rxApi.
+      removeListeners();
     }
   );
 }
@@ -168,8 +206,11 @@ function getTargetingData(adUnits, config, _userConsent) {
     logInfo(MODULE, 'getTargetingData');
 
     const requester = config?.params?.customer;
-    const rx = getRxEngineReceptivity(requester) ||
-      loadSessionReceptivity(requester) || {};
+    const rx =
+      getRxEngineReceptivity(requester) ||
+      loadSessionReceptivity(requester) ||
+      {};
+
     if (isEmpty(rx)) {
       return {};
     }
@@ -192,11 +233,9 @@ function getTargetingData(adUnits, config, _userConsent) {
  */
 function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   function onReturn() {
-    if (isFirstBidRequestCall) {
-      isFirstBidRequestCall = false;
-    };
     onDone();
   }
+
   logInfo(MODULE, 'getBidRequestData');
   const bidders = config?.params?.bidders || [];
   if (isEmpty(bidders) || !isArray(bidders)) {
@@ -204,46 +243,26 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
     return;
   }
 
-  let fromApiBatched = () => rxApi?.receptivityBatched?.(bidders);
-  let fromApiSingle = () => prepareBatch(bidders, getRxEngineReceptivity);
-  let fromStorage = () => prepareBatch(bidders, loadSessionReceptivity);
+  let fromApi = rxApi?.receptivityBatched?.(bidders) || {};
+  let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
 
-  function tryMethods(methods) {
-    for (let method of methods) {
-      try {
-        let batch = method();
-        if (!isEmpty(batch)) {
-          return batch;
-        }
-      } catch (error) { }
-    }
-    return {};
-  }
-  let rxBatch = {};
-  try {
-    if (isFirstBidRequestCall) {
-      rxBatch = tryMethods([fromStorage, fromApiBatched, fromApiSingle]);
-    } else {
-      rxBatch = tryMethods([fromApiBatched, fromApiSingle, fromStorage])
-    }
-  } catch (error) { }
+  let sources = [fromStorage, fromApi];
 
-  if (isEmpty(rxBatch)) {
-    onReturn();
-    return;
-  }
+  let rxBatch = Object.assign(...sources);
+
+  let singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
 
   bidders
-    .map((bidderCode) => ({ bidderCode, rx: rxBatch[bidderCode] }))
-    .filter(({ rx }) => !isEmpty(rx))
-    .forEach(({ bidderCode, rx }) => {
+    .forEach(bidderCode => {
       const ortb2 = {
         user: {
           data: [
             {
               name: MODULE_NAME,
               ext: {
-                rx,
+                rx: rxBatch[bidderCode],
+                events: singlePointEvents,
+                sm: sm(),
                 params: {
                   ev: config.params?.version,
                   ci: config.params?.customer,
@@ -253,13 +272,96 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
           ],
         },
       };
+
       mergeDeep(reqBidsConfigObj.ortb2Fragments?.bidder, {
         [bidderCode]: ortb2,
       });
     });
 
   onReturn();
-};
+}
+
+function getUiEvents() {
+  return {
+    position: lastCursorPosition,
+    screen: getScreen(),
+  };
+}
+
+function getScreen() {
+  function getInnerSize() {
+    let w = window?.innerWidth;
+    let h = window?.innerHeight;
+
+    if (w && h) {
+      return [w, h];
+    }
+  }
+
+  function getDocumentSize() {
+    let body = window?.document?.body;
+    let w = body.clientWidth;
+    let h = body.clientHeight;
+
+    if (w && h) {
+      return [w, h];
+    }
+  }
+
+  // If we cannot access or cast the window dimensions, we get None.
+  // If we cannot collect the size from the window we try to use the root document dimensions
+  let [width, height] = getInnerSize() || getDocumentSize() || [0, 0];
+  let topLeft = { x: window.scrollX, y: window.scrollY };
+
+  return {
+    topLeft,
+    width,
+    height,
+    timestampMs: performance.now(),
+  };
+}
+
+let lastCursorPosition;
+
+function observeLastCursorPosition() {
+  function pointerEventToPosition(event) {
+    lastCursorPosition = {
+      x: event.clientX,
+      y: event.clientY,
+      timestampMs: performance.now()
+    };
+  }
+
+  function touchEventToPosition(event) {
+    let touch = event.touches.item(0);
+    if (!touch) {
+      return;
+    }
+
+    lastCursorPosition = {
+      x: touch.clientX,
+      y: touch.clientY,
+      timestampMs: performance.now()
+    };
+  }
+
+  addListener('pointermove', pointerEventToPosition);
+  addListener('touchmove', touchEventToPosition);
+}
+
+let listeners = {};
+function addListener(name, listener) {
+  listeners[name] = listener;
+
+  window.addEventListener(name, listener);
+}
+
+function removeListeners() {
+  for (const name in listeners) {
+    window.removeEventListener(name, listeners[name]);
+    delete listeners[name];
+  }
+}
 
 export const contxtfulSubmodule = {
   name: MODULE_NAME,

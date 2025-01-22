@@ -1,27 +1,17 @@
-import {createTrackPixelHtml, _each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import {getAd, getSiteObj, getSyncResponse} from '../libraries/targetVideoUtils/bidderUtils.js'
+import {GVLID, SOURCE, TIME_TO_LIVE, VIDEO_ENDPOINT_URL, VIDEO_PARAMS} from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
-
-const SOURCE = 'pbjs';
-const BIDDER_CODE = 'brid';
-const ENDPOINT_URL = 'https://pbs.prebrid.tv/openrtb2/auction';
-const GVLID = 934;
-const TIME_TO_LIVE = 300;
-const VIDEO_PARAMS = [
-  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'plcmt',
-  'playbackmethod', 'protocols', 'startdelay'
-];
-
 export const spec = {
 
-  code: BIDDER_CODE,
+  code: 'brid',
   gvlid: GVLID,
   supportedMediaTypes: [VIDEO],
 
@@ -117,7 +107,7 @@ export const spec = {
 
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL,
+        url: VIDEO_ENDPOINT_URL,
         data: JSON.stringify(postBody),
         options: {
           withCredentials: true
@@ -138,92 +128,59 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const response = serverResponse.body;
-    const bidResponses = [];
+    let highestBid = null;
 
-    _each(response.seatbid, (resp) => {
-      _each(resp.bid, (bid) => {
-        const requestId = bidRequest.bidId;
-        const params = bidRequest.params;
+    if (response && response.seatbid && response.seatbid.length && response.seatbid[0].bid && response.seatbid[0].bid.length) {
+      _each(response.seatbid, (resp) => {
+        _each(resp.bid, (bid) => {
+          const requestId = bidRequest.bidId;
+          const params = bidRequest.params;
 
-        const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
+          const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
-        const bidResponse = {
-          requestId,
-          params,
-          cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
-          creativeId: bid.adid,
-          currency: response.cur,
-          netRevenue: false,
-          ttl: TIME_TO_LIVE,
-          meta: {
-            advertiserDomains: bid.adomain || []
+          const bidResponse = {
+            requestId,
+            params,
+            cpm: bid.price,
+            width: bid.w,
+            height: bid.h,
+            creativeId: bid.crid || bid.adid,
+            currency: response.cur,
+            netRevenue: false,
+            ttl: TIME_TO_LIVE,
+            meta: {
+              advertiserDomains: bid.adomain || []
+            }
+          };
+
+          if (vastUrl || vastXml) {
+            bidResponse.mediaType = VIDEO;
+            if (vastUrl) bidResponse.vastUrl = vastUrl;
+            if (vastXml) bidResponse.vastXml = vastXml;
+          } else {
+            bidResponse.ad = ad;
+            bidResponse.adUrl = adUrl;
+          };
+
+          if (!highestBid || highestBid.cpm < bidResponse.cpm) {
+            highestBid = bidResponse;
           }
-        };
-
-        if (vastUrl || vastXml) {
-          bidResponse.mediaType = VIDEO;
-          if (vastUrl) bidResponse.vastUrl = vastUrl;
-          if (vastXml) bidResponse.vastXml = vastXml;
-        } else {
-          bidResponse.ad = ad;
-          bidResponse.adUrl = adUrl;
-        };
-
-        bidResponses.push(bidResponse);
+        });
       });
-    });
+    }
 
-    return bidResponses;
+    return highestBid ? [highestBid] : [];
   },
 
-}
-
-/**
- * Helper function to get ad
- *
- * @param {object} bid The bid.
- * @return {object} ad object.
- */
-function getAd(bid) {
-  let ad, adUrl, vastXml, vastUrl;
-
-  switch (deepAccess(bid, 'ext.prebid.type')) {
-    case VIDEO:
-      if (bid.adm.substr(0, 4) === 'http') {
-        vastUrl = bid.adm;
-      } else {
-        vastXml = bid.adm;
-      };
-      break;
-    default:
-      if (bid.adm && bid.nurl) {
-        ad = bid.adm;
-        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
-      } else if (bid.adm) {
-        ad = bid.adm;
-      } else if (bid.nurl) {
-        adUrl = bid.nurl;
-      };
+  /**
+   * Determine the user sync type (either 'iframe' or 'image') based on syncOptions.
+   * Construct the sync URL by appending required query parameters such as gdpr, ccpa, and coppa consents.
+   * Return an array containing an object with the sync type and the constructed URL.
+   */
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+    return getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, 'brid');
   }
 
-  return {ad, adUrl, vastXml, vastUrl};
-}
-
-/**
- * Helper function to get site object
- *
- * @return {object} siteObj.
- */
-function getSiteObj() {
-  const refInfo = (getRefererInfo && getRefererInfo()) || {};
-
-  return {
-    page: refInfo.page,
-    ref: refInfo.ref,
-    domain: refInfo.domain
-  };
 }
 
 registerBidder(spec);

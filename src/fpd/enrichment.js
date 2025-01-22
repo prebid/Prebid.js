@@ -99,8 +99,13 @@ const ENRICHMENTS = {
   },
   device() {
     return winFallback((win) => {
-      const w = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-      const h = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
+      // screen.width and screen.height are the physical dimensions of the screen
+      const w = win.screen.width;
+      const h = win.screen.height;
+
+      // vpw and vph are the viewport dimensions of the browser window
+      const vpw = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
+      const vph = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
 
       const device = {
         w,
@@ -108,6 +113,10 @@ const ENRICHMENTS = {
         dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
+        ext: {
+          vpw,
+          vph,
+        },
       };
 
       if (win.navigator?.webdriver) {
@@ -120,7 +129,7 @@ const ENRICHMENTS = {
   regs() {
     const regs = {};
     if (winFallback((win) => win.navigator.globalPrivacyControl)) {
-      deepSetValue(regs, 'ext.gpc', 1);
+      deepSetValue(regs, 'ext.gpc', '1');
     }
     const coppa = config.getConfig('coppa');
     if (typeof coppa === 'boolean') {

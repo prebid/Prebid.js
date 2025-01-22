@@ -37,7 +37,7 @@ const SUBMODULE_NAME = 'adagio';
 const ADAGIO_BIDDER_CODE = 'adagio';
 const GVLID = 617;
 const SCRIPT_URL = 'https://script.4dex.io/a/latest/adagio.js';
-const SESS_DURATION = 30 * 60 * 1000;
+const LATEST_ABTEST_VERSION = 2;
 export const PLACEMENT_SOURCES = {
   ORTB: 'ortb', // implicit default, not used atm.
   ADUNITCODE: 'code',
@@ -66,27 +66,53 @@ const _SESSION = (function() {
   return {
     init: () => {
       // helper function to determine if the session is new.
-      const isNewSession = (lastActivity) => {
-        const now = Date.now();
-        return (!isNumber(lastActivity) || (now - lastActivity) > SESS_DURATION);
+      const isNewSession = (expiry) => {
+        return (!isNumber(expiry) || Date.now() > expiry);
       };
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
-        const { rnd, new: isNew, vwSmplg, vwSmplgNxt, lastActivityTime } = _internal.getSessionFromLocalStorage(storageValue);
+        const { rnd, vwSmplg, vwSmplgNxt, expiry, lastActivityTime, id, pages, testName: legacyTestName, testVersion: legacyTestVersion } = _internal.getSessionFromLocalStorage(storageValue);
+
+        const isNewSess = isNewSession(expiry);
+
+        const abTest = _internal.getAbTestFromLocalStorage(storageValue);
+
+        // if abTest is defined it means that the website is using the new version of the snippet
+        const v = abTest ? LATEST_ABTEST_VERSION : undefined;
 
         data.session = {
           rnd,
-          new: isNew || false, // legacy: `new` was used but the choosen name is not good.
+          pages: pages || 1,
+          new: isNewSess, // legacy: `new` was used but the choosen name is not good.
           // Don't use values if they are not defined.
+          ...(v !== undefined && { v }),
           ...(vwSmplg !== undefined && { vwSmplg }),
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
-          ...(lastActivityTime !== undefined && { lastActivityTime })
+          ...(expiry !== undefined && { expiry }),
+          ...(lastActivityTime !== undefined && { lastActivityTime }), // legacy: used by older version of the snippet
+          ...(id !== undefined && { id }),
         };
 
-        if (isNewSession(lastActivityTime)) {
+        if (isNewSess) {
           data.session.new = true;
+          data.session.id = generateUUID();
           data.session.rnd = Math.random();
+        }
+
+        if (v === LATEST_ABTEST_VERSION) {
+          const { testName, testVersion, expiry: abTestExpiry, sessionId } = abTest;
+          if (abTestExpiry && abTestExpiry > Date.now() && (!sessionId || sessionId === data.session.id)) { // if AbTest didn't set a session id, it's probably because it's a new one and it didn't retrieve it yet, assume it's okay to get test Name and Version.
+            if (testName && testVersion) {
+              data.session.testName = testName;
+              data.session.testVersion = testVersion;
+            }
+          }
+        } else {
+          if (legacyTestName && legacyTestVersion) {
+            data.session.testName = legacyTestName;
+            data.session.testVersion = legacyTestVersion;
+          }
         }
 
         _internal.getAdagioNs().queue.push({
@@ -181,13 +207,35 @@ export const _internal = {
       rnd: Math.random()
     };
 
-    const obj = JSON.parse(storageValue, function(name, value) {
+    const obj = this.getObjFromStorageValue(storageValue);
+
+    return (!obj || !obj.session) ? _default : obj.session;
+  },
+
+  /**
+   * Returns the abTest data from the localStorage.
+   *
+   * @param {string} storageValue - The value stored in the localStorage.
+   * @returns {AbTest}
+   */
+  getAbTestFromLocalStorage: function(storageValue) {
+    const obj = this.getObjFromStorageValue(storageValue);
+
+    return (!obj || !obj.abTest) ? null : obj.abTest;
+  },
+
+  /**
+   * Returns the parsed data from the localStorage.
+   *
+   * @param {string} storageValue - The value stored in the localStorage.
+   * @returns {Object}
+   */
+  getObjFromStorageValue: function(storageValue) {
+    return JSON.parse(storageValue, function(name, value) {
       if (name.charAt(0) !== '_' || name === '') {
         return value;
       }
     });
-
-    return (!obj || !obj.session) ? _default : obj.session;
   }
 };
 
@@ -197,7 +245,10 @@ function loadAdagioScript(config) {
       return;
     }
 
-    loadExternalScript(SCRIPT_URL, SUBMODULE_NAME, undefined, undefined, { id: `adagiojs-${getUniqueIdentifierStr()}`, 'data-pid': config.params.organizationId });
+    loadExternalScript(SCRIPT_URL, MODULE_TYPE_RTD, SUBMODULE_NAME, undefined, undefined, {
+      id: `adagiojs-${getUniqueIdentifierStr()}`,
+      'data-pid': config.params.organizationId
+    });
   });
 }
 
@@ -278,15 +329,18 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
 
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits || [];
   adUnits.forEach(adUnit => {
+    adUnit.ortb2Imp = adUnit.ortb2Imp || {};
     const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+
     // A divId is required to compute the slot position and later to track viewability.
     // If nothing has been explicitly set, we try to get the divId from the GPT slot and fallback to the adUnit code in last resort.
-    if (!deepAccess(ortb2Imp, 'ext.data.divId')) {
-      const divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
+    let divId = deepAccess(ortb2Imp, 'ext.data.divId')
+    if (!divId) {
+      divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
       deepSetValue(ortb2Imp, `ext.data.divId`, divId || adUnit.code);
     }
 
-    const slotPosition = getSlotPosition(adUnit);
+    const slotPosition = getSlotPosition(divId);
     deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
 
     // It is expected that the publisher set a `adUnits[].ortb2Imp.ext.data.placement` value.
@@ -430,7 +484,7 @@ function getElementFromTopWindow(element, currentWindow) {
   }
 };
 
-function getSlotPosition(adUnit) {
+function getSlotPosition(divId) {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
@@ -451,16 +505,15 @@ function getSlotPosition(adUnit) {
       // window.top based computing
       const wt = getWindowTop();
       const d = wt.document;
-      const adUnitElementId = deepAccess(adUnit, 'ortb2Imp.ext.data.divId');
 
       let domElement;
 
       if (inIframe() === true) {
         const ws = getWindowSelf();
-        const currentElement = ws.document.getElementById(adUnitElementId);
+        const currentElement = ws.document.getElementById(divId);
         domElement = getElementFromTopWindow(currentElement, ws);
       } else {
-        domElement = wt.document.getElementById(adUnitElementId);
+        domElement = wt.document.getElementById(divId);
       }
 
       if (!domElement) {
@@ -661,11 +714,24 @@ function registerEventsForAdServers(config) {
 
 /**
  * @typedef {Object} Session
+ * @property {string} id - uuid of the session.
  * @property {boolean} new - True if the session is new.
  * @property {number} rnd - Random number used to determine if the session is new.
  * @property {number} vwSmplg - View sampling rate.
  * @property {number} vwSmplgNxt - Next view sampling rate.
+ * @property {number} expiry - Timestamp after which session should be considered expired.
  * @property {number} lastActivityTime - Last activity time.
+ * @property {number} pages - current number of pages seen.
+ * @property {string} testName - The test name defined by the publisher. Legacy only present for websites with older abTest snippet.
+ * @property {string} testVersion - 'clt', 'srv'. Legacy only present for websites with older abTest snippet.
+ */
+
+/**
+ * @typedef {Object} AbTest
+ * @property {string} testName - The test name defined by the publisher.
+ * @property {string} testVersion - 'clt', 'srv'.
+ * @property {string} sessionId - uuid of the session.
+ * @property {number} expiry - Timestamp after which session should be considered expired.
  */
 
 /**

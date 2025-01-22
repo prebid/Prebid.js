@@ -277,8 +277,6 @@ describe('Adagio bid adapter', () => {
     it('should send bid request to ENDPOINT_PB via POST', function() {
       sandbox.stub(_internal, 'getDevice').returns({ a: 'a' });
       sandbox.stub(_internal, 'getSite').returns({ domain: 'adagio.io', 'page': 'https://adagio.io/hb' });
-      // sandbox.stub(_internal, 'getPageviewId').returns('1234-567');
-      // sandbox.stub(utils, 'generateUUID').returns('blabla');
 
       const bid01 = new BidRequestBuilder().withParams().build();
       const bidderRequest = new BidderRequestBuilder().build();
@@ -292,7 +290,31 @@ describe('Adagio bid adapter', () => {
       expect(requests[0].data).to.have.all.keys(expectedDataKeys);
     });
 
-    it('should use a custom generated auctionId and remove transactionId', function() {
+    it('should use a custom generated auctionId from ortb2.site.ext.data.adg_rtd.uid when available', function() {
+      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
+
+      const bid01 = new BidRequestBuilder().withParams().build();
+      let ortb = {
+        ortb2: {
+          site: {
+            ext: {
+              data: {
+                adg_rtd: {
+                  uid: expectedAuctionId
+                }
+              }
+            }
+          }
+        }
+      }
+      const bidderRequest = new BidderRequestBuilder(ortb).build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest);
+      expect(requests[0].data.adUnits[0].auctionId).eq(expectedAuctionId);
+      expect(requests[0].data.adUnits[0].transactionId).to.not.exist;
+    });
+
+    it('should use a custom generated auctionId when ortb2.site.ext.data.adg_rtd.uid is absent and remove transactionId', function() {
       const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
       sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
 
@@ -305,9 +327,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should enrich prebid bid requests params', function() {
-      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
       const expectedPageviewId = '56befc26-8cf0-472d-b105-73896df8eb89';
-      sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
       sandbox.stub(_internal, 'getAdagioNs').returns({ pageviewId: expectedPageviewId });
 
       const bid01 = new BidRequestBuilder().withParams().build();
@@ -315,7 +335,6 @@ describe('Adagio bid adapter', () => {
 
       spec.buildRequests([bid01], bidderRequest);
 
-      expect(bid01.params.adagioAuctionId).eq(expectedAuctionId);
       expect(bid01.params.pageviewId).eq(expectedPageviewId);
     });
 
@@ -584,7 +603,6 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
         expect(requests).to.have.lengthOf(1);
         expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
-        sinon.assert.calledTwice(utils.logWarn.withArgs(sinon.match(new RegExp(/^Adagio: The OpenRTB/))));
       });
     });
 
@@ -782,77 +800,24 @@ describe('Adagio bid adapter', () => {
     describe('with GPP', function() {
       const bid01 = new BidRequestBuilder().withParams().build();
 
-      const regsGpp = 'regs_gpp_consent_string';
-      const regsApplicableSections = [2];
+      const gpp = 'gpp_consent_string';
+      const gppSid = [1];
 
-      const ortb2Gpp = 'ortb2_gpp_consent_string';
-      const ortb2GppSid = [1];
-
-      context('When GPP in regs module', function() {
-        it('send gpp and gppSid to the server', function() {
-          const bidderRequest = new BidderRequestBuilder({
-            gppConsent: {
-              gppString: regsGpp,
-              applicableSections: regsApplicableSections,
-            }
-          }).build();
-
-          const requests = spec.buildRequests([bid01], bidderRequest);
-
-          expect(requests[0].data.regs.gpp).to.equal(regsGpp);
-          expect(requests[0].data.regs.gppSid).to.equal(regsApplicableSections);
-        });
-      });
-
-      context('When GPP partially defined in regs module', function() {
+      context('When GPP is defined', function() {
         it('send gpp and gppSid coming from ortb2 to the server', function() {
           const bidderRequest = new BidderRequestBuilder({
-            gppConsent: {
-              gppString: regsGpp,
-            },
             ortb2: {
               regs: {
-                gpp: ortb2Gpp,
-                gpp_sid: ortb2GppSid,
+                gpp,
+                gpp_sid: gppSid,
               }
             }
           }).build();
 
           const requests = spec.buildRequests([bid01], bidderRequest);
 
-          expect(requests[0].data.regs.gpp).to.equal(ortb2Gpp);
-          expect(requests[0].data.regs.gppSid).to.equal(ortb2GppSid);
-        });
-
-        it('send empty gpp and gppSid if no ortb2 fields to the server', function() {
-          const bidderRequest = new BidderRequestBuilder({
-            gppConsent: {
-              gppString: regsGpp,
-            }
-          }).build();
-
-          const requests = spec.buildRequests([bid01], bidderRequest);
-
-          expect(requests[0].data.regs.gpp).to.equal('');
-          expect(requests[0].data.regs.gppSid).to.be.empty;
-        });
-      });
-
-      context('When GPP defined in ortb2 module', function() {
-        it('send gpp and gppSid coming from ortb2 to the server', function() {
-          const bidderRequest = new BidderRequestBuilder({
-            ortb2: {
-              regs: {
-                gpp: ortb2Gpp,
-                gpp_sid: ortb2GppSid,
-              }
-            }
-          }).build();
-
-          const requests = spec.buildRequests([bid01], bidderRequest);
-
-          expect(requests[0].data.regs.gpp).to.equal(ortb2Gpp);
-          expect(requests[0].data.regs.gppSid).to.equal(ortb2GppSid);
+          expect(requests[0].data.regs.gpp).to.equal(gpp);
+          expect(requests[0].data.regs.gppSid).to.equal(gppSid);
         });
       });
 
@@ -1077,6 +1042,40 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.regs.dsa).to.be.undefined;
       });
     })
+
+    describe('with ORTB2', function() {
+      it('should add ortb2 device data to the request', function() {
+        const ortb2 = {
+          device: {
+            w: 980,
+            h: 1720,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+            language: 'en',
+            devicetype: 1,
+            make: 'Apple',
+            model: 'iPhone 12 Pro Max',
+            os: 'iOS',
+            osv: '17.4',
+            ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          },
+        };
+
+        const bid01 = new BidRequestBuilder().withParams().build();
+        const bidderRequest = new BidderRequestBuilder({ortb2}).build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        const expectedData = {
+          ...ortb2.device,
+          language: navigator[navigator.language ? 'language' : 'userLanguage'],
+          js: 1,
+          geo: {},
+          userAgent: navigator.userAgent,
+        };
+
+        expect(requests[0].data.device).to.deep.equal(expectedData);
+      });
+    });
   });
 
   describe('interpretResponse()', function() {

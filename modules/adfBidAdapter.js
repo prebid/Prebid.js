@@ -3,9 +3,10 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const { getConfig } = config;
 
@@ -32,7 +33,7 @@ export const spec = {
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};
-    let { user } = commonFpd;
+    let user = commonFpd.user || {};
 
     if (typeof getConfig('app') === 'object') {
       app = getConfig('app') || {};
@@ -50,21 +51,35 @@ export const spec = {
       }
     }
 
-    const device = getConfig('device') || {};
+    let device = getConfig('device') || {};
+    if (commonFpd.device) {
+      mergeDeep(device, commonFpd.device);
+    }
     device.w = device.w || window.innerWidth;
     device.h = device.h || window.innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
+    let source = commonFpd.source || {};
+    source.fd = 1;
+
+    let regs = commonFpd.regs || {};
+
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
 
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = bidderRequest.ortb2?.source?.tid;
     const test = setOnAny(validBidRequests, 'params.test');
-    const currency = getConfig('currency.adServerCurrency');
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const schain = setOnAny(validBidRequests, 'schain');
-    const dsa = commonFpd.regs?.ext?.dsa;
+
+    if (eids) {
+      deepSetValue(user, 'ext.eids', eids);
+    }
+
+    if (schain) {
+      deepSetValue(source, 'ext.schain', schain);
+    }
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -75,8 +90,8 @@ export const spec = {
         mediaType: '*'
       }) : {};
 
-      const bidfloor = floorInfo.floor;
-      const bidfloorcur = floorInfo.currency;
+      const bidfloor = floorInfo?.floor;
+      const bidfloorcur = floorInfo?.currency;
       const { mid, inv, mname } = bid.params;
       const impExtData = bid.ortb2Imp?.ext?.data;
 
@@ -150,40 +165,16 @@ export const spec = {
       app,
       user,
       device,
-      source: { tid, fd: 1 },
+      source,
       ext: { pt },
       cur,
-      imp
+      imp,
+      regs
     };
 
     if (test) {
       request.is_debug = !!test;
       request.test = 1;
-    }
-
-    if (config.getConfig('coppa')) {
-      deepSetValue(request, 'regs.coppa', 1);
-    }
-
-    if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
-      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
-    }
-
-    if (bidderRequest.uspConsent) {
-      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    }
-
-    if (eids) {
-      deepSetValue(request, 'user.ext.eids', eids);
-    }
-
-    if (schain) {
-      deepSetValue(request, 'source.ext.schain', schain);
-    }
-
-    if (dsa) {
-      deepSetValue(request, 'regs.ext.dsa', dsa);
     }
 
     return {
@@ -223,7 +214,9 @@ export const spec = {
           meta: {
             mediaType,
             advertiserDomains: bidResponse.adomain,
-            dsa
+            dsa,
+            primaryCatId: bidResponse.cat?.[0],
+            secondaryCatIds: bidResponse.cat?.slice(1)
           }
         };
 
@@ -254,15 +247,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
-}
 
 function flatten(arr) {
   return [].concat(...arr);

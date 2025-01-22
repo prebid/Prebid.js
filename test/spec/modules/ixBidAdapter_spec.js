@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
+import * as ajaxLib from 'src/ajax.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
@@ -856,7 +857,8 @@ describe('IndexexchangeAdapter', function () {
         source: 'identityinc.com',
         uids: [
           {
-            id: 'identityid'
+            id: 'identityid',
+            atype: 1
           }
         ]
       }
@@ -1383,8 +1385,14 @@ describe('IndexexchangeAdapter', function () {
 
       it('identity data in impression should have correct format and value (single identity partner)', function () {
         const impression = payload.user.eids;
+        expect(impression).to.be.an('array');
+        expect(impression).to.have.lengthOf(1);
         expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids).to.be.an('array');
+        expect(impression[0].uids).to.have.lengthOf(1);
         expect(impression[0].uids[0].id).to.equal(testCopy.IdentityIp.data.uids[0].id);
+        expect(impression[0].uids[0].atype).to.exist;
+        expect(impression[0].uids[0].atype).to.equal(testCopy.IdentityIp.data.uids[0].atype);
       });
     });
 
@@ -1520,9 +1528,7 @@ describe('IndexexchangeAdapter', function () {
       body: {
         ext: {
           pbjs_allow_all_eids: {
-            test: {
-              activated: false
-            }
+            activated: true
           }
         }
       }
@@ -1537,11 +1543,6 @@ describe('IndexexchangeAdapter', function () {
 
     afterEach(function () {
       delete window.headertag;
-      serverResponse.body.ext.features = {
-        pbjs_allow_all_eids: {
-          activated: false
-        }
-      };
       validIdentityResponse = {}
     });
 
@@ -1555,12 +1556,6 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('IX adapter filters eids from prebid past the maximum eid limit', function () {
-      serverResponse.body.ext.features = {
-        pbjs_allow_all_eids: {
-          activated: true
-        }
-      };
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
       let eid_sent_from_prebid = generateEid(55);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
@@ -1602,12 +1597,6 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       };
-      serverResponse.body.ext.features = {
-        pbjs_allow_all_eids: {
-          activated: true
-        }
-      };
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
       let eid_sent_from_prebid = generateEid(49);
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
@@ -1628,15 +1617,21 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.ext.ixdiag.eidLength).to.equal(49);
     });
 
-    it('All incoming eids are from unsupported source with feature toggle off', function () {
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+    it('Has incoming eids with no uid', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      let eid_sent_from_prebid = generateEid(20);
+      let eid_sent_from_prebid = [
+        {
+          source: 'catijah.org'
+        },
+        {
+          source: 'bagel.com'
+        }
+      ];
       cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
       expect(payload.user.eids).to.be.undefined
-      expect(payload.ext.ixdiag.eidLength).to.equal(20);
+      expect(payload.ext.ixdiag.eidLength).to.equal(2);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
@@ -2094,7 +2089,11 @@ describe('IndexexchangeAdapter', function () {
     it('request should be made to IX endpoint with POST method and siteId in query param', function () {
       expect(requestMethod).to.equal('POST');
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT + '?s=' + DEFAULT_BANNER_VALID_BID[0].params.siteId);
-      expect(request.option.contentType).to.equal('text/plain')
+    });
+
+    it('request made to IX endpoint with POST method should have correct options fields set', function () {
+      expect(request.options.contentType).to.equal('text/plain')
+      expect(request.options.withCredentials).to.equal(true)
     });
 
     it('auction type should be set correctly', function () {
@@ -5009,6 +5008,7 @@ describe('IndexexchangeAdapter', function () {
       expect(result['b8c6b5d5-76a1-4a90-b635-0c7eae1bfaa7'].ixImps.length).to.equal(1);
     });
   });
+
   describe('apply floors test', function () {
     it('video test', function() {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
@@ -5373,6 +5373,7 @@ describe('IndexexchangeAdapter', function () {
       expect(removeSiteIDs(request)).to.deep.equal(expected);
     });
   });
+
   describe('addDeviceInfo', () => {
     it('should add device to request when device already exists', () => {
       let r = {
@@ -5389,6 +5390,55 @@ describe('IndexexchangeAdapter', function () {
       r = addDeviceInfo(r);
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
+    });
+  });
+
+  describe('fetch requests', function () {
+    let ajaxStub;
+
+    beforeEach(function () {
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
+        return sinon.spy(function (url, callback, data, options) {
+          callback.success('OK');
+        });
+      });
+    });
+
+    afterEach(function () {
+      ajaxStub.restore();
+    });
+
+    it('should send the correct headers in the actual fetch call', function (done) {
+      const requests = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const request = requests[0];
+      const ajax = ajaxLib.ajaxBuilder();
+
+      ajax(
+        request.url,
+        {
+          success: () => {
+            try {
+              sinon.assert.calledOnce(ajaxStub);
+              const ajaxCall = ajaxStub.returnValues[0];
+              sinon.assert.calledOnce(ajaxCall);
+              const [calledUrl, callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
+
+              expect(calledUrl).to.equal(request.url);
+              expect(calledData).to.equal(request.data);
+
+              expect(calledOptions.contentType).to.equal('text/plain');
+              expect(calledOptions.withCredentials).to.be.true;
+
+              done();
+            } catch (err) {
+              done(err);
+            }
+          },
+          error: (err) => done(err || new Error('Ajax request failed')),
+        },
+        request.data,
+        request.options
+      );
     });
   });
 });

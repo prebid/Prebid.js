@@ -7,12 +7,12 @@
 import {deepSetValue, isEmpty, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gppDataHandler} from '../src/adapterManager.js';
-import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {GreedyPromise, defer} from '../src/utils/promise.js';
 import {buildActivityParams} from '../src/activities/params.js';
+import {consentManagementHook} from '../libraries/consentManagement/cmUtils.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -72,7 +72,7 @@ export class GPPClient {
 
   constructor(cmp) {
     this.cmp = cmp;
-    [this.#resolve, this.#reject] = [0, 1].map(slot => (result) => {
+    [this.#resolve, this.#reject] = ['resolve', 'reject'].map(slot => (result) => {
       while (this.#pending.length) {
         this.#pending.pop()[slot](result);
       }
@@ -102,6 +102,15 @@ export class GPPClient {
             this.#reject(new GPPError('CMP status is "error"; please check CMP setup', event));
           } else if (this.isCMPReady(event?.pingData || {}) && ['sectionChange', 'signalStatus'].includes(event?.eventName)) {
             this.#resolve(this.updateConsent(event.pingData));
+          }
+          // NOTE: according to https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Core/CMP%20API%20Specification.md,
+          // > [signalStatus] Event is called whenever the display status of the CMP changes (e.g. the CMP shows the consent layer).
+          //
+          // however, from real world testing, at least some CMPs only trigger 'cmpDisplayStatus'
+          // other CMPs may do something else yet; here we just look for 'signalStatus: not ready' on any event
+          // to decide if consent data is likely to change
+          if (consentData != null && event?.pingData != null && !this.isCMPReady(event.pingData)) {
+            consentData = null;
           }
         }
       });
@@ -136,9 +145,9 @@ export class GPPClient {
    * @returns {Promise<{}>}
    */
   nextUpdate() {
-    return new GreedyPromise((resolve, reject) => {
-      this.#pending.push([resolve, reject]);
-    });
+    const def = defer();
+    this.#pending.push(def);
+    return def.promise;
   }
 
   /**
@@ -229,20 +238,6 @@ function loadConsentData(cb) {
 }
 
 /**
- * Like `loadConsentData`, but cache and re-use previously loaded data.
- * @param cb
- */
-function loadIfMissing(cb) {
-  if (consentData) {
-    logInfo('User consent information already known.  Pulling internally stored information...');
-    // eslint-disable-next-line standard/no-callback-literal
-    cb(false);
-  } else {
-    loadConsentData(cb);
-  }
-}
-
-/**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
  * data as part of a gppConsent object which gets transferred to adapterManager's gppDataHandler object.
@@ -250,29 +245,7 @@ function loadIfMissing(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('gpp', function requestBidsHook(fn, reqBidsConfigObj) {
-  loadIfMissing(function (shouldCancelAuction, errMsg, ...extraArgs) {
-    if (errMsg) {
-      let log = logWarn;
-      if (shouldCancelAuction) {
-        log = logError;
-        errMsg = `${errMsg} Canceling auction as per consentManagement config.`;
-      }
-      log(errMsg, ...extraArgs);
-    }
-
-    if (shouldCancelAuction) {
-      fn.stopTiming();
-      if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
-        reqBidsConfigObj.bidsBackHandler();
-      } else {
-        logError('Error executing bidsBackHandler');
-      }
-    } else {
-      fn.call(this, reqBidsConfigObj);
-    }
-  });
-});
+export const requestBidsHook = consentManagementHook('gpp', () => consentData, loadConsentData);
 
 function processCmpData(consentData) {
   if (

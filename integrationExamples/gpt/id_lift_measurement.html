@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Measure Lift of Multiple ID Modules</title>
+    <script>
+        const FAILSAFE_TIMEOUT = 2000;
+        const ID_MODULES = [
+            {
+                name: "id1",
+                params: { key1: "value1", key2: "value2" }
+            },
+            {
+                name: "id2",
+                params: { key3: "value3", key4: "value4" }
+            },
+            {
+                name: "id3",
+                params: { key5: "value5", key6: "value6" }
+            }
+        ];
+        const TREATMENT_RATE = 0.95; // 95% chance to include an ID module
+        const targetingArray = [];
+
+        const adUnits = [
+            {
+                code: 'test-div',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250], [300, 600], [728, 90]]
+                    },
+                },
+                bids: [
+                    {
+                        bidder: 'rubicon',
+                        params: {
+                            accountId: '1001',
+                            siteId: '113932',
+                            zoneId: '535510'
+                        }
+                    }
+                ]
+            }
+        ];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        // Randomly enable each ID module based on dice rolls
+        ID_MODULES.forEach(module => {
+            const isEnabled = Math.random() < TREATMENT_RATE;
+            targetingArray.push(`${module.name}:${isEnabled ? 't1' : 't0'}`);
+
+            if (isEnabled) {
+                pbjs.que.push(function () {
+                    pbjs.mergeConfig({
+                        userSync: {
+                            userIds: [
+                                {
+                                    name: module.name,
+                                    params: module.params
+                                }
+                            ],
+                            syncDelay: 5000,
+                            auctionDelay: 1000,
+                        }
+                    });
+                });
+            }
+        });
+
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+            googletag.pubads().setTargeting("abg", targetingArray);
+        });
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({ debug: true });
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest
+            });
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh();
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        (function () {
+            var gads = document.createElement('script');
+            gads.async = true;
+            gads.type = 'text/javascript';
+            gads.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
+            var node = document.getElementsByTagName('script')[0];
+            node.parentNode.insertBefore(gads, node);
+        })();
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250], [300, 600], [728, 90]], 'test-div').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+    <script>
+        pbjs.que.push(function () {
+            pbjs.getUserIdsAsync().then(ids => {
+                document.getElementById('ids-div').innerHTML = JSON.stringify(ids, null, ' ');
+                document.getElementById('eids-div').innerHTML = JSON.stringify(pbjs.getUserIdsAsEids(), null, ' ');
+            });
+        });
+    </script>
+
+    <h2>Measure Lift of Multiple ID Modules</h2>
+
+    <h4>Generated IDs:</h4>
+    <pre id="ids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
+
+    <h4>Generated EIDs:</h4>
+    <pre id="eids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
+
+    <!-- Instructions Section -->
+    <h3>Instructions</h3>
+    <ol>
+        <li>Ensure that the `abg` key is definied in GAM targeting with all possible keys. Each value will be a combination of the following six possible key-value pairs:
+            <ul>
+                <li><code>id1:t0</code></li>
+                <li><code>id1:t1</code></li>
+                <li><code>id2:t0</code></li>
+                <li><code>id2:t1</code></li>
+                <li><code>id3:t0</code></li>
+                <li><code>id3:t1</code></li>
+            </ul>
+        </li>
+        <li>In Google Ad Manager (GAM), create a report with the following setup:
+            <ul>
+                <li><strong>Dimensions</strong>: Ad Unit, Key-Value Targeting (`abg`).</li>
+                <li><strong>Metrics</strong>: Impressions, Revenue.</li>
+                <li><strong>Filters</strong>: Include the `abg` key in the report.</li>
+            </ul>
+        </li>
+        <li>Analyze the report for each ID module:
+            <ul>
+                <li>Filter by combinations of `t1` (treatment) and `t0` (control) for each ID module (e.g., `id1:t1`, `id1:t0`).</li>
+                <li>Compare performance metrics (eg Impressions, Revenue) for the `t1` vs. `t0` values.</li>
+                <li>Calculate lift for each module using the formula:
+                    <pre>Lift (%) = ((Treatment Metric / Treatment Rate - Control Metric / Control Rate) / (Control Metric / Control Rate)) * 100</pre>
+                    Replace "Metric" with the relevant performance metric.
+                </li>
+            </ul>
+        </li>
+    </ol>
+</body>
+
+</html>

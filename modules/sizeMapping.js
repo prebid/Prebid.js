@@ -4,7 +4,6 @@ import {includes} from '../src/polyfill.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
 
-let installed = false;
 let sizeConfig = [];
 
 /**
@@ -24,11 +23,9 @@ let sizeConfig = [];
  */
 export function setSizeConfig(config) {
   sizeConfig = config;
-  if (!installed) {
-    setupAdUnitMediaTypes.before((next, adUnit, labels) => next(processAdUnitsForLabels(adUnit, labels), labels));
-    installed = true;
-  }
 }
+
+setupAdUnitMediaTypes.before((next, adUnit, labels) => next(processAdUnitsForLabels(adUnit, labels), labels));
 config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
 
 /**

@@ -1,0 +1,106 @@
+<html>
+
+<head>
+    <meta http-equiv="delegate-ch" content="sec-ch-ua https://prebid.wurflcloud.com; sec-ch-ua-bitness https://prebid.wurflcloud.com; sec-ch-ua-arch https://prebid.wurflcloud.com; sec-ch-ua-model https://prebid.wurflcloud.com; sec-ch-ua-platform https://prebid.wurflcloud.com; sec-ch-ua-platform-version https://prebid.wurflcloud.com; sec-ch-ua-full-version https://prebid.wurflcloud.com; sec-ch-ua-full-version-list https://prebid.wurflcloud.com; sec-ch-ua-mobile https://prebid.wurflcloud.com">
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 2000;
+
+        var adUnits = [
+        {
+            code: 'div-gpt-ad-1460505748561-0',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]],
+                }
+            },
+            sizes: [
+                [300, 250],
+                [728, 90]
+            ],  
+            bids: [
+                {
+                    bidder: 'appnexus',
+                    params: {
+                      placementId: 13144370
+                    }
+                },
+            ]
+
+        }];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+    </script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            // configure the WURFL RTD module
+            pbjs.setConfig({
+                debug: true, // enabled for testing purposes
+                realTimeData: {
+                    auctionDelay: 2000, 
+                    dataProviders: [
+                        // WURFL RTD module configuration
+                        {
+                            name: 'wurfl',
+                            waitForIt: true
+                        },
+                    ]
+                }
+            });
+
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+    <h2>Prebid.js Test</h2>
+    <h5>Div-1</h5>
+    <div id='div-gpt-ad-1460505748561-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+        </script>
+    </div>
+</body>
+
+</html>

@@ -18,6 +18,8 @@ export const STORAGE_TYPE_COOKIES = 'cookie';
 
 export let storageCallbacks = [];
 
+/* eslint-disable prebid/no-global */
+
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
@@ -56,6 +58,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
    * If not specified, defaults to the host portion of the current document location.
    * If a domain is specified, subdomains are always included.
    * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
+   * @param {function} [done]
    */
   const setCookie = function (key, value, expires, sameSite, domain, done) {
     let cb = function (result) {
@@ -64,6 +67,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
         const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
         const isNone = (sameSite != null && sameSite.toLowerCase() == 'none')
         const secure = (isNone) ? '; Secure' : '';
+        // eslint-disable-next-line prebid/no-member
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
@@ -72,6 +76,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
 
   /**
    * @param {string} name
+   * @param {function} [done]
    * @returns {(string|null)}
    */
   const getCookie = function(name, done) {
@@ -86,27 +91,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
   };
 
   /**
-   * @returns {boolean}
-   */
-  const localStorageIsEnabled = function (done) {
-    let cb = function (result) {
-      if (result && result.valid) {
-        try {
-          localStorage.setItem('prebid.cookieTest', '1');
-          return localStorage.getItem('prebid.cookieTest') === '1';
-        } catch (error) {
-        } finally {
-          try {
-            localStorage.removeItem('prebid.cookieTest');
-          } catch (error) {}
-        }
-      }
-      return false;
-    }
-    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
-  }
-
-  /**
+   * @param {function} [done]
    * @returns {boolean}
    */
   const cookiesAreEnabled = function (done) {
@@ -119,73 +104,84 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
     return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
-  /**
-   * @param {string} key
-   * @param {string} value
-   */
-  const setDataInLocalStorage = function (key, value, done) {
-    let cb = function (result) {
-      if (result && result.valid && hasLocalStorage()) {
-        window.localStorage.setItem(key, value);
-      }
-    }
-    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
-  }
+  function storageMethods(name) {
+    const capName = name.charAt(0).toUpperCase() + name.substring(1);
+    const backend = () => window[name];
 
-  /**
-   * @param {string} key
-   * @returns {(string|null)}
-   */
-  const getDataFromLocalStorage = function (key, done) {
-    let cb = function (result) {
-      if (result && result.valid && hasLocalStorage()) {
-        return window.localStorage.getItem(key);
-      }
-      return null;
-    }
-    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
-  }
-
-  /**
-   * @param {string} key
-   */
-  const removeDataFromLocalStorage = function (key, done) {
-    let cb = function (result) {
-      if (result && result.valid && hasLocalStorage()) {
-        window.localStorage.removeItem(key);
-      }
-    }
-    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
-  }
-
-  /**
-   * @returns {boolean}
-   */
-  const hasLocalStorage = function (done) {
-    let cb = function (result) {
-      if (result && result.valid) {
-        try {
-          return !!window.localStorage;
-        } catch (e) {
-          logError('Local storage api disabled');
+    const hasStorage = function (done) {
+      let cb = function (result) {
+        if (result && result.valid) {
+          try {
+            return !!backend();
+          } catch (e) {
+            logError(`${name} api disabled`);
+          }
         }
+        return false;
       }
-      return false;
+      return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
     }
-    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+
+    return {
+      [`has${capName}`]: hasStorage,
+      [`${name}IsEnabled`](done) {
+        let cb = function (result) {
+          if (result && result.valid) {
+            try {
+              backend().setItem('prebid.cookieTest', '1');
+              return backend().getItem('prebid.cookieTest') === '1';
+            } catch (error) {
+            } finally {
+              try {
+                backend().removeItem('prebid.cookieTest');
+              } catch (error) {}
+            }
+          }
+          return false;
+        }
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+      },
+      [`setDataIn${capName}`](key, value, done) {
+        let cb = function (result) {
+          if (result && result.valid && hasStorage()) {
+            backend().setItem(key, value);
+          }
+        }
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+      },
+      [`getDataFrom${capName}`](key, done) {
+        let cb = function (result) {
+          if (result && result.valid && hasStorage()) {
+            return backend().getItem(key);
+          }
+          return null;
+        }
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+      },
+      [`removeDataFrom${capName}`](key, done) {
+        let cb = function (result) {
+          if (result && result.valid && hasStorage()) {
+            backend().removeItem(key);
+          }
+        }
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+      }
+    }
   }
 
   /**
    * Returns all cookie values from the jar whose names contain the `keyLike`
    * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
    * @param {string} keyLike
-   * @return {[]}
+   * @param {function} [done]
+   * @returns {string[]}
    */
   const findSimilarCookies = function(keyLike, done) {
     let cb = function (result) {
       if (result && result.valid) {
         const all = [];
         if (hasDeviceAccess()) {
+          // eslint-disable-next-line prebid/no-member
           const cookies = document.cookie.split(';');
           while (cookies.length) {
             const cookie = cookies.pop();
@@ -207,12 +203,9 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
   return {
     setCookie,
     getCookie,
-    localStorageIsEnabled,
     cookiesAreEnabled,
-    setDataInLocalStorage,
-    getDataFromLocalStorage,
-    removeDataFromLocalStorage,
-    hasLocalStorage,
+    ...storageMethods('localStorage'),
+    ...storageMethods('sessionStorage'),
     findSimilarCookies
   }
 }

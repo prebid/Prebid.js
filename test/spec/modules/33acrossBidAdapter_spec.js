@@ -527,27 +527,6 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      it('returns false for invalid bidder name values', function() {
-        const invalidBidderName = [
-          undefined,
-          '33',
-          '33x',
-          'thirtythree',
-          ''
-        ];
-
-        invalidBidderName.forEach((bidderName) => {
-          const bid = {
-            bidder: bidderName,
-            params: {
-              siteId: 'sample33xGUID123456789'
-            }
-          };
-
-          expect(spec.isBidRequestValid(bid)).to.be.false;
-        });
-      });
-
       it('returns true for valid guid values', function() {
         // NOTE: We ignore whitespace at the start and end since
         // in our experience these are common typos

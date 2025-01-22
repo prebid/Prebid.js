@@ -3,7 +3,16 @@
  */
 import {config} from '../src/config.js';
 import {getHook, hook, module} from '../src/hook.js';
-import {deepSetValue, logInfo, logWarn, mergeDeep, sizesToSizeTuples, deepAccess, deepEqual} from '../src/utils.js';
+import {
+  deepAccess,
+  deepEqual,
+  deepSetValue,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep,
+  sizesToSizeTuples
+} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
@@ -11,6 +20,9 @@ import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
+import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
+import {defer} from '../src/utils/promise.js';
+import {auctionManager} from '../src/auctionManager.js';
 
 const MODULE = 'PAAPI';
 
@@ -27,9 +39,17 @@ export function registerSubmodule(submod) {
 
 module('paapi', registerSubmodule);
 
-const pendingConfigsForAuction = auctionStore();
+/* auction configs as returned by getPAAPIConfigs */
 const configsForAuction = auctionStore();
+
+/* auction configs returned by adapters, but waiting for end-of-auction signals before they're added to configsForAuction */
+const pendingConfigsForAuction = auctionStore();
+
+/* igb returned by adapters, waiting for end-of-auction signals before they're merged into configForAuctions */
 const pendingBuyersForAuction = auctionStore();
+
+/* for auction configs that were generated in parallel with auctions (and contain promises), their resolve/reject methods */
+const deferredConfigsForAuction = auctionStore();
 
 let latestAuctionForAdUnit = {};
 let moduleConfig = {};
@@ -45,19 +65,48 @@ export function reset() {
 
 export function init(cfg) {
   if (cfg && cfg.enabled === true) {
+    if (!moduleConfig.enabled) {
+      attachHandlers();
+    }
     moduleConfig = cfg;
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} runAdAuction)`, cfg);
   } else {
+    if (moduleConfig.enabled) {
+      detachHandlers();
+    }
     moduleConfig = {};
     logInfo(`${MODULE} disabled`, cfg);
   }
 }
 
-getHook('addPaapiConfig').before(addPaapiConfigHook);
-getHook('makeBidRequests').after(markForFledge);
-events.on(EVENTS.AUCTION_END, onAuctionEnd);
+function attachHandlers() {
+  getHook('addPaapiConfig').before(addPaapiConfigHook);
+  getHook('makeBidRequests').before(addPaapiData);
+  getHook('makeBidRequests').after(markForFledge);
+  getHook('processBidderRequests').before(parallelPaapiProcessing);
+  events.on(EVENTS.AUCTION_INIT, onAuctionInit);
+  events.on(EVENTS.AUCTION_END, onAuctionEnd);
+}
 
-function getSlotSignals(adUnit = {}, bidsReceived = [], bidRequests = []) {
+function detachHandlers() {
+  getHook('addPaapiConfig').getHooks({hook: addPaapiConfigHook}).remove();
+  getHook('makeBidRequests').getHooks({hook: addPaapiData}).remove();
+  getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
+  getHook('processBidderRequests').getHooks({hook: parallelPaapiProcessing}).remove();
+  events.off(EVENTS.AUCTION_INIT, onAuctionInit);
+  events.off(EVENTS.AUCTION_END, onAuctionEnd);
+}
+
+function getStaticSignals(adUnit = {}) {
+  const cfg = {};
+  const requestedSize = getRequestedSize(adUnit);
+  if (requestedSize) {
+    cfg.requestedSize = requestedSize;
+  }
+  return cfg;
+}
+
+function getSlotSignals(bidsReceived = [], bidRequests = []) {
   let bidfloor, bidfloorcur;
   if (bidsReceived.length > 0) {
     const bestBid = bidsReceived.reduce(maximum(currencyCompare(bid => [bid.cpm, bid.currency])));
@@ -73,10 +122,6 @@ function getSlotSignals(adUnit = {}, bidsReceived = [], bidRequests = []) {
   if (bidfloor) {
     deepSetValue(cfg, 'auctionSignals.prebid.bidfloor', bidfloor);
     bidfloorcur && deepSetValue(cfg, 'auctionSignals.prebid.bidfloorcur', bidfloorcur);
-  }
-  const requestedSize = getRequestedSize(adUnit);
-  if (requestedSize) {
-    cfg.requestedSize = requestedSize;
   }
   return cfg;
 }
@@ -94,40 +139,98 @@ export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config 
     .map(([request, igbs]) => {
       const auctionConfig = mergeDeep(merge(igbs), config.auctionConfig);
       auctionConfig.auctionSignals = setFPD(auctionConfig.auctionSignals || {}, request);
-      return auctionConfig;
+      return [request, auctionConfig];
     });
 }
 
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adUnits}) {
   const adUnitsByCode = Object.fromEntries(adUnits?.map(au => [au.code, au]) || []);
   const allReqs = bidderRequests?.flatMap(br => br.bids);
-  const paapiConfigs = {};
+  const paapiConfigs = configsForAuction(auctionId);
   (adUnitCodes || []).forEach(au => {
-    paapiConfigs[au] = null;
+    if (!paapiConfigs.hasOwnProperty(au)) {
+      paapiConfigs[au] = null;
+    }
     !latestAuctionForAdUnit.hasOwnProperty(au) && (latestAuctionForAdUnit[au] = null);
   });
+
   const pendingConfigs = pendingConfigsForAuction(auctionId);
   const pendingBuyers = pendingBuyersForAuction(auctionId);
+
   if (pendingConfigs && pendingBuyers) {
     Object.entries(pendingBuyers).forEach(([adUnitCode, igbRequests]) => {
-      buyersToAuctionConfigs(igbRequests).forEach(auctionConfig => append(pendingConfigs, adUnitCode, auctionConfig))
+      buyersToAuctionConfigs(igbRequests).forEach(([{bidder}, auctionConfig]) => append(pendingConfigs, adUnitCode, {id: getComponentSellerConfigId(bidder), config: auctionConfig}))
     })
   }
+
+  const deferredConfigs = deferredConfigsForAuction(auctionId);
+
+  const adUnitsWithConfigs = Array.from(new Set(Object.keys(pendingConfigs).concat(Object.keys(deferredConfigs))));
+  const signals = Object.fromEntries(
+    adUnitsWithConfigs.map(adUnitCode => {
+      latestAuctionForAdUnit[adUnitCode] = auctionId;
+      const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
+      return [adUnitCode, {
+        ...getStaticSignals(adUnitsByCode[adUnitCode]),
+        ...getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit))
+      }]
+    })
+  )
+
+  const configsById = {};
   Object.entries(pendingConfigs || {}).forEach(([adUnitCode, auctionConfigs]) => {
-    const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
-    const slotSignals = getSlotSignals(adUnitsByCode[adUnitCode], bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
-    paapiConfigs[adUnitCode] = {
-      ...slotSignals,
-      componentAuctions: auctionConfigs.map(cfg => mergeDeep({}, slotSignals, cfg))
-    };
-    latestAuctionForAdUnit[adUnitCode] = auctionId;
+    auctionConfigs.forEach(({id, config}) => append(configsById, id, {
+      adUnitCode,
+      config: mergeDeep({}, signals[adUnitCode], config)
+    }));
   });
-  configsForAuction(auctionId, paapiConfigs);
-  submodules.forEach(submod => submod.onAuctionConfig?.(
-    auctionId,
-    paapiConfigs,
-    (adUnitCode) => paapiConfigs[adUnitCode] != null && USED.add(paapiConfigs[adUnitCode]))
-  );
+
+  function resolveSignals(signals, deferrals) {
+    Object.entries(deferrals).forEach(([signal, {resolve, default: defaultValue}]) => {
+      let value = signals.hasOwnProperty(signal) ? signals[signal] : null;
+      if (value == null && defaultValue == null) {
+        value = undefined;
+      } else if (typeof defaultValue === 'object' && typeof value === 'object') {
+        value = mergeDeep({}, defaultValue, value);
+      } else {
+        value = value ?? defaultValue
+      }
+      resolve(value);
+    })
+  }
+
+  Object.entries(deferredConfigs).forEach(([adUnitCode, {top, components}]) => {
+    resolveSignals(signals[adUnitCode], top);
+    Object.entries(components).forEach(([configId, {deferrals}]) => {
+      const matchingConfigs = configsById.hasOwnProperty(configId) ? configsById[configId] : [];
+      if (matchingConfigs.length > 1) {
+        logWarn(`Received multiple PAAPI configs for the same bidder and seller (${configId}), active PAAPI auctions will only see the first`);
+      }
+      const {config} = matchingConfigs.shift() ?? {config: {...signals[adUnitCode]}}
+      resolveSignals(config, deferrals);
+    })
+  });
+
+  const newConfigs = Object.values(configsById).flatMap(configs => configs);
+  const hasDeferredConfigs = Object.keys(deferredConfigs).length > 0;
+
+  if (moduleConfig.parallel && hasDeferredConfigs && newConfigs.length > 0) {
+    logError(`Received PAAPI configs after PAAPI auctions were already started in parallel with their contextual auction`, newConfigs)
+  }
+
+  newConfigs.forEach(({adUnitCode, config}) => {
+    if (paapiConfigs[adUnitCode] == null) {
+      paapiConfigs[adUnitCode] = {
+        ...signals[adUnitCode],
+        componentAuctions: []
+      }
+    }
+    paapiConfigs[adUnitCode].componentAuctions.push(mergeDeep({}, signals[adUnitCode], config));
+  });
+
+  if (!moduleConfig.parallel || !hasDeferredConfigs) {
+    submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, paapiConfigs));
+  }
 }
 
 function append(target, key, value) {
@@ -141,9 +244,17 @@ function setFPD(target, {ortb2, ortb2Imp}) {
   return target;
 }
 
+function getConfigId(bidderCode, seller) {
+  return `${bidderCode}::${seller}`;
+}
+
+function getComponentSellerConfigId(bidderCode) {
+  return moduleConfig.componentSeller.separateAuctions ? `igb::${bidderCode}` : 'igb';
+}
+
 export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
-    const {adUnitCode, auctionId} = request;
+    const {adUnitCode, auctionId, bidder} = request;
 
     // eslint-disable-next-line no-inner-declarations
     function storePendingData(store, data) {
@@ -162,7 +273,7 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
       (config.interestGroupBuyers || []).forEach(buyer => {
         pbs[buyer] = setFPD(pbs[buyer] ?? {}, request);
       })
-      storePendingData(pendingConfigsForAuction, config);
+      storePendingData(pendingConfigsForAuction, {id: getConfigId(bidder, config.seller), config});
     }
     if (igb && checkOrigin(igb)) {
       igb.pbs = setFPD(igb.pbs || {}, request);
@@ -313,9 +424,11 @@ function getFledgeConfig(bidder) {
  * Given an array of size tuples, return the one that should be used for PAAPI.
  */
 export const getPAAPISize = hook('sync', function (sizes) {
+  sizes = sizes
+    ?.filter(([w, h]) => !(w === h && w <= 5));
+
   if (sizes?.length) {
     return sizes
-      .filter(([w, h]) => !(w === h && w <= 5))
       .reduce(maximum(keyCompare(([w, h]) => w * h)));
   }
 }, 'getPAAPISize');
@@ -332,41 +445,225 @@ function getRequestedSize(adUnit) {
   })();
 }
 
+export function addPaapiData(next, adUnits, ...args) {
+  if (isFledgeSupported() && moduleConfig.enabled) {
+    adUnits.forEach(adUnit => {
+      // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
+      const igsAe = adUnit.ortb2Imp?.ext?.igs != null
+        ? adUnit.ortb2Imp.ext.igs.ae || 1
+        : null;
+      const extAe = adUnit.ortb2Imp?.ext?.ae;
+      if (igsAe !== extAe && igsAe != null && extAe != null) {
+        logWarn(MODULE, `Ad unit defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, adUnit);
+      }
+      const ae = igsAe ?? extAe ?? moduleConfig.defaultForSlots;
+      if (ae) {
+        deepSetValue(adUnit, 'ortb2Imp.ext.ae', ae);
+        adUnit.ortb2Imp.ext.igs = Object.assign({
+          ae: ae,
+          biddable: 1
+        }, adUnit.ortb2Imp.ext.igs);
+        const requestedSize = getRequestedSize(adUnit);
+        if (requestedSize) {
+          deepSetValue(adUnit, 'ortb2Imp.ext.paapi.requestedSize', requestedSize);
+        }
+        adUnit.bids.forEach(bidReq => {
+          if (!getFledgeConfig(bidReq.bidder).enabled) {
+            deepSetValue(bidReq, 'ortb2Imp.ext.ae', 0);
+            bidReq.ortb2Imp.ext.igs = {ae: 0, biddable: 0};
+          }
+        })
+      }
+    })
+  }
+  next(adUnits, ...args);
+}
+
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((bidderReq) => {
-      const {enabled, ae} = getFledgeConfig(bidderReq.bidderCode);
+      const {enabled} = getFledgeConfig(bidderReq.bidderCode);
       Object.assign(bidderReq, {
         paapi: {
           enabled,
           componentSeller: !!moduleConfig.componentSeller?.auctionConfig
         }
       });
-      bidderReq.bids.forEach(bidReq => {
-        // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
-        const igsAe = bidReq.ortb2Imp?.ext?.igs != null
-          ? bidReq.ortb2Imp.ext.igs.ae || 1
-          : null;
-        const extAe = bidReq.ortb2Imp?.ext?.ae;
-        if (igsAe !== extAe && igsAe != null && extAe != null) {
-          logWarn(MODULE, `Bid request defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, bidReq);
-        }
-        const bidAe = igsAe ?? extAe ?? ae;
-        if (bidAe) {
-          deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidAe);
-          bidReq.ortb2Imp.ext.igs = Object.assign({
-            ae: bidAe,
-            biddable: 1
-          }, bidReq.ortb2Imp.ext.igs);
-          const requestedSize = getRequestedSize(bidReq);
-          if (requestedSize) {
-            deepSetValue(bidReq, 'ortb2Imp.ext.paapi.requestedSize', requestedSize);
-          }
-        }
-      });
     });
   }
   next(bidderRequests);
+}
+
+export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals'];
+
+const validatePartialConfig = (() => {
+  const REQUIRED_SYNC_SIGNALS = [
+    {
+      props: ['seller'],
+      validate: (val) => typeof val === 'string'
+    },
+    {
+      props: ['interestGroupBuyers'],
+      validate: (val) => Array.isArray(val) && val.length > 0
+    },
+    {
+      props: ['decisionLogicURL', 'decisionLogicUrl'],
+      validate: (val) => typeof val === 'string'
+    }
+  ];
+
+  return function (config) {
+    const invalid = REQUIRED_SYNC_SIGNALS.find(({props, validate}) => props.every(prop => !config.hasOwnProperty(prop) || !config[prop] || !validate(config[prop])));
+    if (invalid) {
+      logError(`Partial PAAPI config has missing or invalid property "${invalid.props[0]}"`, config)
+      return false;
+    }
+    return true;
+  }
+})()
+
+/**
+ * Adapters can provide a `spec.buildPAAPIConfigs(validBidRequests, bidderRequest)` to be included in PAAPI auctions
+ * that can be started in parallel with contextual auctions.
+ *
+ * If PAAPI is enabled, and an adapter provides `buildPAAPIConfigs`, it is invoked just before `buildRequests`,
+ * and takes the same arguments. It should return an array of PAAPI configuration objects with the same format
+ * as in `interpretResponse` (`{bidId, config?, igb?}`).
+ *
+ * Everything returned by `buildPAAPIConfigs` is treated in the same way as if it was returned by `interpretResponse` -
+ * except for signals that can be provided asynchronously (cfr. `ASYNC_SIGNALS`), which are replaced by promises.
+ * When the (contextual) auction ends, the promises are resolved.
+ *
+ * If during the auction the adapter's `interpretResponse` returned matching configurations (same `bidId`,
+ * and a `config` with the same `seller`, or an `igb` with the same `origin`), the promises resolve to their contents.
+ * Otherwise, they resolve to the values provided by `buildPAAPIConfigs`, or an empty object if no value was provided.
+ *
+ * Promisified auction configs are available from `getPAAPIConfig` immediately after `requestBids`.
+ * If the `paapi.parallel` config flag is set, PAAPI submodules are also triggered at the same time
+ * (instead of when the auction ends).
+ */
+export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
+  function makeDeferrals(defaults = {}) {
+    let promises = {};
+    const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
+      const def = defer({promiseFactory: (resolver) => new Promise(resolver)});
+      def.default = defaults.hasOwnProperty(signal) ? defaults[signal] : null;
+      promises[signal] = def.promise;
+      return [signal, def]
+    }))
+    return [deferrals, promises];
+  }
+
+  const {auctionId, paapi: {enabled, componentSeller} = {}} = bidderRequest;
+  const auctionConfigs = configsForAuction(auctionId);
+  bids.map(bid => bid.adUnitCode).forEach(adUnitCode => {
+    latestAuctionForAdUnit[adUnitCode] = auctionId;
+    if (!auctionConfigs.hasOwnProperty(adUnitCode)) {
+      auctionConfigs[adUnitCode] = null;
+    }
+  });
+
+  if (enabled && spec.buildPAAPIConfigs) {
+    const metrics = adapterMetrics(bidderRequest);
+    const tidGuard = guardTids(bidderRequest);
+    let partialConfigs;
+    metrics.measureTime('buildPAAPIConfigs', () => {
+      try {
+        partialConfigs = spec.buildPAAPIConfigs(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))
+      } catch (e) {
+        logError(`Error invoking "buildPAAPIConfigs":`, e);
+      }
+    });
+    const requestsById = Object.fromEntries(bids.map(bid => [bid.bidId, bid]));
+    (partialConfigs ?? []).forEach(({bidId, config, igb}) => {
+      const bidRequest = requestsById.hasOwnProperty(bidId) && requestsById[bidId];
+      if (!bidRequest) {
+        logError(`Received partial PAAPI config for unknown bidId`, {bidId, config});
+      } else {
+        const adUnitCode = bidRequest.adUnitCode;
+        latestAuctionForAdUnit[adUnitCode] = auctionId;
+        const deferredConfigs = deferredConfigsForAuction(auctionId);
+
+        const getDeferredConfig = () => {
+          if (!deferredConfigs.hasOwnProperty(adUnitCode)) {
+            const [deferrals, promises] = makeDeferrals();
+            auctionConfigs[adUnitCode] = {
+              ...getStaticSignals(auctionManager.index.getAdUnit(bidRequest)),
+              ...promises,
+              componentAuctions: []
+            }
+            deferredConfigs[adUnitCode] = {
+              top: deferrals,
+              components: {},
+              auctionConfig: auctionConfigs[adUnitCode]
+            }
+          }
+          return deferredConfigs[adUnitCode];
+        }
+
+        if (config && validatePartialConfig(config)) {
+          const configId = getConfigId(bidRequest.bidder, config.seller);
+          const deferredConfig = getDeferredConfig();
+          if (deferredConfig.components.hasOwnProperty(configId)) {
+            logWarn(`Received multiple PAAPI configs for the same bidder and seller; config will be ignored`, {
+              config,
+              bidder: bidRequest.bidder
+            })
+          } else {
+            const [deferrals, promises] = makeDeferrals(config);
+            const auctionConfig = {
+              ...getStaticSignals(bidRequest),
+              ...config,
+              ...promises
+            }
+            deferredConfig.auctionConfig.componentAuctions.push(auctionConfig)
+            deferredConfig.components[configId] = {auctionConfig, deferrals};
+          }
+        }
+        if (componentSeller && igb && checkOrigin(igb)) {
+          const configId = getComponentSellerConfigId(spec.code);
+          const deferredConfig = getDeferredConfig();
+          const partialConfig = buyersToAuctionConfigs([[bidRequest, igb]])[0][1];
+          if (deferredConfig.components.hasOwnProperty(configId)) {
+            const {auctionConfig, deferrals} = deferredConfig.components[configId];
+            if (!auctionConfig.interestGroupBuyers.includes(igb.origin)) {
+              const immediate = {};
+              Object.entries(partialConfig).forEach(([key, value]) => {
+                if (deferrals.hasOwnProperty(key)) {
+                  mergeDeep(deferrals[key], {default: value});
+                } else {
+                  immediate[key] = value;
+                }
+              })
+              mergeDeep(auctionConfig, immediate);
+            } else {
+              logWarn(`Received the same PAAPI buyer multiple times for the same PAAPI auction. Consider setting paapi.componentSeller.separateAuctions: true`, igb)
+            }
+          } else {
+            const [deferrals, promises] = makeDeferrals(partialConfig);
+            const auctionConfig = {
+              ...partialConfig,
+              ...getStaticSignals(bidRequest),
+              ...promises,
+            }
+            deferredConfig.components[configId] = {auctionConfig, deferrals};
+            deferredConfig.auctionConfig.componentAuctions.push(auctionConfig);
+          }
+        }
+      }
+    })
+  }
+  return next.call(this, spec, bids, bidderRequest, ...args);
+}
+
+export function onAuctionInit({auctionId}) {
+  if (moduleConfig.parallel) {
+    auctionManager.index.getAuction({auctionId}).requestsDone.then(() => {
+      if (Object.keys(deferredConfigsForAuction(auctionId)).length > 0) {
+        submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, configsForAuction(auctionId)));
+      }
+    })
+  }
 }
 
 export function setImpExtAe(imp, bidRequest, context) {
@@ -377,18 +674,6 @@ export function setImpExtAe(imp, bidRequest, context) {
 }
 
 registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
-
-function paapiResponseParser(configs, response, context) {
-  configs.forEach((config) => {
-    const impCtx = context.impContext[config.impid];
-    if (!impCtx?.imp?.ext?.ae) {
-      logWarn(MODULE, 'Received auction configuration for an impression that was not in the request or did not ask for it', config, impCtx?.imp);
-    } else {
-      impCtx.paapiConfigs = impCtx.paapiConfigs || [];
-      impCtx.paapiConfigs.push(config);
-    }
-  });
-}
 
 export function parseExtIgi(response, ortbResponse, context) {
   paapiResponseParser(
@@ -409,6 +694,18 @@ export function parseExtIgi(response, ortbResponse, context) {
     response,
     context
   )
+}
+
+function paapiResponseParser(configs, response, context) {
+  configs.forEach((config) => {
+    const impCtx = context.impContext[config.impid];
+    if (!impCtx?.imp?.ext?.ae) {
+      logWarn(MODULE, 'Received auction configuration for an impression that was not in the request or did not ask for it', config, impCtx?.imp);
+    } else {
+      impCtx.paapiConfigs = impCtx.paapiConfigs || [];
+      impCtx.paapiConfigs.push(config);
+    }
+  });
 }
 
 // to make it easier to share code between the PBS adapter and adapters whose backend is PBS, break up

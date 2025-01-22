@@ -1,17 +1,7 @@
 import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
-import {
-  deepAccess,
-  deepSetValue,
-  getBidRequest,
-  getDefinedParams,
-  isArray,
-  logError,
-  logWarn,
-  mergeDeep,
-  timestamp
-} from '../../src/utils.js';
+import {deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
 import {config} from '../../src/config.js';
-import { STATUS, S2S } from '../../src/constants.js';
+import {S2S, STATUS} from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
@@ -26,6 +16,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
 import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
 import {s2sDefaultConfig} from './index.js';
+import {premergeFpd} from './bidderConfig.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -47,7 +38,7 @@ const PBS_CONVERTER = ortbConverter({
       }
     });
     if (Object.values(SUPPORTED_MEDIA_TYPES).some(mtype => imp[mtype])) {
-      imp.secure = context.s2sBidRequest.s2sConfig.secure;
+      imp.secure = proxyBidRequest.ortb2Imp?.secure ?? 1;
       return imp;
     }
   },
@@ -55,7 +46,7 @@ const PBS_CONVERTER = ortbConverter({
     if (!imps.length) {
       logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
     } else {
-      let {s2sBidRequest, requestedBidders, eidPermissions} = context;
+      let {s2sBidRequest} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
       request.tmax = s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout);
@@ -66,16 +57,6 @@ const PBS_CONVERTER = ortbConverter({
           deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
         }
       })
-
-      if (isArray(eidPermissions) && eidPermissions.length > 0) {
-        if (requestedBidders && isArray(requestedBidders)) {
-          eidPermissions = eidPermissions.map(p => ({
-            ...p,
-            bidders: p.bidders.filter(bidder => requestedBidders.includes(bidder))
-          }))
-        }
-        deepSetValue(request, 'ext.prebid.data.eidpermissions', eidPermissions);
-      }
 
       if (!context.transmitTids) {
         deepSetValue(request, 'ext.prebid.createtids', false);
@@ -122,7 +103,10 @@ const PBS_CONVERTER = ortbConverter({
         transactionId: context.adUnit.transactionId,
         adUnitId: context.adUnit.adUnitId,
         auctionId: context.bidderRequest.auctionId,
-      }), bidResponse),
+      }), bidResponse, {
+        deferRendering: !!context.adUnit.deferBilling,
+        deferBilling: !!context.adUnit.deferBilling
+      }),
       adUnit: context.adUnit.code
     };
   },
@@ -200,7 +184,7 @@ const PBS_CONVERTER = ortbConverter({
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
         // pass schains in ext.prebid.schains
-        let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
+        let chains = ortbRequest?.ext?.prebid?.schains || [];
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
         chains = Object.values(
@@ -209,7 +193,7 @@ const PBS_CONVERTER = ortbConverter({
               .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
               .map((req) => ({
                 bidders: [req.bidderCode],
-                schain: deepAccess(req, 'bids.0.schain')
+                schain: req?.bids?.[0]?.schain
               })))
             .filter(({bidders, schain}) => bidders?.length > 0 && schain)
             .reduce((chains, {bidders, schain}) => {
@@ -241,6 +225,7 @@ const PBS_CONVERTER = ortbConverter({
               adUnitCode: impCtx.adUnit.code,
               ortb2: bidderReq?.ortb2,
               ortb2Imp: bidReq?.ortb2Imp,
+              bidder: cfg.bidder,
               config: cfg.config
             };
           }));
@@ -252,7 +237,7 @@ const PBS_CONVERTER = ortbConverter({
   },
 });
 
-export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requestedBidders, eidPermissions) {
+export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   const requestTimestamp = timestamp();
   const impIds = new Set();
   const proxyBidRequests = [];
@@ -294,7 +279,6 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     proxyBidRequests.push({
       ...adUnit,
       adUnitCode: adUnit.code,
-      ...getDefinedParams(actualBidRequests.values().next().value || {}, ['userId', 'userIdAsEids', 'schain']),
       pbsData: {impId, actualBidRequests, adUnit},
     });
   });
@@ -313,10 +297,12 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
       ttl: s2sBidRequest.s2sConfig.defaultTtl || DEFAULT_S2S_TTL,
       requestTimestamp,
-      s2sBidRequest,
+      s2sBidRequest: {
+        ...s2sBidRequest,
+        ortb2Fragments: premergeFpd(s2sBidRequest.ortb2Fragments, requestedBidders)
+      },
       requestedBidders,
       actualBidderRequests: bidderRequests,
-      eidPermissions,
       nativeRequest: s2sBidRequest.s2sConfig.ortbNative,
       getRedactor,
       transmitTids: isActivityAllowed(ACTIVITY_TRANSMIT_TID, s2sParams),

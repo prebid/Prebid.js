@@ -9,10 +9,13 @@ import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
-
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 export function createRtdProvider(moduleName) {
   const MODULE_NAME = 'realTimeData';
   const SUBMODULE_NAME = moduleName;
+  const GVLID = 1116;
 
   const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
   /**
@@ -106,6 +109,7 @@ export function createRtdProvider(moduleName) {
   /** @type {RtdSubmodule} */
   const rtdSubmodule = {
     name: SUBMODULE_NAME,
+    gvlid: GVLID,
     getBidRequestData: getRealTimeData,
     init: init
   };

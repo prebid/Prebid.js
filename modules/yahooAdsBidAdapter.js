@@ -3,12 +3,15 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahooAds';
-const BIDDER_ALIASES = ['yahoossp', 'yahooAdvertising']
 const GVLID = 25;
+const BIDDER_ALIASES = [
+  { code: 'yahoossp', gvlid: GVLID },
+  { code: 'yahooAdvertising', gvlid: GVLID }
+];
 const ADAPTER_VERSION = '1.1.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
@@ -147,7 +150,7 @@ function getSupportedEids(bid) {
 }
 
 function isSecure(bid) {
-  return deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
+  return deepAccess(bid, 'params.bidOverride.imp.secure') ?? bid.ortb2Imp?.secure ?? 1;
 };
 
 function getPubIdMode(bid) {
@@ -343,7 +346,7 @@ function appendImpObject(bid, openRtbObject) {
     const impObject = {
       id: bid.bidId,
       secure: isSecure(bid),
-      bidfloor: getFloorModuleData(bid).floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
+      bidfloor: getFloorModuleData(bid)?.floor || deepAccess(bid, 'params.bidOverride.imp.bidfloor')
     };
 
     if (bid.mediaTypes.banner && (typeof mediaTypeMode === 'undefined' || mediaTypeMode === BANNER || mediaTypeMode === '*')) {
@@ -657,13 +660,9 @@ export const spec = {
         bidResponse.mediaType = VIDEO;
         bidResponse.meta.mediaType = VIDEO;
         bidResponse.vastXml = bid.adm;
-
-        if (bid.nurl) {
-          bidResponse.vastUrl = bid.nurl;
-        };
       }
 
-      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer) {
+      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer && bidResponse.mediaType === VIDEO) {
         bidResponse.renderer = createRenderer(bidderRequest, bidResponse) || undefined;
       }
 

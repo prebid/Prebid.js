@@ -1,6 +1,5 @@
 import {
   createTrackPixelHtml,
-  deepAccess,
   inIframe,
   mergeDeep,
   sizesToSizeTuples,
@@ -15,7 +14,7 @@ import {BANNER} from '../../../src/mediaTypes.js';
 export function fillBannerImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== BANNER) return;
 
-  const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
+  const bannerParams = bidRequest?.mediaTypes?.banner;
   if (bannerParams) {
     const banner = {
       topframe: inIframe() === true ? 0 : 1

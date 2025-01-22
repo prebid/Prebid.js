@@ -73,9 +73,7 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
-
-  if (invalidBidderName || !bid.params) {
+  if (!bid.params) {
     return false;
   }
 
@@ -537,7 +535,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
     size: [ size.w, size.h ]
   });
 
-  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+  if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
     return bidFloors.floor;
   }
 }

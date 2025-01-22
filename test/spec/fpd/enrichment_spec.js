@@ -34,7 +34,11 @@ describe('FPD enrichment', () => {
       },
       document: {
         querySelector: sinon.stub()
-      }
+      },
+      screen: {
+        width: 1,
+        height: 1,
+      },
     };
   }
 
@@ -156,12 +160,23 @@ describe('FPD enrichment', () => {
     });
     testWindows(() => win, () => {
       it('sets w/h', () => {
-        win.innerHeight = 123;
-        win.innerWidth = 321;
+        win.screen.width = 321;
+        win.screen.height = 123;
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
             h: 123,
+          });
+        });
+      });
+
+      it('sets ext.vpw/vph', () => {
+        win.innerWidth = 12;
+        win.innerHeight = 21;
+        return fpd().then(ortb2 => {
+          sinon.assert.match(ortb2.device.ext, {
+            vpw: 12,
+            vph: 21,
           });
         });
       });
@@ -207,7 +222,7 @@ describe('FPD enrichment', () => {
         it('is set if globalPrivacyControl is set', () => {
           win.navigator.globalPrivacyControl = true;
           return fpd().then(ortb2 => {
-            expect(ortb2.regs.ext.gpc).to.eql(1);
+            expect(ortb2.regs.ext.gpc).to.eql('1');
           });
         });
 

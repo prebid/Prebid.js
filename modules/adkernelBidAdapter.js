@@ -20,6 +20,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 
 /**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -83,7 +84,6 @@ export const spec = {
     {code: 'unibots'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
-    {code: 'felixads'},
     {code: 'motionspots'},
     {code: 'sonic_twist'},
     {code: 'displayioads'},
@@ -95,7 +95,15 @@ export const spec = {
     {code: 'headbidder'},
     {code: 'digiad'},
     {code: 'monetix'},
-    {code: 'hyperbrainz'}
+    {code: 'hyperbrainz'},
+    {code: 'voisetech'},
+    {code: 'global_sun'},
+    {code: 'rxnetwork'},
+    {code: 'revbid'},
+    {code: 'spinx', gvlid: 1308},
+    {code: 'oppamedia'},
+    {code: 'pixelpluses', gvlid: 1209},
+    {code: 'urekamedia'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -111,7 +119,9 @@ export const spec = {
       !isNaN(Number(bidRequest.params.zoneId)) &&
       bidRequest.params.zoneId > 0 &&
       bidRequest.mediaTypes &&
-      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video || (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native)));
+      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video ||
+        (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native))
+      );
   },
 
   /**
@@ -246,18 +256,6 @@ function groupImpressionsByHostZone(bidRequests, refererInfo) {
   );
 }
 
-function getBidFloor(bid, mediaType, sizes) {
-  var floor;
-  var size = sizes.length === 1 ? sizes[0] : '*';
-  if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
-}
-
 /**
  *  Builds rtb imp object(s) for single adunit
  *  @param bidRequest {BidRequest}
@@ -269,7 +267,7 @@ function buildImps(bidRequest, secure) {
     'tagid': bidRequest.adUnitCode
   };
   if (secure) {
-    imp.secure = 1;
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
   var sizes = [];
   let mediaTypes = bidRequest.mediaTypes;
