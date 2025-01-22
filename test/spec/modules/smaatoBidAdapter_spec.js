@@ -8,9 +8,11 @@ import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
+
+const SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
 
 const ADTYPE_IMG = 'Img';
 const ADTYPE_VIDEO = 'Video';
@@ -172,6 +174,7 @@ describe('smaatoBidAdapterTest', () => {
             id: 'bidId',
             banner: BANNER_OPENRTB_IMP,
             tagid: 'adspaceId',
+            secure: 1
           }
         ]);
       });
@@ -296,6 +299,33 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.site.page).to.equal(page);
         expect(req.site.ref).to.equal(ref);
         expect(req.site.publisher.id).to.equal('publisherId');
+        expect(req.dooh).to.be.undefined;
+      })
+
+      it('sends correct dooh from ortb2', () => {
+        const name = 'name';
+        const domain = 'domain';
+        const keywords = 'keyword1,keyword2';
+        const venuetypetax = 1;
+        const ortb2 = {
+          dooh: {
+            name: name,
+            domain: domain,
+            keywords: keywords,
+            venuetypetax: venuetypetax
+          },
+        };
+
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.dooh.id).to.exist.and.to.be.a('string');
+        expect(req.dooh.name).to.equal(name);
+        expect(req.dooh.domain).to.equal(domain);
+        expect(req.dooh.keywords).to.equal(keywords);
+        expect(req.dooh.venuetypetax).to.equal(venuetypetax);
+        expect(req.dooh.publisher.id).to.equal('publisherId');
+        expect(req.site).to.be.undefined;
       })
 
       it('sends correct device from ortb2', () => {
@@ -1640,8 +1670,41 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('getUserSyncs', () => {
-    it('returns no pixels', () => {
+    it('when pixelEnabled false then returns no pixels', () => {
       expect(spec.getUserSyncs()).to.be.empty
+    })
+
+    it('when pixelEnabled true then returns pixel', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, null, null)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: SYNC_URL
+          }
+        ]
+      )
+    })
+
+    it('when pixelEnabled true and gdprConsent then returns pixel with gdpr params', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, {gdprApplies: true, consentString: CONSENT_STRING}, null)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
+      )
+    })
+
+    it('when pixelEnabled true and gdprConsent without gdpr then returns pixel with gdpr_consent', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, {consentString: CONSENT_STRING}, null), null).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
+      )
     })
   })
 });

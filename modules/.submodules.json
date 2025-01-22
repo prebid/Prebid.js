@@ -6,7 +6,6 @@
       "adtelligentIdSystem",
       "adqueryIdSystem",
       "amxIdSystem",
-      "britepoolIdSystem",
       "connectIdSystem",
       "czechAdIdSystem",
       "criteoIdSystem",
@@ -37,15 +36,16 @@
       "novatiqIdSystem",
       "oneKeyIdSystem",
       "operaadsIdSystem",
-      "parrableIdSystem",
+      "permutiveIdentityManagerIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
+      "rewardedInterestIdSystem",
       "sharedIdSystem",
       "tapadIdSystem",
       "teadsIdSystem",
       "tncIdSystem",
-      "utiqSystem",
+      "utiqIdSystem",
       "utiqMtpIdSystem",
       "uid2IdSystem",
       "euidIdSystem",
@@ -57,12 +57,14 @@
     ],
     "adpod": [
       "freeWheelAdserverVideo",
-      "dfpAdServerVideo"
+      "dfpAdpod"
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "51DegreesRtdProvider",
       "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
+      "adagioRtdProvider",
       "adlooxRtdProvider",
       "adnuntiusRtdProvider",
       "airgridRtdProvider",
@@ -82,6 +84,7 @@
       "greenbidsRtdProvider",
       "growthCodeRtdProvider",
       "hadronRtdProvider",
+      "humansecurityRtdProvider",
       "iasRtdProvider",
       "idWardRtdProvider",
       "imRtdProvider",
@@ -89,6 +92,7 @@
       "jwplayerRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
+      "mobianRtdProvider",
       "neuwoRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
@@ -99,8 +103,10 @@
       "reconciliationRtdProvider",
       "relevadRtdProvider",
       "sirdataRtdProvider",
+      "symitriDapRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider",
+      "wurflRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
@@ -108,10 +114,12 @@
     ],
     "videoModule": [
       "jwplayerVideoProvider",
-      "videojsVideoProvider"
+      "videojsVideoProvider",
+      "adplayerproVideoProvider"
     ],
     "paapi": [
-      "fledgeForGpt"
+      "paapiForGpt",
+      "topLevelPaapi"
     ]
   }
 }

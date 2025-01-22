@@ -10,7 +10,8 @@ import {
   getAdUnits,
   getServerTestingConfig,
   getServerTestingsAds,
-  getBidRequests
+  getBidRequests,
+  getTwinAdUnits
 } from 'test/fixtures/fixtures.js';
 import { EVENTS, S2S } from 'src/constants.js';
 import * as utils from 'src/utils.js';
@@ -82,6 +83,7 @@ describe('adapterManager tests', function () {
   let orgPrebidServerAdapter;
   let orgRubiconAdapter;
   let orgBadBidderAdapter;
+  let sandbox;
   before(function () {
     orgAppnexusAdapter = adapterManager.bidderRegistry['appnexus'];
     orgAdequantAdapter = adapterManager.bidderRegistry['adequant'];
@@ -99,8 +101,12 @@ describe('adapterManager tests', function () {
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
   afterEach(() => {
     s2sTesting.clientTestBidders.clear();
+    sandbox.restore();
   });
 
   describe('callBids', function () {
@@ -392,11 +398,51 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onBidWon when the bid is S2S', () => {
-        bids[0].src = S2S.SRC
+        bids[0].source = S2S.SRC
         adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onBidWon);
       })
     });
+
+    describe('triggerBilling', () => {
+      beforeEach(() => {
+        criteoSpec.onBidBillable = sinon.spy();
+        sandbox.stub(utils.internal, 'triggerPixel');
+      });
+      describe('on client bids', () => {
+        it('should call bidder\'s onBidBillable, and ignore burl', () => {
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.called(criteoSpec.onBidBillable);
+          sinon.assert.notCalled(utils.internal.triggerPixel)
+        });
+        it('should not call again on second trigger', () => {
+          adapterManager.triggerBilling(bids[0]);
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.calledOnce(criteoSpec.onBidBillable);
+        });
+      })
+      describe('on s2s bids', () => {
+        beforeEach(() => {
+          bids[0].source = S2S.SRC;
+        });
+        it('should call burl and not onBidBillable', () => {
+          bids[0].burl = 'burl';
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.notCalled(criteoSpec.onBidBillable);
+          sinon.assert.calledWith(utils.internal.triggerPixel, 'burl');
+        });
+        it('should not call burl if not present', () => {
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.notCalled(utils.internal.triggerPixel);
+        });
+        it('should not call burl again on second triggerBilling', () => {
+          bids[0].burl = 'burl';
+          adapterManager.triggerBilling(bids[0]);
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.calledOnce(utils.internal.triggerPixel)
+        });
+      });
+    })
 
     describe('onSetTargeting', function () {
       beforeEach(() => {
@@ -409,7 +455,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onSetTargeting when bid is S2S', () => {
-        bids[0].src = S2S.SRC;
+        bids[0].source = S2S.SRC;
         adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onSetTargeting);
       })
@@ -423,10 +469,20 @@ describe('adapterManager tests', function () {
         sinon.assert.called(criteoSpec.onBidViewable);
       });
       it('should NOT call onBidViewable when bid is S2S', () => {
-        bids[0].src = S2S.SRC;
+        bids[0].source = S2S.SRC;
         adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
         sinon.assert.notCalled(criteoSpec.onBidViewable);
       })
+    });
+
+    describe('onAdRenderSucceeded', function () {
+      beforeEach(() => {
+        criteoSpec.onAdRenderSucceeded = sinon.stub()
+      });
+      it('should call spec\'s onAdRenderSucceeded callback', function () {
+        adapterManager.callAdRenderSucceededBidder(bids[0].bidder, bids[0]);
+        sinon.assert.called(criteoSpec.onAdRenderSucceeded);
+      });
     });
   })
   describe('onBidderError', function () {
@@ -1620,6 +1676,15 @@ describe('adapterManager tests', function () {
           expect(adapterManager.videoAdapters).to.include(alias);
         }
       });
+
+      it('should use gvlid of original adapter when option set', () => {
+        const gvlid = 'origvlid';
+        let thisSpec = Object.assign(spec, { gvlid });
+        registerBidder(thisSpec);
+        const alias = 'bidderWithGvlid';
+        adapterManager.aliasBidAdapter(CODE, alias, {useBaseGvlid: true});
+        expect(adapterManager.bidderRegistry[alias].getSpec()?.gvlid).to.deep.eql(gvlid);
+      })
     });
 
     describe('special case for s2s-only bidders', function () {
@@ -1675,13 +1740,14 @@ describe('adapterManager tests', function () {
   });
 
   describe('makeBidRequests', function () {
-    let adUnits;
+    let adUnits, twinAdUnits;
     beforeEach(function () {
       resetAdUnitCounters();
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
         return adUnit;
       })
+      twinAdUnits = getTwinAdUnits();
     });
 
     function makeBidRequests(au = adUnits) {
@@ -1725,6 +1791,14 @@ describe('adapterManager tests', function () {
 
       expect(sizes1).not.to.deep.equal(sizes2);
     });
+
+    it('should transfer deferBilling from ad unit', () => {
+      adUnits[0].deferBilling = true;
+      const requests = makeBidRequests();
+      requests.flatMap(req => req.bids).forEach(bidRequest => {
+        expect(bidRequest.deferBilling).to.equal(bidRequest.adUnitCode === adUnits[0].code);
+      })
+    })
 
     it('should set and increment bidRequestsCounter', () => {
       const [au1, au2] = adUnits;
@@ -1788,6 +1862,31 @@ describe('adapterManager tests', function () {
           rubicon: 2
         })
       })
+    });
+
+    describe('adUnitAuctionsCounter', () => {
+      it('should set and increment auctionsCount at adUnitCode level', () => {
+        const [au1, au2] = adUnits;
+        makeBidRequests([au1]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(1);
+        });
+        makeBidRequests([au1]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(2);
+        });
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(bid.adUnitCode === au1.code ? 3 : 1);
+        });
+      });
+
+      it('should increment the auctionsCount of each adUnitCode exactly once per auction for twin ad units', () => {
+        const [au1, au2] = twinAdUnits;
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(1);
+        });
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(2);
+        });
+      });
     });
 
     describe('and activity controls', () => {

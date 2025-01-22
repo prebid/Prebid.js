@@ -1,7 +1,11 @@
 import {expect} from 'chai';
 import {
   spec as adapter,
+  storage,
   createDomain,
+  webSessionId
+} from 'modules/vidazooBidAdapter.js';
+import {
   hashCode,
   extractPID,
   extractCID,
@@ -11,9 +15,9 @@ import {
   tryParseJSON,
   getUniqueDealId,
   getNextDealId,
-  getVidazooSessionId,
-  webSessionId
-} from 'modules/vidazooBidAdapter.js';
+  getTopWindowQueryParams,
+  getVidazooSessionId
+} from 'libraries/vidazooUtils/bidderUtils.js'
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
@@ -21,7 +25,7 @@ import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
 import {deepSetValue} from 'src/utils.js';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
+export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -88,7 +92,7 @@ const VIDEO_BID = {
       'minduration': 0,
       'startdelay': 0,
       'linearity': 1,
-      'api': [2],
+      'api': [2, 7],
       'placement': 1
     }
   }
@@ -111,6 +115,7 @@ const BIDDER_REQUEST = {
       'cat': ['IAB2'],
       'pagecat': ['IAB2-2'],
       'content': {
+        'language': 'en',
         'data': [{
           'name': 'example.com',
           'ext': {
@@ -125,7 +130,8 @@ const BIDDER_REQUEST = {
     },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -153,8 +159,14 @@ const BIDDER_REQUEST = {
           segment: [{id: '243'}],
         },
       ],
+    },
+    source: {
+      ext: {
+        omidpn: 'MyIntegrationPartner',
+        omidpv: '7.1'
+      }
     }
-  },
+  }
 };
 
 const SERVER_RESPONSE = {
@@ -204,15 +216,6 @@ const REQUEST = {
     bidId: '2d52001cabd527'
   }
 };
-
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
 
 describe('VidazooBidAdapter', function () {
   describe('validtae spec', function () {
@@ -317,6 +320,7 @@ describe('VidazooBidAdapter', function () {
           gpid: '',
           prebidVersion: version,
           ptrace: '1000',
+          vdzhum: '1000',
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
@@ -340,6 +344,8 @@ describe('VidazooBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -363,7 +369,7 @@ describe('VidazooBidAdapter', function () {
           webSessionId: webSessionId,
           mediaTypes: {
             video: {
-              api: [2],
+              api: [2, 7],
               context: 'instream',
               linearity: 1,
               maxduration: 60,
@@ -377,7 +383,9 @@ describe('VidazooBidAdapter', function () {
               protocols: [2, 3, 5, 6],
               startdelay: 0
             }
-          }
+          },
+          omidpn: 'MyIntegrationPartner',
+          omidpv: '7.1'
         }
       })
       ;
@@ -436,6 +444,7 @@ describe('VidazooBidAdapter', function () {
           prebidVersion: version,
           schain: BID.schain,
           ptrace: '1000',
+          vdzhum: '1000',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           mediaTypes: [BANNER],
           uqs: getTopWindowQueryParams(),
@@ -445,6 +454,8 @@ describe('VidazooBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -526,6 +537,7 @@ describe('VidazooBidAdapter', function () {
         prebidVersion: version,
         schain: BID.schain,
         ptrace: '1000',
+        vdzhum: '1000',
         res: `${window.top.screen.width}x${window.top.screen.height}`,
         mediaTypes: [BANNER],
         uqs: getTopWindowQueryParams(),
@@ -535,6 +547,8 @@ describe('VidazooBidAdapter', function () {
         gpid: '1234567890',
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
+        contentLang: 'en',
+        coppa: 0,
         contentData: [{
           'name': 'example.com',
           'ext': {
@@ -600,7 +614,7 @@ describe('VidazooBidAdapter', function () {
     it('should set fledge correctly if enabled', function () {
       config.resetConfig();
       const bidderRequest = utils.deepClone(BIDDER_REQUEST);
-      bidderRequest.fledgeEnabled = true;
+      bidderRequest.paapi = {enabled: true};
       deepSetValue(bidderRequest, 'ortb2Imp.ext.ae', 1);
       const requests = adapter.buildRequests([BID], bidderRequest);
       expect(requests[0].data.fledge).to.equal(1);
@@ -750,8 +764,6 @@ describe('VidazooBidAdapter', function () {
         switch (idSystemProvider) {
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:
@@ -802,14 +814,14 @@ describe('VidazooBidAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
     it('should get undefined vidazoo session id', function () {
-      const sessionId = getVidazooSessionId();
+      const sessionId = getVidazooSessionId(storage);
       expect(sessionId).to.be.empty;
     });
 
     it('should get vidazoo session id from storage', function () {
       const vidSid = '1234-5678';
       window.localStorage.setItem('vidSid', vidSid);
-      const sessionId = getVidazooSessionId();
+      const sessionId = getVidazooSessionId(storage);
       expect(sessionId).to.be.equal(vidSid);
     });
   });
@@ -828,15 +840,15 @@ describe('VidazooBidAdapter', function () {
     const key = 'myDealKey';
 
     it('should get the next deal id', function () {
-      const dealId = getNextDealId(key);
-      const nextDealId = getNextDealId(key);
+      const dealId = getNextDealId(storage, key);
+      const nextDealId = getNextDealId(storage, key);
       expect(dealId).to.be.equal(1);
       expect(nextDealId).to.be.equal(2);
     });
 
     it('should get the first deal id on expiration', function (done) {
       setTimeout(function () {
-        const dealId = getNextDealId(key, 100);
+        const dealId = getNextDealId(storage, key, 100);
         expect(dealId).to.be.equal(1);
         done();
       }, 200);
@@ -857,13 +869,13 @@ describe('VidazooBidAdapter', function () {
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(key, 0);
+      uniqueDealId = getUniqueDealId(storage, key, 0);
     })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(key);
+        const current = getUniqueDealId(storage, key);
         expect(current).to.be.equal(uniqueDealId);
         done();
       }, 200);
@@ -871,7 +883,7 @@ describe('VidazooBidAdapter', function () {
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(key, 100);
+        const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
       }, 200)
@@ -895,8 +907,8 @@ describe('VidazooBidAdapter', function () {
         shouldAdvanceTime: true,
         now
       });
-      setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      setStorageItem(storage, 'myKey', 2020);
+      const {value, created} = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -907,7 +919,7 @@ describe('VidazooBidAdapter', function () {
     it('should get external stored value', function () {
       const value = 'superman'
       window.localStorage.setItem('myExternalKey', value);
-      const item = getStorageItem('myExternalKey');
+      const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 

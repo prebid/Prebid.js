@@ -1,10 +1,13 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
+import { config } from 'src/config.js';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
 const COOKIE_DEPRECATION_LABEL = 'test';
+const API_KEY = 'PA-XXXXXX';
 
 describe('Missena Adapter', function () {
   $$PREBID_GLOBAL$$.bidderSettings = {
@@ -12,6 +15,9 @@ describe('Missena Adapter', function () {
       storageAllowed: true,
     },
   };
+  let sandbox = sinon.sandbox.create();
+  sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
+  sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
 
   const bidId = 'abc';
   const bid = {
@@ -25,9 +31,15 @@ describe('Missena Adapter', function () {
       },
     },
     params: {
-      apiKey: 'PA-34745704',
+      apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
+    },
+    schain: {
+      validation: 'strict',
+      config: {
+        ver: '1.0',
+      },
     },
     getFloor: (inputParams) => {
       if (inputParams.mediaType === BANNER) {
@@ -46,7 +58,7 @@ describe('Missena Adapter', function () {
     sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
     params: {
-      apiKey: 'PA-34745704',
+      apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
@@ -58,10 +70,12 @@ describe('Missena Adapter', function () {
       consentString: consentString,
       gdprApplies: true,
     },
+    uspConsent: 'IDO',
     refererInfo: {
       topmostLocation: REFERRER,
       canonicalUrl: 'https://canonical',
     },
+    ortb2: { regs: { coppa: 1 } },
   };
 
   const bids = [bid, bidWithoutFloor];
@@ -100,6 +114,23 @@ describe('Missena Adapter', function () {
     const payload = JSON.parse(request.data);
     const payloadNoFloor = JSON.parse(requests[1].data);
 
+    it('should send disabled autoplay', function () {
+      expect(payload.autoplay).to.equal(0);
+    });
+
+    it('should contain coppa', function () {
+      expect(payload.coppa).to.equal(1);
+    });
+    sandbox.restore();
+
+    it('should contain uspConsent', function () {
+      expect(payload.us_privacy).to.equal('IDO');
+    });
+
+    it('should contain schain', function () {
+      expect(payload.schain.config.ver).to.equal('1.0');
+    });
+
     it('should return as many server requests as bidder requests', function () {
       expect(requests.length).to.equal(2);
     });
@@ -113,11 +144,11 @@ describe('Missena Adapter', function () {
     });
 
     it('should send placement', function () {
-      expect(payload.placement).to.equal('sticky');
+      expect(payload.params.placement).to.equal('sticky');
     });
 
     it('should send formats', function () {
-      expect(payload.formats).to.eql(['sticky-banner']);
+      expect(payload.params.formats).to.eql(['sticky-banner']);
     });
 
     it('should send referer information to the request', function () {
@@ -140,6 +171,11 @@ describe('Missena Adapter', function () {
     it('should send the idempotency key', function () {
       expect(window.msna_ik).to.not.equal(undefined);
       expect(payload.ik).to.equal(window.msna_ik);
+    });
+
+    it('should send screen', function () {
+      expect(payload.screen.width).to.equal(screen.width);
+      expect(payload.screen.height).to.equal(screen.height);
     });
 
     getDataFromLocalStorageStub.restore();
@@ -269,7 +305,7 @@ describe('Missena Adapter', function () {
 
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
-      expect(userSync[0].url).to.be.equal(syncFrameUrl);
+      expect(userSync[0].url).to.be.equal(`${syncFrameUrl}?t=${API_KEY}`);
     });
 
     it('should return empty array when iframeEnabled is false', function () {
@@ -282,7 +318,7 @@ describe('Missena Adapter', function () {
         gdprApplies: true,
         consentString,
       });
-      const expectedUrl = `${syncFrameUrl}?gdpr=1&gdpr_consent=${consentString}`;
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=1&gdpr_consent=${consentString}`;
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
       expect(userSync[0].url).to.be.equal(expectedUrl);
@@ -292,7 +328,7 @@ describe('Missena Adapter', function () {
         gdprApplies: false,
         consentString,
       });
-      const expectedUrl = `${syncFrameUrl}?gdpr=0&gdpr_consent=${consentString}`;
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=0&gdpr_consent=${consentString}`;
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
       expect(userSync[0].url).to.be.equal(expectedUrl);

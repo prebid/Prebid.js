@@ -2,15 +2,7 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
-  hashCode,
-  extractPID,
-  extractCID,
-  extractSubDomain,
-  getStorageItem,
-  setStorageItem,
-  tryParseJSON,
-  getUniqueDealId,
-  webSessionId
+  storage
 } from 'modules/twistDigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
@@ -18,6 +10,16 @@ import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
 import {deepSetValue} from 'src/utils.js';
+import {
+  extractPID,
+  extractCID,
+  extractSubDomain,
+  hashCode,
+  getStorageItem,
+  setStorageItem,
+  tryParseJSON,
+  getUniqueDealId
+} from '../../../libraries/vidazooUtils/bidderUtils.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -109,6 +111,7 @@ const BIDDER_REQUEST = {
       'cat': ['IAB2'],
       'pagecat': ['IAB2-2'],
       'content': {
+        'language': 'en',
         'data': [{
           'name': 'example.com',
           'ext': {
@@ -123,7 +126,8 @@ const BIDDER_REQUEST = {
     },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -335,6 +339,8 @@ describe('TwistDigitalBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -355,7 +361,6 @@ describe('TwistDigitalBidAdapter', function () {
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           isStorageAllowed: true,
-          webSessionId: webSessionId,
           mediaTypes: {
             video: {
               api: [2],
@@ -437,6 +442,8 @@ describe('TwistDigitalBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          contentLang: 'en',
+          coppa: 0,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -453,8 +460,7 @@ describe('TwistDigitalBidAdapter', function () {
               name: 'example.com',
               segment: [{id: '243'}],
             },
-          ],
-          webSessionId: webSessionId
+          ]
         }
       });
     });
@@ -524,6 +530,8 @@ describe('TwistDigitalBidAdapter', function () {
         gpid: '1234567890',
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
+        contentLang: 'en',
+        coppa: 0,
         contentData: [{
           'name': 'example.com',
           'ext': {
@@ -540,8 +548,7 @@ describe('TwistDigitalBidAdapter', function () {
             name: 'example.com',
             segment: [{id: '243'}],
           },
-        ],
-        webSessionId: webSessionId
+        ]
       };
 
       const REQUEST_DATA2 = utils.deepClone(REQUEST_DATA);
@@ -588,7 +595,7 @@ describe('TwistDigitalBidAdapter', function () {
     it('should set fledge correctly if enabled', function () {
       config.resetConfig();
       const bidderRequest = utils.deepClone(BIDDER_REQUEST);
-      bidderRequest.fledgeEnabled = true;
+      bidderRequest.paapi = {enabled: true};
       deepSetValue(bidderRequest, 'ortb2Imp.ext.ae', 1);
       const requests = adapter.buildRequests([BID], bidderRequest);
       expect(requests[0].data.fledge).to.equal(1);
@@ -738,8 +745,6 @@ describe('TwistDigitalBidAdapter', function () {
         switch (idSystemProvider) {
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:
@@ -805,13 +810,13 @@ describe('TwistDigitalBidAdapter', function () {
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(key, 0);
+      uniqueDealId = getUniqueDealId(storage, key, 0);
     })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(key);
+        const current = getUniqueDealId(storage, key);
         expect(current).to.be.equal(uniqueDealId);
         done();
       }, 200);
@@ -819,7 +824,7 @@ describe('TwistDigitalBidAdapter', function () {
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(key, 100);
+        const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
       }, 200)
@@ -843,8 +848,8 @@ describe('TwistDigitalBidAdapter', function () {
         shouldAdvanceTime: true,
         now
       });
-      setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      setStorageItem(storage, 'myKey', 2020);
+      const {value, created} = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -855,7 +860,7 @@ describe('TwistDigitalBidAdapter', function () {
     it('should get external stored value', function () {
       const value = 'superman'
       window.localStorage.setItem('myExternalKey', value);
-      const item = getStorageItem('myExternalKey');
+      const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 

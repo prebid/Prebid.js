@@ -433,6 +433,11 @@ function sendPage() {
 function sendHbConfigData() {
   const conf = {}
   const pbjsConfig = config.getConfig()
+  // Check if pbjsConfig.userSync exists and has userIds property
+  if (pbjsConfig.userSync && pbjsConfig.userSync.userIds) {
+    // Delete the userIds property
+    delete pbjsConfig.userSync.userIds;
+  }
 
   Object.keys(pbjsConfig).forEach(key => {
     if (key[0] !== '_') {

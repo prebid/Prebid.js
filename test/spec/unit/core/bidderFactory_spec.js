@@ -639,48 +639,103 @@ describe('bidderFactory', () => {
         expect(doneStub.calledOnce).to.equal(true);
       });
 
-      it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', function () {
-        const bidder = newBidder(spec);
+      describe('when interpretResponse returns a bid', () => {
+        let bid, bidderRequest;
+        beforeEach(() => {
+          bid = {
+            creativeId: 'creative-id',
+            requestId: '1',
+            ad: 'ad-url.com',
+            cpm: 0.5,
+            height: 200,
+            width: 300,
+            adUnitCode: 'mock/placement',
+            currency: 'USD',
+            netRevenue: true,
+            ttl: 300,
+            bidderCode: 'sampleBidder',
+            sampleBidder: {advertiserId: '12345', networkId: '111222'}
+          }
+          bidderRequest = utils.deepClone(MOCK_BIDS_REQUEST);
+          bidderRequest.bids[0].bidder = 'sampleBidder';
+        })
 
-        const bid = {
-          creativeId: 'creative-id',
-          requestId: '1',
-          ad: 'ad-url.com',
-          cpm: 0.5,
-          height: 200,
-          width: 300,
-          adUnitCode: 'mock/placement',
-          currency: 'USD',
-          netRevenue: true,
-          ttl: 300,
-          bidderCode: 'sampleBidder',
-          sampleBidder: {advertiserId: '12345', networkId: '111222'}
-        };
-        const bidderRequest = Object.assign({}, MOCK_BIDS_REQUEST);
-        bidderRequest.bids[0].bidder = 'sampleBidder';
-        spec.isBidRequestValid.returns(true);
-        spec.buildRequests.returns({
-          method: 'POST',
-          url: 'test.url.com',
-          data: {}
+        function getAuctionBid() {
+          const bidder = newBidder(spec);
+          spec.isBidRequestValid.returns(true);
+          spec.buildRequests.returns({
+            method: 'POST',
+            url: 'test.url.com',
+            data: {}
+          });
+          spec.getUserSyncs.returns([]);
+          spec.interpretResponse.returns(bid);
+          bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          return addBidResponseStub.firstCall.args[1];
+        }
+
+        function setDeferredBilling(deferredBilling = true) {
+          bidderRequest.bids.forEach(bid => { bid.deferBilling = deferredBilling });
+        }
+
+        it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', function () {
+          const auctionBid = getAuctionBid();
+          expect(addBidResponseStub.calledOnce).to.equal(true);
+          expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+          // checking the fields added by our code
+          expect(auctionBid.originalCpm).to.equal(bid.cpm);
+          expect(auctionBid.originalCurrency).to.equal(bid.currency);
+          expect(doneStub.calledOnce).to.equal(true);
+          expect(logErrorSpy.callCount).to.equal(0);
+          expect(auctionBid.meta).to.exist;
+          expect(auctionBid.meta).to.deep.equal({advertiserId: '12345', networkId: '111222'});
         });
-        spec.getUserSyncs.returns([]);
 
-        spec.interpretResponse.returns(bid);
+        describe('if request has deferBilling = true', () => {
+          beforeEach(() => setDeferredBilling(true));
 
-        bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          it('should set response.deferBilling = true, regardless of what the adapter says', () => {
+            bid.deferBilling = false;
+            expect(getAuctionBid().deferBilling).to.be.true;
+          });
+          [
+            {
+              shouldDefer: true
+            },
+            {
+              deferRendering: false,
+              shouldDefer: false
+            },
+            {
+              onBidBillable: true,
+              shouldDefer: false,
+            },
+            {
+              onBidBillable: true,
+              deferRendering: true,
+              shouldDefer: true
+            }
+          ].forEach(({onBidBillable, deferRendering, shouldDefer}) => {
+            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and sayd deferRender = ${deferRendering}`, () => {
+              if (onBidBillable) {
+                spec.onBidBillable = sinon.stub();
+              }
+              bid.deferRendering = deferRendering;
+              expect(getAuctionBid().deferRendering).to.equal(shouldDefer);
+            });
+          })
+        });
 
-        expect(addBidResponseStub.calledOnce).to.equal(true);
-        expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
-        let bidObject = addBidResponseStub.firstCall.args[1];
-        // checking the fields added by our code
-        expect(bidObject.originalCpm).to.equal(bid.cpm);
-        expect(bidObject.originalCurrency).to.equal(bid.currency);
-        expect(doneStub.calledOnce).to.equal(true);
-        expect(logErrorSpy.callCount).to.equal(0);
-        expect(bidObject.meta).to.exist;
-        expect(bidObject.meta).to.deep.equal({advertiserId: '12345', networkId: '111222'});
-      });
+        describe('if request has deferBilling = false', () => {
+          beforeEach(() => setDeferredBilling(false));
+          [true, false].forEach(deferredRender => {
+            it(`should set deferRendering = false when adapter says deferRendering = ${deferredRender}`, () => {
+              bid.deferRendering = deferredRender;
+              expect(getAuctionBid().deferRendering).to.be.false;
+            });
+          });
+        });
+      })
 
       it('should call spec.getUserSyncs() with the response', function () {
         const bidder = newBidder(spec);
@@ -1510,39 +1565,29 @@ describe('bidderFactory', () => {
           paapiStub = sinon.stub();
         });
 
-        const PAAPI_PROPS = ['fledgeAuctionConfigs', 'paapi'];
+        describe(`when response has paapi`, () => {
+          it('should call paapi config hook with auction configs', function () {
+            runBidder({
+              bids: bids,
+              paapi: [paapiConfig]
+            });
+            expect(paapiStub.calledOnce).to.equal(true);
+            sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
+            sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
+          });
 
-        it(`should not accept both ${PAAPI_PROPS.join(' and ')}`, () => {
-          expect(() => {
-            runBidder(Object.fromEntries(PAAPI_PROPS.map(prop => [prop, [paapiConfig]])))
-          }).to.throw();
-        })
-
-        PAAPI_PROPS.forEach(paapiProp => {
-          describe(`using ${paapiProp}`, () => {
-            it('should call paapi config hook with auction configs', function() {
+          Object.entries({
+            'missing': undefined,
+            'an empty array': []
+          }).forEach(([t, bids]) => {
+            it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function () {
               runBidder({
-                bids: bids,
-                [paapiProp]: [paapiConfig]
-              })
-              expect(paapiStub.calledOnce).to.equal(true);
-              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-              sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
-            })
-
-            Object.entries({
-              'missing': undefined,
-              'an empty array': []
-            }).forEach(([t, bids]) => {
-              it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function() {
-                runBidder({
-                  bids,
-                  [paapiProp]: [paapiConfig]
-                })
-                expect(paapiStub.calledOnce).to.be.true;
-                sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-                expect(addBidResponseStub.calledOnce).to.equal(false);
+                bids,
+                paapi: [paapiConfig]
               });
+              expect(paapiStub.calledOnce).to.be.true;
+              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
+              expect(addBidResponseStub.calledOnce).to.equal(false);
             });
           });
         });

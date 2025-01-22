@@ -201,7 +201,7 @@ export const spec = {
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
           meta: {
-            advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a',
+            advertiserDomains: [(matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'],
           },
         };
 
@@ -555,7 +555,7 @@ function getBidFloor(bid, sizes) {
     mediaType: mediaType !== undefined && spec.supportedMediaTypes.includes(mediaType) ? mediaType : '*',
     size: sizes.length !== 1 ? '*' : sizes[0].split(DIMENSION_SIGN),
   });
-  if (floor.currency === CURRENCY_CODE) {
+  if (floor?.currency === CURRENCY_CODE) {
     return (floor.floor * 100).toFixed(0);
   }
   return undefined;

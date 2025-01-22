@@ -1,4 +1,3 @@
-import {config} from '../src/config.js';
 import { deepAccess, deepSetValue, generateUUID, logError, logInfo } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -7,6 +6,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -22,7 +22,7 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '4.1';
+const BIDDER_VERSION = '4.2';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
@@ -33,6 +33,8 @@ const ALIASES = [
   { code: 'league-m', gvlid: 965 },
   { code: 'prjads' },
   { code: 'pubtech' },
+  { code: '1accord', gvlid: 965 },
+  { code: 'easybid', gvlid: 1068 },
 ];
 
 export const storage = getStorageManager({
@@ -125,12 +127,12 @@ const converter = ortbConverter({
       deepSetValue(request, 'ext.localStorage.nexx360Id', nexx360LocalStorage.nexx360Id);
     }
     const amxId = getAmxId();
-    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId());
+    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId);
     deepSetValue(request, 'ext.version', '$prebid.version$');
     deepSetValue(request, 'ext.source', 'prebid.js');
     deepSetValue(request, 'ext.pageViewId', PAGE_VIEW_ID);
     deepSetValue(request, 'ext.bidderVersion', BIDDER_VERSION);
-    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || 'USD']);
+    deepSetValue(request, 'cur', [getCurrencyFromBidderRequest(bidderRequest) || 'USD']);
     if (!request.user) request.user = {};
     if (getAmxId()) {
       if (!request.user.ext) request.user.ext = {};

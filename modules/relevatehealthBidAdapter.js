@@ -1,3 +1,4 @@
+import { formatResponse } from '../libraries/deepintentUtils/index.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -119,30 +120,13 @@ function getSite(bidderRequest) {
   }
   return site;
 }
-// Function to format response
-function formatResponse(bid) {
-  return {
-    requestId: bid && bid.impid ? bid.impid : undefined,
-    cpm: bid && bid.price ? bid.price : 0.0,
-    width: bid && bid.w ? bid.w : 0,
-    height: bid && bid.h ? bid.h : 0,
-    ad: bid && bid.adm ? bid.adm : '',
-    meta: {
-      advertiserDomains: bid && bid.adomain ? bid.adomain : []
-    },
-    creativeId: bid && bid.crid ? bid.crid : undefined,
-    netRevenue: false,
-    currency: bid && bid.cur ? bid.cur : 'USD',
-    ttl: 300,
-    dealId: bid && bid.dealId ? bid.dealId : undefined
-  };
-}
 // Function to build the user object
 function buildUser(bid) {
   if (bid && bid.params) {
     return {
       id: bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '',
-      buyeruid: localStorage.getItem('adx_profile_guid') ? localStorage.getItem('adx_profile_guid') : '',
+      // TODO: commented out because of rule violations
+      buyeruid: '', // localStorage.getItem('adx_profile_guid') ? localStorage.getItem('adx_profile_guid') : '',
       keywords: bid.params.keywords && typeof bid.params.keywords == 'string' ? bid.params.keywords : '',
       customdata: bid.params.customdata && typeof bid.params.customdata == 'string' ? bid.params.customdata : ''
     };

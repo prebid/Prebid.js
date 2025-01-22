@@ -73,9 +73,7 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
-
-  if (invalidBidderName || !bid.params) {
+  if (!bid.params) {
     return false;
   }
 
@@ -492,7 +490,6 @@ function _buildVideoORTB(bidRequest) {
   // Placement Inference Rules:
   // - If no placement is defined then default to 2 (In Banner)
   // - If the old deprecated field is defined, use its value for the recent placement field
-  // - If product is instream (for instream context) then override placement to 1
 
   const calculatePlacementValue = () => {
     const IN_BANNER_PLACEMENT_VALUE = 2;
@@ -510,8 +507,6 @@ function _buildVideoORTB(bidRequest) {
 
   if (product === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
-    video.plcmt = 1;
-    video.placement &&= 1;
   }
 
   // bidfloors
@@ -540,7 +535,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
     size: [ size.w, size.h ]
   });
 
-  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+  if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
     return bidFloors.floor;
   }
 }

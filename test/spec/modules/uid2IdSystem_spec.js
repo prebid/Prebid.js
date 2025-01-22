@@ -3,12 +3,12 @@ import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
 import 'src/prebid.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
-import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
@@ -93,7 +93,7 @@ describe(`UID2 module`, function () {
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
-    uninstallGdprEnforcement();
+    uninstallTcfControl();
     attachIdSystem(uid2IdSubmodule);
 
     suiteSandbox = sinon.sandbox.create();

@@ -97,6 +97,9 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
       if (consent == null) {
         return {allow: false, reason: 'consent data not available'};
       }
+      if (consent.Version !== 1) {
+        return {allow: false, reason: `unsupported consent specification version "${consent.Version}"`}
+      }
       if (denies(consent)) {
         return {allow: false};
       }
@@ -105,7 +108,7 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
 }
 
 function flatSection(subsections) {
-  if (subsections == null) return subsections;
+  if (!Array.isArray(subsections)) return subsections;
   return subsections.reduceRight((subsection, consent) => {
     return Object.assign(consent, subsection);
   }, {});

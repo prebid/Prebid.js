@@ -6,6 +6,16 @@ import { getUniqueIdentifierStr } from '../../../src/utils.js';
 const bidder = 'playdigo'
 
 describe('PlaydigoBidAdapter', function () {
+  const userIdAsEids = [{
+    source: 'test.org',
+    uids: [{
+      id: '01**********',
+      atype: 1,
+      ext: {
+        third: '01***********'
+      }
+    }]
+  }];
   const bids = [
     {
       bidId: getUniqueIdentifierStr(),
@@ -16,8 +26,9 @@ describe('PlaydigoBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner',
-      }
+        placementId: 'testBanner'
+      },
+      userIdAsEids
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -30,8 +41,9 @@ describe('PlaydigoBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testVideo',
-      }
+        placementId: 'testVideo'
+      },
+      userIdAsEids
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -54,7 +66,8 @@ describe('PlaydigoBidAdapter', function () {
       },
       params: {
         placementId: 'testNative'
-      }
+      },
+      userIdAsEids
     }
   ];
 
@@ -78,8 +91,17 @@ describe('PlaydigoBidAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'https://test.com'
-    }
+      referer: 'https://test.com',
+      page: 'https://test.com'
+    },
+    ortb2: {
+      device: {
+        w: 1512,
+        h: 982,
+        language: 'en-UK'
+      }
+    },
+    timeout: 500
   };
 
   describe('isBidRequestValid', function () {
@@ -105,11 +127,16 @@ describe('PlaydigoBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
 
+    it('Returns valid URL', function () {
+      expect(serverRequest.url).to.equal('https://server.playdigo.com/pbjs');
+    });
+
     it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
+        'device',
         'language',
         'secure',
         'host',
@@ -143,6 +170,7 @@ describe('PlaydigoBidAdapter', function () {
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.type).to.exist.and.to.equal('publisher');
+        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
@@ -175,9 +203,10 @@ describe('PlaydigoBidAdapter', function () {
           },
           params: {
             endpointId: 'testBanner',
-          }
+          },
+          userIdAsEids
         }
-      ]
+      ];
 
       let serverRequest = spec.buildRequests(bids, bidderRequest);
 
@@ -190,6 +219,7 @@ describe('PlaydigoBidAdapter', function () {
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.type).to.exist.and.to.equal('network');
+        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');

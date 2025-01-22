@@ -1832,7 +1832,7 @@ describe('kargo adapter tests', function() {
       });
     });
 
-    it('should return fledgeAuctionConfigs if provided in bid response', function () {
+    it('should return paapi if provided in bid response', function () {
       const auctionConfig = {
         seller: 'https://kargo.com',
         decisionLogicUrl: 'https://kargo.com/decision_logic.js',
@@ -1865,11 +1865,11 @@ describe('kargo adapter tests', function() {
         expect(bid).to.have.property('meta').that.is.an('object');
       });
 
-      // Test properties of fledgeAuctionConfigs
-      expect(result.fledgeAuctionConfigs).to.have.lengthOf(3);
+      // Test properties of paapi
+      expect(result.paapi).to.have.lengthOf(3);
 
       const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
-      result.fledgeAuctionConfigs.forEach(config => {
+      result.paapi.forEach(config => {
         expect(config).to.have.property('bidId');
         expect(expectedBidIds).to.include(config.bidId);
 
@@ -1885,16 +1885,15 @@ describe('kargo adapter tests', function() {
   describe('getUserSyncs', function() {
     let crb = {};
     const clientId = 'random-client-id-string';
-    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=0&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
+    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
 
-    function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=0&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
+    function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
       let syncs = [];
-      for (let i = 0; i < 5; i++) {
-        syncs.push({
-          type: 'iframe',
-          url: baseUrl.replace(/idx=\d+&/, `idx=${i}&`),
-        });
-      }
+
+      syncs.push({
+        type: 'iframe',
+        url: baseUrl
+      });
 
       return syncs;
     }
@@ -2031,31 +2030,49 @@ describe('kargo adapter tests', function() {
     });
   });
 
-  describe('onTimeout', function() {
+  describe('onTimeout', function () {
+    let fetchStub;
+
     beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
+      fetchStub = sinon.stub(global, 'fetch').resolves(); // Stub fetch globally
     });
 
     afterEach(function () {
-      utils.triggerPixel.restore();
+      fetchStub.restore(); // Restore the original fetch function
     });
 
-    it('does not call triggerPixel if timeout data is not provided', function() {
+    it('does not call fetch if timeout data is not provided', function () {
       spec.onTimeout(null);
-      expect(utils.triggerPixel.callCount).to.equal(0);
+      expect(fetchStub.callCount).to.equal(0);
     });
 
-    it('calls triggerPixel if any timeout data is provided', function() {
+    it('calls fetch with the correct URLs if timeout data is provided', function () {
       spec.onTimeout([
-        {auctionId: 'test-auction-id', timeout: 400},
-        {auctionId: 'test-auction-id-2', timeout: 100},
-        {auctionId: 'test-auction-id-3', timeout: 450},
-        {auctionId: 'test-auction-id-4', timeout: 500},
+        { auctionId: 'test-auction-id', timeout: 400 },
+        { auctionId: 'test-auction-id-2', timeout: 100 },
+        { auctionId: 'test-auction-id-3', timeout: 450 },
+        { auctionId: 'test-auction-id-4', timeout: 500 },
       ]);
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id&ato=400')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-2&ato=100')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-3&ato=450')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-4&ato=500')).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id&ato=400',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-2&ato=100',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-3&ato=450',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-4&ato=500',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
     });
   });
 });

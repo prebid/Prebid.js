@@ -2,6 +2,14 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
+  storage
+} from 'modules/illuminBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {version} from 'package.json';
+import {useFakeTimers} from 'sinon';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
+import {
   hashCode,
   extractPID,
   extractCID,
@@ -10,14 +18,9 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-} from 'modules/illuminBidAdapter.js';
-import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+} from '../../../libraries/vidazooUtils/bidderUtils.js';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
+export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -104,9 +107,15 @@ const BIDDER_REQUEST = {
     'ref': 'https://www.somereferrer.com'
   },
   'ortb2': {
+    'site': {
+      'content': {
+        'language': 'en'
+      }
+    },
     'regs': {
       'gpp': 'gpp_string',
-      'gpp_sid': [7]
+      'gpp_sid': [7],
+      'coppa': 0
     },
     'device': {
       'sua': {
@@ -325,7 +334,14 @@ describe('IlluminBidAdapter', function () {
               startdelay: 0
             }
           },
-          gpid: '0123456789'
+          gpid: '0123456789',
+          cat: [],
+          contentData: [],
+          contentLang: 'en',
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: [],
+          coppa: 0
         }
       });
     });
@@ -387,6 +403,13 @@ describe('IlluminBidAdapter', function () {
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          cat: [],
+          contentData: [],
+          contentLang: 'en',
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: [],
+          coppa: 0
         }
       });
     });
@@ -510,8 +533,6 @@ describe('IlluminBidAdapter', function () {
         switch (idSystemProvider) {
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:
@@ -564,13 +585,13 @@ describe('IlluminBidAdapter', function () {
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(key, 0);
+      uniqueDealId = getUniqueDealId(storage, key, 0);
     })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(key);
+        const current = getUniqueDealId(storage, key);
         expect(current).to.be.equal(uniqueDealId);
         done();
       }, 200);
@@ -578,7 +599,7 @@ describe('IlluminBidAdapter', function () {
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(key, 100);
+        const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
       }, 200)
@@ -602,8 +623,8 @@ describe('IlluminBidAdapter', function () {
         shouldAdvanceTime: true,
         now
       });
-      setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      setStorageItem(storage, 'myKey', 2020);
+      const {value, created} = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -614,7 +635,7 @@ describe('IlluminBidAdapter', function () {
     it('should get external stored value', function () {
       const value = 'superman'
       window.localStorage.setItem('myExternalKey', value);
-      const item = getStorageItem('myExternalKey');
+      const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 

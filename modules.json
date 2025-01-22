@@ -27,18 +27,17 @@
   "sparteoBidAdapter",
   "tripleliftBidAdapter",
   "viouslyBidAdapter",
-  "yahoosspBidAdapter",
+  "yahooAdsBidAdapter",
 
   "adlooxRtdProvider",
   "greenbidsRtdProvider",
-  "intersectionRtdProvider",
   "iasRtdProvider",
+  "intersectionRtdProvider",
   "sirdataRtdProvider",
   "weboramaRtdProvider",
 
   "amxIdSystem",
-  "consentManagement",
-  "consentManagementUsp",
+  "consentManagementTcf",
   "currency",
   "dfpAdServerVideo",
   "id5IdSystem",
@@ -49,6 +48,6 @@
   "schain",
   "unifiedIdHubvisorSystem",
   "userId",
-  "utiqSystem",
+  "utiqIdSystem",
   "utiqMtpIdSystem"
 ]

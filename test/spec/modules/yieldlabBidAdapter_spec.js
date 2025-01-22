@@ -682,7 +682,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].netRevenue).to.equal(false);
       expect(result[0].ttl).to.equal(300);
       expect(result[0].referrer).to.equal('');
-      expect(result[0].meta.advertiserDomains).to.equal('yieldlab');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
       expect(result[0].ad).to.include('&id=abc');
     });
@@ -719,7 +719,7 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].netRevenue).to.equal(false);
       expect(result[0].ttl).to.equal(300);
       expect(result[0].referrer).to.equal('');
-      expect(result[0].meta.advertiserDomains).to.equal('yieldlab');
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['yieldlab']);
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=');
       expect(result[0].ad).to.include('&id=abc');
     });

@@ -459,7 +459,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
       },
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gpdr_data'
+        consentString: 'serialized_gdpr_data'
       },
       ortb2: {
         user: {

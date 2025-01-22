@@ -26,7 +26,7 @@ describe('QTBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner',
+        placementId: 'testBanner'
       },
       userIdAsEids
     },
@@ -41,7 +41,7 @@ describe('QTBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testVideo',
+        placementId: 'testVideo'
       },
       userIdAsEids
     },
@@ -91,7 +91,15 @@ describe('QTBidAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'https://test.com'
+      referer: 'https://test.com',
+      page: 'https://test.com'
+    },
+    ortb2: {
+      device: {
+        w: 1512,
+        h: 982,
+        language: 'en-UK'
+      }
     },
     timeout: 500
   };
@@ -119,11 +127,16 @@ describe('QTBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
 
+    it('Returns valid URL', function () {
+      expect(serverRequest.url).to.equal('https://endpoint1.qt.io/pbjs');
+    });
+
     it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
+        'device',
         'language',
         'secure',
         'host',

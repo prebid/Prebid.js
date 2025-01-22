@@ -1,12 +1,12 @@
 import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import {euidIdSubmodule} from 'modules/euidIdSystem.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'src/prebid.js';
 import * as utils from 'src/utils.js';
 import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
-import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
@@ -50,7 +50,7 @@ describe('EUID module', function() {
   const configureEuidCstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
 
   before(function() {
-    uninstallGdprEnforcement();
+    uninstallTcfControl();
     hook.ready();
     suiteSandbox = sinon.sandbox.create();
     if (typeof window.crypto.subtle === 'undefined') {
