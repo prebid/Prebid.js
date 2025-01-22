@@ -16,9 +16,9 @@ This module connects web publishers to Teal demand.
 
 | Key | Required | Example | Description |
 | --- | -------- | ------- | ----------- |
-| `account` | yes | `myaccount` | account name provided by your account manager |
-| `placement` | no | `mysite300x250` | placement name provided by your account manager |
-| `testMode` | no | `true` | activate test mode - 100% test bids |
+| `account` | yes | `myaccount` | account name provided by your account manager - set to `test-account` for test mode |
+| `placement` | no | `mysite300x250` | placement name provided by your account manager - set to `test-placement300x250` for test mode |
+| `testMode` | no | `true` | activate test mode - 100% test bids - placement needs be set to `test-placement300x250` for this option to work |
 | `useSourceBidderCode` | no | `true` | use seat bidder code as hb_bidder, instead of teal (or confgiured alias) |
 
 # Test Parameters

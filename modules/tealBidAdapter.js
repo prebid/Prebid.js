@@ -8,7 +8,6 @@ const GVLID = 1378;
 const DEFAULT_ENDPOINT = 'https://a.bids.ws/openrtb2/auction';
 const COOKIE_SYNC_ENDPOINT = 'https://a.bids.ws/cookie_sync';
 const COOKIE_SYNC_IFRAME = 'https://bids.ws/load-cookie.html';
-const STORED_RESPONSE_ID = 'test-placement300x250';
 const MAX_SYNC_COUNT = 10;
 import {pbsExtensions} from 'libraries/pbsExtensions/pbsExtensions.js'
 
@@ -25,7 +24,7 @@ const converter = ortbConverter({
         deepSetValue(imp, 'ext.prebid.storedrequest.id', placement);
       }
       if (testMode) {
-        deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', STORED_RESPONSE_ID);
+        deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', placement);
       }
       delete imp.ext.prebid.bidder;
       return imp;
