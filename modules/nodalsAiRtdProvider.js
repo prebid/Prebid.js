@@ -20,7 +20,7 @@ const fillTemplate = (strings, ...keys) => {
   };
 };
 
-const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${'publisherId'}/config?${'consentParams'}`;
+const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${'propertyId'}/config?${'consentParams'}`;
 const { logInfo, logWarn, logError } = prefixLog('[NodalsAiRTDProvider]');
 
 class NodalsAiRtdProvider {
@@ -37,23 +37,24 @@ class NodalsAiRtdProvider {
   STORAGE_KEY = LOCAL_STORAGE_KEY;
 
   // Private properties
-  #publisherId = null;
+  #propertyId = null;
   #overrides = {};
 
   // Public methods
 
   /**
    * Initialises the class with the provided config and user consent.
-   * @param {Object} config - Configuration object for targeting.
+   * @param {Object} config - Configuration object for the module.
    * @param {Object} userConsent - User consent object for GDPR or other purposes.
    */
   init(config, userConsent) {
+    const params = config?.params || {};
     if (
-      this.#isValidConfig(config) &&
+      this.#isValidConfig(params) &&
       this.#hasRequiredUserConsent(userConsent)
     ) {
-      this.#publisherId = config.publisherId;
-      this.#setOverrides(config);
+      this.#propertyId = params.propertyId;
+      this.#setOverrides(params);
       const storedData = this.#readFromStorage(
         this.#overrides?.storageKey || this.STORAGE_KEY
       );
@@ -99,23 +100,27 @@ class NodalsAiRtdProvider {
   }
 
   // Private methods
-  #setOverrides(config) {
-    if (config?.storage?.ttl && typeof config.storage.ttl === 'number') {
-      this.#overrides.storageTTL = config.storage.ttl * 1000;
+  #setOverrides(params) {
+    if (params?.storage?.ttl && typeof params.storage.ttl === 'number') {
+      this.#overrides.storageTTL = params.storage.ttl * 1000;
     }
-    this.#overrides.storageKey = config?.storage?.key;
-    this.#overrides.endpointOrigin = config?.endpoint?.origin;
+    this.#overrides.storageKey = params?.storage?.key;
+    this.#overrides.endpointOrigin = params?.endpoint?.origin;
   }
 
   /**
-   * Validates if the provided config is valid.
-   * @param {Object} config - Configuration object.
-   * @returns {boolean} - True if config is valid, false otherwise.
+   * Validates if the provided module input parameters are valid.
+   * @param {Object} params - Parameters object from the module configuration.
+   * @returns {boolean} - True if parameters are valid, false otherwise.
    */
   // eslint-disable-next-line no-dupe-class-members
-  #isValidConfig(config) {
+  #isValidConfig(params) {
     // Basic validation logic
-    return typeof config === 'object' && config?.publisherId;
+    if (typeof params === 'object' && params?.propertyId) {
+      return true;
+    }
+    logWarn('Invalid configuration');
+    return false;
   }
 
   /**
@@ -159,7 +164,7 @@ class NodalsAiRtdProvider {
           return null;
         }
         if (!dataEnvelope.data) {
-          throw new Error('Data envelope is missing \'data\' property.');
+          throw new Error("Data envelope is missing 'data' property.");
         }
         return dataEnvelope.data;
       } catch (error) {
@@ -222,7 +227,7 @@ class NodalsAiRtdProvider {
     };
     const querystring = new URLSearchParams(parameterMap).toString();
     const values = {
-      publisherId: this.#publisherId,
+      propertyId: this.#propertyId,
       consentParams: querystring,
     };
     const path = PUB_ENDPOINT_PATH(values);

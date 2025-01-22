@@ -12,49 +12,51 @@ const jsonResponseHeaders = {
 const successPubEndpointResponse = {
   deps: {
     '1.0.0': 'https://static.nodals.io/sdk/rule/1.0.0/engine.js',
-    '1.1.0': 'https://static.nodals.io/sdk/rule/1.1.0/engine.js'
+    '1.1.0': 'https://static.nodals.io/sdk/rule/1.1.0/engine.js',
   },
   facts: {
     'browser.name': 'safari',
     'geo.country': 'AR',
   },
-  campaigns: [{
-    id: 1234,
-    ads: [
-      {
-        delivery_id: '1234',
-        property_id: 'fd32da',
-        weighting: 1,
-        kvs: [
-          {
-            k: 'nodals',
-            v: '1',
-          },
-        ],
-        rules: {
-          engine: {
-            version: '1.0.0',
-          },
-          conditions: {
-            ANY: [
-              {
-                fact: 'id',
-                op: 'allin',
-                val: ['1', '2', '3'],
-              },
-            ],
-            NONE: [
-              {
-                fact: 'ua.browser',
-                op: 'eq',
-                val: 'opera',
-              },
-            ],
+  campaigns: [
+    {
+      id: 1234,
+      ads: [
+        {
+          delivery_id: '1234',
+          property_id: 'fd32da',
+          weighting: 1,
+          kvs: [
+            {
+              k: 'nodals',
+              v: '1',
+            },
+          ],
+          rules: {
+            engine: {
+              version: '1.0.0',
+            },
+            conditions: {
+              ANY: [
+                {
+                  fact: 'id',
+                  op: 'allin',
+                  val: ['1', '2', '3'],
+                },
+              ],
+              NONE: [
+                {
+                  fact: 'ua.browser',
+                  op: 'eq',
+                  val: 'opera',
+                },
+              ],
+            },
           },
         },
-      }
-    ]
-  }]
+      ],
+    },
+  ],
 };
 
 const engineGetTargetingDataReturnValue = {
@@ -108,9 +110,11 @@ const setDataInLocalStorage = (data) => {
 
 describe('NodalsAI RTD Provider', () => {
   let sandbox;
-  const validConfig = { publisherId: '10312dd2' };
+  let validConfig;
 
   beforeEach(() => {
+    validConfig = { params: { propertyId: '10312dd2' } };
+
     sandbox = sinon.sandbox.create();
     nodalsAiRtdSubmodule.storage.removeDataFromLocalStorage(
       nodalsAiRtdSubmodule.STORAGE_KEY
@@ -142,7 +146,7 @@ describe('NodalsAI RTD Provider', () => {
       });
 
       it('should return false when initialized with invalid config', () => {
-        const config = { invalid: true };
+        const config = { params: { invalid: true } };
         const result = nodalsAiRtdSubmodule.init(config, userConsent);
         expect(result).to.be.false;
         expect(server.requests.length).to.equal(0);
@@ -204,7 +208,7 @@ describe('NodalsAI RTD Provider', () => {
           createdAt: fiveMinutesAgoMs,
         });
         const config = Object.assign({}, validConfig);
-        config.storage = { ttl: 4 * 60 };
+        config.params.storage = { ttl: 4 * 60 };
         const result = nodalsAiRtdSubmodule.init(config, {});
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
@@ -217,7 +221,7 @@ describe('NodalsAI RTD Provider', () => {
           createdAt: fiveMinutesAgoMs,
         });
         const config = Object.assign({}, validConfig);
-        config.storage = { ttl: 6 * 60 };
+        config.params.storage = { ttl: 6 * 60 };
         const result = nodalsAiRtdSubmodule.init(config, {});
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(0);
@@ -226,7 +230,7 @@ describe('NodalsAI RTD Provider', () => {
       it('should return true and make a remote request when data stored under default key, but override key specified', () => {
         setDataInLocalStorage({ data: { foo: 'bar' }, createdAt: Date.now() });
         const config = Object.assign({}, validConfig);
-        config.storage = { key: '_foobarbaz_' };
+        config.params.storage = { key: '_foobarbaz_' };
         const result = nodalsAiRtdSubmodule.init(config, {});
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
@@ -248,7 +252,7 @@ describe('NodalsAI RTD Provider', () => {
 
       it('should construct the URL to the overridden origin when specified in the config', () => {
         const config = Object.assign({}, validConfig);
-        config.endpoint = { origin: 'http://localhost:8000' };
+        config.params.endpoint = { origin: 'http://localhost:8000' };
         const userConsent = generateGdprConsent();
         nodalsAiRtdSubmodule.init(config, userConsent);
 
@@ -313,7 +317,7 @@ describe('NodalsAI RTD Provider', () => {
       it('should store successful response data in local storage under the override key', () => {
         const userConsent = generateGdprConsent();
         const config = Object.assign({}, validConfig);
-        config.storage = { key: '_foobarbaz_' };
+        config.params.storage = { key: '_foobarbaz_' };
         nodalsAiRtdSubmodule.init(config, userConsent);
 
         let request = server.requests[0];
