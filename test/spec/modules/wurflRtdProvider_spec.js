@@ -229,7 +229,7 @@ describe('wurflRtdProvider', function () {
       expect(loadExternalScriptStub.calledOnce).to.be.true;
       const loadExternalScriptCall = loadExternalScriptStub.getCall(0);
       expect(loadExternalScriptCall.args[0]).to.equal(expectedURL.toString());
-      expect(loadExternalScriptCall.args[2]).to.equal('wurfl');
+      expect(loadExternalScriptCall.args[1]).to.equal('wurfl');
     });
 
     it('onAuctionEndEvent: should send analytics data using navigator.sendBeacon, if available', () => {
