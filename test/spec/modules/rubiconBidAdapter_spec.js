@@ -1565,6 +1565,39 @@ describe('the rubicon adapter', function () {
                 // Check if the generated EID value matches the expected format
                 expect(data.get('eid_example.com')).to.equal(expectedEidValue);
               });
+              it('should generate eidValue with all attributes including rtiPartner', function () {
+                const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+                // Simulating a full EID object with multiple fields
+                clonedBid.ortb2 = {
+                  user: {
+                    ext: {
+                      eids: [{
+                        source: 'example.com',
+                        uids: [{
+                          id: '11111', // UID
+                          atype: 2, // atype
+                          ext: {
+                            rtiPartner: 'rtipartner123', // rtiPartner (note the different capitalization)
+                            stype: 'ppuid' // stype
+                          }
+                        }],
+                        inserter: 'inserter123', // inserter
+                        matcher: 'matcher123', // matcher
+                        mm: 'mm123' // mm
+                      }]
+                    }
+                  }
+                };
+
+                let [request] = spec.buildRequests([clonedBid], bidderRequest);
+                let data = new URLSearchParams(request.data);
+
+                // Expected format: uid^atype^third^inserter^matcher^mm^rtipartner
+                const expectedEidValue = '11111^2^^inserter123^matcher123^mm123^rtipartner123';
+
+                // Check if the generated EID value matches the expected format
+                expect(data.get('eid_example.com')).to.equal(expectedEidValue);
+              });
             });
           });
           describe('Config user.id support', function () {
