@@ -304,7 +304,7 @@ function constructFullUrl(data) {
     '&jsver=' + VERSION +
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report) +
-    '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints +
+    '&uh=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints) +
     (gppData.gppString ? '&gpp=' + encodeURIComponent(gppData.gppString) : '');
 
   url = appendVrrefAndFui(url, iiqAnalyticsAnalyticsAdapter.initOptions.domainName);
