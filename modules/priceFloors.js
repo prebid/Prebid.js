@@ -31,6 +31,8 @@ import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
+import {ORTB_MTYPES} from "../libraries/ortbConverter/processors/mediaType.js";
+import {BANNER} from "../src/mediaTypes.js";
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -804,30 +806,70 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
 
-/**
- * Sets bidfloor and bidfloorcur for ORTB imp objects
- */
-export function setOrtbImpBidFloor(imp, bidRequest, context) {
+function tryGetFloor(bidRequest, {currency = config.getConfig('currency.adServerCurrency') || 'USD', mediaType = '*', size = '*'}, fn) {
   if (typeof bidRequest.getFloor === 'function') {
-    let currency, floor;
+    let floor;
     try {
-      ({currency, floor} = bidRequest.getFloor({
-        currency: context.currency || config.getConfig('currency.adServerCurrency') || 'USD',
-        mediaType: context.mediaType || '*',
-        size: '*'
-      }) || {});
+      floor = bidRequest.getFloor({
+        currency,
+        mediaType,
+        size
+      }) || {};
     } catch (e) {
       logWarn('Cannot compute floor for bid', bidRequest);
       return;
     }
-    floor = parseFloat(floor);
-    if (currency != null && floor != null && !isNaN(floor)) {
-      Object.assign(imp, {
-        bidfloor: floor,
-        bidfloorcur: currency
-      });
+    floor.floor = parseFloat(floor.floor);
+    if (floor.currency != null && floor.floor && !isNaN(floor.floor)) {
+      fn(floor.floor, floor.currency);
     }
   }
+}
+
+/**
+ * Sets bidfloor and bidfloorcur for ORTB imp objects
+ */
+export function setOrtbImpBidFloor(imp, bidRequest, context) {
+  tryGetFloor(bidRequest, {
+    currency: context.currency,
+    mediaType: context.mediaType || '*',
+    size: '*'
+  }, (bidfloor, bidfloorcur) => {
+    Object.assign(imp, {
+      bidfloor,
+      bidfloorcur
+    });
+  })
+}
+
+/**
+ * Set per-mediatype and per-format bidfloor
+ */
+export function setGranularBidfloors(imp, bidRequest, context) {
+  function setIfDifferent(bidfloor, bidfloorcur) {
+    if (bidfloor !== imp.bidfloor || bidfloorcur !== imp.bidfloorcur) {
+      deepSetValue(this, 'ext.bidfloor', bidfloor);
+      deepSetValue(this, 'ext.bidfloorcur', bidfloorcur);
+    }
+  }
+
+  Object.values(ORTB_MTYPES)
+    .filter(mediaType => imp[mediaType] != null)
+    .forEach(mediaType => {
+      tryGetFloor(bidRequest, {
+        currency: imp.bidfloorcur || context?.currency,
+        mediaType
+      }, setIfDifferent.bind(imp[mediaType]))
+    });
+  (imp[BANNER]?.format || [])
+    .filter(({w, h}) => w != null && h != null)
+    .forEach(format => {
+      tryGetFloor(bidRequest, {
+        currency: imp.bidfloorcur || context?.currency,
+        mediaType: BANNER,
+        size: [format.w, format.h]
+      }, setIfDifferent.bind(format))
+    })
 }
 
 export function setImpExtPrebidFloors(imp, bidRequest, context) {
@@ -870,5 +912,7 @@ export function setOrtbExtPrebidFloors(ortbRequest, bidderRequest, context) {
 }
 
 registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
+// granular floors should be set after both "normal" bidfloors and mediaypes
+registerOrtbProcessor({type: IMP, name: 'granularBidfloors', fn: setGranularBidfloors, priority: -10})
 registerOrtbProcessor({type: IMP, name: 'extPrebidFloors', fn: setImpExtPrebidFloors, dialects: [PBS], priority: -1});
 registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});
