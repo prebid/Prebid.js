@@ -128,7 +128,7 @@ describe('PlaydigoBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://server.playdigo.com/pbjs');
+      expect(serverRequest.url).to.equal('http://localhost:3000');
     });
 
     it('Returns general data valid', function () {
@@ -145,7 +145,11 @@ describe('PlaydigoBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp',
+        'battr'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
