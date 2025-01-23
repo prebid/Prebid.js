@@ -1,7 +1,7 @@
 import {config} from 'src/config.js';
 import {setOrtbExtPrebidFloors, setOrtbImpBidFloor, setGranularBidfloors} from '../../../modules/priceFloors.js';
 import 'src/prebid.js';
-import {ORTB_MTYPES} from "../../../libraries/ortbConverter/processors/mediaType.js";
+import {ORTB_MTYPES} from '../../../libraries/ortbConverter/processors/mediaType.js';
 
 describe('pbjs - ortb imp floor params', () => {
   before(() => {

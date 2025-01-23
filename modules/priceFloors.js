@@ -31,8 +31,8 @@ import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
-import {ORTB_MTYPES} from "../libraries/ortbConverter/processors/mediaType.js";
-import {BANNER} from "../src/mediaTypes.js";
+import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -913,6 +913,6 @@ export function setOrtbExtPrebidFloors(ortbRequest, bidderRequest, context) {
 
 registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
 // granular floors should be set after both "normal" bidfloors and mediaypes
-registerOrtbProcessor({type: IMP, name: 'granularBidfloors', fn: setGranularBidfloors, priority: -10})
+registerOrtbProcessor({type: IMP, name: 'extBidfloor', fn: setGranularBidfloors, priority: -10})
 registerOrtbProcessor({type: IMP, name: 'extPrebidFloors', fn: setImpExtPrebidFloors, dialects: [PBS], priority: -1});
 registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});

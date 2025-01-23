@@ -1372,65 +1372,99 @@ describe('S2S Adapter', function () {
             updateBid(BID_REQUESTS[1].bids[0]);
             adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
             const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
-            expect(pbsReq.imp[0].bidfloor).to.be.undefined;
-            expect(pbsReq.imp[0].bidfloorcur).to.be.undefined;
+            [pbsReq.imp[0], pbsReq.imp[0].banner, pbsReq.imp[0].banner.format[0]].forEach(obj => {
+              expect(obj.bidfloor).to.be.undefined;
+              expect(obj.bidfloorcur).to.be.undefined;
+            })
           });
         })
 
         Object.entries({
-          'is available': {
-            expectDesc: 'minimum after conversion',
-            expectedFloor: 10,
-            expectedCur: '0.1',
-            conversionFn: (amount, from, to) => {
-              from = parseFloat(from);
-              to = parseFloat(to);
-              return amount * from / to;
-            },
+          /*
+          'imp level floors': {
+            target: 'imp.0'
           },
-          'is not available': {
-            expectDesc: 'absolute minimum',
-            expectedFloor: 1,
-            expectedCur: '10',
-            conversionFn: null
+          'mediaType level floors': {
+            target: 'imp.0.banner.ext',
+            floorFilter: ({mediaType, size}) => size === '*' && mediaType !== '*'
           },
-          'is not working': {
-            expectDesc: 'absolute minimum',
-            expectedFloor: 1,
-            expectedCur: '10',
-            conversionFn: () => {
-              throw new Error();
-            }
+           */
+          'format level floors': {
+            target: 'imp.0.banner.format.0.ext',
+            floorFilter: ({size}) => size !== '*'
           }
-        }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
-          describe(`and currency conversion ${t}`, () => {
-            let mockConvertCurrency;
-            const origConvertCurrency = getGlobal().convertCurrency;
+        }).forEach(([t, {target, floorFilter}]) => {
+          describe(t, () => {
             beforeEach(() => {
-              if (conversionFn) {
-                getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
-              } else {
-                mockConvertCurrency = null;
-                delete getGlobal().convertCurrency;
+              if (floorFilter != null) {
+                BID_REQUESTS
+                  .flatMap(req => req.bids)
+                  .forEach(req => {
+                    req.getFloor = ((orig) => (params) => {
+                      if (floorFilter(params)) {
+                        return orig(params);
+                      }
+                    })(req.getFloor);
+                  })
               }
-            });
+            })
 
-            afterEach(() => {
-              if (origConvertCurrency != null) {
-                getGlobal().convertCurrency = origConvertCurrency;
-              } else {
-                delete getGlobal().convertCurrency;
+            Object.entries({
+              'is available': {
+                expectDesc: 'minimum after conversion',
+                expectedFloor: 10,
+                expectedCur: '0.1',
+                conversionFn: (amount, from, to) => {
+                  from = parseFloat(from);
+                  to = parseFloat(to);
+                  return amount * from / to;
+                },
+              },
+              'is not available': {
+                expectDesc: 'absolute minimum',
+                expectedFloor: 1,
+                expectedCur: '10',
+                conversionFn: null
+              },
+              'is not working': {
+                expectDesc: 'absolute minimum',
+                expectedFloor: 1,
+                expectedCur: '10',
+                conversionFn: () => {
+                  throw new Error();
+                }
               }
-            });
+            }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
+              describe(`and currency conversion ${t}`, () => {
+                let mockConvertCurrency;
+                const origConvertCurrency = getGlobal().convertCurrency;
+                beforeEach(() => {
+                  if (conversionFn) {
+                    getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
+                  } else {
+                    mockConvertCurrency = null;
+                    delete getGlobal().convertCurrency;
+                  }
+                });
 
-            it(`should pick the ${expectDesc}`, () => {
-              adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
-              const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
-              expect(pbsReq.imp[0].bidfloor).to.eql(expectedFloor);
-              expect(pbsReq.imp[0].bidfloorcur).to.eql(expectedCur);
+                afterEach(() => {
+                  if (origConvertCurrency != null) {
+                    getGlobal().convertCurrency = origConvertCurrency;
+                  } else {
+                    delete getGlobal().convertCurrency;
+                  }
+                });
+
+                it(`should pick the ${expectDesc}`, () => {
+                  adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
+                  const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+                  expect(deepAccess(pbsReq, `${target}.bidfloor`)).to.eql(expectedFloor);
+                  expect(deepAccess(pbsReq, `${target}.bidfloorcur`)).to.eql(expectedCur)
+                });
+              });
             });
-          });
-        });
+          })
+        })
       });
     });
 
