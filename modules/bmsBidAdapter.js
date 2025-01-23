@@ -96,37 +96,54 @@ export const spec = {
       }
     }
 
-    return {
-      method: "POST",
-      url: ENDPOINT_URL,
-      data: ortbRequest,
-      options: {
-        contentType: "application/json",
+    return [
+      {
+        method: "POST",
+        url: ENDPOINT_URL,
+        data: ortbRequest,
+        options: {
+          contentType: "application/json",
+        },
       },
-    };
+    ];
   },
 
-  // Interpret OpenRTB responses using `ortbConverter`
-  interpretResponse: function (serverResponse, bidRequest) {
-    if (!serverResponse || !serverResponse.body) return [];
-    const parsedSeatbid = serverResponse.body.seatbid.map((seatbidItem) => {
-      const parsedBid = seatbidItem.bid.map((bidItem) => ({
-        ...bidItem,
-        adm: utils.replaceAuctionPrice(bidItem.adm, bidItem.price),
-        nurl: utils.replaceAuctionPrice(bidItem.nurl, bidItem.price),
-      }));
-      return { ...seatbidItem, bid: parsedBid };
+  interpretResponse: (serverResponse, parseNative) => {
+    if (!serverResponse || utils.isEmpty(serverResponse.body)) return [];
+
+    let bids = [];
+    serverResponse.body.seatbid.forEach((response) => {
+      response.bid.forEach((bid) => {
+        const mediaType = bid.ext?.mediaType || "banner";
+
+        const bidObj = {
+          requestId: bid.impid,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          ttl: 1200,
+          currency: serverResponse.body.cur || "USD",
+          netRevenue: true,
+          creativeId: bid.crid,
+          dealId: bid.dealid || null,
+          mediaType,
+        };
+
+        switch (mediaType) {
+          case "native":
+            bidObj.native = parseNative(bid.adm);
+            break;
+          default:
+            bidObj.ad = bid.adm;
+        }
+
+        bids.push(bidObj);
+      });
     });
-    const responseBody = { ...serverResponse.body, seatbid: parsedSeatbid };
-    return converter.fromORTB({
-      response: responseBody,
-      request: bidRequest.data,
-    }).bids;
+    return bids;
   },
 
   onBidWon: function (bid) {
-    // eslint-disable-next-line no-console
-    console.log("🚀 ~ bid:", bid);
     const { burl, nurl } = bid || {};
 
     if (nurl) {
