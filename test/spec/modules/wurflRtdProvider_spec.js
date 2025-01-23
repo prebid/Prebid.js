@@ -52,7 +52,8 @@ describe('wurflRtdProvider', function () {
       pixel_density: 443,
       pointing_method: 'touchscreen',
       resolution_height: 1920,
-      resolution_width: 1080
+      resolution_width: 1080,
+      wurfl_id: 'lg_nexus5_ver1',
     };
 
     // expected analytics values
@@ -100,6 +101,7 @@ describe('wurflRtdProvider', function () {
       const expectedURL = new URL(altHost);
       expectedURL.searchParams.set('debug', true);
       expectedURL.searchParams.set('mode', 'prebid');
+      expectedURL.searchParams.set('wurfl_id', true);
 
       const callback = () => {
         const v = {
@@ -147,7 +149,8 @@ describe('wurflRtdProvider', function () {
                   pixel_density: 443,
                   pointing_method: 'touchscreen',
                   resolution_height: 1920,
-                  resolution_width: 1080
+                  resolution_width: 1080,
+                  wurfl_id: 'lg_nexus5_ver1',
                 },
               },
             },
@@ -187,7 +190,8 @@ describe('wurflRtdProvider', function () {
                   model_name: 'Nexus 5',
                   pixel_density: 443,
                   resolution_height: 1920,
-                  resolution_width: 1080
+                  resolution_width: 1080,
+                  wurfl_id: 'lg_nexus5_ver1',
                 },
               },
             },
@@ -203,6 +207,7 @@ describe('wurflRtdProvider', function () {
                   is_mobile: !0,
                   model_name: 'Nexus 5',
                   brand_name: 'Google',
+                  wurfl_id: 'lg_nexus5_ver1',
                 },
               },
             },
