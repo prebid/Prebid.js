@@ -3,7 +3,6 @@
  * @version 1.0.0
  * @description Adapter for Epom DSP and AdExchange
  * @module modules/epomDspBidAdapter
- * @license Open Source - Apache 2.0
  */
 
 import { logError, logWarn, registerBidder } from '../src/adapters/bidderFactory.js';
