@@ -566,7 +566,7 @@ export const spec = {
             inserter || '',
             matcher || '',
             mm || '',
-            uidData?.ext?.rtipartner || ''
+            uidData?.ext?.rtiPartner || uidData?.ext?.rtipartner || ''
           ].join('^'); // Return a single string formatted with '^' delimiter
 
           const eidValue = buildEidValue(uidData); // Build the EID value string
