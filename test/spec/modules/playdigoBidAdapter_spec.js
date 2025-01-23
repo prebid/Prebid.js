@@ -128,7 +128,7 @@ describe('PlaydigoBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('http://localhost:3000');
+      expect(serverRequest.url).to.equal('https://server.playdigo.com/pbjs');
     });
 
     it('Returns general data valid', function () {
