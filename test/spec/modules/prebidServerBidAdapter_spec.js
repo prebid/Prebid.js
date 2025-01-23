@@ -1380,7 +1380,6 @@ describe('S2S Adapter', function () {
         })
 
         Object.entries({
-          /*
           'imp level floors': {
             target: 'imp.0'
           },
@@ -1388,7 +1387,6 @@ describe('S2S Adapter', function () {
             target: 'imp.0.banner.ext',
             floorFilter: ({mediaType, size}) => size === '*' && mediaType !== '*'
           },
-           */
           'format level floors': {
             target: 'imp.0.banner.format.0.ext',
             floorFilter: ({size}) => size !== '*'

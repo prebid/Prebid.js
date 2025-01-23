@@ -17,8 +17,7 @@ import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
 import {s2sDefaultConfig} from './index.js';
 import {premergeFpd} from './bidderConfig.js';
-import {ORTB_MTYPES} from '../../libraries/ortbConverter/processors/mediaType.js';
-import {BANNER} from '../../src/mediaTypes.js';
+import {ALL_MEDIATYPES, BANNER} from '../../src/mediaTypes.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -167,7 +166,7 @@ const PBS_CONVERTER = ortbConverter({
             orig(requestImp, request, context);
             return requestImp;
           });
-        Object.values(ORTB_MTYPES).forEach(mediaType => {
+        Object.values(ALL_MEDIATYPES).forEach(mediaType => {
           setExtFloor(imp[mediaType], getMinimumFloor(imps.map(imp => imp[mediaType]?.ext)))
         });
         (imp[BANNER]?.format || []).forEach((format, i) => {
