@@ -264,7 +264,10 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
     // pub provided inverse function takes precedence, otherwise do old adjustment stuff
     const inverseFunction = bidderSettings.get(bidRequest.bidder, 'inverseBidAdjustment');
     if (inverseFunction) {
-      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest);
+      const definedParams = Object.fromEntries(
+        Object.entries(requestParams).filter(([key, val]) => val !== '*' && ['mediaType', 'size'].includes(key))
+      );
+      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest, definedParams);
     } else {
       let cpmAdjustment = getBiddersCpmAdjustment(floorInfo.matchingFloor, null, bidRequest);
       floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
