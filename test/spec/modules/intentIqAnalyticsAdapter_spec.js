@@ -161,11 +161,36 @@ describe('IntentIQ tests all', function () {
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
     const expectedUrl = appendVrrefAndFui(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&payload=${payload}&uh=`,
+      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&payload=${payload}&uh=&gdpr=0`,
       iiqAnalyticsAnalyticsAdapter.initOptions.domainName
     );
     expect(request.url).to.equal(expectedUrl);
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
+  });
+
+  it('should send CMP data in report if available', function () {
+    const cmpData = {
+      uspString: '1NYN',
+      gppString: '{"key1":"value1","key2":"value2"}',
+      gdprString: 'gdprConsent'
+    };
+
+    USERID_CONFIG[0].params.providedUSP = cmpData.uspString;
+    USERID_CONFIG[0].params.providedGPP = cmpData.gppString;
+    USERID_CONFIG[0].params.providedGDPR = cmpData.gdprString;
+
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876/'});
+    const expectedVrref = encodeURIComponent(getWindowLocationStub().href);
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+
+    expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(cmpData.uspString)}`);
+    expect(request.url).to.contain(`&gpp=${encodeURIComponent(cmpData.gppString)}`);
+    expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(cmpData.gdprString)}`);
+    expect(request.url).to.contain(`&gdpr=1`);
   });
 
   it('should not send request if manualWinReportEnabled is true', function () {

@@ -3,8 +3,8 @@ import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { decryptData, handleClientHints, readData } from '../../../modules/intentIqIdSystem';
-import {getGppValue} from '../../../libraries/intentIqUtils/getGppValue.js';
-import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
+import {getCmpData} from '../../../libraries/intentIqUtils/getCmpData.js';
+import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY} from '../../../libraries/intentIqConstants/intentIqConstants.js';
@@ -307,42 +307,6 @@ describe('IntentIQ tests', function () {
     expect(logErrorStub.called).to.be.true;
   });
 
-  describe('getGppValue', function () {
-    const testCases = [
-      {
-        description: 'should return gppString and gpi=0 when GPP data exists',
-        input: { gppString: '{"key1":"value1","key2":"value2"}' },
-        expectedOutput: { gppString: '{"key1":"value1","key2":"value2"}', gpi: 0 }
-      },
-      {
-        description: 'should return empty gppString and gpi=1 when GPP data does not exist',
-        input: null,
-        expectedOutput: { gppString: '', gpi: 1 }
-      },
-      {
-        description: 'should return empty gppString and gpi=1 when gppString is not set',
-        input: {},
-        expectedOutput: { gppString: '', gpi: 1 }
-      },
-      {
-        description: 'should handle GPP data with empty string',
-        input: { gppString: '' },
-        expectedOutput: { gppString: '', gpi: 1 }
-      }
-    ];
-
-    testCases.forEach(({ description, input, expectedOutput }) => {
-      it(description, function () {
-        sinon.stub(gppDataHandler, 'getConsentData').returns(input);
-
-        const result = getGppValue();
-        expect(result).to.deep.equal(expectedOutput);
-
-        gppDataHandler.getConsentData.restore();
-      });
-    });
-  });
-
   describe('detectBrowserFromUserAgent', function () {
     it('should detect Chrome browser', function () {
       const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
@@ -400,71 +364,150 @@ describe('IntentIQ tests', function () {
   describe('IntentIQ consent management within getId', function () {
     let uspDataHandlerStub;
     let gppDataHandlerStub;
+    let gdprDataHandlerStub;
+    let uspData;
+    let gppData;
+    let gdprData;
+
+    function mockConsentHandlers(usp, gpp, gdpr) {
+      uspDataHandlerStub.returns(usp);
+      gppDataHandlerStub.returns(gpp);
+      gdprDataHandlerStub.returns(gdpr);
+    }
 
     beforeEach(function () {
       localStorage.clear();
       const expiredDate = new Date(0).toUTCString();
-      storage.setCookie(FIRST_PARTY_KEY, '', expiredDate, 'Lax');
-      storage.setCookie(FIRST_PARTY_KEY + '_' + partner, '', expiredDate, 'Lax');
       uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
       gppDataHandlerStub = sinon.stub(gppDataHandler, 'getConsentData');
+      gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+      // Initialize data here so it can be reused in all tests
+      uspData = '1NYN';
+      gppData = { gppString: '{"key1":"value1","key2":"value2"}' };
+      gdprData = { consentString: 'gdprConsent' };
     });
 
     afterEach(function () {
       uspDataHandlerStub.restore();
       gppDataHandlerStub.restore();
+      gdprDataHandlerStub.restore();
     });
 
-    it('should set cmpData.us_privacy if uspData exists', function () {
-      const uspData = '1NYN';
-      uspDataHandlerStub.returns(uspData);
+    it('should save cmpData parameters in firstPartyData, parameters used in request if uspData, gppData, gdprData exists', function () {
+      mockConsentHandlers(uspData, gppData, gdprData);
+
       let callBackSpy = sinon.spy();
       let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+
       submoduleCallback(callBackSpy);
       let request = server.requests[0];
-      expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
       request.respond(
         200,
         responseHeader,
-        JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false, isOptedOut: false })
+        JSON.stringify({ isOptedOut: false })
       );
-      expect(callBackSpy.calledOnce).to.be.true;
 
-      // Check the local storage directly to see if cmpData.us_privacy was set correctly
+      expect(request.url).to.contain(`&gpp=${encodeURIComponent(gppData.gppString)}`);
+      expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(uspData)}`);
+      expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
+
       const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-      expect(firstPartyData.uspapi_value).to.equal(uspData);
+      expect(firstPartyData.uspString).to.equal(uspData);
+      expect(firstPartyData.gppString).to.equal(gppData.gppString);
+      expect(firstPartyData.gdprString).to.equal(gdprData.consentString);
     });
 
-    it('should create a request with gpp data if gppData exists and has gppString', function () {
-      const mockGppValue = {
-        gppString: '{"key1":"value1","key2":"value2"}',
-        gpi: 0
-      };
+    it('should clear localStorage, update runtimeEids and call callback with empty data if isOptedOut is true in response', function () {
+      // Save some data to localStorage for FIRST_PARTY_DATA_KEY и CLIENT_HINTS_KEY
+      const FIRST_PARTY_DATA_KEY = FIRST_PARTY_KEY + '_' + partner;
+      localStorage.setItem(FIRST_PARTY_DATA_KEY, JSON.stringify({terminationCause: 35, some_key: 'someValue'}));
+      localStorage.setItem(CLIENT_HINTS_KEY, JSON.stringify({ hint: 'someClientHintData' }));
 
-      const mockConfig = {
-        params: { partner: partner },
-        enabledStorageTypes: ['localStorage']
-      };
-
-      gppDataHandlerStub.returns(mockGppValue);
+      mockConsentHandlers(uspData, gppData, gdprData);
 
       let callBackSpy = sinon.spy();
-      let submoduleCallback = intentIqIdSubmodule.getId(mockConfig).callback;
+      let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+
       submoduleCallback(callBackSpy);
 
+      // Create a mocked response with isOptedOut: true
       let request = server.requests[0];
-
       request.respond(
         200,
         responseHeader,
-        JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+        JSON.stringify({isOptedOut: true})
       );
 
-      expect(request.url).to.contain(`&gpp=${encodeURIComponent(mockGppValue.gppString)}`);
-      expect(callBackSpy.calledOnce).to.be.true;
+      // Check that the URL contains the expected consent data
+      expect(request.url).to.contain(`&gpp=${encodeURIComponent(gppData.gppString)}`);
+      expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(uspData)}`);
+      expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
 
       const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-      expect(firstPartyData.gpp_string_value).to.equal(mockGppValue.gppString);
+
+      // Ensure that keys are removed if isOptedOut is true
+      expect(localStorage.getItem(FIRST_PARTY_DATA_KEY)).to.be.null;
+      expect(localStorage.getItem(CLIENT_HINTS_KEY)).to.be.null;
+
+      expect(firstPartyData.isOptedOut).to.equal(true);
+      expect(callBackSpy.calledOnce).to.be.true;
+      // Get the parameter with which the callback was called
+      const callbackArgument = callBackSpy.args[0][0]; // The first argument from the callback call (runtimeEids)
+      expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
+    });
+
+    it('Should use parameters provided by parner, in request and save to LS', function() {
+      mockConsentHandlers(uspData, gppData, gdprData);
+      const partnerProvidedParams = {providedGDPR: 'provided-GDPR', providedGPP: 'provided-GPP', providedUSP: 'provided-USP'};
+      defaultConfigParams.params = {...defaultConfigParams.params, ...partnerProvidedParams};
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
+
+      submoduleCallback(callBackSpy);
+      let request = server.requests[0];
+
+      expect(request.url).to.contain(`&gpp=${encodeURIComponent(partnerProvidedParams.providedGPP)}`);
+      expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(partnerProvidedParams.providedUSP)}`);
+      expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(partnerProvidedParams.providedGDPR)}`);
+      expect(request.url).to.contain(`&gdpr=${encodeURIComponent('1')}`);
+
+      const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+
+      expect(firstPartyData.uspString).to.equal(partnerProvidedParams.providedUSP);
+      expect(firstPartyData.gppString).to.equal(partnerProvidedParams.providedGPP);
+      expect(firstPartyData.gdprString).to.equal(partnerProvidedParams.providedGDPR);
+    });
+
+    it('should save undefined in localStorage and send undefined in request if allowGDPR, allowGPP, allowUSP are false', function () {
+      const partnerProvidedParams = {allowGDPR: false, allowGPP: false, allowUSP: false}
+      defaultConfigParams.params = {...defaultConfigParams.params, ...partnerProvidedParams};
+
+      // Mocking the returned data from consent handlers
+      mockConsentHandlers(uspData, gppData, gdprData);
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
+
+      // Call callback
+      submoduleCallback(callBackSpy);
+      let request = server.requests[0];
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({ isOptedOut: false })
+      );
+
+      // Check that the URL contains the expected consent data
+      expect(request.url).to.contain(`&gpp=${encodeURIComponent('undefined')}`);
+      expect(request.url).to.contain(`&us_privacy=${encodeURIComponent('undefined')}`);
+      expect(request.url).to.contain(`&gdpr=${encodeURIComponent('0')}`);
+
+      // Mock the firstPartyData from localStorage
+      const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+
+      // Ensure that the values are set to undefined
+      expect(firstPartyData.uspString).to.equal('undefined');
+      expect(firstPartyData.gppString).to.equal('undefined');
+      expect(firstPartyData.gdprString).to.equal('undefined');
     });
   });
 
