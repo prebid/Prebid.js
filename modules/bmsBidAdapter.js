@@ -1,26 +1,33 @@
-import { ortbConverter } from "../libraries/ortbConverter/converter.js";
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { BANNER } from "../src/mediaTypes.js";
-import { getStorageManager } from "../src/storageManager.js";
-import * as utils from "../src/utils.js";
-const BIDDER_CODE = "bms";
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import {
+  replaceAuctionPrice,
+  isFn,
+  isPlainObject,
+  deepSetValue,
+  isEmpty,
+  triggerPixel,
+} from '../src/utils.js';
+const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
-  "https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid";
+  'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';
 const GVLID = 1105;
-const COOKIE_NAME = "bmsCookieId";
-const DEFAULT_CURRENCY = "USD";
+const COOKIE_NAME = 'bmsCookieId';
+const DEFAULT_CURRENCY = 'USD';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function getBidFloor(bid) {
-  if (utils.isFn(bid.getFloor)) {
+  if (isFn(bid.getFloor)) {
     let floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType: BANNER,
-      size: "*",
+      size: '*',
     });
     if (
-      utils.isPlainObject(floor) &&
+      isPlainObject(floor) &&
       !isNaN(floor.floor) &&
       floor.currency === DEFAULT_CURRENCY
     ) {
@@ -43,7 +50,7 @@ function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
 
   // Add publisher ID
-  utils.deepSetValue(request, "site.publisher.id", context.publisherId);
+  deepSetValue(request, 'site.publisher.id', context.publisherId);
   return request;
 }
 
@@ -86,58 +93,54 @@ export const spec = {
 
     // Add extensions to the request
     ortbRequest.ext = ortbRequest.ext || {};
-    utils.deepSetValue(ortbRequest, "ext.gvlid", GVLID);
+    deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
 
     if (storage.localStorageIsEnabled()) {
       // Include user cookie ID if available
       const ckid = storage.getDataFromLocalStorage(COOKIE_NAME) || null;
       if (ckid) {
-        utils.deepSetValue(ortbRequest, "user.ext.buyerid", ckid);
+        deepSetValue(ortbRequest, 'user.ext.buyerid', ckid);
       }
     }
 
     return [
       {
-        method: "POST",
+        method: 'POST',
         url: ENDPOINT_URL,
         data: ortbRequest,
         options: {
-          contentType: "application/json",
+          contentType: 'application/json',
         },
       },
     ];
   },
 
-  interpretResponse: (serverResponse, parseNative) => {
-    if (!serverResponse || utils.isEmpty(serverResponse.body)) return [];
+  interpretResponse: (serverResponse) => {
+    if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
     let bids = [];
     serverResponse.body.seatbid.forEach((response) => {
       response.bid.forEach((bid) => {
-        const mediaType = bid.ext?.mediaType || "banner";
-
-        const bidObj = {
-          requestId: bid.impid,
+        const mediaType = bid.ext?.mediaType || 'banner';
+        bids.push({
+          ad: replaceAuctionPrice(bid.adm, bid.price),
+          adapterCode: BIDDER_CODE,
           cpm: bid.price,
+          creativeId: bid.crid,
+          creative_id: bid.crid,
+          currency: serverResponse.body.cur || 'USD',
+          deferBilling: false,
+          deferRendering: false,
           width: bid.w,
           height: bid.h,
-          ttl: 1200,
-          currency: serverResponse.body.cur || "USD",
-          netRevenue: true,
-          creativeId: bid.crid,
-          dealId: bid.dealid || null,
           mediaType,
-        };
-
-        switch (mediaType) {
-          case "native":
-            bidObj.native = parseNative(bid.adm);
-            break;
-          default:
-            bidObj.ad = bid.adm;
-        }
-
-        bids.push(bidObj);
+          netRevenue: true,
+          originalCpm: bid.price,
+          originalCurrency: serverResponse.body.cur || 'USD',
+          requestId: bid.impid,
+          seatBidId: bid.id,
+          ttl: 1200,
+        });
       });
     });
     return bids;
@@ -147,15 +150,11 @@ export const spec = {
     const { burl, nurl } = bid || {};
 
     if (nurl) {
-      utils.triggerPixel(
-        utils.replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm)
-      );
+      triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
     }
 
     if (burl) {
-      utils.triggerPixel(
-        utils.replaceAuctionPrice(burl, bid.originalCpm || bid.cpm)
-      );
+      triggerPixel(replaceAuctionPrice(burl, bid.originalCpm || bid.cpm));
     }
   },
 };
