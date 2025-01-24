@@ -71,11 +71,11 @@ function parseNativeResponse(ad) {
     return false;
   }
 
-  const { Thirdpartyimpressiontracker, Thirdpartyimpressiontracker2, thirdPartyClickTracker2, imp, impression, impression1, impressionJs1, image, Image, title, leadtext, url, Calltoaction, Body, Headline, Thirdpartyclicktracker, adInfo, partner_logo: partnerLogo } = ad.data.fields;
+  const { click, Thirdpartyimpressiontracker, Thirdpartyimpressiontracker2, thirdPartyClickTracker2, imp, impression, impression1, impressionJs1, image, Image, title, leadtext, url, Calltoaction, Body, Headline, Thirdpartyclicktracker, adInfo, partner_logo: partnerLogo } = ad.data.fields;
   
   const { dsaurl, height, width, adclick } = ad.data.meta;
   const emsLink = ad.ems_link;
-  const link = adclick + (url || Thirdpartyclicktracker);
+  const link = adclick + (url || click);
   const nativeResponse = {
     sendTargetingKeys: false,
     title: title || Headline || '',
@@ -98,7 +98,7 @@ function parseNativeResponse(ad) {
 
   nativeResponse.impressionTrackers = [emsLink, imp, impression, impression1, Thirdpartyimpressiontracker, Thirdpartyimpressiontracker2].filter(Boolean);
   nativeResponse.javascriptTrackers = [impressionJs1].map(url => url ? `<script async src=${url}></script>` : null).filter(Boolean);
-  nativeResponse.clickTrackers = [thirdPartyClickTracker2].filter(Boolean);
+  nativeResponse.clickTrackers = [Thirdpartyclicktracker, thirdPartyClickTracker2].filter(Boolean);
 
   if (dsaurl) {
     nativeResponse.privacyLink = dsaurl;
