@@ -10,7 +10,7 @@ Maintainer: prebid@teal.works
 Description
 ===========
 
-This module connects web publishers to Teal demand.
+This module connects web publishers to Teal demand. This adapter requires iframe user syncs to be enabled to support uids.
 
 # Bid Parameters
 
