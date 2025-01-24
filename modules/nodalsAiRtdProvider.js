@@ -1,27 +1,27 @@
-import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
-import { loadExternalScript } from "../src/adloader.js";
-import { ajax } from "../src/ajax.js";
-import { submodule } from "../src/hook.js";
-import { getStorageManager } from "../src/storageManager.js";
-import { prefixLog } from "../src/utils.js";
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { prefixLog } from '../src/utils.js';
 
-const MODULE_NAME = "nodalsAi";
+const MODULE_NAME = 'nodalsAi';
 const GVLID = 1360;
-const PUB_ENDPOINT_ORIGIN = "https://nodals.io";
-const LOCAL_STORAGE_KEY = "signals.nodals.ai";
+const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
+const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
 const STORAGE_TTL = 3600000; // 1 hour in milliseconds
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
     return strings.reduce((result, str, i) => {
       const key = keys[i - 1];
-      return result + (key ? values[key] || "" : "") + str;
+      return result + (key ? values[key] || '' : '') + str;
     });
   };
 };
 
-const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${"propertyId"}/config?${"consentParams"}`;
-const { logInfo, logWarn, logError } = prefixLog("[NodalsAiRTDProvider]");
+const PUB_ENDPOINT_PATH = fillTemplate`/p/v1/${'propertyId'}/config?${'consentParams'}`;
+const { logInfo, logWarn, logError } = prefixLog('[NodalsAiRTDProvider]');
 
 class NodalsAiRtdProvider {
   // Public properties
@@ -65,7 +65,7 @@ class NodalsAiRtdProvider {
       }
       return true;
     } else {
-      logWarn("Invalid configuration or missing user consent.");
+      logWarn('Invalid configuration or missing user consent.');
       return false;
     }
   }
@@ -89,7 +89,7 @@ class NodalsAiRtdProvider {
       return targetingData;
     }
     const facts = storedData?.facts ?? {};
-    const targetingEngine = window?.$nodals?.adTargetingEngine["latest"];
+    const targetingEngine = window?.$nodals?.adTargetingEngine['latest'];
     try {
       targetingEngine.init(config, facts);
       targetingData = targetingEngine.getTargetingData(
@@ -105,7 +105,7 @@ class NodalsAiRtdProvider {
 
   // Private methods
   #setOverrides(params) {
-    if (params?.storage?.ttl && typeof params.storage.ttl === "number") {
+    if (params?.storage?.ttl && typeof params.storage.ttl === 'number') {
       this.#overrides.storageTTL = params.storage.ttl * 1000;
     }
     this.#overrides.storageKey = params?.storage?.key;
@@ -120,10 +120,10 @@ class NodalsAiRtdProvider {
   // eslint-disable-next-line no-dupe-class-members
   #isValidConfig(params) {
     // Basic validation logic
-    if (typeof params === "object" && params?.propertyId) {
+    if (typeof params === 'object' && params?.propertyId) {
       return true;
     }
-    logWarn("Invalid configuration");
+    logWarn('Invalid configuration');
     return false;
   }
 
@@ -168,7 +168,7 @@ class NodalsAiRtdProvider {
           return null;
         }
         if (!dataEnvelope.data) {
-          throw new Error("Data envelope is missing 'data' property.");
+          throw new Error('Data envelope is missing \'data\' property.');
         }
         return dataEnvelope.data;
       } catch (error) {
@@ -176,7 +176,7 @@ class NodalsAiRtdProvider {
         return null;
       }
     } else {
-      logError("Local storage is not available or not enabled.");
+      logError('Local storage is not available or not enabled.');
       return null;
     }
   }
@@ -198,7 +198,7 @@ class NodalsAiRtdProvider {
       };
       this.storage.setDataInLocalStorage(key, JSON.stringify(storageObject));
     } else {
-      logError("Local storage is not available or not enabled.");
+      logError('Local storage is not available or not enabled.');
     }
   }
 
@@ -220,14 +220,14 @@ class NodalsAiRtdProvider {
     const endpointOrigin =
       this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN;
     const parameterMap = {
-      gdpr_consent: userConsent?.gdpr?.consentString ?? "",
-      gdpr: userConsent?.gdpr?.gdprApplies ? "1" : "0",
-      us_privacy: userConsent?.uspConsent ?? "",
-      gpp: userConsent?.gpp?.gppString ?? "",
+      gdpr_consent: userConsent?.gdpr?.consentString ?? '',
+      gdpr: userConsent?.gdpr?.gdprApplies ? '1' : '0',
+      us_privacy: userConsent?.uspConsent ?? '',
+      gpp: userConsent?.gpp?.gppString ?? '',
       gpp_sid:
         userConsent.gpp && Array.isArray(userConsent.gpp.applicableSections)
-          ? userConsent.gpp.applicableSections.join(",")
-          : "",
+          ? userConsent.gpp.applicableSections.join(',')
+          : '',
     };
     const querystring = new URLSearchParams(parameterMap).toString();
     const values = {
@@ -255,7 +255,7 @@ class NodalsAiRtdProvider {
     };
 
     const options = {
-      method: "GET",
+      method: 'GET',
       withCredentials: false,
     };
 
@@ -289,7 +289,7 @@ class NodalsAiRtdProvider {
   #loadAdLibraries(deps) {
     // eslint-disable-next-line no-unused-vars
     for (const [key, value] of Object.entries(deps)) {
-      if (typeof value === "string") {
+      if (typeof value === 'string') {
         loadExternalScript(value, MODULE_TYPE_RTD, MODULE_NAME, () => {
           // noop
         });
@@ -300,4 +300,4 @@ class NodalsAiRtdProvider {
 
 export const nodalsAiRtdSubmodule = new NodalsAiRtdProvider();
 
-submodule("realTimeData", nodalsAiRtdSubmodule);
+submodule('realTimeData', nodalsAiRtdSubmodule);
