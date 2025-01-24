@@ -157,7 +157,7 @@ getGlobal().setPAAPIConfigForGPT = setPAAPIConfigFactory();
 const setTargetingHook = setTargetingHookFactory();
 
 submodule('paapi', {
-  name: 'gpt',
+  name: MODULE,
   init(params) {
     getPAAPIConfig = params.getPAAPIConfig;
     getHook('getPAAPISize').before(getPAAPISizeHook);
