@@ -6,6 +6,7 @@ const expect = require('chai').expect;
 const PBS_HOST = 'a.bids.ws';
 const PLACEMENT = 'test-placement300x250';
 const ACCOUNT = 'test-account';
+const SUB_ACCOUNT = 'test-sub-account';
 const TEST_DOMAIN = 'example.com';
 const TEST_PAGE = `https://${TEST_DOMAIN}/page.html`;
 const ADUNIT_CODE = '/1234/header-bid-tag-0';
@@ -220,6 +221,12 @@ describe('Teal Bid Adaper', function () {
       expect(data.tmax).be.lessThan(BIDDER_REQUEST.timeout)
     });
   });
+  describe('buildRequests with subAccount', () => {
+    const {data} = buildRequest({ subAccount: SUB_ACCOUNT });
+    it('should set the correct stored request ids', () => {
+      expect(data.ext.prebid.storedrequest.id).equal(SUB_ACCOUNT);
+    });
+  });
   describe('interpreteResponse', () => {
     const request = buildRequest();
     const [bid] = spec.interpretResponse({ body: BID_RESPONSE }, request);
@@ -244,7 +251,7 @@ describe('Teal Bid Adaper', function () {
   describe('getUserSyncs with iframeEnabled', () => {
     const allSyncs = spec.getUserSyncs({ iframeEnabled: true }, [{ body: BID_RESPONSE }], null, null);
     const [{ url, type }] = allSyncs;
-    const { endpoint } = parseUrl(url).search;
+    const { bidders, endpoint } = parseUrl(url).search;
     it('should return a single sync object', () => {
       expect(allSyncs.length).equal(1);
     });
@@ -253,6 +260,9 @@ describe('Teal Bid Adaper', function () {
     });
     it('should sync to the right endpoint', () => {
       expect(endpoint).equal(`https://${PBS_HOST}/cookie_sync`);
+    });
+    it('should sync to at least one bidders', () => {
+      expect(bidders.split(',').length).be.greaterThan(0);
     });
   });
 });

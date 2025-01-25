@@ -1,4 +1,4 @@
-import {deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError} from '../src/utils.js';
+import {deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {BANNER} from '../src/mediaTypes.js';
@@ -53,8 +53,10 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     const { bidder } = bidRequests[0];
     const data = converter.toORTB({bidRequests, bidderRequest});
-    deepSetValue(data, 'ext.prebid.storedrequest.id', deepAccess(bidRequests[0], 'params.account', null));
-    deepSetValue(data, 'site.publisher.id', deepAccess(bidRequests[0], 'params.account', null));
+    const account = deepAccess(bidRequests[0], 'params.account', null);
+    const subAccount = deepAccess(bidRequests[0], 'params.subAccount', null);
+    deepSetValue(data, 'site.publisher.id', account);
+    deepSetValue(data, 'ext.prebid.storedrequest.id', subAccount || account);
     data.ext.prebid.passthrough = {
       ...data.ext.prebid.passthrough,
       teal: { bidder },
@@ -90,12 +92,26 @@ export const spec = {
     }
     const syncs = [];
     const { gdprApplies, consentString } = gdprConsent || {};
+    let bidders = [];
+    serverResponses.forEach(({ body }) => {
+      const newBidders = Object.keys(body.ext?.responsetimemillis || {});
+      newBidders.forEach(s => {
+        if (bidders.indexOf(s) === -1) {
+          bidders.push(s);
+        }
+      });
+    });
+    bidders = shuffle(bidders).slice(0, MAX_SYNC_COUNT);
+    if (!bidders.length) {
+      return;
+    }
     const params = {
       endpoint: COOKIE_SYNC_ENDPOINT,
       max_sync_count: MAX_SYNC_COUNT,
       gdpr: gdprApplies ? 1 : 0,
       gdpr_consent: consentString,
-      us_privacy: uspConsent
+      us_privacy: uspConsent,
+      bidders: bidders.join(',')
     };
     const qs = Object.entries(params)
       .filter(([k, v]) => ![null, undefined, ''].includes(v))
