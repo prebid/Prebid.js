@@ -111,7 +111,8 @@ export const spec = {
       gdpr: gdprApplies ? 1 : 0,
       gdpr_consent: consentString,
       us_privacy: uspConsent,
-      bidders: bidders.join(',')
+      bidders: bidders.join(','),
+      coop_sync: 0
     };
     const qs = Object.entries(params)
       .filter(([k, v]) => ![null, undefined, ''].includes(v))
