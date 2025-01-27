@@ -1,4 +1,4 @@
-import {includes} from './polyfill.js';
+import { includes } from './polyfill.js';
 import { logError, logWarn, insertElement, setScriptAttributes } from './utils.js';
 
 const _requestCache = new WeakMap();
@@ -34,6 +34,7 @@ const _approvedLoadExternalJSList = [
   'contxtful',
   'id5',
   '51Degrees',
+  'wurfl',
 ];
 
 /**
