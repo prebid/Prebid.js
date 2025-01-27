@@ -41,7 +41,7 @@ jobs:
   deploy:
     needs: build
     if: github.ref == 'refs/heads/dreamlab-master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Download artifact
@@ -64,10 +64,5 @@ jobs:
           release="${version}_$(date +"%Y%m%d%H%M%S")"
           echo "Uploading Prebid.js ver:${version} to OCDN"
           echo -e "\e[32mRelease: ${release}\e[0m"
-          export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
-          export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
-          echo "AWS_REQUEST_CHECKSUM_CALCULATION=$AWS_REQUEST_CHECKSUM_CALCULATION"
-          echo "AWS_RESPONSE_CHECKSUM_VALIDATION=$AWS_RESPONSE_CHECKSUM_VALIDATION"
-          aws s3 sync "${version}" s3://${BUCKET}/prebid/prod/${release}/ --debug --checksum-algorithm CRC32 --region ocdn --endpoint "https://ocdn.eu"
-
+          aws s3 sync "${version}" s3://${BUCKET}/prebid/prod/${release}/ --region ocdn --endpoint "https://ocdn.eu"
 
