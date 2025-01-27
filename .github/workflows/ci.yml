@@ -68,4 +68,5 @@ jobs:
           export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required
           echo "AWS_REQUEST_CHECKSUM_CALCULATION=$AWS_REQUEST_CHECKSUM_CALCULATION"
           echo "AWS_RESPONSE_CHECKSUM_VALIDATION=$AWS_RESPONSE_CHECKSUM_VALIDATION"
-          aws s3 sync "${version}" s3://${BUCKET}/prebid/prod/${release}/ --region ocdn --endpoint "https://ocdn.eu"
+          aws s3 sync "${version}" s3://${BUCKET}/prebid/prod/${release}/ --debug --region ocdn --endpoint "https://ocdn.eu"
+
