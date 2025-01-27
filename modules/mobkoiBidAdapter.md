@@ -22,28 +22,16 @@ const adUnits = [
     bids: [
       {
         bidder: 'mobkoi',
+        params: {
+          publisherId: 'module-test-publisher-id',
+          adServerBaseUrl: 'https://adserver.maximus.mobkoi.com',
+        }
       },
     ],
   },
 ];
 
 pbjs.que.push(function () {
-  pbjs.setBidderConfig({
-    bidders: ['mobkoi'],
-    config: {
-      ortb2: {
-        site: {
-          publisher: {
-            id: 'module-test-publisher-id',
-            ext: {
-              adServerBaseUrl: 'https://adserver.dev.mobkoi.com',
-            },
-          },
-        },
-      },
-    },
-  });
-
   pbjs.addAdUnits(adUnits);
 });
 ```

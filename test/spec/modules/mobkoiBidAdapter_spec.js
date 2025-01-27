@@ -1,20 +1,20 @@
 import {spec, utils} from 'modules/mobkoiBidAdapter.js';
 
 describe('Mobkoi bidding Adapter', function () {
-  const adServerBaseUrl = 'http://adServerBaseUrl';
-  const requestId = 'test-request-id'
-  const publisherId = 'mobkoiPublisherId'
-  const bidId = 'test-bid-id'
+  const testAdServerBaseUrl = 'http://test.adServerBaseUrl.com';
+  const testRequestId = 'test-request-id'
+  const testPublisherId = 'mobkoiPublisherId'
+  const testBidId = 'test-bid-id'
   const bidderCode = 'mobkoi'
-  const transactionId = 'test-transaction-id'
-  const adUnitId = 'test-ad-unit-id'
-  const auctionId = 'test-auction-id'
+  const testTransactionId = 'test-transaction-id'
+  const testAdUnitId = 'test-ad-unit-id'
+  const testAuctionId = 'test-auction-id'
 
   const getOrtb2 = () => ({
     site: {
       publisher: {
-        id: publisherId,
-        ext: { adServerBaseUrl }
+        id: testPublisherId,
+        ext: { adServerBaseUrl: testAdServerBaseUrl }
       }
     }
   })
@@ -22,29 +22,30 @@ describe('Mobkoi bidding Adapter', function () {
   const getBidRequest = () => ({
     bidder: bidderCode,
     adUnitCode: 'banner-ad',
-    transactionId,
-    adUnitId,
-    bidId: bidId,
-    bidderRequestId: requestId,
-    auctionId,
-    ortb2: getOrtb2()
+    transactionId: testTransactionId,
+    adUnitId: testAdUnitId,
+    bidId: testBidId,
+    bidderRequestId: testRequestId,
+    auctionId: testAuctionId,
+    ortb2: getOrtb2(),
+    params: {
+      publisherId: testPublisherId,
+      adServerBaseUrl: testAdServerBaseUrl
+    }
   })
 
   const getBidderRequest = () => ({
     bidderCode,
-    auctionId,
-    bidderRequestId: requestId,
+    auctionId: testAuctionId,
+    bidderRequestId: testRequestId,
     bids: [getBidRequest()],
     ortb2: getOrtb2()
   })
 
   const getConvertedBidRequest = () => ({
-    id: requestId,
-    cur: [
-      'USD'
-    ],
+    id: testRequestId,
     imp: [{
-      id: bidId,
+      id: testBidId,
     }],
     ...getOrtb2(),
     test: 0
@@ -56,15 +57,15 @@ describe('Mobkoi bidding Adapter', function () {
 
   const getBidderResponse = () => ({
     body: {
-      id: bidId,
+      id: testBidId,
       cur: 'USD',
       seatbid: [
         {
           seat: 'mobkoi_debug',
           bid: [
             {
-              id: bidId,
-              impid: bidId,
+              id: testBidId,
+              impid: testBidId,
               cid: 'campaign_1',
               crid: 'creative_1',
               price: 1,
@@ -94,17 +95,41 @@ describe('Mobkoi bidding Adapter', function () {
       bid = getBidderRequest().bids[0];
     });
 
-    it('should return true when publisher id exists in ortb2', function () {
+    it('should return true when publisher id only exists in ortb2', function () {
+      delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when publisher id is missing', function () {
+    it('should return true when publisher ID only exists in ad unit params', function () {
       delete bid.ortb2.site.publisher.id;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when adServerBaseUrl only exists in ortb2', function () {
+      delete bid.params.adServerBaseUrl;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when adServerBaseUrl only exists in ad unit params', function () {
+      delete bid.ortb2.site.publisher.ext.adServerBaseUrl;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false when publisher id is missing both in ad unit params and ortb2', function () {
+      delete bid.ortb2.site.publisher.id;
+      delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when publisher id is empty', function () {
+    it('should return false when publisher id is empty in ad unit params and ortb2', function () {
       bid.ortb2.site.publisher.id = '';
+      bid.params.publisherId = '';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when adServerBaseUrl is missing in ad unit params and ortb2', function () {
+      delete bid.ortb2.site.publisher.ext.adServerBaseUrl;
+      delete bid.params.adServerBaseUrl;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   })
@@ -119,7 +144,7 @@ describe('Mobkoi bidding Adapter', function () {
 
     it('should return valid request object with correct structure', function () {
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      const expectedUrl = adServerBaseUrl + '/bid';
+      const expectedUrl = testAdServerBaseUrl + '/bid';
 
       expect(request.method).to.equal('POST');
       expect(request.options.contentType).to.equal('application/json');
@@ -135,14 +160,31 @@ describe('Mobkoi bidding Adapter', function () {
       expect(ortbData.site.publisher.id).to.equal(bidderRequest.ortb2.site.publisher.id);
     });
 
-    it('should throw error when adServerBaseUrl is missing', function () {
+    it('should obtain publisher ID from ad unit params if the value does not exist in ortb2.', function () {
+      delete bidderRequest.ortb2.site.publisher.id;
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const ortbData = request.data;
+
+      expect(ortbData.site.publisher.id).to.equal(bidderRequest.bids[0].params.publisherId);
+    });
+
+    it('should obtain adServerBaseUrl from ad unit params if the value does not exist in ortb2.', function () {
       delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const ortbData = request.data;
+
+      expect(ortbData.site.publisher.ext.adServerBaseUrl).to.equal(bidderRequest.bids[0].params.adServerBaseUrl);
+    });
+
+    it('should throw error when adServerBaseUrl is missing both in ortb2 and bid params', function () {
+      delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
+      delete bidderRequest.bids[0].params.adServerBaseUrl;
 
       expect(() => {
         spec.buildRequests(bidderRequest.bids, bidderRequest);
       }).to.throw();
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     let bidderRequest, bidRequest, bidderResponse;
@@ -184,11 +226,12 @@ describe('Mobkoi bidding Adapter', function () {
     describe('getAdServerEndpointBaseUrl', function () {
       it('should return the adServerBaseUrl from the given object', function () {
         expect(utils.getAdServerEndpointBaseUrl(bidderRequest))
-          .to.equal(adServerBaseUrl);
+          .to.equal(testAdServerBaseUrl);
       });
 
       it('should throw error when adServerBaseUrl is missing', function () {
         delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
+        delete bidderRequest.bids[0].params.adServerBaseUrl;
 
         expect(() => {
           utils.getAdServerEndpointBaseUrl(bidderRequest);
@@ -203,6 +246,7 @@ describe('Mobkoi bidding Adapter', function () {
 
       it('should throw error when publisherId is missing', function () {
         delete bidderRequest.ortb2.site.publisher.id;
+        delete bidderRequest.bids[0].params.publisherId;
         expect(() => {
           utils.getPublisherId(bidderRequest);
         }).to.throw();
@@ -255,7 +299,7 @@ describe('Mobkoi bidding Adapter', function () {
         bid.lurl = '${BIDDING_API_BASE_URL}/loss?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}';
         bid.adm = '<div>${AUCTION_PRICE}${AUCTION_CURRENCY}${AUCTION_IMP_ID}${AUCTION_BID_ID}${CAMPAIGN_ID}${CREATIVE_ID}${PUBLISHER_ID}${ORTB_ID}${BIDDING_API_BASE_URL}</div>';
 
-        const BIDDING_API_BASE_URL = adServerBaseUrl;
+        const BIDDING_API_BASE_URL = testAdServerBaseUrl;
         const AUCTION_CURRENCY = bidderResponse.body.cur;
         const AUCTION_BID_ID = bidderRequest.auctionId;
         const AUCTION_PRICE = bid.price;
