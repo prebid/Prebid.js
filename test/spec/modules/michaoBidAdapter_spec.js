@@ -308,7 +308,7 @@ describe('Michao Bid Adapter', () => {
 
         const result = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-        expect(result[0].data.site.id).to.equal('456');
+        expect(result[0].data.site.ext.michao.site).to.equal('456');
       });
 
       it('sets placementId in impression object', () => {
@@ -324,7 +324,7 @@ describe('Michao Bid Adapter', () => {
 
         const result = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-        expect(result[0].data.imp[0].ext.placement).to.equal('123');
+        expect(result[0].data.imp[0].ext.michao.placement).to.equal('123');
       });
     });
 
@@ -343,7 +343,7 @@ describe('Michao Bid Adapter', () => {
 
         const result = spec.buildRequests([bannerBidRequest], bidderRequest);
 
-        expect(result[0].data.site.publisher.ext.partner).to.equal('123');
+        expect(result[0].data.site.publisher.ext.michao.partner).to.equal('123');
       });
 
       it('sets test in publisher when specified', () => {

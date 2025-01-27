@@ -196,7 +196,7 @@ const converter = ortbConverter({
 
     deepSetValue(
       openRTBBidRequest,
-      'site.id',
+      'site.ext.michao.site',
       bidRequest.params.site.toString()
     );
     if (bidRequest?.schain) {
@@ -206,7 +206,7 @@ const converter = ortbConverter({
     if (bidRequest.params?.partner) {
       deepSetValue(
         openRTBBidRequest,
-        'site.publisher.ext.partner',
+        'site.publisher.ext.michao.partner',
         bidRequest.params.partner.toString()
       );
     }
@@ -216,7 +216,7 @@ const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, 'ext.placement', bidRequest.params.placement.toString());
+    deepSetValue(imp, 'ext.michao.placement', bidRequest.params.placement.toString());
 
     if (!bidRequest.mediaTypes?.native) {
       delete imp.native;
