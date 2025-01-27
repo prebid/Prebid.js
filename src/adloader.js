@@ -11,7 +11,6 @@ const _approvedLoadExternalJSList = [
   'debugging',
   'outstream',
   // Bid Modules - only exception is on rendering edge cases, to clean up in Prebid 10:
-  'improvedigital',
   'showheroes-bs',
   // RTD modules:
   'aaxBlockmeter',
