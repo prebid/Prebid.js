@@ -4,12 +4,15 @@ import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import * as events from '../../../src/events';
+import * as utils from 'src/utils.js';
 import Sinon from 'sinon';
+import { deepClone } from '../../../src/utils.js';
 
 const MODULE_NAME = 'contxtful';
 
 const VERSION = 'v1';
 const CUSTOMER = 'CUSTOMER';
+const SM = 'SM';
 const CONTXTFUL_CONNECTOR_ENDPOINT = `https://api.receptivity.io/${VERSION}/prebid/${CUSTOMER}/connector/rxConnector.js`;
 
 const RX_FROM_SESSION_STORAGE = { ReceptivityState: 'Receptive', test_info: 'rx_from_session_storage' };
@@ -61,6 +64,8 @@ describe('contxtfulRtdProvider', function () {
     RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK)));
 
     eventsEmitSpy = sandbox.spy(events, ['emit']);
+
+    sandbox.stub(utils, 'generateUUID').returns(SM);
 
     let tagId = CUSTOMER;
     sessionStorage.clear();
@@ -534,6 +539,7 @@ describe('contxtfulRtdProvider', function () {
         name: 'contxtful',
         ext: {
           rx: RX_FROM_API,
+          sm: SM,
           params: {
             ev: config.params?.version,
             ci: config.params?.customer,
@@ -549,7 +555,36 @@ describe('contxtfulRtdProvider', function () {
 
         expect(data.name).to.deep.equal(expectedData.name);
         expect(data.ext.rx).to.deep.equal(expectedData.ext.rx);
+        expect(data.ext.sm).to.deep.equal(expectedData.ext.sm);
         expect(data.ext.params).to.deep.equal(expectedData.ext.params);
+        done();
+      }, TIMEOUT);
+    });
+
+    it('does not change the sm', function (done) {
+      let config = buildInitConfig(VERSION, CUSTOMER);
+      contxtfulSubmodule.init(config);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+
+      let firstReqBidsConfigObj = {
+        ortb2Fragments: {
+          global: {},
+          bidder: {},
+        },
+      };
+
+      let secondReqBidsConfigObj = deepClone(firstReqBidsConfigObj);
+
+      setTimeout(() => {
+        const onDoneSpy = sinon.spy();
+        contxtfulSubmodule.getBidRequestData(firstReqBidsConfigObj, onDoneSpy, config);
+        contxtfulSubmodule.getBidRequestData(secondReqBidsConfigObj, onDoneSpy, config);
+
+        let firstData = firstReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
+        let secondData = secondReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
+
+        expect(firstData.ext.sm).to.equal(secondData.ext.sm);
+
         done();
       }, TIMEOUT);
     });
@@ -628,7 +663,7 @@ describe('contxtfulRtdProvider', function () {
   });
 
   describe('after rxApi is loaded', function () {
-    it('does not add event', function (done) {
+    it('should add event', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
       contxtfulSubmodule.init(config);
       window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
@@ -648,7 +683,7 @@ describe('contxtfulRtdProvider', function () {
 
         let events = ext.events;
 
-        expect(events).to.be.undefined;
+        expect(events).to.be.not.undefined;
         done();
       }, TIMEOUT);
     });

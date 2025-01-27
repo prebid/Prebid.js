@@ -8,7 +8,7 @@ import {
   interpretResponse,
   getUserSyncs as getUserSyncsLib,
 } from '../libraries/teqblazeUtils/bidderUtils.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 // Constants
 const BIDDER_CODE = 'contxtful';
@@ -75,7 +75,7 @@ const extractParameters = (config) => {
 
 // Construct the Payload towards the Bidding endpoint
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
-  const ortb2 = converter.toORTB({bidderRequest: bidderRequest, bidRequests: validBidRequests});
+  const ortb2 = converter.toORTB({ bidderRequest: bidderRequest, bidRequests: validBidRequests });
 
   const bidRequests = [];
   _each(validBidRequests, bidRequest => {
@@ -88,7 +88,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   });
   const config = pbjsConfig.getConfig();
   config.pbjsVersion = PREBID_VERSION;
-  const {version, customer} = extractParameters(config)
+  const { version, customer } = extractParameters(config)
   const adapterUrl = buildUrl({
     protocol: 'https',
     host: BIDDER_ENDPOINT,
@@ -151,6 +151,17 @@ const getSamplingRate = (bidderConfig, eventType) => {
   return entry ? entry[1] : DEFAULT_SAMPLING_RATE;
 };
 
+const logBidderError = ({ error, bidderRequest }) => {
+  if (error) {
+    let jsonReason = {
+      message: error.reason?.message,
+      stack: error.reason?.stack,
+    };
+    error.reason = jsonReason;
+  }
+  logEvent('onBidderError', { error, bidderRequest });
+};
+
 // Handles the logging of events
 const logEvent = (eventType, data) => {
   try {
@@ -159,7 +170,7 @@ const logEvent = (eventType, data) => {
 
     // Get Config
     const bidderConfig = pbjsConfig.getConfig();
-    const {version, customer} = extractParameters(bidderConfig);
+    const { version, customer } = extractParameters(bidderConfig);
 
     // Sampled monitoring
     if (['onBidBillable', 'onAdRenderSucceeded'].includes(eventType)) {
@@ -206,12 +217,12 @@ export const spec = {
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon: function(bid) { logEvent('onBidWon', bid); },
-  onBidBillable: function(bid) { logEvent('onBidBillable', bid); },
-  onAdRenderSucceeded: function(bid) { logEvent('onAdRenderSucceeded', bid); },
-  onSetTargeting: function(bid) { },
-  onTimeout: function(timeoutData) { logEvent('onTimeout', timeoutData); },
-  onBidderError: function({ error, bidderRequest }) { logEvent('onBidderError', { error, bidderRequest }); },
+  onBidWon: function (bid) { logEvent('onBidWon', bid); },
+  onBidBillable: function (bid) { logEvent('onBidBillable', bid); },
+  onAdRenderSucceeded: function (bid) { logEvent('onAdRenderSucceeded', bid); },
+  onSetTargeting: function (bid) { },
+  onTimeout: function (timeoutData) { logEvent('onTimeout', timeoutData); },
+  onBidderError: logBidderError,
 };
 
 registerBidder(spec);

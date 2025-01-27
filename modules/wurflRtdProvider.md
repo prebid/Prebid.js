@@ -9,7 +9,7 @@
 ## Description
 
 The WURFL RTD module enriches the OpenRTB 2.0 device data with [WURFL data](https://www.scientiamobile.com/wurfl-js-business-edition-at-the-intersection-of-javascript-and-enterprise/).
-The module sets the WURFL data in `device.ext.wurfl` and all the bidder adapters will always receive the low entry capabilites like `is_mobile`, `complete_device_name` and `form_factor`. 
+The module sets the WURFL data in `device.ext.wurfl` and all the bidder adapters will always receive the low entry capabilities like `is_mobile`, `complete_device_name` and `form_factor`, and the `wurfl_id`.
 
 For a more detailed analysis bidders can subscribe to detect iPhone and iPad models and receive additional [WURFL device capabilities](https://www.scientiamobile.com/capabilities/?products%5B%5D=wurfl-js).
 
