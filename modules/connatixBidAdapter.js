@@ -5,9 +5,9 @@ import {
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
+import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
 import {
   deepAccess,
   deepSetValue,
@@ -35,7 +35,7 @@ const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
 const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
-const IDENTITY_PROVIDER_RESOLVED_EVENT = 'cnx_identity_provider_resolved';
+const AGGREGATED_IDENTITY_PROVIDERS_RESOLVED_EVENT = 'cnx_aggregated_identity_providers_resolved';
 let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
@@ -188,6 +188,16 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
+export function urlHasQueryParams(url) {
+  try {
+    const urlObject = new URL(url);
+    const searchParams = new URLSearchParams(urlObject.search);
+    return searchParams.size > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
 export function saveOnAllStorages(name, value, expirationTimeMs) {
   const date = new Date();
   date.setTime(date.getTime() + expirationTimeMs);
@@ -233,10 +243,10 @@ export const spec = {
     if (!isValid) {
       logError(
         `Invalid bid request:
-          hasBidId: ${hasBidId}, 
-          hasMediaTypes: ${hasMediaTypes}, 
-          isValidBanner: ${isValidBanner}, 
-          isValidVideo: ${isValidVideo}, 
+          hasBidId: ${hasBidId},
+          hasMediaTypes: ${hasMediaTypes},
+          isValidBanner: ${isValidBanner},
+          isValidVideo: ${isValidVideo},
           hasRequiredBidParams: ${hasRequiredBidParams}`
       );
     }
@@ -341,17 +351,19 @@ export const spec = {
     }
 
     window.addEventListener('message', function handler(event) {
-      if (!event.data || event.origin !== 'https://cds.connatix.com') {
+      if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
         return;
       }
 
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT) {
+      const messageType = event.data.cnx.message;
+
+      if (messageType === ALL_PROVIDERS_RESOLVED_EVENT) {
         this.removeEventListener('message', handler);
         event.stopImmediatePropagation();
       }
 
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT || event.data.type === IDENTITY_PROVIDER_RESOLVED_EVENT) {
-        const response = event.data;
+      if (messageType === ALL_PROVIDERS_RESOLVED_EVENT || messageType === AGGREGATED_IDENTITY_PROVIDERS_RESOLVED_EVENT) {
+        const response = event.data.cnx;
         if (response.data) {
           saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
         }
@@ -361,7 +373,11 @@ export const spec = {
     const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
 
-    const url = queryParams ? `${syncUrl}?${queryParams}` : syncUrl;
+    const url = queryParams
+      ? urlHasQueryParams(syncUrl)
+        ? `${syncUrl}&${queryParams}`
+        : `${syncUrl}?${queryParams}`
+      : syncUrl;
     return [{
       type: 'iframe',
       url
