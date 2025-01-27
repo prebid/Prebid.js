@@ -8,17 +8,12 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 function GamAdServerProvider(dfpModule_) {
   const dfp = dfpModule_;
 
-  function getAdTagUrl(adUnit, baseAdTag, params) {
-    return dfp.buildVideoUrl({ adUnit: adUnit, url: baseAdTag, params });
-  }
-
-  function getVast(adUnit, baseAdTag, params) {
-    return dfp.getVast({ adUnit: adUnit, url: baseAdTag, params });
+  function getAdTagUrl(adUnit, baseAdTag, params, bid) {
+    return dfp.buildVideoUrl({ adUnit: adUnit, url: baseAdTag, params, bid });
   }
 
   return {
-    getAdTagUrl,
-    getVast
+    getAdTagUrl
   }
 }
 

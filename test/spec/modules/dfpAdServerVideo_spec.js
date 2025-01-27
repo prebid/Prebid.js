@@ -14,8 +14,6 @@ import * as adServer from 'src/adserver.js';
 import {hook} from '../../../src/hook.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
-import { getBidVastWithGam, replaceVastAdTagUri } from '../../../modules/dfpAdServerVideo.js';
-import { server } from '../../mocks/xhr.js';
 
 describe('The DFP video support module', function () {
   before(() => {
@@ -23,18 +21,6 @@ describe('The DFP video support module', function () {
   });
 
   let sandbox, bid, adUnit;
-
-  const bidCacheUrl = 'https://prebid-server-test-j.prebid.org/cache?uuid=1234'
-  const vastWrapper = (
-    `<VAST version="3.0">` +
-      `<Ad>` +
-        `<Wrapper>` +
-         `<AdSystem>prebid.org wrapper</AdSystem>` +
-          `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
-        `</Wrapper>` +
-     `</Ad>` +
-    `</VAST>`
-  );
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -720,60 +706,4 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('other_key', 'other_value');
     expect(customParams).to.have.property('hb_rand', 'random');
   });
-
-  it('should replace vast ad tag uri properly', () => {
-    const blobUrl = 'blob:http://localhost:9999/uri';
-    const input = vastWrapper;
-
-    const expectedOutput = (
-      `<VAST version="3.0">` +
-        `<Ad>` +
-         `<Wrapper>` +
-            `<AdSystem>prebid.org wrapper</AdSystem>` +
-            `<VASTAdTagURI><![CDATA[${blobUrl}]]></VASTAdTagURI>` +
-          `</Wrapper>` +
-       `</Ad>` +
-      `</VAST>`
-    );
-
-    const output = replaceVastAdTagUri(input, blobUrl);
-
-    expect(output).to.deep.eql(expectedOutput);
-  });
-
-  it('getBidVastWithGam should produce valid output for local cache', function(done) {
-    config.setConfig({cache: {useLocal: true}});
-
-    const cacheMap = new Map();
-
-    const uuid = '1234';
-    const blobUrl = 'blob:http://localhost:9999/uri';
-    const gamAdTagUrl = 'https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp&cust_params=hb_uuid%3D' + uuid
-
-    cacheMap.set(uuid, blobUrl);
-    server.respondWith(vastWrapper);
-
-    const expectedOutput = (
-      `<VAST version="3.0">` +
-        `<Ad>` +
-         `<Wrapper>` +
-            `<AdSystem>prebid.org wrapper</AdSystem>` +
-            `<VASTAdTagURI><![CDATA[${blobUrl}]]></VASTAdTagURI>` +
-          `</Wrapper>` +
-       `</Ad>` +
-      `</VAST>`
-    );
-
-    getBidVastWithGam(gamAdTagUrl, cacheMap)
-      .then((vastXml) => {
-        expect(expectedOutput).to.deep.eql(vastXml);
-        done();
-      })
-      .catch(done)
-      .finally(() => {
-        config.resetConfig();
-      })
-
-    server.respond();
-  })
 });

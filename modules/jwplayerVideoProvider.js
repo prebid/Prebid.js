@@ -206,11 +206,15 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       return;
     }
 
-    if (adTagUrl) {
-      player.playAd(adTagUrl, options);
-    } else {
-      player.loadAdXml(options.adXml, options);
+    player.playAd(adTagUrl, options);
+  }
+
+  function setAdXml(vastXml, options) {
+    if (!player) {
+      return;
     }
+
+    player.loadAdXml(vastXml, options);
   }
 
   function onEvent(externalEventName, callback, basePayload) {
@@ -500,6 +504,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy

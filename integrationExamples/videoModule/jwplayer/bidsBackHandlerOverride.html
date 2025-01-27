@@ -105,14 +105,15 @@
 
         pbjs.requestBids({
           adUnitCodes: [videoAdUnitCode],
-          bidsBackHandler: function(bidResponses) {
+          bidsBackHandler: async function(bidResponses) {
             const bidResponse = bidResponses[videoAdUnitCode];
             if (!bidResponse) {
               return;
             }
 
-            bidResponse.bids.forEach(bid => {
-              const videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+            for (let bid of bidResponse.bids) {
+              const vastXml = await pbjs.adServers.dfp.getAdXml({
+                bid,
                 adUnit: videoAdUnit,
                 url: bid.vastUrl,
                 params: {
@@ -127,9 +128,8 @@
                 }
               });
 
-              bid.vastUrl = videoUrl;
-              pbjs.videoModule.renderBid('player', bid);
-            });
+              pbjs.videoModule.renderBid('player', vastXml);
+            };
           }
         });
 

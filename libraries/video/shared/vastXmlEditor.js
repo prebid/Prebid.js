@@ -1,6 +1,9 @@
+import { fetch } from '../../../src/ajax.js';
+import { logError } from '../../../src/utils.js';
 import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
 export const XML_MIME_TYPE = 'application/xml';
+export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
 export function VastXmlEditor(xmlUtil_) {
   const xmlUtil = xmlUtil_;
@@ -45,7 +48,8 @@ export function VastXmlEditor(xmlUtil_) {
 
   return {
     getVastXmlWithTracking,
-    buildVastWrapper
+    buildVastWrapper,
+    replaceVastAdTagWithBlobContent
   }
 
   function getImpressionDoc(impressionUrl, impressionId) {
@@ -73,6 +77,46 @@ export function VastXmlEditor(xmlUtil_) {
 
     const doc = copy ? child.cloneNode(true) : child;
     node.appendChild(doc.documentElement);
+  }
+
+  function replaceVastAdTagUri(xmlString, match, newContent) {
+    try {
+      const xmlDoc = xmlUtil.parse(xmlString);
+      const vastAdTagUriElements = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME);
+      const vastAdTagUriElement = Array.from(vastAdTagUriElements).find(adTag => adTag.textContent.includes(match));
+
+      if (vastAdTagUriElement) {
+        const cdata = xmlDoc.createCDATASection(newContent);
+        vastAdTagUriElement.textContent = '';
+        vastAdTagUriElement.appendChild(cdata);
+        return xmlUtil.serialize(xmlDoc);
+      } else {
+        throw new Error();
+      }
+    } catch (error) {
+      logError('Unable to process xml', error);
+      return xmlString;
+    }
+  };
+
+  async function replaceVastAdTagWithBlobContent(vastXml, blobUrl, videoCacheKey) {
+    try {
+      const response = await fetch(blobUrl);
+      if (!response.ok) {
+        logError('Unable to fetch blob');
+        return vastXml;
+      }
+
+      // Mechanism to handle cases where VAST tags are fetched
+      // from a context where the blob resource is not accessible.
+      // like IMA SDK iframe
+      const blobContent = await response.text();
+      const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+
+      return replaceVastAdTagUri(vastXml, videoCacheKey, dataUrl);
+    } catch (e) {
+      return vastXml;
+    }
   }
 }
 

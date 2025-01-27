@@ -1,5 +1,6 @@
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 import { expect } from 'chai';
+import { server } from '../../../../mocks/xhr';
 
 describe('Vast XML Editor', function () {
   const adWrapperXml = `
@@ -205,5 +206,45 @@ describe('Vast XML Editor', function () {
     </Ad>
 </VAST>`;
     expect(vastXml).to.equal(expectedXml);
+  });
+
+  it('should replace vast ad tag uri properly with blob content in data uri format', (done) => {
+    const uuid = '1234325';
+    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid' + uuid;
+    const input = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+    const blobUrl = 'blob:http://localhost:9999/uri';
+
+    const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>'
+    const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+    const expectedOutput = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+         `<Wrapper>` +
+            `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${dataUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+
+    server.respondWith('GET', blobUrl, [200, {}, blobContent]);
+
+    vastXmlEditor.replaceVastAdTagWithBlobContent(input, blobUrl, uuid)
+      .then((vastXml) => {
+        expect(vastXml).to.deep.eql(expectedOutput);
+        done();
+      })
+      .catch(done);
+
+    server.respond();
   });
 });

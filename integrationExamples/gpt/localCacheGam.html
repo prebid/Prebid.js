@@ -87,7 +87,7 @@
       });
 
       pbjs.requestBids({
-        bidsBackHandler: function(bidResponses) {
+        bidsBackHandler: async function(bidResponses) {
             const bidResponse = bidResponses['div-gpt-ad-51545-0'];
             if (!bidResponse) {
               return;
@@ -95,27 +95,28 @@
 
             const bid = bidResponse.bids[0];
 
-            pbjs.adServers.dfp.getVast({
-                adUnit: 'div-gpt-ad-51545-0',
-                params: {
-                  iu: '/41758329/localcache',
-                  url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp",
-                }
-            }).then((vastxml) => {
-              jwplayer("player").setup({
-                playlist: "https://cdn.jwplayer.com/v2/media/hWF9vG66",
-                autostart: "viewable",
-                advertising: {
-                    client: "vast",
-                    schedule: [
-                      { 
-                        vastxml,
-                        offset: 'pre'
-                      }
-                    ]
-                }
-              });
-            })
+            const vastXml = await pbjs.adServers.dfp.getAdXml({
+              bid,
+              adUnit: 'div-gpt-ad-51545-0',
+              params: {
+                iu: '/41758329/localcache',
+                url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp",
+              }                
+            });
+
+            jwplayer("player").setup({
+              playlist: "https://cdn.jwplayer.com/v2/media/hWF9vG66",
+              autostart: "viewable",
+              advertising: {
+                  client: "vast",
+                  schedule: [
+                    { 
+                      vastxml: vastXml,
+                      offset: 'pre'
+                    }
+                  ]
+              }
+            });
         }
       });
     });

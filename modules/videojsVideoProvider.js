@@ -207,11 +207,23 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
     // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
     try {
-      if (!adTagUrl && options.adXml) {
-        player.ima.controller.settings.adsResponse = options.adXml;
-      } else {
-        player.ima.changeAdTag(adTagUrl);
-      }
+      player.ima.changeAdTag(adTagUrl);
+      player.ima.requestAds();
+    } catch (e) {
+      /*
+      Handling is not required; ad errors are emitted automatically by video.js
+       */
+    }
+  }
+
+  function setAdXml(vastXml) {
+    if (!player.ima) {
+      return;
+    }
+
+    // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
+    try {
+      player.ima.controller.settings.adsResponse = vastXml;
       player.ima.requestAds();
     } catch (e) {
       /*
@@ -505,6 +517,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy

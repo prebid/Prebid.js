@@ -23,13 +23,6 @@ const ttlBufferInSeconds = 15;
 
 export const vastsLocalCache = new Map();
 
-export const localCacheStrategy = {
-  BLOB: 'blob',
-  DATA: 'data'
-};
-
-const { BLOB, DATA } = localCacheStrategy;
-
 /**
  * @typedef {object} CacheableUrlBid
  * @property {string} vastUrl A URL which loads some valid VAST XML.
@@ -176,18 +169,20 @@ export function getCacheUrl(id) {
 }
 
 export const storeLocally = (bid) => {
-  const vastValue = getVastXml(bid);
-  const strategy = config.getConfig('cache.strategy') || BLOB;
-  const bidVastUrl = {
-    [DATA]: (xml) => 'data:text/xml;base64,' + btoa(xml),
-    [BLOB]: (xml) => URL.createObjectURL(new Blob([xml], { type: 'text/xml' }))
-  }[strategy](vastValue);
+  const vastXml = getVastXml(bid);
+  const bidVastUrl = URL.createObjectURL(new Blob([vastXml], { type: 'text/xml' }));
 
-  bid.vastUrl = bidVastUrl;
-  bid.videoCacheKey = generateUUID();
+  assignVastUrlAndCacheId(bid, bidVastUrl);
 
   vastsLocalCache.set(bid.videoCacheKey, bidVastUrl);
 };
+
+const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey) => {
+  bid.videoCacheKey = videoCacheKey || generateUUID();
+  if (!bid.vastUrl) {
+    bid.vastUrl = vastUrl;
+  }
+}
 
 export const _internal = {
   store
@@ -209,10 +204,7 @@ export function storeBatch(batch) {
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
         } else {
-          bidResponse.videoCacheKey = cacheId.uuid;
-          if (!bidResponse.vastUrl) {
-            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
-          }
+          assignVastUrlAndCacheId(bidResponse, getCacheUrl(bidResponse.videoCacheKey), cacheId.uuid);
           addBidToAuction(auctionInstance, bidResponse);
           afterBidAdded();
         }

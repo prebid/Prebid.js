@@ -84,11 +84,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  function renderBid(divId, bid, options = {}) {
-    const adUrl = bid.vastUrl;
-    options.adXml = bid.vastXml;
-    options.winner = bid.bidder;
-    loadAdTag(adUrl, divId, options);
+  function renderBid(divId, vastXml, options = {}) {
+    loadAd(vastXml, divId, options);
   }
 
   function getOrtbVideo(divId) {
@@ -204,36 +201,38 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return mergeDeep({}, globalVideoConfig.adServer, globalProviderConfig.adServer, adUnitVideoConfig.adServer);
   }
 
-  function renderWinningBid(adUnit) {
+  async function renderWinningBid(adUnit) {
     const adUnitCode = adUnit.code;
-    const options = { adUnitCode };
 
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
+
     const adServerConfig = getAdServerConfig(videoConfig);
-    if (adServerConfig) {
-      gamSubmodule.getVast(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params)
-        .then((vastXml) => loadAdTag(null, divId, {...options, adXml: vastXml}));
+    const winningBid = getWinningBid(adUnitCode);
+    const vastUrl = !adServerConfig ? winningBid?.vastUrl : gamSubmodule.getAdTagUrl(
+      adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params, winningBid
+    );
+
+    if (!vastUrl) {
+      logError('Unable to determine vastUrl');
       return;
     }
 
-    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
-    if (!highestCpmBids.length) {
-      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, options));
-      return;
-    }
-
-    const highestBid = highestCpmBids.shift();
-    if (!highestBid) {
-      return;
-    }
-
-    renderBid(divId, highestBid, options);
+    const vastXml = await pbGlobal.getVast(vastUrl, winningBid.videoCacheKey);
+    loadAd(vastXml, divId);
   }
 
-  // options: adXml, winner, adUnitCode,
-  function loadAdTag(adTagUrl, divId, options) {
-    adQueueCoordinator.queueAd(adTagUrl, divId, options);
+  function getWinningBid(adUnitCode) {
+    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
+    if (!highestCpmBids.length) {
+      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, {adUnitCode}));
+      return;
+    }
+    return highestCpmBids.shift();
+  }
+
+  function loadAd(adXml, divId, options) {
+    adQueueCoordinator.queueAd(adXml, divId, options);
   }
 
   function triggerVideoBidEvent(eventName, adEventPayload) {

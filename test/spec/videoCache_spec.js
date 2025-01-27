@@ -413,24 +413,7 @@ describe('The video cache', function () {
       expect(bid.vastUrl.startsWith('blob:http://')).to.be.true;
       expect(bid.videoCacheKey).to.not.be.empty;
     });
-
-    it('should store bid vast locally with data when strategy set', () => {
-      config.setConfig({
-        cache: {
-          strategy: 'data'
-        }
-      });
-
-      const bid = {
-        vastXml: `<VAST version="3.0"></VAST>`
-      };
-
-      storeLocally(bid);
-
-      expect(bid.vastUrl.startsWith('data:')).to.be.true;
-      expect(bid.videoCacheKey).to.not.be.empty;
-    });
-  })
+  });
 });
 
 describe('The getCache function', function () {

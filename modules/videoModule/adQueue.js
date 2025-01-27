@@ -9,13 +9,13 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
     videoCore.onEvents([SETUP_COMPLETE], onSetupComplete, divId);
   }
 
-  function queueAd(adTagUrl, divId, options) {
+  function queueAd(adXml, divId, options) {
     const queue = storage[divId];
     if (queue) {
-      queue.push({adTagUrl, options});
-      triggerEvent(AUCTION_AD_LOAD_QUEUED, adTagUrl, options);
+      queue.push({adXml, options});
+      triggerEvent(AUCTION_AD_LOAD_QUEUED, adXml, options);
     } else {
-      loadAd(divId, adTagUrl, options);
+      loadAd(divId, adXml, options);
     }
   }
 
@@ -48,16 +48,16 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
 
     const queuedAd = adQueue.shift();
     videoCore.onEvents([AD_BREAK_END], onAdBreakEnd, divId);
-    loadAd(divId, queuedAd.adTagUrl, queuedAd.options);
+    loadAd(divId, queuedAd.adXml, queuedAd.options);
   }
 
-  function loadAd(divId, adTagUrl, options) {
-    triggerEvent(AUCTION_AD_LOAD_ATTEMPT, adTagUrl, options);
-    videoCore.setAdTagUrl(adTagUrl, divId, options);
+  function loadAd(divId, adXml, options) {
+    triggerEvent(AUCTION_AD_LOAD_ATTEMPT, adXml, options);
+    videoCore.setAdXml(adXml, divId, options);
   }
 
-  function triggerEvent(eventName, adTagUrl, options) {
-    const payload = Object.assign({ adTagUrl }, options);
+  function triggerEvent(eventName, adTagXml, options) {
+    const payload = Object.assign({ adTagXml }, options);
     pbEvents.emit(getExternalVideoEventName(eventName), getExternalVideoEventPayload(eventName, payload));
   }
 }
