@@ -305,7 +305,7 @@ function constructFullUrl(data) {
     '&jsver=' + VERSION +
     '&source=pbjs' +
     '&payload=' + JSON.stringify(report) +
-    '&uh=' + iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints +
+    '&uh=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints) +
     (cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '') +
     (cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '') +
     (cmpData.allowGDPR && cmpData.gdprString
