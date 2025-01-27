@@ -49,6 +49,7 @@ const encoderCH = {
 };
 const INVALID_ID = 'INVALID_ID';
 const SUPPORTED_TYPES = ['html5', 'cookie']
+export let firstPartyData;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
@@ -228,7 +229,7 @@ export const intentIqIdSubmodule = {
 
     // Get consent information with priority for user-provided data
     const cmpData = getCmpData(configParams);
-    let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+    firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
 
     const firePartnerCallback = () => {

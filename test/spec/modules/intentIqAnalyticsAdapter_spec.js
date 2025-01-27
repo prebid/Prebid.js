@@ -191,6 +191,10 @@ describe('IntentIQ tests all', function () {
     expect(request.url).to.contain(`&gpp=${encodeURIComponent(cmpData.gppString)}`);
     expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(cmpData.gdprString)}`);
     expect(request.url).to.contain(`&gdpr=1`);
+
+    delete USERID_CONFIG[0].params.providedGDPR;
+    delete USERID_CONFIG[0].params.providedGPP;
+    delete USERID_CONFIG[0].params.providedUSP;
   });
 
   it('should not send request if manualWinReportEnabled is true', function () {

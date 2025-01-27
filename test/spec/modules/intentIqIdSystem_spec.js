@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { decryptData, handleClientHints, readData } from '../../../modules/intentIqIdSystem';
+import { decryptData, handleClientHints, readData, firstPartyData as moduleFPD } from '../../../modules/intentIqIdSystem';
 import {getCmpData} from '../../../libraries/intentIqUtils/getCmpData.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
@@ -393,31 +393,36 @@ describe('IntentIQ tests', function () {
       gdprDataHandlerStub.restore();
     });
 
-    it('should save cmpData parameters in firstPartyData, parameters used in request if uspData, gppData, gdprData exists', function () {
+    it('should save cmpData parameters in LS data and used it request if uspData, gppData, gdprData exists', function () {
       mockConsentHandlers(uspData, gppData, gdprData);
 
       let callBackSpy = sinon.spy();
       let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+      const data = {eids: {key1: 'value1', key2: 'value2'}}
 
       submoduleCallback(callBackSpy);
       let request = server.requests[0];
       request.respond(
         200,
         responseHeader,
-        JSON.stringify({ isOptedOut: false })
+        JSON.stringify({ ...data, isOptedOut: false })
       );
 
       expect(request.url).to.contain(`&gpp=${encodeURIComponent(gppData.gppString)}`);
       expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(uspData)}`);
       expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
 
-      const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-      expect(firstPartyData.uspString).to.equal(uspData);
-      expect(firstPartyData.gppString).to.equal(gppData.gppString);
-      expect(firstPartyData.gdprString).to.equal(gdprData.consentString);
+      const lsFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+      expect(lsFirstPartyData.uspString).to.equal(uspData);
+      expect(lsFirstPartyData.gppString).to.equal(gppData.gppString);
+      expect(lsFirstPartyData.gdprString).to.equal(gdprData.consentString);
+
+      expect(moduleFPD.uspString).to.equal(uspData);
+      expect(moduleFPD.gppString).to.equal(gppData.gppString);
+      expect(moduleFPD.gdprString).to.equal(gdprData.consentString);
     });
 
-    it('should clear localStorage, update runtimeEids and call callback with empty data if isOptedOut is true in response', function () {
+    it('should clear localStorage, update runtimeEids and trigger callback with empty data if isOptedOut is true in response', function () {
       // Save some data to localStorage for FIRST_PARTY_DATA_KEY и CLIENT_HINTS_KEY
       const FIRST_PARTY_DATA_KEY = FIRST_PARTY_KEY + '_' + partner;
       localStorage.setItem(FIRST_PARTY_DATA_KEY, JSON.stringify({terminationCause: 35, some_key: 'someValue'}));
@@ -443,20 +448,20 @@ describe('IntentIQ tests', function () {
       expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(uspData)}`);
       expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
 
-      const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+      const lsFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
 
       // Ensure that keys are removed if isOptedOut is true
       expect(localStorage.getItem(FIRST_PARTY_DATA_KEY)).to.be.null;
       expect(localStorage.getItem(CLIENT_HINTS_KEY)).to.be.null;
 
-      expect(firstPartyData.isOptedOut).to.equal(true);
+      expect(lsFirstPartyData.isOptedOut).to.equal(true);
       expect(callBackSpy.calledOnce).to.be.true;
       // Get the parameter with which the callback was called
       const callbackArgument = callBackSpy.args[0][0]; // The first argument from the callback call (runtimeEids)
       expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
     });
 
-    it('Should use parameters provided by parner, in request and save to LS', function() {
+    it('Should use parameters provided by parner in request and save to LS', function() {
       mockConsentHandlers(uspData, gppData, gdprData);
       const partnerProvidedParams = {providedGDPR: 'provided-GDPR', providedGPP: 'provided-GPP', providedUSP: 'provided-USP'};
       defaultConfigParams.params = {...defaultConfigParams.params, ...partnerProvidedParams};
@@ -471,14 +476,14 @@ describe('IntentIQ tests', function () {
       expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(partnerProvidedParams.providedGDPR)}`);
       expect(request.url).to.contain(`&gdpr=${encodeURIComponent('1')}`);
 
-      const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+      const lsFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
 
-      expect(firstPartyData.uspString).to.equal(partnerProvidedParams.providedUSP);
-      expect(firstPartyData.gppString).to.equal(partnerProvidedParams.providedGPP);
-      expect(firstPartyData.gdprString).to.equal(partnerProvidedParams.providedGDPR);
+      expect(lsFirstPartyData.uspString).to.equal(partnerProvidedParams.providedUSP);
+      expect(lsFirstPartyData.gppString).to.equal(partnerProvidedParams.providedGPP);
+      expect(lsFirstPartyData.gdprString).to.equal(partnerProvidedParams.providedGDPR);
     });
 
-    it('should save undefined in localStorage and send undefined in request if allowGDPR, allowGPP, allowUSP are false', function () {
+    it('should save "undefined" in localStorage and send it in request if allowGDPR, allowGPP, allowUSP are false', function () {
       const partnerProvidedParams = {allowGDPR: false, allowGPP: false, allowUSP: false}
       defaultConfigParams.params = {...defaultConfigParams.params, ...partnerProvidedParams};
 
@@ -502,12 +507,12 @@ describe('IntentIQ tests', function () {
       expect(request.url).to.contain(`&gdpr=${encodeURIComponent('0')}`);
 
       // Mock the firstPartyData from localStorage
-      const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+      const lsFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
 
       // Ensure that the values are set to undefined
-      expect(firstPartyData.uspString).to.equal('undefined');
-      expect(firstPartyData.gppString).to.equal('undefined');
-      expect(firstPartyData.gdprString).to.equal('undefined');
+      expect(lsFirstPartyData.uspString).to.equal('undefined');
+      expect(lsFirstPartyData.gppString).to.equal('undefined');
+      expect(lsFirstPartyData.gdprString).to.equal('undefined');
     });
   });
 
