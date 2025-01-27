@@ -3,13 +3,13 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'algorix';
-const ADAGIO_GVLID = 1176;
+const ALGORIX_GVLID = 1176;
 
 let ENDPOINT = 'https://';
 let region = '';
 let url = null;
 
-const DEFAULT_BID_TTL = 1000;
+const DEFAULT_BID_TTL = 5000;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const REGION = ['apac', 'use', 'euc']
@@ -28,7 +28,7 @@ const converter = ortbConverter({
 });
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: ADAGIO_GVLID,
+  gvlid: ALGORIX_GVLID,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
