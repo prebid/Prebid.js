@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +59,7 @@ jobs:
           BUCKET: ${{ secrets.BUCKET }}
         run: |
           version="$(cat version.txt)"
+          cat /etc/os-release
           echo "Zainstalowana wersja AWS CLI: $(aws --version)"
           mkdir "${version}"
           cp prebid.js "${version}"/
