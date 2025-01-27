@@ -5,7 +5,6 @@ import {
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
