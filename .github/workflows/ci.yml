@@ -64,4 +64,5 @@ jobs:
           release="${version}_$(date +"%Y%m%d%H%M%S")"
           echo "Uploading Prebid.js ver:${version} to OCDN"
           echo -e "\e[32mRelease: ${release}\e[0m"
+          export AWS_REQUEST_CHECKSUM_CALCULATION=when_required
           aws s3 sync "${version}" s3://${BUCKET}/prebid/prod/${release}/ --region ocdn --endpoint "https://ocdn.eu"
