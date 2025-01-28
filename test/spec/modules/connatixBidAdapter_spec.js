@@ -7,10 +7,10 @@ import {
   getBidFloor as connatixGetBidFloor,
   _getMinSize as connatixGetMinSize,
   _getViewability as connatixGetViewability,
+  hasQueryParams as connatixHasQueryParams,
   _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
   readFromAllStorages as connatixReadFromAllStorages,
   saveOnAllStorages as connatixSaveOnAllStorages,
-  urlHasQueryParams as connatixUrlHasQueryParams,
   spec,
   storage
 } from '../../../modules/connatixBidAdapter.js';
@@ -1051,28 +1051,28 @@ describe('connatixBidAdapter', function () {
       expect(storage.setDataInLocalStorage.notCalled).to.be.true;
     });
   });
-  describe('connatixUrlHasQueryParams', () => {
+  describe('connatixHasQueryParams', () => {
     it('Should return false if there is no query param in the url', () => {
       const url = 'http://example.com'
-      const result = connatixUrlHasQueryParams(url);
+      const result = connatixHasQueryParams(url);
       expect(result).to.equal(false);
     });
 
     it('Should return true if there is one query param in the url', () => {
       const url = 'http://example.com?query1=value1'
-      const result = connatixUrlHasQueryParams(url);
+      const result = connatixHasQueryParams(url);
       expect(result).to.equal(true);
     });
 
     it('Should return true if there is multiple query params in the url', () => {
       const url = 'http://example.com?query1=value1&query2=value2'
-      const result = connatixUrlHasQueryParams(url);
+      const result = connatixHasQueryParams(url);
       expect(result).to.equal(true);
     });
 
     it('Should return false if the url is invalid', () => {
       const url = 'example'
-      const result = connatixUrlHasQueryParams(url);
+      const result = connatixHasQueryParams(url);
       expect(result).to.equal(false);
     });
   });

@@ -188,7 +188,7 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
-export function urlHasQueryParams(url) {
+export function hasQueryParams(url) {
   try {
     const urlObject = new URL(url);
     const searchParams = new URLSearchParams(urlObject.search);
@@ -355,17 +355,16 @@ export const spec = {
         return;
       }
 
-      const messageType = event.data.cnx.message;
+      const { message, data } = event.data.cnx;
 
-      if (messageType === ALL_PROVIDERS_RESOLVED_EVENT) {
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
         this.removeEventListener('message', handler);
         event.stopImmediatePropagation();
       }
 
-      if (messageType === ALL_PROVIDERS_RESOLVED_EVENT || messageType === AGGREGATED_IDENTITY_PROVIDERS_RESOLVED_EVENT) {
-        const response = event.data.cnx;
-        if (response.data) {
-          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === AGGREGATED_IDENTITY_PROVIDERS_RESOLVED_EVENT) {
+        if (data) {
+          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
         }
       }
     }, true)
@@ -373,11 +372,17 @@ export const spec = {
     const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
 
-    const url = queryParams
-      ? urlHasQueryParams(syncUrl)
-        ? `${syncUrl}&${queryParams}`
-        : `${syncUrl}?${queryParams}`
-      : syncUrl;
+    let url;
+    if (queryParams) {
+      if (hasQueryParams(syncUrl)) {
+        url = `${syncUrl}&${queryParams}`;
+      } else {
+        url = `${syncUrl}?${queryParams}`;
+      }
+    } else {
+      url = syncUrl;
+    }
+
     return [{
       type: 'iframe',
       url
