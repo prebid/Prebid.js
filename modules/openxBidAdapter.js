@@ -80,13 +80,16 @@ const converter = ortbConverter({
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
-    let mediaType = BANNER; // default media type
-    if (bid.vastXml || bid.vastUrl || (bid.adm && bid.adm.startsWith('<VAST'))) {
-      mediaType = VIDEO;
-    } else if (bid.adm && bid.adm.startsWith('{') && bid.adm.includes('"assets"')) {
-      mediaType = NATIVE;
+    if (!context.mediaType) {
+      let mediaType = BANNER; // default media type
+      if (bid.vastXml || bid.vastUrl || (bid.adm && bid.adm.startsWith('<VAST'))) {
+        mediaType = VIDEO;
+      } else if (bid.adm && bid.adm.startsWith('{') && bid.adm.includes('"assets"')) {
+        mediaType = NATIVE;
+      }
+      bid.mediaType = mediaType;
+      bid.mtype = Object.keys(ORTB_MTYPES).find(key => ORTB_MTYPES[key] === mediaType);
     }
-    bid.mtype = Object.keys(ORTB_MTYPES).find(key => ORTB_MTYPES[key] === mediaType);
 
     const bidResponse = buildBidResponse(bid, context);
     if (bid.ext) {
