@@ -1530,7 +1530,7 @@ describe('OpenxRtbAdapter', function () {
                 h: 480,
                 crid: 'test-creative-id',
                 dealid: 'test-deal-id',
-                adm: 'test-ad-markup',
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
               }]
             }],
             cur: 'AUS'
@@ -1619,6 +1619,59 @@ describe('OpenxRtbAdapter', function () {
               url: 'http://example.com/impression'
             }]
           });
+        });
+      });
+
+      context('when banner + native request and the response is a banner', function() {
+        beforeEach(function () {
+          const nativeOrtbRequest = {
+            ver: '1.2',
+            assets: [{
+              id: 1,
+              required: 1,
+              title: {
+                len: 80
+              }
+            }]
+          };
+          bidRequestConfigs = [{
+            bidder: 'openx',
+            params: {
+              unit: '12345678',
+              delDomain: 'test-del-domain'
+            },
+            adUnitCode: 'adunit-code',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [300, 600]]
+              },
+              native: {
+                ...nativeOrtbRequest
+              },
+            },
+            nativeOrtbRequest,
+            bidId: 'test-bid-id',
+            bidderRequestId: 'test-bidder-request-id',
+            auctionId: 'test-auction-id'
+          }];
+
+          bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
+
+          bidResponse = {
+            seatbid: [{
+              bid: [{
+                impid: 'test-bid-id',
+                price: 2,
+                adm: '<iframe src="https://test.url"></iframe>',
+              }]
+            }],
+            cur: 'AUS'
+          };
+        });
+
+        it('should return banner mediaType', function () {
+          bid = spec.interpretResponse({body: bidResponse}, bidRequest).bids[0];
+          expect(bid.mediaType).to.equal(BANNER);
         });
       });
     }
