@@ -1,6 +1,13 @@
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
-import {prefixLog, deepAccess, mergeDeep} from '../src/utils.js';
+import {
+  deepAccess,
+  deepSetValue,
+  formatQS,
+  mergeDeep,
+  prefixLog,
+} from '../src/utils.js';
 
 const MODULE_NAME = '51Degrees';
 export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
@@ -48,17 +55,49 @@ const ORTB_DEVICE_TYPE_MAP = new Map([
  */
 export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // Resource key
-  const resourceKey = deepAccess(moduleConfig, 'params.resourceKey');
+  let resourceKey = deepAccess(moduleConfig, 'params.resourceKey');
   // On-premise JS URL
-  const onPremiseJSUrl = deepAccess(moduleConfig, 'params.onPremiseJSUrl');
+  let onPremiseJSUrl = deepAccess(moduleConfig, 'params.onPremiseJSUrl');
 
+  // Trim the values
+  if (typeof resourceKey === 'string') {
+    resourceKey = resourceKey.trim();
+  }
+  if (typeof onPremiseJSUrl === 'string') {
+    onPremiseJSUrl = onPremiseJSUrl.trim();
+  }
+
+  // If this module is configured via a 3rd party wrapper, both form inputs
+  // might be mandatory. To handle this, 0 can be used as a value to skip
+  // the parameter.
+  if (typeof resourceKey === 'string' && resourceKey.trim() === '0') {
+    resourceKey = undefined;
+  }
+  if (typeof onPremiseJSUrl === 'string' && onPremiseJSUrl.trim() === '0') {
+    onPremiseJSUrl = undefined;
+  }
+
+  // Verify that onPremiseJSUrl is a valid URL: either a full URL, relative
+  // path (/path/to/file.js), or a protocol-relative URL (//example.com/path/to/file.js)
+  if (typeof onPremiseJSUrl === 'string' && onPremiseJSUrl.length && !(
+    onPremiseJSUrl.startsWith('https://') ||
+    onPremiseJSUrl.startsWith('http://') ||
+    onPremiseJSUrl.startsWith('/'))
+  ) {
+    throw new Error(LOG_PREFIX + ' Invalid URL format for onPremiseJSUrl in moduleConfig');
+  }
+
+  // Verify that one of the parameters is provided,
+  // but not both at the same time
   if (!resourceKey && !onPremiseJSUrl) {
     throw new Error(LOG_PREFIX + ' Missing parameter resourceKey or onPremiseJSUrl in moduleConfig');
   } else if (resourceKey && onPremiseJSUrl) {
     throw new Error(LOG_PREFIX + ' Only one of resourceKey or onPremiseJSUrl should be provided in moduleConfig');
   }
+
+  // Verify that the resource key is not the one provided as an example
   if (resourceKey === '<YOUR_RESOURCE_KEY>') {
-    throw new Error(LOG_PREFIX + ' replace <YOUR_RESOURCE_KEY> in configuration with a resource key obtained from https://configure.51degrees.com/tWrhNfY6');
+    throw new Error(LOG_PREFIX + ' replace <YOUR_RESOURCE_KEY> in configuration with a resource key obtained from https://configure.51degrees.com/HNZ75HT1');
   }
 
   return {resourceKey, onPremiseJSUrl};
@@ -69,14 +108,41 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
  * @param {Object} pathData API path data
  * @param {string} [pathData.resourceKey] Resource key
  * @param {string} [pathData.onPremiseJSUrl] On-premise JS URL
+ * @param {Object<string, any>} [pathData.hev] High entropy values
+ * @param {Window} [win] Window object (mainly for testing)
  * @returns {string} 51Degrees JS URL
  */
-export const get51DegreesJSURL = (pathData) => {
-  if (pathData.onPremiseJSUrl) {
-    return pathData.onPremiseJSUrl;
-  }
-  return `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`;
+export const get51DegreesJSURL = (pathData, win) => {
+  const _window = win || window;
+  const baseURL = pathData.onPremiseJSUrl || `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`;
+
+  const queryPrefix = baseURL.includes('?') ? '&' : '?';
+  const qs = {};
+
+  deepSetNotEmptyValue(
+    qs,
+    '51D_GetHighEntropyValues',
+    pathData.hev && Object.keys(pathData.hev).length ? btoa(JSON.stringify(pathData.hev)) : null,
+  );
+  deepSetNotEmptyValue(qs, '51D_ScreenPixelsHeight', _window?.screen?.height);
+  deepSetNotEmptyValue(qs, '51D_ScreenPixelsWidth', _window?.screen?.width);
+  deepSetNotEmptyValue(qs, '51D_PixelRatio', _window?.devicePixelRatio);
+
+  const _qs = formatQS(qs);
+  const _qsString = _qs ? `${queryPrefix}${_qs}` : '';
+
+  return `${baseURL}${_qsString}`;
 }
+
+/**
+ * Retrieves high entropy values from `navigator.userAgentData` if available
+ *
+ * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
+ * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
+ */
+export const getHighEntropyValues = async (hints) => {
+  return navigator?.userAgentData?.getHighEntropyValues?.(hints);
+};
 
 /**
  * Check if meta[http-equiv="Delegate-CH"] tag is present in the document head and points to 51Degrees cloud
@@ -112,33 +178,57 @@ export const is51DegreesMetaPresent = () => {
  * @param {string} key The key to set
  * @param {any} value The value to set
  */
-export const setOrtb2KeyIfNotEmpty = (obj, key, value) => {
+export const deepSetNotEmptyValue = (obj, key, value) => {
   if (!key) {
     throw new Error(LOG_PREFIX + ' Key is required');
   }
 
   if (value) {
-    obj[key] = value;
+    deepSetValue(obj, key, value);
   }
 }
 
 /**
+ * Converts all 51Degrees data to ORTB2 format
+ *
+ * @param {Object} data51 Response from 51Degrees API
+ * @param {Object} [data51.device] Device data
+ *
+ * @returns {Object} Enriched ORTB2 object
+ */
+export const convert51DegreesDataToOrtb2 = (data51) => {
+  let ortb2Data = {};
+
+  if (!data51) {
+    return ortb2Data;
+  }
+
+  ortb2Data = convert51DegreesDeviceToOrtb2(data51.device);
+
+  // placeholder for the next 51Degrees RTD submodule update
+
+  return ortb2Data;
+};
+
+/**
  * Converts 51Degrees device data to ORTB2 format
  *
- * @param {Object} device
+ * @param {Object} device 51Degrees device object
  * @param {string} [device.deviceid] Device ID (unique 51Degrees identifier)
- * @param {string} [device.devicetype]
- * @param {string} [device.hardwarevendor]
- * @param {string} [device.hardwaremodel]
- * @param {string[]} [device.hardwarename]
- * @param {string} [device.platformname]
- * @param {string} [device.platformversion]
- * @param {number} [device.screenpixelsheight]
- * @param {number} [device.screenpixelswidth]
- * @param {number} [device.pixelratio]
- * @param {number} [device.screeninchesheight]
+ * @param {string} [device.devicetype] Device type
+ * @param {string} [device.hardwarevendor] Hardware vendor
+ * @param {string} [device.hardwaremodel] Hardware model
+ * @param {string[]} [device.hardwarename] Hardware name
+ * @param {string} [device.platformname] Platform name
+ * @param {string} [device.platformversion] Platform version
+ * @param {number} [device.screenpixelsheight] Screen height in pixels
+ * @param {number} [device.screenpixelswidth] Screen width in pixels
+ * @param {number} [device.screenpixelsphysicalheight] Screen physical height in pixels
+ * @param {number} [device.screenpixelsphysicalwidth] Screen physical width in pixels
+ * @param {number} [device.pixelratio] Pixel ratio
+ * @param {number} [device.screeninchesheight] Screen height in inches
  *
- * @returns {Object}
+ * @returns {Object} Enriched ORTB2 object
  */
 export const convert51DegreesDeviceToOrtb2 = (device) => {
   const ortb2Device = {};
@@ -154,27 +244,26 @@ export const convert51DegreesDeviceToOrtb2 = (device) => {
         : null
     );
 
+  const devicePhysicalPPI = device.screenpixelsphysicalheight && device.screeninchesheight
+    ? Math.round(device.screenpixelsphysicalheight / device.screeninchesheight)
+    : null;
+
   const devicePPI = device.screenpixelsheight && device.screeninchesheight
     ? Math.round(device.screenpixelsheight / device.screeninchesheight)
     : null;
 
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype));
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'make', device.hardwarevendor);
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'model', deviceModel);
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'os', device.platformname);
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'osv', device.platformversion);
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'h', device.screenpixelsheight);
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'w', device.screenpixelswidth);
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'pxratio', device.pixelratio);
-  setOrtb2KeyIfNotEmpty(ortb2Device, 'ppi', devicePPI);
+  deepSetNotEmptyValue(ortb2Device, 'devicetype', ORTB_DEVICE_TYPE_MAP.get(device.devicetype));
+  deepSetNotEmptyValue(ortb2Device, 'make', device.hardwarevendor);
+  deepSetNotEmptyValue(ortb2Device, 'model', deviceModel);
+  deepSetNotEmptyValue(ortb2Device, 'os', device.platformname);
+  deepSetNotEmptyValue(ortb2Device, 'osv', device.platformversion);
+  deepSetNotEmptyValue(ortb2Device, 'h', device.screenpixelsphysicalheight || device.screenpixelsheight);
+  deepSetNotEmptyValue(ortb2Device, 'w', device.screenpixelsphysicalwidth || device.screenpixelswidth);
+  deepSetNotEmptyValue(ortb2Device, 'pxratio', device.pixelratio);
+  deepSetNotEmptyValue(ortb2Device, 'ppi', devicePhysicalPPI || devicePPI);
+  deepSetNotEmptyValue(ortb2Device, 'ext.fiftyonedegrees_deviceId', device.deviceid);
 
-  if (device.deviceid) {
-    ortb2Device.ext = {
-      'fiftyonedegrees_deviceId': device.deviceid
-    };
-  }
-
-  return ortb2Device;
+  return {device: ortb2Device};
 }
 
 /**
@@ -190,10 +279,6 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     logMessage('Resource key: ', resourceKey);
     logMessage('On-premise JS URL: ', onPremiseJSUrl);
 
-    // Get 51Degrees JS URL, which is either cloud or on-premise
-    const scriptURL = get51DegreesJSURL(resourceKey ? {resourceKey} : {onPremiseJSUrl});
-    logMessage('URL of the script to be injected: ', scriptURL);
-
     // Check if 51Degrees meta is present (cloud only)
     if (resourceKey) {
       logMessage('Checking if 51Degrees meta is present in the document head');
@@ -202,20 +287,26 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       }
     }
 
-    // Inject 51Degrees script, get device data and merge it into the ORTB2 object
-    loadExternalScript(scriptURL, MODULE_NAME, () => {
-      logMessage('Successfully injected 51Degrees script');
-      const fod = /** @type {Object} */ (window.fod);
-      // Convert and merge device data in the callback
-      fod.complete((data) => {
-        logMessage('51Degrees raw data: ', data);
-        mergeDeep(
-          reqBidsConfigObj.ortb2Fragments.global,
-          {device: convert51DegreesDeviceToOrtb2(data.device)},
-        );
-        logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
-        callback();
-      });
+    getHighEntropyValues(['model', 'platform', 'platformVersion', 'fullVersionList']).then((hev) => {
+      // Get 51Degrees JS URL, which is either cloud or on-premise
+      const scriptURL = get51DegreesJSURL({resourceKey, onPremiseJSUrl, hev});
+      logMessage('URL of the script to be injected: ', scriptURL);
+
+      // Inject 51Degrees script, get device data and merge it into the ORTB2 object
+      loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, () => {
+        logMessage('Successfully injected 51Degrees script');
+        const fod = /** @type {Object} */ (window.fod);
+        // Convert and merge device data in the callback
+        fod.complete((data) => {
+          logMessage('51Degrees raw data: ', data);
+          mergeDeep(
+            reqBidsConfigObj.ortb2Fragments.global,
+            convert51DegreesDataToOrtb2(data),
+          );
+          logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
+          callback();
+        });
+      }, document, {crossOrigin: 'anonymous'});
     });
   } catch (error) {
     // In case of an error, log it and continue

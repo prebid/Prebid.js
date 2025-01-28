@@ -17,36 +17,18 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
+import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
 const ORTB_VIDEO_PARAMS = {
-  'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
-  'minduration': (value) => isInteger(value),
-  'maxduration': (value) => isInteger(value),
-  'protocols': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 10),
-  'w': (value) => isInteger(value),
-  'h': (value) => isInteger(value),
-  'startdelay': (value) => isInteger(value),
+  ...COMMON_ORTB_VIDEO_PARAMS,
   'placement': (value) => isInteger(value) && value >= 1 && value <= 5,
   'plcmt': (value) => isInteger(value) && value >= 1 && value <= 4,
-  'linearity': (value) => [1, 2].indexOf(value) !== -1,
-  'skip': (value) => [0, 1].indexOf(value) !== -1,
-  'skipmin': (value) => isInteger(value),
-  'skipafter': (value) => isInteger(value),
-  'sequence': (value) => isInteger(value),
-  'battr': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 17),
-  'maxextended': (value) => isInteger(value),
-  'minbitrate': (value) => isInteger(value),
-  'maxbitrate': (value) => isInteger(value),
-  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
-  'playbackmethod': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6),
-  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
   'delivery': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 3),
   'pos': (value) => isInteger(value) && value >= 1 && value <= 7,
-  'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 }
 
 const REQUIRED_VIDEO_PARAMS = {
@@ -391,7 +373,7 @@ function _getBidFloors(bid) {
     mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
     size: '*'
   }) : {}
-  const floorModuleValue = parseFloat(floorInfo.floor)
+  const floorModuleValue = parseFloat(floorInfo?.floor)
   if (!isNaN(floorModuleValue)) {
     return floorModuleValue
   }

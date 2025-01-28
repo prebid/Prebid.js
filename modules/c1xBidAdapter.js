@@ -185,7 +185,7 @@ function getBidFloor(bidRequest) {
   }
 
   let floor =
-    floorInfo.floor ||
+    floorInfo?.floor ||
     bidRequest.params.bidfloor ||
     bidRequest.params.floorPriceMap ||
     0;

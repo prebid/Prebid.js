@@ -1,7 +1,7 @@
 import {config} from './config.js';
 import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
-import { EVENTS, S2S } from './constants.js';
+import {EVENTS} from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
 import { default as deepAccess } from 'dlv/index.js';
@@ -488,12 +488,6 @@ export function triggerPixel(url, done, timeout) {
   img.src = url;
 }
 
-export function callBurl({ source, burl }) {
-  if (source === S2S.SRC && burl) {
-    internal.triggerPixel(burl);
-  }
-}
-
 /**
  * Inserts an empty iframe with the specified `html`, primarily used for tracking purposes
  * (though could be for other purposes)
@@ -624,6 +618,10 @@ export function isApnGetTagDefined() {
   if (window.apntag && isFn(window.apntag.getTag)) {
     return true;
   }
+}
+
+export const sortByHighestCpm = (a, b) => {
+  return b.cpm - a.cpm;
 }
 
 /**

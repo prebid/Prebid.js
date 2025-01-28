@@ -10,8 +10,6 @@ import {gppDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import 'src/prebid.js';
-import {MODE_CALLBACK, MODE_MIXED} from '../../../libraries/cmp/cmpClient.js';
-import {GreedyPromise} from '../../../src/utils/promise.js';
 
 let expect = require('chai').expect;
 
@@ -348,8 +346,8 @@ describe('consentManagementGpp', function () {
               sinon.assert.match(gppDataHandler.getConsentData(), gppData2);
             });
           });
-        })
-      })
+        });
+      });
     });
   });
 
@@ -496,56 +494,76 @@ describe('consentManagementGpp', function () {
       });
     });
 
-    describe('already known consentData:', function () {
-      let cmpStub = sinon.stub();
-
-      function mockCMP(pingData) {
-        return function (command, callback) {
+    describe('on CMP sectionChange events', () => {
+      let pingData, triggerCMPEvent;
+      beforeEach(() => {
+        pingData = {
+          applicableSections: [7],
+          gppString: 'xyz',
+        };
+        triggerCMPEvent = null;
+        window.__gpp = sinon.stub().callsFake(function (command, callback) {
           switch (command) {
             case 'addEventListener':
               // eslint-disable-next-line standard/no-callback-literal
-              callback({eventName: 'sectionChange', pingData})
+              triggerCMPEvent = (event, payload = {}) => callback({eventName: event, pingData: {...pingData, ...payload}})
               break;
             case 'ping':
               callback(pingData)
               break;
+            default:
+              throw new Error('unexpected __gpp invocation')
           }
-        }
-      }
-
-      beforeEach(function () {
-        didHookReturn = false;
-        window.__gpp = function () {};
+        });
+        setConsentConfig(goodConfig);
       });
 
-      afterEach(function () {
-        config.resetConfig();
-        cmpStub.restore();
+      afterEach(() => {
         delete window.__gpp;
         resetConsentData();
       });
 
-      it('should bypass CMP and simply use previously stored consentData', function () {
-        let testConsentData = {
-          applicableSections: [7],
-          gppString: 'xyz',
-        };
-
-        cmpStub = sinon.stub(window, '__gpp').callsFake(mockCMP({...testConsentData, signalStatus: 'ready'}));
-        setConsentConfig(goodConfig);
-        requestBidsHook(() => {}, {});
-        cmpStub.reset();
-
+      function startHook() {
+        let hookRan = false;
         requestBidsHook(() => {
-          didHookReturn = true;
+          hookRan = true;
         }, {});
-        let consent = gppDataHandler.getConsentData();
+        return () => new Promise((resolve) => setTimeout(resolve(hookRan), 5));
+      }
 
-        expect(didHookReturn).to.be.true;
-        expect(consent.gppString).to.equal(testConsentData.gppString);
-        expect(consent.applicableSections).to.deep.equal(testConsentData.applicableSections);
-        sinon.assert.notCalled(cmpStub);
+      it('should wait for signalStatus: ready', async () => {
+        const didHookRun = startHook();
+        expect(await didHookRun()).to.be.false;
+        triggerCMPEvent('sectionChange', {signalStatus: 'not ready'});
+        expect(await didHookRun()).to.be.false;
+        triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
+        expect(await didHookRun()).to.be.true;
+        expect(gppDataHandler.getConsentData().gppString).to.eql('xyz');
       });
-    });
+
+      it('should re-use GPP data once ready', async () => {
+        let didHookRun = startHook();
+        triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
+        await didHookRun();
+        window.__gpp.reset();
+        didHookRun = startHook();
+        expect(await didHookRun()).to.be.true;
+        sinon.assert.notCalled(window.__gpp);
+      });
+
+      it('after signalStatus: ready, should wait again for signalStatus: ready', async () => {
+        let didHookRun = startHook();
+        triggerCMPEvent('sectionChange', {signalStatus: 'ready'});
+        await didHookRun();
+        for (let run of ['first', 'second']) {
+          triggerCMPEvent('cmpDisplayStatus', {signalStatus: 'not ready'});
+          didHookRun = startHook();
+          expect(await didHookRun()).to.be.false;
+          triggerCMPEvent('sectionChange', {signalStatus: 'ready', gppString: run});
+          expect(await didHookRun()).to.be.true;
+          expect(gppDataHandler.getConsentData().gppString).to.eql(run);
+        }
+      });
+    })
   });
 });

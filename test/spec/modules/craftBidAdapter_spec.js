@@ -158,7 +158,7 @@ describe('craftAdapter', function () {
         height: 250,
         mediaType: 'banner',
         meta: null,
-        netRevenue: false,
+        netRevenue: true,
         requestId: '0396fae4eb5f47',
         ttl: 360,
         width: 300,

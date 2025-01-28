@@ -26,19 +26,6 @@ export const S2S_VENDORS = {
     },
     maxTimeout: 500
   },
-  'openx': {
-    adapter: 'prebidServer',
-    enabled: true,
-    endpoint: {
-      p1Consent: 'https://prebid.openx.net/openrtb2/auction',
-      noP1Consent: 'https://prebid.openx.net/openrtb2/auction'
-    },
-    syncEndpoint: {
-      p1Consent: 'https://prebid.openx.net/cookie_sync',
-      noP1Consent: 'https://prebid.openx.net/cookie_sync'
-    },
-    maxTimeout: 1000
-  },
   'openwrap': {
     adapter: 'prebidServer',
     enabled: true,

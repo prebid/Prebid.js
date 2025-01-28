@@ -1,9 +1,10 @@
 import { loadExternalScript } from './adloader.js';
 import {
-  logError, logWarn, logMessage, deepAccess
+  logError, logWarn, logMessage
 } from './utils.js';
 import {find} from './polyfill.js';
 import {getGlobal} from './prebidGlobal.js';
+import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
 const pbjsInstance = getGlobal();
 const moduleCode = 'outstream';
@@ -62,7 +63,7 @@ export function Renderer(options) {
     } else {
       // we expect to load a renderer url once only so cache the request to load script
       this.cmd.unshift(runRender) // should render run first ?
-      loadExternalScript(url, moduleCode, this.callback, this.documentContext);
+      loadExternalScript(url, MODULE_TYPE_PREBID, moduleCode, this.callback, this.documentContext);
     }
   }.bind(this); // bind the function to this object to avoid 'this' errors
 }
@@ -143,11 +144,11 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   }
 
   // renderer defined at adUnit level
-  const adUnitRenderer = deepAccess(adUnit, 'renderer');
+  const adUnitRenderer = adUnit?.renderer;
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = deepAccess(adUnit, 'mediaTypes.video.renderer');
+  const mediaTypeRenderer = adUnit?.mediaTypes?.video?.renderer;
   const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
 
   return !!(

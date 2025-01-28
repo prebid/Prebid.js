@@ -3,7 +3,7 @@ import {
   spec,
   BANNER_ENDPOINT,
 } from 'modules/ssp_genieeBidAdapter.js';
-import { config } from '../../../src/config.js';
+import { config } from 'src/config.js';
 
 describe('ssp_genieeBidAdapter', function () {
   const ZONE_ID = 1234567;
@@ -128,9 +128,7 @@ describe('ssp_genieeBidAdapter', function () {
     describe('QueryStringParameters', function () {
       it('should sets the value of the zoneid query to bid.params.zoneId', function () {
         const request = spec.buildRequests([BANNER_BID]);
-        expect(String(request[0].data.zoneid)).to.have.string(
-          `${BANNER_BID.params.zoneId}`
-        );
+        expect(request[0].data.zoneid).to.deep.equal(BANNER_BID.params.zoneId);
       });
 
       it('should sets the values for loc and referer queries when bidderRequest.refererInfo.referer has a value', function () {
@@ -138,12 +136,8 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([BANNER_BID], {
           refererInfo: { legacy: { referer: referer }, ref: referer },
         });
-        expect(String(request[0].data.loc)).to.have.string(
-          `${referer}`
-        );
-        expect(String(request[0].data.referer)).to.have.string(
-          `${referer}`
-        );
+        expect(request[0].data.loc).to.deep.equal(referer);
+        expect(request[0].data.referer).to.deep.equal(referer);
       });
 
       it('should makes the values of loc query and referer query geparams value when bidderRequest.refererInfo.referer is a falsy value', function () {
@@ -156,12 +150,8 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { loc: loc, ref: referer }),
         ]);
-        expect(String(request[0].data.loc)).to.have.string(
-          `${encodeURIComponent(loc)}`
-        );
-        expect(String(request[0].data.referer)).to.have.string(
-          `${encodeURIComponent(referer)}`
-        );
+        expect(request[0].data.loc).to.deep.equal(encodeURIComponent(loc));
+        expect(request[0].data.referer).to.deep.equal(encodeURIComponent(referer));
       });
 
       it('should sets the value of the ct0 query to geparams.ct0', function () {
@@ -172,12 +162,12 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { ct0: ct0 }),
         ]);
-        expect(String(request[0].data.ct0)).to.have.string(`${ct0}`);
+        expect(request[0].data.ct0).to.deep.equal(ct0);
       });
 
       it('should replaces currency with JPY if there is no currency provided', function () {
         const request = spec.buildRequests([BANNER_BID]);
-        expect(String(request[0].data.cur)).to.have.string('JPY');
+        expect(request[0].data.cur).to.deep.equal('JPY');
       });
 
       it('should makes currency the value of params.currency when params.currency exists', function () {
@@ -191,8 +181,8 @@ describe('ssp_genieeBidAdapter', function () {
             params: { ...BANNER_BID.params, currency: 'USD' },
           },
         ]);
-        expect(String(request[0].data.cur)).to.have.string('JPY');
-        expect(String(request[1].data.cur)).to.have.string('USD');
+        expect(request[0].data.cur).to.deep.equal('JPY');
+        expect(request[1].data.cur).to.deep.equal('USD');
       });
 
       it('should makes invalidImpBeacon the value of params.invalidImpBeacon when params.invalidImpBeacon exists (in current version, this parameter is not necessary and ib is always `0`)', function () {
@@ -210,9 +200,9 @@ describe('ssp_genieeBidAdapter', function () {
             params: { ...BANNER_BID.params },
           },
         ]);
-        expect(String(request[0].data.ib)).to.have.string('0');
-        expect(String(request[1].data.ib)).to.have.string('0');
-        expect(String(request[2].data.ib)).to.have.string('0');
+        expect(request[0].data.ib).to.deep.equal(0);
+        expect(request[1].data.ib).to.deep.equal(0);
+        expect(request[2].data.ib).to.deep.equal(0);
       });
 
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
@@ -227,7 +217,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { lat: 1 }),
         ]);
-        expect(String(request[0].data.adtk)).to.have.string('0');
+        expect(request[0].data.adtk).to.deep.equal('0');
       });
 
       it('should sets the value of the adtk query to 1 when geparams.lat is falsy value', function () {
@@ -237,7 +227,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { lat: 0 }),
         ]);
-        expect(String(request[0].data.adtk)).to.have.string('1');
+        expect(request[0].data.adtk).to.deep.equal('1');
       });
 
       it('should sets the value of the idfa query to geparams.idfa', function () {
@@ -248,7 +238,7 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { idfa: idfa }),
         ]);
-        expect(String(request[0].data.idfa)).to.have.string(`${idfa}`);
+        expect(request[0].data.idfa).to.deep.equal(idfa);
       });
 
       it('should set the sw query to screen.height and the sh query to screen.width when screen.width is greater than screen.height', function () {
@@ -258,8 +248,8 @@ describe('ssp_genieeBidAdapter', function () {
           return { width: width, height: height };
         });
         const request = spec.buildRequests([BANNER_BID]);
-        expect(String(request[0].data.sw)).to.have.string(`${height}`);
-        expect(String(request[0].data.sh)).to.have.string(`${width}`);
+        expect(request[0].data.sw).to.deep.equal(height);
+        expect(request[0].data.sh).to.deep.equal(width);
         stub.restore();
       });
 
@@ -270,8 +260,8 @@ describe('ssp_genieeBidAdapter', function () {
           return { width: width, height: height };
         });
         const request = spec.buildRequests([BANNER_BID]);
-        expect(String(request[0].data.sw)).to.have.string(`${width}`);
-        expect(String(request[0].data.sh)).to.have.string(`${height}`);
+        expect(request[0].data.sw).to.deep.equal(width);
+        expect(request[0].data.sh).to.deep.equal(height);
         stub.restore();
       });
 
@@ -354,28 +344,18 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([
           getGeparamsDefinedBid(BANNER_BID, { bundle: bundle }),
         ]);
-        expect(String(request[0].data.apid)).to.have.string(`${bundle}`);
+        expect(request[0].data.apid).to.deep.equal(bundle);
       });
 
-      it('should not include the extuid query when it does not contain the imuid cookie', function () {
-        const stub = sinon.stub(document, 'cookie').get(function () {
-          return '';
-        });
+      it('should not include the extuid query when bid.userId.imuid does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('extuid');
-        stub.restore();
       });
 
-      it('should include an extuid query when it contains an imuid cookie', function () {
+      it('should include an extuid query when bid.userId.imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
-        const stub = sinon.stub(document, 'cookie').get(function () {
-          return `_im_uid.3929=${imuid}`;
-        });
-        const request = spec.buildRequests([BANNER_BID]);
-        expect(String(request[0].data.extuid)).to.have.string(
-          `${`im:${imuid}`}`
-        );
-        stub.restore();
+        const request = spec.buildRequests([{...BANNER_BID, userId: {imuid}}]);
+        expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
       });
     });
   });
@@ -415,7 +395,7 @@ describe('ssp_genieeBidAdapter', function () {
       };
       const request = spec.buildRequests([BANNER_BID])[0];
       const result = spec.interpretResponse({ body: response }, request);
-      expect(result[0]).to.have.deep.equal(expectedBanner);
+      expect(result[0]).to.deep.equal(expectedBanner);
     });
   });
 });

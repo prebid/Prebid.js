@@ -3,7 +3,6 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
-  generateUUID,
   getParameterByName,
   isNumber,
   logError,
@@ -13,7 +12,8 @@ import {
   parseGPTSingleSizeArray,
   parseUrl,
   pick,
-  deepEqual
+  deepEqual,
+  generateUUID
 } from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
@@ -30,6 +30,7 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -72,7 +73,7 @@ let _floorsConfig = {};
 /**
  * @summary If a auction is to be delayed by an ongoing fetch we hold it here until it can be resumed
  */
-let _delayedAuctions = [];
+const _delayedAuctions = timeoutQueue();
 
 /**
  * @summary Each auction can have differing floors data depending on execution time or per adunit setup
@@ -270,6 +271,10 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
     }
   }
 
+  if (floorInfo.floorRuleValue === null) {
+    return null;
+  }
+
   if (floorInfo.matchingFloor) {
     return {
       floor: roundUp(floorInfo.matchingFloor, 4),
@@ -436,17 +441,11 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
  * @summary This is the function which will be called to exit our module and continue the auction.
  */
 export function continueAuction(hookConfig) {
-  // only run if hasExited
   if (!hookConfig.hasExited) {
-    // if this current auction is still fetching, remove it from the _delayedAuctions
-    _delayedAuctions = _delayedAuctions.filter(auctionConfig => auctionConfig.timer !== hookConfig.timer);
-
     // We need to know the auctionId at this time. So we will use the passed in one or generate and set it ourselves
     hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || generateUUID();
-
     // now we do what we need to with adUnits and save the data object to be used for getFloor and enforcement calls
     _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits, hookConfig.reqBidsConfigObj.auctionId);
-
     hookConfig.nextFn.apply(hookConfig.context, [hookConfig.reqBidsConfigObj]);
     hookConfig.hasExited = true;
   }
@@ -467,7 +466,7 @@ function isValidRule(key, floor, numFields, delimiter) {
   if (typeof key !== 'string' || key.split(delimiter).length !== numFields) {
     return false;
   }
-  return typeof floor === 'number';
+  return typeof floor === 'number' || floor === null;
 }
 
 function validateRules(floorsData, numFields, delimiter) {
@@ -577,35 +576,21 @@ export const requestBidsHook = timedAuctionHook('priceFloors', function requestB
     reqBidsConfigObj,
     context: this,
     nextFn: fn,
-    haveExited: false,
+    hasExited: false,
     timer: null
   };
 
   // If auction delay > 0 AND we are fetching -> Then wait until it finishes
   if (_floorsConfig.auctionDelay > 0 && fetching) {
-    hookConfig.timer = setTimeout(() => {
+    _delayedAuctions.submit(_floorsConfig.auctionDelay, () => continueAuction(hookConfig), () => {
       logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction`);
       _floorsConfig.fetchStatus = 'timeout';
       continueAuction(hookConfig);
-    }, _floorsConfig.auctionDelay);
-    _delayedAuctions.push(hookConfig);
+    });
   } else {
     continueAuction(hookConfig);
   }
 });
-
-/**
- * @summary If an auction was queued to be delayed (waiting for a fetch) then this function will resume
- * those delayed auctions when delay is hit or success return or fail return
- */
-function resumeDelayedAuctions() {
-  _delayedAuctions.forEach(auctionConfig => {
-    // clear the timeout
-    clearTimeout(auctionConfig.timer);
-    continueAuction(auctionConfig);
-  });
-  _delayedAuctions = [];
-}
 
 /**
  * This function handles the ajax response which comes from the user set URL to fetch floors data from
@@ -631,7 +616,7 @@ export function handleFetchResponse(fetchResponse) {
   }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions();
+  _delayedAuctions.resume();
 }
 
 function handleFetchError(status) {
@@ -640,7 +625,7 @@ function handleFetchError(status) {
   logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions();
+  _delayedAuctions.resume();
 }
 
 /**
@@ -827,7 +812,7 @@ export function setOrtbImpBidFloor(imp, bidRequest, context) {
         currency: context.currency || config.getConfig('currency.adServerCurrency') || 'USD',
         mediaType: context.mediaType || '*',
         size: '*'
-      }));
+      }) || {});
     } catch (e) {
       logWarn('Cannot compute floor for bid', bidRequest);
       return;

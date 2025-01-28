@@ -1,4 +1,5 @@
 import { spec } from '../../../modules/targetVideoBidAdapter.js'
+import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
 
 describe('TargetVideo Bid Adapter', function() {
   const bidder = 'targetVideo';
@@ -236,5 +237,24 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.user.ext.consent).to.equal(gdprConsentString);
     expect(payload.regs.ext.us_privacy).to.equal(uspConsentString);
     expect(payload.regs.ext.gdpr).to.equal(1);
+  });
+
+  it('Test userSync have only one object and it should have a property type=iframe', function () {
+    let userSync = spec.getUserSyncs({ iframeEnabled: true });
+    expect(userSync).to.be.an('array');
+    expect(userSync.length).to.be.equal(1);
+    expect(userSync[0]).to.have.property('type');
+    expect(userSync[0].type).to.be.equal('iframe');
+  });
+
+  it('Test userSync valid sync url for iframe', function () {
+    let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=targetvideo&gdpr=0&gdpr_consent=anyString');
+    expect(userSync.type).to.be.equal('iframe');
+  });
+
+  it('Test userSyncs iframeEnabled=false', function () {
+    let userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    expect(userSyncs).to.have.lengthOf(0);
   });
 });
