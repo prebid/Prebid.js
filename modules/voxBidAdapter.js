@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 import {Renderer} from '../src/Renderer.js';
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {config} from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -12,15 +12,17 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
+const { getConfig } = config;
+
 const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';
 const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const TTL = 60;
 const GVLID = 206;
 
-function buildBidRequests(validBidRequests, bidderRequest) {
+function buildBidRequests(validBidRequests) {
   return _map(validBidRequests, function(bid) {
-    const currency = getCurrencyFromBidderRequest(bidderRequest);
+    const currency = getConfig('currency.adServerCurrency');
     const floorInfo = bid.getFloor ? bid.getFloor({
       currency: currency || 'USD'
     }) : {};
@@ -216,7 +218,7 @@ export const spec = {
       // TODO: is 'page' the right value here?
       url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
-      bidRequests: buildBidRequests(validBidRequests, bidderRequest)
+      bidRequests: buildBidRequests(validBidRequests)
     };
 
     if (payload.cmp) {

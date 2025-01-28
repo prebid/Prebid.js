@@ -1,4 +1,4 @@
-import { logError, logInfo, logWarn, logMessage, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
+import { logError, logInfo, logWarn, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
@@ -85,7 +85,6 @@ function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbids
 
 function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
   const isFilteringForced = getParameterByName('greenbids_force_filtering');
-  const isFilteringDisabled = getParameterByName('greenbids_disable_filtering');
   adUnits.forEach((adUnit) => {
     const matchingAdUnit = findMatchingAdUnit(responseAdUnits, adUnit.code);
     if (matchingAdUnit) {
@@ -94,12 +93,10 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
         keptInAuction: matchingAdUnit.bidders,
         isExploration: matchingAdUnit.isExploration
       });
-      if (matchingAdUnit.isExploration || isFilteringDisabled) {
-        logMessage('Greenbids Rtd: either exploration traffic, or disabled filtering flag detected');
-      } else if (isFilteringForced) {
+      if (isFilteringForced) {
         adUnit.bids = [];
         logInfo('Greenbids Rtd: filtering flag detected, forcing filtering of Rtd module.');
-      } else {
+      } else if (!matchingAdUnit.isExploration) {
         removeFalseBidders(adUnit, matchingAdUnit);
       }
     }

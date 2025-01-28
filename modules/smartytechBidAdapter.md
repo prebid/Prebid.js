@@ -3,7 +3,7 @@
 ```
 Module Name:  SmartyTech Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   info@fusify.io
+Maintainer: info@adpartner.pro
 ```
 
 # Description

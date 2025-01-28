@@ -5,21 +5,17 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
 const BIDDER_CODE = 'retailspot';
-const GVL_ID = 1319;
-
-const DEFAULT_SUBDOMAIN = 'hbapi';
-const PREPROD_SUBDOMAIN = 'hbapi-preprod';
-const HOST = 'retailspotads.com';
-const ENDPOINT = '/';
-const DEV_URL = 'http://localhost:3030/';
+const DEFAULT_SUBDOMAIN = 'ssp';
+const PREPROD_SUBDOMAIN = 'ssp-preprod';
+const HOST = 'retail-spot.io';
+const ENDPOINT = '/prebid';
+const DEV_URL = 'http://localhost:8090/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['rs'], // short code
   /**
@@ -29,7 +25,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const sizes = getSize(bid);
+    const sizes = getSize(getSizeArray(bid));
     const sizeValid = sizes.width > 0 && sizes.height > 0;
 
     return deepAccess(bid, 'params.placement') && sizeValid;
@@ -37,8 +33,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest} bidRequests is an array of AdUnits and bids
-   * @param {BidderRequest} bidderRequest
+   * @param {BidRequests} - bidRequests.bids[] is an array of AdUnits and bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
@@ -101,39 +96,40 @@ export const spec = {
   }
 }
 
-/* Get parsed size from request size */
-function getSize(bid) {
+function getSizeArray(bid) {
   let inputSize = bid.sizes || [];
 
-  if (bid.mediaTypes?.banner) {
+  if (bid.mediaTypes && bid.mediaTypes.banner) {
     inputSize = bid.mediaTypes.banner.sizes || [];
   }
 
-  // Size can be [w, h] or array of sizes : [[w,h]].
-  if (Array.isArray(bid.params?.size)) {
+  // handle size in bid.params in formats: [w, h] and [[w,h]].
+  if (bid.params && Array.isArray(bid.params.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
       inputSize = [inputSize]
     }
   }
 
-  const sizesArray = parseSizesInput(inputSize);
-  const parsed = {};
+  return parseSizesInput(inputSize);
+}
 
-  // Use the first size as the main requested one
+/* Get parsed size from request size */
+function getSize(sizesArray) {
+  const parsed = {};
+  // the main requested size is the first one
   const size = sizesArray[0];
 
-  // size is ready
   if (typeof size !== 'string') {
     return parsed;
   }
 
-  // size is given as string "wwwxhhh" or "www*hhh"
-  const parsedSize = size.includes('*') ? size.split('*') : size.toUpperCase().split('X');
+  const parsedSize = size.toUpperCase().split('X');
   const width = parseInt(parsedSize[0], 10);
   if (width) {
     parsed.width = width;
   }
+
   const height = parseInt(parsedSize[1], 10);
   if (height) {
     parsed.height = height;

@@ -41,21 +41,6 @@ var adUnits = [
         publisherId: 2141020
       }
     }]
-  },
-  {
-    code: 'video-instream',
-    mediaTypes: {
-      video: {
-        context: 'instream',  
-        playerSize: [640, 480]
-      }
-    },
-    bids: [{
-      bidder: 'oms',
-      params: {
-        publisherId: 2141020
-      }
-    }]
   }
 ]
 ```

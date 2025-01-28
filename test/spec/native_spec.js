@@ -22,7 +22,7 @@ import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '..
 import {auctionManager} from '../../src/auctionManager.js';
 import {getRenderingData} from '../../src/adRendering.js';
 import {getCreativeRendererSource} from '../../src/creativeRenderers.js';
-import {deepSetValue} from '../../src/utils.js';
+import {deepClone} from '../../src/utils.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -211,18 +211,6 @@ describe('native.js', function () {
     expect(targeting.hb_native_foo).to.equal(bid.native.foo);
   });
 
-  it('does not include targeting keys if request is ortb', () => {
-    const targeting = getNativeTargeting(bid, deps({
-      adUnitId: bid.adUnitId,
-      nativeParams: {
-        ortb: {
-          assets: [{id: 1, type: '2'}]
-        }
-      }
-    }));
-    expect(Object.keys(targeting)).to.eql([]);
-  });
-
   it('can get targeting from null native keys', () => {
     const targeting = getNativeTargeting({...bid, native: {...bid.native, displayUrl: null}});
     expect(targeting.hb_native_displayurl).to.not.be.ok;
@@ -402,8 +390,7 @@ describe('native.js', function () {
       'returns native data': {
         renderDataHook(next, bidResponse) {
           next.bail({
-            native: getNativeRenderingData(bidResponse, adUnit),
-            rendererVersion: 'native-render-version'
+            native: getNativeRenderingData(bidResponse, adUnit)
           });
         },
         renderSourceHook(next) {
@@ -434,9 +421,8 @@ describe('native.js', function () {
         function checkRenderer(message) {
           if (withRenderer) {
             expect(message.renderer).to.eql('mock-native-renderer')
-            expect(message.rendererVersion).to.eql('native-render-version');
             Object.entries(message).forEach(([key, val]) => {
-              if (!['native', 'adId', 'message', 'assets', 'renderer', 'rendererVersion'].includes(key)) {
+              if (!['native', 'adId', 'message', 'assets', 'renderer'].includes(key)) {
                 expect(message.native[key]).to.eql(val);
               }
             })
@@ -661,14 +647,6 @@ describe('native.js', function () {
       expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
       expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
     });
-    ['img.type', 'title.text', 'data.type'].forEach(prop => {
-      it(`does not choke when the request does not have ${prop}, but the response does`, () => {
-        const request = {ortb: {assets: [{id: 1}]}};
-        const response = {ortb: {assets: [{id: 1}]}};
-        deepSetValue(response, `assets.0.${prop}`, 'value');
-        toLegacyResponse(response, request);
-      })
-    })
   });
 
   describe('setNativeResponseProperties', () => {

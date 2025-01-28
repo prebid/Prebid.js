@@ -1,7 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/voxBidAdapter.js'
-import { setConfig as setCurrencyConfig } from '../../../modules/currency'
-import { addFPDToBidderRequest } from '../../helpers/fpd'
+import {config} from 'src/config.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -248,17 +247,14 @@ describe('VOX Adapter', function() {
       })
 
       it('should request floor price in adserver currency', function () {
-        const configCurrency = 'DKK';
-        setCurrencyConfig({ adServerCurrency: configCurrency });
-        return addFPDToBidderRequest(bidderRequest).then(res => {
-          const request = spec.buildRequests([ getBidWithFloor() ], res)
-          const data = JSON.parse(request.data)
-          data.bidRequests.forEach(bid => {
-            expect(bid.floorInfo.currency).to.equal(configCurrency)
-          })
-          setCurrencyConfig({});
-        });
-      });
+        const configCurrency = 'DKK'
+        config.setConfig({ currency: { adServerCurrency: configCurrency } })
+        const request = spec.buildRequests([ getBidWithFloor() ], bidderRequest)
+        const data = JSON.parse(request.data)
+        data.bidRequests.forEach(bid => {
+          expect(bid.floorInfo.currency).to.equal(configCurrency)
+        })
+      })
 
       function getBidWithFloor(floor) {
         return {

@@ -2,20 +2,12 @@ import { EVENTS } from '../../src/constants.js';
 import {ajax} from '../../src/ajax.js';
 import {logError, logMessage} from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import {config} from '../../src/config.js';
 
 export const _internal = {
   ajax
 };
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
-const LABELS_KEY = 'analyticsLabels';
-
-let labels = {};
-
-config.getConfig(LABELS_KEY, (cfg) => {
-  labels = cfg[LABELS_KEY]
-});
 
 export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
   .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
@@ -98,18 +90,12 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   }
 
   function _callEndpoint({ eventType, args, callback }) {
-    _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels }));
+    _internal.ajax(url, callback, JSON.stringify({ eventType, args }));
   }
 
   function _enqueue({eventType, args}) {
     queue.push(() => {
-      if (Object.keys(labels || []).length > 0) {
-        args = {
-          [LABELS_KEY]: labels,
-          ...args,
-        }
-      }
-      this.track({eventType, labels, args});
+      this.track({eventType, args});
     });
     emptyQueue();
   }

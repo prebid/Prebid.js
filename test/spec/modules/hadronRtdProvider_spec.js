@@ -1,20 +1,13 @@
 import {config} from 'src/config.js';
-import {
-  HADRONID_LOCAL_NAME,
-  RTD_LOCAL_NAME,
-  addRealTimeData,
-  getRealTimeData,
-  hadronSubmodule,
-  storage
-} from 'modules/hadronRtdProvider.js';
+import {HADRONID_LOCAL_NAME, RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, hadronSubmodule, storage} from 'modules/hadronRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
 
-describe('hadronRtdProvider', function () {
+describe('hadronRtdProvider', function() {
   let getDataFromLocalStorageStub;
 
-  beforeEach(function () {
+  beforeEach(function() {
     config.resetConfig();
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
   });
@@ -23,19 +16,19 @@ describe('hadronRtdProvider', function () {
     getDataFromLocalStorageStub.restore();
   });
 
-  describe('hadronSubmodule', function () {
+  describe('hadronSubmodule', function() {
     it('successfully instantiates', function () {
-      expect(hadronSubmodule.init()).to.equal(true);
+		  expect(hadronSubmodule.init()).to.equal(true);
     });
   });
 
-  describe('Add Real-Time Data', function () {
-    it('merges ortb2 data', function () {
+  describe('Add Real-Time Data', function() {
+    it('merges ortb2 data', function() {
       let rtdConfig = {};
 
       const setConfigUserObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1776'
         }]
@@ -43,7 +36,7 @@ describe('hadronRtdProvider', function () {
 
       const setConfigUserObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1914'
         }]
@@ -130,12 +123,12 @@ describe('hadronRtdProvider', function () {
       expect(ortb2Config.site.content.data).to.deep.include.members([setConfigSiteObj1, rtdSiteObj1]);
     });
 
-    it('merges ortb2 data without duplication', function () {
+    it('merges ortb2 data without duplication', function() {
       let rtdConfig = {};
 
       const userObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1776'
         }]
@@ -143,7 +136,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1914'
         }]
@@ -202,12 +195,12 @@ describe('hadronRtdProvider', function () {
       expect(ortb2Config.site.content.data).to.have.lengthOf(1);
     });
 
-    it('merges bidder-specific ortb2 data', function () {
+    it('merges bidder-specific ortb2 data', function() {
       let rtdConfig = {};
 
       const configUserObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1776'
         }]
@@ -215,7 +208,7 @@ describe('hadronRtdProvider', function () {
 
       const configUserObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1914'
         }]
@@ -223,7 +216,7 @@ describe('hadronRtdProvider', function () {
 
       const configUserObj3 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '2003'
         }]
@@ -379,12 +372,12 @@ describe('hadronRtdProvider', function () {
       expect(ortb2Config.site.content.data).to.deep.include.members([configSiteObj2, rtdSiteObj2]);
     });
 
-    it('merges bidder-specific ortb2 data without duplication', function () {
+    it('merges bidder-specific ortb2 data without duplication', function() {
       let rtdConfig = {};
 
       const userObj1 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1776'
         }]
@@ -392,7 +385,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj2 = {
         name: 'www.dataprovider2.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '1914'
         }]
@@ -400,7 +393,7 @@ describe('hadronRtdProvider', function () {
 
       const userObj3 = {
         name: 'www.dataprovider1.com',
-        ext: {segtax: 3},
+        ext: { segtax: 3 },
         segment: [{
           id: '2003'
         }]
@@ -508,10 +501,10 @@ describe('hadronRtdProvider', function () {
       expect(ortb2Config.site.content.data).to.have.lengthOf(2);
     });
 
-    it('allows publisher defined rtd ortb2 logic', function () {
+    it('allows publisher defined rtd ortb2 logic', function() {
       const rtdConfig = {
         params: {
-          handleRtd: function (bidConfig, rtd, rtdConfig, pbConfig) {
+          handleRtd: function(bidConfig, rtd, rtdConfig, pbConfig) {
             if (rtd.ortb2.user.data[0].segment[0].id == '1776') {
               pbConfig.setConfig({ortb2: rtd.ortb2});
             } else {
@@ -525,7 +518,7 @@ describe('hadronRtdProvider', function () {
 
       const rtdUserObj1 = {
         name: 'www.dataprovider.com',
-        ext: {taxonomyname: 'iab_audience_taxonomy'},
+        ext: { taxonomyname: 'iab_audience_taxonomy' },
         segment: [{
           id: '1776'
         }]
@@ -571,10 +564,10 @@ describe('hadronRtdProvider', function () {
       expect(config.getConfig().ortb2).to.deep.equal({});
     });
 
-    it('allows publisher defined adunit logic', function () {
+    it('allows publisher defined adunit logic', function() {
       const rtdConfig = {
         params: {
-          handleRtd: function (bidConfig, rtd, rtdConfig, pbConfig) {
+          handleRtd: function(bidConfig, rtd, rtdConfig, pbConfig) {
             var adUnits = bidConfig.adUnits;
             for (var i = 0; i < adUnits.length; i++) {
               var adUnit = adUnits[i];
@@ -636,8 +629,8 @@ describe('hadronRtdProvider', function () {
     });
   });
 
-  describe('Get Real-Time Data', function () {
-    it('gets rtd from local storage cache', function () {
+  describe('Get Real-Time Data', function() {
+    it('gets rtd from local storage cache', function() {
       const rtdConfig = {
         params: {
           segmentCache: true
@@ -672,12 +665,12 @@ describe('hadronRtdProvider', function () {
       };
 
       getDataFromLocalStorageStub.withArgs(RTD_LOCAL_NAME).returns(JSON.stringify(cachedRtd));
-      getRealTimeData(bidConfig, () => {
-        expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
-      }, rtdConfig, {});
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
     });
 
-    it('gets real-time data via async request', function () {
+    it('gets real-time data via async request', function() {
       const setConfigSiteObj1 = {
         name: 'www.audigent.com',
         ext: {
@@ -743,14 +736,16 @@ describe('hadronRtdProvider', function () {
       };
 
       getDataFromLocalStorageStub.withArgs(HADRONID_LOCAL_NAME).returns('testHadronId1');
-      getRealTimeData(bidConfig, () => {
-        let request = server.requests[0];
-        let postData = JSON.parse(request.requestBody);
-        expect(postData.config).to.have.deep.property('publisherId', 'testPub1');
-        expect(postData.userIds).to.have.deep.property('hadronId', 'testHadronId1');
-        request.respond(200, responseHeader, JSON.stringify(data));
-        expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
-      }, rtdConfig, {});
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+
+      let request = server.requests[0];
+      let postData = JSON.parse(request.requestBody);
+      expect(postData.config).to.have.deep.property('publisherId', 'testPub1');
+      expect(postData.userIds).to.have.deep.property('hadronId', 'testHadronId1');
+
+      request.respond(200, responseHeader, JSON.stringify(data));
+
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
     });
   });
 });

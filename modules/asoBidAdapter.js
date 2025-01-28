@@ -17,8 +17,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   aliases: [
     {code: 'bcmint'},
-    {code: 'bidgency'},
-    {code: 'kuantyx'}
+    {code: 'bidgency'}
   ],
 
   isBidRequestValid: bid => {
@@ -107,7 +106,7 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
 
     imp.tagid = bidRequest.adUnitCode;
-    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
+    imp.secure = Number(window.location.protocol === 'https:');
     return imp;
   },
 

@@ -1,7 +1,6 @@
 import { submodule } from '../src/hook.js';
 import { mergeDeep } from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -29,7 +28,7 @@ function init(config, userConsent) {
     } else {
       scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
     }
-    loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME);
+    loadExternalScript(scriptUrl, SUBMODULE_NAME);
   }
   return true;
 }

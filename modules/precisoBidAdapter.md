@@ -14,9 +14,9 @@ Module that connects to preciso' demand sources
 
 | Name          | Scope    | Description               | Example              |
 | :------------ | :------- | :------------------------ | :------------------- |
-| `region`      | optional (for prebid.js)     | 3 letter country code | "USA"  |
-| `publisherId` | required (for prebid-server) |  partner ID provided by preciso | PreTest_0001 |
-| `traffic`     | optional (for prebid.js)     | Configures the mediaType that should be used. Values can be banner, native | "banner" |
+| `region`  | required (for prebid.js)     | region | "prebid-eu" |
+| `publisherId` | required (for prebid-server) | partner ID | "1901" |
+| `traffic`   | optional (for prebid.js)     | Configures the mediaType that should be used. Values can be banner, native or video | "banner" |
 
 # Test Parameters
 ```
@@ -25,35 +25,7 @@ Module that connects to preciso' demand sources
                 {
                     code: 'placementId_0',
                     mediaTypes: {
-                        native: {
-                            ortb: {
-                                assets: [
-                                   {
-                                        id: 3,
-                                        required: 1,
-                                        img: {
-                                            type: 3,
-                                            w: 300,
-                                            h: 250
-                                        }
-                                    },
-                                {
-                                    id: 1,
-                                    required: 1,
-                                    title: {
-                                        len: 800
-                                    }
-                                },
-                                {
-                                    id: 4,
-                                    required: 0,
-                                    data: {
-                                        type: 1
-                                    }
-                                }
-                            ]
-                        }
-                        }
+                        native: {}
                     },
                     bids: [
                         {
@@ -61,7 +33,7 @@ Module that connects to preciso' demand sources
                             params: {
                                 host: 'prebid',
                                 publisherId: '0',
-                                region: 'USA',
+                                region: 'prebid-eu',
                                 traffic: 'native'
                             }
                         }
@@ -81,8 +53,29 @@ Module that connects to preciso' demand sources
                             params: {
                                 host: 'prebid',
                                 publisherId: '0',
-                                region: 'USA',
+                                region: 'prebid-eu',
                                 traffic: 'banner'
+                            }
+                        }
+                    ]
+                },
+                // Will return test vast xml. All video params are stored under placement in publishers UI
+                {
+                    code: 'placementId_0',
+                    mediaTypes: {
+                        video: {
+                            playerSize: [640, 480],
+                            context: 'instream'
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'preciso',
+                            params: {
+                                host: 'prebid',
+                                publisherId: '0',
+                                region: 'prebid-eu',
+                                traffic: 'video'
                             }
                         }
                     ]

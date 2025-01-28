@@ -10,7 +10,6 @@ import { deepAccess, deepSetValue, logError, mergeDeep, generateUUID } from '../
 import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -141,7 +140,7 @@ function initializeBrandmetrics(scriptId) {
     const file = scriptId + '.js'
     const url = path + file
 
-    loadExternalScript(url, MODULE_TYPE_RTD, MODULE_CODE)
+    loadExternalScript(url, MODULE_CODE)
   }
 }
 

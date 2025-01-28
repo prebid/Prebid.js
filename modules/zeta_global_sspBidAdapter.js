@@ -191,14 +191,6 @@ export const spec = {
       payload.tmax = bidderRequest.timeout;
     }
 
-    if (bidderRequest?.ortb2?.bcat) {
-      payload.bcat = bidderRequest.ortb2.bcat;
-    }
-
-    if (bidderRequest?.ortb2?.badv) {
-      payload.badv = bidderRequest.ortb2.badv;
-    }
-
     provideEids(validBidRequests[0], payload);
     provideSegments(bidderRequest, payload);
     const url = params.sid ? ENDPOINT_URL.concat('?sid=', params.sid) : ENDPOINT_URL;

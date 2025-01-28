@@ -76,25 +76,21 @@ export const appendGptSlots = adUnits => {
     return acc;
   }, {});
 
-  const adUnitPaths = {};
-
   window.googletag.pubads().getSlots().forEach(slot => {
     const matchingAdUnitCode = find(Object.keys(adUnitMap), customGptSlotMatching
       ? customGptSlotMatching(slot)
       : isAdUnitCodeMatchingSlot(slot));
 
     if (matchingAdUnitCode) {
-      const path = adUnitPaths[matchingAdUnitCode] = slot.getAdUnitPath();
       const adserver = {
         name: 'gam',
-        adslot: sanitizeSlotPath(path)
+        adslot: sanitizeSlotPath(slot.getAdUnitPath())
       };
       adUnitMap[matchingAdUnitCode].forEach((adUnit) => {
         deepSetValue(adUnit, 'ortb2Imp.ext.data.adserver', Object.assign({}, adUnit.ortb2Imp?.ext?.data?.adserver, adserver));
       });
     }
   });
-  return adUnitPaths;
 };
 
 const sanitizeSlotPath = (path) => {
@@ -107,7 +103,7 @@ const sanitizeSlotPath = (path) => {
   return path;
 }
 
-const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
+const defaultPreAuction = (adUnit, adServerAdSlot) => {
   const context = adUnit.ortb2Imp.ext.data;
 
   // use pbadslot if supplied
@@ -121,7 +117,7 @@ const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
   }
 
   // find all GPT slots with this name
-  var gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adUnitPath);
+  var gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adServerAdSlot);
 
   if (gptSlots.length === 0) {
     return; // should never happen
@@ -171,7 +167,7 @@ function warnDeprecation(adUnit) {
 }
 
 export const makeBidRequestsHook = (fn, adUnits, ...args) => {
-  const adUnitPaths = appendGptSlots(adUnits);
+  appendGptSlots(adUnits);
   const { useDefaultPreAuction, customPreAuction } = _currentConfig;
   adUnits.forEach(adUnit => {
     // init the ortb2Imp if not done yet
@@ -194,9 +190,9 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
       let adserverSlot = deepAccess(context, 'data.adserver.adslot');
       let result;
       if (customPreAuction) {
-        result = customPreAuction(adUnit, adserverSlot, adUnitPaths?.[adUnit.code]);
+        result = customPreAuction(adUnit, adserverSlot);
       } else if (useDefaultPreAuction) {
-        result = defaultPreAuction(adUnit, adserverSlot, adUnitPaths?.[adUnit.code]);
+        result = defaultPreAuction(adUnit, adserverSlot);
       }
       if (result) {
         context.gpid = context.data.pbadslot = result;

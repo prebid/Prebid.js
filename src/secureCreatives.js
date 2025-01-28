@@ -7,14 +7,7 @@ import {getAllAssetsMessage, getAssetMessage} from './native.js';
 import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {find, includes} from './polyfill.js';
-import {
-  deferRendering,
-  getBidToRender,
-  handleCreativeEvent,
-  handleNativeMessage,
-  handleRender,
-  markWinner
-} from './adRendering.js';
+import {getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender, markWinningBid} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
@@ -109,16 +102,20 @@ function handleNativeRequest(reply, data, adObject) {
     logError(`Cannot find ad for x-origin event request: '${data.adId}'`);
     return;
   }
+
+  if (adObject.status !== BID_STATUS.RENDERED) {
+    markWinningBid(adObject);
+  }
+
   switch (data.action) {
     case 'assetRequest':
-      deferRendering(adObject, () => reply(getAssetMessage(data, adObject)));
+      reply(getAssetMessage(data, adObject));
       break;
     case 'allAssetRequest':
-      deferRendering(adObject, () => reply(getAllAssetsMessage(data, adObject)));
+      reply(getAllAssetsMessage(data, adObject));
       break;
     default:
-      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)});
-      markWinner(adObject);
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)})
   }
 }
 

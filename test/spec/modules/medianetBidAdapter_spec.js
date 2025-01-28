@@ -30,7 +30,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1,
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -57,7 +57,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
 
   VALID_BID_REQUEST_WITH_CRID = [{
@@ -87,7 +87,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -115,7 +115,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
   VALID_BID_REQUEST_WITH_ORTB2 = [{
     'bidder': 'medianet',
@@ -144,7 +144,7 @@ let VALID_BID_REQUEST = [{
         'data': {'pbadslot': '/12345/my-gpt-tag-0'}
       }
     },
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -173,7 +173,7 @@ let VALID_BID_REQUEST = [{
         'data': {'pbadslot': '/12345/my-gpt-tag-0'}
       }
     },
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
   // Protected Audience API Request
   VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
@@ -203,7 +203,7 @@ let VALID_BID_REQUEST = [{
         'ae': 1
       }
     },
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
 
   VALID_BID_REQUEST_WITH_USERID = [{
@@ -235,7 +235,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -263,7 +263,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
   VALID_BID_REQUEST_WITH_USERIDASEIDS = [{
     'bidder': 'medianet',
@@ -301,7 +301,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -329,7 +329,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
 
   VALID_BID_REQUEST_INVALID_BIDFLOOR = [{
@@ -359,7 +359,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -386,7 +386,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
   VALID_NATIVE_BID_REQUEST = [{
     'bidder': 'medianet',
@@ -414,7 +414,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1,
+    'bidRequestsCount': 1,
     'nativeParams': {
       'image': {
         'required': true,
@@ -471,7 +471,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1,
+    'bidRequestsCount': 1,
     'nativeParams': {
       'image': {
         'required': true,
@@ -531,16 +531,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -632,16 +622,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -734,16 +714,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -837,16 +807,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -941,16 +901,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1058,16 +1008,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1164,16 +1104,6 @@ let VALID_BID_REQUEST = [{
         'w': 1000,
         'h': 1000
       },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
-      }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [
@@ -1244,7 +1174,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
 
   VALID_PAYLOAD_PAGE_META = (() => {
@@ -1646,7 +1576,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
     'params': {
@@ -1673,7 +1603,7 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'auctionsCount': 1
+    'bidRequestsCount': 1
   }],
   VALID_BIDDER_REQUEST_WITH_GDPR = {
     'gdprConsent': {
@@ -1710,16 +1640,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1827,16 +1747,6 @@ let VALID_BID_REQUEST = [{
       'screen': {
         'w': 1000,
         'h': 1000
-      },
-      'vcoords': {
-        'top_left': {
-          'x': 50,
-          'y': 100
-        },
-        'bottom_right': {
-          'x': 490,
-          'y': 880
-        }
       }
     },
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -1919,10 +1829,6 @@ describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-    sandbox.stub(window.top, 'innerHeight').value(780)
-    sandbox.stub(window.top, 'innerWidth').value(440)
-    sandbox.stub(window.top, 'scrollY').value(100)
-    sandbox.stub(window.top, 'scrollX').value(50)
   });
 
   afterEach(function () {

@@ -255,7 +255,7 @@ function _getFloor (bid) {
         mediaType: _isVideoBidRequest(bid) ? 'video' : 'banner',
         size: '*'
       });
-      if (utils.isPlainObject(floorInfo) &&
+      if (typeof floorInfo === 'object' &&
       floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }

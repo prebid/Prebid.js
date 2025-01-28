@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import { spec, getPayload, getPageUrl } from '../../../modules/docereeAdManagerBidAdapter.js';
+import { spec, getPayload } from '../../../modules/docereeAdManagerBidAdapter.js';
 import { config } from '../../../src/config.js';
-import * as utils from '../../../src/utils.js';
 
 describe('docereeadmanager', function () {
   config.setConfig({
@@ -18,6 +17,7 @@ describe('docereeadmanager', function () {
           city: '',
           state: '',
           zipcode: '',
+          hashedNPI: '',
           hashedhcpid: '',
           hashedemail: '',
           hashedmobile: '',
@@ -125,15 +125,8 @@ describe('docereeadmanager', function () {
     });
   });
 
-  describe('getPageUrl', function () {
-    it('should return an url string', function () {
-      const result = getPageUrl();
-      expect(result).to.equal(utils.getWindowSelf().location.href);
-    });
-  });
-
-  describe('payload', function () {
-    it('should return payload with the correct data', function () {
+  describe('payload', function() {
+    it('should return payload with the correct data', function() {
       const data = {
         userId: 'xxxxx',
         email: 'xxxx@mail.com',
@@ -145,6 +138,7 @@ describe('docereeadmanager', function () {
         city: 'Xxxxx',
         state: 'Xxxxxx',
         zipcode: 'XXXXXX',
+        hashedNPI: 'xxxxxx',
         hashedhcpid: 'xxxxxxx',
         hashedemail: 'xxxxxxx',
         hashedmobile: 'xxxxxxx',
@@ -153,9 +147,8 @@ describe('docereeadmanager', function () {
         dob: 'xx-xx-xxxx',
         platformUid: 'Xx.xxx.xxxxxx',
         mobile: 'XXXXXXXXXX',
-        userconsent: 1
       }
-      bid = { ...bid, params: { ...bid.params, placementId: 'DOC-19-1' } }
+      bid = {...bid, params: {...bid.params, placementId: 'DOC-19-1'}}
       const buildRequests = {
         gdprConsent: {
           consentString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
@@ -163,7 +156,6 @@ describe('docereeadmanager', function () {
         }
       }
       const payload = getPayload(bid, data, buildRequests);
-
       const payloadData = payload.data;
       expect(payloadData).to.have.all.keys(
         'userid',
@@ -176,6 +168,7 @@ describe('docereeadmanager', function () {
         'city',
         'state',
         'zipcode',
+        'hashedNPI',
         'pb',
         'adunit',
         'requestId',
@@ -185,7 +178,7 @@ describe('docereeadmanager', function () {
         'country',
         'organization',
         'dob',
-        'upref',
+        'userconsent',
         'mobile',
         'pageurl',
         'consent'
@@ -200,8 +193,9 @@ describe('docereeadmanager', function () {
       expect(payloadData.city).to.equal('Xxxxx');
       expect(payloadData.state).to.equal('Xxxxxx');
       expect(payloadData.zipcode).to.equal('XXXXXX');
+      expect(payloadData.hashedNPI).to.equal('xxxxxx');
       expect(payloadData.pb).to.equal(1);
-      expect(payloadData.upref).to.equal(1);
+      expect(payloadData.userconsent).to.equal(1);
       expect(payloadData.dob).to.equal('xx-xx-xxxx');
       expect(payloadData.organization).to.equal('Xxxxxx');
       expect(payloadData.country).to.equal('Xxxxxx');
@@ -211,7 +205,7 @@ describe('docereeadmanager', function () {
       expect(payloadData.requestId).to.equal('testing');
       expect(payloadData.mobile).to.equal('XXXXXXXXXX');
       expect(payloadData.adunit).to.equal('DOC-19-1');
-      expect(payloadData.pageurl).to.equal('http://localhost:9876/context.html');
+      expect(payloadData.pageurl).to.equal('xxxxxx.com/xxxx');
       expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
       expect(payloadData.consent.gdpr).to.equal(0);
     })

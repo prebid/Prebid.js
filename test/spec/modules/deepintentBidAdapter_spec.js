@@ -252,22 +252,6 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].displaymanager).to.equal('di_prebid');
       expect(data.imp[0].displaymanagerver).to.equal('1.0.0');
     });
-    it('bid request check: bidfloor check', function() {
-      const requestClone = utils.deepClone(request);
-      let bRequest = spec.buildRequests(requestClone);
-      let data = JSON.parse(bRequest.data);
-      expect(data.imp[0].bidfloor).to.not.exist;
-
-      requestClone[0].params.bidfloor = 0;
-      bRequest = spec.buildRequests(requestClone);
-      data = JSON.parse(bRequest.data);
-      expect(data.imp[0].bidfloor).to.equal(0);
-
-      requestClone[0].params.bidfloor = 1.2;
-      bRequest = spec.buildRequests(requestClone);
-      data = JSON.parse(bRequest.data);
-      expect(data.imp[0].bidfloor).to.equal(1.2);
-    });
     it('bid request check: user object check', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);

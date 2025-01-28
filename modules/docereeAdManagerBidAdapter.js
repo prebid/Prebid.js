@@ -70,31 +70,10 @@ export const spec = {
   },
 };
 
-export function getPageUrl() {
-  let url = '';
-  try {
-    url = window.location.href;
-  } catch (error) {
-  }
-  return url;
-}
-
-const handleConsent = (consentValue) => {
-  try {
-    if (consentValue === 0 || consentValue === '0') {
-      consentValue = '0';
-    }
-  } catch (error) {
-
-  }
-  return consentValue;
-}
-
 export function getPayload(bid, userData, bidderRequest) {
   if (!userData || !bid) {
     return false;
   }
-
   const { bidId, params } = bid;
   const { placementId, publisherUrl } = params;
   const {
@@ -109,15 +88,14 @@ export function getPayload(bid, userData, bidderRequest) {
     city,
     state,
     zipcode,
+    hashedNPI,
     hashedhcpid,
     hashedemail,
     hashedmobile,
     country,
-    hashedNPI,
     organization,
     platformUid,
-    mobile,
-    userconsent
+    mobile
   } = userData;
 
   const data = {
@@ -131,18 +109,19 @@ export function getPayload(bid, userData, bidderRequest) {
     city: city || '',
     state: state || '',
     zipcode: zipcode || '',
+    hashedNPI: hashedNPI || '',
     pb: 1,
     adunit: placementId || '',
     requestId: bidId || '',
-    hashedhcpid: hashedhcpid || hashedNPI || '',
+    hashedhcpid: hashedhcpid || '',
     hashedemail: hashedemail || '',
     hashedmobile: hashedmobile || '',
     country: country || '',
     organization: organization || '',
     dob: dob || '',
-    upref: handleConsent(userconsent) || '',
+    userconsent: 1,
     mobile: mobile || '',
-    pageurl: getPageUrl() || publisherUrl || ''
+    pageurl: publisherUrl || ''
   };
 
   try {

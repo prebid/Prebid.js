@@ -188,9 +188,6 @@ describe('luponmediaBidAdapter', function () {
                 'price': 0.43,
                 'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
                 'adid': '56380110',
-                'adomain': [
-                  'mi.betrivers.com'
-                ],
                 'cid': '44724710',
                 'crid': '443801010',
                 'w': 300,
@@ -235,15 +232,7 @@ describe('luponmediaBidAdapter', function () {
           'netRevenue': false,
           'ttl': 300,
           'referrer': '',
-          'ad': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
-          'adomain': [
-            'mi.betrivers.com'
-          ],
-          'meta': {
-            'advertiserDomains': [
-              'mi.betrivers.com'
-            ]
-          }
+          'ad': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>'
         }
       ];
 

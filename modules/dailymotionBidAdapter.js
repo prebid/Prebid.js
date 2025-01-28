@@ -17,11 +17,10 @@ function getVideoMetadata(bidRequest, bidderRequest) {
 
   // As per oRTB 2.5 spec, "A bid request must not contain both an App and a Site object."
   // See section 3.2.14
-  const siteOrAppObj = deepAccess(bidderRequest, 'ortb2.site')
-    ? deepAccess(bidderRequest, 'ortb2.site')
-    : deepAccess(bidderRequest, 'ortb2.app');
   // Content object is either from Object: Site or Object: App
-  const contentObj = deepAccess(siteOrAppObj, 'content')
+  const contentObj = deepAccess(bidderRequest, 'ortb2.site')
+    ? deepAccess(bidderRequest, 'ortb2.site.content')
+    : deepAccess(bidderRequest, 'ortb2.app.content');
 
   const parsedContentData = {
     // Store as object keys to ensure uniqueness
@@ -71,8 +70,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
       ? videoParams.isCreatedForKids
       : null,
     context: {
-      siteOrAppCat: deepAccess(siteOrAppObj, 'cat', []),
-      siteOrAppContentCat: deepAccess(contentObj, 'cat', []),
+      siteOrAppCat: deepAccess(contentObj, 'cat', []),
       videoViewsInSession: (
         typeof videoParams.videoViewsInSession === 'number' &&
         videoParams.videoViewsInSession >= 0
@@ -203,8 +201,7 @@ export const spec = {
           },
         },
         config: {
-          api_key: bid.params.apiKey,
-          ts: bid.params.dmTs,
+          api_key: bid.params.apiKey
         },
         // Cast boolean in any case (value should be 0 or 1) to ensure type
         coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),

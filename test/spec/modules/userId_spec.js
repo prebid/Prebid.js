@@ -8,7 +8,6 @@ import {
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   startAuctionHook,
-  addUserIdsHook,
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
@@ -23,12 +22,11 @@ import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {resetConsentData, } from 'modules/consentManagementTcf.js';
-import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from '../../../libraries/liveIntentId/idSystem.js';
+import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
-import {startAuction} from 'src/prebid';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
@@ -177,8 +175,6 @@ describe('User ID', function () {
   afterEach(() => {
     sandbox.restore();
     config.resetConfig();
-    startAuction.getHooks({hook: startAuctionHook}).remove();
-    startAuction.getHooks({hook: addUserIdsHook}).remove();
   });
 
   after(() => {
@@ -456,54 +452,14 @@ describe('User ID', function () {
             {'mockId2v1': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 1})}}),
           createMockIdSubmodule('mockId2v2', null, null,
             {'mockId2v2': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 2})}}),
-          createMockIdSubmodule('mockId2v3', null, null, {
-            'mockId2v3'(ids) {
-              return {
-                source: 'mock2source',
-                inserter: 'ins',
-                ext: {v: 2},
-                uids: ids.map(id => ({id, atype: 2}))
-              }
-            }
-          }),
-          createMockIdSubmodule('mockId2v4', null, null, {
-            'mockId2v4'(ids) {
-              return ids.map(id => ({
-                uids: [{id, atype: 0}],
-                source: 'mock2source',
-                inserter: 'ins',
-                ext: {v: 2}
-              }))
-            }
-          })
         ]);
       });
 
-      it('should filter out non-string uid returned by generator functions', () => {
-        const eids = createEidsArray({
-          mockId2v3: [null, 'id1', 123],
-        });
-        expect(eids[0].uids).to.eql([
-          {
-            atype: 2,
-            id: 'id1'
-          }
-        ]);
-      });
-
-      it('should filter out entire EID if none of the uids are strings', () => {
-        const eids = createEidsArray({
-          mockId2v3: [null],
-        });
-        expect(eids).to.eql([]);
-      })
-
-      it('should group UIDs by everything except uid', () => {
+      it('should group UIDs by source and ext', () => {
         const eids = createEidsArray({
           mockId1: ['mock-1-1', 'mock-1-2'],
           mockId2v1: ['mock-2-1', 'mock-2-2'],
-          mockId2v2: ['mock-2-1', 'mock-2-2'],
-          mockId2v3: ['mock-2-1', 'mock-2-2']
+          mockId2v2: ['mock-2-1', 'mock-2-2']
         });
         expect(eids).to.eql([
           {
@@ -550,50 +506,10 @@ describe('User ID', function () {
                 atype: 2,
               }
             ]
-          },
-          {
-            source: 'mock2source',
-            inserter: 'ins',
-            ext: {v: 2},
-            uids: [
-              {
-                id: 'mock-2-1',
-                atype: 2,
-              },
-              {
-                id: 'mock-2-2',
-                atype: 2,
-              }
-            ]
           }
         ])
       });
 
-      it('should group matching EIDs regardless of entry order', () => {
-        const eids = createEidsArray({
-          mockId2v3: ['id1', 'id2'],
-          mockId2v4: ['id3']
-        });
-        expect(eids).to.eql([{
-          source: 'mock2source',
-          inserter: 'ins',
-          uids: [
-            {
-              id: 'id1',
-              atype: 2,
-            },
-            {
-              id: 'id2',
-              atype: 2
-            },
-            {
-              id: 'id3',
-              atype: 0
-            }
-          ],
-          ext: {v: 2}
-        }])
-      })
       it('when merging with pubCommonId, should not alter its eids', () => {
         const uid = {
           pubProvidedId: [
@@ -784,27 +700,6 @@ describe('User ID', function () {
         done();
       });
     });
-
-    it('pbjs.getUserIdsAsEids should pass config to eid function', async function () {
-      const eidFn = sinon.stub();
-      init(config);
-      setSubmoduleRegistry([createMockIdSubmodule('mockId', null, null, {
-        mockId: eidFn
-      })]);
-      const moduleConfig = {
-        name: 'mockId',
-        value: {mockId: 'mockIdValue'},
-        some: 'config'
-      };
-      config.setConfig({
-        userSync: {
-          auctionDelay: 10,
-          userIds: [moduleConfig]
-        }
-      });
-      await getGlobal().getUserIdsAsync();
-      sinon.assert.calledWith(eidFn, ['mockIdValue'], moduleConfig);
-    })
 
     it('pbjs.getUserIdsAsEids should prioritize user ids according to config available to core', () => {
       init(config);
@@ -1207,20 +1102,18 @@ describe('User ID', function () {
         });
       });
 
-      ['refreshUserIds', 'getUserIdsAsync'].forEach(method => {
-        it(`should still resolve promises returned by ${method}`, () => {
-          startInit();
-          let result = null;
-          getGlobal()[method]().then((val) => { result = val; });
-          return clearStack().then(() => {
-            expect(result).to.equal(null); // auction has not ended, callback should not have been called
-            mockIdCallback.callsFake((cb) => cb(MOCK_ID));
-            return getGlobal().refreshUserIds().then(clearStack);
-          }).then(() => {
-            expect(result).to.deep.equal(getGlobal().getUserIds()) // auction still not over, but refresh was explicitly forced
-          });
+      it('should still resolve promises returned by getUserIdsAsync', () => {
+        startInit();
+        let result = null;
+        getGlobal().getUserIdsAsync().then((val) => { result = val; });
+        return clearStack().then(() => {
+          expect(result).to.equal(null); // auction has not ended, callback should not have been called
+          mockIdCallback.callsFake((cb) => cb(MOCK_ID));
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(result).to.deep.equal(getGlobal().getUserIds()) // auction still not over, but refresh was explicitly forced
         });
-      })
+      });
 
       it('should not stop auctions', (done) => {
         // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
@@ -2527,58 +2420,6 @@ describe('User ID', function () {
           })
         })
       })
-    });
-
-    describe('submodules not added', () => {
-      const eid = {
-        source: 'example.com',
-        uids: [{id: '1234', atype: 3}]
-      };
-      let adUnits;
-      let startAuctionStub;
-      function saHook(fn, ...args) {
-        return startAuctionStub(...args);
-      }
-      beforeEach(() => {
-        adUnits = [{code: 'au1', bids: [{bidder: 'sampleBidder'}]}];
-        startAuctionStub = sinon.stub();
-        startAuction.before(saHook);
-        config.resetConfig();
-      });
-      afterEach(() => {
-        startAuction.getHooks({hook: saHook}).remove();
-      })
-
-      it('addUserIdsHook', function (done) {
-        addUserIdsHook(function () {
-          adUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userIdAsEids.0.source');
-              expect(bid).to.have.deep.nested.property('userIdAsEids.0.uids.0.id');
-              expect(bid.userIdAsEids[0].source).to.equal('example.com');
-              expect(bid.userIdAsEids[0].uids[0].id).to.equal('1234');
-            });
-          });
-          done();
-        }, {
-          adUnits,
-          ortb2Fragments: {
-            global: {user: {ext: {eids: [eid]}}},
-            bidder: {}
-          }
-        });
-      });
-
-      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', () => {
-        init(config);
-        config.setConfig({
-          ortb2: {user: {ext: {eids: [eid]}}}
-        })
-        expect(startAuction.getHooks({hook: startAuctionHook}).length).equal(0);
-        expect(startAuction.getHooks({hook: addUserIdsHook}).length).equal(1);
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledWith(startAuctionStub, sinon.match.hasNested('adUnits[0].bids[0].userIdAsEids[0]', eid));
-      });
     });
   });
 

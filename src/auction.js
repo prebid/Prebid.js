@@ -66,7 +66,10 @@
  */
 
 import {
+  callBurl,
+  deepAccess,
   generateUUID,
+  getValue,
   isEmpty,
   isEmptyStr,
   isFn,
@@ -96,8 +99,6 @@ import {defer, GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
-import {ttlCollection} from './utils/ttlCollection.js';
-import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 
 const { syncUsers } = userSync;
 
@@ -149,14 +150,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   const _timeout = cbTimeout;
   const _timelyRequests = new Set();
   const done = defer();
-  const requestsDone = defer();
   let _bidsRejected = [];
   let _callback = callback;
   let _bidderRequests = [];
-  let _bidsReceived = ttlCollection({
-    startTime: (bid) => bid.responseTimestamp,
-    ttl: (bid) => getMinBidCacheTTL() == null ? null : Math.max(getMinBidCacheTTL(), bid.ttl) * 1000
-  });
+  let _bidsReceived = [];
   let _noBids = [];
   let _winningBids = [];
   let _auctionStart;
@@ -165,10 +162,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _auctionStatus;
   let _nonBids = [];
 
-  onMinBidCacheTTLChange(() => _bidsReceived.refresh());
-
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
-  function addBidReceived(bid) { _bidsReceived.add(bid); }
+  function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
   function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
   function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
@@ -184,7 +179,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       labels: _labels,
       bidderRequests: _bidderRequests,
       noBids: _noBids,
-      bidsReceived: _bidsReceived.toArray(),
+      bidsReceived: _bidsReceived,
       bidsRejected: _bidsRejected,
       winningBids: _winningBids,
       timeout: _timeout,
@@ -224,7 +219,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       bidsBackCallback(_adUnits, function () {
         try {
           if (_callback != null) {
-            const bids = _bidsReceived.toArray()
+            const bids = _bidsReceived
               .filter(bid => _adUnitCodes.includes(bid.adUnitCode))
               .reduce(groupByPlacement, {});
             _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
@@ -251,7 +246,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function auctionDone() {
     config.resetBidder();
     // when all bidders have called done callback atleast once it means auction is complete
-    logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived.toArray());
+    logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
     executeCallback(false);
   }
@@ -325,7 +320,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             }
           }
         }, _timeout, onTimelyResponse, ortb2Fragments);
-        requestsDone.resolve();
       }
     };
 
@@ -376,11 +370,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
+    const winningAd = adUnits.find(adUnit => adUnit.adUnitId === winningBid.adUnitId);
     _winningBids = _winningBids.concat(winningBid);
+    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
-    if (!winningBid.deferBilling) {
-      adapterManager.triggerBilling(winningBid)
-    }
+    if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
   }
 
   function setBidTargeting(bid) {
@@ -409,14 +403,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getAdUnits: () => _adUnits,
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
-    getBidsReceived: () => _bidsReceived.toArray(),
+    getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
     getNonBids: () => _nonBids,
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
-    end: done.promise,
-    requestsDone: requestsDone.promise,
-    getProperties
+    end: done.promise
   };
 }
 
@@ -565,12 +557,13 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
   let addBid = true;
 
-  const videoMediaType = index.getMediaTypes({
-    requestId: bidResponse.originalRequestId || bidResponse.requestId,
-    adUnitId: bidResponse.adUnitId
-  })?.video;
-  const context = videoMediaType && videoMediaType?.context;
-  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
+  const videoMediaType = deepAccess(
+    index.getMediaTypes({
+      requestId: bidResponse.originalRequestId || bidResponse.requestId,
+      adUnitId: bidResponse.adUnitId
+    }), 'video');
+  const context = videoMediaType && deepAccess(videoMediaType, 'context');
+  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
 
   if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
@@ -640,15 +633,15 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   var renderer = null;
 
   // the renderer for the mediaType takes precendence
-  if (mediaTypeRenderer && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
+  if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
     renderer = mediaTypeRenderer;
-  } else if (bidRenderer && bidRenderer.render && !(bidRenderer.backupOnly === true && bid.renderer)) {
+  } else if (bidRenderer && bidRenderer.url && bidRenderer.render && !(bidRenderer.backupOnly === true && bid.renderer)) {
     renderer = bidRenderer;
   }
 
   if (renderer) {
     // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-    bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null });// rename options to config, to make it consistent?
+    bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options });// rename options to config, to make it consistent?
     bid.renderer.setRender(renderer.render);
   }
 
@@ -689,7 +682,7 @@ function setupBidTargeting(bidObject) {
 export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
     if (FEATURES.VIDEO && mediaType === VIDEO) {
-      const context = mediaTypes?.[VIDEO]?.context ?? 'instream';
+      const context = deepAccess(mediaTypes, `${VIDEO}.context`, 'instream');
       if (mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
         return mediaTypePriceGranularity[`${VIDEO}-${context}`];
       }
@@ -762,7 +755,7 @@ export const getAdvertiserDomain = () => {
  */
 export const getDSP = () => {
   return (bid) => {
-    return (bid.meta && (bid.meta.networkId || bid.meta.networkName)) ? bid?.meta?.networkName || bid?.meta?.networkId : '';
+    return (bid.meta && (bid.meta.networkId || bid.meta.networkName)) ? deepAccess(bid, 'meta.networkName') || deepAccess(bid, 'meta.networkId') : '';
   }
 }
 
@@ -785,7 +778,7 @@ function createKeyVal(key, value) {
         return value(bidResponse, bidReq);
       }
       : function (bidResponse) {
-        return bidResponse[value];
+        return getValue(bidResponse, value);
       }
   };
 }
@@ -834,7 +827,8 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
-          return bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname;
+          return deepAccess(bidResponse, `adserverTargeting.${TARGETING_KEYS.CACHE_HOST}`)
+            ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_HOST] : urlInfo.hostname;
         }));
       }
     }

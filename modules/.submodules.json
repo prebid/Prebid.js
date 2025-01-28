@@ -36,11 +36,9 @@
       "novatiqIdSystem",
       "oneKeyIdSystem",
       "operaadsIdSystem",
-      "permutiveIdentityManagerIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
-      "rewardedInterestIdSystem",
       "sharedIdSystem",
       "tapadIdSystem",
       "teadsIdSystem",
@@ -60,7 +58,6 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
-      "51DegreesRtdProvider",
       "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
       "adagioRtdProvider",
@@ -113,8 +110,7 @@
     ],
     "videoModule": [
       "jwplayerVideoProvider",
-      "videojsVideoProvider",
-      "adplayerproVideoProvider"
+      "videojsVideoProvider"
     ],
     "paapi": [
       "paapiForGpt",

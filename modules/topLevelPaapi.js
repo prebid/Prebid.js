@@ -96,6 +96,7 @@ export function getRenderingDataHook(next, bid, options) {
 
 export function markWinningBidHook(next, bid) {
   if (isPaapiBid(bid)) {
+    bid.status = BID_STATUS.RENDERED;
     emit(EVENTS.BID_WON, bid);
     next.bail();
   } else {

@@ -1,7 +1,7 @@
 import {_each, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
+import {formatRequest, getRtbBid, getSiteObj, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
 import {SOURCE, GVLID, BIDDER_CODE, VIDEO_PARAMS, BANNER_ENDPOINT_URL, VIDEO_ENDPOINT_URL, MARGIN, TIME_TO_LIVE} from '../libraries/targetVideoUtils/constants.js';
 
 /**
@@ -167,26 +167,14 @@ export const spec = {
         _each(resp.bid, (bid) => {
           const requestId = bidRequest.bidId;
           const params = bidRequest.params;
-          const vBid = videoBid(bid, requestId, currency, params, TIME_TO_LIVE);
-          if (bids.length == 0 || bids[0].cpm < vBid.cpm) {
-            bids[0] = vBid;
-          }
+
+          bids.push(videoBid(bid, requestId, currency, params, TIME_TO_LIVE));
         });
       });
     }
 
     return bids;
-  },
-
-  /**
-   * Determine the user sync type (either 'iframe' or 'image') based on syncOptions.
-   * Construct the sync URL by appending required query parameters such as gdpr, ccpa, and coppa consents.
-   * Return an array containing an object with the sync type and the constructed URL.
-   */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    return getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, 'targetvideo');
   }
-
 }
 
 registerBidder(spec);

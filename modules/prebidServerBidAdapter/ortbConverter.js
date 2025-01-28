@@ -1,5 +1,5 @@
 import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
-import {deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
+import {deepAccess, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
 import {config} from '../../src/config.js';
 import {S2S, STATUS} from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
@@ -16,7 +16,6 @@ import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
 import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
 import {s2sDefaultConfig} from './index.js';
-import {premergeFpd} from './bidderConfig.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -38,7 +37,7 @@ const PBS_CONVERTER = ortbConverter({
       }
     });
     if (Object.values(SUPPORTED_MEDIA_TYPES).some(mtype => imp[mtype])) {
-      imp.secure = proxyBidRequest.ortb2Imp?.secure ?? 1;
+      imp.secure = context.s2sBidRequest.s2sConfig.secure;
       return imp;
     }
   },
@@ -103,10 +102,7 @@ const PBS_CONVERTER = ortbConverter({
         transactionId: context.adUnit.transactionId,
         adUnitId: context.adUnit.adUnitId,
         auctionId: context.bidderRequest.auctionId,
-      }), bidResponse, {
-        deferRendering: !!context.adUnit.deferBilling,
-        deferBilling: !!context.adUnit.deferBilling
-      }),
+      }), bidResponse),
       adUnit: context.adUnit.code
     };
   },
@@ -184,7 +180,7 @@ const PBS_CONVERTER = ortbConverter({
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
         // pass schains in ext.prebid.schains
-        let chains = ortbRequest?.ext?.prebid?.schains || [];
+        let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
         chains = Object.values(
@@ -193,7 +189,7 @@ const PBS_CONVERTER = ortbConverter({
               .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
               .map((req) => ({
                 bidders: [req.bidderCode],
-                schain: req?.bids?.[0]?.schain
+                schain: deepAccess(req, 'bids.0.schain')
               })))
             .filter(({bidders, schain}) => bidders?.length > 0 && schain)
             .reduce((chains, {bidders, schain}) => {
@@ -297,10 +293,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
       ttl: s2sBidRequest.s2sConfig.defaultTtl || DEFAULT_S2S_TTL,
       requestTimestamp,
-      s2sBidRequest: {
-        ...s2sBidRequest,
-        ortb2Fragments: premergeFpd(s2sBidRequest.ortb2Fragments, requestedBidders)
-      },
+      s2sBidRequest,
       requestedBidders,
       actualBidderRequests: bidderRequests,
       nativeRequest: s2sBidRequest.s2sConfig.ortbNative,

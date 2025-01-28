@@ -8,8 +8,7 @@ import {
   logError,
   logInfo,
   triggerPixel,
-  uniques,
-  deepSetValue
+  uniques
 } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -19,7 +18,6 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../src/auction.js';
 import {includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
@@ -114,7 +112,6 @@ class Configure {
       pbv: PREBID_VERSION,
       pbav: ANALYTICS_VERSION,
       flt: 1,
-      enableDbf: 1
     }
   }
 
@@ -306,17 +303,21 @@ class BidWrapper {
     this.bidObjs.push(bidObj);
   }
 
-  getAdSlotBidRequests(adSlot) {
-    return this.bidReqs.filter((bid) => bid.adUnitCode === adSlot);
+  getAdSlotBids(adSlot) {
+    const bidResponses = this.getAdSlotBidObjs(adSlot);
+    return bidResponses.map((bid) => bid.getLoggingData());
   }
 
-  getAdSlotBidResponses(adSlot) {
-    return this.bidObjs.filter((bid) => bid.adUnitCode === adSlot);
+  getAdSlotBidObjs(adSlot) {
+    const bidResponses = this.bidObjs
+      .filter((bid) => bid.adUnitCode === adSlot);
+    const remResponses = this.bidReqs.filter(bid => !bid.used && bid.adUnitCode === adSlot);
+    return [...bidResponses, ...remResponses];
   }
 }
 
 class Bid {
-  constructor(bidId, bidder, src, start, adUnitCode, mediaType, allMediaTypeSizes, resSizes) {
+  constructor(bidId, bidder, src, start, adUnitCode, mediaType, allMediaTypeSizes) {
     this.bidId = bidId;
     this.bidder = bidder;
     this.src = src;
@@ -347,14 +348,6 @@ class Bid {
     this.used = false;
     this.originalRequestId = bidId;
     this.requestId = undefined;
-    this.advUrl = undefined;
-    this.latestAcid = undefined;
-    this.originalCurrency = undefined;
-    this.currMul = undefined;
-    this.inCurrMul = undefined;
-    this.res_mtype = undefined;
-    this.res_sizes = resSizes;
-    this.req_mtype = mediaType;
   }
 
   get size() {
@@ -381,7 +374,7 @@ class Bid {
       cbdp: this.dfpbd,
       dfpbd: this.dfpbd,
       szs: this.allMediaTypeSizes.join('|'),
-      size: (this.res_sizes || [this.size]).join('|'),
+      size: this.size,
       mtype: this.mediaType,
       dId: this.dealId,
       winner: this.winner,
@@ -396,13 +389,6 @@ class Bid {
       flrrule: this.floorRule,
       ext: JSON.stringify(this.ext),
       rtime: this.serverLatencyMillis,
-      advurl: this.advUrl,
-      lacid: this.latestAcid,
-      icurr: this.originalCurrency,
-      imul: this.inCurrMul,
-      omul: this.currMul,
-      res_mtype: this.res_mtype,
-      req_mtype: this.req_mtype
     }
   }
 }
@@ -468,12 +454,11 @@ class Auction {
     return this.bidWrapper.findBidObj(key, value)
   }
 
-  getAdSlotBidRequests(adSlot) {
-    return this.bidWrapper.getAdSlotBidRequests(adSlot);
+  getAdSlotBids(adSlot) {
+    return this.bidWrapper.getAdSlotBids(adSlot);
   }
-
-  getAdSlotBidResponses(adSlot) {
-    return this.bidWrapper.getAdSlotBidResponses(adSlot);
+  getAdSlotBidObjs(adSlot) {
+    return this.bidWrapper.getAdSlotBidObjs(adSlot);
   }
 
   _mergeFieldsToLog(objParams) {
@@ -573,8 +558,8 @@ function _getSizes(mediaTypes, sizes) {
 }
 
 function bidResponseHandler(bid) {
-  const { width, height, mediaType, cpm, requestId, timeToRespond, auctionId, dealId, originalRequestId, bidder, meta } = bid;
-  let {originalCpm, creativeId, adId, currency, originalCurrency} = bid;
+  const { width, height, mediaType, cpm, requestId, timeToRespond, auctionId, dealId, originalRequestId, bidder } = bid;
+  const {originalCpm, creativeId, adId, currency} = bid;
 
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
@@ -590,26 +575,13 @@ function bidResponseHandler(bid) {
     bidObj = {};
     isBidOverridden = false;
   }
-  currency = currency ? currency.toUpperCase() : '';
-  originalCurrency = originalCurrency ? originalCurrency.toUpperCase() : currency;
   Object.assign(bidObj, bidReq,
     { cpm, width, height, mediaType, timeToRespond, dealId, creativeId, originalRequestId, requestId },
-    { adId, currency, originalCurrency }
+    { adId, currency }
   );
   bidObj.floorPrice = deepAccess(bid, 'floorData.floorValue');
   bidObj.floorRule = deepAccess(bid, 'floorData.floorRule');
   bidObj.originalCpm = originalCpm || cpm;
-  bidObj.advUrl = meta && meta.advertiserDomains && meta.advertiserDomains.join(',');
-  bidObj.currMul = 1;
-  bidObj.inCurrMul = 1;
-  if (bidObj.originalCurrency !== 'USD') {
-    bidObj.originalCpm = exchangeCurrency(bidObj.originalCpm, bidObj.originalCurrency, 'USD');
-    bidObj.inCurrMul = exchangeCurrency(1, 'USD', bidObj.originalCurrency)
-  }
-  if (bidObj.currency !== 'USD') {
-    bidObj.cpm = exchangeCurrency(bidObj.cpm, bidObj.currency, 'USD');
-    bidObj.currMul = exchangeCurrency(1, 'USD', bidObj.currency)
-  }
   let dfpbd = deepAccess(bid, 'adserverTargeting.hb_pb');
   if (!dfpbd) {
     let priceGranularity = getPriceGranularity(bid);
@@ -634,17 +606,7 @@ function bidResponseHandler(bid) {
   if (typeof bid.serverResponseTimeMs !== 'undefined') {
     bidObj.serverLatencyMillis = bid.serverResponseTimeMs;
   }
-  bidObj.res_mtype = mediaType;
   !isBidOverridden && auctions[auctionId].addBidObj(bidObj);
-}
-
-function exchangeCurrency(price, fromCurrency, toCurrency) {
-  try {
-    return convertCurrency(price, fromCurrency, toCurrency, false).toFixed(4)
-  } catch (e) {
-    logError(`Media.net Analytics Adapter: Could not convert ${fromCurrency} to ${toCurrency} for price ${price}`);
-  }
-  return price;
 }
 
 function noBidResponseHandler({ auctionId, bidId }) {
@@ -668,7 +630,7 @@ function bidTimeoutHandler(timedOutBids) {
     if (!(auctions[auctionId] instanceof Auction)) {
       return;
     }
-    const bidReq = auctions[auctionId].findReqBid(bidId);
+    const bidReq = auctions[auctionId].findReqBid('bidId', bidId);
     if (!(bidReq instanceof Bid) || bidReq.used) {
       return;
     }
@@ -748,7 +710,6 @@ function bidWonHandler(bid) {
     }).send();
     return;
   }
-  bidObj.latestAcid = bid.latestTargetedAuctionId;
   auctions[auctionId].bidWonTime = Date.now();
   bidObj.winner = 1;
   sendEvent(auctionId, adUnitCode, LOG_TYPE.RA, bidObj.adId);
@@ -788,43 +749,6 @@ function getCommonLoggingData(acid, adtag) {
   return Object.assign(commonParams, adunitParams, auctionParams);
 }
 
-function getResponseSizeMap(acid, adtag) {
-  const responses = auctions[acid].getAdSlotBidResponses(adtag);
-  const receivedResponse = {};
-  // Set true in map for success bids
-  responses.filter((bid) => bid.size !== '')
-    .forEach((bid) => deepSetValue(receivedResponse, `${bid.bidId}.${bid.size}`, true));
-
-  // For non-success bids:
-  // 1) set bid.res_sizes = (sizes for which no successful bid received)
-  // 2) set true in map
-  responses.filter((bid) => bid.size === '').forEach((bid) => {
-    bid.res_sizes = bid.allMediaTypeSizes.filter((size) => !deepAccess(receivedResponse, `${bid.bidId}.${size}`));
-    bid.allMediaTypeSizes.forEach((size) => deepSetValue(receivedResponse, `${bid.bidId}.${size}`, true));
-  });
-  return receivedResponse;
-}
-
-function getDummyBids(acid, adtag, receivedResponse) {
-  const emptyBids = [];
-  auctions[acid].getAdSlotBidRequests(adtag).forEach(({ bidId, bidder, src, start, adUnitCode, mediaType, allMediaTypeSizes, status }) => {
-    const emptySizes = allMediaTypeSizes.filter((size) => !deepAccess(receivedResponse, `${bidId}.${size}`));
-    if (bidder !== DUMMY_BIDDER && emptySizes.length > 0) {
-      const bid = new Bid(bidId, bidder, src, start, adUnitCode, mediaType, allMediaTypeSizes, emptySizes);
-      bid.status = status === BID_SUCCESS ? BID_NOBID : status;
-      emptyBids.push(bid);
-    }
-  });
-  return emptyBids;
-}
-
-function getLoggingBids(acid, adtag) {
-  const receivedResponse = getResponseSizeMap(acid, adtag);
-  const dummyBids = getDummyBids(acid, adtag, receivedResponse);
-
-  return [...auctions[acid].getAdSlotBidResponses(adtag), ...dummyBids];
-}
-
 function fireAuctionLog(acid, adtag, logType, adId) {
   let commonParams = getCommonLoggingData(acid, adtag);
   commonParams.lgtp = logType;
@@ -842,7 +766,7 @@ function fireAuctionLog(acid, adtag, logType, adId) {
     bidParams = [winLogData];
     commonParams.lper = 1;
   } else {
-    bidParams = getLoggingBids(acid, adtag).map((bid) => bid.getLoggingData())
+    bidParams = auctions[acid].getAdSlotBids(adtag).map(({winner, ...restParams}) => restParams);
     delete commonParams.wts;
   }
   let mnetPresent = bidParams.filter(b => b.pvnm === MEDIANET_BIDDER_CODE).length > 0;

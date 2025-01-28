@@ -6,7 +6,7 @@ import {
   YANDEX_EXT_COOKIE_NAMES,
   BIDDER_CODE,
   YANDEX_USER_ID_KEY,
-  YANDEX_STORAGE_TYPE,
+  YANDEX_COOKIE_STORAGE_TYPE,
   YANDEX_MIN_EXPIRE_DAYS,
   PREBID_STORAGE,
   yandexIdSubmodule,
@@ -30,7 +30,7 @@ const CORRECT_SUBMODULE_CONFIG = {
   storage: {
     expires: YANDEX_MIN_EXPIRE_DAYS,
     name: YANDEX_USER_ID_KEY,
-    type: YANDEX_STORAGE_TYPE,
+    type: YANDEX_COOKIE_STORAGE_TYPE,
     refreshInSeconds: undefined,
   },
   params: undefined,

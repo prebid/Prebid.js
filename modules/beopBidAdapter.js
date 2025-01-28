@@ -1,18 +1,16 @@
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getRefererInfo } from '../src/refererDetection.js';
 import {
   buildUrl,
-  deepAccess, generateUUID, getBidIdParameter,
+  deepAccess, getBidIdParameter,
   getValue,
   isArray,
-  isPlainObject,
   logInfo,
   logWarn,
   triggerPixel
 } from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -22,11 +20,9 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.beop.io/bid';
-const COOKIE_NAME = 'beopid';
 const TCF_VENDOR_ID = 666;
 
 const validIdRegExp = /^[0-9a-fA-F]{24}$/
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -56,7 +52,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the BeOp's server
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const slots = validBidRequests.map((bid) => beOpRequestSlotsMaker(bid, bidderRequest));
+    const slots = validBidRequests.map(beOpRequestSlotsMaker);
     const firstPartyData = bidderRequest.ortb2 || {};
     const psegs = firstPartyData.user?.ext?.permutive || firstPartyData.user?.ext?.data?.permutive || [];
     const userBpSegs = firstPartyData.user?.ext?.bpsegs || firstPartyData.user?.ext?.data?.bpsegs || [];
@@ -67,30 +63,17 @@ export const spec = {
     const kwdsFromRequest = firstSlot.kwds;
     let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
-    let beopid = '';
-    if (storage.cookiesAreEnabled) {
-      beopid = storage.getCookie(COOKIE_NAME, undefined);
-      if (!beopid) {
-        beopid = generateUUID();
-        let expirationDate = new Date();
-        expirationDate.setTime(expirationDate.getTime() + 86400 * 183 * 1000);
-        storage.setCookie(COOKIE_NAME, beopid, expirationDate.toUTCString());
-      }
-    } else {
-      storage.setCookie(COOKIE_NAME, '', 0);
-    }
-
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
       pid: firstSlot.pid,
-      bpsegs: (userBpSegs.concat(siteBpSegs, psegs)).map(item => item.toString()),
+      psegs: psegs,
+      bpsegs: (userBpSegs.concat(siteBpSegs)).map(item => item.toString()),
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
       dbg: false,
-      fg: beopid,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
@@ -159,13 +142,13 @@ function buildTrackingParams(data, info, value) {
   };
 }
 
-function beOpRequestSlotsMaker(bid, bidderRequest) {
+function beOpRequestSlotsMaker(bid) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-  const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
+  const publisherCurrency = config.getConfig('currency.adServerCurrency') || getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});
-    if (isPlainObject(floorInfo) && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
+    if (typeof floorInfo === 'object' && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
   }

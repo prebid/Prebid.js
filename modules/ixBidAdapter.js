@@ -496,11 +496,6 @@ function parseBid(rawBid, currency, bidRequest) {
   if (rawBid.ext?.dsa) {
     bid.meta.dsa = rawBid.ext.dsa
   }
-
-  if (rawBid.ext?.ibv) {
-    bid.ext = bid.ext || {}
-    bid.ext.ibv = rawBid.ext.ibv
-  }
   return bid;
 }
 
@@ -756,9 +751,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         method: 'POST',
         url: exchangeUrl,
         data: deepClone(r),
-        options: {
+        option: {
           contentType: 'text/plain',
-          withCredentials: true
         },
         validBidRequests
       });

@@ -134,9 +134,7 @@ describe('Edge226BidAdapter', function () {
     it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys(
-        'device',
-        'deviceWidth',
+      expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
         'language',
         'secure',

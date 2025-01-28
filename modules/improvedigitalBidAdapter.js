@@ -5,7 +5,13 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
+ * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
+ * Also see https://github.com/prebid/Prebid.js/issues/11656
+ */
+// eslint-disable-next-line no-restricted-imports
+import {loadExternalScript} from '../src/adloader.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -23,7 +29,6 @@ const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
 const PB_ENDPOINT = 'pb';
 const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
-const DEFAULT_CURRENCY = 'USD';
 
 const VIDEO_PARAMS = {
   DEFAULT_MIMES: ['video/mp4']
@@ -119,21 +124,6 @@ export const spec = {
 
 registerBidder(spec);
 
-const convertBidFloorCurrency = (imp) => {
-  try {
-    const bidFloor = convertCurrency(
-      imp.bidfloor,
-      imp.bidfloorcur,
-      DEFAULT_CURRENCY,
-      false,
-    );
-    imp.bidfloor = bidFloor;
-    imp.bidfloorcur = DEFAULT_CURRENCY;
-  } catch (err) {
-    logWarn(`Failed to convert bid floor to ${DEFAULT_CURRENCY}. Passing floor price in its original currency.`, err);
-  }
-};
-
 export const CONVERTER = ortbConverter({
   context: {
     ttl: CREATIVE_TTL,
@@ -145,14 +135,10 @@ export const CONVERTER = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
+    imp.secure = Number(window.location.protocol === 'https:');
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || DEFAULT_CURRENCY;
-    }
-
-    if (imp.bidfloor && imp.bidfloorcur && imp.bidfloorcur !== DEFAULT_CURRENCY) {
-      convertBidFloorCurrency(imp);
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
     }
     const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
     const placementId = bidRequest.params.placementId;
@@ -217,6 +203,7 @@ export const CONVERTER = ortbConverter({
         renderer: ID_OUTSTREAM.createRenderer(bidRequest)
       })
     }
+    ID_RAZR.forwardBid({bidRequest, bid: bidResponse});
     return bidResponse;
   },
   overrides: {
@@ -357,4 +344,62 @@ const ID_OUTSTREAM = {
   handleRendererEvents(bid, id, eventName) {
     bid.renderer.handleVideoEvent({ id, eventName });
   },
+};
+
+const ID_RAZR = {
+  RENDERER_URL: 'https://cdn.360yield.com/razr/tag.js',
+
+  forwardBid({bidRequest, bid}) {
+    if (bid.mediaType !== BANNER) {
+      return;
+    }
+
+    const cfg = {
+      prebid: {
+        bidRequest,
+        bid
+      }
+    };
+
+    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/ig, '\\x3C/script>');
+    const s = `<script>window.__razr_config = ${cfgStr};</script>`;
+    // prepend RAZR config to ad markup:
+    bid.ad = s + bid.ad;
+
+    this.installListener();
+  },
+
+  installListener() {
+    if (this._listenerInstalled) {
+      return;
+    }
+
+    window.addEventListener('message', function(e) {
+      const data = e.data?.razr?.load;
+      if (!data) {
+        return;
+      }
+
+      if (e.source) {
+        data.source = e.source;
+        if (data.id) {
+          e.source.postMessage({
+            razr: {
+              id: data.id
+            }
+          }, '*');
+        }
+      }
+
+      const ns = window.razr = window.razr || {};
+      ns.q = ns.q || [];
+      ns.q.push(data);
+
+      if (!ns.loaded) {
+        loadExternalScript(ID_RAZR.RENDERER_URL, BIDDER_CODE);
+      }
+    });
+
+    this._listenerInstalled = true;
+  }
 };

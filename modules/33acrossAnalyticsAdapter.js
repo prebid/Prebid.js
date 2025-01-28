@@ -5,7 +5,6 @@ import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspD
  * @typedef {typeof import('../src/constants.js').EVENTS} EVENTS
  */
 import { EVENTS } from '../src/constants.js';
-import { sendBeacon } from '../src/ajax.js';
 
 /** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
 /**
@@ -630,7 +629,9 @@ function setCachedBidStatus(auctionId, bidId, status) {
  * @param {string} endpoint URL
  */
 function sendReport(report, endpoint) {
-  if (sendBeacon(endpoint, JSON.stringify(report))) {
+  // TODO FIX THIS RULES VIOLATION
+  // eslint-disable-next-line
+  if (navigator.sendBeacon(endpoint, JSON.stringify(report))) {
     log.info(`Analytics report sent to ${endpoint}`, report);
 
     return;

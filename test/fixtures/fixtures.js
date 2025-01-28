@@ -822,68 +822,6 @@ export function getAdUnits() {
   ];
 };
 
-export function getTwinAdUnits() {
-  return [
-    {
-      'code': '/19968336/header-bid-tag1',
-      'mediaTypes': {
-        'banner': {
-          'sizes': [
-            [
-              728,
-              90
-            ]
-          ]
-        }
-      },
-      'bids': [
-        {
-          'bidder': 'pubmatic',
-          'params': {
-            'publisherId': 1234567,
-            'adSlot': '1234567@728x90'
-          }
-        },
-        {
-          'bidder': 'medianet',
-          'params': {
-            'cid': '8CUWQS47C',
-            'crid': '241882766'
-          },
-        },
-      ]
-    },
-    {
-      'code': '/19968336/header-bid-tag1',
-      'mediaTypes': {
-        'banner': {
-          'sizes': [
-            [
-              970,
-              90
-            ]
-          ]
-        }
-      },
-      'bids': [
-        {
-          'bidder': 'appnexus',
-          'params': {
-            'placementId': '543221'
-          }
-        },
-        {
-          'bidder': 'medianet',
-          'params': {
-            'cid': '8CUWQS47C',
-            'crid': '241882764'
-          },
-        },
-      ]
-    }
-  ]
-}
-
 export function getBidResponsesFromAPI() {
   return {
     '/19968336/header-bid-tag-0': {
@@ -1028,7 +966,7 @@ export function getBidResponsesFromAPI() {
 export function getAdServerTargeting() {
   return {
     '/19968336/header-bid-tag-0': convertTargetingsFromOldToNew({
-      'foobar': '300x250,300x600,0x0',
+      'foobar': '0x0,300x250,300x600',
       'hb_size': '300x250',
       'hb_pb': '10.00',
       'hb_adid': '233bcbee889d46d',
@@ -1097,7 +1035,7 @@ export function getTargetingKeys() {
     ],
     [
       'foobar',
-      ['300x250', '300x600', '0x0']
+      ['0x0', '300x250', '300x600']
     ]
   ];
 }
@@ -1124,7 +1062,7 @@ export function getTargetingKeysBidLandscape() {
     ],
     [
       'foobar',
-      ['300x250', '300x600', '0x0']
+      ['0x0', '300x250', '300x600']
     ],
     [
       TARGETING_KEYS.BIDDER + '_triplelift',

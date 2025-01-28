@@ -47,14 +47,10 @@ export function toFetchRequest(url, data, options = {}) {
   if (options.withCredentials) {
     rqOpts.credentials = 'include';
   }
-  if (isSecureContext) {
-    ['browsingTopics', 'adAuctionHeaders'].forEach(opt => {
-      // the Request constructor will throw an exception if the browser supports topics/fledge
-      // but we're not in a secure context
-      if (options[opt]) {
-        rqOpts[opt] = true;
-      }
-    })
+  if (options.browsingTopics && isSecureContext) {
+    // the Request constructor will throw an exception if the browser supports topics
+    // but we're not in a secure context
+    rqOpts.browsingTopics = true;
   }
   if (options.keepalive) {
     rqOpts.keepalive = true;

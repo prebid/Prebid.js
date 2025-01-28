@@ -22,7 +22,7 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const ORIGIN_DEV = 'https://test.ozpr.net';
-const OZONEVERSION = '2.9.4';
+const OZONEVERSION = '2.9.3';
 export const spec = {
   gvlid: 524,
   aliases: [{code: 'lmc', gvlid: 524}, {code: 'venatus', gvlid: 524}],
@@ -227,13 +227,9 @@ export const spec = {
     const getParams = this.getGetParametersAsObject();
     const wlOztestmodeKey = whitelabelPrefix + 'testmode';
     const isTestMode = getParams[wlOztestmodeKey] || null; // this can be any string, it's used for testing ads
-    ozoneRequest.device = bidderRequest?.ortb2?.device || {};
+    ozoneRequest.device = {'w': window.innerWidth, 'h': window.innerHeight};
     let placementIdOverrideFromGetParam = this.getPlacementIdOverrideFromGetParam(); // null or string
     let schain = null;
-    var auctionId = deepAccess(validBidRequests, '0.ortb2.source.tid');
-    if (auctionId === '0') {
-      auctionId = null;
-    }
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
       let placementId = placementIdOverrideFromGetParam || this.getPlacementId(ozoneBidRequest); // prefer to use a valid override param, else the bidRequest placement Id
@@ -333,13 +329,6 @@ export const spec = {
       if (gpid) {
         deepSetValue(obj, 'ext.gpid', gpid);
       }
-      let transactionId = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.tid');
-      if (transactionId) {
-        obj.ext[whitelabelBidder].transactionId = transactionId; // this is the transactionId PER adUnit, common across bidders for this unit
-      }
-      if (auctionId) {
-        obj.ext[whitelabelBidder].auctionId = auctionId; // we were sent a valid auctionId to use - this will also be used as the root id value for the request
-      }
       if (fledgeEnabled) { // fledge is enabled at some config level - pbjs.setBidderConfig or pbjs.setConfig
         const auctionEnvironment = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.ae'); // this will be set for one of 3 reasons; adunit, setBidderConfig, setConfig
         if (isInteger(auctionEnvironment)) {
@@ -418,16 +407,22 @@ export const spec = {
     }
     extObj[whitelabelBidder].cookieDeprecationLabel = deepAccess(bidderRequest, 'ortb2.device.ext.cdep', 'none');
     logInfo('cookieDeprecationLabel from bidderRequest object = ' + extObj[whitelabelBidder].cookieDeprecationLabel);
+    let ozUuid = generateUUID();
     let batchRequestsVal = this.getBatchRequests(); // false|numeric
     if (typeof batchRequestsVal === 'number') {
       logInfo('going to batch the requests');
       let arrRet = []; // return an array of objects containing data describing max 10 bids
       for (let i = 0; i < tosendtags.length; i += batchRequestsVal) {
-        ozoneRequest.id = generateUUID(); // Unique ID of the bid request, provided by the exchange. (REQUIRED)
-        deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
-        if (auctionId) {
-          deepSetValue(ozoneRequest, 'source.tid', auctionId);
+        if (bidderRequest.auctionId) {
+          logInfo('Found bidderRequest.auctionId - will pass these values through & not generate our own id');
+          ozoneRequest.id = bidderRequest.auctionId;
+          ozoneRequest.auctionId = bidderRequest.auctionId;
+          deepSetValue(ozoneRequest, 'source.tid', deepAccess(bidderRequest, 'ortb2.source.tid'));
+        } else {
+          logInfo('Did not find bidderRequest.auctionId - will generate our own id');
+          ozoneRequest.id = ozUuid; // Unique ID of the bid request, provided by the exchange. (REQUIRED)
         }
+        deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
         ozoneRequest.imp = tosendtags.slice(i, i + batchRequestsVal);
         ozoneRequest.ext = extObj;
         if (ozoneRequest.imp.length > 0) {
@@ -445,13 +440,18 @@ export const spec = {
     logInfo('requests will not be batched.');
     if (singleRequest) {
       logInfo('buildRequests starting to generate response for a single request');
-      ozoneRequest.id = generateUUID(); // Unique ID of the bid request, provided by the exchange. (REQUIRED)
+      if (bidderRequest.auctionId) {
+        logInfo('Found bidderRequest.auctionId - will pass these values through & not generate our own id');
+        ozoneRequest.id = bidderRequest.auctionId;
+        ozoneRequest.auctionId = bidderRequest.auctionId;
+        deepSetValue(ozoneRequest, 'source.tid', deepAccess(bidderRequest, 'ortb2.source.tid'));
+      } else {
+        logInfo('Did not find bidderRequest.auctionId - will generate our own id');
+        ozoneRequest.id = ozUuid; // Unique ID of the bid request, provided by the exchange. (REQUIRED)
+      }
       ozoneRequest.imp = tosendtags;
       ozoneRequest.ext = extObj;
       deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
-      if (auctionId) {
-        deepSetValue(ozoneRequest, 'source.tid', auctionId);
-      }
       var ret = {
         method: 'POST',
         url: this.getAuctionUrl(),
@@ -470,9 +470,6 @@ export const spec = {
       ozoneRequestSingle.imp = [imp];
       ozoneRequestSingle.ext = extObj;
       deepSetValue(ozoneRequestSingle, 'user.ext.eids', userExtEids);
-      if (auctionId) {
-        deepSetValue(ozoneRequestSingle, 'source.tid', auctionId);
-      }
       logInfo('buildRequests RequestSingle (for non-single) = ', ozoneRequestSingle);
       return {
         method: 'POST',
@@ -494,13 +491,13 @@ export const spec = {
     logInfo('getFloorObjectForAuction mediaTypesSizes : ', mediaTypesSizes);
     let ret = {};
     if (mediaTypesSizes.banner) {
-      ret.banner = bidRequestRef.getFloor({mediaType: 'banner', currency: 'USD', size: mediaTypesSizes.banner}) || {};
+      ret.banner = bidRequestRef.getFloor({mediaType: 'banner', currency: 'USD', size: mediaTypesSizes.banner});
     }
     if (mediaTypesSizes.video) {
-      ret.video = bidRequestRef.getFloor({mediaType: 'video', currency: 'USD', size: mediaTypesSizes.video}) || {};
+      ret.video = bidRequestRef.getFloor({mediaType: 'video', currency: 'USD', size: mediaTypesSizes.video});
     }
     if (mediaTypesSizes.native) {
-      ret.native = bidRequestRef.getFloor({mediaType: 'native', currency: 'USD', size: mediaTypesSizes.native}) || {};
+      ret.native = bidRequestRef.getFloor({mediaType: 'native', currency: 'USD', size: mediaTypesSizes.native});
     }
     logInfo('getFloorObjectForAuction returning : ', deepClone(ret));
     return ret;
@@ -894,9 +891,7 @@ export const spec = {
       params: bid.params,
       price: bid.price,
       transactionId: bid.transactionId,
-      ttl: bid.ttl,
-      ortb2: deepAccess(bid, 'ortb2'),
-      ortb2Imp: deepAccess(bid, 'ortb2Imp'),
+      ttl: bid.ttl
     };
     if (bid.hasOwnProperty('floorData')) {
       logObj.floorData = bid.floorData;

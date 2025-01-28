@@ -132,8 +132,6 @@ describe('Zeta Ssp Bid Adapter', function () {
     userIdAsEids: eids,
     timeout: 500,
     ortb2: {
-      bcat: ['CAT1'],
-      badv: ['test1.com'],
       site: {
         inventorypartnerdomain: 'disqus.com'
       },
@@ -721,7 +719,5 @@ describe('Zeta Ssp Bid Adapter', function () {
 
     expect(payload.site.page).to.eql('zetaglobal.com/page');
     expect(payload.site.inventorypartnerdomain).to.eql('disqus.com');
-    expect(payload.bcat).to.eql(['CAT1']);
-    expect(payload.badv).to.eql(['test1.com']);
   });
 });

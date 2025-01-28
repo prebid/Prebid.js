@@ -22,8 +22,8 @@ const readBlobSafariCompat = (blob) => {
 
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
+    getGlobal().refreshUserIds()
     sinon.stub(events, 'getEvents').returns([]);
-    getGlobal().refreshUserIds?.()
   });
 
   afterEach(() => {
@@ -776,108 +776,6 @@ describe('pubxai analytics adapter', () => {
       }
     });
 
-    it('auction data with only rejected bids', async () => {
-      // Step 1: Send auction init event
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
-
-      // Step 2: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
-
-      // Step 3: Send bid rejected (afaict the only expected reason would be a bid being too low)
-      events.emit(EVENTS.BID_REJECTED, prebidEvent['bidResponse']);
-
-      // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
-
-      // Step 4: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(0);
-
-      // Step 5: Send auction end event
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
-
-      // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
-
-      // Step 6: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(1);
-
-      // Step 7: check the pathname of the calls is correct (sent only to the auction endpoint)
-      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
-      const parsedUrl = new URL(expectedUrl);
-      expect(parsedUrl.pathname).to.equal('/analytics/auction');
-
-      // Step 8: check that the meta information in the call is correct
-      expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
-        auctionTimestamp: '1616654312804',
-        pubxaiAnalyticsVersion: 'v2.1.0',
-        prebidVersion: '$prebid.version$',
-        pubxId: pubxId,
-      });
-
-      // Step 9: check that the data sent in the request is correct
-      expect(expectedData.type).to.equal('text/json');
-      expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
-        {
-          ...expectedAfterBid,
-          bids: [{
-            ...expectedAfterBid.bids[0],
-            bidType: 1
-          }]
-        }
-      ]);
-    });
-
-    it('auction data with only timed out bids', async () => {
-      // Step 1: Send auction init event
-      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
-
-      // Step 2: Send bid requested event
-      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
-
-      // Step 3: Send bid rejected (afaict the only expected reason would be a bid being too low)
-      events.emit(EVENTS.BID_TIMEOUT, [prebidEvent['bidResponse']]);
-
-      // Simulate "navigate away" behaviour
-      document.dispatchEvent(new Event('visibilitychange'));
-
-      // Step 4: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(0);
-
-      // Step 5: Send auction end event
-      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
-
-      // Simulate end of session
-      document.dispatchEvent(new Event('visibilitychange'));
-
-      // Step 6: check the number of calls made to pubx.ai
-      expect(navigator.sendBeacon.callCount).to.equal(1);
-
-      // Step 7: check the pathname of the calls is correct (sent only to the auction endpoint)
-      const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
-      const parsedUrl = new URL(expectedUrl);
-      expect(parsedUrl.pathname).to.equal('/analytics/auction');
-
-      // Step 8: check that the meta information in the call is correct
-      expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
-        auctionTimestamp: '1616654312804',
-        pubxaiAnalyticsVersion: 'v2.1.0',
-        prebidVersion: '$prebid.version$',
-        pubxId: pubxId,
-      });
-
-      // Step 9: check that the data sent in the request is correct
-      expect(expectedData.type).to.equal('text/json');
-      expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
-        {
-          ...expectedAfterBid,
-          bids: [{
-            ...expectedAfterBid.bids[0],
-            bidType: 3
-          }]
-        }
-      ]);
-    });
-
     it('auction with no bids', async () => {
       // Step 1: Send auction init event
       events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
@@ -885,27 +783,30 @@ describe('pubxai analytics adapter', () => {
       // Step 2: Send bid requested event
       events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
 
+      // Step 3: Send bid time out event
+      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+
       // Simulate "navigate away" behaviour
       document.dispatchEvent(new Event('visibilitychange'));
 
-      // Step 3: check the number of calls made to pubx.ai
+      // Step 4: check the number of calls made to pubx.ai
       expect(navigator.sendBeacon.callCount).to.equal(0);
 
-      // Step 4: Send auction end event
+      // Step 5: Send auction end event
       events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
 
       // Simulate end of session
       document.dispatchEvent(new Event('visibilitychange'));
 
-      // Step 5: check the number of calls made to pubx.ai
+      // Step 6: check the number of calls made to pubx.ai
       expect(navigator.sendBeacon.callCount).to.equal(1);
 
-      // Step 6: check the pathname of the calls is correct (sent only to the auction endpoint)
+      // Step 7: check the pathname of the calls is correct (sent only to the auction endpoint)
       const [expectedUrl, expectedData] = navigator.sendBeacon.args[0];
       const parsedUrl = new URL(expectedUrl);
       expect(parsedUrl.pathname).to.equal('/analytics/auction');
 
-      // Step 7: check that the meta information in the call is correct
+      // Step 8: check that the meta information in the call is correct
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
         auctionTimestamp: '1616654312804',
         pubxaiAnalyticsVersion: 'v2.1.0',
@@ -913,7 +814,7 @@ describe('pubxai analytics adapter', () => {
         pubxId: pubxId,
       });
 
-      // Step 8: check that the data sent in the request is correct
+      // Step 9: check that the data sent in the request is correct
       expect(expectedData.type).to.equal('text/json');
       expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
         {

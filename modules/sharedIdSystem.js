@@ -183,15 +183,9 @@ export const sharedIdSystemSubmodule = {
 
   domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
   eids: {
-    'pubcid'(values, config) {
-      const eid = {
-        source: 'pubcid.org',
-        uids: values.map(id => ({id, atype: 1}))
-      }
-      if (config?.params?.inserter != null) {
-        eid.inserter = config.params.inserter;
-      }
-      return eid;
+    'pubcid': {
+      source: 'pubcid.org',
+      atype: 1
     },
   }
 };

@@ -28,17 +28,6 @@ function getUtiqFromStorage() {
     storage.getDataFromLocalStorage('utiqPass')
   );
 
-  const netIdAdtechpass = storage.getDataFromLocalStorage('netid_utiq_adtechpass');
-
-  if (netIdAdtechpass) {
-    logInfo(
-      `${LOG_PREFIX}: Local storage netid_utiq_adtechpass: ${netIdAdtechpass}`
-    );
-    return {
-      utiq: netIdAdtechpass,
-    }
-  }
-
   if (
     utiqPassStorage &&
     utiqPassStorage.connectId &&

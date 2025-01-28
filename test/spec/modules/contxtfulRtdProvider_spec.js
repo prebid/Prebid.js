@@ -1,24 +1,16 @@
 import { contxtfulSubmodule, extractParameters } from '../../../modules/contxtfulRtdProvider.js';
 import { expect } from 'chai';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
-import { getStorageManager } from '../../../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import * as events from '../../../src/events';
-import * as utils from 'src/utils.js';
-import Sinon from 'sinon';
-import { deepClone } from '../../../src/utils.js';
-
-const MODULE_NAME = 'contxtful';
 
 const VERSION = 'v1';
 const CUSTOMER = 'CUSTOMER';
-const SM = 'SM';
 const CONTXTFUL_CONNECTOR_ENDPOINT = `https://api.receptivity.io/${VERSION}/prebid/${CUSTOMER}/connector/rxConnector.js`;
 
 const RX_FROM_SESSION_STORAGE = { ReceptivityState: 'Receptive', test_info: 'rx_from_session_storage' };
 const RX_FROM_API = { ReceptivityState: 'Receptive', test_info: 'rx_from_engine' };
 
-const RX_API_MOCK = { receptivity: sinon.stub(), receptivityBatched: sinon.stub() };
+const RX_API_MOCK = { receptivity: sinon.stub(), };
 const RX_CONNECTOR_MOCK = {
   fetchConfig: sinon.stub(),
   rxApiBuilder: sinon.stub(),
@@ -26,6 +18,13 @@ const RX_CONNECTOR_MOCK = {
 
 const TIMEOUT = 10;
 const RX_CONNECTOR_IS_READY_EVENT = new CustomEvent('rxConnectorIsReady', { detail: {[CUSTOMER]: RX_CONNECTOR_MOCK}, bubbles: true });
+
+function writeToStorage(requester, timeDiff) {
+  let rx = RX_FROM_SESSION_STORAGE;
+  let exp = new Date().getTime() + timeDiff;
+  let item = { rx, exp, };
+  sessionStorage.setItem(requester, JSON.stringify(item),);
+}
 
 function buildInitConfig(version, customer) {
   return {
@@ -45,17 +44,12 @@ describe('contxtfulRtdProvider', function () {
   let loadExternalScriptTag;
   let eventsEmitSpy;
 
-  const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
-
   beforeEach(() => {
     loadExternalScriptTag = document.createElement('script');
     loadExternalScriptStub.callsFake((_url, _moduleName) => loadExternalScriptTag);
 
     RX_API_MOCK.receptivity.reset();
-    RX_API_MOCK.receptivity.callsFake(() => RX_FROM_API);
-
-    RX_API_MOCK.receptivityBatched.reset();
-    RX_API_MOCK.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
+    RX_API_MOCK.receptivity.callsFake((tagId) => RX_FROM_API);
 
     RX_CONNECTOR_MOCK.fetchConfig.reset();
     RX_CONNECTOR_MOCK.fetchConfig.callsFake((tagId) => new Promise((resolve, reject) => resolve({ tag_id: tagId })));
@@ -64,8 +58,6 @@ describe('contxtfulRtdProvider', function () {
     RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK)));
 
     eventsEmitSpy = sandbox.spy(events, ['emit']);
-
-    sandbox.stub(utils, 'generateUUID').returns(SM);
 
     let tagId = CUSTOMER;
     sessionStorage.clear();
@@ -257,7 +249,7 @@ describe('contxtfulRtdProvider', function () {
 
         setTimeout(() => {
           let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
-          expect(targetingData, description).to.deep.equal(expected, description);
+          expect(targetingData, description).to.deep.equal(expected);
           done();
         }, TIMEOUT);
       });
@@ -330,18 +322,22 @@ describe('contxtfulRtdProvider', function () {
     ];
 
     theories.forEach(([adUnits, expected, _description]) => {
+      // TODO: commented out because of rule violations
+      /*
       it('uses non-expired info from session storage and adds receptivity to the ad units using session storage', function (done) {
-        // Simulate that there was a write to sessionStorage in the past.
-        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE}))
-
         let config = buildInitConfig(VERSION, CUSTOMER);
+        // Simulate that there was a write to sessionStorage in the past.
+        writeToStorage(config.params.customer, +100);
         contxtfulSubmodule.init(config);
 
-        let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
-        expect(targetingData).to.deep.equal(expected);
-
-        done();
+        setTimeout(() => {
+          expect(contxtfulSubmodule.getTargetingData(adUnits, config)).to.deep.equal(
+            expected
+          );
+          done();
+        }, TIMEOUT);
       });
+       */
     });
   });
 
@@ -364,15 +360,13 @@ describe('contxtfulRtdProvider', function () {
 
     theories.forEach(([adUnits, expected, _description]) => {
       it('ignores expired info from session storage and does not forward the info to ad units', function (done) {
-        // Simulate that there was a write to sessionStorage in the past.
-        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({exp: new Date().getTime() - 100, rx: RX_FROM_SESSION_STORAGE}));
-
         let config = buildInitConfig(VERSION, CUSTOMER);
+        // Simulate that there was a write to sessionStorage in the past.
+        writeToStorage(config.params.customer, -100);
         contxtfulSubmodule.init(config);
-
-        let targetingData = contxtfulSubmodule.getTargetingData(adUnits, config);
-        expect(targetingData).to.deep.equal(expected);
-
+        expect(contxtfulSubmodule.getTargetingData(adUnits, config)).to.deep.equal(
+          expected
+        );
         done();
       });
     });
@@ -434,39 +428,42 @@ describe('contxtfulRtdProvider', function () {
         },
       };
 
-      let expectedData = {
-        name: 'contxtful',
-        ext: {
-          rx: RX_FROM_API,
-          params: {
-            ev: config.params?.version,
-            ci: config.params?.customer,
-          },
+      let expectedOrtb2 = {
+        user: {
+          data: [
+            {
+              name: 'contxtful',
+              ext: {
+                rx: RX_FROM_API,
+                params: {
+                  ev: config.params?.version,
+                  ci: config.params?.customer,
+                },
+              },
+            },
+          ],
         },
       };
 
       setTimeout(() => {
-        const onDoneSpy = sinon.spy();
-        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
-
-        let data = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
-
-        expect(data.name).to.deep.equal(expectedData.name);
-        expect(data.ext.rx).to.deep.equal(expectedData.ext.rx);
-        expect(data.ext.params).to.deep.equal(expectedData.ext.params);
+        const onDone = () => undefined;
+        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDone, config);
+        let actualOrtb2 = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
+        expect(actualOrtb2).to.deep.equal(expectedOrtb2);
         done();
       }, TIMEOUT);
     });
   });
 
   describe('getBidRequestData', function () {
+    // TODO: commented out because of rule violations
+    /*
     it('uses non-expired info from session storage and adds receptivity to the reqBidsConfigObj', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
-
       // Simulate that there was a write to sessionStorage in the past.
-      let bidder = config.params.bidders[0];
+      writeToStorage(config.params.bidders[0], +100);
 
-      storage.setDataInSessionStorage(`${config.params.customer}_${bidder}`, JSON.stringify({exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE}));
+      contxtfulSubmodule.init(config);
 
       let reqBidsConfigObj = {
         ortb2Fragments: {
@@ -475,26 +472,33 @@ describe('contxtfulRtdProvider', function () {
         },
       };
 
-      contxtfulSubmodule.init(config);
+      let expectedOrtb2 = {
+        user: {
+          data: [
+            {
+              name: 'contxtful',
+              ext: {
+                rx: RX_FROM_SESSION_STORAGE,
+                params: {
+                  ev: config.params?.version,
+                  ci: config.params?.customer,
+                },
+              },
+            },
+          ],
+        },
+      };
 
       // Since the RX_CONNECTOR_IS_READY_EVENT event was not dispatched, the RX engine is not loaded.
-      contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, () => {}, config);
-
       setTimeout(() => {
-        let ortb2BidderFragment = reqBidsConfigObj.ortb2Fragments.bidder[bidder];
-        let userData = ortb2BidderFragment.user.data;
-        let contxtfulData = userData[0];
-
-        expect(contxtfulData.name).to.be.equal('contxtful');
-        expect(contxtfulData.ext.rx).to.deep.equal(RX_FROM_SESSION_STORAGE);
-        expect(contxtfulData.ext.params).to.deep.equal({
-          ev: config.params.version,
-          ci: config.params.customer,
-        });
-
+        const noOp = () => undefined;
+        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, noOp, buildInitConfig(VERSION, CUSTOMER));
+        let actualOrtb2 = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
+        expect(actualOrtb2).to.deep.equal(expectedOrtb2);
         done();
       }, TIMEOUT);
     });
+     */
   });
 
   describe('getBidRequestData', function () {
@@ -516,7 +520,7 @@ describe('contxtfulRtdProvider', function () {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
         expect(onDoneSpy.callCount).to.equal(1);
-        expect(RX_API_MOCK.receptivityBatched.callCount).to.equal(1);
+        expect(RX_API_MOCK.receptivity.callCount).to.equal(1);
         done();
       }, TIMEOUT);
     });
@@ -535,157 +539,29 @@ describe('contxtfulRtdProvider', function () {
         },
       };
 
-      let expectedData = {
-        name: 'contxtful',
-        ext: {
-          rx: RX_FROM_API,
-          sm: SM,
-          params: {
-            ev: config.params?.version,
-            ci: config.params?.customer,
-          },
-        },
-      };
-
-      setTimeout(() => {
-        const onDoneSpy = sinon.spy();
-        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
-
-        let data = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
-
-        expect(data.name).to.deep.equal(expectedData.name);
-        expect(data.ext.rx).to.deep.equal(expectedData.ext.rx);
-        expect(data.ext.sm).to.deep.equal(expectedData.ext.sm);
-        expect(data.ext.params).to.deep.equal(expectedData.ext.params);
-        done();
-      }, TIMEOUT);
-    });
-
-    it('does not change the sm', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
-      contxtfulSubmodule.init(config);
-      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
-
-      let firstReqBidsConfigObj = {
-        ortb2Fragments: {
-          global: {},
-          bidder: {},
-        },
-      };
-
-      let secondReqBidsConfigObj = deepClone(firstReqBidsConfigObj);
-
-      setTimeout(() => {
-        const onDoneSpy = sinon.spy();
-        contxtfulSubmodule.getBidRequestData(firstReqBidsConfigObj, onDoneSpy, config);
-        contxtfulSubmodule.getBidRequestData(secondReqBidsConfigObj, onDoneSpy, config);
-
-        let firstData = firstReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
-        let secondData = secondReqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0];
-
-        expect(firstData.ext.sm).to.equal(secondData.ext.sm);
-
-        done();
-      }, TIMEOUT);
-    });
-
-    describe('before rxApi is loaded', function () {
-      const moveEventTheories = [
-        [
-          new PointerEvent('pointermove', { clientX: 1, clientY: 2 }),
-          { x: 1, y: 2 },
-          'pointer move',
-        ]
-      ];
-
-      moveEventTheories.forEach(([event, expected, _description]) => {
-        it('adds move event', function (done) {
-          let config = buildInitConfig(VERSION, CUSTOMER);
-          contxtfulSubmodule.init(config);
-
-          window.dispatchEvent(event);
-
-          let reqBidsConfigObj = {
-            ortb2Fragments: {
-              global: {},
-              bidder: {},
+      let ortb2 = {
+        user: {
+          data: [
+            {
+              name: 'contxtful',
+              ext: {
+                rx: RX_FROM_API,
+                params: {
+                  ev: config.params?.version,
+                  ci: config.params?.customer,
+                },
+              },
             },
-          };
-
-          setTimeout(() => {
-            const onDoneSpy = sinon.spy();
-            contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
-
-            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-
-            let events = JSON.parse(atob(ext.events));
-
-            expect(events.ui.position.x).to.be.deep.equal(expected.x);
-            expect(events.ui.position.y).to.be.deep.equal(expected.y);
-            expect(Sinon.match.number.test(events.ui.position.timestampMs)).to.be.true;
-            done();
-          }, TIMEOUT);
-        });
-      });
-
-      it('adds screen event', function (done) {
-        let config = buildInitConfig(VERSION, CUSTOMER);
-        contxtfulSubmodule.init(config);
-
-        // Cannot change the window size from JS
-        // So we take the current size as expectation
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-
-        let reqBidsConfigObj = {
-          ortb2Fragments: {
-            global: {},
-            bidder: {},
-          },
-        };
-
-        setTimeout(() => {
-          const onDoneSpy = sinon.spy();
-          contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
-
-          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-
-          let events = JSON.parse(atob(ext.events));
-
-          expect(events.ui.screen.topLeft).to.be.deep.equal({ x: 0, y: 0 }, 'screen top left');
-          expect(events.ui.screen.width).to.be.deep.equal(width, 'screen width');
-          expect(events.ui.screen.height).to.be.deep.equal(height, 'screen height');
-          expect(Sinon.match.number.test(events.ui.screen.timestampMs), 'screen timestamp').to.be.true;
-          done();
-        }, TIMEOUT);
-      });
-    })
-  });
-
-  describe('after rxApi is loaded', function () {
-    it('should add event', function (done) {
-      let config = buildInitConfig(VERSION, CUSTOMER);
-      contxtfulSubmodule.init(config);
-      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
-
-      let reqBidsConfigObj = {
-        ortb2Fragments: {
-          global: {},
-          bidder: {},
+          ],
         },
       };
 
       setTimeout(() => {
         const onDoneSpy = sinon.spy();
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
-
-        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
-
-        let events = ext.events;
-
-        expect(events).to.be.not.undefined;
+        expect(reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]]).to.deep.equal(ortb2);
         done();
       }, TIMEOUT);
     });
-  })
+  });
 });

@@ -3,8 +3,6 @@ import { assert } from 'chai';
 import { spec } from 'modules/dianomiBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
-import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Dianomi adapter', () => {
   let bids = [];
@@ -269,14 +267,12 @@ describe('Dianomi adapter', () => {
     });
 
     it('should send currency if defined', () => {
-      setCurrencyConfig({ adServerCurrency: 'EUR' })
+      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
       let validBidRequests = [{ params: { smartadId: 1234 } }];
       let refererInfo = { page: 'page' };
-      return addFPDToBidderRequest({ refererInfo }).then(res => {
-        let request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
-        assert.deepEqual(request.cur, ['EUR']);
-        setCurrencyConfig({});
-      });
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
+
+      assert.deepEqual(request.cur, ['EUR']);
     });
 
     it('should pass supply chain object', () => {
@@ -398,18 +394,12 @@ describe('Dianomi adapter', () => {
         });
 
         it('should request floor price in adserver currency', () => {
-          setCurrencyConfig({ adServerCurrency: 'GBP' })
-          let validBidRequests = [getBidWithFloor()];
-          let refererInfo = { page: 'page' };
-          return addFPDToBidderRequest({ refererInfo }).then(res => {
-            let imp = JSON.parse(
-              spec.buildRequests(validBidRequests, res).data
-            ).imp[0];
+          config.setConfig({ currency: { adServerCurrency: 'GBP' } });
+          const validBidRequests = [getBidWithFloor()];
+          let imp = getRequestImps(validBidRequests)[0];
 
-            assert.equal(imp.bidfloor, undefined);
-            assert.equal(imp.bidfloorcur, 'GBP');
-            setCurrencyConfig({});
-          });
+          assert.equal(imp.bidfloor, undefined);
+          assert.equal(imp.bidfloorcur, 'GBP');
         });
 
         it('should add correct floor values', () => {

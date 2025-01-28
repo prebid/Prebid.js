@@ -22,7 +22,6 @@ const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
-const DEFAULT_TTL = 360;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
@@ -140,12 +139,6 @@ const MEDIATYPE = [
   VIDEO,
   NATIVE
 ]
-
-const MEDIATYPE_TTL = {
-  'banner': 360,
-  'video': 1800,
-  'native': 1800
-};
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
@@ -833,7 +826,7 @@ function _addFloorFromFloorModule(impObj, bid) {
         sizesArray.forEach(size => {
           let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: size });
           logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, ' and size:', size, ' is: currency', floorInfo.currency, 'floor', floorInfo.floor);
-          if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+          if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
             let mediaTypeFloor = parseFloat(floorInfo.floor);
             logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
             if (bidFloor === -1) {
@@ -863,23 +856,6 @@ function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'user.eids', bidUserIdAsEids);
-  }
-}
-
-export function setTTL(bid, newBid) {
-  let ttl = MEDIATYPE_TTL[newBid?.mediaType] || DEFAULT_TTL;
-  newBid.ttl = bid.exp || ttl;
-}
-
-// Setting IBV & meta.mediaType field into the bid response
-export function setIBVField(bid, newBid) {
-  if (bid?.ext?.ibv) {
-    newBid.ext = newBid.ext || {};
-    newBid.ext['ibv'] = bid.ext.ibv;
-
-    // Overriding the mediaType field in meta with the `video` value if bid.ext.ibv is present
-    newBid.meta = newBid.meta || {};
-    newBid.meta.mediaType = VIDEO;
   }
 }
 
@@ -1032,7 +1008,7 @@ function isNonEmptyArray(test) {
  * @param {*} bid : bids
  */
 export function prepareMetaObject(br, bid, seat) {
-  br.meta = br.meta || {};
+  br.meta = {};
 
   if (bid.ext && bid.ext.dspid) {
     br.meta.networkId = bid.ext.dspid;
@@ -1070,11 +1046,6 @@ export function prepareMetaObject(br, bid, seat) {
 
   if (bid.ext && bid.ext.dsa && Object.keys(bid.ext.dsa).length) {
     br.meta.dsa = bid.ext.dsa;
-  }
-
-  // Initializing meta.mediaType field to the actual bidType returned by the bidder
-  if (br.mediaType) {
-    br.meta.mediaType = br.mediaType;
   }
 }
 
@@ -1326,11 +1297,6 @@ export const spec = {
       }
     }
 
-    // if present, merge device object from ortb2 into `payload.device`
-    if (bidderRequest?.ortb2?.device) {
-      mergeDeep(payload.device, bidderRequest.ortb2.device);
-    }
-
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
       _allowedIabCategoriesValidation(payload, acatParams);
@@ -1402,7 +1368,7 @@ export const spec = {
                 dealId: bid.dealid,
                 currency: respCur,
                 netRevenue: NET_REVENUE,
-                ttl: DEFAULT_TTL,
+                ttl: 300,
                 referrer: parsedReferrer,
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
@@ -1413,7 +1379,6 @@ export const spec = {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
                     _checkMediaType(bid, newBid);
-                    setTTL(bid, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
@@ -1431,11 +1396,11 @@ export const spec = {
                   }
                 });
               }
-              prepareMetaObject(newBid, bid, seatbidder.seat);
-              setIBVField(bid, newBid);
               if (bid.ext && bid.ext.deal_channel) {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
+
+              prepareMetaObject(newBid, bid, seatbidder.seat);
 
               // adserverTargeting
               if (seatbidder.ext && seatbidder.ext.buyid) {

@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -11,7 +11,7 @@ let REFERER = '';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 108,
-  aliases: [{code: 'ra', gvlid: 108}],
+  aliases: ['ra'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /***
@@ -36,7 +36,7 @@ export const spec = {
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
-        currencyCode: getCurrencyFromBidderRequest(bidderRequest),
+        currencyCode: config.getConfig('currency.adServerCurrency'),
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -53,7 +53,7 @@ export const spec = {
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: bid.params.keywords,
+        kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
         schain: bid.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
@@ -118,9 +118,7 @@ export const spec = {
         netRevenue: response.netRevenue,
         currency: response.currency,
         ttl: response.ttl,
-        meta: {
-          advertiserDomains: [response.adomain[0]]
-        },
+        meta: response.adomain,
         dealId: response.dealId
       };
 

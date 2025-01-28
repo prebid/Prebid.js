@@ -135,7 +135,7 @@ const interpretResponse = (serverResponse, request) => {
           ad: b.adm,
           ttl: 1000,
           creativeId: b.crid,
-          netRevenue: true,
+          netRevenue: false,
           currency: res.cur
         }
 

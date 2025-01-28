@@ -7,8 +7,7 @@ import {
   mergeDeep,
   logWarn,
   isNumber,
-  isStr,
-  isPlainObject
+  isStr
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -276,11 +275,6 @@ export const spec = {
         userExt.device = { ...ortb2UserExtDevice };
       }
 
-      // if present, add device data object from ortb2 to the request
-      if (bidderRequest?.ortb2?.device) {
-        request.device = bidderRequest.ortb2.device;
-      }
-
       if (userIdAsEids && userIdAsEids.length) {
         userExt = userExt || {};
         userExt.eids = [...userIdAsEids];
@@ -509,7 +503,7 @@ function _getFloor (mediaTypes, bid) {
       size: bid.sizes.map(([w, h]) => ({w, h}))
     });
 
-    if (isPlainObject(floorInfo) &&
+    if (typeof floorInfo === 'object' &&
       floorInfo.currency === 'USD' &&
       !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(floor, parseFloat(floorInfo.floor));

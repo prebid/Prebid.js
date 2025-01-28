@@ -452,20 +452,16 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+    function checkGppStatus(gppConsent) {
+      // user sync suppression for adapters is handled in activity controls and not needed in adapters
+      return true;
+    }
+
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent) && checkGppStatus(gppConsent)) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       }];
-    }
-
-    if (syncOptions.pixelEnabled) {
-      // first attempt using static list
-      const imgList = ['https://px.ads.linkedin.com/setuid?partner=appNexus'];
-      return imgList.map(url => ({
-        type: 'image',
-        url
-      }));
     }
   }
 };
@@ -694,124 +690,19 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       javascriptTrackers: jsTrackers
     };
     if (nativeAd.main_img) {
-      bid[NATIVE].image = {
+      bid['native'].image = {
         url: nativeAd.main_img.url,
         height: nativeAd.main_img.height,
         width: nativeAd.main_img.width,
       };
     }
     if (nativeAd.icon) {
-      bid[NATIVE].icon = {
+      bid['native'].icon = {
         url: nativeAd.icon.url,
         height: nativeAd.icon.height,
         width: nativeAd.icon.width,
       };
     }
-
-    // Custom fields
-    bid[NATIVE].ext = {
-      video: nativeAd.video,
-      customImage1: nativeAd.image1 && {
-        url: nativeAd.image1.url,
-        height: nativeAd.image1.height,
-        width: nativeAd.image1.width,
-      },
-      customImage2: nativeAd.image2 && {
-        url: nativeAd.image2.url,
-        height: nativeAd.image2.height,
-        width: nativeAd.image2.width,
-      },
-      customImage3: nativeAd.image3 && {
-        url: nativeAd.image3.url,
-        height: nativeAd.image3.height,
-        width: nativeAd.image3.width,
-      },
-      customImage4: nativeAd.image4 && {
-        url: nativeAd.image4.url,
-        height: nativeAd.image4.height,
-        width: nativeAd.image4.width,
-      },
-      customImage5: nativeAd.image5 && {
-        url: nativeAd.image5.url,
-        height: nativeAd.image5.height,
-        width: nativeAd.image5.width,
-      },
-      customIcon1: nativeAd.icon1 && {
-        url: nativeAd.icon1.url,
-        height: nativeAd.icon1.height,
-        width: nativeAd.icon1.width,
-      },
-      customIcon2: nativeAd.icon2 && {
-        url: nativeAd.icon2.url,
-        height: nativeAd.icon2.height,
-        width: nativeAd.icon2.width,
-      },
-      customIcon3: nativeAd.icon3 && {
-        url: nativeAd.icon3.url,
-        height: nativeAd.icon3.height,
-        width: nativeAd.icon3.width,
-      },
-      customIcon4: nativeAd.icon4 && {
-        url: nativeAd.icon4.url,
-        height: nativeAd.icon4.height,
-        width: nativeAd.icon4.width,
-      },
-      customIcon5: nativeAd.icon5 && {
-        url: nativeAd.icon5.url,
-        height: nativeAd.icon5.height,
-        width: nativeAd.icon5.width,
-      },
-      customSocialIcon1: nativeAd.socialicon1 && {
-        url: nativeAd.socialicon1.url,
-        height: nativeAd.socialicon1.height,
-        width: nativeAd.socialicon1.width,
-      },
-      customSocialIcon2: nativeAd.socialicon2 && {
-        url: nativeAd.socialicon2.url,
-        height: nativeAd.socialicon2.height,
-        width: nativeAd.socialicon2.width,
-      },
-      customSocialIcon3: nativeAd.socialicon3 && {
-        url: nativeAd.socialicon3.url,
-        height: nativeAd.socialicon3.height,
-        width: nativeAd.socialicon3.width,
-      },
-      customSocialIcon4: nativeAd.socialicon4 && {
-        url: nativeAd.socialicon4.url,
-        height: nativeAd.socialicon4.height,
-        width: nativeAd.socialicon4.width,
-      },
-      customSocialIcon5: nativeAd.socialicon5 && {
-        url: nativeAd.socialicon5.url,
-        height: nativeAd.socialicon5.height,
-        width: nativeAd.socialicon5.width,
-      },
-      customTitle1: nativeAd.title1,
-      customTitle2: nativeAd.title2,
-      customTitle3: nativeAd.title3,
-      customTitle4: nativeAd.title4,
-      customTitle5: nativeAd.title5,
-      customBody1: nativeAd.body1,
-      customBody2: nativeAd.body2,
-      customBody3: nativeAd.body3,
-      customBody4: nativeAd.body4,
-      customBody5: nativeAd.body5,
-      customCta1: nativeAd.ctatext1,
-      customCta2: nativeAd.ctatext2,
-      customCta3: nativeAd.ctatext3,
-      customCta4: nativeAd.ctatext4,
-      customCta5: nativeAd.ctatext5,
-      customDisplayUrl1: nativeAd.displayurl1,
-      customDisplayUrl2: nativeAd.displayurl2,
-      customDisplayUrl3: nativeAd.displayurl3,
-      customDisplayUrl4: nativeAd.displayurl4,
-      customDisplayUrl5: nativeAd.displayurl5,
-      customSocialUrl1: nativeAd.socialurl1,
-      customSocialUrl2: nativeAd.socialurl2,
-      customSocialUrl3: nativeAd.socialurl3,
-      customSocialUrl4: nativeAd.socialurl4,
-      customSocialUrl5: nativeAd.socialurl5
-    };
   } else {
     Object.assign(bid, {
       width: rtbBid.rtb.banner.width,

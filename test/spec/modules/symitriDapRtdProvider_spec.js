@@ -49,7 +49,7 @@ describe('symitriDapRtdProvider', function() {
       'apiAuthToken': 'Token 1234',
       'domain': 'prebid.org',
       'identityType': 'dap-signature:1.0.0',
-      'segtax': 708
+      'segtax': 503
     }
   }
 
@@ -61,7 +61,7 @@ describe('symitriDapRtdProvider', function() {
       'apiVersion': 'x1',
       'domain': 'prebid.org',
       'identityType': 'dap-signature:1.0.0',
-      'segtax': 710,
+      'segtax': 504,
       'pixelUrl': 'https://www.test.com/pixel'
     }
   }
@@ -70,15 +70,7 @@ describe('symitriDapRtdProvider', function() {
     'api_hostname': 'prebid.dap.akadns.net',
     'api_version': 'x1',
     'domain': 'prebid.org',
-    'segtax': 708,
-    'identity': sampleIdentity
-  }
-
-  const sampleX2Config = {
-    'api_hostname': 'prebid.dap.akadns.net',
-    'api_version': 'x2',
-    'domain': 'prebid.org',
-    'segtax': 708,
+    'segtax': 503,
     'identity': sampleIdentity
   }
 
@@ -86,7 +78,7 @@ describe('symitriDapRtdProvider', function() {
     'api_hostname': 'prebid.dap.akadns.net',
     'api_version': 'x1',
     'domain': 'prebid.org',
-    'segtax': 710,
+    'segtax': 504,
     'identity': sampleIdentity
   }
   let cacheExpiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
@@ -112,7 +104,7 @@ describe('symitriDapRtdProvider', function() {
   const encRtdUserObj = {
     name: 'www.dataprovider3.com',
     ext: {
-      segtax: 710,
+      segtax: 504,
       taxonomyname: 'iab_audience_taxonomy'
     },
     segment: []
@@ -268,34 +260,6 @@ describe('symitriDapRtdProvider', function() {
     });
   });
 
-  describe('dapX2Tokenize', function () {
-    it('dapX2Tokenize error callback', function () {
-      let configAsync = JSON.parse(JSON.stringify(sampleX2Config));
-      let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
-        },
-        function(xhr, status, error, onDone) {
-        }
-      );
-      let request = server.requests[0];
-      request.respond(400, responseHeader, JSON.stringify('error'));
-      expect(submoduleCallback).to.equal(undefined);
-    });
-
-    it('dapX2Tokenize success callback', function () {
-      let configAsync = JSON.parse(JSON.stringify(sampleX2Config));
-      let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
-        },
-        function(xhr, status, error, onDone) {
-        }
-      );
-      let request = server.requests[0];
-      request.respond(200, responseHeader, JSON.stringify('success'));
-      expect(submoduleCallback).to.equal(undefined);
-    });
-  });
-
   describe('dapTokenize and dapMembership incorrect params', function () {
     it('Onerror and config are null', function () {
       expect(dapUtils.dapTokenize(null, 'identity', onDone, null, null)).to.be.equal(undefined);
@@ -305,13 +269,13 @@ describe('symitriDapRtdProvider', function() {
         'api_hostname': 'prebid.dap.akadns.net',
         'api_version': 1,
         'domain': '',
-        'segtax': 708
+        'segtax': 503
       };
       const encConfig = {
         'api_hostname': 'prebid.dap.akadns.net',
         'api_version': 1,
         'domain': '',
-        'segtax': 710
+        'segtax': 504
       };
       let identity = {
         type: 'dap-signature:1.0.0'
@@ -439,7 +403,7 @@ describe('symitriDapRtdProvider', function() {
         apiHostname: 'prebid.dap.akadns.net',
         apiVersion: 'x1',
         domain: 'prebid.org',
-        segtax: 708
+        segtax: 503
       };
       expect(dapUtils.dapRefreshMembership(ortb2, config, 'token', onDone)).to.equal(undefined)
       const membership = {cohorts: ['1', '5', '7']}
@@ -448,11 +412,11 @@ describe('symitriDapRtdProvider', function() {
   });
 
   describe('checkAndAddRealtimeData test', function () {
-    it('add realtime data for segtax 708 and 710', function () {
-      dapUtils.checkAndAddRealtimeData(ortb2, cachedEncRtd, 710);
-      dapUtils.checkAndAddRealtimeData(ortb2, cachedEncRtd, 710);
+    it('add realtime data for segtax 503 and 504', function () {
+      dapUtils.checkAndAddRealtimeData(ortb2, cachedEncRtd, 504);
+      dapUtils.checkAndAddRealtimeData(ortb2, cachedEncRtd, 504);
       expect(ortb2.user.data).to.deep.include.members([encRtdUserObj]);
-      dapUtils.checkAndAddRealtimeData(ortb2, cachedRtd, 708);
+      dapUtils.checkAndAddRealtimeData(ortb2, cachedRtd, 503);
       expect(ortb2.user.data).to.deep.include.members([rtdUserObj]);
     });
   });
@@ -509,7 +473,7 @@ describe('symitriDapRtdProvider', function() {
       let request = server.requests[0];
       responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
-      let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 710)
+      let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(expiry);
     });
@@ -520,7 +484,7 @@ describe('symitriDapRtdProvider', function() {
       let request = server.requests[0];
       responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
-      let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 710)
+      let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP)).expires_at).to.equal(1643830630);
     });
@@ -551,7 +515,7 @@ describe('symitriDapRtdProvider', function() {
       dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       let request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
-      let rtdObj = dapUtils.dapGetRtdObj(membership, 708);
+      let rtdObj = dapUtils.dapGetRtdObj(membership, 503);
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
     });
 
@@ -560,7 +524,7 @@ describe('symitriDapRtdProvider', function() {
       dapUtils.dapRefreshMembership(ortb2, sampleConfig, sampleCachedToken.token, onDone);
       let request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(membership));
-      let rtdObj = dapUtils.dapGetRtdObj(membership, 708)
+      let rtdObj = dapUtils.dapGetRtdObj(membership, 503)
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_MEMBERSHIP)).expires_at).to.be.equal(1647971548);
     });

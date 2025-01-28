@@ -138,7 +138,6 @@ describe('EMTVBidAdapter', function () {
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth',
         'deviceHeight',
-        'device',
         'language',
         'secure',
         'host',

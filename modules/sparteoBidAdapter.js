@@ -24,14 +24,12 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    deepSetValue(request, 'site.publisher.ext.params.pbjsVersion', '$prebid.version$');
-
     if (bidderRequest.bids[0].params.networkId) {
-      request.site.publisher.ext.params.networkId = bidderRequest.bids[0].params.networkId;
+      deepSetValue(request, 'site.publisher.ext.params.networkId', bidderRequest.bids[0].params.networkId);
     }
 
     if (bidderRequest.bids[0].params.publisherId) {
-      request.site.publisher.ext.params.publisherId = bidderRequest.bids[0].params.publisherId;
+      deepSetValue(request, 'site.publisher.ext.params.publisherId', bidderRequest.bids[0].params.publisherId);
     }
 
     return request;
@@ -40,7 +38,6 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
 
     deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
-    imp.ext.sparteo.params.adUnitCode = bidRequest.adUnitCode;
 
     return imp;
   },
@@ -79,8 +76,7 @@ export const spec = {
     }
 
     if (!bid.params.networkId && !bid.params.publisherId) {
-      // publisherId is deprecated but is still accepted for now for retrocompatibility purpose.
-      logError('The networkId is required');
+      logError('The networkId or publisherId is required');
       return false;
     }
 

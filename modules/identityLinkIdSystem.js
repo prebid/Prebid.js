@@ -132,8 +132,6 @@ function getEnvelope(url, callback, configParams) {
     utils.logInfo('identityLink: A 3P retrieval is attempted!');
     setEnvelopeSource(false);
     ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-  } else {
-    callback()
   }
 }
 

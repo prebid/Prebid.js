@@ -1,29 +1,61 @@
 import {deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {findIndex} from '../src/polyfill.js';
-import {
-  getUserSyncsFn,
-  isBidRequestValid,
-  supportedMediaTypes
-} from '../libraries/adtelligentUtils/adtelligentUtils.js';
 
 const URL = 'https://ghb.sync.viewdeos.com/auction/';
 const OUTSTREAM_SRC = 'https://player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'viewdeosDX';
 const OUTSTREAM = 'outstream';
 const DISPLAY = 'display';
-const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['viewdeos'],
   gvlid: 924,
-  supportedMediaTypes,
-  isBidRequestValid,
+  supportedMediaTypes: [VIDEO, BANNER],
+  isBidRequestValid: function (bid) {
+    return !!deepAccess(bid, 'params.aid');
+  },
   getUserSyncs: function (syncOptions, serverResponses) {
-    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    const syncs = [];
+
+    function addSyncs(bid) {
+      const uris = bid.cookieURLs;
+      const types = bid.cookieURLSTypes || [];
+
+      if (Array.isArray(uris)) {
+        uris.forEach((uri, i) => {
+          const type = types[i] || 'image';
+
+          if ((!syncOptions.pixelEnabled && type === 'image') ||
+            (!syncOptions.iframeEnabled && type === 'iframe')) {
+            return;
+          }
+
+          syncs.push({
+            type: type,
+            url: uri
+          })
+        })
+      }
+    }
+
+    if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
+      isArray(serverResponses) && serverResponses.forEach((response) => {
+        if (response.body) {
+          if (isArray(response.body)) {
+            response.body.forEach(b => {
+              addSyncs(b);
+            })
+          } else {
+            addSyncs(response.body)
+          }
+        }
+      })
+    }
+    return syncs;
   },
   /**
    * Make a server request from the list of BidRequests
@@ -189,7 +221,6 @@ function createBid(bidResponse, mediaType, bidderParams) {
 /**
  * Create  renderer
  * @param requestId
- * @param bidderParams
  * @returns {*}
  */
 function newRenderer(requestId, bidderParams) {

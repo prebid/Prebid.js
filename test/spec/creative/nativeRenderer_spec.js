@@ -34,16 +34,10 @@ describe('Native creative renderer', () => {
       });
     });
     describe('otherwise, calls replacer', () => {
-      let replacer, frame;
+      let replacer;
       beforeEach(() => {
         replacer = sinon.stub().returns('markup');
-        frame = document.createElement('iframe');
-        document.body.appendChild(frame);
-        win.document = frame.contentDocument;
       });
-      afterEach(() => {
-        document.body.removeChild(frame);
-      })
       it('with adTemplate, if present', () => {
         return getAdMarkup('123', {adTemplate: 'tpl'}, replacer, win).then((result) => {
           expect(result).to.eql('markup');
@@ -51,7 +45,7 @@ describe('Native creative renderer', () => {
         });
       });
       it('with document body otherwise', () => {
-        win.document.body.innerHTML = 'body'
+        win.document = {body: {innerHTML: 'body'}};
         return getAdMarkup('123', {}, replacer, win).then((result) => {
           expect(result).to.eql('markup');
           sinon.assert.calledWith(replacer, 'body');
@@ -192,21 +186,18 @@ describe('Native creative renderer', () => {
   });
 
   describe('render', () => {
-    let getMarkup, sendMessage, adId, nativeData, exc, frame;
+    let getMarkup, sendMessage, adId, nativeData, exc;
     beforeEach(() => {
       adId = '123';
       nativeData = {}
       getMarkup = sinon.stub();
       sendMessage = sinon.stub()
       exc = sinon.stub();
-      frame = document.createElement('iframe');
-      document.body.appendChild(frame);
-      win.document = frame.contentDocument;
+      win.document = {
+        querySelectorAll() { return [] },
+        body: {}
+      }
     });
-
-    afterEach(() => {
-      document.body.removeChild(frame);
-    })
 
     function runRender() {
       return render({adId, native: nativeData}, {sendMessage, exc}, win, getMarkup)
@@ -214,7 +205,7 @@ describe('Native creative renderer', () => {
 
     it('replaces placeholders in head, if present', () => {
       getMarkup.returns(Promise.resolve(''))
-      win.document.head.innerHTML = '##hb_native_asset_id_1##';
+      win.document.head = {innerHTML: '##hb_native_asset_id_1##'};
       nativeData.ortb = {
         assets: [
           {id: 1, data: {value: 'repl'}}
@@ -224,14 +215,6 @@ describe('Native creative renderer', () => {
         expect(win.document.head.innerHTML).to.eql('repl');
       })
     });
-
-    it('does not replace iframes with srcdoc that contain "renderer"', () => {
-      win.document.head.innerHTML = win.document.body.innerHTML = '<iframe srcdoc="renderer"></iframe>';
-      getMarkup.returns(Promise.resolve(''))
-      return runRender().then(() => {
-        expect(Array.from(win.document.querySelectorAll('iframe[srcdoc="renderer"]')).length).to.eql(2);
-      })
-    })
 
     it('drops markup on body, and fires imp trackers', () => {
       getMarkup.returns(Promise.resolve('markup'));
@@ -263,27 +246,9 @@ describe('Native creative renderer', () => {
 
     describe('requests resize', () => {
       beforeEach(() => {
-        const mkNode = () => {
-          const node = {
-            innerHTML: '',
-            childNodes: [],
-            insertAdjacentHTML: () => {},
-            style: {},
-            querySelectorAll: () => [],
-            cloneNode: () => node
-          };
-          return node;
-        }
-        win.document = {
-          head: mkNode(),
-          body: Object.assign(mkNode(), {
-            offsetHeight: 123,
-            offsetWidth: 321
-          }),
-          querySelectorAll: () => [],
-          style: {}
-        };
         getMarkup.returns(Promise.resolve('markup'));
+        win.document.body.offsetHeight = 123;
+        win.document.body.offsetWidth = 321;
       });
 
       it('immediately, if document is loaded', () => {

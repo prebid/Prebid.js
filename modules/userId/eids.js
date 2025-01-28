@@ -1,4 +1,4 @@
-import {logError, deepClone, isFn, isStr} from '../../src/utils.js';
+import {deepClone, isFn, isStr} from '../../src/utils.js';
 
 /**
  * @typedef {import('./index.js').SubmodulePriorityMap} SubmodulePriorityMap
@@ -38,10 +38,7 @@ function createEidObject(userIdData, subModuleKey, eidConf) {
 export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
   const allEids = {};
   function collect(eid) {
-    const key = JSON.stringify([
-      eid.source?.toLowerCase(),
-      ...Object.keys(eid).filter(k => !['uids', 'source'].includes(k)).sort().map(k => eid[k])
-    ]);
+    const key = JSON.stringify([eid.source?.toLowerCase(), eid.ext]);
     if (allEids.hasOwnProperty(key)) {
       allEids[key].uids.push(...eid.uids);
     } else {
@@ -51,27 +48,8 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
 
   Object.entries(bidRequestUserId).forEach(([name, values]) => {
     values = Array.isArray(values) ? values : [values];
-    const eidConf = eidConfigs.get(name);
-    let eids;
-    if (name === 'pubProvidedId') {
-      eids = deepClone(values);
-    } else if (typeof eidConf === 'function') {
-      try {
-        eids = eidConf(values);
-        if (!Array.isArray(eids)) {
-          eids = [eids];
-        }
-        eids.forEach(eid => eid.uids = eid.uids.filter(({id}) => isStr(id)))
-        eids = eids.filter(({uids}) => uids?.length > 0);
-      } catch (e) {
-        logError(`Could not generate EID for "${name}"`, e);
-      }
-    } else {
-      eids = values.map(value => createEidObject(value, name, eidConf));
-    }
-    if (Array.isArray(eids)) {
-      eids.filter(eid => eid != null).forEach(collect);
-    }
+    const eids = name === 'pubProvidedId' ? deepClone(values) : values.map(value => createEidObject(value, name, eidConfigs.get(name)));
+    eids.filter(eid => eid != null).forEach(collect);
   })
   return Object.values(allEids);
 }
@@ -86,12 +64,7 @@ export function getEids(priorityMap) {
     const submodule = submodules.find(mod => mod.idObj?.[key] != null);
     if (submodule) {
       idValues[key] = submodule.idObj[key];
-      let eidConf = submodule.submodule.eids?.[key];
-      if (typeof eidConf === 'function') {
-        // if eid config is given as a function, append the active module configuration to its args
-        eidConf = ((orig) => (...args) => orig(...args, submodule.config))(eidConf);
-      }
-      eidConfigs.set(key, eidConf);
+      eidConfigs.set(key, submodule.submodule.eids?.[key])
     }
   })
   return createEidsArray(idValues, eidConfigs);

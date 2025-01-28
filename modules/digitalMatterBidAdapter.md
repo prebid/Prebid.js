@@ -1,38 +1,50 @@
 # Overview
 
 ```
-Module Name: Digital Matter Bid Adapter
-Module Type: Digital Matter Bid Adapter
-Maintainer: prebid@digitalmatter.ai
+Module Name: Digital Matter Bidder Adapter
+Module Type: Digital Matter Bidder Adapter
+Maintainer: di-change@digitalmatter.ai
 ```
 
-# Description
-
-Module that connects to Digital Matter demand sources
-
-# Banner Test Parameters
-
-```js
+# Test Parameters
+```
 var adUnits = [
-  {
-    code: "test-banner",
-    mediaTypes: {
-      banner: {
-        sizes: [
-          [300, 250],
-          [300, 600]
+    {
+        code: 'test-banner',
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250]],
+            }
+        },
+        bids: [
+            {
+                bidder: 'digitalmatter',
+                params: {
+                    env: 'digitalmatter',
+                    pid: '40',
+                    ext: {}
+                }
+            }
         ]
-      }
     },
-    bids: [
-      {
-        bidder: "digitalMatter",
-        params: {
-          accountId: "1_demo_1", // string, required
-          siteId: "1-demo-1" // string, required
-        }
-      }
-    ]
-  }
+    {
+        code: 'test-video',
+        sizes: [ [ 640, 480 ] ],
+        mediaTypes: {
+            video: {
+                playerSize: [640, 480],
+                context: 'instream',
+                skipppable: true
+            }
+        },
+        bids: [{
+            bidder: 'digitalmatter',
+            params: {
+                env: 'digitalmatter',
+                pid: '40',
+                ext: {}
+            }
+        }]
+    }
 ];
 ```

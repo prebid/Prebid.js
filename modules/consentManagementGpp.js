@@ -10,7 +10,7 @@ import {gppDataHandler} from '../src/adapterManager.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
-import {GreedyPromise, defer} from '../src/utils/promise.js';
+import {GreedyPromise} from '../src/utils/promise.js';
 import {buildActivityParams} from '../src/activities/params.js';
 import {consentManagementHook} from '../libraries/consentManagement/cmUtils.js';
 
@@ -72,7 +72,7 @@ export class GPPClient {
 
   constructor(cmp) {
     this.cmp = cmp;
-    [this.#resolve, this.#reject] = ['resolve', 'reject'].map(slot => (result) => {
+    [this.#resolve, this.#reject] = [0, 1].map(slot => (result) => {
       while (this.#pending.length) {
         this.#pending.pop()[slot](result);
       }
@@ -102,15 +102,6 @@ export class GPPClient {
             this.#reject(new GPPError('CMP status is "error"; please check CMP setup', event));
           } else if (this.isCMPReady(event?.pingData || {}) && ['sectionChange', 'signalStatus'].includes(event?.eventName)) {
             this.#resolve(this.updateConsent(event.pingData));
-          }
-          // NOTE: according to https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Core/CMP%20API%20Specification.md,
-          // > [signalStatus] Event is called whenever the display status of the CMP changes (e.g. the CMP shows the consent layer).
-          //
-          // however, from real world testing, at least some CMPs only trigger 'cmpDisplayStatus'
-          // other CMPs may do something else yet; here we just look for 'signalStatus: not ready' on any event
-          // to decide if consent data is likely to change
-          if (consentData != null && event?.pingData != null && !this.isCMPReady(event.pingData)) {
-            consentData = null;
           }
         }
       });
@@ -145,9 +136,9 @@ export class GPPClient {
    * @returns {Promise<{}>}
    */
   nextUpdate() {
-    const def = defer();
-    this.#pending.push(def);
-    return def.promise;
+    return new GreedyPromise((resolve, reject) => {
+      this.#pending.push([resolve, reject]);
+    });
   }
 
   /**

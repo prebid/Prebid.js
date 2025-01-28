@@ -489,6 +489,7 @@ describe('topLevelPaapi', () => {
         markWinningBidHook(next, bid);
         sinon.assert.notCalled(next);
         sinon.assert.called(next.bail);
+        expect(bid.status).to.eql(BID_STATUS.RENDERED);
         sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bid);
       });
       it('ignores non-paapi bids', () => {

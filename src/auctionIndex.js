@@ -65,9 +65,6 @@ export function AuctionIndex(getAuctions) {
           .flatMap(ber => ber.bids)
           .find(br => br && br.bidId === requestId);
       }
-    },
-    getOrtb2(bid) {
-      return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2
     }
   });
 }

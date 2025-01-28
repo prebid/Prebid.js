@@ -1,23 +1,15 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import {
-  _getBidRequests,
-  _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
+  spec,
   detectViewability as connatixDetectViewability,
   getBidFloor as connatixGetBidFloor,
   _getMinSize as connatixGetMinSize,
-  _getViewability as connatixGetViewability,
   _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
-  saveOnAllStorages as connatixSaveOnAllStorages,
-  readFromAllStorages as connatixReadFromAllStorages,
-  storage,
-  spec
+  _canSelectViewabilityContainer as connatixCanSelectViewabilityContainer,
+  _getViewability as connatixGetViewability,
 } from '../../../modules/connatixBidAdapter.js';
-import adapterManager from '../../../src/adapterManager.js';
-import * as ajax from '../../../src/ajax.js';
 import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
-
-const BIDDER_CODE = 'connatix';
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -335,181 +327,6 @@ describe('connatixBidAdapter', function () {
     });
   });
 
-  describe('_getBidRequests', function () {
-    let bid;
-
-    // Mock a bid request similar to the one already used in connatixBidAdapter tests
-    function mockBidRequest() {
-      const mediaTypes = {
-        banner: {
-          sizes: [16, 9],
-        }
-      };
-      return {
-        bidId: 'testing',
-        bidder: 'connatix',
-        params: {
-          placementId: '30e91414-545c-4f45-a950-0bec9308ff22',
-          viewabilityContainerIdentifier: 'viewabilityId',
-        },
-        mediaTypes,
-        sizes: [300, 250]
-      };
-    }
-
-    it('should map valid bid requests and include the expected fields', function () {
-      bid = mockBidRequest();
-
-      const result = _getBidRequests([bid]);
-
-      expect(result).to.have.lengthOf(1);
-      expect(result[0]).to.have.property('bidId', bid.bidId);
-      expect(result[0]).to.have.property('mediaTypes', bid.mediaTypes);
-      expect(result[0]).to.have.property('sizes', bid.sizes);
-      expect(result[0]).to.have.property('placementId', bid.params.placementId);
-      expect(result[0]).to.have.property('hasViewabilityContainerId', true);
-    });
-
-    it('should set hasViewabilityContainerId to false when viewabilityContainerIdentifier is absent', function () {
-      bid = mockBidRequest();
-      delete bid.params.viewabilityContainerIdentifier;
-
-      const result = _getBidRequests([bid]);
-
-      expect(result[0]).to.have.property('hasViewabilityContainerId', false);
-    });
-
-    it('should call getBidFloor for each bid and return the correct floor value', function () {
-      bid = mockBidRequest();
-      const floorValue = 5;
-
-      // Mock getFloor method on bid
-      bid.getFloor = function() {
-        return { floor: floorValue };
-      };
-
-      const result = _getBidRequests([bid]);
-
-      expect(result[0]).to.have.property('floor', floorValue);
-    });
-
-    it('should return floor as 0 if getBidFloor throws an error', function () {
-      bid = mockBidRequest();
-
-      // Mock getFloor method to throw an error
-      bid.getFloor = function() {
-        throw new Error('error');
-      };
-
-      const result = _getBidRequests([bid]);
-
-      expect(result[0]).to.have.property('floor', 0);
-    });
-  });
-
-  describe('onTimeout', function () {
-    let ajaxStub;
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'triggerEvent')
-    })
-
-    afterEach(() => {
-      ajaxStub.restore()
-    });
-
-    it('call event if bidder is connatix', () => {
-      const result = spec.onTimeout([{
-        bidder: 'connatix',
-        timeout: 500,
-      }]);
-      expect(ajaxStub.calledOnce).to.equal(true);
-
-      const data = ajaxStub.firstCall.args[0];
-      expect(data.type).to.equal('Timeout');
-      expect(data.timeout).to.equal(500);
-    });
-
-    it('timeout event is not triggered if bidder is not connatix', () => {
-      const result = spec.onTimeout([{
-        bidder: 'otherBidder',
-        timeout: 500,
-      }]);
-      expect(ajaxStub.notCalled).to.equal(true);
-    });
-  });
-
-  describe('onBidWon', function () {
-    let ajaxStub;
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'triggerEvent');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
-    it('calls triggerEvent with correct data when bidWinData is provided', () => {
-      const bidWinData = {
-        bidder: 'connatix',
-        cpm: 2.5,
-        requestId: 'abc123',
-        bidId: 'dasdas-dsawda-dwaddw-dwdwd',
-        adUnitCode: 'adunit_1',
-        timeToRespond: 300,
-        auctionId: 'auction_456',
-      };
-
-      spec.onBidWon(bidWinData);
-      expect(ajaxStub.calledOnce).to.equal(true);
-
-      const eventData = ajaxStub.firstCall.args[0];
-      expect(eventData.type).to.equal('BidWon');
-      expect(eventData.bestBidBidder).to.equal('connatix');
-      expect(eventData.bestBidPrice).to.equal(2.5);
-      expect(eventData.requestId).to.equal('abc123');
-      expect(eventData.bidId).to.equal('dasdas-dsawda-dwaddw-dwdwd');
-      expect(eventData.adUnitCode).to.equal('adunit_1');
-      expect(eventData.timeToRespond).to.equal(300);
-      expect(eventData.auctionId).to.equal('auction_456');
-    });
-
-    it('does not call triggerEvent if bidWinData is null', () => {
-      spec.onBidWon(null);
-      expect(ajaxStub.notCalled).to.equal(true);
-    });
-
-    it('does not call triggerEvent if bidWinData is undefined', () => {
-      spec.onBidWon(undefined);
-      expect(ajaxStub.notCalled).to.equal(true);
-    });
-  });
-
-  describe('triggerEvent', function () {
-    let ajaxStub;
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(ajax, 'ajax');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
-    it('should call ajax with the correct parameters', () => {
-      const data = { type: 'BidWon', bestBidBidder: 'bidder1', bestBidPrice: 1.5, requestId: 'req123', adUnitCode: 'ad123', timeToRespond: 250, auctionId: 'auc123', context: {} };
-      spec.triggerEvent(data);
-
-      expect(ajaxStub.calledOnce).to.equal(true);
-      const [url, _, payload, options] = ajaxStub.firstCall.args;
-      expect(url).to.equal('https://capi.connatix.com/tr/am');
-      expect(payload).to.equal(JSON.stringify(data));
-      expect(options.method).to.equal('POST');
-      expect(options.withCredentials).to.equal(false);
-    });
-  });
-
   describe('isBidRequestValid', function () {
     this.beforeEach(function () {
       bid = mockBidRequest();
@@ -567,7 +384,6 @@ describe('connatixBidAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest;
-    let setCookieStub, setDataInLocalStorageStub;
     let bidderRequest = {
       refererInfo: {
         canonicalUrl: '',
@@ -596,20 +412,9 @@ describe('connatixBidAdapter', function () {
     };
 
     this.beforeEach(function () {
-      const mockIdentityProviderData = { mockKey: 'mockValue' };
-      const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
-      setCookieStub = sinon.stub(storage, 'setCookie');
-      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-      connatixSaveOnAllStorages('test_ids_cnx', mockIdentityProviderData, CNX_IDS_EXPIRY);
-
       bid = mockBidRequest();
       serverRequest = spec.buildRequests([bid], bidderRequest);
     })
-
-    this.afterEach(function() {
-      setCookieStub.restore();
-      setDataInLocalStorageStub.restore();
-    });
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -637,7 +442,6 @@ describe('connatixBidAdapter', function () {
       expect(serverRequest.data.uspConsent).to.equal(bidderRequest.uspConsent);
       expect(serverRequest.data.gppConsent).to.equal(bidderRequest.gppConsent);
       expect(serverRequest.data.ortb2).to.equal(bidderRequest.ortb2);
-      expect(serverRequest.data.identityProviderData).to.deep.equal({ mockKey: 'mockValue' });
     });
   });
 
@@ -863,45 +667,6 @@ describe('connatixBidAdapter', function () {
     });
   });
 
-  describe('isConnatix', function () {
-    let aliasRegistryStub;
-
-    beforeEach(() => {
-      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry').value({});
-    });
-
-    afterEach(() => {
-      aliasRegistryStub.restore();
-    });
-
-    it('should return false if aliasName is undefined or null', () => {
-      expect(spec.isConnatix(undefined)).to.be.false;
-      expect(spec.isConnatix(null)).to.be.false;
-    });
-
-    it('should return true if aliasName matches BIDDER_CODE', () => {
-      const aliasName = BIDDER_CODE;
-      expect(spec.isConnatix(aliasName)).to.be.true;
-    });
-
-    it('should return true if aliasName is mapped to BIDDER_CODE in aliasRegistry', () => {
-      const aliasName = 'connatixAlias';
-      aliasRegistryStub.value({ 'connatixAlias': BIDDER_CODE });
-      expect(spec.isConnatix(aliasName)).to.be.true;
-    });
-
-    it('should return false if aliasName does not match BIDDER_CODE', () => {
-      const aliasName = 'otherBidder';
-      expect(spec.isConnatix(aliasName)).to.be.false;
-    });
-
-    it('should return false if aliasName is mapped to a different bidder in aliasRegistry', () => {
-      const aliasName = 'someOtherAlias';
-      aliasRegistryStub.value({ 'someOtherAlias': 'otherBidder' });
-      expect(spec.isConnatix(aliasName)).to.be.false;
-    });
-  });
-
   describe('getBidFloor', function () {
     this.beforeEach(function () {
       bid = mockBidRequest();
@@ -949,104 +714,6 @@ describe('connatixBidAdapter', function () {
       };
       const floor = connatixGetBidFloor(bid);
       expect(floor).to.equal(0);
-    });
-  });
-  describe('getUserSyncs with message event listener', function() {
-    const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
-    const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
-    const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
-
-    const mockData = {
-      providerName: 'nonId',
-      data: {
-        supplementalEids: [{ provider: 2, group: 1, eidsList: ['123', '456'] }]
-      }
-    };
-
-    function messageHandler(event) {
-      if (!event.data || event.origin !== 'https://cds.connatix.com') {
-        return;
-      }
-
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT) {
-        window.removeEventListener('message', messageHandler);
-        event.stopImmediatePropagation();
-      }
-
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT || event.data.type === IDENTITY_PROVIDER_RESOLVED_EVENT) {
-        const response = event.data;
-        if (response.data) {
-          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
-        }
-      }
-    }
-
-    let sandbox;
-
-    beforeEach(() => {
-      sandbox = sinon.createSandbox();
-      sandbox.stub(storage, 'setCookie');
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(window, 'removeEventListener');
-      sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      sandbox.stub(storage, 'getCookie');
-      sandbox.stub(storage, 'getDataFromLocalStorage');
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    it('Should set a cookie and save to local storage when a valid message is received', () => {
-      const fakeEvent = {
-        data: { type: 'cnx_all_identity_providers_resolved', data: mockData },
-        origin: 'https://cds.connatix.com',
-        stopImmediatePropagation: sinon.spy()
-      };
-
-      messageHandler(fakeEvent);
-
-      expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
-      expect(window.removeEventListener.calledWith('message', messageHandler)).to.be.true;
-      expect(storage.setCookie.calledWith(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, JSON.stringify(mockData), sinon.match.string)).to.be.true;
-      expect(storage.setDataInLocalStorage.calledWith(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, JSON.stringify(mockData))).to.be.true;
-
-      storage.getCookie.returns(JSON.stringify(mockData));
-      storage.getDataFromLocalStorage.returns(JSON.stringify(mockData));
-
-      const retrievedData = connatixReadFromAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY);
-      expect(retrievedData).to.deep.equal(mockData);
-    });
-
-    it('Should should not do anything when there is no data in the payload', () => {
-      const fakeEvent = {
-        data: null,
-        origin: 'https://cds.connatix.com',
-        stopImmediatePropagation: sinon.spy()
-      };
-
-      messageHandler(fakeEvent);
-
-      expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
-      expect(window.removeEventListener.notCalled).to.be.true;
-      expect(storage.setCookie.notCalled).to.be.true;
-      expect(storage.setDataInLocalStorage.notCalled).to.be.true;
-    });
-
-    it('Should should not do anything when the origin is invalid', () => {
-      const fakeEvent = {
-        data: { type: 'cnx_all_identity_providers_resolved', data: mockData },
-        origin: 'https://notConnatix.com',
-        stopImmediatePropagation: sinon.spy()
-      };
-
-      messageHandler(fakeEvent);
-
-      expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
-      expect(window.removeEventListener.notCalled).to.be.true;
-      expect(storage.setCookie.notCalled).to.be.true;
-      expect(storage.setDataInLocalStorage.notCalled).to.be.true;
     });
   });
 });

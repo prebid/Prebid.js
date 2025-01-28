@@ -6,7 +6,6 @@ import {
   isArray,
   isEmpty,
   isFn,
-  isPlainObject,
   logError,
   logMessage,
   logWarn,
@@ -172,11 +171,7 @@ export const spec = {
                 netRevenue: false,
                 ttl: 300,
                 referrer: parsedReferrer,
-                ad: bid.adm,
-                adomain: bid.adomain || [],
-                meta: {
-                  advertiserDomains: bid && bid.adomain ? bid.adomain : []
-                }
+                ad: bid.adm
               };
 
               bidResponses.push(newBid);
@@ -325,7 +320,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     } catch (e) {
       logError('LuponMedia: getFloor threw an error: ', e);
     }
-    bidFloor = isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
+    bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
   } else {
     bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
   }

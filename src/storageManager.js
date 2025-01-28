@@ -58,7 +58,6 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
    * If not specified, defaults to the host portion of the current document location.
    * If a domain is specified, subdomains are always included.
    * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
-   * @param {function} [done]
    */
   const setCookie = function (key, value, expires, sameSite, domain, done) {
     let cb = function (result) {
@@ -76,7 +75,6 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
 
   /**
    * @param {string} name
-   * @param {function} [done]
    * @returns {(string|null)}
    */
   const getCookie = function(name, done) {
@@ -91,7 +89,6 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
   };
 
   /**
-   * @param {function} [done]
    * @returns {boolean}
    */
   const cookiesAreEnabled = function (done) {
@@ -173,8 +170,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
    * Returns all cookie values from the jar whose names contain the `keyLike`
    * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
    * @param {string} keyLike
-   * @param {function} [done]
-   * @returns {string[]}
+   * @return {[]}
    */
   const findSimilarCookies = function(keyLike, done) {
     let cb = function (result) {

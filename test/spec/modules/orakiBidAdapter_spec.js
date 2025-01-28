@@ -133,7 +133,6 @@ describe('OrakiBidAdapter', function () {
       expect(data).to.have.all.keys(
         'deviceWidth',
         'deviceHeight',
-        'device',
         'language',
         'secure',
         'host',

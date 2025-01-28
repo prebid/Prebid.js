@@ -5,11 +5,6 @@ import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
 import {chunk} from '../libraries/chunk/chunk.js';
-import {
-  createTag, getUserSyncsFn,
-  isBidRequestValid,
-  supportedMediaTypes
-} from '../libraries/adtelligentUtils/adtelligentUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -31,7 +26,6 @@ const HOST_GETTERS = {
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
   indicue: () => 'ghb.console.indicue.com',
-  stellormedia: () => 'ghb.ads.stellormedia.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -54,12 +48,51 @@ export const spec = {
     { code: 'ocm', gvlid: 1148 },
     '9dotsmedia',
     'indicue',
-    'stellormedia'
   ],
-  supportedMediaTypes,
-  isBidRequestValid,
+  supportedMediaTypes: [VIDEO, BANNER],
+  isBidRequestValid: function (bid) {
+    return !!deepAccess(bid, 'params.aid');
+  },
   getUserSyncs: function (syncOptions, serverResponses) {
-    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    const syncs = [];
+
+    function addSyncs(bid) {
+      const uris = bid.cookieURLs;
+      const types = bid.cookieURLSTypes || [];
+
+      if (Array.isArray(uris)) {
+        uris.forEach((uri, i) => {
+          const type = types[i] || 'image';
+
+          if ((!syncOptions.pixelEnabled && type === 'image') ||
+            (!syncOptions.iframeEnabled && type === 'iframe') ||
+            syncsCache[uri]) {
+            return;
+          }
+
+          syncsCache[uri] = true;
+          syncs.push({
+            type: type,
+            url: uri
+          })
+        })
+      }
+    }
+
+    if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
+      isArray(serverResponses) && serverResponses.forEach((response) => {
+        if (response.body) {
+          if (isArray(response.body)) {
+            response.body.forEach(b => {
+              addSyncs(b);
+            })
+          } else {
+            addSyncs(response.body)
+          }
+        }
+      })
+    }
+    return syncs;
   },
   /**
    * Make a server request from the list of BidRequests
@@ -129,7 +162,29 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
-  const tag = createTag(bidRequests, adapterRequest);
+  const tag = {
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
+  };
+  if (config.getConfig('coppa') === true) {
+    tag.Coppa = 1;
+  }
+  if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
+    tag.GDPR = 1;
+    tag.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString');
+  }
+  if (deepAccess(adapterRequest, 'uspConsent')) {
+    tag.USP = deepAccess(adapterRequest, 'uspConsent');
+  }
+  if (deepAccess(bidRequests[0], 'schain')) {
+    tag.Schain = deepAccess(bidRequests[0], 'schain');
+  }
+  if (deepAccess(bidRequests[0], 'userId')) {
+    tag.UserIds = deepAccess(bidRequests[0], 'userId');
+  }
+  if (deepAccess(bidRequests[0], 'userIdAsEids')) {
+    tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
+  }
   if (window.adtDmp && window.adtDmp.ready) {
     tag.DMPId = window.adtDmp.getUID();
   }
@@ -252,7 +307,6 @@ function createBid(bidResponse, bidRequest) {
 /**
  * Create Adtelligent renderer
  * @param requestId
- * @param bidderParams
  * @returns {*}
  */
 function newRenderer(requestId, bidderParams) {

@@ -1,9 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict'
 
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
@@ -13,6 +11,7 @@ import {
   sizeTupleToRtbSize,
   sizesToSizeTuples
 } from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const { getConfig } = config;
 
@@ -46,7 +45,7 @@ export const spec = {
       getFirstWithKey(validBidRequests, 'params.priceType') ||
       'net';
     const test = getFirstWithKey(validBidRequests, 'params.test');
-    const currency = getCurrencyFromBidderRequest(bidderRequest);
+    const currency = getConfig('currency.adServerCurrency');
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
     const schain = getFirstWithKey(validBidRequests, 'schain');
     const request = {
@@ -185,8 +184,8 @@ function getImps (validBidRequests, common) {
     const floorInfo = bid.getFloor
       ? bid.getFloor({ currency: common.currency || 'EUR' })
       : {};
-    const bidfloor = floorInfo?.floor;
-    const bidfloorcur = floorInfo?.currency;
+    const bidfloor = floorInfo.floor;
+    const bidfloorcur = floorInfo.currency;
     const { ctok, placementId } = bid.params;
     const imp = {
       bid_id: bid.bidId,

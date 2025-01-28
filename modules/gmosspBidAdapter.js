@@ -1,7 +1,3 @@
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
   deepAccess,
@@ -11,6 +7,10 @@ import {
   isEmpty,
   logError
 } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -50,7 +50,7 @@ export const spec = {
     const bidRequests = [];
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
-    const cur = getCurrencyType(bidderRequest);
+    const cur = getCurrencyType();
     const dnt = getDNT() ? '1' : '0';
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -156,8 +156,11 @@ export const spec = {
 
 };
 
-function getCurrencyType(bidderRequest) {
-  return getCurrencyFromBidderRequest(bidderRequest) || 'JPY';
+function getCurrencyType() {
+  if (config.getConfig('currency.adServerCurrency')) {
+    return config.getConfig('currency.adServerCurrency');
+  }
+  return 'JPY';
 }
 
 function getUrlInfo(refererInfo) {
