@@ -29,7 +29,7 @@ const BASE_URLS = {
   vimayx: 'https://vimayx-prebid.attekmi.com/pbjs',
   artechnology: 'https://artechnology-prebid.attekmi.com/pbjs',
   adinify: 'https://adinify-prebid.attekmi.com/pbjs',
-  addigi: 'https://addigi-prebid.attekmi.com/pbjs',  
+  addigi: 'https://addigi-prebid.attekmi.com/pbjs',
 };
 
 const _getUrl = (partnerName) => {
