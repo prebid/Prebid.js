@@ -1,8 +1,8 @@
-import {getValue, formatQS, logError, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, formatQS, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
 
@@ -24,7 +24,8 @@ export const spec = {
     {code: 'pixad', gvlid: 1281},
     {code: 'monetixads', gvlid: 1281},
     {code: 'netaddiction', gvlid: 1281},
-    {code: 'adt', gvlid: 779}
+    {code: 'adt', gvlid: 779},
+    {code: 'yobee', gvlid: 1281}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -56,6 +57,7 @@ export const spec = {
     const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     let host = getValue(validBidRequests[0].params, 'host');
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || null;
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -84,9 +86,7 @@ export const spec = {
       tmax: parseInt(tmax)
     };
 
-    if (config.getConfig('currency.adServerCurrency')) {
-      payload.ext.cur = config.getConfig('currency.adServerCurrency');
-    }
+    payload.ext.cur = currency;
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -139,8 +139,12 @@ export const spec = {
           SYNC_URL = 'https://static.cdn.admatic.de/admaticde/sync.html';
           break;
         case 'adt':
-          SYNC_URL = 'https://static.cdn.adtarget.org/adt/sync.html';
+          SYNC_URL = 'https://static.cdn.adtarget.biz/adt/sync.html';
           break;
+        case 'yobee':
+          SYNC_URL = 'https://static.cdn.yobee.it/yobee/sync.html';
+          break;
+        case 'admatic':
         default:
           SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
           break;

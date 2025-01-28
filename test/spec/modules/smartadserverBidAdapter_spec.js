@@ -4,6 +4,8 @@ import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'
 import { spec } from 'modules/smartadserverBidAdapter.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {
@@ -249,10 +251,8 @@ describe('Smart bid adapter tests', function () {
   ];
 
   it('Verify build request', function () {
+    setCurrencyConfig({ adServerCurrency: 'EUR' });
     config.setConfig({
-      'currency': {
-        'adServerCurrency': 'EUR'
-      },
       ortb2: {
         'user': {
           'data': sellerDefinedAudience
@@ -265,30 +265,32 @@ describe('Smart bid adapter tests', function () {
       }
     });
 
-    const request = spec.buildRequests(DEFAULT_PARAMS);
-    expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
-    expect(request[0]).to.have.property('method').and.to.equal('POST');
-    const requestContent = JSON.parse(request[0].data);
-
-    expect(requestContent).to.have.property('siteid').and.to.equal('1234');
-    expect(requestContent).to.have.property('pageid').and.to.equal('5678');
-    expect(requestContent).to.have.property('formatid').and.to.equal('90');
-    expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
-    expect(requestContent).to.have.property('bidfloor').and.to.equal(0.42);
-    expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid');
-    expect(requestContent).to.have.property('tagId').and.to.equal('sas_42');
-    expect(requestContent).to.have.property('sizes');
-    expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
-    expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
-    expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
-    expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(200);
-    expect(requestContent).to.not.have.property('pageDomain');
-    expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
-    expect(requestContent).to.have.property('buid').and.to.equal('7569');
-    expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
-    expect(requestContent).to.have.property('ckid').and.to.equal(42);
-    expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
-    expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
+    return addFPDToBidderRequest(DEFAULT_PARAMS[0]).then(res => {
+      const request = spec.buildRequests(DEFAULT_PARAMS, res);
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('siteid').and.to.equal('1234');
+      expect(requestContent).to.have.property('pageid').and.to.equal('5678');
+      expect(requestContent).to.have.property('formatid').and.to.equal('90');
+      expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(0.42);
+      expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid');
+      expect(requestContent).to.have.property('tagId').and.to.equal('sas_42');
+      expect(requestContent).to.have.property('sizes');
+      expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
+      expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
+      expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
+      expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(200);
+      expect(requestContent).to.not.have.property('pageDomain');
+      expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
+      expect(requestContent).to.have.property('buid').and.to.equal('7569');
+      expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
+      expect(requestContent).to.have.property('ckid').and.to.equal(42);
+      expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+      expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
+      setCurrencyConfig({});
+    });
   });
 
   it('Verify parse response with no ad', function () {
@@ -648,10 +650,8 @@ describe('Smart bid adapter tests', function () {
     };
 
     it('Verify instream video build request', function () {
+      setCurrencyConfig({ adServerCurrency: 'EUR' });
       config.setConfig({
-        'currency': {
-          'adServerCurrency': 'EUR'
-        },
         ortb2: {
           'user': {
             'data': sellerDefinedAudience
@@ -663,29 +663,33 @@ describe('Smart bid adapter tests', function () {
           }
         }
       });
-      const request = spec.buildRequests(INSTREAM_DEFAULT_PARAMS);
-      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
-      expect(request[0]).to.have.property('method').and.to.equal('POST');
-      const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.have.property('siteid').and.to.equal('1234');
-      expect(requestContent).to.have.property('pageid').and.to.equal('5678');
-      expect(requestContent).to.have.property('formatid').and.to.equal('90');
-      expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
-      expect(requestContent).to.have.property('bidfloor').and.to.equal(0.42);
-      expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid');
-      expect(requestContent).to.have.property('tagId').and.to.equal('sas_42');
-      expect(requestContent).to.not.have.property('pageDomain');
-      expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
-      expect(requestContent).to.have.property('buid').and.to.equal('7569');
-      expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
-      expect(requestContent).to.have.property('ckid').and.to.equal(42);
-      expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
-      expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
-      expect(requestContent).to.have.property('isVideo').and.to.equal(true);
-      expect(requestContent).to.have.property('videoData');
-      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
-      expect(requestContent.videoData).to.have.property('playerWidth').and.to.equal(640);
-      expect(requestContent.videoData).to.have.property('playerHeight').and.to.equal(480);
+
+      return addFPDToBidderRequest(INSTREAM_DEFAULT_PARAMS[0]).then(res => {
+        const request = spec.buildRequests(INSTREAM_DEFAULT_PARAMS, res);
+        expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+        expect(request[0]).to.have.property('method').and.to.equal('POST');
+        const requestContent = JSON.parse(request[0].data);
+        expect(requestContent).to.have.property('siteid').and.to.equal('1234');
+        expect(requestContent).to.have.property('pageid').and.to.equal('5678');
+        expect(requestContent).to.have.property('formatid').and.to.equal('90');
+        expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
+        expect(requestContent).to.have.property('bidfloor').and.to.equal(0.42);
+        expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid');
+        expect(requestContent).to.have.property('tagId').and.to.equal('sas_42');
+        expect(requestContent).to.not.have.property('pageDomain');
+        expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
+        expect(requestContent).to.have.property('buid').and.to.equal('7569');
+        expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
+        expect(requestContent).to.have.property('ckid').and.to.equal(42);
+        expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+        expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
+        expect(requestContent).to.have.property('isVideo').and.to.equal(true);
+        expect(requestContent).to.have.property('videoData');
+        expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
+        expect(requestContent.videoData).to.have.property('playerWidth').and.to.equal(640);
+        expect(requestContent.videoData).to.have.property('playerHeight').and.to.equal(480);
+        setCurrencyConfig({});
+      });
     });
 
     it('Verify instream parse response', function () {
@@ -989,10 +993,8 @@ describe('Smart bid adapter tests', function () {
     };
 
     it('Verify outstream video build request', function () {
+      setCurrencyConfig({ adServerCurrency: 'EUR' });
       config.setConfig({
-        'currency': {
-          'adServerCurrency': 'EUR'
-        },
         ortb2: {
           'user': {
             'data': sellerDefinedAudience
@@ -1004,29 +1006,33 @@ describe('Smart bid adapter tests', function () {
           }
         }
       });
-      const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS);
-      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
-      expect(request[0]).to.have.property('method').and.to.equal('POST');
-      const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.have.property('siteid').and.to.equal('1234');
-      expect(requestContent).to.have.property('pageid').and.to.equal('5678');
-      expect(requestContent).to.have.property('formatid').and.to.equal('91');
-      expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
-      expect(requestContent).to.have.property('bidfloor').and.to.equal(0.43);
-      expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid-outstream');
-      expect(requestContent).to.have.property('tagId').and.to.equal('sas_43');
-      expect(requestContent).to.not.have.property('pageDomain');
-      expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
-      expect(requestContent).to.have.property('buid').and.to.equal('7579');
-      expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
-      expect(requestContent).to.have.property('ckid').and.to.equal(43);
-      expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
-      expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
-      expect(requestContent).to.have.property('isVideo').and.to.equal(false);
-      expect(requestContent).to.have.property('videoData');
-      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(7);
-      expect(requestContent.videoData).to.have.property('playerWidth').and.to.equal(800);
-      expect(requestContent.videoData).to.have.property('playerHeight').and.to.equal(600);
+
+      return addFPDToBidderRequest(OUTSTREAM_DEFAULT_PARAMS[0]).then(res => {
+        const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS, res);
+        expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+        expect(request[0]).to.have.property('method').and.to.equal('POST');
+        const requestContent = JSON.parse(request[0].data);
+        expect(requestContent).to.have.property('siteid').and.to.equal('1234');
+        expect(requestContent).to.have.property('pageid').and.to.equal('5678');
+        expect(requestContent).to.have.property('formatid').and.to.equal('91');
+        expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
+        expect(requestContent).to.have.property('bidfloor').and.to.equal(0.43);
+        expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid-outstream');
+        expect(requestContent).to.have.property('tagId').and.to.equal('sas_43');
+        expect(requestContent).to.not.have.property('pageDomain');
+        expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
+        expect(requestContent).to.have.property('buid').and.to.equal('7579');
+        expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
+        expect(requestContent).to.have.property('ckid').and.to.equal(43);
+        expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+        expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
+        expect(requestContent).to.have.property('isVideo').and.to.equal(false);
+        expect(requestContent).to.have.property('videoData');
+        expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(7);
+        expect(requestContent.videoData).to.have.property('playerWidth').and.to.equal(800);
+        expect(requestContent.videoData).to.have.property('playerHeight').and.to.equal(600);
+        setCurrencyConfig({});
+      });
     });
 
     it('Verify outstream parse response', function () {

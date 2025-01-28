@@ -861,6 +861,51 @@ describe('targeting tests', function () {
       });
     });
 
+    describe('targetingControls.alwaysIncludeDeals with enableSendAllBids', function () {
+      beforeEach(function() {
+        enableSendAllBids = true;
+      });
+
+      it('includes bids w/o deal when enableSendAllBids and alwaysIncludeDeals set to true', function () {
+        config.setConfig({
+          enableSendAllBids: true,
+          targetingControls: {
+            alwaysIncludeDeals: true
+          }
+        });
+
+        let bid5 = utils.deepClone(bid1);
+        bid5.adserverTargeting = {
+          hb_pb: '3.0',
+          hb_adid: '111111',
+          hb_bidder: 'pubmatic',
+          foobar: '300x250'
+        };
+        bid5.bidder = bid5.bidderCode = 'pubmatic';
+        bid5.cpm = 3.0; // winning bid!
+        delete bid5.dealId; // no deal with winner
+        bidsReceived.push(bid5);
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Pubmatic wins but no deal. But enableSendAllBids is true.
+        // So Pubmatic is passed through
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+          'hb_bidder': 'pubmatic',
+          'hb_adid': '111111',
+          'hb_pb': '3.0',
+          'foobar': '300x250',
+          'hb_pb_pubmatic': '3.0',
+          'hb_adid_pubmatic': '111111',
+          'hb_bidder_pubmatic': 'pubmatic',
+          'hb_deal_rubicon': '1234',
+          'hb_pb_rubicon': '0.53',
+          'hb_adid_rubicon': '148018fe5e',
+          'hb_bidder_rubicon': 'rubicon'
+        });
+      });
+    });
+
     it('selects the top bid when enableSendAllBids true', function () {
       enableSendAllBids = true;
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);

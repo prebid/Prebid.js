@@ -1,6 +1,6 @@
 import { loadExternalScript } from './adloader.js';
 import {
-  logError, logWarn, logMessage, deepAccess
+  logError, logWarn, logMessage
 } from './utils.js';
 import {find} from './polyfill.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -144,11 +144,11 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   }
 
   // renderer defined at adUnit level
-  const adUnitRenderer = deepAccess(adUnit, 'renderer');
+  const adUnitRenderer = adUnit?.renderer;
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = deepAccess(adUnit, 'mediaTypes.video.renderer');
+  const mediaTypeRenderer = adUnit?.mediaTypes?.video?.renderer;
   const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
 
   return !!(
