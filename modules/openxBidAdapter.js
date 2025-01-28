@@ -162,12 +162,17 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(bids, bidderRequest) {
-  let videoBids = bids.filter(bid => isVideoBid(bid));
-  let bannerAndNativeBids = bids.filter(bid => isBannerBid(bid) || isNativeBid(bid))
-    // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
-    .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
+  const videoBids = bids.filter(bid => isVideoBid(bid));
+  const nativeBids = bids.filter(bid => isNativeBid(bid));
+  const bannerBids = bids.filter(bid => isBannerBid(bid));
 
-  let requests = bannerAndNativeBids.length ? [createRequest(bannerAndNativeBids, bidderRequest, null)] : [];
+  const requests = []
+  if (bannerBids.length) {
+    requests.push(createRequest(bannerBids, bidderRequest, BANNER))
+  }
+  if (nativeBids.length) {
+    requests.push(createRequest(nativeBids, bidderRequest, NATIVE));
+  }
   videoBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });

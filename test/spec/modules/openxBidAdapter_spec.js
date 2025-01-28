@@ -435,12 +435,15 @@ describe('OpenxRtbAdapter', function () {
           sizes: [[300, 250], [300, 600]]
         }
         const requests = spec.buildRequests([multiformat], mockBidderRequest);
-        expect(requests).to.have.length(1);
+        expect(requests).to.have.length(FEATURES.NATIVE ? 2 : 1);
         expect(requests[0].data.imp).to.have.length(1);
         expect(requests[0].data.imp[0].banner).to.exist;
+        expect(requests[0].data.imp[0].native).to.not.exist;
         expect(requests[0].data.imp[0].video).to.not.exist;
         if (FEATURES.NATIVE) {
-          expect(requests[0].data.imp[0].native).to.exist;
+          expect(requests[1].data.imp[0].native).to.exist;
+          expect(requests[1].data.imp[0].banner).to.not.exist;
+          expect(requests[1].data.imp[0].video).to.not.exist;
         }
       })
 
@@ -454,18 +457,22 @@ describe('OpenxRtbAdapter', function () {
           sizes: [[300, 250]]
         }
         const requests = spec.buildRequests([multiformat], mockBidderRequest);
-        expect(requests).to.have.length(2);
+        expect(requests).to.have.length(3);
         expect(requests[0].data.imp).to.have.length(1);
         expect(requests[0].data.imp[0].banner).to.exist;
+        expect(requests[0].data.imp[0].native).to.not.exist;
         expect(requests[0].data.imp[0].video).to.not.exist;
         if (FEATURES.NATIVE) {
-          expect(requests[0].data.imp[0].native).to.exist;
+          expect(requests[1].data.imp[0].native).to.exist;
+          expect(requests[1].data.imp[0].banner).to.not.exist;
+          expect(requests[1].data.imp[0].video).to.not.exist;
         }
-        expect(requests[1].data.imp).to.have.length(1);
-        expect(requests[1].data.imp[0].banner).to.not.exist;
-        expect(requests[1].data.imp[0].native).to.not.exist;
+        const videoIndex = FEATURES.NATIVE ? 2 : 1;
+        expect(requests[videoIndex].data.imp).to.have.length(1);
+        expect(requests[videoIndex].data.imp[0].banner).to.not.exist;
+        expect(requests[videoIndex].data.imp[0].native).to.not.exist;
         if (FEATURES.VIDEO) {
-          expect(requests[1].data.imp[0].video).to.exist;
+          expect(requests[videoIndex].data.imp[0].video).to.exist;
         }
       })
 
