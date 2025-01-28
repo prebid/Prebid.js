@@ -732,11 +732,19 @@ describe('connatixBidAdapter', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
     const UserSyncEndpoint = 'https://connatix.com/sync'
+    const UserSyncEndpointWithParams = 'https://connatix.com/sync?param1=value1'
     const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
 
     const serverResponse = {
       body: {
         UserSyncEndpoint,
+        Bids: [ Bid ]
+      },
+      headers: function() { }
+    };
+    const serverResponse2 = {
+      body: {
+        UserSyncEndpoint: UserSyncEndpointWithParams,
         Bids: [ Bid ]
       },
       headers: function() { }
@@ -829,6 +837,17 @@ describe('connatixBidAdapter', function () {
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+    });
+    it('Should correctly append all consents to the sync url if the url contains query params', function () {
+      const userSyncList = spec.getUserSyncs(
+        {iframeEnabled: true, pixelEnabled: true},
+        [serverResponse2],
+        {gdprApplies: true, consentString: 'test&2'},
+        '1YYYN',
+        {consent: '1'}
+      );
+      const { url } = userSyncList[0];
+      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
     });
   });
 
@@ -968,17 +987,16 @@ describe('connatixBidAdapter', function () {
         return;
       }
 
-      const messageType = event.data.cnx.message;
+      const { message, data } = event.data.cnx;
 
-      if (messageType === ALL_PROVIDERS_RESOLVED_EVENT) {
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
         window.removeEventListener('message', messageHandler);
         event.stopImmediatePropagation();
       }
 
-      if (messageType === ALL_PROVIDERS_RESOLVED_EVENT || messageType === AGGREGATED_IDENTITY_PROVIDERS_RESOLVED_EVENT) {
-        const response = event.data.cnx;
-        if (response.data) {
-          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === AGGREGATED_IDENTITY_PROVIDERS_RESOLVED_EVENT) {
+        if (data) {
+          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
         }
       }
     }
