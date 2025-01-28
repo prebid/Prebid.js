@@ -372,15 +372,9 @@ export const spec = {
     const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
 
-    let url;
+    let url = syncUrl;
     if (queryParams) {
-      if (hasQueryParams(syncUrl)) {
-        url = `${syncUrl}&${queryParams}`;
-      } else {
-        url = `${syncUrl}?${queryParams}`;
-      }
-    } else {
-      url = syncUrl;
+      url += hasQueryParams(syncUrl) ? `&${queryParams}` : `?${queryParams}`;
     }
 
     return [{
