@@ -194,7 +194,7 @@ function buildImp(bid) {
       mediaType: bid.mediaTypes.banner ? 'banner' : 'video',
       size: '*',
       currency: 'USD',
-    });
+    }) || {};
 
     if (floor) {
       imp.bidfloor = floor;

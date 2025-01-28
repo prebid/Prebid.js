@@ -26,6 +26,7 @@ const {
   BID_TIMEOUT,
   BILLABLE_EVENT,
   SEAT_NON_BID,
+  PBS_ANALYTICS,
   BID_REJECTED
 } = EVENTS;
 
@@ -637,6 +638,45 @@ describe('magnite analytics adapter', function () {
           height: 1
         }
       ]);
+    });
+
+    it('should pass along atag data', function () {
+      const PBS_ANALYTICS_EVENT = {
+        'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+        atag: [{
+          'stage': 'processed-auction-request',
+          'module': 'mgni-timeout-optimization',
+          'analyticstags': [{
+            activities: [{
+              name: 'optimize-tmax',
+              status: 'success',
+              results: [{
+                status: 'success',
+                values: {
+                  'scenario': 'a',
+                  'rule': 'b',
+                  'tmax': 3
+                }
+              }]
+            }]
+          }]
+        }]
+      }
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+      events.emit(PBS_ANALYTICS, PBS_ANALYTICS_EVENT)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message.auctions[0].experiments[0]).to.deep.equal({
+        name: 'a',
+        rule: 'b',
+        value: 3
+      });
     });
 
     it('should pass along user ids', function () {
@@ -2262,7 +2302,7 @@ describe('magnite analytics adapter', function () {
     const runNonBidAuction = () => {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(SEAT_NON_BID, seatnonbid)
+      events.emit(PBS_ANALYTICS, seatnonbid)
       events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
       clock.tick(rubiConf.analyticsBatchTimeout + 1000);

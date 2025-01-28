@@ -68,10 +68,10 @@ describe('humansecurity RTD module', function () {
 
       const args = loadExternalScriptStub.getCall(0).args;
       expect(args[0]).to.be.equal(`${SCRIPT_URL}?r=example.com`);
-      expect(args[1]).to.be.equal(SUBMODULE_NAME);
-      expect(args[2]).to.be.equal(onImplLoaded);
-      expect(args[3]).to.be.equal(null);
-      expect(args[4]).to.be.deep.equal({ 'data-sid': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' });
+      expect(args[2]).to.be.equal(SUBMODULE_NAME);
+      expect(args[3]).to.be.equal(onImplLoaded);
+      expect(args[4]).to.be.equal(null);
+      expect(args[5]).to.be.deep.equal({ 'data-sid': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' });
     });
 
     it('should insert external script element with "customerId" info from config', () => {
