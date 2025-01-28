@@ -15,6 +15,7 @@ import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
+import {readData, defineStorageType} from '../libraries/intentIqUtils/storageUtils.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -23,7 +24,7 @@ import {
   CLIENT_HINTS_KEY,
   EMPTY,
   GVLID,
-  VERSION
+  VERSION,
 } from '../libraries/intentIqConstants/intentIqConstants.js';
 
 /**
@@ -48,7 +49,6 @@ const encoderCH = {
   fullVersionList: 8
 };
 const INVALID_ID = 'INVALID_ID';
-const SUPPORTED_TYPES = ['html5', 'cookie']
 export let firstPartyData;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
@@ -87,24 +87,6 @@ export function decryptData(encryptedText) {
 }
 
 /**
- * Read Intent IQ data from local storage or cookie
- * @param key
- * @return {string}
- */
-export function readData(key, allowedStorage) {
-  try {
-    if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-      return storage.getDataFromLocalStorage(key);
-    }
-    if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-      return storage.getCookie(key);
-    }
-  } catch (error) {
-    logError(error);
-  }
-}
-
-/**
  * Store Intent IQ data in cookie, local storage or both of them
  * expiration date: 365 days
  * @param key
@@ -112,6 +94,9 @@ export function readData(key, allowedStorage) {
  */
 export function storeData(key, value, allowedStorage) {
   try {
+    if (firstPartyData?.isOptedOut && key !== FIRST_PARTY_KEY) {
+      return;
+    }
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
     if (value) {
       if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
@@ -191,12 +176,6 @@ export function isCMPStringTheSame(fpData, cmpData) {
   return firstPartyDataCPString === cmpDataString;
 }
 
-function defineStorageType(params) {
-  if (!params || !Array.isArray(params)) return ['html5']; // use locale storage be default
-  const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
-  return filteredArr.length ? filteredArr : ['html5'];
-}
-
 /** @type {Submodule} */
 export const intentIqIdSubmodule = {
   /**
@@ -228,8 +207,13 @@ export const intentIqIdSubmodule = {
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
     // Get consent information with priority for user-provided data
+    let rrttStrtTime = 0;
+    let partnerData = {};
+    let shouldCallServer = false;
+    const FIRST_PARTY_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
     const cmpData = getCmpData(configParams);
-    firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+    const gdprDetected = cmpData.allowGDPR && cmpData.gdprString;
+    firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage, storage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
 
     const firePartnerCallback = () => {
@@ -252,12 +236,6 @@ export const intentIqIdSubmodule = {
       return;
     }
 
-    const FIRST_PARTY_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
-
-    let rrttStrtTime = 0;
-    let partnerData = {};
-    let shouldCallServer = false
-
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
 
@@ -266,29 +244,6 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule: browser is in blacklist!');
       if (configParams.callback) configParams.callback('', BLACK_LIST);
       return;
-    }
-
-    // Read client hints from storage
-    let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
-
-    // Get client hints and save to storage
-    if (navigator.userAgentData) {
-      navigator.userAgentData
-        .getHighEntropyValues([
-          'brands',
-          'mobile',
-          'bitness',
-          'wow64',
-          'architecture',
-          'model',
-          'platform',
-          'platformVersion',
-          'fullVersionList'
-        ])
-        .then(ch => {
-          clientHints = handleClientHints(ch);
-          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage)
-        });
     }
 
     if (!firstPartyData?.pcid) {
@@ -309,7 +264,34 @@ export const intentIqIdSubmodule = {
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
     }
 
-    const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY, allowedStorage))
+    if (gdprDetected && !('isOptedOut' in firstPartyData)) {
+      firstPartyData.isOptedOut = true;
+    }
+
+    // Read client hints from storage
+    let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage, storage);
+
+    // Get client hints and save to storage
+    if (navigator?.userAgentData?.getHighEntropyValues) {
+      navigator.userAgentData
+        .getHighEntropyValues([
+          'brands',
+          'mobile',
+          'bitness',
+          'wow64',
+          'architecture',
+          'model',
+          'platform',
+          'platformVersion',
+          'fullVersionList'
+        ])
+        .then(ch => {
+          clientHints = handleClientHints(ch);
+          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage)
+        });
+    }
+
+    const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY, allowedStorage, storage))
     if (savedData) {
       partnerData = savedData;
 

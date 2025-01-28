@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { decryptData, handleClientHints, readData, firstPartyData as moduleFPD } from '../../../modules/intentIqIdSystem';
-import {getCmpData} from '../../../libraries/intentIqUtils/getCmpData.js';
+import { decryptData, handleClientHints, firstPartyData as moduleFPD } from '../../../modules/intentIqIdSystem';
+import { readData } from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
@@ -377,7 +377,6 @@ describe('IntentIQ tests', function () {
 
     beforeEach(function () {
       localStorage.clear();
-      const expiredDate = new Date(0).toUTCString();
       uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
       gppDataHandlerStub = sinon.stub(gppDataHandler, 'getConsentData');
       gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
@@ -391,6 +390,34 @@ describe('IntentIQ tests', function () {
       uspDataHandlerStub.restore();
       gppDataHandlerStub.restore();
       gdprDataHandlerStub.restore();
+    });
+
+    it('should create isOptOut in LS for new user and change it with response isOptOut value', function () {
+      localStorage.clear();
+      mockConsentHandlers(uspData, gppData, gdprData);
+      let initialFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+
+      expect(initialFirstPartyData).to.be.null;
+
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+      submoduleCallback(callBackSpy);
+
+      const lsBeforeReq = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY))
+      expect(lsBeforeReq.isOptedOut).to.be.true;
+
+      let request = server.requests[0];
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({isOptedOut: false})
+      );
+      expect(callBackSpy.calledOnce).to.be.true;
+
+      let updatedFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+
+      expect(updatedFirstPartyData).to.not.be.undefined;
+      expect(updatedFirstPartyData.isOptedOut).to.equal(false);
     });
 
     it('should save cmpData parameters in LS data and used it request if uspData, gppData, gdprData exists', function () {
@@ -516,16 +543,17 @@ describe('IntentIQ tests', function () {
     });
   });
 
-  it('should get and save client hints to storge', async () => {
-    // Client hints are async function, thats why async/await is using
+  it('should get and save client hints to storage', async () => {
     localStorage.clear();
     Object.defineProperty(navigator, 'userAgentData', {
       value: { getHighEntropyValues: async () => testClientHints },
       configurable: true
     });
     await intentIqIdSubmodule.getId(defaultConfigParams);
-    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5']);
-    expect(savedClientHints).to.equal(handleClientHints(testClientHints));
+
+    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5'], storage);
+    const expectedClientHints = handleClientHints(testClientHints);
+    expect(savedClientHints).to.equal(expectedClientHints);
   });
 
   it('should run callback from params', async () => {

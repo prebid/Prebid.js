@@ -10,6 +10,7 @@ import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui, getReferrer} from '../libraries/intentIqUtils/getRefferer.js';
 import {getCmpData} from '../libraries/intentIqUtils/getCmpData.js'
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, VERSION} from '../libraries/intentIqConstants/intentIqConstants.js';
+import {readData, defineStorageType} from '../libraries/intentIqUtils/storageUtils.js';
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
@@ -17,6 +18,7 @@ const defaultUrl = 'https://reports.intentiq.com/report';
 const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
+const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
 const PARAMS_NAMES = {
   abTestGroup: 'abGroup',
@@ -87,22 +89,13 @@ const {
   BID_REQUESTED
 } = EVENTS;
 
-function readData(key) {
-  try {
-    if (storage.hasLocalStorage()) {
-      return storage.getDataFromLocalStorage(key);
-    }
-    if (storage.cookiesAreEnabled()) {
-      return storage.getCookie(key);
-    }
-  } catch (error) {
-    logError(error);
-  }
+function getIntentIqConfig() {
+  return config.getConfig('userSync.userIds')?.find(m => m.name === 'intentIqId') || {};
 }
 
 function initLsValues() {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
-  let iiqConfig = config.getConfig('userSync.userIds')?.find(m => m.name == 'intentIqId');
+  let iiqConfig = getIntentIqConfig()
 
   if (iiqConfig) {
     iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
@@ -122,12 +115,12 @@ function initLsValues() {
 function initReadLsIds() {
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
-    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY));
+    iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY, allowedStorage, storage));
     if (iiqAnalyticsAnalyticsAdapter.initOptions.fpid) {
       iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
-    const partnerData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
-    const clientsHints = readData(CLIENT_HINTS_KEY) || '';
+    const partnerData = readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner, allowedStorage, storage);
+    const clientsHints = readData(CLIENT_HINTS_KEY, allowedStorage, storage) || '';
 
     if (partnerData) {
       iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized = true;
@@ -173,20 +166,13 @@ function bidWon(args, isReportExternal) {
 
 function defineGlobalVariableName() {
   function reportExternalWin(args) {
-    return bidWon(args, true)
+    return bidWon(args, true);
   }
 
-  let partnerId = 0
-  const userConfig = config.getConfig('userSync.userIds')
+  const iiqConfig = getIntentIqConfig();
+  const partnerId = iiqConfig?.params?.partner || 0;
 
-  if (userConfig) {
-    const iiqConfig = userConfig.find(m => m.name === 'intentIqId');
-    if (iiqConfig.params?.partner) {
-      partnerId = iiqConfig.params.partner;
-    }
-  }
-
-  window[`intentIqAnalyticsAdapter_${partnerId}`] = {reportExternalWin: reportExternalWin}
+  window[`intentIqAnalyticsAdapter_${partnerId}`] = { reportExternalWin };
 }
 
 function getRandom(start, end) {
@@ -195,7 +181,7 @@ function getRandom(start, end) {
 
 export function preparePayload(data) {
   let result = getDefaultDataObject();
-  readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
+  readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner, allowedStorage, storage);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.referrer] = getReferrer();
@@ -293,7 +279,7 @@ function constructFullUrl(data) {
   data = btoa(JSON.stringify(data));
   report.push(data);
 
-  let iiqConfig = config.getConfig('userSync.userIds')?.find(m => m.name == 'intentIqId');
+  let iiqConfig = getIntentIqConfig();
   let configParams = iiqConfig?.params || {};
   const cmpData = getCmpData(configParams);
 

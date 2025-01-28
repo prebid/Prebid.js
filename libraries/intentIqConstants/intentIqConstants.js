@@ -1,4 +1,5 @@
 export const FIRST_PARTY_KEY = '_iiq_fdata';
+export const SUPPORTED_TYPES = ['html5', 'cookie']
 
 export const WITH_IIQ = 'A';
 export const WITHOUT_IIQ = 'B';
