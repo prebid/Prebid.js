@@ -1381,7 +1381,6 @@ describe('OpenxRtbAdapter', function () {
           crid: 'test-creative-id',
           dealid: 'test-deal-id',
           adm: 'test-ad-markup',
-          mtype: 1,
           adomain: ['brand.com'],
           ext: {
             dsp_id: '123',
@@ -1593,7 +1592,6 @@ describe('OpenxRtbAdapter', function () {
               bid: [{
                 impid: 'test-bid-id',
                 price: 2,
-                mtype: 4,
                 adm: '{"ver": "1.2", "assets": [{"id": 1, "required": 1,"title": {"text": "OpenX (Title)"}}], "link": {"url": "https://www.openx.com/"}, "eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
               }]
             }],
