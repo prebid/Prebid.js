@@ -80,7 +80,7 @@ const converter = ortbConverter({
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
-    if (!context.mediaType) {
+    if (!context.mediaType && !bid.mtype) {
       let mediaType = BANNER; // default media type
       if (bid.vastXml || bid.vastUrl || (bid.adm && bid.adm.startsWith('<VAST'))) {
         mediaType = VIDEO;
