@@ -5,6 +5,7 @@ import { _each, replaceMacros, deepAccess, deepSetValue, logError } from '../src
 
 const BIDDER_CODE = 'mobkoi';
 const GVL_ID = 898;
+export const DEFAULT_AD_SERVER_BASE_URL = 'https://adserver.maximus.mobkoi.com';
 
 const PUBLISHER_PARAMS = {
   /**
@@ -13,6 +14,7 @@ const PUBLISHER_PARAMS = {
    */
   PARAM_NAME_AD_SERVER_BASE_URL: 'adServerBaseUrl',
   PARAM_NAME_PUBLISHER_ID: 'publisherId',
+  PARAM_NAME_PLACEMENT_ID: 'placementId',
 }
 
 /**
@@ -35,6 +37,8 @@ export const converter = ortbConverter({
     ortbRequest.id = utils.getOrtbId(prebidBidRequest);
     deepSetValue(ortbRequest, 'site.publisher.id', utils.getPublisherId(prebidBidRequest));
     deepSetValue(ortbRequest, 'site.publisher.ext.adServerBaseUrl', utils.getAdServerEndpointBaseUrl(prebidBidRequest));
+    // We only support one impression per request.
+    deepSetValue(ortbRequest, 'imp.0.tagid', utils.getPlacementId(prebidBidRequest));
 
     return ortbRequest;
   },
@@ -67,12 +71,10 @@ export const spec = {
     }
 
     if (
-      !deepAccess(bid, `params.${PUBLISHER_PARAMS.PARAM_NAME_AD_SERVER_BASE_URL}`) &&
-      !deepAccess(bid, 'ortb2.site.publisher.ext.adServerBaseUrl')) {
-      logError(
-        `The "${PUBLISHER_PARAMS.PARAM_NAME_AD_SERVER_BASE_URL}" field is required in the bid request. ` +
-        'Please follow the setup guideline to set the field.'
-      );
+      !deepAccess(bid, `params.${PUBLISHER_PARAMS.PARAM_NAME_PLACEMENT_ID}`)
+    ) {
+      logError(`The ${PUBLISHER_PARAMS.PARAM_NAME_PLACEMENT_ID} field is required in the bid request. ` +
+        'Please follow the setup guideline to set the placement ID field.')
       return false;
     }
 
@@ -121,35 +123,56 @@ export const utils = {
    * @param {*} bid Prebid Bidder Request Object or Prebid Bid Response/Request
    * or ORTB Request/Response Object
    * @returns {string} The Ad Server Base URL
-   * @throws {Error} If the ORTB ID cannot be found in the given
    */
   getAdServerEndpointBaseUrl (bid) {
-    // (begin) Fields that would be automatically set if the publisher set it via pbjs.setBidderConfig.
+    // Fields that would be automatically set if the publisher set it via pbjs.setBidderConfig.
     const ortbPath = `site.publisher.ext.${PUBLISHER_PARAMS.PARAM_NAME_AD_SERVER_BASE_URL}`;
     const prebidPath = `ortb2.${ortbPath}`;
-    // (end)
 
-    // (begin) Fields that would be set by the publisher in the bid
+    // Fields that would be set by the publisher in the bid
     // configuration object in ad unit.
     const paramPath = `params.${PUBLISHER_PARAMS.PARAM_NAME_AD_SERVER_BASE_URL}`;
     const bidRequestFirstBidParam = `bids.0.${paramPath}`;
-    // (end)
 
     const adServerBaseUrl =
       deepAccess(bid, paramPath) ||
       deepAccess(bid, bidRequestFirstBidParam) ||
       deepAccess(bid, prebidPath) ||
-      deepAccess(bid, ortbPath);
+      deepAccess(bid, ortbPath) ||
+      DEFAULT_AD_SERVER_BASE_URL;
 
-    if (!adServerBaseUrl) {
-      throw new Error('Failed to find the Ad Server Base URL in the given object. ' +
-        `Please follow the setup documentation to set "${PUBLISHER_PARAMS.PARAM_NAME_AD_SERVER_BASE_URL}".\n` +
-        'Given Object:\n' +
-        JSON.stringify(bid, null, 2)
+    return adServerBaseUrl;
+  },
+
+  /**
+   * Extract the placement ID from the given object.
+   * @param {*} prebidBidRequestOrOrtbBidRequest
+   * @returns string
+   * @throws {Error} If the placement ID is not found in the given object.
+   */
+  getPlacementId: function (prebidBidRequestOrOrtbBidRequest) {
+    // Fields that would be set by the publisher in the bid configuration object in ad unit.
+    const paramPath = 'params.placementId';
+    const bidRequestFirstBidParam = `bids.0.${paramPath}`;
+
+    // ORTB path for placement ID
+    const ortbPath = 'imp.0.tagid';
+
+    const placementId =
+      deepAccess(prebidBidRequestOrOrtbBidRequest, paramPath) ||
+      deepAccess(prebidBidRequestOrOrtbBidRequest, bidRequestFirstBidParam) ||
+      deepAccess(prebidBidRequestOrOrtbBidRequest, ortbPath);
+
+    if (!placementId) {
+      throw new Error(
+        'Failed to obtain placement ID from the given object. ' +
+        `Please set it via the "${paramPath}" field in the bid configuration.\n` +
+        'Given object:\n' +
+        JSON.stringify({functionParam: prebidBidRequestOrOrtbBidRequest}, null, 3)
       );
     }
 
-    return adServerBaseUrl;
+    return placementId;
   },
 
   /**
@@ -161,17 +184,15 @@ export const utils = {
    * @throws {Error} If the publisher ID is not found in the given object.
    */
   getPublisherId: function (prebidBidRequestOrOrtbBidRequest) {
-    // (begin) Fields that would be automatically set if the publisher set it
+    // Fields that would be automatically set if the publisher set it
     // via pbjs.setBidderConfig.
     const ortbPath = 'site.publisher.id';
     const prebidPath = `ortb2.${ortbPath}`;
-    // (end)
 
-    // (begin) Fields that would be set by the publisher in the bid
+    // Fields that would be set by the publisher in the bid
     // configuration object in ad unit.
     const paramPath = 'params.publisherId';
     const bidRequestFirstBidParam = `bids.0.${paramPath}`;
-    // (end)
 
     const publisherId =
       deepAccess(prebidBidRequestOrOrtbBidRequest, paramPath) ||

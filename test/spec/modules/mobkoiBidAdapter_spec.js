@@ -1,14 +1,19 @@
-import {spec, utils} from 'modules/mobkoiBidAdapter.js';
+import {
+  spec,
+  utils,
+  DEFAULT_AD_SERVER_BASE_URL
+} from 'modules/mobkoiBidAdapter.js';
 
 describe('Mobkoi bidding Adapter', function () {
   const testAdServerBaseUrl = 'http://test.adServerBaseUrl.com';
-  const testRequestId = 'test-request-id'
-  const testPublisherId = 'mobkoiPublisherId'
-  const testBidId = 'test-bid-id'
-  const bidderCode = 'mobkoi'
-  const testTransactionId = 'test-transaction-id'
-  const testAdUnitId = 'test-ad-unit-id'
-  const testAuctionId = 'test-auction-id'
+  const testRequestId = 'test-request-id';
+  const testPublisherId = 'mobkoiPublisherId';
+  const testPlacementId = 'mobkoiPlacementId';
+  const testBidId = 'test-bid-id';
+  const bidderCode = 'mobkoi';
+  const testTransactionId = 'test-transaction-id';
+  const testAdUnitId = 'test-ad-unit-id';
+  const testAuctionId = 'test-auction-id';
 
   const getOrtb2 = () => ({
     site: {
@@ -30,7 +35,8 @@ describe('Mobkoi bidding Adapter', function () {
     ortb2: getOrtb2(),
     params: {
       publisherId: testPublisherId,
-      adServerBaseUrl: testAdServerBaseUrl
+      adServerBaseUrl: testAdServerBaseUrl,
+      placementId: testPlacementId
     }
   })
 
@@ -46,6 +52,7 @@ describe('Mobkoi bidding Adapter', function () {
     id: testRequestId,
     imp: [{
       id: testBidId,
+      tagid: testPlacementId,
     }],
     ...getOrtb2(),
     test: 0
@@ -100,18 +107,12 @@ describe('Mobkoi bidding Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return true when placement id exist in ad unit params', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should return true when publisher ID only exists in ad unit params', function () {
       delete bid.ortb2.site.publisher.id;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should return true when adServerBaseUrl only exists in ortb2', function () {
-      delete bid.params.adServerBaseUrl;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should return true when adServerBaseUrl only exists in ad unit params', function () {
-      delete bid.ortb2.site.publisher.ext.adServerBaseUrl;
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
@@ -121,18 +122,17 @@ describe('Mobkoi bidding Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
+    it('should return false when placement id is missing in ad unit params', function () {
+      delete bid.params.placementId;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
     it('should return false when publisher id is empty in ad unit params and ortb2', function () {
       bid.ortb2.site.publisher.id = '';
       bid.params.publisherId = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-
-    it('should return false when adServerBaseUrl is missing in ad unit params and ortb2', function () {
-      delete bid.ortb2.site.publisher.ext.adServerBaseUrl;
-      delete bid.params.adServerBaseUrl;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  })
+  });
 
   describe('buildRequests', function () {
     let bidderRequest, convertedBidRequest;
@@ -140,16 +140,6 @@ describe('Mobkoi bidding Adapter', function () {
     beforeEach(function () {
       bidderRequest = getBidderRequest();
       convertedBidRequest = getConvertedBidRequest();
-    });
-
-    it('should return valid request object with correct structure', function () {
-      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      const expectedUrl = testAdServerBaseUrl + '/bid';
-
-      expect(request.method).to.equal('POST');
-      expect(request.options.contentType).to.equal('application/json');
-      expect(request.url).to.equal(expectedUrl);
-      expect(request.data).to.deep.equal(convertedBidRequest);
     });
 
     it('should include converted ORTB data in request', function () {
@@ -176,13 +166,12 @@ describe('Mobkoi bidding Adapter', function () {
       expect(ortbData.site.publisher.ext.adServerBaseUrl).to.equal(bidderRequest.bids[0].params.adServerBaseUrl);
     });
 
-    it('should throw error when adServerBaseUrl is missing both in ortb2 and bid params', function () {
+    it('should use the pro server url when the ad server base url is not set', function () {
       delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
       delete bidderRequest.bids[0].params.adServerBaseUrl;
 
-      expect(() => {
-        spec.buildRequests(bidderRequest.bids, bidderRequest);
-      }).to.throw();
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(request.url).to.equal(DEFAULT_AD_SERVER_BASE_URL + '/bid');
     });
   });
 
@@ -229,13 +218,11 @@ describe('Mobkoi bidding Adapter', function () {
           .to.equal(testAdServerBaseUrl);
       });
 
-      it('should throw error when adServerBaseUrl is missing', function () {
+      it('should return default prod ad server url when adServerBaseUrl is missing in params and ortb2', function () {
         delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
         delete bidderRequest.bids[0].params.adServerBaseUrl;
 
-        expect(() => {
-          utils.getAdServerEndpointBaseUrl(bidderRequest);
-        }).to.throw();
+        expect(utils.getAdServerEndpointBaseUrl(bidderRequest)).to.equal(DEFAULT_AD_SERVER_BASE_URL);
       });
     })
 

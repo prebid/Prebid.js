@@ -24,7 +24,8 @@ const adUnits = [
         bidder: 'mobkoi',
         params: {
           publisherId: 'module-test-publisher-id',
-          adServerBaseUrl: 'https://adserver.maximus.mobkoi.com',
+          placementId: 'moudle-test-placement-id',
+          adServerBaseUrl: 'https://not.an.adserver.endpoint.com',
         }
       },
     ],
@@ -34,4 +35,19 @@ const adUnits = [
 pbjs.que.push(function () {
   pbjs.addAdUnits(adUnits);
 });
+```
+
+
+# Serve Prebid.js Locally
+
+To serve Prebid.js locally with specific modules, you can use the following command:
+
+```sh
+gulp serve-fast --modules=consentManagementTcf,tcfControl,mobkoiBidAdapter
+```
+
+# Run bid adapter test locally
+
+```sh
+gulp test --file=test/spec/modules/mobkoiBidAdapter_spec.js
 ```
