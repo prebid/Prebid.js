@@ -2,6 +2,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { prefixLog } from '../src/utils.js';
 
@@ -9,7 +10,7 @@ const MODULE_NAME = 'nodalsAi';
 const GVLID = 1360;
 const PUB_ENDPOINT_ORIGIN = 'https://nodals.io';
 const LOCAL_STORAGE_KEY = 'signals.nodals.ai';
-const STORAGE_TTL = 3600000; // 1 hour in milliseconds
+const STORAGE_TTL = 3600; // 1 hour in seconds
 
 const fillTemplate = (strings, ...keys) => {
   return function (values) {
@@ -88,7 +89,8 @@ class NodalsAiRtdProvider {
     if (storedData === null) {
       return targetingData;
     }
-    const facts = storedData?.facts ?? {};
+    const facts = Object.assign({}, storedData?.facts ?? {});
+    facts['page.url'] = getRefererInfo().page;
     const targetingEngine = window?.$nodals?.adTargetingEngine['latest'];
     try {
       targetingEngine.init(config, facts);
@@ -106,7 +108,7 @@ class NodalsAiRtdProvider {
   // Private methods
   #setOverrides(params) {
     if (params?.storage?.ttl && typeof params.storage.ttl === 'number') {
-      this.#overrides.storageTTL = params.storage.ttl * 1000;
+      this.#overrides.storageTTL = params.storage.ttl;
     }
     this.#overrides.storageKey = params?.storage?.key;
     this.#overrides.endpointOrigin = params?.endpoint?.origin;
@@ -211,8 +213,8 @@ class NodalsAiRtdProvider {
   #dataIsStale(storedData) {
     const currentTime = Date.now();
     const dataTime = storedData.createdAt || 0;
-    const staleThreshold = this.#overrides?.storageTTL ?? STORAGE_TTL;
-    return currentTime - dataTime >= staleThreshold;
+    const staleThreshold = this.#overrides?.storageTTL ?? storedData?.meta?.ttl ?? STORAGE_TTL;
+    return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
   // eslint-disable-next-line no-dupe-class-members

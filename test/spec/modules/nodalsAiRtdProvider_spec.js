@@ -214,6 +214,32 @@ describe('NodalsAI RTD Provider', () => {
         expect(server.requests.length).to.equal(1);
       });
 
+      it('should detect stale data if remote defined TTL is exceeded', function () {
+        const fiveMinutesAgoMs = Date.now() - 5 * 60 * 1000;
+        setDataInLocalStorage({
+          meta: { ttl: 4 * 60 },
+          data: { foo: 'bar' },
+          createdAt: fiveMinutesAgoMs,
+        });
+        const result = nodalsAiRtdSubmodule.init(validConfig, {});
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
+      });
+
+      it('should respect pub defined TTL over remote defined TTL', function () {
+        const fiveMinutesAgoMs = Date.now() - 5 * 60 * 1000;
+        setDataInLocalStorage({
+          meta: { ttl: 4 * 60 },
+          data: { foo: 'bar' },
+          createdAt: fiveMinutesAgoMs,
+        });
+        const config = Object.assign({}, validConfig);
+        config.params.storage = { ttl: 6 * 60 };
+        const result = nodalsAiRtdSubmodule.init(config, {});
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(0);
+      });
+
       it('should NOT detect stale data if override TTL is not exceeded', function () {
         const fiveMinutesAgoMs = Date.now() - 5 * 60 * 1000;
         setDataInLocalStorage({
@@ -431,7 +457,29 @@ describe('NodalsAI RTD Provider', () => {
       expect(engine.init.called).to.be.true;
       const args = engine.init.getCall(0).args;
       expect(args[0]).to.deep.equal(validConfig);
-      expect(args[1]).to.deep.equal(successPubEndpointResponse.facts);
+      expect(args[1]).to.deep.include(successPubEndpointResponse.facts);
+      //expect(args[1]).to.have.keys('page.url');
+    });
+
+    it('should proxy the correct data to engine.init()', () => {
+      const engine = stubVersionedTargetingEngine(
+        engineGetTargetingDataReturnValue
+      );
+      const userConsent = generateGdprConsent();
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: Date.now(),
+      });
+      nodalsAiRtdSubmodule.getTargetingData(
+        ['adUnit1', 'adUnit2'],
+        validConfig,
+        userConsent
+      );
+
+      expect(engine.init.called).to.be.true;
+      const args = engine.init.getCall(0).args;
+      expect(args[0]).to.deep.equal(validConfig);
+      expect(args[1]).to.be.an('object').with.keys(['browser.name', 'geo.country', 'page.url']);
     });
 
     it('should proxy the correct data to engine.getTargetingData()', () => {
@@ -452,7 +500,7 @@ describe('NodalsAI RTD Provider', () => {
       expect(engine.getTargetingData.called).to.be.true;
       const args = engine.getTargetingData.getCall(0).args;
       expect(args[0]).to.deep.equal(['adUnit1', 'adUnit2']);
-      expect(args[1]).to.deep.equal(successPubEndpointResponse);
+      expect(args[1]).to.deep.include(successPubEndpointResponse);
       expect(args[2]).to.deep.equal(userConsent);
     });
 
