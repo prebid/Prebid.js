@@ -458,7 +458,6 @@ describe('NodalsAI RTD Provider', () => {
       const args = engine.init.getCall(0).args;
       expect(args[0]).to.deep.equal(validConfig);
       expect(args[1]).to.deep.include(successPubEndpointResponse.facts);
-      //expect(args[1]).to.have.keys('page.url');
     });
 
     it('should proxy the correct data to engine.init()', () => {
