@@ -82,10 +82,11 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     if (!context.mediaType && !bid.mtype) {
       let mediaType = BANNER; // default media type
-      if (bid.vastXml || bid.vastUrl || (bid.adm && bid.adm.startsWith('<VAST'))) {
-        mediaType = VIDEO;
-      } else if (bid.adm && bid.adm.startsWith('{') && bid.adm.includes('"assets"')) {
+      const vastKeywords = ['VAST ', 'vast ', 'videoad', 'dur', 'VAST_VERSION', 'dc_vast', 'video ']
+      if (bid.adm && bid.adm.startsWith('{') && bid.adm.includes('"assets"')) {
         mediaType = NATIVE;
+      } else if (bid.vastXml || bid.vastUrl || (bid.adm && vastKeywords.some(v => bid.adm.includes(v)))) {
+        mediaType = VIDEO;
       }
       bid.mediaType = mediaType;
       bid.mtype = Object.keys(ORTB_MTYPES).find(key => ORTB_MTYPES[key] === mediaType);
