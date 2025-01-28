@@ -19,7 +19,7 @@ const ENV = {
   NET_REVENUE: true,
   DEFAULT_CURRENCY: 'USD',
   OUTSTREAM_RENDERER_URL:
-    'https://cdn.jsdelivr.net/npm/in-renderer-js@1.0.6/dist/in-video-renderer.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/in-renderer-js@1/dist/in-video-renderer.umd.min.js',
 };
 
 export const spec = {
