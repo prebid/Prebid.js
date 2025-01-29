@@ -26,7 +26,7 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 
 *Note:* Requires Prebid.js v1.38.0+
 
-Prebid.js depends on Babel and some Babel Plugins in order to run correctly in the browser.  Here are some examples for 
+Prebid.js depends on Babel and some Babel Plugins in order to run correctly in the browser.  Here are some examples for
 configuring webpack to work with Prebid.js.
 
 With Babel 7:
@@ -37,7 +37,7 @@ module.exports = {
   mode: 'production',
   module: {
     rules: [
-      
+
       // this rule can be excluded if you don't require babel-loader for your other application files
       {
         test: /\.m?js$/,
@@ -46,7 +46,7 @@ module.exports = {
           loader: 'babel-loader',
         }
       },
-      
+
       // this separate rule is required to make sure that the Prebid.js files are babel-ified.  this rule will
       // override the regular exclusion from above (for being inside node_modules).
       {
@@ -71,7 +71,7 @@ Or for Babel 6:
             // you must manually install and specify the presets and plugins yourself
             options: {
               plugins: [
-                "transform-object-assign", // required (for IE support) and "babel-plugin-transform-object-assign" 
+                "transform-object-assign", // required (for IE support) and "babel-plugin-transform-object-assign"
                                            // must be installed as part of your package.
                 require('prebid.js/plugins/pbjsGlobals.js') // required!
               ],
@@ -79,7 +79,7 @@ Or for Babel 6:
                 ["env", {                 // you can use other presets if you wish.
                   "targets": {            // this example is using "babel-presets-env", which must be installed if you
                     "browsers": [         // follow this example.
-                      ... // your browser targets. they should probably match the targets you're using for the rest 
+                      ... // your browser targets. they should probably match the targets you're using for the rest
                           // of your application
                     ]
                   }
@@ -143,7 +143,7 @@ This will run testing but not linting. A web server will start at `http://localh
 
 Development may be a bit slower but if you prefer linting and additional watch files you can also still run just:
 
-    $ gulp serve 
+    $ gulp serve
 
 
 ### Build Optimization
@@ -162,11 +162,11 @@ Building with just these adapters will result in a smaller bundle which should a
 - Then run the build:
 
         $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
-        
+
 Alternatively, a `.json` file can be specified that contains a list of modules you would like to include.
 
     $ gulp build --modules=modules.json
-        
+
 With `modules.json` containing the following
 ```json modules.json
 [
@@ -202,7 +202,7 @@ gulp bundle --tag one --modules=one.json
 gulp bundle --tag two --modules=two.json
 ```
 
-This generates slightly larger files, but has the advantage of being much faster to run (after the initial `gulp build`). It's also the method used by [the Prebid.org download page](https://docs.prebid.org/download.html).  
+This generates slightly larger files, but has the advantage of being much faster to run (after the initial `gulp build`). It's also the method used by [the Prebid.org download page](https://docs.prebid.org/download.html).
 
 <a name="Run"></a>
 
@@ -378,7 +378,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](https:/
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11. 
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

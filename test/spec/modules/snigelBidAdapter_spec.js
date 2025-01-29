@@ -181,6 +181,50 @@ describe('snigelBidAdapter', function () {
       expect(data.placements[2].refresh.count).to.equal(1);
       expect(data.placements[2].refresh.time).to.be.greaterThanOrEqual(0);
     });
+
+    it('should increment auction counter upon every request', function () {
+      const bidderRequest = makeBidderRequest({});
+
+      let request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      const previousCounter = data.counter;
+
+      request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data.counter).to.equal(previousCounter + 1);
+    });
+
+    it('should increment placement counter for each placement', function () {
+      const bidderRequest = Object.assign({}, BASE_BIDDER_REQUEST);
+      const topLeaderboard = makeBidRequest({adUnitCode: 'top_leaderboard', params: {placement: 'ros'}});
+      const bottomLeaderboard = makeBidRequest({adUnitCode: 'bottom_leaderboard', params: {placement: 'ros'}});
+      const sidebar = makeBidRequest({adUnitCode: 'sidebar', params: {placement: 'other'}});
+
+      let request = spec.buildRequests([topLeaderboard, bottomLeaderboard, sidebar], bidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      const previousCounters = {};
+      data.placements.forEach((placement) => {
+        previousCounters[placement.name] = Math.max(previousCounters[placement.name] || 0, placement.counter);
+      });
+
+      request = spec.buildRequests([topLeaderboard, bottomLeaderboard, sidebar], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data).to.have.property('placements');
+      expect(data.placements.length).to.equal(3);
+      expect(data.placements[0].id).to.equal('top_leaderboard');
+      expect(previousCounters).to.have.property(data.placements[0].name);
+      expect(data.placements[0].counter).to.equal(previousCounters[data.placements[0].name] + 1);
+      expect(data.placements[1].id).to.equal('bottom_leaderboard');
+      expect(previousCounters).to.have.property(data.placements[1].name);
+      expect(data.placements[1].counter).to.equal(previousCounters[data.placements[1].name] + 2);
+      expect(data.placements[2].id).to.equal('sidebar');
+      expect(previousCounters).to.have.property(data.placements[2].name);
+      expect(data.placements[2].counter).to.equal(previousCounters[data.placements[2].name] + 1);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -347,7 +391,7 @@ describe('snigelBidAdapter', function () {
       expect(sync.url).to.equal(`https://somesyncurl?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}`);
     });
 
-    it('should omit session ID if no device access', function() {
+    it('should omit session ID if no device access', function () {
       const bidderRequest = makeBidderRequest();
       const unregisterRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'denyAccess', () => {
         return {allow: false, reason: 'no consent'};
@@ -373,9 +417,9 @@ describe('snigelBidAdapter', function () {
             },
             vendor: {
               consents: {[spec.gvlid]: true},
-            }
+            },
           },
-        }
+        },
       });
       let request = spec.buildRequests([], baseBidderRequest);
       expect(request).to.have.property('data');
@@ -388,25 +432,14 @@ describe('snigelBidAdapter', function () {
       data = JSON.parse(request.data);
       expect(data.gdprConsent).to.be.false;
 
-      bidderRequest = {...baseBidderRequest, ...{gdprConsent: {vendorData: {vendor: {consents: {[spec.gvlid]: false}}}}}};
+      bidderRequest = {
+        ...baseBidderRequest,
+        ...{gdprConsent: {vendorData: {vendor: {consents: {[spec.gvlid]: false}}}}},
+      };
       request = spec.buildRequests([], bidderRequest);
       expect(request).to.have.property('data');
       data = JSON.parse(request.data);
       expect(data.gdprConsent).to.be.false;
-    });
-
-    it('should increment auction counter upon every request', function() {
-      const bidderRequest = makeBidderRequest({});
-
-      let request = spec.buildRequests([], bidderRequest);
-      expect(request).to.have.property('data');
-      let data = JSON.parse(request.data);
-      const previousCounter = data.counter;
-
-      request = spec.buildRequests([], bidderRequest);
-      expect(request).to.have.property('data');
-      data = JSON.parse(request.data);
-      expect(data.counter).to.equal(previousCounter + 1);
     });
   });
 });

@@ -14,7 +14,7 @@ export function isVideoBid(bid) {
 
 export function getBannerBidFloor(bid) {
   let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
-  return floorInfo.floor || getBannerBidParam(bid, 'bidfloor');
+  return floorInfo?.floor || getBannerBidParam(bid, 'bidfloor');
 }
 
 export function getVideoBidFloor(bid) {

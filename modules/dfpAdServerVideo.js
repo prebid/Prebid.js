@@ -2,10 +2,8 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { DEFAULT_DFP_PARAMS, DFP_ENDPOINT, setGdprConsent } from '../libraries/dfpUtils/dfpUtils.js';
 import { getSignals } from '../libraries/gptUtils/gptUtils.js';
 import { registerVideoSupport } from '../src/adServerManager.js';
-import { gdprDataHandler } from '../src/adapterManager.js';
 import { getPPID } from '../src/adserver.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
@@ -16,7 +14,6 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
 import {
   buildUrl,
-  deepAccess,
   formatQS,
   isEmpty,
   isNumber,
@@ -24,6 +21,7 @@ import {
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
+import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -91,7 +89,7 @@ export function buildDfpVideoUrl(options) {
 
   const derivedParams = {
     correlator: Date.now(),
-    sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
+    sz: parseSizesInput(adUnit?.mediaTypes?.video?.playerSize).join('|'),
     url: encodeURIComponent(location.href),
   };
 
@@ -108,13 +106,12 @@ export function buildDfpVideoUrl(options) {
     urlComponents.search,
     derivedParams,
     options.params,
-    { cust_params: encodedCustomParams }
+    { cust_params: encodedCustomParams },
+    gdprParams()
   );
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
-  const gdprConsent = gdprDataHandler.getConsentData();
-  setGdprConsent(gdprConsent, queryParams);
 
   if (!queryParams.ppid) {
     const ppid = getPPID();
@@ -136,7 +133,7 @@ export function buildDfpVideoUrl(options) {
         return 'preroll';
       }
     },
-    vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.every(m => m === 7) ? '2' : undefined,
+    vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.some(m => m === 7) ? '2' : undefined,
     vpa() {
       // playbackmethod = 3 is play on click; 1, 2, 4, 5, 6 are autoplay
       if (Array.isArray(video?.playbackmethod)) {
@@ -210,7 +207,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  return deepAccess(components, `${prop}.description_url`) || encodeURIComponent(dep.ri().page);
+  return components?.[prop]?.description_url || encodeURIComponent(dep.ri().page);
 }
 
 /**
@@ -242,7 +239,7 @@ function getCustParams(bid, options, urlCustParams) {
   events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
 
   // merge the prebid + publisher targeting sets
-  const publisherTargetingSet = deepAccess(options, 'params.cust_params');
+  const publisherTargetingSet = options?.params?.cust_params;
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
   let encodedParams = encodeURIComponent(formatQS(targetingSet));
   if (urlCustParams) {

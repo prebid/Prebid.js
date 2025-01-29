@@ -210,7 +210,7 @@ describe('Media.net Analytics Adapter', function() {
       expect(noBidLog.pvnm).to.have.ordered.members(['-2', 'bidder1', 'bidder1', 'medianet']);
       expect(noBidLog.mtype).to.have.ordered.members([banner, banner, banner, banner]);
       expect(noBidLog.status).to.have.ordered.members(['1', '2', '2', '2']);
-      expect(noBidLog.size).to.have.ordered.members(['', '', '', '']);
+      expect(noBidLog.size).to.have.ordered.members(['300x100|300x250', '300x100', '300x250', '300x250|300x100']);
       expect(noBidLog.szs).to.have.ordered.members(['300x100|300x250', '300x100', '300x250', '300x250|300x100']);
     });
 
@@ -225,7 +225,7 @@ describe('Media.net Analytics Adapter', function() {
     it('should have winner log in standard auction', function() {
       medianetAnalytics.clearlogsQueue();
       performStandardAuctionWithWinner();
-      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
+      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner === '1');
       medianetAnalytics.clearlogsQueue();
 
       expect(winnerLog.length).to.equal(1);
@@ -234,7 +234,7 @@ describe('Media.net Analytics Adapter', function() {
     it('should have correct values in winner log', function() {
       medianetAnalytics.clearlogsQueue();
       performStandardAuctionWithWinner();
-      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
+      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner === '1');
       medianetAnalytics.clearlogsQueue();
 
       expect(winnerLog[0]).to.include({
@@ -258,7 +258,7 @@ describe('Media.net Analytics Adapter', function() {
     it('should have correct bid floor data in winner log', function() {
       medianetAnalytics.clearlogsQueue();
       performAuctionWithFloorConfig();
-      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner);
+      let winnerLog = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter((log) => log.winner === '1');
       medianetAnalytics.clearlogsQueue();
 
       expect(winnerLog[0]).to.include({
@@ -309,32 +309,32 @@ describe('Media.net Analytics Adapter', function() {
 
     it('should pick winning bid if multibids with same request id', function() {
       performStandardAuctionMultiBidWithSameRequestId(MOCK.BIDS_SAME_REQ_DIFF_CPM);
-      let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner)[0];
+      let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
       expect(winningBid.adid).equals('3e6e4bce5c8fb3');
       medianetAnalytics.clearlogsQueue();
 
       const reversedResponseArray = [].concat(MOCK.BIDS_SAME_REQ_DIFF_CPM).reverse();
       performStandardAuctionMultiBidWithSameRequestId(reversedResponseArray);
-      winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner)[0];
+      winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
       expect(winningBid.adid).equals('3e6e4bce5c8fb3');
     });
 
     it('should pick winning bid if multibids with same request id and same time to respond', function() {
       performStandardAuctionMultiBidWithSameRequestId(MOCK.BIDS_SAME_REQ_DIFF_CPM_SAME_TIME);
-      let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner)[0];
+      let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
       expect(winningBid.adid).equals('3e6e4bce5c8fb3');
       medianetAnalytics.clearlogsQueue();
     });
 
     it('should pick winning bid if multibids with same request id and equal cpm', function() {
       performStandardAuctionMultiBidWithSameRequestId(MOCK.BIDS_SAME_REQ_EQUAL_CPM);
-      let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner)[0];
+      let winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
       expect(winningBid.adid).equals('3e6e4bce5c8fb3');
       medianetAnalytics.clearlogsQueue();
 
       const reversedResponseArray = [].concat(MOCK.BIDS_SAME_REQ_EQUAL_CPM).reverse();
       performStandardAuctionMultiBidWithSameRequestId(reversedResponseArray);
-      winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner)[0];
+      winningBid = medianetAnalytics.getlogsQueue().map((log) => getQueryData(log)).filter(log => log.winner === '1')[0];
       expect(winningBid.adid).equals('3e6e4bce5c8fb3');
     });
 

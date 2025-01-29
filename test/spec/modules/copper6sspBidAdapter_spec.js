@@ -137,6 +137,7 @@ describe('Copper6SSPBidAdapter', function () {
       expect(data).to.have.all.keys(
         'deviceWidth',
         'deviceHeight',
+        'device',
         'language',
         'secure',
         'host',
@@ -145,7 +146,11 @@ describe('Copper6SSPBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp',
+        'battr'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');

@@ -91,53 +91,130 @@ describe('bidderFactory', () => {
         sandbox.restore();
       });
 
-      it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: true
+      describe('user syncs', () => {
+        [
+          {
+            t: 'invalid alias, aliasSync enabled',
+            alias: false,
+            aliasSyncEnabled: true,
+            shouldRegister: true
+          },
+          {
+            t: 'valid alias, aliasSync enabled',
+            alias: true,
+            aliasSyncEnabled: true,
+            shouldRegister: true
+          },
+          {
+            t: 'invalid alias, aliasSync disabled',
+            alias: false,
+            aliasSyncEnabled: false,
+            shouldRegister: true,
+          },
+          {
+            t: 'valid alias, aliasSync disabled',
+            alias: true,
+            aliasSyncEnabled: false,
+            shouldRegister: false
           }
+        ].forEach(({t, alias, aliasSyncEnabled, shouldRegister}) => {
+          describe(t, () => {
+            it(shouldRegister ? 'should register sync' : 'should NOT register sync', () => {
+              config.setConfig({
+                userSync: {
+                  aliasSyncEnabled
+                }
+              });
+              spec.code = 'someBidder';
+              if (alias) {
+                aliasRegistry[spec.code] = 'original';
+              }
+              const bidder = newBidder(spec);
+              bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+              if (shouldRegister) {
+                sinon.assert.called(spec.getUserSyncs);
+              } else {
+                sinon.assert.notCalled(spec.getUserSyncs);
+              }
+            });
+          });
         });
-        spec.code = 'fakeBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
 
-      it('should let registerSyncs run with valid alias and aliasSync enabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: true
-          }
-        });
-        spec.code = 'aliasBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
+        describe('getUserSyncs syncOptions', () => {
+          [
+            {
+              t: 'all image allowed, specific bidder denied iframe',
+              userSync: {
+                syncEnabled: true,
+                pixelEnabled: true,
+                iframeEnabled: true,
+                filterSettings: {
+                  image: {
+                    bidders: '*',
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['bidderB'],
+                    filter: 'include'
+                  }
+                }
+              },
+              expected: {
+                bidderA: {
+                  iframeEnabled: false,
+                  pixelEnabled: true
+                },
+                bidderB: {
+                  iframeEnabled: true,
+                  pixelEnabled: true,
+                }
+              }
+            },
+            {
+              t: 'specific bidders allowed specific methods',
+              userSync: {
+                syncEnabled: true,
+                pixelEnabled: true,
+                iframeEnabled: true,
+                filterSettings: {
+                  image: {
+                    bidders: ['bidderA'],
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['bidderB'],
+                    filter: 'include'
+                  }
+                },
+              },
+              expected: {
+                bidderA: {
+                  iframeEnabled: false,
+                  pixelEnabled: true
+                },
+                bidderB: {
+                  iframeEnabled: true,
+                  pixelEnabled: false,
+                }
+              }
+            }
+          ].forEach(({t, userSync, expected}) => {
+            describe(`when ${t}`, () => {
+              beforeEach(() => {
+                config.setConfig({userSync});
+              });
 
-      it('should let registerSyncs run with invalid alias and aliasSync disabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: false
-          }
-        });
-        spec.code = 'fakeBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
-
-      it('should not let registerSyncs run with valid alias and aliasSync disabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: false
-          }
-        });
-        spec.code = 'aliasBidder';
-        const bidder = newBidder(spec);
-        aliasRegistry = {[spec.code]: CODE};
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
+              Object.entries(expected).forEach(([bidderCode, syncOptions]) => {
+                it(`should pass ${JSON.stringify(syncOptions)} to ${bidderCode}`, () => {
+                  spec.code = bidderCode;
+                  const bidder = newBidder(spec);
+                  bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+                  sinon.assert.calledWith(spec.getUserSyncs, syncOptions);
+                })
+              })
+            })
+          })
+        })
       });
 
       describe('transaction IDs', () => {
@@ -639,48 +716,103 @@ describe('bidderFactory', () => {
         expect(doneStub.calledOnce).to.equal(true);
       });
 
-      it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', function () {
-        const bidder = newBidder(spec);
+      describe('when interpretResponse returns a bid', () => {
+        let bid, bidderRequest;
+        beforeEach(() => {
+          bid = {
+            creativeId: 'creative-id',
+            requestId: '1',
+            ad: 'ad-url.com',
+            cpm: 0.5,
+            height: 200,
+            width: 300,
+            adUnitCode: 'mock/placement',
+            currency: 'USD',
+            netRevenue: true,
+            ttl: 300,
+            bidderCode: 'sampleBidder',
+            sampleBidder: {advertiserId: '12345', networkId: '111222'}
+          }
+          bidderRequest = utils.deepClone(MOCK_BIDS_REQUEST);
+          bidderRequest.bids[0].bidder = 'sampleBidder';
+        })
 
-        const bid = {
-          creativeId: 'creative-id',
-          requestId: '1',
-          ad: 'ad-url.com',
-          cpm: 0.5,
-          height: 200,
-          width: 300,
-          adUnitCode: 'mock/placement',
-          currency: 'USD',
-          netRevenue: true,
-          ttl: 300,
-          bidderCode: 'sampleBidder',
-          sampleBidder: {advertiserId: '12345', networkId: '111222'}
-        };
-        const bidderRequest = Object.assign({}, MOCK_BIDS_REQUEST);
-        bidderRequest.bids[0].bidder = 'sampleBidder';
-        spec.isBidRequestValid.returns(true);
-        spec.buildRequests.returns({
-          method: 'POST',
-          url: 'test.url.com',
-          data: {}
+        function getAuctionBid() {
+          const bidder = newBidder(spec);
+          spec.isBidRequestValid.returns(true);
+          spec.buildRequests.returns({
+            method: 'POST',
+            url: 'test.url.com',
+            data: {}
+          });
+          spec.getUserSyncs.returns([]);
+          spec.interpretResponse.returns(bid);
+          bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          return addBidResponseStub.firstCall.args[1];
+        }
+
+        function setDeferredBilling(deferredBilling = true) {
+          bidderRequest.bids.forEach(bid => { bid.deferBilling = deferredBilling });
+        }
+
+        it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', function () {
+          const auctionBid = getAuctionBid();
+          expect(addBidResponseStub.calledOnce).to.equal(true);
+          expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+          // checking the fields added by our code
+          expect(auctionBid.originalCpm).to.equal(bid.cpm);
+          expect(auctionBid.originalCurrency).to.equal(bid.currency);
+          expect(doneStub.calledOnce).to.equal(true);
+          expect(logErrorSpy.callCount).to.equal(0);
+          expect(auctionBid.meta).to.exist;
+          expect(auctionBid.meta).to.deep.equal({advertiserId: '12345', networkId: '111222'});
         });
-        spec.getUserSyncs.returns([]);
 
-        spec.interpretResponse.returns(bid);
+        describe('if request has deferBilling = true', () => {
+          beforeEach(() => setDeferredBilling(true));
 
-        bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          it('should set response.deferBilling = true, regardless of what the adapter says', () => {
+            bid.deferBilling = false;
+            expect(getAuctionBid().deferBilling).to.be.true;
+          });
+          [
+            {
+              shouldDefer: true
+            },
+            {
+              deferRendering: false,
+              shouldDefer: false
+            },
+            {
+              onBidBillable: true,
+              shouldDefer: false,
+            },
+            {
+              onBidBillable: true,
+              deferRendering: true,
+              shouldDefer: true
+            }
+          ].forEach(({onBidBillable, deferRendering, shouldDefer}) => {
+            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and sayd deferRender = ${deferRendering}`, () => {
+              if (onBidBillable) {
+                spec.onBidBillable = sinon.stub();
+              }
+              bid.deferRendering = deferRendering;
+              expect(getAuctionBid().deferRendering).to.equal(shouldDefer);
+            });
+          })
+        });
 
-        expect(addBidResponseStub.calledOnce).to.equal(true);
-        expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
-        let bidObject = addBidResponseStub.firstCall.args[1];
-        // checking the fields added by our code
-        expect(bidObject.originalCpm).to.equal(bid.cpm);
-        expect(bidObject.originalCurrency).to.equal(bid.currency);
-        expect(doneStub.calledOnce).to.equal(true);
-        expect(logErrorSpy.callCount).to.equal(0);
-        expect(bidObject.meta).to.exist;
-        expect(bidObject.meta).to.deep.equal({advertiserId: '12345', networkId: '111222'});
-      });
+        describe('if request has deferBilling = false', () => {
+          beforeEach(() => setDeferredBilling(false));
+          [true, false].forEach(deferredRender => {
+            it(`should set deferRendering = false when adapter says deferRendering = ${deferredRender}`, () => {
+              bid.deferRendering = deferredRender;
+              expect(getAuctionBid().deferRendering).to.be.false;
+            });
+          });
+        });
+      })
 
       it('should call spec.getUserSyncs() with the response', function () {
         const bidder = newBidder(spec);

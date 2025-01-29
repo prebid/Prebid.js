@@ -93,13 +93,13 @@ export const spec = {
     }
 
     const bidders = getBidders(serverResponse)
-
-    if (optionsType.iframeEnabled && bidders) {
+    // note this only does the iframe sync when gdpr consent object exists to match previous behavior (generate error on gdprconsent not existing)
+    if (optionsType.iframeEnabled && bidders && gdprConsent) {
       const queryParams = []
 
       queryParams.push('bidders=' + bidders)
-      queryParams.push('gdpr=' + +gdprConsent.gdprApplies)
-      queryParams.push('gdpr_consent=' + gdprConsent.consentString)
+      queryParams.push('gdpr=' + +gdprConsent?.gdprApplies)
+      queryParams.push('gdpr_consent=' + gdprConsent?.consentString)
       queryParams.push('usp_consent=' + (uspConsent || ''))
 
       let strQueryParams = queryParams.join('&')
