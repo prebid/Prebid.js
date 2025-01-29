@@ -1032,6 +1032,32 @@ describe('Utils', function () {
         }
       });
     });
+
+    it('properly merge objects with undefined property types', function() {
+      const object1 = {
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c'],
+          depth1_B: 'abc',
+          depth1_C: 123
+        }
+      };
+      const object2 = {
+        depth0_A: {
+          depth1_A: undefined,
+          depth1_D: true,
+        }
+      };
+
+      const result = utils.mergeDeep({}, object1, object2);
+      expect(result).to.deep.equal({
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c'],
+          depth1_B: 'abc',
+          depth1_C: 123,
+          depth1_D: true,
+        }
+      });
+    });
   });
 
   describe('deepEqual', function() {
