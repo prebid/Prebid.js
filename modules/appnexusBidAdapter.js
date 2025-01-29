@@ -368,7 +368,7 @@ export const spec = {
           });
         });
       }
-      if(bidRequests[0].userIdAsEids){
+      if (bidRequests[0].userIdAsEids) {
         processEids(bidRequests[0].userIdAsEids);
       }
       if (eids.length) {
