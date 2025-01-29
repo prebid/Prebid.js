@@ -994,7 +994,7 @@ describe('connatixBidAdapter', function () {
         event.stopImmediatePropagation();
       }
 
-      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === AGGREGATED_IDENTITY_PROVIDERS_RESOLVED_EVENT) {
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
         if (data) {
           connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
         }
