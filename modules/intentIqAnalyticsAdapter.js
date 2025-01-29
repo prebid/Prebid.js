@@ -90,7 +90,7 @@ const {
 } = EVENTS;
 
 function getIntentIqConfig() {
-  return config.getConfig('userSync.userIds')?.find(m => m.name === 'intentIqId') || {};
+  return config.getConfig('userSync.userIds')?.find(m => m.name === 'intentIqId');
 }
 
 function initLsValues() {
@@ -280,7 +280,7 @@ function constructFullUrl(data) {
   report.push(data);
 
   let iiqConfig = getIntentIqConfig()
-  let configParams = iiqConfig?.params;
+  let configParams = iiqConfig?.params || {};
   const cmpData = getCmpData(configParams);
 
   let url = defaultUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
