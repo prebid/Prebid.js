@@ -1022,7 +1022,7 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   }
 }
 
-export function mergeDeep(target, ...sources) {
+export function mergeDeep(target, ...sources) { //
   if (!sources.length) return target;
   const source = sources.shift();
 
@@ -1048,7 +1048,7 @@ export function mergeDeep(target, ...sources) {
             }
           });
         }
-      } else if (source[key] !== undefined) {
+      } else if (source[key] !== undefined) { //undefined check
         Object.assign(target, { [key]: source[key] });
       }
     }
