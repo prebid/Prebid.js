@@ -1022,6 +1022,15 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   }
 }
 
+/**
+ * Recursively merges multiple source objects into a target object.
+ * If a key contains objects or arrays, they are merged deeply.
+ * Arrays are merged by adding unique elements (based on deep equality).
+ *
+ * @param {Object} target - The target object to be merged into.
+ * @param {...(any | undefined)} sources - One or more source objects to merge into the target.
+ * @returns {Object} The merged target object.
+ */
 export function mergeDeep(target, ...sources) { //
   if (!sources.length) return target;
   const source = sources.shift();
