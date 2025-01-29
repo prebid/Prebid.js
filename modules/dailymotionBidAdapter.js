@@ -179,6 +179,20 @@ export const spec = {
         )
       );
 
+    const isSite = !!deepAccess(bidderRequest, 'ortb2.site');
+
+    const content = {
+      'cattax': deepAccess(bidderRequest, 'ortb2.site.cattax', ''),
+    }
+
+    const site = {
+      'content': content,
+    }
+
+    const app = {
+      'content': content,
+    }
+
     return validBidRequests.map(bid => ({
       method: 'POST',
       url: 'https://pb.dmxleo.com',
@@ -245,6 +259,33 @@ export const spec = {
           sizes: bid.sizes || [],
         },
         video_metadata: getVideoMetadata(bid, bidderRequest),
+        tmax: deepAccess(bidderRequest, 'timeout', ''),
+        bcat: deepAccess(bidderRequest, 'ortb2.bcat', []),
+        bdav: deepAccess(bidderRequest, 'ortb2.bdav', []), // TODO(SEI): seems like we are the first one to use it
+        device: {
+          // TODO(SEI): There are a lot of util function to retrieve getDeviceType(), getOS(), getOsVersion(), getDeviceModel()
+          // Should we use them or use the field set in the bidderRequest?
+          devicetype: deepAccess(bidderRequest, 'ortb2.device.devicetype', ''),
+          make: deepAccess(bidderRequest, 'ortb2.device.make', ''),
+          model: deepAccess(bidderRequest, 'ortb2.device.model', ''),
+          os: deepAccess(bidderRequest, 'ortb2.device.os', ''),
+          osv: deepAccess(bidderRequest, 'ortb2.device.osv', ''),
+          language: deepAccess(bidderRequest, 'ortb2.device.language', ''),
+          geo: {
+            country: deepAccess(bidderRequest, 'ortb2.device.geo.country', ''),
+            region: deepAccess(bidderRequest, 'ortb2.device.geo.region', ''),
+            city: deepAccess(bidderRequest, 'ortb2.device.geo.city', ''),
+            zip: deepAccess(bidderRequest, 'ortb2.device.geo.zip', ''),
+            metro: deepAccess(bidderRequest, 'ortb2.device.geo.metro', ''),
+          }
+        },
+        // device.ext.ifa_type (be careful, on Prebid.js it seems to be device.ext.ifatype, we need to make sure of what it is there. We send ifa_type to our bidders).
+
+        ...(isSite ? {'site': {
+          'content': deepAccess(bidderRequest, 'ortb2.site.cattax', ''),
+        }} : {'app': {
+          'content': deepAccess(bidderRequest, 'ortb2.app.cattax', ''),
+        }})
       },
       options: {
         withCredentials: allowCookieReading,
