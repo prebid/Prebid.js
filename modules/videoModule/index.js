@@ -84,7 +84,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  function renderBid(divId, vastXml, options = {}) {
+  async function renderBid(divId, bid, vastUrl, options) {
+    const vastXml = await pbGlobal.getVast(vastUrl || bid.vastUrl, bid.videoCacheKey);
     loadAd(vastXml, divId, options);
   }
 
@@ -201,7 +202,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return mergeDeep({}, globalVideoConfig.adServer, globalProviderConfig.adServer, adUnitVideoConfig.adServer);
   }
 
-  async function renderWinningBid(adUnit) {
+  function renderWinningBid(adUnit) {
     const adUnitCode = adUnit.code;
 
     const videoConfig = adUnit.video;
@@ -218,8 +219,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    const vastXml = await pbGlobal.getVast(vastUrl, winningBid.videoCacheKey);
-    loadAd(vastXml, divId);
+    renderBid(divId, winningBid, vastUrl, {adUnitCode});
   }
 
   function getWinningBid(adUnitCode) {
