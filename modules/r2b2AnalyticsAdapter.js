@@ -3,7 +3,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {EVENTS} from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {logWarn, logError, isNumber, isStr, isPlainObject} from '../src/utils.js';
+import {isNumber, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {config} from '../src/config.js';
 
@@ -21,9 +21,12 @@ const DEFAULT_PROTOCOL = 'https';
 const ERROR_MAX = 10;
 const BATCH_SIZE = 50;
 const BATCH_DELAY = 500;
-const REPORTED_URL = getRefererInfo().page || getRefererInfo().topmostLocation;
+const MAX_CALL_DEPTH = 20;
+const REPORTED_URL = getRefererInfo().page || getRefererInfo().topmostLocation || '';
 
 const START_TIME = Date.now();
+
+const CACHE_TTL = 300 * 1000;
 
 const EVENT_MAP = {};
 EVENT_MAP[EVENTS.NO_BID] = 'noBid';
@@ -49,7 +52,9 @@ let CONFIG_VERSION = 0;
 let LOG_SERVER = DEFAULT_SERVER;
 
 /* CACHED DATA */
-let orderedAuctions = [];
+let latestAuction = '';
+let previousAuction = '';
+let auctionCount = 0;
 let auctionsData = {};
 let bidsData = {};
 let adServerCurrency = '';
@@ -57,20 +62,50 @@ let adServerCurrency = '';
 let flushTimer;
 let eventBuffer = [];
 let errors = 0;
+
+let callDepth = 0;
 function flushEvents () {
   let events = { prebid: { e: eventBuffer, c: adServerCurrency } };
   eventBuffer = [];
-  reportEvents(events)
+  callDepth++;
+  try {
+    if (callDepth >= MAX_CALL_DEPTH) {
+      if (callDepth === MAX_CALL_DEPTH) {
+        logError(`${MODULE_NAME}: Maximum call depth reached, discarding events`);
+      }
+      return;
+    }
+    if (callDepth === 1) {
+      clearCache(bidsData);
+      clearCache(auctionsData);
+    }
+
+    reportEvents(events);
+  } finally {
+    callDepth--;
+  }
+}
+
+function clearCache(cache) {
+  const now = Date.now();
+  for (const [key, { t }] of Object.entries(cache)) {
+    if ((t + CACHE_TTL) < now) {
+      delete cache[key];
+    }
+  }
 }
 
 export function resetAnalyticAdapter() {
-  orderedAuctions = [];
+  latestAuction = '';
+  previousAuction = '';
+  auctionCount = 0;
   auctionsData = {};
   bidsData = {};
   adServerCurrency = '';
   clearTimeout(flushTimer);
   eventBuffer = [];
-  errors = [];
+  errors = 0;
+  callDepth = 0;
 
   WEBSITE = 0;
   CONFIG_ID = 0;
@@ -164,9 +199,8 @@ function getEventTimestamps (eventName, auctionId) {
   if (auctionData.end) {
     timestamps.te = auctionData.end - START_TIME;
   }
-  if (eventName === EVENT_MAP[EVENTS.AUCTION_INIT] && orderedAuctions.length > 1) {
-    const prevAuctionId = orderedAuctions[orderedAuctions.length - 2];
-    timestamps.tprev = auctionsData[prevAuctionId].start - START_TIME;
+  if (eventName === EVENT_MAP[EVENTS.AUCTION_INIT] && auctionCount > 1) {
+    timestamps.tprev = auctionsData[previousAuction].start - START_TIME;
   }
   return timestamps
 }
@@ -195,12 +229,15 @@ function createEvent (name, data, auctionId) {
 
 function createAuctionData (auction, empty) {
   const auctionId = auction.auctionId;
-  orderedAuctions.push(auctionId);
+  previousAuction = latestAuction;
+  latestAuction = auctionId;
+  auctionCount++;
   auctionsData[auctionId] = {
     start: auction.timestamp,
     end: auction.auctionEnd ? auction.auctionEnd : null,
     timeout: auction.timeout,
-    empty: !!empty
+    empty: !!empty,
+    t: Date.now(),
   };
 }
 function handleAuctionInit (args) {
@@ -209,7 +246,7 @@ function handleAuctionInit (args) {
   const auctionId = args.auctionId;
   const bidderRequests = args.bidderRequests || [];
   const data = {
-    o: orderedAuctions.length,
+    o: auctionCount,
     u: bidderRequests.reduce((result, bidderRequest) => {
       bidderRequest.bids.forEach((bid) => {
         if (!result[bid.adUnitCode]) {
@@ -276,7 +313,8 @@ function handleBidResponse (args) {
   // console.log('bid response:', arguments);
   bidsData[args.adId] = {
     id: args.requestId,
-    auctionId: args.auctionId
+    auctionId: args.auctionId,
+    t: Date.now(),
   };
   const data = {
     b: args.bidder,
@@ -366,7 +404,7 @@ function handleAuctionEnd (args) {
   const data = {
     wins,
     u: getAuctionUnitsData(args),
-    o: orderedAuctions.length,
+    o: auctionCount,
     bc: args.bidsReceived.length,
     nbc: args.noBids.length,
     rjc: args.bidsRejected.length,
@@ -390,7 +428,7 @@ function handleBidWon (args) {
     sz: args.size,
     mt: args.mediaType,
     at: getStandardTargeting(args.adserverTargeting),
-    o: orderedAuctions.length,
+    o: auctionCount,
     bi: args.requestId,
   };
   const event = createEvent(EVENT_MAP[EVENTS.BID_WON], data, args.auctionId);
@@ -488,14 +526,26 @@ let r2b2Analytics = Object.assign({}, baseAdapter, {
         return
       }
       WEBSITE = domain
-      if (server && isStr(server)) {
-        LOG_SERVER = server
+      if (server) {
+        if (isStr(server)) {
+          LOG_SERVER = server
+        } else {
+          logWarn(`options.server must be a string`);
+        }
       }
-      if (configId && isNumber(configId)) {
-        CONFIG_ID = configId
+      if (configId) {
+        if (isNumber(configId)) {
+          CONFIG_ID = configId
+        } else {
+          logWarn(`options.configId must be a number`);
+        }
       }
-      if (configVer && isNumber(configVer)) {
-        CONFIG_VERSION = configVer
+      if (configVer) {
+        if (isNumber(configVer)) {
+          CONFIG_VERSION = configVer
+        } else {
+          logWarn(`options.configVer must be a number`);
+        }
       }
     }
     baseAdapter.enableAnalytics.call(this, conf);
