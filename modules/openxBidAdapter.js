@@ -4,6 +4,7 @@ import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
@@ -79,6 +80,18 @@ const converter = ortbConverter({
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
+    if (!context.mediaType && !bid.mtype) {
+      let mediaType = BANNER; // default media type
+      const vastKeywords = ['VAST ', 'vast ', 'videoad', 'VAST_VERSION', 'dc_vast', 'video '];
+      if (bid.adm && bid.adm.startsWith('{') && bid.adm.includes('"assets"')) {
+        mediaType = NATIVE;
+      } else if (bid.vastXml || bid.vastUrl || (bid.adm && vastKeywords.some(v => bid.adm.includes(v)))) {
+        mediaType = VIDEO;
+      }
+      bid.mediaType = mediaType;
+      bid.mtype = Object.keys(ORTB_MTYPES).find(key => ORTB_MTYPES[key] === mediaType);
+    }
+
     const bidResponse = buildBidResponse(bid, context);
     if (bid.ext) {
       bidResponse.meta.networkId = bid.ext.dsp_id;
