@@ -11,6 +11,16 @@ Maintainer: ad-leo-engineering@dailymotion.com
 Dailymotion prebid adapter.
 Supports video ad units in instream context.
 
+### Usage
+
+Make sure to have the following modules listed while building prebid : `priceFloors,dailymotionBidAdapter`
+
+`priceFloors` module is needed to retrieve the price floor: https://docs.prebid.org/dev-docs/modules/floors.html 
+
+```shell
+gulp build --modules=priceFloors,dailymotionBidAdapter
+```
+
 ### Configuration options
 
 Before calling this adapter, you need to at least set a video adUnit in an instream context and the API key in the bid parameters:
@@ -57,6 +67,116 @@ pbjs.setConfig({
   },
 });
 ```
+
+#### Price floor
+
+The price floor can be set at the ad unit level, for example : 
+
+```javascript
+const adUnits = [{
+  floors: {
+    currency: 'USD',
+    schema: {
+      fields: [ 'mediaType', 'size' ]
+    },
+    values: {
+      'video|300x250': 2.22,
+      'video|*': 1
+    }
+  },
+  bids: [{
+    bidder: 'dailymotion',
+    params: {
+      apiKey: 'dailymotion-testing',
+    }
+  }],
+  code: 'test-ad-unit',
+  mediaTypes: {
+    video: {
+      playerSize: [300, 250],
+      context: 'instream',
+    },
+  }
+}];
+
+// Do not forget to set an empty object for "floors" to active the price floor module
+pbjs.setConfig({floors: {}});
+```
+
+The following request will be sent to Dailymotion Prebid Service : 
+
+```javascript
+{
+  "pbv": "9.23.0-pre",
+  "ortb": {
+    "imp": [
+      {
+        ...
+        "bidfloor": 2.22,
+        "bidfloorcur": "USD"
+      }
+    ],
+  }
+  ...
+}
+```
+
+Or the price floor can be set at the package level, for example : 
+
+```javascript
+const adUnits = [
+  {
+    bids: [{
+      bidder: 'dailymotion',
+      params: {
+        apiKey: 'dailymotion-testing',
+      }
+    }],
+    code: 'test-ad-unit',
+    mediaTypes: {
+      video: {
+        playerSize: [1280,720],
+        context: 'instream',
+      },
+    }
+  }
+];
+
+pbjs.setConfig({
+  floors: {
+      data: { 
+          currency: 'USD',
+          schema: {
+              fields: [ 'mediaType', 'size' ]
+          },
+          values: {
+              'video|300x250': 2.22,
+              'video|*': 1
+          }
+      }
+  }
+})
+```
+
+This will send the following bid floor in the request to Daiymotion Prebid Service : 
+
+```javascript
+{
+  "pbv": "9.23.0-pre",
+  "ortb": {
+    "imp": [
+      {
+        ...
+        "bidfloor": 1,
+        "bidfloorcur": "USD"
+      }
+    ],
+    ...
+  }
+}
+```
+
+You can also [set dynamic floors](https://docs.prebid.org/dev-docs/modules/floors.html#bid-adapter-interface).
 
 ### Test Parameters
 
@@ -142,6 +262,7 @@ const adUnits = [
           private: false,
           tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
+          url: 'https://test.com/testvideo'
           topics: 'topic_1, topic_2',
           isCreatedForKids: false,
           videoViewsInSession: 1,
@@ -161,7 +282,7 @@ const adUnits = [
         maxduration: 30,
         playbackmethod: [3],
         plcmt: 1,
-        protocols: [7, 8, 11, 12, 13, 14]
+        protocols: [7, 8, 11, 12, 13, 14],
         startdelay: 0,
         w: 1280,
         h: 720,
@@ -206,16 +327,4 @@ If you already specify [First-Party data](https://docs.prebid.org/features/first
 | `ortb2.site.content.keywords`                                                   | `tags`          |
 | `ortb2.site.content.title`                                                      | `title`         |
 | `ortb2.site.content.url`                                                        | `url`           |
-| `ortb2.app.bundle`                                                              | N/A             |
-| `ortb2.app.storeurl`                                                            | N/A             |
-| `ortb2.device.lmt`                                                              | N/A             |
-| `ortb2.device.ifa`                                                              | N/A             |
-| `ortb2.device.ext.atts`                                                         | N/A             |
-
-### Integrating the adapter
-
-To use the adapter with any non-test request, you first need to ask an API key from Dailymotion. Please contact us through **DailymotionPrebid.js@dailymotion.com**.
-
-You will then be able to use it within the bid parameters before making a bid request.
-
-This API key will ensure proper identification of your inventory and allow you to get real bids.
+| `ortb2.*`                                                                       | N/A             |
