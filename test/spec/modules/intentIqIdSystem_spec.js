@@ -392,30 +392,27 @@ describe('IntentIQ tests', function () {
       gdprDataHandlerStub.restore();
     });
 
-    it('should create isOptOut in LS for new user and change it with response isOptOut value', function () {
+    it('should set isOptOut to true for new users if GDPR is detected and update it upon receiving a server response', function () {
       localStorage.clear();
       mockConsentHandlers(uspData, gppData, gdprData);
-      let initialFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-
-      expect(initialFirstPartyData).to.be.null;
-
       let callBackSpy = sinon.spy();
       let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
       submoduleCallback(callBackSpy);
 
-      const lsBeforeReq = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY))
-      expect(lsBeforeReq.isOptedOut).to.be.true;
+      let lsBeforeReq = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
 
       let request = server.requests[0];
       request.respond(
         200,
         responseHeader,
-        JSON.stringify({isOptedOut: false})
+        JSON.stringify({ isOptedOut: false })
       );
-      expect(callBackSpy.calledOnce).to.be.true;
 
       let updatedFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
 
+      expect(lsBeforeReq).to.not.be.null;
+      expect(lsBeforeReq.isOptedOut).to.be.true;
+      expect(callBackSpy.calledOnce).to.be.true;
       expect(updatedFirstPartyData).to.not.be.undefined;
       expect(updatedFirstPartyData.isOptedOut).to.equal(false);
     });
@@ -450,7 +447,7 @@ describe('IntentIQ tests', function () {
     });
 
     it('should clear localStorage, update runtimeEids and trigger callback with empty data if isOptedOut is true in response', function () {
-      // Save some data to localStorage for FIRST_PARTY_DATA_KEY и CLIENT_HINTS_KEY
+      // Save some data to localStorage for FPD and CLIENT_HINTS
       const FIRST_PARTY_DATA_KEY = FIRST_PARTY_KEY + '_' + partner;
       localStorage.setItem(FIRST_PARTY_DATA_KEY, JSON.stringify({terminationCause: 35, some_key: 'someValue'}));
       localStorage.setItem(CLIENT_HINTS_KEY, JSON.stringify({ hint: 'someClientHintData' }));
@@ -462,7 +459,6 @@ describe('IntentIQ tests', function () {
 
       submoduleCallback(callBackSpy);
 
-      // Create a mocked response with isOptedOut: true
       let request = server.requests[0];
       request.respond(
         200,

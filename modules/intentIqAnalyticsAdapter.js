@@ -279,8 +279,8 @@ function constructFullUrl(data) {
   data = btoa(JSON.stringify(data));
   report.push(data);
 
-  let iiqConfig = getIntentIqConfig();
-  let configParams = iiqConfig?.params || {};
+  let iiqConfig = getIntentIqConfig()
+  let configParams = iiqConfig?.params;
   const cmpData = getCmpData(configParams);
 
   let url = defaultUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
