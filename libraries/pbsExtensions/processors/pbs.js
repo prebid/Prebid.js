@@ -6,7 +6,7 @@ import {setImpBidParams} from './params.js';
 import {setImpAdUnitCode} from './adUnitCode.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
-import {addEventTrackers} from "./eventTrackers.js";
+import {addEventTrackers} from './eventTrackers.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {

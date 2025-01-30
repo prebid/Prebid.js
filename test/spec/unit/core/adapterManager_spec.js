@@ -32,7 +32,7 @@ import {
   EVENT_TYPE_WIN,
   TRACKER_METHOD_IMG,
   TRACKER_METHOD_JS
-} from "../../../../src/eventTrackers.js";
+} from '../../../../src/eventTrackers.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {

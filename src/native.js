@@ -16,7 +16,7 @@ import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB,
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
-import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from "./eventTrackers.js";
+import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
