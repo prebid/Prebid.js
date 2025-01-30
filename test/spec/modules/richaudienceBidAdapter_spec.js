@@ -246,6 +246,66 @@ describe('Richaudience adapter tests', function () {
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6'
   }];
 
+  var BID_PARAMS_EIDS = [{
+    'bidder': 'richaudience',
+    'params': {
+      'pid': 'IHOhChZNuI',
+      'supplyType': 'site'
+    },
+    'userIdAsEids': [],
+    'sizes': [
+      [
+        300,
+        250
+      ],
+      [
+        300,
+        600
+      ]
+    ],
+  }]
+
+  var id5 = {
+    'source': 'id5-sync.com',
+    'uids': [
+      {
+        'id': 'id5-string-cookie',
+        'atype': 1,
+        'ext': {
+          'linkType': 2,
+          'pba': 'id5-pba',
+          'abTestingControlGroup': false
+        }
+      }
+    ]
+  }
+
+  var first_id = {
+    'source': 'first-id.fr',
+    'uids': [
+      {
+        'id': 'value read from cookie or local storage',
+        'atype': 1,
+        'ext': {
+          'stype': 'ppuid'
+        }
+      }
+    ]
+  }
+
+  var three_party_provided = {
+    'source': '3rdpartyprovided.com',
+    'uids': [
+      {
+        'id': 'value read from cookie or local storage',
+        'atype': 3,
+        'ext': {
+          'stype': 'dmp'
+        }
+      }
+    ]
+  }
+
   var BID_RESPONSE = {
     body: {
       cpm: 1.50,
@@ -289,7 +349,7 @@ describe('Richaudience adapter tests', function () {
     }
   }
 
-  it('Referer undefined', function() {
+  it('Referer undefined', function () {
     config.setConfig({
       'currency': {'adServerCurrency': 'USD'}
     })
@@ -306,7 +366,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('referer').and.to.equal(null);
   })
 
-  it('Verify build request to prebid 3.0 display test', function() {
+  it('Verify build request to prebid 3.0 display test', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -348,7 +408,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
   })
 
-  it('Verify build request to prebid video inestream', function() {
+  it('Verify build request to prebid video inestream', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_IN, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -367,7 +427,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.videoData).to.have.property('format').and.to.equal('instream');
   })
 
-  it('Verify build request to prebid video outstream', function() {
+  it('Verify build request to prebid video outstream', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -467,8 +527,8 @@ describe('Richaudience adapter tests', function () {
             pd: 'MT1iNTBjY...' // optional, see table below for a link to how to generate this
           },
           storage: {
-            type: 'html5', // "html5" is the required storage type
-            name: 'id5id', // "id5id" is the required storage name
+            type: 'html5', // 'html5' is the required storage type
+            name: 'id5id', // 'id5id' is the required storage name
             expires: 90, // storage lasts for 90 days
             refreshInSeconds: 8 * 3600 // refresh ID every 8 hours to ensure it's fresh
           }
@@ -476,213 +536,55 @@ describe('Richaudience adapter tests', function () {
         auctionDelay: 50 // 50ms maximum auction delay, applies to all userId modules
       }
     });
-    it('Verify build id5', function () {
-      var request;
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 1 };
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+
+    it('Verify build return empty users', function () {
+      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
 
-      expect(requestContent.user.eids).to.equal(undefined);
+      expect(requestContent.eids).to.deep.equal([]);
+    })
 
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: [] };
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: null };
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: {} };
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = null;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = {};
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-    });
-
-    it('Verify build pubCommonId', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = 'pub_common_user_id';
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+    it('Verify build return all users', function () {
+      BID_PARAMS_EIDS[0].userIdAsEids = [id5, three_party_provided, first_id]
+      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
+      expect(requestContent.eids).to.deep.equal([id5, three_party_provided, first_id]);
+    })
 
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'pub_common_user_id',
-        'source': 'pubcommon'
-      }]);
-
-      var request;
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = 1;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+    it('Verify build return first-id.fr users', function () {
+      BID_PARAMS_EIDS[0].userIdAsEids = [first_id]
+      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
+      expect(requestContent.eids).to.deep.equal([first_id]);
+    })
 
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = [];
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = null;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = {};
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-    });
-
-    it('Verify build criteoId', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = 'criteo-user-id';
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+    it('Verify build return first-id.fr users', function () {
+      BID_PARAMS_EIDS[0].userIdAsEids = [first_id]
+      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
+      expect(requestContent.eids).to.deep.equal([first_id]);
+    })
 
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'criteo-user-id',
-        'source': 'criteo.com'
-      }]);
-
-      var request;
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = 1;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+    it('Verify build return users []', function () {
+      BID_PARAMS_EIDS[0].userIdAsEids = []
+      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
+      expect(requestContent.eids).to.deep.equal([]);
+    })
 
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = null;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = {};
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-    });
-
-    it('Verify build identityLink', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 'identity-link-user-id';
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+    it('Verify build return users null', function () {
+      BID_PARAMS_EIDS[0].userIdAsEids = null
+      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
+      expect(requestContent.eids).to.deep.equal([]);
+    })
 
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'identity-link-user-id',
-        'source': 'liveramp.com'
-      }]);
-
-      var request;
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 1;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+    it('Verify build return users {}', function () {
+      BID_PARAMS_EIDS[0].userIdAsEids = null
+      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = null;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = {};
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-    });
-    it('Verify build liveIntentId', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 'identity-link-user-id';
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data)
-
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'identity-link-user-id',
-        'source': 'liveramp.com'
-      }]);
-
-      var request;
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 1;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = null;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = {};
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-    });
-    it('Verify build TradeDesk', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.tdid = 'tdid-user-id';
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data)
-
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'tdid-user-id',
-        'source': 'adserver.org'
-      }]);
-
-      request;
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 1;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = null;
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = {};
-      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      requestContent = JSON.parse(request[0].data);
-      expect(requestContent.user.eids).to.equal(undefined);
-    });
+      expect(requestContent.eids).to.deep.equal([]);
+    })
   });
 
   it('Verify interprete response', function () {
@@ -900,7 +802,7 @@ describe('Richaudience adapter tests', function () {
     })).to.equal(true);
   });
 
-  it('should pass schain', function() {
+  it('should pass schain', function () {
     let schain = {
       'ver': '1.0',
       'complete': 1,
@@ -940,7 +842,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('schain').to.deep.equal(schain);
   })
 
-  it('should pass DSA', function() {
+  it('should pass DSA', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_DSA, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -955,7 +857,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.dsa.transparency[0]).to.have.property('domain').and.to.equal('richaudience.com');
   })
 
-  it('should pass gpid', function() {
+  it('should pass gpid', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES_GPID, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -968,11 +870,11 @@ describe('Richaudience adapter tests', function () {
   })
 
   describe('onTimeout', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('onTimeout exist as a function', () => {
@@ -990,7 +892,7 @@ describe('Richaudience adapter tests', function () {
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
     });
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
     });
     it('Verifies user syncs iframe include', function () {
@@ -1002,7 +904,8 @@ describe('Richaudience adapter tests', function () {
         iframeEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true
+      },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -1042,7 +945,8 @@ describe('Richaudience adapter tests', function () {
         iframeEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true
+      },
       );
       expect(syncs).to.have.lengthOf(0);
 
@@ -1150,7 +1054,12 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe/image include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'include'}}}
+        'userSync': {
+          filterSettings: {
+            iframe: {bidders: '*', filter: 'include'},
+            image: {bidders: '*', filter: 'include'}
+          }
+        }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1158,7 +1067,8 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true
+      },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -1196,7 +1106,12 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe/image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': {
+          filterSettings: {
+            iframe: {bidders: '*', filter: 'exclude'},
+            image: {bidders: '*', filter: 'exclude'}
+          }
+        }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1204,7 +1119,8 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true
+      },
       );
       expect(syncs).to.have.lengthOf(0);
 
@@ -1241,7 +1157,12 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe exclude / image include', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}, image: {bidders: '*', filter: 'include'}}}
+        'userSync': {
+          filterSettings: {
+            iframe: {bidders: '*', filter: 'exclude'},
+            image: {bidders: '*', filter: 'include'}
+          }
+        }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1249,7 +1170,8 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true
+      },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
@@ -1287,7 +1209,12 @@ describe('Richaudience adapter tests', function () {
 
     it('Verifies user syncs iframe include / image exclude', function () {
       config.setConfig({
-        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}, image: {bidders: '*', filter: 'exclude'}}}
+        'userSync': {
+          filterSettings: {
+            iframe: {bidders: '*', filter: 'include'},
+            image: {bidders: '*', filter: 'exclude'}
+          }
+        }
       })
 
       var syncs = spec.getUserSyncs({
@@ -1295,7 +1222,8 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
-        gdprApplies: true},
+        gdprApplies: true
+      },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -1338,7 +1266,8 @@ describe('Richaudience adapter tests', function () {
 
       var syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
-        applicableSections: [7]},
+        applicableSections: [7]
+      },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -1349,17 +1278,22 @@ describe('Richaudience adapter tests', function () {
 
       var syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
         gppString: 'DBABL~BVVqAAEABgA.QA',
-        applicableSections: [7, 5]},
+        applicableSections: [7, 5]
+      },
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
     });
 
     it('Verifies user syncs URL image include with GPP', function () {
-      const gppConsent = { gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA', applicableSections: [0] };
+      const gppConsent = {
+        gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA',
+        applicableSections: [0]
+      };
       const result = spec.getUserSyncs({pixelEnabled: true}, undefined, undefined, undefined, gppConsent);
       expect(result).to.deep.equal([{
-        type: 'image', url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
+        type: 'image',
+        url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
       }]);
     });
   })
