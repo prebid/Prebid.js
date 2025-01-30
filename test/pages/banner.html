@@ -57,6 +57,7 @@
 		});
 
 		pbjs.que.push(function () {
+			pbjs.setConfig({enableTIDs: true});
 			pbjs.addAdUnits(adUnits);
 			pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
 		});

@@ -8,6 +8,7 @@
 -->
 
 <html>
+
 <head>
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
@@ -19,9 +20,10 @@
             code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250], [300,600]],
+                    sizes: [[300, 250]],
                 }
             },
+
             // Replace this object to test a new Adapter!
             bids: [{
                 bidder: 'appnexus',
@@ -40,12 +42,13 @@
     <script>
         var googletag = googletag || {};
         googletag.cmd = googletag.cmd || [];
-        googletag.cmd.push(function() {
+        googletag.cmd.push(function () {
             googletag.pubads().disableInitialLoad();
         });
 
-        pbjs.que.push(function() {
+        pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
+
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT
@@ -55,15 +58,15 @@
         function sendAdserverRequest() {
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
-            googletag.cmd.push(function() {
-                pbjs.que.push(function() {
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
                     pbjs.setTargetingForGPTAsync();
                     googletag.pubads().refresh();
                 });
             });
         }
 
-        setTimeout(function() {
+        setTimeout(function () {
             sendAdserverRequest();
         }, FAILSAFE_TIMEOUT);
 
@@ -80,12 +83,13 @@
 </head>
 
 <body>
-<h2>Prebid.js Test</h2>
-<h5>Div-1</h5>
-<div id='div-gpt-ad-1460505748561-0'>
-    <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
-    </script>
-</div>
+    <h2>Prebid.js Test</h2>
+    <h5>Div-1</h5>
+    <div id='div-gpt-ad-1460505748561-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+        </script>
+    </div>
 </body>
+
 </html>

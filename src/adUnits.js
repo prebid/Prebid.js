@@ -1,6 +1,7 @@
-import { deepAccess } from './utils.js';
-
 let adUnits = {};
+export function reset() {
+  adUnits = {}
+}
 
 function ensureAdUnit(adunit, bidderCode) {
   let adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
@@ -21,7 +22,7 @@ function incrementAdUnitCount(adunit, counter, bidderCode) {
  * @param {string} adunit id
  * @returns {number} current adunit count
  */
-function incrementRequestsCounter(adunit) {
+export function incrementRequestsCounter(adunit) {
   return incrementAdUnitCount(adunit, 'requestsCounter');
 }
 
@@ -31,7 +32,7 @@ function incrementRequestsCounter(adunit) {
  * @param {string} bidderCode code
  * @returns {number} current adunit bidder requests count
  */
-function incrementBidderRequestsCounter(adunit, bidderCode) {
+export function incrementBidderRequestsCounter(adunit, bidderCode) {
   return incrementAdUnitCount(adunit, 'requestsCounter', bidderCode);
 }
 
@@ -41,8 +42,17 @@ function incrementBidderRequestsCounter(adunit, bidderCode) {
  * @param {string} bidderCode code
  * @returns {number} current adunit bidder requests count
  */
-function incrementBidderWinsCounter(adunit, bidderCode) {
+export function incrementBidderWinsCounter(adunit, bidderCode) {
   return incrementAdUnitCount(adunit, 'winsCounter', bidderCode);
+}
+
+/**
+ * Increments and returns current Adunit auctions counter
+ * @param {string} adunit id
+ * @returns {number} current adunit auctions count
+ */
+export function incrementAuctionsCounter(adunit) {
+  return incrementAdUnitCount(adunit, 'auctionsCounter');
 }
 
 /**
@@ -50,8 +60,8 @@ function incrementBidderWinsCounter(adunit, bidderCode) {
  * @param {string} adunit id
  * @returns {number} current adunit count
  */
-function getRequestsCounter(adunit) {
-  return deepAccess(adUnits, `${adunit}.requestsCounter`) || 0;
+export function getRequestsCounter(adunit) {
+  return adUnits?.[adunit]?.requestsCounter || 0;
 }
 
 /**
@@ -60,8 +70,8 @@ function getRequestsCounter(adunit) {
  * @param {string} bidder code
  * @returns {number} current adunit bidder requests count
  */
-function getBidderRequestsCounter(adunit, bidder) {
-  return deepAccess(adUnits, `${adunit}.bidders.${bidder}.requestsCounter`) || 0;
+export function getBidderRequestsCounter(adunit, bidder) {
+  return adUnits?.[adunit]?.bidders?.[bidder]?.requestsCounter || 0;
 }
 
 /**
@@ -70,21 +80,15 @@ function getBidderRequestsCounter(adunit, bidder) {
  * @param {string} bidder code
  * @returns {number} current adunit bidder requests count
  */
-function getBidderWinsCounter(adunit, bidder) {
-  return deepAccess(adUnits, `${adunit}.bidders.${bidder}.winsCounter`) || 0;
+export function getBidderWinsCounter(adunit, bidder) {
+  return adUnits?.[adunit]?.bidders?.[bidder]?.winsCounter || 0;
 }
 
 /**
- * A module which counts how many times an adunit was called
- * @module adunitCounter
+ * Returns current Adunit auctions counter
+ * @param {string} adunit id
+ * @returns {number} current adunit auctions count
  */
-let adunitCounter = {
-  incrementRequestsCounter,
-  incrementBidderRequestsCounter,
-  incrementBidderWinsCounter,
-  getRequestsCounter,
-  getBidderRequestsCounter,
-  getBidderWinsCounter
+export function getAuctionsCounter(adunit) {
+  return adUnits?.[adunit]?.auctionsCounter || 0;
 }
-
-export { adunitCounter };

@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   _each,
   deepAccess,
@@ -10,21 +10,33 @@ import {
   logError,
   parseUrl,
   triggerPixel,
+  generateUUID,
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { fetch } from '../src/ajax.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
-const VERSION = 'pba1.3.2';
+const VERSION = 'pba1.3.4';
 const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
-const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
+const TRACKING_BASE = 'https://1x1.a-mo.net/';
+const TRACKING_ENDPOINT = TRACKING_BASE + 'hbx/';
+const POST_TRACKING_ENDPOINT = TRACKING_BASE + 'e';
 const AMUID_KEY = '__amuidpb';
 
 function getLocation(request) {
   return parseUrl(request.refererInfo?.topmostLocation || window.location.href);
+}
+
+function getTimeoutSize(timeoutData) {
+  if (timeoutData.sizes == null || timeoutData.sizes.length === 0) {
+    return [0, 0];
+  }
+
+  return timeoutData.sizes[0];
 }
 
 const largestSize = (sizes, mediaTypes) => {
@@ -130,7 +142,7 @@ function getFloor(bid) {
       size: '*',
       bidRequest: bid,
     });
-    return floor.floor;
+    return floor?.floor;
   } catch (e) {
     logError('call to getFloor failed: ', e);
     return DEFAULT_MIN_FLOOR;
@@ -148,7 +160,9 @@ function convertRequest(bid) {
   const tid = deepAccess(bid, 'params.tagId');
 
   const au =
-    bid.params != null && typeof bid.params.adUnitId === 'string' && bid.params.adUnitId !== ''
+    bid.params != null &&
+      typeof bid.params.adUnitId === 'string' &&
+      bid.params.adUnitId !== ''
       ? bid.params.adUnitId
       : bid.adUnitCode;
 
@@ -201,7 +215,10 @@ function isSyncEnabled(syncConfigP, syncType) {
     return false;
   }
 
-  if (syncConfig.bidders === '*' || (isArray(syncConfig.bidders) && syncConfig.bidders.indexOf('amx') !== -1)) {
+  if (
+    syncConfig.bidders === '*' ||
+    (isArray(syncConfig.bidders) && syncConfig.bidders.indexOf('amx') !== -1)
+  ) {
     return syncConfig.filter == null || syncConfig.filter === 'include';
   }
 
@@ -218,12 +235,17 @@ function getSyncSettings() {
       d: 0,
       l: 0,
       t: 0,
-      e: true
+      e: true,
     };
   }
 
-  const settings = { d: syncConfig.syncDelay, l: syncConfig.syncsPerBidder, t: 0, e: syncConfig.syncEnabled }
-  const all = isSyncEnabled(syncConfig.filterSettings, 'all')
+  const settings = {
+    d: syncConfig.syncDelay,
+    l: syncConfig.syncsPerBidder,
+    t: 0,
+    e: syncConfig.syncEnabled,
+  };
+  const all = isSyncEnabled(syncConfig.filterSettings, 'all');
 
   if (all) {
     settings.t = SYNC_IMAGE & SYNC_IFRAME;
@@ -255,12 +277,14 @@ function getGpp(bidderRequest) {
     return bidderRequest.gppConsent;
   }
 
-  return bidderRequest?.ortb2?.regs?.gpp ?? {gppString: '', applicableSections: ''};
+  return (
+    bidderRequest?.ortb2?.regs?.gpp ?? { gppString: '', applicableSections: '' }
+  );
 }
 
 function buildReferrerInfo(bidderRequest) {
   if (bidderRequest.refererInfo == null) {
-    return {r: '', t: false, c: '', l: 0, s: []}
+    return { r: '', t: false, c: '', l: 0, s: [] };
   }
 
   const re = bidderRequest.refererInfo;
@@ -271,7 +295,7 @@ function buildReferrerInfo(bidderRequest) {
     l: re.numIframes,
     s: re.stack,
     c: re.canonicalUrl,
-  }
+  };
 }
 
 const isTrue = (boolValue) =>
@@ -303,7 +327,7 @@ export const spec = {
         };
 
     const payload = {
-      a: bidderRequest.auctionId,
+      a: generateUUID(),
       B: 0,
       b: loc.host,
       brc: fbid.bidderRequestsCount || 0,
@@ -357,28 +381,35 @@ export const spec = {
     return {
       data: payload,
       method: 'POST',
+      browsingTopics: true,
       url: deepAccess(bidRequests[0], 'params.endpoint', DEFAULT_ENDPOINT),
       withCredentials: true,
     };
   },
 
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs(
+    syncOptions,
+    serverResponses,
+    gdprConsent,
+    uspConsent,
+    gppConsent
+  ) {
     const qp = {
       gdpr_consent: enc(gdprConsent?.consentString || ''),
       gdpr: enc(gdprConsent?.gdprApplies ? 1 : 0),
       us_privacy: enc(uspConsent || ''),
       gpp: enc(gppConsent?.gppString || ''),
-      gpp_sid: enc(gppConsent?.applicableSections || '')
+      gpp_sid: enc(gppConsent?.applicableSections || ''),
     };
 
     const iframeSync = {
       url: `https://prebid.a-mo.net/isyn?${formatQS(qp)}`,
-      type: 'iframe'
+      type: 'iframe',
     };
 
     if (serverResponses == null || serverResponses.length === 0) {
       if (syncOptions.iframeEnabled) {
-        return [iframeSync]
+        return [iframeSync];
       }
 
       return [];
@@ -387,13 +418,16 @@ export const spec = {
     const output = [];
     let hasFrame = false;
 
-    _each(serverResponses, function ({ body: response }) {
+    _each(serverResponses, function({ body: response }) {
       if (response != null && response.p != null && response.p.hreq) {
-        _each(response.p.hreq, function (syncPixel) {
+        _each(response.p.hreq, function(syncPixel) {
           const pixelType =
             syncPixel.indexOf('__st=iframe') !== -1 ? 'iframe' : 'image';
           if (syncOptions.iframeEnabled || pixelType === 'image') {
-            hasFrame = hasFrame || (pixelType === 'iframe') || (syncPixel.indexOf('cchain') !== -1)
+            hasFrame =
+              hasFrame ||
+              pixelType === 'iframe' ||
+              syncPixel.indexOf('cchain') !== -1;
             output.push({
               url: syncPixel,
               type: pixelType,
@@ -404,7 +438,7 @@ export const spec = {
     });
 
     if (!hasFrame && output.length < 2) {
-      output.push(iframeSync)
+      output.push(iframeSync);
     }
 
     return output;
@@ -420,6 +454,10 @@ export const spec = {
       setUIDSafe(response.am);
     }
 
+    const bidderSettings = config.getConfig('bidderSettings');
+    const settings = bidderSettings?.amx ?? bidderSettings?.standard ?? {};
+    const allowAlternateBidderCodes = !!settings.allowAlternateBidderCodes;
+
     return flatMap(Object.keys(response.r), (bidID) => {
       return flatMap(response.r[bidID], (siteBid) =>
         siteBid.b.map((bid) => {
@@ -432,8 +470,10 @@ export const spec = {
 
           const size = resolveSize(bid, request.data, bidID);
           const defaultExpiration = mediaType === BANNER ? 240 : 300;
+          const { bc: bidderCode, ds: demandSource } = bid.ext ?? {};
 
           return {
+            ...(bidderCode != null && allowAlternateBidderCodes ? { bidderCode } : {}),
             requestId: bidID,
             cpm: bid.price,
             width: size[0],
@@ -445,6 +485,7 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain,
               mediaType,
+              ...(demandSource != null ? { demandSource } : {}),
             },
             mediaType,
             ttl: typeof bid.exp === 'number' ? bid.exp : defaultExpiration,
@@ -469,20 +510,58 @@ export const spec = {
       aud: targetingData.requestId,
       a: targetingData.adUnitCode,
       c2: nestedQs(targetingData.adserverTargeting),
+      cn3: targetingData.timeToRespond,
     });
   },
 
   onTimeout(timeoutData) {
-    if (timeoutData == null) {
+    if (timeoutData == null || !timeoutData.length) {
       return;
     }
 
-    trackEvent('pbto', {
-      A: timeoutData.bidder,
-      bid: timeoutData.bidId,
-      a: timeoutData.adUnitCode,
-      cn: timeoutData.timeout,
-      aud: timeoutData.auctionId,
+    let common = null;
+    const events = timeoutData.map((timeout) => {
+      const params = timeout.params || {};
+      const size = getTimeoutSize(timeout);
+      const { domain, page, ref } =
+        timeout.ortb2 != null && timeout.ortb2.site != null
+          ? timeout.ortb2.site
+          : {};
+
+      if (common == null) {
+        common = {
+          do: domain,
+          u: page,
+          U: getUIDSafe(),
+          re: ref,
+          V: '$prebid.version$',
+          vg: '$$PREBID_GLOBAL$$',
+        };
+      }
+
+      return {
+        A: timeout.bidder,
+        mid: params.tagId,
+        a: params.adunitId || timeout.adUnitCode,
+        bid: timeout.bidId,
+        n: 'g_pbto',
+        aud: timeout.transactionId,
+        w: size[0],
+        h: size[1],
+        cn: timeout.timeout,
+        cn2: timeout.bidderRequestsCount,
+        cn3: timeout.bidderWinsCount,
+      };
+    });
+
+    const payload = JSON.stringify({ c: common, e: events });
+    fetch(POST_TRACKING_ENDPOINT, {
+      body: payload,
+      keepalive: true,
+      withCredentials: true,
+      method: 'POST'
+    }).catch((_e) => {
+      // do nothing; ignore errors
     });
   },
 

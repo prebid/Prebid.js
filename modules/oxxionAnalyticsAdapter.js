@@ -1,28 +1,28 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { deepClone } from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_WON,
-    BID_RESPONSE,
-    BID_REQUESTED,
-    BID_TIMEOUT,
-  }
-} = CONSTANTS;
+  AUCTION_END,
+  BID_WON,
+  BID_RESPONSE,
+  BID_REQUESTED,
+  BID_TIMEOUT,
+} = EVENTS;
 
 let saveEvents = {}
 let allEvents = {}
 let auctionEnd = {}
 let initOptions = {}
+let mode = {};
 let endpoint = 'https://default'
-let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
+let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
@@ -41,16 +41,27 @@ function filterAttributes(arg, removead) {
     }
     if (typeof arg['gdprConsent'] != 'undefined') {
       response['gdprConsent'] = {};
-      if (typeof arg['gdprConsent']['consentString'] != 'undefined') { response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString']; }
+      if (typeof arg['gdprConsent']['consentString'] != 'undefined') {
+        response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString'];
+      }
     }
-    if (typeof arg['meta'] == 'object' && typeof arg['meta']['advertiserDomains'] != 'undefined') {
-      response['meta'] = {'advertiserDomains': arg['meta']['advertiserDomains']};
+    if (typeof arg['meta'] == 'object') {
+      response['meta'] = {};
+      if (typeof arg['meta']['advertiserDomains'] != 'undefined') {
+        response['meta']['advertiserDomains'] = arg['meta']['advertiserDomains'];
+      }
+      if (typeof arg['meta']['demandSource'] == 'string') {
+        response['meta']['demandSource'] = arg['meta']['demandSource'];
+      }
     }
     requestsAttributes.forEach((attr) => {
       if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
     });
-    if (typeof response['creativeId'] == 'number') { response['creativeId'] = response['creativeId'].toString(); }
+    if (typeof response['creativeId'] == 'number') {
+      response['creativeId'] = response['creativeId'].toString();
+    }
   }
+  response['oxxionMode'] = mode;
   return response;
 }
 
@@ -77,7 +88,8 @@ function cleanAuctionEnd(args) {
 }
 
 function cleanCreatives(args) {
-  return filterAttributes(args, false);
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  return filterAttributes(stringArgs, false);
 }
 
 function enhanceMediaType(arg) {
@@ -93,7 +105,7 @@ function enhanceMediaType(arg) {
 
 function addBidResponse(args) {
   let eventType = BID_RESPONSE;
-  let argsCleaned = cleanCreatives(JSON.parse(JSON.stringify(args))); ;
+  let argsCleaned = cleanCreatives(args); ;
   if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
   allEvents[eventType].push(argsCleaned);
 }
@@ -110,25 +122,52 @@ function addTimeout(args) {
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
   let argsCleaned = [];
-  let argsDereferenced = JSON.parse(JSON.stringify(args));
+  let argsDereferenced = {};
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  argsDereferenced = stringArgs;
   argsDereferenced.forEach((attr) => {
-    argsCleaned.push(filterAttributes(JSON.parse(JSON.stringify(attr)), false));
+    argsCleaned.push(filterAttributes(deepClone(attr), false));
   });
   if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
+}
+
+export const dereferenceWithoutRenderer = function(args) {
+  if (args.renderer) {
+    let tmp = args.renderer;
+    delete args.renderer;
+    let stringified = JSON.stringify(args);
+    args['renderer'] = tmp;
+    return stringified;
+  }
+  if (args.bidsReceived) {
+    let tmp = {}
+    for (let key in args.bidsReceived) {
+      if (args.bidsReceived[key].renderer) {
+        tmp[key] = args.bidsReceived[key].renderer;
+        delete args.bidsReceived[key].renderer;
+      }
+    }
+    let stringified = JSON.stringify(args);
+    for (let key in tmp) {
+      args.bidsReceived[key].renderer = tmp[key];
+    }
+    return stringified;
+  }
+  return JSON.stringify(args);
 }
 
 function addAuctionEnd(args) {
   let eventType = AUCTION_END;
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
-  let argsCleaned = cleanAuctionEnd(JSON.parse(JSON.stringify(args)));
+  let argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
   if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
 }
 
 function handleBidWon(args) {
-  args = enhanceMediaType(filterAttributes(JSON.parse(JSON.stringify(args)), true));
+  args = enhanceMediaType(filterAttributes(JSON.parse(dereferenceWithoutRenderer(args)), true));
   let increment = args['cpm'];
   if (typeof saveEvents['auctionEnd'] == 'object') {
     saveEvents['auctionEnd'].forEach((auction) => {
@@ -141,6 +180,15 @@ function handleBidWon(args) {
               increment = args['cpm'] - bid['cpm'];
             }
           }
+        });
+      }
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] == 'object') {
+        auction['bidderRequests'].forEach((req) => {
+          req.bids.forEach((bid) => {
+            if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
+              args['ova'] = bid['ova'];
+            }
+          });
         });
       }
     });
@@ -192,7 +240,8 @@ let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
         addTimeout(args);
         break;
     }
-  }});
+  }
+});
 
 // save the base class function
 oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
@@ -201,7 +250,12 @@ oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
 oxxionAnalytics.enableAnalytics = function (config) {
   oxxionAnalytics.originEnableAnalytics(config); // call the base class function
   initOptions = config.options;
-  if (initOptions.domain) { endpoint = 'https://' + initOptions.domain; }
+  if (initOptions.domain) {
+    endpoint = 'https://' + initOptions.domain;
+  }
+  if (window.OXXION_MODE) {
+    mode = window.OXXION_MODE;
+  }
 };
 
 adapterManager.registerAnalyticsAdapter({

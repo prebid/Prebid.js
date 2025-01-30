@@ -27,10 +27,10 @@ describe('GmosspAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -50,7 +50,11 @@ describe('GmosspAdapter', function () {
         bidId: '2b84475b5b636e',
         bidderRequestId: '1f4001782ac16c',
         auctionId: 'aba03555-4802-4c45-9f15-05ffa8594cff',
-        transactionId: '791e9d84-af92-4903-94da-24c7426d9d0c',
+        ortb2Imp: {
+          ext: {
+            tid: '791e9d84-af92-4903-94da-24c7426d9d0c',
+          }
+        },
         userId: {
           imuid: 'h.0a4749e7ffe09fa6',
           pubcid: '1111',

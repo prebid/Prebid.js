@@ -1,7 +1,8 @@
-import { deepAccess, parseSizesInput, isArray, deepSetValue, isStr, isNumber, logInfo } from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -58,11 +59,11 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
+  let {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
   let req = {
-    id: auctionId,
-    // TODO: transactionId is undefined here, should this be auctionId? see #8573
-    tid: transactionId,
+    id: bidderRequest.bidderRequestId,
+    // TODO: root-level `tid` is not ORTB; is this intentional?
+    tid: ortb2?.source?.tid,
     site: buildSite(refererInfo),
     imp: tags
   };
@@ -99,7 +100,6 @@ function buildSite(refInfo) {
 function buildBid(tag) {
   let bid = {
     requestId: tag.impid,
-    bidderCode: spec.code,
     cpm: tag.bid,
     creativeId: tag.crid,
     currency: 'USD',
@@ -144,23 +144,11 @@ function fillBidMeta(bid, tag) {
   }
 }
 
-function getBidFloor(bid, mediaType, sizes) {
-  var floor;
-  var size = sizes.length === 1 ? sizes[0] : '*';
-  if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
-    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
-      floor = parseFloat(floorInfo.floor);
-    }
-  }
-  return floor;
-}
-
 export const spec = {
   code: 'adkernelAdn',
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['engagesimply'],
+  aliases: ['engagesimply', 'adpluto_dsp'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&

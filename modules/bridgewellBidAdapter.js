@@ -4,6 +4,11 @@ import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
 const BIDDER_VERSION = '1.1.0';

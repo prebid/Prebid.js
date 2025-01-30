@@ -1,32 +1,18 @@
-import { logMessage } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getAdUrlByRegion } from '../libraries/smartyadsUtils/getAdUrlByRegion.js';
+import { interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'smartyads';
-const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
-const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
+const GVLID = 534;
 
-function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
-    return false;
-  }
-  switch (bid['mediaType']) {
-    case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
-    case VIDEO:
-      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
-    case NATIVE:
-      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
-    default:
-      return false;
-  }
-}
+const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
@@ -39,39 +25,37 @@ export const spec = {
 
     let winTop = window;
     let location;
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
-    try {
-      location = new URL(bidderRequest.refererInfo.page)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
+    location = bidderRequest?.refererInfo ?? null;
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': 1,
-      'host': location.host,
-      'page': location.pathname,
+      'host': location?.domain ?? '',
+      'page': location?.page ?? '',
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      'placements': placements
+      'placements': placements,
+      'eeid': validBidRequests[0]?.userIdAsEids,
+      'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
-    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+
     if (bidderRequest) {
-      if (bidderRequest.uspConsent) {
-        request.ccpa = bidderRequest.uspConsent;
-      }
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent
+      }
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent;
       }
     }
     const len = validBidRequests.length;
 
+    let adUrl;
+
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
+
+      if (i === 0) adUrl = getAdUrlByRegion(bid);
+
+      let traff = bid.params.traffic || BANNER;
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,
@@ -83,44 +67,16 @@ export const spec = {
         placements.schain = bid.schain;
       }
     }
+
     return {
       method: 'POST',
-      url: AD_URL,
+      url: adUrl,
       data: request
-    };
+    }
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    serverResponse = serverResponse.body;
-    for (let i = 0; i < serverResponse.length; i++) {
-      let resItem = serverResponse[i];
-      if (isBidResponseValid(resItem)) {
-        response.push(resItem);
-      }
-    }
-    return response;
-  },
-
-  getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') => {
-    let syncs = [];
-    let { gdprApplies, consentString = '' } = gdprConsent;
-
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=${uspConsent}`
-      });
-    } else {
-      syncs.push({
-        type: 'image',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=${uspConsent}`
-      });
-    }
-
-    return syncs
-  }
-
+  interpretResponse,
+  getUserSyncs: getUserSyncs(URL_SYNC),
 };
 
 registerBidder(spec);

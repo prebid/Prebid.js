@@ -1,8 +1,12 @@
 import {sharedIdSystemSubmodule, storage} from 'modules/sharedIdSystem.js';
 import {coppaDataHandler} from 'src/adapterManager';
+import {config} from 'src/config.js';
 
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {attachIdSystem, init} from '../../../modules/userId/index.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 let expect = require('chai').expect;
 
@@ -91,4 +95,42 @@ describe('SharedId System', function () {
       expect(result).to.be.undefined;
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(sharedIdSystemSubmodule);
+    });
+    afterEach(() => {
+      config.resetConfig();
+    });
+    it('pubCommonId', function() {
+      const userId = {
+        pubcid: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'pubcid.org',
+        uids: [{id: 'some-random-id-value', atype: 1}]
+      });
+    });
+
+    it('should set inserter, if provided in config', async () => {
+      config.setConfig({
+        userSync: {
+          userIds: [{
+            name: 'sharedId',
+            params: {
+              inserter: 'mock-inserter'
+            },
+            value: {pubcid: 'mock-id'}
+          }]
+        }
+      });
+      const eids = getGlobal().getUserIdsAsEids();
+      sinon.assert.match(eids[0], {
+        source: 'pubcid.org',
+        inserter: 'mock-inserter'
+      })
+    })
+  })
 });

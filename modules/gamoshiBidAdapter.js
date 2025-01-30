@@ -80,11 +80,11 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
+      const {adUnitCode, mediaTypes, params, sizes, bidId} = bidRequest;
       const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
-        id: auctionId,
+        id: bidderRequest.bidderRequestId,
         site: {
           domain: bidderRequest.refererInfo.domain,
           page: bidderRequest.refererInfo.page,
@@ -118,7 +118,7 @@ export const spec = {
       }
 
       const imp = {
-        id: transactionId,
+        id: bidId,
         instl: deepAccess(bidderRequest.ortb2Imp, 'instl') === 1 || params.instl === 1 ? 1 : 0,
         tagid: adUnitCode,
         bidfloor: helper.getBidFloor(bidRequest) || 0,
@@ -157,7 +157,7 @@ export const spec = {
               maxduration: bidRequest.mediaTypes.video.maxduration,
               api: bidRequest.mediaTypes.video.api,
               skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
-              placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
+              plcmt: bidRequest.mediaTypes.video.plcmt || bidRequest.params.video.plcmt,
               minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
               playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
               startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay

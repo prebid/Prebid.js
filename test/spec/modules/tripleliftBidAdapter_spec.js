@@ -8,6 +8,7 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
+const GPP_CONSENT_STR = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
@@ -166,7 +167,8 @@ describe('triplelift adapter', function () {
             video: {
               context: 'instream',
               playerSize: [640, 480],
-              playbackmethod: 5
+              playbackmethod: 5,
+              plcmt: 1
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -306,7 +308,8 @@ describe('triplelift adapter', function () {
             video: {
               context: 'instream',
               playerSize: [640, 480],
-              playbackmethod: [1, 2, 3]
+              playbackmethod: [1, 2, 3],
+              plcmt: 1
             },
             banner: {
               sizes: [
@@ -523,7 +526,8 @@ describe('triplelift adapter', function () {
           mediaTypes: {
             video: {
               context: 'outstream',
-              playerSize: [640, 480]
+              playerSize: [640, 480],
+              plcmt: 4
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -552,7 +556,7 @@ describe('triplelift adapter', function () {
             video: {
               context: 'outstream',
               playerSize: [640, 480],
-              placement: 6
+              plcmt: 3
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -636,12 +640,12 @@ describe('triplelift adapter', function () {
       expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[1].video.placement).to.equal(1);
+      expect(payload.imp[1].video.plcmt).to.equal(1);
       // banner and outstream video
       expect(payload.imp[2]).to.have.property('video');
       expect(payload.imp[2]).to.have.property('banner');
       expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
+      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream'});
       // banner and incomplete video
       expect(payload.imp[3]).to.not.have.property('video');
       expect(payload.imp[3]).to.have.property('banner');
@@ -654,21 +658,24 @@ describe('triplelift adapter', function () {
       expect(payload.imp[5]).to.not.have.property('banner');
       expect(payload.imp[5]).to.have.property('video');
       expect(payload.imp[5].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[5].video.placement).to.equal(1);
+      expect(payload.imp[5].video.plcmt).to.equal(1);
       // banner and outream video and native
       expect(payload.imp[6]).to.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
+      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream'});
       // outstream video only
       expect(payload.imp[7]).to.have.property('video');
       expect(payload.imp[7]).to.not.have.property('banner');
-      expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
+      expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream'});
       // banner and incomplete outstream (missing size); video request is permitted so banner can still monetize
       expect(payload.imp[8]).to.have.property('video');
       expect(payload.imp[8]).to.have.property('banner');
       expect(payload.imp[8].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream', 'placement': 3});
+      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream'});
+      // outstream new plcmt value
+      expect(payload.imp[13]).to.have.property('video');
+      expect(payload.imp[13].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'plcmt': 3});
     });
 
     it('should check for valid outstream placement values', function () {
@@ -693,12 +700,12 @@ describe('triplelift adapter', function () {
       expect(payload.imp[12]).to.not.have.property('banner');
       expect(payload.imp[12]).to.have.property('video');
       expect(payload.imp[12].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[12].video.placement).to.equal(3);
+      expect(payload.imp[12].video.plcmt).to.equal(4);
       // outstream video; invalid placement
       expect(payload.imp[13]).to.not.have.property('banner');
       expect(payload.imp[13]).to.have.property('video');
       expect(payload.imp[13].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[13].video.placement).to.equal(3);
+      expect(payload.imp[13].video.plcmt).to.equal(3);
     });
 
     it('should add tid to imp.ext if transactionId exists', function() {
@@ -735,57 +742,78 @@ describe('triplelift adapter', function () {
     });
 
     it('should add tdid to the payload if included', function () {
-      const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
-      bidRequests[0].userId.tdid = id;
+      const tdid = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      bidRequests[0].userIdAsEids = [
+        {
+          source: 'adserver.org',
+          uids: [
+            {
+              atype: 1,
+              ext: {
+                rtiPartner: 'TDID'
+              },
+              id: tdid
+            }
+          ]
+        },
+      ];
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id, ext: {rtiPartner: 'TDID'}}]}]}});
-    });
-
-    it('should add idl_env to the payload if included', function () {
-      const id = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
-      bidRequests[0].userId.idl_env = id;
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'liveramp.com', uids: [{id, ext: {rtiPartner: 'idl'}}]}]}});
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id: tdid, atype: 1, ext: {rtiPartner: 'TDID'}}]}]}});
     });
 
     it('should add criteoId to the payload if included', function () {
       const id = '53e30ea700424f7bbdd793b02abc5d7';
-      bidRequests[0].userId.criteoId = id;
+      bidRequests[0].userIdAsEids = [
+        {
+          source: 'criteo.com',
+          uids: [
+            {
+              atype: 1,
+              ext: {
+                rtiPartner: 'criteoId'
+              },
+              id: id
+            }
+          ]
+        },
+      ];
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id: id, atype: 1, ext: {rtiPartner: 'criteoId'}}]}]}});
     });
 
-    it('should add adqueryId to the payload if included', function () {
-      const id = '%7B%22qid%22%3A%229c985f8cc31d9b3c000d%22%7D';
-      bidRequests[0].userIdAsEids = [{ source: 'adquery.io', uids: [{ id }] }];
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adquery.io', uids: [{id, ext: {rtiPartner: 'adquery.io'}}]}]}});
-    });
-
-    it('should add amxRtbId to the payload if included', function () {
-      const id = 'Ok9JQkBM-UFlAXEZQ-UUNBQlZOQzgrUFhW-UUNBQkRQTUBPQVpVWVxNXlZUUF9AUFhAUF9PXFY/';
-      bidRequests[0].userIdAsEids = [{ source: 'amxdt.net', uids: [{ id }] }];
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
-      expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'amxdt.net', uids: [{id, ext: {rtiPartner: 'amxdt.net'}}]}]}});
-    });
-
-    it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
-      const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
-      const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+    it('should add tdid and criteoId to the payload if both are included', function () {
+      const tdid = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
-      bidRequests[0].userId.tdid = tdidId;
-      bidRequests[0].userId.idl_env = idlEnvId;
-      bidRequests[0].userId.criteoId = criteoId;
+      bidRequests[0].userIdAsEids = [
+        {
+          source: 'adserver.org',
+          uids: [
+            {
+              atype: 1,
+              ext: {
+                rtiPartner: 'TDID'
+              },
+              id: tdid
+            }
+          ]
+        },
+        {
+          source: 'criteo.com',
+          uids: [
+            {
+              atype: 1,
+              ext: {
+                rtiPartner: 'criteoId'
+              },
+              id: criteoId
+            }
+          ]
+        },
+      ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
@@ -798,119 +826,8 @@ describe('triplelift adapter', function () {
               source: 'adserver.org',
               uids: [
                 {
-                  id: tdidId,
-                  ext: { rtiPartner: 'TDID' }
-                }
-              ],
-            },
-            {
-              source: 'liveramp.com',
-              uids: [
-                {
-                  id: idlEnvId,
-                  ext: { rtiPartner: 'idl' }
-                }
-              ]
-            },
-            {
-              source: 'criteo.com',
-              uids: [
-                {
-                  id: criteoId,
-                  ext: { rtiPartner: 'criteoId' }
-                }
-              ]
-            }
-          ]
-        }
-      });
-    });
-
-    it('should consolidate user ids from multiple bid requests', function () {
-      const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
-      const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
-      const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
-      const pubcid = '3261d8ad-435d-481d-abd1-9f1a9ec99f0e';
-
-      const bidRequestsMultiple = [
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
-      ];
-
-      const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      const payload = request.data;
-
-      expect(payload.user).to.deep.equal({
-        ext: {
-          eids: [
-            {
-              source: 'adserver.org',
-              uids: [
-                {
-                  id: tdidId,
-                  ext: { rtiPartner: 'TDID' }
-                }
-              ],
-            },
-            {
-              source: 'liveramp.com',
-              uids: [
-                {
-                  id: idlEnvId,
-                  ext: { rtiPartner: 'idl' }
-                }
-              ]
-            },
-            {
-              source: 'criteo.com',
-              uids: [
-                {
-                  id: criteoId,
-                  ext: { rtiPartner: 'criteoId' }
-                }
-              ]
-            },
-            {
-              source: 'pubcid.org',
-              uids: [
-                {
-                  id: '3261d8ad-435d-481d-abd1-9f1a9ec99f0e',
-                  ext: { rtiPartner: 'pubcid' }
-                }
-              ]
-            }
-          ]
-        }
-      });
-
-      expect(payload.user.ext.eids).to.be.an('array');
-      expect(payload.user.ext.eids).to.have.lengthOf(4);
-    });
-
-    it('should remove malformed ids that would otherwise break call', function () {
-      let tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
-      let idlEnvId = null; // fail; can't be null
-      let criteoId = '53e30ea700424f7bbdd793b02abc5d7';
-      let pubcid = ''; // fail; can't be empty string
-
-      let bidRequestsMultiple = [
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
-      ];
-
-      let request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      let payload = request.data;
-
-      expect(payload.user).to.deep.equal({
-        ext: {
-          eids: [
-            {
-              source: 'adserver.org',
-              uids: [
-                {
-                  id: tdidId,
+                  id: tdid,
+                  atype: 1,
                   ext: { rtiPartner: 'TDID' }
                 }
               ],
@@ -920,90 +837,7 @@ describe('triplelift adapter', function () {
               uids: [
                 {
                   id: criteoId,
-                  ext: { rtiPartner: 'criteoId' }
-                }
-              ]
-            }
-          ]
-        }
-      });
-
-      expect(payload.user.ext.eids).to.be.an('array');
-      expect(payload.user.ext.eids).to.have.lengthOf(2);
-
-      tdidId = {}; // fail; can't be empty object
-      idlEnvId = { id: '987654' }; // pass
-      criteoId = [{ id: '123456' }]; // fail; can't be an array
-      pubcid = '3261d8ad-435d-481d-abd1-9f1a9ec99f0e'; // pass
-
-      bidRequestsMultiple = [
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
-      ];
-
-      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      payload = request.data;
-
-      expect(payload.user).to.deep.equal({
-        ext: {
-          eids: [
-            {
-              source: 'liveramp.com',
-              uids: [
-                {
-                  id: '987654',
-                  ext: { rtiPartner: 'idl' }
-                }
-              ]
-            },
-            {
-              source: 'pubcid.org',
-              uids: [
-                {
-                  id: pubcid,
-                  ext: { rtiPartner: 'pubcid' }
-                }
-              ]
-            }
-          ]
-        }
-      });
-
-      expect(payload.user.ext.eids).to.be.an('array');
-      expect(payload.user.ext.eids).to.have.lengthOf(2);
-
-      tdidId = { id: '987654' }; // pass
-      idlEnvId = { id: 987654 }; // fail; can't be an int
-      criteoId = '53e30ea700424f7bbdd793b02abc5d7'; // pass
-      pubcid = { id: '' }; // fail; can't be an empty string
-
-      bidRequestsMultiple = [
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
-        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
-      ];
-
-      request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
-      payload = request.data;
-
-      expect(payload.user).to.deep.equal({
-        ext: {
-          eids: [
-            {
-              source: 'adserver.org',
-              uids: [
-                {
-                  id: '987654',
-                  ext: { rtiPartner: 'TDID' }
-                }
-              ],
-            },
-            {
-              source: 'criteo.com',
-              uids: [
-                {
-                  id: criteoId,
+                  atype: 1,
                   ext: { rtiPartner: 'criteoId' }
                 }
               ]
@@ -1038,6 +872,12 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
+    });
+    it('should pass fledge signal when Triplelift is eligible for fledge', function() {
+      bidderRequest.paapi = {enabled: true};
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)fledge=true/);
     });
     it('should return coppa param when COPPA config is set to true', function() {
       sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
@@ -1122,6 +962,46 @@ describe('triplelift adapter', function () {
       tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
+    });
+    it('should add ortb2 ext object if global fpd is available', function() {
+      const ortb2 = {
+        site: {
+          domain: 'page.example.com',
+          cat: ['IAB2'],
+          sectioncat: ['IAB2-2'],
+          pagecat: ['IAB2-2'],
+          page: 'https://page.example.com/here.html',
+        },
+        user: {
+          yob: 1985,
+          gender: 'm',
+          keywords: 'a,b',
+          data: [
+            {
+              name: 'dataprovider.com',
+              ext: { segtax: 4 },
+              segment: [{ id: '1' }]
+            }
+          ],
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      };
+
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      const { data: payload } = request;
+      expect(payload.ext.ortb2).to.exist;
+      expect(payload.ext.ortb2.site).to.deep.equal({
+        domain: 'page.example.com',
+        cat: ['IAB2'],
+        sectioncat: ['IAB2-2'],
+        pagecat: ['IAB2-2'],
+        page: 'https://page.example.com/here.html',
+      });
     });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
@@ -1501,11 +1381,63 @@ describe('triplelift adapter', function () {
       expect(result[2].meta.networkId).to.equal('5989');
       expect(result[3].meta.networkId).to.equal('5989');
     });
+
+    it('should return fledgeAuctionConfigs if PAAPI response is received', function() {
+      response.body.paapi = [
+        {
+          imp_id: '0',
+          auctionConfig: {
+            seller: 'https://3lift.com',
+            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
+            interestGroupBuyers: ['https://some_buyer.com'],
+            perBuyerSignals: {
+              'https://some_buyer.com': { a: 1 }
+            }
+          }
+        },
+        {
+          imp_id: '2',
+          auctionConfig: {
+            seller: 'https://3lift.com',
+            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
+            interestGroupBuyers: ['https://some_other_buyer.com'],
+            perBuyerSignals: {
+              'https://some_other_buyer.com': { b: 2 }
+            }
+          }
+        }
+      ];
+
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+
+      expect(result).to.have.property('bids');
+      expect(result).to.have.property('paapi');
+      expect(result.paapi.length).to.equal(2);
+      expect(result.paapi[0].bidId).to.equal('30b31c1838de1e');
+      expect(result.paapi[1].bidId).to.equal('73edc0ba8de203');
+      expect(result.paapi[0].config).to.deep.equal(
+        {
+          'seller': 'https://3lift.com',
+          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
+          'interestGroupBuyers': ['https://some_buyer.com'],
+          'perBuyerSignals': { 'https://some_buyer.com': { 'a': 1 } }
+        }
+      );
+      expect(result.paapi[1].config).to.deep.equal(
+        {
+          'seller': 'https://3lift.com',
+          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
+          'interestGroupBuyers': ['https://some_other_buyer.com'],
+          'perBuyerSignals': { 'https://some_other_buyer.com': { 'b': 2 } }
+        }
+      );
+    });
   });
 
   describe('getUserSyncs', function() {
     let expectedIframeSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
     let expectedImageSyncUrl = 'https://eb2.3lift.com/sync?px=1&src=prebid&gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedGppSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&gpp=' + GPP_CONSENT_STR + '&gpp_sid=2%2C8' + '&';
 
     it('returns undefined when syncing is not enabled', function() {
       expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
@@ -1543,8 +1475,19 @@ describe('triplelift adapter', function () {
       let syncOptions = {
         iframeEnabled: true
       };
-      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, '1YYY');
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, '1YYY', null);
       expect(result[0].url).to.match(/(\?|&)us_privacy=1YYY/);
+    });
+    it('returns a user sync pixel with GPP signals when available', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let gppConsent = {
+        'applicableSections': [2, 8],
+        'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
+      }
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, null, gppConsent);
+      expect(result[0].url).to.equal(expectedGppSyncUrl);
     });
   });
 });

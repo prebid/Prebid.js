@@ -12,6 +12,13 @@ import {uspDataHandler} from '../src/adapterManager.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
 const LOCAL_STORAGE_EXP_DAYS = 30;
@@ -135,7 +142,7 @@ export const ftrackIdSubmodule = {
         }
 
         // Creates an async script element and appends it to the document
-        loadExternalScript(config.params.url, MODULE_NAME);
+        loadExternalScript(config.params.url, MODULE_TYPE_UID, MODULE_NAME);
       }
     };
   },
@@ -221,6 +228,22 @@ export const ftrackIdSubmodule = {
     if (usPrivacyVersion == 1 && usPrivacyOptOutSale === 'Y') consentValue = false;
 
     return consentValue;
+  },
+  eids: {
+    'ftrackId': {
+      source: 'flashtalking.com',
+      atype: 1,
+      getValue: function(data) {
+        let value = '';
+        if (data && data.ext && data.ext.DeviceID) {
+          value = data.ext.DeviceID;
+        }
+        return value;
+      },
+      getUidExt: function(data) {
+        return data && data.ext;
+      }
+    },
   }
 };
 

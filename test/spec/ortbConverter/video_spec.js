@@ -30,7 +30,6 @@ describe('pbjs -> ortb video conversion', () => {
           h: 2,
           mimes: ['video/mp4'],
           skip: 1,
-          placement: 1,
         },
       },
     },
@@ -121,6 +120,16 @@ describe('pbjs -> ortb video conversion', () => {
     };
     fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {});
     expect(imp.video.someParam).to.eql('someValue');
+  });
+
+  it('should keep ortb2Imp.video.battr', () => {
+    const imp = {
+      video: {
+        battr: 'battr'
+      }
+    };
+    fillVideoImp(imp, {mediaTypes: {video: {sizes: [1, 2]}}}, {});
+    expect(imp.video.battr).to.eql('battr');
   });
 
   it('does nothing is context.mediaType is set but is not VIDEO', () => {

@@ -12,10 +12,19 @@ import { parseUrl, buildUrl, logError } from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'publinkId';
 const GVLID = 24;
 const PUBLINK_COOKIE = '_publink';
 const PUBLINK_S2S_COOKIE = '_publink_srv';
+const PUBLINK_REQUEST_PATH = '/cvx/client/sync/publink';
+const PUBLINK_REFRESH_PATH = '/cvx/client/sync/publink/refresh';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
@@ -23,10 +32,9 @@ function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);
 }
 
-function publinkIdUrl(params, consentData) {
-  let url = parseUrl('https://proc.ad.cpe.dotomi.com/cvx/client/sync/publink');
+function publinkIdUrl(params, consentData, storedId) {
+  let url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
   url.search = {
-    deh: params.e,
     mpn: 'Prebid.js',
     mpv: '$prebid.version$',
   };
@@ -36,9 +44,21 @@ function publinkIdUrl(params, consentData) {
     url.search.gdpr_consent = consentData.consentString;
   }
 
-  if (params.site_id) { url.search.sid = params.site_id; }
+  if (params) {
+    if (params.e) {
+      // if there's an email parameter call the request path
+      url.search.deh = params.e;
+      url.pathname = PUBLINK_REQUEST_PATH;
+    }
 
-  if (params.api_key) { url.search.apikey = params.api_key; }
+    if (params.site_id) { url.search.sid = params.site_id; }
+
+    if (params.api_key) { url.search.apikey = params.api_key; }
+  }
+
+  if (storedId) {
+    url.search.publink = storedId;
+  }
 
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString && typeof usPrivacyString === 'string') {
@@ -48,7 +68,7 @@ function publinkIdUrl(params, consentData) {
   return buildUrl(url);
 }
 
-function makeCallback(config = {}, consentData) {
+function makeCallback(config = {}, consentData, storedId) {
   return function(prebidCallback) {
     const options = {method: 'GET', withCredentials: true};
     let handleResponse = function(responseText, xhr) {
@@ -59,15 +79,12 @@ function makeCallback(config = {}, consentData) {
         }
       }
     };
-
-    if (config.params && config.params.e) {
-      if (isHex(config.params.e)) {
-        ajax(publinkIdUrl(config.params, consentData), handleResponse, undefined, options);
-      } else {
-        logError('params.e must be a hex string');
-      }
+    if ((config.params && config.params.e && isHex(config.params.e)) || storedId) {
+      ajax(publinkIdUrl(config.params, consentData, storedId), handleResponse, undefined, options);
+    } else if (config.params.e) {
+      logError('params.e must be a hex string');
     }
-  };
+  }
 }
 
 function getlocalValue() {
@@ -137,9 +154,13 @@ export const publinkIdSubmodule = {
     if (localValue) {
       return {id: localValue};
     }
-    if (!storedId) {
-      return {callback: makeCallback(config, consentData)};
-    }
-  }
+    return {callback: makeCallback(config, consentData, storedId)};
+  },
+  eids: {
+    'publinkId': {
+      source: 'epsilon.com',
+      atype: 3
+    },
+  },
 };
 submodule('userId', publinkIdSubmodule);

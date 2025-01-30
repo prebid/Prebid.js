@@ -4,6 +4,15 @@ import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 
 /**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').MediaType} MediaType
+ */
+
+/**
  * Version of the FeedAd bid adapter
  * @type {string}
  */
@@ -234,7 +243,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
   data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
     referer: data.refererInfo.page,
-    transactionId: bid.transactionId
+    transactionId: bid.ortb2Imp?.ext?.tid,
   });
   if (bidderRequest.gdprConsent) {
     data.consentIabTcf = bidderRequest.gdprConsent.consentString;

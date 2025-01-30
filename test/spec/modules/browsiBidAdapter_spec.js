@@ -64,7 +64,11 @@ describe('browsi Bid Adapter Test', function () {
           'sizes': [640, 480],
           'bidId': '12345678',
           'requestId': '1234567-3456-4562-7689-98765434A',
-          'transactionId': '1234567-3456-4562-7689-98765434B',
+          ortb2Imp: {
+            ext: {
+              tid: '1234567-3456-4562-7689-98765434B',
+            }
+          },
           'schain': {},
           'mediaTypes': {video: {playerSize: [640, 480]}}
         }
@@ -112,7 +116,7 @@ describe('browsi Bid Adapter Test', function () {
           video: {playerSize: [640, 480]},
           aUCode: inputRequest.adUnitCode,
           aID: inputRequest.auctionId,
-          tID: inputRequest.transactionId,
+          tID: inputRequest.ortb2Imp.ext.tid,
           schain: inputRequest.schain,
           params: inputRequest.params
         }
@@ -157,7 +161,6 @@ describe('browsi Bid Adapter Test', function () {
       const actualBidResponse = bidResponses[0];
       const expectedBidResponse = {
         requestId: bidRequest.data.bidId,
-        bidderCode: 'browsi',
         bidId: 'bidId1',
         width: 300,
         height: 250,

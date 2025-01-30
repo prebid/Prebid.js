@@ -1,6 +1,6 @@
-import { setConsentConfig } from 'modules/consentManagement.js';
-import { server } from 'test/mocks/xhr.js';
-import {coreStorage, init, setSubmoduleRegistry, requestBidsHook} from 'modules/userId/index.js';
+import {setConsentConfig} from 'modules/consentManagementTcf.js';
+import {server} from 'test/mocks/xhr.js';
+import {coreStorage, startAuctionHook} from 'modules/userId/index.js';
 
 const msIn12Hours = 60 * 60 * 12 * 1000;
 const expireCookieDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
@@ -19,23 +19,23 @@ export const runAuction = async () => {
     bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
   }];
   return new Promise(function(resolve) {
-    requestBidsHook(function() {
+    startAuctionHook(function() {
       resolve(adUnits[0].bids[0]);
     }, {adUnits});
   });
 }
 
 export const apiHelpers = {
-  makeTokenResponse: (token, shouldRefresh = false, expired = false) => ({
+  makeTokenResponse: (token, shouldRefresh = false, expired = false, refreshExpired = false) => ({
     advertising_token: token,
     refresh_token: 'fake-refresh-token',
     identity_expires: expired ? Date.now() - 1000 : Date.now() + 60 * 60 * 1000,
     refresh_from: shouldRefresh ? Date.now() - 1000 : Date.now() + 60 * 1000,
-    refresh_expires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    refresh_expires: refreshExpired ? Date.now() - 1000 : Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     refresh_response_key: 'wR5t6HKMfJ2r4J7fEGX9Gw==', // Fake data
   }),
-  respondAfterDelay: (delay) => new Promise((resolve) => setTimeout(() => {
-    server.respond();
+  respondAfterDelay: (delay, srv = server) => new Promise((resolve) => setTimeout(() => {
+    srv.respond();
     setTimeout(() => resolve());
   }, delay)),
 }

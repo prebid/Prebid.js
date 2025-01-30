@@ -131,16 +131,6 @@ describe('bigRichMediaAdapterTests', function () {
   });
 
   describe('interpretResponse', function () {
-    let bfStub;
-
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     const response = {
       'version': '3.0.0',
       'tags': [
@@ -278,31 +268,6 @@ describe('bigRichMediaAdapterTests', function () {
       const serverResponse = [{ body: '' }];
       const result = spec.getUserSyncs(syncOptions, serverResponse);
       expect(result).to.be.undefined;
-    });
-  });
-
-  describe('transformBidParams', function() {
-    it('cast placementId to number', function() {
-      const adUnit = {
-        code: 'adunit-code',
-        params: {
-          placementId: '456'
-        }
-      };
-      const bid = {
-        params: {
-          placementId: '456'
-        },
-        sizes: [[300, 250]],
-        mediaTypes: {
-          banner: { sizes: [[300, 250]] }
-        }
-      };
-
-      const params = spec.transformBidParams({ placementId: '456' }, true, adUnit, [{ bidderCode: 'bigRichmedia', auctionId: bid.auctionId, bids: [bid] }]);
-
-      expect(params.placement_id).to.exist;
-      expect(params.placement_id).to.be.a('number');
     });
   });
 

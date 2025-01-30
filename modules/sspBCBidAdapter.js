@@ -1,26 +1,27 @@
-import { deepAccess, getWindowTop, isArray, logWarn } from '../src/utils.js';
+import { deepAccess, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { includes as strIncludes } from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
-const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
+const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.8';
+const BIDDER_VERSION = '6.10';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
 const adUnitsCalled = {};
 const adSizesCalled = {};
+const bidderRequestsMap = {};
 const pageView = {};
-var consentApiVersion;
 
 /**
  * Native asset mapping - we use constant id per type
@@ -37,7 +38,7 @@ var nativeAssetMap = {
 
 /**
  * return native asset type, based on asset id
- * @param {int} id - native asset id
+ * @param {number} id - native asset id
  * @returns {string} asset type
  */
 const getNativeAssetType = id => {
@@ -70,13 +71,26 @@ const getContentLanguage = () => {
     const topWindow = getWindowTop();
     return topWindow.document.body.parentNode.lang;
   } catch (err) {
-    logWarn('Could not read language form top-level html', err);
+    logWarn('Could not read language from top-level html', err);
+  }
+};
+
+/**
+ * Get host name of the top level html object
+ * @returns {string} host name
+ */
+const getTopHost = () => {
+  try {
+    const topWindow = getWindowTop();
+    return topWindow.location.host;
+  } catch (err) {
+    logWarn('Could not read host from top-level window', err);
   }
 };
 
 /**
  * Get Bid parameters - returns bid params from Object, or 1el array
- * @param {*} bidData - bid (bidWon), or array of bids (timeout)
+ * @param {*} bidParams - bid (bidWon), or array of bids (timeout)
  * @returns {object} params object
  */
 const unpackParams = (bidParams) => {
@@ -93,20 +107,21 @@ const getNotificationPayload = bidData => {
     const bids = isArray(bidData) ? bidData : [bidData];
     if (bids.length > 0) {
       let result = {
-        requestId: undefined,
         siteId: [],
         slotId: [],
         tagid: [],
       }
       bids.forEach(bid => {
-        const { adUnitCode, auctionId, cpm, creativeId, meta, params: bidParams, requestId, timeout } = bid;
+        const { adUnitCode, cpm, creativeId, meta = {}, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
+        const { platform = 'wpartner' } = meta;
         const params = unpackParams(bidParams);
 
         // basic notification data
         const bidBasicData = {
-          requestId: auctionId || result.requestId,
+          requestId: bidderRequestId || bidderRequestsMap[requestId],
           timeout: timeout || result.timeout,
           pvid: pageView.id,
+          platform
         }
         result = { ...result, ...bidBasicData }
 
@@ -126,12 +141,14 @@ const getNotificationPayload = bidData => {
 
         if (cpm) {
           // non-empty bid data
+          const { advertiserDomains = [], networkName, pricepl } = meta;
           const bidNonEmptyData = {
             cpm,
-            cpmpl: meta && meta.pricepl,
+            cpmpl: pricepl,
             creativeId,
-            adomain: meta && meta.advertiserDomains && meta.advertiserDomains[0],
-            networkName: meta && meta.networkName,
+            adomain: advertiserDomains[0],
+            adtype: mediaType,
+            networkName,
           }
           result = { ...result, ...bidNonEmptyData }
         }
@@ -162,7 +179,7 @@ const applyClientHints = ortbRequest => {
     Check / generate page view id
     Should be generated dureing first call to applyClientHints(),
     and re-generated if pathname has changed
-  */
+   */
   if (!pageView.id || location.pathname !== pageView.path) {
     pageView.path = location.pathname;
     pageView.id = Math.floor(1E20 * Math.random()).toString();
@@ -197,9 +214,28 @@ const applyClientHints = ortbRequest => {
   ortbRequest.user = { ...ortbRequest.user, ...ch };
 };
 
+const applyTopics = (validBidRequest, ortbRequest) => {
+  const userData = validBidRequest.ortb2?.user?.data || [];
+  const topicsData = userData.filter(dataObj => {
+    const segtax = dataObj.ext?.segtax;
+    return segtax >= 600 && segtax <= 609;
+  })[0];
+
+  // format topics obj for exchange
+  if (topicsData) {
+    topicsData.id = `${topicsData.ext.segtax}`;
+    topicsData.name = 'topics';
+    delete (topicsData.ext);
+    ortbRequest.user.data.push(topicsData);
+  }
+};
+
 const applyUserIds = (validBidRequest, ortbRequest) => {
-  const eids = validBidRequest.userIdAsEids
-  if (eids && eids.length) {
+  const { userIdAsEids: eidsVbr = [], ortb2 = {} } = validBidRequest;
+  const eidsOrtb = ortb2.user?.ext?.data?.eids || [];
+  const eids = [...eidsVbr, ...eidsOrtb];
+
+  if (eids.length) {
     const ids = { eids };
     ortbRequest.user = { ...ortbRequest.user, ...ids };
   }
@@ -212,10 +248,9 @@ const applyUserIds = (validBidRequest, ortbRequest) => {
 const applyGdpr = (bidderRequest, ortbRequest) => {
   const { gdprConsent } = bidderRequest;
   if (gdprConsent) {
-    const { apiVersion, gdprApplies, consentString } = gdprConsent;
-    consentApiVersion = apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { 'gdpr': gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { 'consent': consentString });
+    const { gdprApplies, consentString } = gdprConsent;
+    ortbRequest.regs = Object.assign(ortbRequest.regs || {}, { 'gdpr': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user || {}, { 'consent': consentString });
   }
 }
 
@@ -225,7 +260,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * returns floor = 0 if getFloor() is not defined
  *
  * @param {object} slot bid request adslot
- * @returns {float} floorprice
+ * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
   const currency = getCurrency();
@@ -240,18 +275,18 @@ const getHighestFloor = (slot) => {
           mediaType: 'banner',
           size: next,
           currency
-        });
+        }) || {};
         return prev > currentFloor ? prev : currentFloor;
       }, 0);
     }
 
     const { floor: nativeFloor = 0 } = slot.getFloor({
       mediaType: 'native', currency
-    });
+    }) || {};
 
     const { floor: videoFloor = 0 } = slot.getFloor({
       mediaType: 'video', currency
-    });
+    }) || {};
 
     result.floor = Math.max(bannerFloor, nativeFloor, videoFloor);
   }
@@ -263,7 +298,7 @@ const getHighestFloor = (slot) => {
  * Get currency (either default or adserver)
  * @returns {string} currency name
  */
-const getCurrency = () => config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+const getCurrency = (bidderRequest) => getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
 /**
  * Get value for first occurence of key within the collection
@@ -319,7 +354,7 @@ var mapAsset = function mapAsset(paramName, paramValue) {
           id: id,
           required: required,
           title: {
-            len: len
+            len: len || 140
           }
         });
         break;
@@ -446,9 +481,14 @@ var mapVideo = (slot, videoFromBid) => {
 };
 
 const mapImpression = slot => {
-  const { adUnitCode, bidId, params = {}, ortb2Imp = {} } = slot;
+  const { adUnitCode, bidderRequestId, bidId, params = {}, ortb2Imp = {} } = slot;
   const { id, siteId, video } = params;
-  const { ext = {} } = ortb2Imp;
+  const { instl, ext = {} } = ortb2Imp;
+
+  /*
+    store bidId <-> bidderRequestId mapping for bidWon notification
+  */
+  bidderRequestsMap[bidId] = bidderRequestId;
 
   /*
      check max size for this imp, and check/store number this size was called (for current view)
@@ -471,6 +511,7 @@ const mapImpression = slot => {
     video: mapVideo(slot, video),
     tagid: adUnitCode,
     ext,
+    instl,
   };
 
   // Check floorprices for this imp
@@ -483,7 +524,7 @@ const mapImpression = slot => {
 }
 
 const isVideoAd = bid => {
-  const xmlTester = new RegExp(/^<\?xml/);
+  const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
 }
 
@@ -493,15 +534,25 @@ const isNativeAd = bid => {
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
 }
 
-const parseNative = (nativeData) => {
+const isHTML = bid => {
+  const xmlTester = new RegExp(/^<html|<iframe/, 'i');
+  return bid.adm && bid.adm.match(xmlTester);
+}
+
+const parseNative = (nativeData, adUnitCode) => {
   const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
   const { url: clickUrl, clicktrackers: clickTrackers = [] } = link;
+  const macroReplacer = tracker => tracker.replace(new RegExp('%native_dom_id%', 'g'), adUnitCode);
+  let javascriptTrackers = isArray(jstracker) ? jstracker : jstracker && [jstracker];
+
+  // replace known macros in js trackers
+  javascriptTrackers = javascriptTrackers && javascriptTrackers.map(macroReplacer);
 
   const result = {
     clickUrl,
     clickTrackers,
     impressionTrackers,
-    javascriptTrackers: isArray(jstracker) ? jstracker : jstracker && [jstracker],
+    javascriptTrackers,
   };
 
   nativeData.assets.forEach(asset => {
@@ -541,81 +592,6 @@ const parseNative = (nativeData) => {
   return result;
 }
 
-const renderCreative = (site, auctionId, bid, seat, request) => {
-  let gam;
-
-  const mcad = {
-    id: auctionId,
-    seat,
-    seatbid: [{
-      bid: [bid],
-    }],
-  };
-
-  const mcbase = btoa(encodeURI(JSON.stringify(mcad)));
-
-  if (bid.adm) {
-    // parse adm for gam config
-    try {
-      gam = JSON.parse(bid.adm).gam;
-
-      if (!gam || !Object.keys(gam).length) {
-        gam = undefined;
-      } else {
-        gam.namedSizes = ['fluid'];
-        gam.div = 'div-gpt-ad-x01';
-        gam.targeting = Object.assign(gam.targeting || {}, {
-          OAS_retarg: '0',
-          PREBID_ON: '1',
-          emptygaf: '0',
-        });
-      }
-
-      if (gam && !gam.targeting) {
-        gam.targeting = {};
-      }
-    } catch (err) {
-      logWarn('Could not parse adm data', bid.adm);
-    }
-  }
-
-  let adcode = `<head>
-  <title></title>
-  <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-    body {
-    background-color: transparent;
-    margin: 0;
-    padding: 0;
-  }
-</style>
-  <script>
-  window.rekid = ${site.id};
-  window.slot = ${parseInt(site.slot, 10)};
-  window.responseTimestamp = ${Date.now()};
-  window.wp_sn = "${site.sn}";
-  window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
-  window.gdpr = ${JSON.stringify(request.gdprConsent)};
-  window.page = "${site.page}";
-  window.ref = "${site.ref}";
-  window.adlabel = "${site.adLabel ? site.adLabel : ''}";
-  window.pubid = "${site.publisherId ? site.publisherId : ''}";
-  window.requestPVID = "${pageView.id}";
-  `;
-
-  adcode += `</script>
-    </head>
-    <body>
-    <div id="c"></div>
-    <script async crossorigin nomodule src="https://std.wpcdn.pl/wpjslib/wpjslib-inline.js" id="wpjslib"></script>
-    <script async crossorigin type="module" src="https://std.wpcdn.pl/wpjslib6/wpjslib-inline.js" id="wpjslib6"></script>
-  </body>
-  </html>`;
-
-  return adcode;
-}
-
 const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -633,6 +609,7 @@ const spec = {
       return false;
     }
 
+    const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
@@ -641,9 +618,12 @@ const spec = {
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
     const ref = bidderRequest.refererInfo.ref;
+    const { source = {}, regs = {} } = ortb2 || {};
+
+    source.schain = setOnAny(validBidRequests, 'schain');
 
     const payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         id: siteId ? `${siteId}` : undefined,
         publisher: publisherId ? { id: publisherId } : undefined,
@@ -653,10 +633,11 @@ const spec = {
         content: { language: getContentLanguage() },
       },
       imp: validBidRequests.map(slot => mapImpression(slot)),
-      cur: [getCurrency()],
+      cur: [getCurrency(bidderRequest)],
       tmax,
       user: {},
-      regs: {},
+      regs,
+      source,
       device: {
         language: getBrowserLanguage(),
         w: screen.width,
@@ -668,6 +649,7 @@ const spec = {
     applyGdpr(bidderRequest, payload);
     applyClientHints(payload);
     applyUserIds(validBidRequests[0], payload);
+    applyTopics(bidderRequest, payload);
 
     return {
       method: 'POST',
@@ -679,21 +661,22 @@ const spec = {
 
   interpretResponse(serverResponse, request) {
     const { bidderRequest } = request;
-    const response = serverResponse.body;
+    const { body: response = {} } = serverResponse;
+    const { seatbid: responseSeat, ext: responseExt = {} } = response;
+    const { paapi: fledgeAuctionConfigs = [] } = responseExt;
     const bids = [];
     let site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
     pageView.sn = site.sn; // store site_name (for syncing and notifications)
-    let seat;
 
-    if (response.seatbid !== undefined) {
+    if (responseSeat !== undefined) {
       /*
         Match response to request, by comparing bid id's
         'bidid-' prefix indicates oneCode (parameterless) request and response
       */
-      response.seatbid.forEach(seatbid => {
-        seat = seatbid.seat;
-        seatbid.bid.forEach(serverBid => {
+      responseSeat.forEach(seatbid => {
+        const { seat, bid } = seatbid;
+        bid.forEach(serverBid => {
           // get data from bid response
           const { adomain, crid = `mcad_${bidderRequest.auctionId}_${site.slot}`, impid, exp = 300, ext = {}, price, w, h } = serverBid;
 
@@ -709,7 +692,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [] } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, platform = 'wpartner', pricepl } = ext;
 
           // update site data
           site = {
@@ -724,6 +707,7 @@ const spec = {
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
             // found a matching request; add this bid
+            const { adUnitCode } = bidRequest;
 
             // store site data for future notification
             oneCodeDetection[bidId] = [site.id, site.slot];
@@ -736,11 +720,12 @@ const spec = {
               ttl: exp,
               width: w,
               height: h,
-              bidderCode: BIDDER_CODE,
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,
-                pricepl: ext && ext.pricepl,
+                pricepl,
+                dsa,
+                platform,
               },
               netRevenue: true,
               vurls,
@@ -754,23 +739,33 @@ const spec = {
               bid.vastXml = serverBid.adm;
               bid.vastContent = serverBid.adm;
               bid.vastUrl = creativeCache;
+
+              logInfo(`Bid ${bid.creativeId} is a video ad`);
             } else if (isNativeAd(serverBid)) {
               // native
               bid.mediaType = 'native';
               // check native object
               try {
                 const nativeData = serverBid.admNative || JSON.parse(serverBid.adm).native;
-                bid.native = parseNative(nativeData);
+                bid.native = parseNative(nativeData, adUnitCode);
                 bid.width = 1;
                 bid.height = 1;
               } catch (err) {
                 logWarn('Could not parse native data', serverBid.adm);
                 bid.cpm = 0;
               }
-            } else {
-              // banner ad (default)
+              logInfo(`Bid ${bid.creativeId} as a native ad`);
+            } else if (isHTML(serverBid)) {
+              // banner ad (preformatted)
               bid.mediaType = 'banner';
-              bid.ad = renderCreative(site, response.id, serverBid, seat, bidderRequest);
+              logInfo(`Bid ${bid.creativeId} as a preformatted banner`);
+              bid.ad = serverBid.adm;
+            } else {
+              // unsupported bid format - send notification and set CPM to zero
+              const payload = getNotificationPayload(bid);
+              payload.event = 'parseError';
+              sendNotification(payload);
+              bid.cpm = 0;
             }
 
             if (bid.cpm > 0) {
@@ -784,17 +779,24 @@ const spec = {
       });
     }
 
-    return bids;
+    return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
   },
-  getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+
+  getUserSyncs(syncOptions, _, gdprConsent = {}) {
+    const {iframeEnabled, pixelEnabled} = syncOptions;
+    const {gdprApplies, consentString = ''} = gdprConsent;
     let mySyncs = [];
-    // TODO: the check on CMP api version does not seem to make sense here. It means "always run the usersync unless an old (v1) CMP was detected". No attention is paid to the consent choices.
-    if (syncOptions.iframeEnabled && consentApiVersion != 1) {
+    if (iframeEnabled) {
       mySyncs.push({
         type: 'iframe',
-        url: `${SYNC_URL}?tcf=${consentApiVersion}&pvid=${pageView.id}&sn=${pageView.sn}`,
+        url: `${SYNC_URL_IFRAME}?tcf=2&pvid=${pageView.id}&sn=${pageView.sn}`,
       });
-    };
+    } else if (pixelEnabled) {
+      mySyncs.push({
+        type: 'image',
+        url: `${SYNC_URL_IMAGE}?inver=0&platform=wpartner&host=${getTopHost() || ''}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`,
+      });
+    }
     return mySyncs;
   },
 
@@ -802,6 +804,33 @@ const spec = {
     const payload = getNotificationPayload(timeoutData);
     if (payload) {
       payload.event = 'timeout';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidderError(errorData) {
+    const payload = getNotificationPayload(errorData);
+    if (payload) {
+      payload.event = 'parseError';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidViewable(bid) {
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidViewable';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidBillable(bid) {
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidBillable';
       sendNotification(payload);
       return payload;
     }
@@ -815,6 +844,7 @@ const spec = {
       return payload;
     }
   },
+
 };
 
 registerBidder(spec);

@@ -11,6 +11,7 @@ import {
   isFn,
   isInteger,
   isNumber,
+  isPlainObject,
   isStr,
   logError,
   logWarn,
@@ -20,7 +21,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -66,6 +67,7 @@ const ORTB_VIDEO_PARAMS = {
   h: value => isInteger(value),
   startdelay: value => isInteger(value),
   placement: value => [1, 2, 3, 4, 5].indexOf(value) !== -1,
+  plcmt: value => [1, 2, 3, 4].indexOf(value) !== -1,
   linearity: value => [1, 2].indexOf(value) !== -1,
   skip: value => [0, 1].indexOf(value) !== -1,
   skipmin: value => isInteger(value),
@@ -119,7 +121,7 @@ function getOS() {
  *
  * @param {*} bid a Prebid.js bid (request) object
  * @param {string} mediaType the mediaType or the wildcard '*'
- * @param {string|array} size the size array or the wildcard '*'
+ * @param {string|Array} size the size array or the wildcard '*'
  * @returns {number|boolean}
  */
 function getFloor(bid, mediaType, size = '*') {
@@ -138,7 +140,7 @@ function getFloor(bid, mediaType, size = '*') {
     size
   })
 
-  return (!isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
+  return (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
 }
 
 /**
@@ -606,10 +608,8 @@ export const spec = {
 
     const payload = createOrtbTemplate();
 
-    // Pass the auctionId as ortb2 id
-    // See https://github.com/prebid/Prebid.js/issues/6563
-    deepSetValue(payload, 'id', bidderRequest.auctionId);
-    deepSetValue(payload, 'source.tid', bidderRequest.auctionId);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
+    deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
       let bid = deepClone(validBid);

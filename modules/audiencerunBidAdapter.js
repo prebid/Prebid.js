@@ -1,17 +1,26 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   _each,
   deepAccess,
-  formatQS,
-  getBidIdParameter,
+  formatQS, getBidIdParameter,
   getValue,
   isArray,
   isFn,
   logError,
   triggerPixel,
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'audiencerun';
 const BASE_URL = 'https://d.audiencerun.com';
@@ -39,7 +48,7 @@ function getBidFloor(bid) {
       mediaType: BANNER,
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (_) {
     return 0;
   }
@@ -114,8 +123,9 @@ export const spec = {
         bidId: bid.bidId,
         bidderRequestId: getBidIdParameter('bidderRequestId', bid),
         adUnitCode: getBidIdParameter('adUnitCode', bid),
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: getBidIdParameter('auctionId', bid),
-        transactionId: getBidIdParameter('transactionId', bid),
+        transactionId: bid.ortb2Imp?.ext?.tid || '',
       };
     });
 
@@ -127,7 +137,7 @@ export const spec = {
       referer: deepAccess(bidderRequest, 'refererInfo.topmostLocation'),
       // TODO: please do not send internal data structures over the network
       refererInfo: deepAccess(bidderRequest, 'refererInfo.legacy'),
-      currencyCode: config.getConfig('currency.adServerCurrency'),
+      currencyCode: getCurrencyFromBidderRequest(bidderRequest),
       timeout: config.getConfig('bidderTimeout'),
       bids,
     };

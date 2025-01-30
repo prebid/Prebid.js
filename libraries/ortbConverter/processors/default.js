@@ -1,4 +1,4 @@
-import {deepSetValue, mergeDeep} from '../../../src/utils.js';
+import {generateUUID, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
@@ -21,17 +21,16 @@ export const DEFAULT_PROCESSORS = {
       fn: clientSectionChecker('ORTB request')
     },
     props: {
-      // sets request properties id, tmax, test, source.tid
+      // sets request properties id, tmax, test
       fn(ortbRequest, bidderRequest) {
         Object.assign(ortbRequest, {
-          id: ortbRequest.id || bidderRequest.auctionId,
+          id: ortbRequest.id || generateUUID(),
           test: ortbRequest.test || 0
         });
         const timeout = parseInt(bidderRequest.timeout, 10);
         if (!isNaN(timeout)) {
           ortbRequest.tmax = timeout;
         }
-        deepSetValue(ortbRequest, 'source.tid', ortbRequest.source?.tid || bidderRequest.auctionId);
       }
     }
   },
@@ -61,6 +60,12 @@ export const DEFAULT_PROCESSORS = {
         if (!pbadslot || typeof pbadslot !== 'string') {
           delete imp.ext?.data?.pbadslot;
         }
+      }
+    },
+    secure: {
+      // should set imp.secure to 1 unless publisher has set it
+      fn(imp, bidRequest) {
+        imp.secure = imp.secure ?? 1;
       }
     }
   },
@@ -97,6 +102,16 @@ export const DEFAULT_PROCESSORS = {
         }
         if (bid.adomain) {
           bidResponse.meta.advertiserDomains = bid.adomain;
+        }
+        if (bid.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
+        }
+        if (bid.cat) {
+          bidResponse.meta.primaryCatId = bid.cat[0];
+          bidResponse.meta.secondaryCatIds = bid.cat.slice(1);
+        }
+        if (bid.attr) {
+          bidResponse.meta.attr = bid.attr;
         }
       }
     }

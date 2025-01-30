@@ -1,10 +1,29 @@
 import {deepAccess} from '../utils.js';
-import {isActivityAllowed} from './rules.js';
-import {ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_PRECISE_GEO, ACTIVITY_TRANSMIT_UFPD} from './activities.js';
+import {config} from '../config.js';
+import {isActivityAllowed, registerActivityControl} from './rules.js';
+import {
+  ACTIVITY_TRANSMIT_EIDS,
+  ACTIVITY_TRANSMIT_PRECISE_GEO,
+  ACTIVITY_TRANSMIT_TID,
+  ACTIVITY_TRANSMIT_UFPD
+} from './activities.js';
+import { scrubIPv4, scrubIPv6 } from '../utils/ipUtils.js';
 
-export const ORTB_UFPD_PATHS = ['user.data', 'user.ext.data'];
+export const ORTB_UFPD_PATHS = [
+  'data',
+  'ext.data',
+  'yob',
+  'gender',
+  'keywords',
+  'kwarray',
+  'id',
+  'buyeruid',
+  'customdata'
+].map(f => `user.${f}`).concat('device.ext.cdep');
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
 export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
+export const ORTB_IPV4_PATHS = ['device.ip']
+export const ORTB_IPV6_PATHS = ['device.ipv6']
 
 /**
  * @typedef TransformationRuleDef
@@ -74,20 +93,25 @@ export function objectTransformer(rules) {
   })
   return function applyTransform(session, obj, ...args) {
     const result = [];
+    const applies = sessionedApplies(session, ...args);
     rules.forEach(rule => {
       if (session[rule.name] === false) return;
       for (const [head, tail] of rule.paths) {
         const parent = head == null ? obj : deepAccess(obj, head);
-        result.push(rule.run(obj, head, parent, tail, () => {
-          if (!session.hasOwnProperty(rule.name)) {
-            session[rule.name] = !!rule.applies(...args);
-          }
-          return session[rule.name]
-        }))
+        result.push(rule.run(obj, head, parent, tail, applies.bind(null, rule)));
         if (session[rule.name] === false) return;
       }
     })
     return result.filter(el => el != null);
+  }
+}
+
+export function sessionedApplies(session, ...args) {
+  return function applies(rule) {
+    if (!session.hasOwnProperty(rule.name)) {
+      session[rule.name] = !!rule.applies(...args);
+    }
+    return session[rule.name];
   }
 }
 
@@ -107,6 +131,11 @@ function bidRequestTransmitRules(isAllowed = isActivityAllowed) {
       name: ACTIVITY_TRANSMIT_EIDS,
       paths: ['userId', 'userIdAsEids'],
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_EIDS, isAllowed),
+    },
+    {
+      name: ACTIVITY_TRANSMIT_TID,
+      paths: ['ortb2Imp.ext.tid'],
+      applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed)
     }
   ].map(redactRule)
 }
@@ -130,6 +159,27 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       get(val) {
         return Math.round((val + Number.EPSILON) * 100) / 100;
       }
+    },
+    {
+      name: ACTIVITY_TRANSMIT_PRECISE_GEO,
+      paths: ORTB_IPV4_PATHS,
+      applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
+      get(val) {
+        return scrubIPv4(val);
+      }
+    },
+    {
+      name: ACTIVITY_TRANSMIT_PRECISE_GEO,
+      paths: ORTB_IPV6_PATHS,
+      applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
+      get(val) {
+        return scrubIPv6(val);
+      }
+    },
+    {
+      name: ACTIVITY_TRANSMIT_TID,
+      paths: ['source.tid'],
+      applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_TID, isAllowed),
     }
   ].map(redactRule);
 }
@@ -155,3 +205,10 @@ export function redactorFactory(isAllowed = isActivityAllowed) {
  *  that can redact disallowed data from ORTB2 and/or bid request objects.
  */
 export const redactor = redactorFactory();
+
+// by default, TIDs are off since version 8
+registerActivityControl(ACTIVITY_TRANSMIT_TID, 'enableTIDs config', () => {
+  if (!config.getConfig('enableTIDs')) {
+    return {allow: false, reason: 'TIDs are disabled'}
+  }
+});

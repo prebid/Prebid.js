@@ -5,6 +5,7 @@ import {logMessage, prefixLog} from './utils.js';
 import {createBid} from './bidfactory.js';
 import {loadExternalScript} from './adloader.js';
 import {GreedyPromise} from './utils/promise.js';
+import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
 export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
 
@@ -14,7 +15,7 @@ function isDebuggingInstalled() {
 
 function loadScript(url) {
   return new GreedyPromise((resolve) => {
-    loadExternalScript(url, 'debugging', resolve);
+    loadExternalScript(url, MODULE_TYPE_PREBID, 'debugging', resolve);
   });
 }
 
@@ -73,6 +74,7 @@ export const reset = ctl.reset;
 export function loadSession() {
   let storage = null;
   try {
+    // eslint-disable-next-line prebid/no-global
     storage = window.sessionStorage;
   } catch (e) {}
 

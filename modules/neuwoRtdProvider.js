@@ -3,21 +3,21 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 export const DATA_PROVIDER = 'neuwo.ai';
 const SEGTAX_IAB = 6 // IAB - Content Taxonomy version 2
 const RESPONSE_IAB_TIER_1 = 'marketing_categories.iab_tier_1'
 const RESPONSE_IAB_TIER_2 = 'marketing_categories.iab_tier_2'
 
-function init(config = {}, userConsent) {
-  config.params = config.params || {}
+function init(config, userConsent) {
+  // config.params = config.params || {}
   // ignore module if publicToken is missing (module setup failure)
-  if (!config.params.publicToken) {
+  if (!config || !config.params || !config.params.publicToken) {
     logError('publicToken missing', 'NeuwoRTDModule', 'config.params.publicToken')
     return false;
   }
-  if (!config.params.apiUrl) {
+  if (!config || !config.params || !config.params.apiUrl) {
     logError('apiUrl missing', 'NeuwoRTDModule', 'config.params.apiUrl')
     return false;
   }
@@ -25,14 +25,14 @@ function init(config = {}, userConsent) {
 }
 
 export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  config.params = config.params || {};
+  const confParams = config.params || {};
   logInfo('NeuwoRTDModule', 'starting getBidRequestData')
 
-  const wrappedArgUrl = encodeURIComponent(config.params.argUrl || getRefererInfo().page);
+  const wrappedArgUrl = encodeURIComponent(confParams.argUrl || getRefererInfo().page);
   /* adjust for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?') */
-  const joiner = config.params.apiUrl.indexOf('?') < 0 ? '?' : '&'
-  const url = config.params.apiUrl + joiner + [
-    'token=' + config.params.publicToken,
+  const joiner = confParams.apiUrl.indexOf('?') < 0 ? '?' : '&'
+  const url = confParams.apiUrl + joiner + [
+    'token=' + confParams.publicToken,
     'url=' + wrappedArgUrl
   ].join('&')
   const billingId = generateUUID();
@@ -42,7 +42,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     try {
       const jsonContent = JSON.parse(responseContent);
       if (jsonContent.marketing_categories) {
-        events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'request', billingId, vendor: neuwoRtdModule.name })
+        events.emit(EVENTS.BILLABLE_EVENT, { type: 'request', billingId, vendor: neuwoRtdModule.name })
       }
       injectTopics(jsonContent, reqBidsConfigObj, billingId)
     } catch (ex) {
@@ -71,7 +71,7 @@ export function addFragment(base, path, addition) {
 /**
  * Concatenate a base array and an array within an object
  * non-array bases will be arrays, non-arrays at object key will be discarded
- * @param {array} base base array to add to
+ * @param {Array} base base array to add to
  * @param {object} source object to get an array from
  * @param {string} key dot-notated path to array within object
  * @returns base + source[key] if that's an array

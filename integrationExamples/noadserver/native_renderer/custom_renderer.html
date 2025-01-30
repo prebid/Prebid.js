@@ -1,0 +1,90 @@
+<html>
+
+<head>
+    <script type="text/javascript" src="../../../../build/dev/prebid.js" async></script>
+
+    <script>
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function () {
+            const adUnits = [{
+                code: 'native-div',
+                mediaTypes: {
+                    native: {
+                        rendererUrl: 'renderer.js',
+                        title: {
+                            required: true,
+                            len: 800
+                        },
+                        image: {
+                            required: true,
+                            sizes: [989, 742],
+                        },
+                        sponsoredBy: {
+                            required: true
+                        }
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232354,
+                        allowSmallerSizes: true
+                    }
+
+                }]
+            }];
+
+            pbjs.setConfig({
+                debug: true,
+                s2sConfig: {
+                    accountId: '1',
+                    enabled: true,
+                    bidders: ['appnexuspsp'],
+                    timeout: 1000,
+                    adapter: 'prebidServer',
+                    endpoint: 'https://ib.adnxs.com/openrtb2/prebid',
+                }
+            });
+
+            pbjs.requestBids({
+                adUnits,
+                bidsBackHandler: function (bidResponses) {
+                    Object.entries(bidResponses).forEach(([slot, {bids}]) => {
+                        bids?.length && renderNative(slot, bids[0]);
+                    });
+                }
+            });
+
+            function renderNative(divId, bid) {
+                const slot = document.getElementById(divId);
+                const iframe = document.createElement('iframe');
+                Object.entries({
+                    frameBorder: 0,
+                    marginWidth: 0,
+                    marginHeight: 0,
+                    scrolling: 'no'
+                }).forEach(([prop, val]) => iframe.setAttribute(prop, val));
+                slot.appendChild(iframe);
+                iframe.onload = () => pbjs.renderAd(iframe.contentDocument, bid.adId);
+            }
+        });
+
+    </script>
+
+</head>
+
+<body>
+
+
+<h2>Prebid Native w/custom renderer</h2>
+<div id='native-div'>
+</div>
+
+<br>
+<br>
+
+</body>
+
+</html>

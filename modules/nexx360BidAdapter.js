@@ -1,4 +1,3 @@
-import {config} from '../src/config.js';
 import { deepAccess, deepSetValue, generateUUID, logError, logInfo } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -7,13 +6,23 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '2.0';
+const BIDDER_VERSION = '4.2';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
@@ -24,6 +33,8 @@ const ALIASES = [
   { code: 'league-m', gvlid: 965 },
   { code: 'prjads' },
   { code: 'pubtech' },
+  { code: '1accord', gvlid: 965 },
+  { code: 'easybid', gvlid: 1068 },
 ];
 
 export const storage = getStorageManager({
@@ -58,6 +69,19 @@ function getAdContainer(container) {
   if (document.getElementById(container)) {
     return document.getElementById(container);
   }
+}
+
+/**
+ * Get the AMX ID
+ * @return {string | false } false if localstorageNotEnabled
+ */
+export function getAmxId() {
+  if (!storage.localStorageIsEnabled()) {
+    logInfo(`localstorage not enabled for Nexx360`);
+    return false;
+  }
+  const amxId = storage.getDataFromLocalStorage('__amuidpb');
+  return amxId || false;
 }
 
 const converter = ortbConverter({
@@ -98,13 +122,30 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const nexx360LocalStorage = getNexx360LocalStorage();
-    if (nexx360LocalStorage) deepSetValue(request, 'ext.nexx360Id', nexx360LocalStorage.nexx360Id);
+    if (nexx360LocalStorage) {
+      deepSetValue(request, 'ext.nexx360Id', nexx360LocalStorage.nexx360Id);
+      deepSetValue(request, 'ext.localStorage.nexx360Id', nexx360LocalStorage.nexx360Id);
+    }
+    const amxId = getAmxId();
+    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId);
     deepSetValue(request, 'ext.version', '$prebid.version$');
     deepSetValue(request, 'ext.source', 'prebid.js');
     deepSetValue(request, 'ext.pageViewId', PAGE_VIEW_ID);
     deepSetValue(request, 'ext.bidderVersion', BIDDER_VERSION);
-    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || 'USD']);
-    if (!request.user) deepSetValue(request, 'user', {});
+    deepSetValue(request, 'cur', [getCurrencyFromBidderRequest(bidderRequest) || 'USD']);
+    if (!request.user) request.user = {};
+    if (getAmxId()) {
+      if (!request.user.ext) request.user.ext = {};
+      if (!request.user.ext.eids) request.user.ext.eids = [];
+      request.user.ext.eids.push({
+        source: 'amxdt.net',
+        uids: [{
+          id: `${getAmxId()}`,
+          atype: 1
+        }]
+      });
+    }
+
     return request;
   },
 });
@@ -142,7 +183,6 @@ function isBidRequestValid(bid) {
 /**
  * Make a server request from the list of BidRequests.
  *
- * @param {validBidRequests[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
  */
 
@@ -190,10 +230,16 @@ function interpretResponse(serverResponse) {
           demandSource: bid.ext.ssp,
         },
       };
-      if (allowAlternateBidderCodes) response.bidderCode = `n360-${bid.ext.ssp}`;
+      if (allowAlternateBidderCodes) response.bidderCode = `n360_${bid.ext.ssp}`;
 
-      if (bid.ext.mediaType === BANNER) response.adUrl = bid.ext.adUrl;
-      if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType)) response.vastXml = bid.ext.vastXml;
+      if (bid.ext.mediaType === BANNER) {
+        if (bid.adm) {
+          response.ad = bid.adm;
+        } else {
+          response.adUrl = bid.ext.adUrl;
+        }
+      }
+      if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType)) response.vastXml = bid.adm;
 
       if (bid.ext.mediaType === OUTSTREAM) {
         response.renderer = createRenderer(bid, OUTSTREAM_RENDERER_URL);

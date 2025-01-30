@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, triggerPixel } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -24,6 +24,7 @@ const CURRENCY = Object.freeze({
 });
 
 const REQUEST_KEYS = Object.freeze({
+  USER_DATA: 'ortb2.user.data',
   SOCIAL_CANVAS: 'params.socialCanvas',
   SUA: 'ortb2.device.sua',
   TDID_ADAPTER: 'userId.tdid',
@@ -47,7 +48,7 @@ const SUA_ATTRIBUTES = [
 
 const CERBERUS = Object.freeze({
   KEY: 'krg_crb',
-  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}&gpp={GPP_STRING}&gpp_sid={GPP_SID}',
+  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}&gpp={GPP_STRING}&gpp_sid={GPP_SID}',
   SYNC_COUNT: 5,
   PAGE_VIEW_ID: 'pageViewId',
   PAGE_VIEW_TIMESTAMP: 'pageViewTimestamp',
@@ -95,13 +96,28 @@ function buildRequests(validBidRequests, bidderRequest) {
     },
     imp: impressions,
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
+    ext: getExtensions(firstBidRequest.ortb2, bidderRequest?.refererInfo)
   });
+
+  // Add site.cat if it exists
+  if (firstBidRequest.ortb2?.site?.cat != null) {
+    krakenParams.site = { cat: firstBidRequest.ortb2.site.cat };
+  }
+
+  // Add schain
+  if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
+    krakenParams.schain = firstBidRequest.schain
+  }
+
+  // Add user data object if available
+  krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
 
   const reqCount = getRequestCount()
   if (reqCount != null) {
     krakenParams.requestCount = reqCount;
   }
 
+  // Add currency if not USD
   if (currency != null && currency != CURRENCY.US_DOLLAR) {
     krakenParams.cur = currency;
   }
@@ -167,6 +183,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.page = page;
   }
 
+  if (krakenParams.ext && Object.keys(krakenParams.ext).length === 0) {
+    delete krakenParams.ext;
+  }
+
   return Object.assign({}, bidderRequest, {
     method: BIDDER.REQUEST_METHOD,
     url: `https://${BIDDER.HOST}${BIDDER.REQUEST_ENDPOINT}`,
@@ -176,25 +196,20 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(response, bidRequest) {
-  let bids = response.body;
+  const bids = response.body;
+  const fledgeAuctionConfigs = [];
   const bidResponses = [];
 
-  if (isEmpty(bids)) {
+  if (isEmpty(bids) || typeof bids !== 'object') {
     return bidResponses;
   }
 
-  if (typeof bids !== 'object') {
-    return bidResponses;
-  }
-
-  Object.entries(bids).forEach((entry) => {
-    const [bidID, adUnit] = entry;
-
+  for (const [bidID, adUnit] of Object.entries(bids)) {
     let meta = {
       mediaType: adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType) ? adUnit.mediaType : BANNER
     };
 
-    if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+    if (adUnit.metadata?.landingPageDomain) {
       meta.clickUrl = adUnit.metadata.landingPageDomain[0];
       meta.advertiserDomains = adUnit.metadata.landingPageDomain;
     }
@@ -205,7 +220,7 @@ function interpretResponse(response, bidRequest) {
       width: adUnit.width,
       height: adUnit.height,
       ttl: 300,
-      creativeId: adUnit.id,
+      creativeId: adUnit.creativeID,
       dealId: adUnit.targetingCustom,
       netRevenue: true,
       currency: adUnit.currency || bidRequest.currency,
@@ -224,9 +239,23 @@ function interpretResponse(response, bidRequest) {
     }
 
     bidResponses.push(bidResponse);
-  })
 
-  return bidResponses;
+    if (adUnit.auctionConfig) {
+      fledgeAuctionConfigs.push({
+        bidId: bidID,
+        config: adUnit.auctionConfig
+      })
+    }
+  }
+
+  if (fledgeAuctionConfigs.length > 0) {
+    return {
+      bids: bidResponses,
+      paapi: fledgeAuctionConfigs
+    }
+  } else {
+    return bidResponses;
+  }
 }
 
 function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
@@ -245,19 +274,16 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
     return syncs;
   }
   if (syncOptions.iframeEnabled && seed && clientId) {
-    for (let i = 0; i < CERBERUS.SYNC_COUNT; i++) {
-      syncs.push({
-        type: 'iframe',
-        url: CERBERUS.SYNC_URL.replace('{UUID}', clientId)
-          .replace('{SEED}', seed)
-          .replace('{INDEX}', i)
-          .replace('{GDPR}', gdpr)
-          .replace('{GDPR_CONSENT}', gdprConsentString)
-          .replace('{US_PRIVACY}', usPrivacy || '')
-          .replace('{GPP_STRING}', gppString)
-          .replace('{GPP_SID}', gppApplicableSections)
-      });
-    }
+    syncs.push({
+      type: 'iframe',
+      url: CERBERUS.SYNC_URL.replace('{UUID}', clientId)
+        .replace('{SEED}', seed)
+        .replace('{GDPR}', gdpr)
+        .replace('{GDPR_CONSENT}', gdprConsentString)
+        .replace('{US_PRIVACY}', usPrivacy || '')
+        .replace('{GPP_STRING}', gppString)
+        .replace('{GPP_SID}', gppApplicableSections)
+    })
   }
   return syncs;
 }
@@ -270,6 +296,13 @@ function onTimeout(timeoutData) {
   timeoutData.forEach((bid) => {
     sendTimeoutData(bid.auctionId, bid.timeout);
   });
+}
+
+function getExtensions(ortb2, refererInfo) {
+  const ext = {};
+  if (ortb2) ext.ortb2 = ortb2;
+  if (refererInfo) ext.refererInfo = refererInfo;
+  return ext;
 }
 
 function _generateRandomUUID() {
@@ -340,56 +373,57 @@ function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
     crbIDs: crb.syncIds || {}
   };
 
-  // Pull Trade Desk ID from adapter
-  if (tdidAdapter) {
+  // Pull Trade Desk ID
+  if (!tdidAdapter && crb.tdID) {
+    userIds.tdID = crb.tdID;
+  } else if (tdidAdapter) {
     userIds.tdID = tdidAdapter;
   }
 
-  // Pull Trade Desk ID from our storage
-  if (!tdidAdapter && crb.tdID) {
-    userIds.tdID = crb.tdID;
-  }
-
+  // USP
   if (usp) {
     userIds.usp = usp;
   }
 
-  try {
-    if (gdpr) {
-      userIds['gdpr'] = {
-        consent: gdpr.consentString || '',
-        applies: !!gdpr.gdprApplies,
-      }
-    }
-  } catch (e) {
+  // GDPR
+  if (gdpr) {
+    userIds.gdpr = {
+      consent: gdpr.consentString || '',
+      applies: !!gdpr.gdprApplies,
+    };
   }
 
+  // Kargo ID
   if (crb.lexId != null) {
     userIds.kargoID = crb.lexId;
   }
 
+  // Client ID
   if (crb.clientId != null) {
     userIds.clientID = crb.clientId;
   }
 
+  // Opt Out
   if (crb.optOut != null) {
     userIds.optOut = crb.optOut;
   }
 
+  // User ID Sub-Modules (userIdAsEids)
   if (eids != null) {
     userIds.sharedIDEids = eids;
   }
 
+  // GPP
   if (gpp) {
-    const parsedGPP = {}
-    if (gpp && gpp.consentString) {
-      parsedGPP.gppString = gpp.consentString
+    const parsedGPP = {};
+    if (gpp.consentString) {
+      parsedGPP.gppString = gpp.consentString;
     }
-    if (gpp && gpp.applicableSections) {
-      parsedGPP.applicableSections = gpp.applicableSections
+    if (gpp.applicableSections) {
+      parsedGPP.applicableSections = gpp.applicableSections;
     }
     if (!isEmpty(parsedGPP)) {
-      userIds.gpp = parsedGPP
+      userIds.gpp = parsedGPP;
     }
   }
 
@@ -418,34 +452,29 @@ function getRequestCount() {
 }
 
 function sendTimeoutData(auctionId, auctionTimeout) {
-  let params = {
-    aid: auctionId,
-    ato: auctionTimeout
-  };
+  const params = { aid: auctionId, ato: auctionTimeout };
+  const timeoutRequestUrl = buildUrl({
+    protocol: 'https',
+    hostname: BIDDER.HOST,
+    pathname: BIDDER.TIMEOUT_ENDPOINT,
+    search: params,
+  });
 
-  try {
-    let timeoutRequestUrl = buildUrl({
-      protocol: 'https',
-      hostname: BIDDER.HOST,
-      pathname: BIDDER.TIMEOUT_ENDPOINT,
-      search: params
-    });
-
-    triggerPixel(timeoutRequestUrl);
-  } catch (e) {}
+  fetch(timeoutRequestUrl, {
+    method: 'GET',
+    keepalive: true,
+  }).catch((e) => {
+    logError('Kargo: sendTimeoutData/fetch threw an error: ', e);
+  });
 }
 
 function getImpression(bid) {
   const imp = {
     id: bid.bidId,
-    tid: bid.transactionId,
+    tid: bid.ortb2Imp?.ext?.tid,
     pid: bid.params.placementId,
     code: bid.adUnitCode
   };
-
-  if (bid.floorData != null && bid.floorData.floorMin > 0) {
-    imp.floor = bid.floorData.floorMin;
-  }
 
   if (bid.bidRequestsCount > 0) {
     imp.bidRequestCount = bid.bidRequestsCount;
@@ -459,51 +488,49 @@ function getImpression(bid) {
     imp.bidderWinCount = bid.bidderWinsCount;
   }
 
-  const gpid = getGPID(bid)
-  if (gpid != null && gpid != '') {
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  if (gpid) {
     imp.fpd = {
       gpid: gpid
     }
   }
 
-  if (bid.mediaTypes != null) {
-    if (bid.mediaTypes.banner != null) {
-      imp.banner = bid.mediaTypes.banner;
+  // Add full ortb2Imp object as backup
+  if (bid.ortb2Imp) {
+    imp.ext = { ortb2Imp: bid.ortb2Imp };
+  }
+
+  if (bid.mediaTypes) {
+    const { banner, video, native } = bid.mediaTypes;
+
+    if (banner) {
+      imp.banner = banner;
     }
 
-    if (bid.mediaTypes.video != null) {
-      imp.video = bid.mediaTypes.video;
+    if (video) {
+      imp.video = video;
     }
 
-    if (bid.mediaTypes.native != null) {
-      imp.native = bid.mediaTypes.native;
+    if (native) {
+      imp.native = native;
+    }
+
+    if (typeof bid.getFloor === 'function') {
+      let floorInfo;
+      try {
+        floorInfo = bid.getFloor({
+          currency: 'USD',
+          mediaType: '*',
+          size: '*'
+        });
+      } catch (e) {
+        logError('Kargo: getFloor threw an error: ', e);
+      }
+      imp.floor = isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
   }
 
   return imp
-}
-
-function getGPID(bid) {
-  if (bid.ortb2Imp != null) {
-    if (bid.ortb2Imp.gpid != null && bid.ortb2Imp.gpid != '') {
-      return bid.ortb2Imp.gpid;
-    }
-
-    if (bid.ortb2Imp.ext != null && bid.ortb2Imp.ext.data != null) {
-      if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
-        return bid.ortb2Imp.ext.data.pbAdSlot;
-      }
-
-      if (bid.ortb2Imp.ext.data.adServer != null && bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
-        return bid.ortb2Imp.ext.data.adServer.adSlot;
-      }
-    }
-  }
-
-  if (bid.adUnitCode != null && bid.adUnitCode != '') {
-    return bid.adUnitCode;
-  }
-  return '';
 }
 
 export const spec = {

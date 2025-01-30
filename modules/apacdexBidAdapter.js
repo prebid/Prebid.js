@@ -1,7 +1,7 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn } from '../src/utils.js';
+import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {parseDomain} from '../src/refererDetection.js';
 const BIDDER_CODE = 'apacdex';
 const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
@@ -85,7 +85,7 @@ export const spec = {
         bidReq.bidFloor = bidFloor;
       }
 
-      bids.push(JSON.parse(JSON.stringify(bidReq)));
+      bids.push(deepClone(bidReq));
     });
 
     const payload = {};
@@ -96,8 +96,8 @@ export const spec = {
 
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.width;
-    payload.device.width = window.screen.height;
+    payload.device.height = window.screen.height;
+    payload.device.width = window.screen.width;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
@@ -134,14 +134,14 @@ export const spec = {
 
     // Apply geo
     if (geo) {
-      payload.geo = geo;
+      logError('apacdex adapter: Precise lat and long must be set on config; not on bidder parameters');
     }
 
     payload.bids = bids.map(function (bid) {
       return {
         params: bid.params,
         mediaTypes: bid.mediaTypes,
-        transactionId: bid.transactionId,
+        transactionId: bid.ortb2Imp?.ext?.tid,
         sizes: bid.sizes,
         bidId: bid.bidId,
         adUnitCode: bid.adUnitCode,
@@ -327,7 +327,7 @@ export function validateGeoObject(geo) {
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {float||null}
+ * @returns {?number}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

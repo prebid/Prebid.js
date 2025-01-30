@@ -1,6 +1,7 @@
+import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 
 let ortbVideoMock;
 let ortbContentMock;
@@ -26,7 +27,8 @@ function resetTestVars() {
     onEvents: sinon.spy(),
     getOrtbVideo: () => ortbVideoMock,
     getOrtbContent: () => ortbContentMock,
-    setAdTagUrl: sinon.spy()
+    setAdTagUrl: sinon.spy(),
+    hasProviderFor: sinon.spy(),
   };
   getConfigMock = () => {};
   requestBidsMock = {
@@ -223,7 +225,7 @@ describe('Prebid Video', function () {
     const pbEvents = {
       emit: () => {},
       on: (event, callback) => {
-        if (event === CONSTANTS.EVENTS.AUCTION_END) {
+        if (event === EVENTS.AUCTION_END) {
           auctionEndCallback = callback
         }
       },
@@ -335,7 +337,7 @@ describe('Prebid Video', function () {
 
     const pbEvents = {
       on: (event, callback) => {
-        if (event === CONSTANTS.EVENTS.BID_ADJUSTMENT) {
+        if (event === EVENTS.BID_ADJUSTMENT) {
           bidAdjustmentCb = callback;
         } else if (event === 'videoAdImpression') {
           adImpressionCb = callback;

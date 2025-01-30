@@ -1,6 +1,17 @@
-import { logWarn, deepAccess } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {deepAccess, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').Bids} Bids
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'zeta_global';
 const PREBID_DEFINER_ID = '44253'
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
@@ -14,11 +25,11 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   /**
-     * Determines whether or not the given bid request is valid.
-     *
-     * @param {BidRequest} bid The bid params to validate.
-     * @return boolean True if this is a valid bid, and false otherwise.
-     */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     // check for all required bid fields
     if (!(bid &&
@@ -40,12 +51,6 @@ export const spec = {
       return false;
     }
 
-    if (!(bid.params.device.geo &&
-          bid.params.device.geo.country)) {
-      logWarn('Invalid bid request - missing required geo data');
-      return false;
-    }
-
     if (!bid.params.definerId) {
       logWarn('Invalid bid request - missing required definer data');
       return false;
@@ -55,12 +60,12 @@ export const spec = {
   },
 
   /**
-     * Make a server request from the list of BidRequests.
-     *
-     * @param {Bids[]} validBidRequests - an array of bidRequest objects
-     * @param {BidderRequest} bidderRequest - master bidRequest object
-     * @return ServerRequest Info describing the request to the server.
-     */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {Bids[]} validBidRequests - an array of bidRequest objects
+   * @param {BidderRequest} bidderRequest - master bidRequest object
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
@@ -71,7 +76,7 @@ export const spec = {
       banner: buildBanner(request)
     };
     let payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: [impData],
       site: params.site ? params.site : {},
       app: params.app ? params.app : {},
@@ -122,12 +127,12 @@ export const spec = {
   },
 
   /**
-     * Unpack the response from the server into a list of bids.
-     *
-     * @param {ServerResponse} serverResponse A successful response from the server.
-     * @param bidRequest The payload from the server's response.
-     * @return {Bid[]} An array of bids which were nested inside the server.
-     */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param bidRequest The payload from the server's response.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     let bidResponse = [];
     if (Object.keys(serverResponse.body).length !== 0) {

@@ -15,6 +15,12 @@ export const HIGH_ENTROPY_HINTS = [
   'fullVersionList'
 ]
 
+export const LOW_ENTROPY_HINTS = [
+  'brands',
+  'mobile',
+  'platform'
+]
+
 /**
  * Returns low entropy UA client hints encoded as an ortb2.6 device.sua object; or null if no UA client hints are available.
  */
@@ -32,7 +38,7 @@ export const getLowEntropySUA = lowEntropySUAAccessor();
 export const getHighEntropySUA = highEntropySUAAccessor();
 
 export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
-  const sua = isEmpty(uaData) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData));
+  const sua = (uaData && LOW_ENTROPY_HINTS.some(h => typeof uaData[h] !== 'undefined')) ? Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData)) : null;
   return function () {
     return sua;
   }
@@ -85,7 +91,7 @@ export function uaDataToSUA(source, uaData) {
   if (uaData.fullVersionList || uaData.brands) {
     sua.browsers = (uaData.fullVersionList || uaData.brands).map(({brand, version}) => toBrandVersion(brand, version));
   }
-  if (uaData.hasOwnProperty('mobile')) {
+  if (typeof uaData['mobile'] !== 'undefined') {
     sua.mobile = uaData.mobile ? 1 : 0;
   }
   ['model', 'bitness', 'architecture'].forEach(prop => {

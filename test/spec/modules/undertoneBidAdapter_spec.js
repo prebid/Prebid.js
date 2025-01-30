@@ -39,12 +39,19 @@ const videoBidReq = [{
       maxDuration: 30
     }
   },
-  mediaTypes: {video: {
-    context: 'outstream',
-    playerSize: [640, 480],
-    placement: 1,
-    plcmt: 1
-  }},
+  ortb2Imp: {
+    ext: {
+      gpid: '/1111/gpid#728x90',
+    }
+  },
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [640, 480],
+      placement: 1,
+      plcmt: 1
+    }
+  },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
@@ -56,10 +63,19 @@ const videoBidReq = [{
     placementId: '10433395',
     publisherId: 12345
   },
-  mediaTypes: {video: {
-    context: 'outstream',
-    playerSize: [640, 480]
-  }},
+  ortb2Imp: {
+    ext: {
+      data: {
+        pbadslot: '/1111/pbadslot#728x90'
+      }
+    }
+  },
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [640, 480]
+    }
+  },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
@@ -463,12 +479,14 @@ describe('Undertone Adapter', () => {
       expect(bidVideo.video.skippable).to.equal(true);
       expect(bidVideo.video.placement).to.equal(1);
       expect(bidVideo.video.plcmt).to.equal(1);
+      expect(bidVideo.gpid).to.equal('/1111/gpid#728x90');
 
       expect(bidVideo2.video.skippable).to.equal(null);
       expect(bidVideo2.video.maxDuration).to.equal(null);
       expect(bidVideo2.video.playbackMethod).to.equal(null);
       expect(bidVideo2.video.placement).to.equal(null);
       expect(bidVideo2.video.plcmt).to.equal(null);
+      expect(bidVideo2.gpid).to.equal('/1111/pbadslot#728x90');
     });
     it('should send all userIds data to server', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);

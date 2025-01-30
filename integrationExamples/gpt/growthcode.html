@@ -56,20 +56,11 @@
         provider: 'growthCodeAnalytics',
         options: {
           pid: 'TEST01',
+          //url: 'http://localhost:8080/v3/pb/analytics',
           trackEvents: [
-            'auctionInit',
             'auctionEnd',
-            'bidAdjustment',
-            'bidTimeout',
-            'bidTimeout',
-            'bidRequested',
-            'bidResponse',
-            'setTargeting',
-            'requestBids',
-            'addAdUnits',
-            'noBid',
             'bidWon',
-            'bidderDone']
+            ]
         }
       });
       pbjs.setConfig({
@@ -80,7 +71,7 @@
           auctionDelay: 1000,
           dataProviders: [{
             name: 'growthCodeRtd',
-            waitForIt: true,
+            waitForIt: false,
             params: {
               pid: 'TEST01',
             }

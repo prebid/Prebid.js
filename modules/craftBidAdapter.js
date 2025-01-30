@@ -1,20 +1,13 @@
-import {
-  convertCamelToUnderscore,
-  convertTypes,
-  getBidRequest,
-  isArray,
-  isEmpty,
-  logError,
-  transformBidderParamKeywords
-} from '../src/utils.js';
+import {getBidRequest} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {auctionManager} from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {interpretResponseUtil} from '../libraries/interpretResponseUtils/index.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
@@ -76,56 +69,18 @@ export const spec = {
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
     try {
-      serverResponse = serverResponse.body;
-      const bids = [];
-      if (!serverResponse) {
-        return [];
-      }
-      if (serverResponse.error) {
-        let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-        if (serverResponse.error) {
-          errorMessage += `: ${serverResponse.error}`;
+      const bids = interpretResponseUtil(serverResponse, {bidderRequest}, serverBid => {
+        const rtbBid = getRtbBid(serverBid);
+        if (rtbBid && rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          const bid = newBid(serverBid, rtbBid, bidderRequest);
+          bid.mediaType = parseMediaType(rtbBid);
+          return bid;
         }
-        logError(errorMessage);
-        return bids;
-      }
-      if (serverResponse.tags) {
-        serverResponse.tags.forEach(serverBid => {
-          const rtbBid = getRtbBid(serverBid);
-          if (rtbBid) {
-            if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
-              const bid = newBid(serverBid, rtbBid, bidderRequest);
-              bid.mediaType = parseMediaType(rtbBid);
-              bids.push(bid);
-            }
-          }
-        });
-      }
+      });
       return bids;
     } catch (e) {
       return [];
     }
-  },
-
-  transformBidParams: function(params, isOpenRtb) {
-    params = convertTypes({
-      'sitekey': 'string',
-      'placementId': 'string',
-      'keywords': transformBidderParamKeywords,
-    }, params);
-    if (isOpenRtb) {
-      if (isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(deleteValues);
-      }
-      Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-    }
-    return params;
   },
 
   onBidWon: function(bid) {
@@ -135,16 +90,6 @@ export const spec = {
     });
   }
 };
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
 
 function formatRequest(payload, bidderRequest) {
   let options = {};
@@ -175,7 +120,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     ad: rtbBid.rtb.banner.content,
     ttl: TTL,
     creativeId: rtbBid.creative_id,
-    netRevenue: false, // ???
+    netRevenue: true,
     dealId: rtbBid.deal_id,
     meta: null,
     _adUnitCode: bidRequest.adUnitCode,
@@ -200,18 +145,13 @@ function bidToTag(bid) {
   tag.primary_size = tag.sizes[0];
   tag.ad_types = [];
   tag.uuid = bid.bidId;
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
+  const keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
+  if (keywords.length) {
     tag.keywords = keywords;
   }
-  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
-  if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
+  if (bid.mediaTypes?.banner) {
     tag.ad_types.push(BANNER);
   }
-
   if (tag.ad_types.length === 0) {
     delete tag.ad_types;
   }

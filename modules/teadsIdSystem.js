@@ -12,6 +12,13 @@ import {getStorageManager} from '../src/storageManager.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'teadsId';
 const GVL_ID = 132;
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
@@ -34,9 +41,9 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 /** @type {Submodule} */
 export const teadsIdSubmodule = {
   /**
-     * used to link submodule with config
-     * @type {string}
-     */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
   /**
    * Vendor id of Teads
@@ -44,21 +51,21 @@ export const teadsIdSubmodule = {
    */
   gvlid: GVL_ID,
   /**
-     * decode the stored id value for passing to bid requests
-     * @function
-     * @param {string} value
-     * @returns {{teadsId:string}}
-     */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{teadsId:string}}
+   */
   decode(value) {
     return {teadsId: value}
   },
   /**
-     * performs action to obtain id and return a value in the callback's response argument
-     * @function
-     * @param {SubmoduleConfig} [submoduleConfig]
-     * @param {ConsentData} [consentData]
-     * @returns {IdResponse|undefined}
-     */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} [submoduleConfig]
+   * @param {ConsentData} [consentData]
+   * @returns {IdResponse|undefined}
+   */
   getId(submoduleConfig, consentData) {
     const resp = function (callback) {
       const url = buildAnalyticsTagUrl(submoduleConfig, consentData);

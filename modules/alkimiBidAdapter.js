@@ -1,18 +1,23 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepClone, deepAccess} from '../src/utils.js';
+import {deepAccess, deepClone, getDNT, generateUUID, replaceAuctionPrice} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {VIDEO, BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
+const GVLID = 1169;
+const USER_ID_KEY = 'alkimiUserID';
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.bidFloor && bid.params.token);
+    return !!(bid.params && bid.params.token);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -28,26 +33,56 @@ export const spec = {
 
       bids.push({
         token: bidRequest.params.token,
-        pos: bidRequest.params.pos,
+        instl: bidRequest.params.instl,
+        exp: bidRequest.params.exp,
         bidFloor: getBidFloor(bidRequest, formatTypes),
         sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
         playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
         impMediaTypes: formatTypes,
-        adUnitCode: bidRequest.adUnitCode
+        adUnitCode: bidRequest.adUnitCode,
+        video: deepAccess(bidRequest, 'mediaTypes.video'),
+        banner: deepAccess(bidRequest, 'mediaTypes.banner')
       })
       bidIds.push(bidRequest.bidId)
     })
 
-    const alkimiConfig = config.getConfig('alkimi');
+    const ortb2 = bidderRequest.ortb2
+    const site = ortb2?.site
+
+    const id = getUserId()
+    const alkimiConfig = config.getConfig('alkimi')
+    const fpa = ortb2?.source?.ext?.fpa
+    const source = fpa != undefined ? { ext: { fpa } } : undefined
+    const walletID = alkimiConfig && alkimiConfig.walletID
+    const userParams = alkimiConfig && alkimiConfig.userParams
+    const user = (walletID != undefined || userParams != undefined || id != undefined) ? { id, ext: { walletID, userParams } } : undefined
 
     let payload = {
-      requestId: bidderRequest.auctionId,
+      requestId: generateUUID(),
       signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
       bidIds,
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
       schain: validBidRequests[0].schain,
-      cpp: config.getConfig('coppa') ? 1 : 0
+      cpp: config.getConfig('coppa') ? 1 : 0,
+      device: {
+        dnt: getDNT() ? 1 : 0,
+        w: screen.width,
+        h: screen.height
+      },
+      ortb2: {
+        source,
+        user,
+        site: {
+          keywords: site?.keywords,
+          sectioncat: site?.sectioncat,
+          pagecat: site?.pagecat,
+          cat: site?.cat
+        },
+        at: ortb2?.at,
+        bcat: ortb2?.bcat,
+        wseat: ortb2?.wseat
+      }
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -87,7 +122,7 @@ export const spec = {
     }
 
     const {prebidResponse} = serverBody;
-    if (!prebidResponse || typeof prebidResponse !== 'object') {
+    if (!Array.isArray(prebidResponse)) {
       return [];
     }
 
@@ -98,7 +133,7 @@ export const spec = {
 
       // banner or video
       if (VIDEO === bid.mediaType) {
-        bid.vastXml = bid.ad;
+        bid.vastUrl = replaceAuctionPrice(bid.winUrl, bid.cpm);
       }
 
       bid.meta = {};
@@ -111,21 +146,30 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    let winUrl;
-    if (bid.winUrl || bid.vastUrl) {
-      winUrl = bid.winUrl ? bid.winUrl : bid.vastUrl;
-      winUrl = winUrl.replace(/\$\{AUCTION_PRICE}/, bid.cpm);
-    } else if (bid.ad) {
-      let trackImg = bid.ad.match(/(?!^)<img src=".+dsp-win.+">/);
-      bid.ad = bid.ad.replace(trackImg[0], '');
-      winUrl = trackImg[0].split('"')[1];
-      winUrl = winUrl.replace(/\$%7BAUCTION_PRICE%7D/, bid.cpm);
-    } else {
-      return false;
+    if (BANNER == bid.mediaType && bid.winUrl) {
+      const winUrl = replaceAuctionPrice(bid.winUrl, bid.cpm);
+      ajax(winUrl, null);
+      return true;
     }
+    return false;
+  },
 
-    ajax(winUrl, null);
-    return true;
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+      const serverBody = serverResponses[0].body;
+      if (!serverBody || typeof serverBody !== 'object') return [];
+
+      const { iframeList } = serverBody;
+      if (!Array.isArray(iframeList)) return [];
+
+      const urls = [];
+      iframeList.forEach(url => {
+        urls.push({type: 'iframe', url});
+      })
+
+      return urls;
+    }
+    return [];
   }
 }
 
@@ -158,6 +202,17 @@ const getFormatType = bidRequest => {
   if (deepAccess(bidRequest, 'mediaTypes.banner')) formats.push('Banner')
   if (deepAccess(bidRequest, 'mediaTypes.video')) formats.push('Video')
   return formats
+}
+
+const getUserId = () => {
+  if (storage.localStorageIsEnabled()) {
+    let userId = storage.getDataFromLocalStorage(USER_ID_KEY)
+    if (!userId) {
+      userId = generateUUID()
+      storage.setDataInLocalStorage(USER_ID_KEY, userId)
+    }
+    return userId
+  }
 }
 
 registerBidder(spec);

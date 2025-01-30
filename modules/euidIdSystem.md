@@ -1,8 +1,58 @@
 ## EUID User ID Submodule
 
-EUID requires initial tokens to be generated server-side. The EUID module handles storing, providing, and optionally refreshing them. The module can operate in one of two different modes: *Client Refresh* mode or *Server Only* mode.
+The EUID module handles storing, providing, and optionally refreshing tokens. While initial tokens traditionally required server-side generation, the introduction of the *Client-Side Token Generation (CSTG)* mode offers publishers the flexibility to generate EUID tokens directly from the module, eliminating this need. Publishers can choose to operate the module in one of three distinct modes: *Client Refresh* mode, *Server Only* mode and *Client-Side Token Generation* mode.
 
 *Server Only* mode was originally referred to as *legacy mode*, but it is a popular mode for new integrations where publishers prefer to handle token refresh server-side.
+
+*Client-Side Token Generation* mode is included in EUID module by default. However, it's important to note that this mode was created and made available recently. For publishers who do not intend to use it, you have the option to instruct the build to exclude the code related to this feature:
+
+```
+    $ gulp build --modules=euidIdSystem --disable UID2_CSTG
+```
+If you do plan to use Client-Side Token Generation (CSTG) mode, please consult the EUID Team first as they will provide required configuration values for you to use (see the Client-Side Token Generation (CSTG) mode section below for details)
+
+**This mode is created and made available recently. Please consult EUID Team first as they will provide required configuration values for you to use.**
+
+For publishers seeking a purely client-side integration without the complexities of server-side involvement, the CSTG mode is highly recommended. This mode requires the provision of a public key, subscription ID and [directly identifying information (DII)](https://unifiedid.com/docs/ref-info/glossary-uid#gl-dii) - either emails or phone numbers. In the CSTG mode, the module takes on the responsibility of encrypting the DII, generating the EUID token, and handling token refreshes when necessary.
+
+To configure the module to use this mode, you must:
+1. Set `parmas.serverPublicKey`  and `params.subscriptionId` (please reach out to the UID2 team to obtain these values)
+2. Provide **ONLY ONE DII** by setting **ONLY ONE** of `params.email`/`params.phone`/`params.emailHash`/`params.phoneHash`
+
+Below is a table that provides guidance on when to use each directly identifying information (DII) parameter, along with information on whether normalization and hashing are required by the publisher for each parameter.
+
+| DII param        | When to use it                                        | Normalization required by publisher? | Hashing required by publisher? |
+|------------------|-------------------------------------------------------|--------------------------------------|--------------------------------|
+| params.email     | When you have users' email address                    | No                                   | No                             |
+| params.phone     | When you have user's phone number                     | Yes                                  | No                             |
+| params.emailHash | When you have user's hashed, normalized email address | Yes                                  | Yes                            |
+| params.phoneHash | When you have user's hashed, normalized phone number  | Yes                                  | Yes                            |
+
+
+*Note that setting params.email will normalize email addresses, but params.phone requires phone numbers to be normalized.*
+
+Refer to [Normalization and Encoding](#normalization-and-encoding) for details on email address normalization, SHA-256 hashing and Base64 encoding.
+
+### CSTG example
+
+Configuration:
+```
+pbjs.setConfig({
+    userSync: {
+        userIds: [{
+            name: 'euid',
+            params: {
+               serverPublicKey: '...server public key...',
+               subscriptionId: '...subcription id...',
+               email: 'user@email.com',
+               //phone: '+0000000',
+               //emailHash: '...email hash...',
+               //phoneHash: '...phone hash ...'
+            }
+        }]
+    }
+});
+```
 
 ## Client Refresh mode
 
@@ -106,6 +156,11 @@ The module stores a number of internal values. By default, all values are stored
 ## Sample token
 
 `{`<br />&nbsp;&nbsp;`"advertising_token": "...",`<br />&nbsp;&nbsp;`"refresh_token": "...",`<br />&nbsp;&nbsp;`"identity_expires": 1633643601000,`<br />&nbsp;&nbsp;`"refresh_from": 1633643001000,`<br />&nbsp;&nbsp;`"refresh_expires": 1636322000000,`<br />&nbsp;&nbsp;`"refresh_response_key": "wR5t6HKMfJ2r4J7fEGX9Gw=="`<br />`}`
+
+## Optout response
+
+`{`<br />&nbsp;&nbsp;`"optout": "true",`<br />`}`
+
 
 ### Notes
 

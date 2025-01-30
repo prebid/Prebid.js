@@ -469,7 +469,11 @@ describe('AduptechBidAdapter', () => {
           {
             bidId: 'bidId1',
             adUnitCode: 'adUnitCode1',
-            transactionId: 'transactionId1',
+            ortb2Imp: {
+              ext: {
+                tid: 'transactionId1',
+              }
+            },
             mediaTypes: {
               banner: {
                 sizes: [[100, 200], [300, 400]]
@@ -483,7 +487,11 @@ describe('AduptechBidAdapter', () => {
           {
             bidId: 'bidId2',
             adUnitCode: 'adUnitCode2',
-            transactionId: 'transactionId2',
+            ortb2Imp: {
+              ext: {
+                tid: 'transactionId2',
+              }
+            },
             mediaTypes: {
               banner: {
                 sizes: [[100, 200]]
@@ -497,7 +505,13 @@ describe('AduptechBidAdapter', () => {
           {
             bidId: 'bidId3',
             adUnitCode: 'adUnitCode3',
-            transactionId: 'transactionId3',
+            ortb2Imp: {
+              ext: {
+                tid: {
+                  transactionId: 'transactionId3',
+                }
+              }
+            },
             mediaTypes: {
               native: {
                 image: {
@@ -536,14 +550,14 @@ describe('AduptechBidAdapter', () => {
               imp: [
                 {
                   bidId: validBidRequests[0].bidId,
-                  transactionId: validBidRequests[0].transactionId,
+                  transactionId: validBidRequests[0].ortb2Imp.ext.tid,
                   adUnitCode: validBidRequests[0].adUnitCode,
                   params: validBidRequests[0].params,
                   banner: validBidRequests[0].mediaTypes.banner
                 },
                 {
                   bidId: validBidRequests[1].bidId,
-                  transactionId: validBidRequests[1].transactionId,
+                  transactionId: validBidRequests[1].ortb2Imp.ext.tid,
                   adUnitCode: validBidRequests[1].adUnitCode,
                   params: validBidRequests[1].params,
                   banner: validBidRequests[1].mediaTypes.banner
@@ -565,7 +579,7 @@ describe('AduptechBidAdapter', () => {
               imp: [
                 {
                   bidId: validBidRequests[2].bidId,
-                  transactionId: validBidRequests[2].transactionId,
+                  transactionId: validBidRequests[2].ortb2Imp.ext.tid,
                   adUnitCode: validBidRequests[2].adUnitCode,
                   params: validBidRequests[2].params,
                   native: validBidRequests[2].mediaTypes.native
@@ -592,7 +606,11 @@ describe('AduptechBidAdapter', () => {
         const bidRequest = {
           bidId: 'bidId1',
           adUnitCode: 'adUnitCode1',
-          transactionId: 'transactionId1',
+          ortb2Imp: {
+            ext: {
+              tid: 'transactionId1',
+            }
+          },
           mediaTypes: {
             banner: {
               sizes: [[100, 200], [300, 400]]
@@ -630,7 +648,7 @@ describe('AduptechBidAdapter', () => {
               imp: [
                 {
                   bidId: bidRequest.bidId,
-                  transactionId: bidRequest.transactionId,
+                  transactionId: bidRequest.ortb2Imp.ext.tid,
                   adUnitCode: bidRequest.adUnitCode,
                   params: bidRequest.params,
                   banner: {

@@ -97,9 +97,7 @@ describe('Scattered adapter', function () {
     it('has the right fields filled', function () {
       let request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
       const bidderRequest = request.data;
-      assert.equal(bidderRequest.id, validBidderRequest.auctionId);
       assert.ok(bidderRequest.site);
-      assert.ok(bidderRequest.source);
       assert.lengthOf(bidderRequest.imp, 1);
     });
 

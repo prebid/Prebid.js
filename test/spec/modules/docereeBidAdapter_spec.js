@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/docereeBidAdapter.js';
 import { config } from '../../../src/config.js';
+import * as utils from 'src/utils.js';
 
 describe('BidlabBidAdapter', function () {
   config.setConfig({
@@ -102,4 +103,36 @@ describe('BidlabBidAdapter', function () {
       expect(dataItem.meta.advertiserDomains[0]).to.equal('doceree.com')
     });
   })
+  describe('onBidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+  describe('onTimeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon([]);
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
 });

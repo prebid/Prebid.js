@@ -10,9 +10,16 @@ import {submodule} from '../src/hook.js';
 import {includes} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
+import {formatQS, isNumber, isPlainObject, logError, parseUrl} from '../src/utils.js';
 import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'connectId';
 const STORAGE_EXPIRY_DAYS = 365;
@@ -26,6 +33,16 @@ const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
+const O_AND_O_DOMAINS = [
+  'yahoo.com',
+  'aol.com',
+  'aol.ca',
+  'aol.de',
+  'aol.co.uk',
+  'engadget.com',
+  'techcrunch.com',
+  'autoblog.com',
+];
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
@@ -104,9 +121,11 @@ function syncLocalStorageToCookie() {
 }
 
 function isStale(storedIdData) {
-  if (isPlainObject(storedIdData) && storedIdData.lastSynced &&
-    (storedIdData.lastSynced + VALID_ID_DURATION) <= Date.now()) {
+  if (isOAndOTraffic()) {
     return true;
+  } else if (isPlainObject(storedIdData) && storedIdData.lastSynced) {
+    const validTTL = storedIdData.ttl || VALID_ID_DURATION;
+    return storedIdData.lastSynced + validTTL <= Date.now();
   }
   return false;
 }
@@ -125,6 +144,17 @@ function getStoredId() {
 function getSiteHostname() {
   const pageInfo = parseUrl(getRefererInfo().page);
   return pageInfo.hostname;
+}
+
+function isOAndOTraffic() {
+  let referer = getRefererInfo().ref;
+
+  if (referer) {
+    referer = parseUrl(referer).hostname;
+    const subDomains = referer.split('.');
+    referer = subDomains.slice(subDomains.length - 2, subDomains.length).join('.');
+  }
+  return O_AND_O_DOMAINS.indexOf(referer) >= 0;
 }
 
 /** @type {Submodule} */
@@ -238,6 +268,13 @@ export const connectIdSubmodule = {
                 responseObj.puid = params.puid || responseObj.puid;
                 responseObj.lastSynced = Date.now();
                 responseObj.lastUsed = Date.now();
+                if (isNumber(responseObj.ttl)) {
+                  let validTTLMiliseconds = responseObj.ttl * 60 * 60 * 1000;
+                  if (validTTLMiliseconds > VALID_ID_DURATION) {
+                    validTTLMiliseconds = VALID_ID_DURATION;
+                  }
+                  responseObj.ttl = validTTLMiliseconds;
+                }
                 storeObject(responseObj);
               } else {
                 logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
@@ -276,12 +313,16 @@ export const connectIdSubmodule = {
 
   /**
    * Utility function that returns a boolean flag indicating if the user
-   * has opeted out via the Yahoo easy-opt-out mechanism.
+   * has opted out via the Yahoo easy-opt-out mechanism.
    * @returns {Boolean}
    */
   userHasOptedOut() {
     try {
-      return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
+      if (storage.localStorageIsEnabled()) {
+        return storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1';
+      } else {
+        return true;
+      }
     } catch {
       return false;
     }
@@ -294,6 +335,12 @@ export const connectIdSubmodule = {
    */
   getAjaxFn() {
     return ajax;
+  },
+  eids: {
+    'connectId': {
+      source: 'yahoo.com',
+      atype: 3
+    },
   }
 };
 

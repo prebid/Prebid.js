@@ -1,12 +1,13 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { includes } from '../src/polyfill.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const VERSION = '3.2';
+const VERSION = '3.6';
 const BAD_WORD_STEP = 0.1;
 const BAD_WORD_MIN = 0.2;
 const ADHASH_BIDDER_CODE = 'adhash';
+const storage = getStorageManager({ bidderCode: ADHASH_BIDDER_CODE });
 
 /**
  * Function that checks the page where the ads are being served for brand safety.
@@ -19,6 +20,8 @@ const ADHASH_BIDDER_CODE = 'adhash';
  * @returns boolean flag is the page safe
  */
 function brandSafety(badWords, maxScore) {
+  const delimiter = '~';
+
   /**
    * Performs the ROT13 encoding on the string argument and returns the resulting string.
    * The Adhash bidder uses ROT13 so that the response is not blocked by:
@@ -40,17 +43,17 @@ function brandSafety(badWords, maxScore) {
   /**
    * Calculates the scoring for each bad word with dimishing returns
    * @param {integer} points points that this word costs
-   * @param {integer} occurances number of occurances
+   * @param {integer} occurrences number of occurrences
    * @returns {float} final score
    */
-  const scoreCalculator = (points, occurances) => {
+  const scoreCalculator = (points, occurrences) => {
     let positive = true;
     if (points < 0) {
       points *= -1;
       positive = false;
     }
     let result = 0;
-    for (let i = 0; i < occurances; i++) {
+    for (let i = 0; i < occurrences; i++) {
       result += Math.max(points - i * BAD_WORD_STEP, BAD_WORD_MIN);
     }
     return positive ? result : -result;
@@ -60,22 +63,50 @@ function brandSafety(badWords, maxScore) {
    * Checks what rule will match in the given array with words
    * @param {string} rule rule type (full, partial, starts, ends, regexp)
    * @param {string} decodedWord decoded word
-   * @param {array} wordsToMatch array to find a match
+   * @param {string} wordsToMatch list of all words on the page separated by delimiters
    * @returns {object|boolean} matched rule and occurances. If nothing is matched returns false
    */
   const wordsMatchedWithRule = function (rule, decodedWord, wordsToMatch) {
-    if (rule === 'full' && wordsToMatch && wordsToMatch.includes(decodedWord)) {
-      return { rule, occurances: wordsToMatch.filter(element => element === decodedWord).length };
-    } else if (rule === 'partial' && wordsToMatch && wordsToMatch.some(element => element.indexOf(decodedWord) > -1)) {
-      return { rule, occurances: wordsToMatch.filter(element => element.indexOf(decodedWord) > -1).length };
-    } else if (rule === 'starts' && wordsToMatch && wordsToMatch.some(word => word.startsWith(decodedWord))) {
-      return { rule, occurances: wordsToMatch.filter(element => element.startsWith(decodedWord)).length };
-    } else if (rule === 'ends' && wordsToMatch && wordsToMatch.some(word => word.endsWith(decodedWord))) {
-      return { rule, occurances: wordsToMatch.filter(element => element.endsWith(decodedWord)).length };
-    } else if (rule === 'regexp' && wordsToMatch && wordsToMatch.some(element => element.match(new RegExp(decodedWord, 'i')))) {
-      return { rule, occurances: wordsToMatch.filter(element => element.match(new RegExp(decodedWord, 'i'))).length };
+    if (!wordsToMatch) {
+      return false;
     }
-    return false;
+
+    let occurrences;
+    let adjustedWordToMatch;
+    decodedWord = decodedWord.split(' ').join(`${delimiter}${delimiter}`);
+    switch (rule) {
+      case 'full':
+        adjustedWordToMatch = `${delimiter}${decodedWord}${delimiter}`;
+        break;
+      case 'partial':
+        adjustedWordToMatch = decodedWord;
+        break;
+      case 'starts':
+        adjustedWordToMatch = `${delimiter}${decodedWord}`;
+        break;
+      case 'ends':
+        adjustedWordToMatch = `${decodedWord}${delimiter}`;
+        break;
+      case 'combo':
+        const allOccurrences = [];
+        const paddedWordsToMatch = `${delimiter}${wordsToMatch}${delimiter}`;
+        const decodedWordsSplit = decodedWord.split(`${delimiter}${delimiter}`);
+        for (const decodedWordPart of decodedWordsSplit) {
+          adjustedWordToMatch = `${delimiter}${decodedWordPart}${delimiter}`;
+          allOccurrences.push(paddedWordsToMatch.split(adjustedWordToMatch).length - 1);
+        }
+        occurrences = Math.min(...allOccurrences);
+        return occurrences > 0 ? { rule, occurrences } : false;
+      case 'regexp':
+        occurrences = [...wordsToMatch.matchAll(new RegExp(decodedWord, 'gi'))].length;
+        return occurrences > 0 ? { rule, occurrences } : false;
+      default:
+        return false;
+    }
+
+    const paddedWordsToMatch = `${delimiter}${wordsToMatch}${delimiter}`;
+    occurrences = paddedWordsToMatch.split(adjustedWordToMatch).length - 1;
+    return occurrences > 0 ? { rule, occurrences } : false;
   };
 
   // Default parameters if the bidder is unable to send some of them
@@ -90,12 +121,12 @@ function brandSafety(badWords, maxScore) {
       .replaceAll(/\s\s+/g, ' ')
       .toLowerCase()
       .trim();
-    const content = window.top.document.body.innerText.toLowerCase();
-    const contentWords = content.trim().split(/\s+/).length;
+    const content = window.top.document.body.textContent.toLowerCase();
     // \p{L} matches a single unicode code point in the category 'letter'. Matches any kind of letter from any language.
     const regexp = new RegExp('[\\p{L}]+', 'gu');
-    const words = content.match(regexp);
-    const wordsInUrl = wordsAndNumbersInUrl.match(regexp);
+    const wordsMatched = content.match(regexp);
+    const words = wordsMatched.join(`${delimiter}${delimiter}`);
+    const wordsInUrl = wordsAndNumbersInUrl.match(regexp).join(`${delimiter}${delimiter}`);
 
     for (const [word, rule, points] of badWords) {
       const decodedWord = rot13(word.toLowerCase());
@@ -110,19 +141,11 @@ function brandSafety(badWords, maxScore) {
 
       // Check if site content's words match any of our brand safety rules
       const matchedRule = wordsMatchedWithRule(rule, decodedWord, words);
-      if (matchedRule.rule === 'full') {
-        score += scoreCalculator(points, matchedRule.occurances);
-      } else if (matchedRule.rule === 'partial') {
-        score += scoreCalculator(points, matchedRule.occurances);
-      } else if (matchedRule.rule === 'starts') {
-        score += scoreCalculator(points, matchedRule.occurances);
-      } else if (matchedRule.rule === 'ends') {
-        score += scoreCalculator(points, matchedRule.occurances);
-      } else if (matchedRule.rule === 'regexp') {
-        score += scoreCalculator(points, matchedRule.occurances);
+      if (matchedRule !== false) {
+        score += scoreCalculator(points, matchedRule.occurrences);
       }
     }
-    return score < (maxScore * contentWords) / 1000;
+    return score < (maxScore * wordsMatched.length) / 1000;
   } catch (e) {
     return true;
   }
@@ -149,7 +172,6 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    const storage = getStorageManager({ bidderCode: ADHASH_BIDDER_CODE });
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
     const body = document.body;
@@ -177,14 +199,16 @@ export const spec = {
         position: validBidRequests[i].adUnitCode
       };
       let recentAds = [];
+      let recentAdsPrebid = [];
       if (storage.localStorageIsEnabled()) {
         const prefix = validBidRequests[i].params.prefix || 'adHash';
         recentAds = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAds') || '[]');
+        recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
       }
 
       // Needed for the ad density calculation
-      var adHeight = validBidRequests[i].sizes[index][1];
-      var adWidth = validBidRequests[i].sizes[index][0];
+      const adHeight = validBidRequests[i].sizes[index][1];
+      const adWidth = validBidRequests[i].sizes[index][0];
       if (!window.adsCount) {
         window.adsCount = 0;
       }
@@ -215,6 +239,7 @@ export const spec = {
           blockedCreatives: [],
           currentTimestamp: (new Date().getTime() / 1000) | 0,
           recentAds: recentAds,
+          recentAdsPrebid: recentAdsPrebid,
           GDPRApplies: gdprConsent ? gdprConsent.gdprApplies : null,
           GDPR: gdprConsent ? gdprConsent.consentString : null,
           servedAdsCount: window.adsCount,
@@ -241,13 +266,26 @@ export const spec = {
       return [];
     }
 
+    if (storage.localStorageIsEnabled()) {
+      const prefix = request.bidRequest.params.prefix || 'adHash';
+      let recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
+      recentAdsPrebid.push([
+        (new Date().getTime() / 1000) | 0,
+        responseBody.creatives[0].advertiserId,
+        responseBody.creatives[0].budgetId,
+        responseBody.creatives[0].expectedHashes.length ? responseBody.creatives[0].expectedHashes[0] : '',
+      ]);
+      let recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
+      storage.setDataInLocalStorage(prefix + 'recentAdsPrebid', recentAdsPrebidFinal);
+    }
+
     const publisherURL = JSON.stringify(request.bidRequest.params.platformURL);
     const bidderURL = request.bidRequest.params.bidderURL || 'https://bidder.adhash.com';
     const oneTimeId = request.bidRequest.adUnitCode + Math.random().toFixed(16).replace('0.', '.');
     const bidderResponse = JSON.stringify({ responseText: JSON.stringify(responseBody) });
     const requestData = JSON.stringify(request.data);
 
-    var response = {
+    let response = {
       requestId: request.bidRequest.bidId,
       cpm: responseBody.creatives[0].costEUR,
       width: request.bidRequest.sizes[0][0],

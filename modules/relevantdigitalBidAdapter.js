@@ -94,11 +94,18 @@ export const spec = {
   gvlid: 1100,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue **/
+  /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue */
   isBidRequestValid: (bid) => bid.params?.placementId && getBidderConfig([bid]).complete,
 
   /** Trigger impression-pixel */
-  onBidWon: ({pbsWurl}) => pbsWurl && triggerPixel(pbsWurl),
+  onBidWon(bid) {
+    if (bid.pbsWurl) {
+      triggerPixel(bid.pbsWurl)
+    }
+    if (bid.burl) {
+      triggerPixel(bid.burl)
+    }
+  },
 
   /** Build BidRequest for PBS */
   buildRequests(bidRequests, bidderRequest) {

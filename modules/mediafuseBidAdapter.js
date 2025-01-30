@@ -1,15 +1,43 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import { config } from '../src/config.js';
-import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
-import { auctionManager } from '../src/auctionManager.js';
+import {
+  createTrackPixelHtml,
+  deepAccess,
+  deepClone,
+  getBidRequest,
+  getParameterByName,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn
+} from '../src/utils.js';
+import {Renderer} from '../src/Renderer.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { bidderSettings } from '../src/bidderSettings.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {bidderSettings} from '../src/bidderSettings.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
+import {
+  getANKewyordParamFromMaps,
+  getANKeywordParam
+} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'mediafuse';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -18,7 +46,7 @@ const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
 const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
-const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
+const APP_DEVICE_PARAMS = ['device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
 const VIDEO_MAPPING = {
   playback_method: {
@@ -57,7 +85,6 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/mediafuse-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
@@ -191,16 +218,8 @@ export const spec = {
       payload.app = appIdObj;
     }
 
-    let auctionKeywords = config.getConfig('mediafuseAuctionKeywords');
-    if (isPlainObject(auctionKeywords)) {
-      let aucKeywords = transformBidderParamKeywords(auctionKeywords);
-
-      if (aucKeywords.length > 0) {
-        aucKeywords.forEach(deleteValues);
-      }
-
-      payload.keywords = aucKeywords;
-    }
+    let mfKeywords = config.getConfig('mediafuseAuctionKeywords');
+    payload.keywords = getANKeywordParam(bidderRequest?.ortb2, mfKeywords);
 
     if (config.getConfig('adpod.brandCategoryExclusion')) {
       payload.brand_category_uniqueness = true;
@@ -321,24 +340,6 @@ export const spec = {
     return bids;
   },
 
-  /**
-   * @typedef {Object} mappingFileInfo
-   * @property {string} url  mapping file json url
-   * @property {number} refreshInDays prebid stores mapping data in localstorage so you can return in how many days you want to update value stored in localstorage.
-   * @property {string} localStorageKey unique key to store your mapping json in localstorage
-   */
-
-  /**
-   * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
-   * @returns {mappingFileInfo}
-   */
-  getMappingFileInfo: function () {
-    return {
-      url: mappingFileUrl,
-      refreshInDays: 2
-    }
-  },
-
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
       return [{
@@ -346,35 +347,6 @@ export const spec = {
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       }];
     }
-  },
-
-  transformBidParams: function (params, isOpenRtb) {
-    params = convertTypes({
-      'member': 'string',
-      'invCode': 'string',
-      'placementId': 'number',
-      'keywords': transformBidderParamKeywords,
-      'publisherId': 'number'
-    }, params);
-
-    if (isOpenRtb) {
-      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
-      if (params.usePaymentRule) { delete params.usePaymentRule; }
-
-      if (isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(deleteValues);
-      }
-
-      Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-    }
-
-    return params;
   },
 
   /**
@@ -387,16 +359,6 @@ export const spec = {
     }
   }
 };
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
 
 function reloadViewabilityScriptWithCorrectParameters(bid) {
   let viewJsPayload = getMediafuseViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
@@ -621,7 +583,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
     switch (videoContext) {
       case ADPOD:
-        const primaryCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        const primaryCatId = (APPNEXUS_CATEGORY_MAPPING[rtbBid.brand_category_id]) ? APPNEXUS_CATEGORY_MAPPING[rtbBid.brand_category_id] : null;
         bid.meta = Object.assign({}, bid.meta, { primaryCatId });
         const dealTier = rtbBid.deal_priority;
         bid.video = {
@@ -765,15 +727,9 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
+    tag.keywords = getANKewyordParamFromMaps(bid.params.keywords);
   }
-
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -886,8 +842,7 @@ function bidToTag(bid) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
 
-  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
-  if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
+  if (bid.mediaTypes?.banner) {
     tag.ad_types.push(BANNER);
   }
 
@@ -976,7 +931,7 @@ function createAdPodRequest(tags, adPodBid) {
   const { durationRangeSec, requireExactDuration } = adPodBid.mediaTypes.video;
 
   const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
-  const maxDuration = getMaxValueFromArray(durationRangeSec);
+  const maxDuration = Math.max(...durationRangeSec);
 
   const tagToDuplicate = tags.filter(tag => tag.uuid === adPodBid.bidId);
   let request = fill(...tagToDuplicate, numberOfPlacements);
@@ -1002,7 +957,7 @@ function createAdPodRequest(tags, adPodBid) {
 
 function getAdPodPlacementNumber(videoParams) {
   const { adPodDurationSec, durationRangeSec, requireExactDuration } = videoParams;
-  const minAllowedDuration = getMinValueFromArray(durationRangeSec);
+  const minAllowedDuration = Math.min(...durationRangeSec);
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration);
 
   return requireExactDuration
@@ -1081,7 +1036,7 @@ function hideSASIframe(elementId) {
 function outstreamRender(bid) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
-  // push to render queue because ANOutstreamVideo may not be loaded yet
+  // push to render queue because ANOutstreamVideo may not be loaded
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,

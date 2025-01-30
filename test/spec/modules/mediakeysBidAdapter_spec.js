@@ -131,7 +131,11 @@ describe('mediakeysBidAdapter', function () {
 
   const bidderRequest = {
     bidderCode: 'mediakeys',
-    auctionId: '84212956-c377-40e8-b000-9885a06dc692',
+    ortb2: {
+      source: {
+        tid: '84212956-c377-40e8-b000-9885a06dc692',
+      }
+    },
     bidderRequestId: '1c1b642f803242',
     bids: [
       bid
@@ -208,7 +212,7 @@ describe('mediakeysBidAdapter', function () {
       // openRTB 2.5
       expect(data.at).to.equal(1);
       expect(data.cur[0]).to.equal('USD'); // default currency
-      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid);
 
       expect(data.imp.length).to.equal(1);
       expect(data.imp[0].id).to.equal(bidRequests[0].bidId);

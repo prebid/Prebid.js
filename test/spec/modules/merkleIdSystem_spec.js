@@ -3,6 +3,8 @@ import * as utils from 'src/utils.js';
 import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 
 import sinon from 'sinon';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
 
 let expect = require('chai').expect;
 
@@ -248,4 +250,71 @@ describe('Merkle System', function () {
       expect(callbackSpy.calledOnce).to.be.true;
     });
   });
+
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(merkleIdSubmodule);
+    });
+    it('merkleId (legacy) - supports single id', function() {
+      const userId = {
+        merkleId: {
+          id: 'some-random-id-value', keyID: 1
+        }
+      };
+      const newEids = createEidsArray(userId);
+
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'merkleinc.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 3,
+          ext: { keyID: 1 }
+        }]
+      });
+    });
+
+    it('merkleId supports multiple source providers', function() {
+      const userId = {
+        merkleId: [{
+          id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }
+        }, {
+          id: 'another-random-id-value',
+          ext: {
+            enc: 1,
+            idName: 'pamId',
+            third: 4,
+            ssp: 'ssp2'
+          }
+        }]
+      }
+
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(2);
+      expect(newEids[0]).to.deep.equal({
+        source: 'ssp1.merkleinc.com',
+        uids: [{id: 'some-random-id-value',
+          atype: 3,
+          ext: {
+            enc: 1,
+            keyID: 16,
+            idName: 'pamId',
+            ssp: 'ssp1'
+          }
+        }]
+      });
+      expect(newEids[1]).to.deep.equal({
+        source: 'ssp2.merkleinc.com',
+        uids: [{id: 'another-random-id-value',
+          atype: 3,
+          ext: {
+            third: 4,
+            enc: 1,
+            idName: 'pamId',
+            ssp: 'ssp2'
+          }
+        }]
+      });
+    });
+  })
 });

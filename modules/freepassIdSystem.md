@@ -9,7 +9,7 @@ Please contact FreePass before using this ID.
 ```
 Module Name: FreePass Id System
 Module Type: User Id System
-Maintainer: freepass-headerbidding@craid-inc.com
+Maintainer: fp-hbidding@freebit.net
 ```
 
 ## Building Prebid with FreePass ID Support

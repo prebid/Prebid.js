@@ -293,4 +293,51 @@ describe('C-WIRE bid adapter', () => {
       expect(bids[0].ad).to.exist;
     })
   });
+
+  describe('add user-syncs', function () {
+    it('empty user-syncs if no consent given', function () {
+      const userSyncs = spec.getUserSyncs({}, {}, {}, {});
+
+      expect(userSyncs).to.be.empty
+    })
+    it('empty user-syncs if no syncOption enabled', function () {
+      let gdprConsent = {
+        vendorData: {
+          purpose: {
+            consents: 1
+          }
+        }};
+      const userSyncs = spec.getUserSyncs({}, {}, gdprConsent, {});
+
+      expect(userSyncs).to.be.empty
+    })
+
+    it('user-syncs with enabled pixel option', function () {
+      let gdprConsent = {
+        vendorData: {
+          purpose: {
+            consents: 1
+          }
+        }};
+      let synOptions = {pixelEnabled: true, iframeEnabled: true};
+      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+
+      expect(userSyncs[0].type).to.equal('image');
+      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID');
+    })
+
+    it('user-syncs with enabled iframe option', function () {
+      let gdprConsent = {
+        vendorData: {
+          purpose: {
+            consents: 1
+          }
+        }};
+      let synOptions = {iframeEnabled: true};
+      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+
+      expect(userSyncs[0].type).to.equal('iframe');
+      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID');
+    })
+  })
 });

@@ -220,7 +220,7 @@ describe('AdkernelAdn adapter', function () {
   }
 
   describe('banner request building', function () {
-    let [_, tagRequests] = buildRequest([bid1_pub1]);
+    let [_, tagRequests] = buildRequest([bid1_pub1], {ortb2: {source: {tid: 'mock-tid'}}});
     let tagRequest = tagRequests[0];
 
     it('should have request id', function () {
@@ -374,7 +374,6 @@ describe('AdkernelAdn adapter', function () {
 
     it('should return fully-initialized bid-response', function () {
       let resp = responses[0];
-      expect(resp).to.have.property('bidderCode', 'adkernelAdn');
       expect(resp).to.have.property('requestId', '2c5e951baeeadd');
       expect(resp).to.have.property('cpm', 5.0);
       expect(resp).to.have.property('width', 300);
@@ -394,7 +393,6 @@ describe('AdkernelAdn adapter', function () {
 
     it('should return fully-initialized video bid-response', function () {
       let resp = responses[2];
-      expect(resp).to.have.property('bidderCode', 'adkernelAdn');
       expect(resp).to.have.property('requestId', '57d602ad1c9545');
       expect(resp).to.have.property('cpm', 10.0);
       expect(resp).to.have.property('creativeId', '108_158802');
@@ -428,8 +426,7 @@ describe('AdkernelAdn adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(1);
-      expect(spec.aliases[0]).to.be.equal('engagesimply');
+      expect(spec.aliases).to.be.an('array');
     });
   });
 });

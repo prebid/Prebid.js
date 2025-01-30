@@ -34,12 +34,12 @@ describe('AdrelevantisAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placementId': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -483,15 +483,6 @@ describe('AdrelevantisAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let bfStub;
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     let response = {
       'version': '3.0.0',
       'tags': [

@@ -223,7 +223,11 @@ describe('ttdBidAdapter', function () {
     const baseBidderRequestReferer = detectReferer(testWindow)();
     const baseBidderRequest = {
       'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
@@ -258,6 +262,11 @@ describe('ttdBidAdapter', function () {
       expect(request.data).to.be.not.null;
     });
 
+    it('sets bidrequest.id to bidderRequestId', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.id).to.equal('18084284054531');
+    });
+
     it('sets impression id to ad unit\'s bid id', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].id).to.equal('243310435309b5');
@@ -266,6 +275,13 @@ describe('ttdBidAdapter', function () {
     it('sends bid requests to the correct endpoint', function () {
       const url = testBuildRequests(baseBannerBidRequests, baseBidderRequest).url;
       expect(url).to.equal('https://direct.adsrvr.org/bid/bidder/supplier');
+    });
+
+    it('sends bid requests to the correct custom endpoint', function () {
+      let bannerBidRequestsWithCustomEndpoint = deepClone(baseBannerBidRequests);
+      bannerBidRequestsWithCustomEndpoint[0].params.useHttp2 = true;
+      const url = testBuildRequests(bannerBidRequestsWithCustomEndpoint, baseBidderRequest).url;
+      expect(url).to.equal('https://d2.adsrvr.org/bid/bidder/supplier');
     });
 
     it('sends publisher id', function () {
@@ -320,10 +336,10 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].rwdd).to.equal(1);
     });
 
-    it('sends auction id in source.tid', function () {
+    it('sends source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.ortb2.source.tid);
     });
 
     it('includes the ad size in the bid request', function () {
@@ -433,7 +449,9 @@ describe('ttdBidAdapter', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       const battr = [1, 2, 3];
       clonedBannerRequests[0].ortb2Imp = {
-        battr: battr
+        banner: {
+          battr: battr
+        }
       };
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.battr).to.equal(battr);
@@ -756,7 +774,11 @@ describe('ttdBidAdapter', function () {
 
     const baseBidderRequest = {
       'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
@@ -776,7 +798,7 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerMultipleBidRequests, baseBidderRequest).data;
       expect(requestBody.imp.length).to.equal(2);
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.ortb2.source.tid);
       expect(requestBody.imp[0].ext).to.be.not.null;
       expect(requestBody.imp[0].ext.tid).to.equal('8651474f-58b1-4368-b812-84f8c937a099');
       expect(requestBody.imp[1].ext).to.be.not.null;

@@ -1,4 +1,5 @@
 import {MODULE_TYPE_BIDDER} from './modules.js';
+import {hook} from '../hook.js';
 
 /**
  * Component ID - who is trying to perform the activity?
@@ -39,8 +40,10 @@ export const ACTIVITY_PARAM_SYNC_TYPE = 'syncType'
 export const ACTIVITY_PARAM_SYNC_URL = 'syncUrl';
 /**
  * @private
- * configuration options for analytics adapter - the argument passed to `enableAnalytics`.
- * relevant for: reportAnalytics
+ * Configuration options for analytics adapter - the argument passed to `enableAnalytics`.
+ * Relevant for: reportAnalytics.
+ * @constant
+ * @type {string}
  */
 export const ACTIVITY_PARAM_ANL_CONFIG = '_config';
 
@@ -54,6 +57,8 @@ export function activityParamsBuilder(resolveAlias) {
     if (moduleType === MODULE_TYPE_BIDDER) {
       defaults[ACTIVITY_PARAM_ADAPTER_CODE] = resolveAlias(moduleName);
     }
-    return Object.assign(defaults, params);
+    return buildActivityParams(Object.assign(defaults, params));
   }
 }
+
+export const buildActivityParams = hook('sync', params => params);

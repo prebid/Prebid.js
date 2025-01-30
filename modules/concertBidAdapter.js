@@ -1,7 +1,14 @@
 import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'concert';
 const CONCERT_ENDPOINT = 'https://bids.concert.io';
@@ -41,6 +48,7 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
+        browserLanguage: window.navigator.language,
         debug: debugTurnedOn(),
         uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
@@ -48,6 +56,7 @@ export const spec = {
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent,
         gppConsent: bidderRequest.gppConsent,
+        tdid: getTdid(bidderRequest, validBidRequests),
       }
     };
 
@@ -66,7 +75,7 @@ export const spec = {
       let slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         sizes: bidRequest.params.sizes || bidRequest.sizes,
         partnerId: bidRequest.params.partnerId,
         slotType: bidRequest.params.slotType,
@@ -119,7 +128,8 @@ export const spec = {
         meta: { advertiserDomains: bid && bid.adomain ? bid.adomain : [] },
         creativeId: bid.creativeId,
         netRevenue: bid.netRevenue,
-        currency: bid.currency
+        currency: bid.currency,
+        ...(bid.dealid && { dealId: bid.dealid }),
       };
     });
 
@@ -261,4 +271,12 @@ function getOffset(el) {
       top: rect.top + window.scrollY
     };
   }
+}
+
+function getTdid(bidderRequest, validBidRequests) {
+  if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
+    return null;
+  }
+
+  return deepAccess(validBidRequests[0], 'userId.tdid') || null;
 }

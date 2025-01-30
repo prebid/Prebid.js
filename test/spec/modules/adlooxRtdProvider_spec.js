@@ -1,12 +1,12 @@
 import adapterManager from 'src/adapterManager.js';
 import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
 import {auctionManager} from 'src/auctionManager.js';
-import { config as _config } from 'src/config.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { subModuleObj as rtdProvider } from 'modules/adlooxRtdProvider.js';
 import * as utils from 'src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -139,16 +139,12 @@ describe('Adloox RTD Provider', function () {
       expect(analyticsAdapter.context).is.null;
     });
 
-    let server = null;
     let CONFIG = null;
     beforeEach(function () {
-      server = sinon.createFakeServer();
       CONFIG = utils.deepClone(config);
     });
     afterEach(function () {
       CONFIG = null;
-      server.restore();
-      server = null;
     });
 
     it('should fetch segments', function (done) {

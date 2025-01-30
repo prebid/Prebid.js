@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from 'src/auctionManager.js';
 import {expectEvents} from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
 
 let utils = require('src/utils');
 let refererDetection = require('src/refererDetection');
@@ -13,14 +14,21 @@ let clock;
 let now = new Date();
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 let auctionId = '99abbc81-c1f1-41cd-8f25-f7149244c897'
 
-const config = {
+const configWithSamplingAll = {
   provider: 'liveintent',
   options: {
     bidWonTimeout: 2000,
     sampling: 1
+  }
+}
+
+const configWithSamplingNone = {
+  provider: 'liveintent',
+  options: {
+    bidWonTimeout: 2000,
+    sampling: 0
   }
 }
 
@@ -273,12 +281,12 @@ describe('LiveIntent Analytics Adapter ', () => {
     clock.restore();
   });
 
-  it('request is computed and sent correctly', () => {
-    liAnalytics.enableAnalytics(config);
+  it('request is computed and sent correctly when sampling is 1', () => {
+    liAnalytics.enableAnalytics(configWithSamplingAll);
     sandbox.stub(utils, 'generateUUID').returns(instanceId);
     sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
     sandbox.stub(auctionManager.index, 'getAuction').withArgs(auctionId).returns({ getWinningBids: () => winningBids });
-    events.emit(constants.EVENTS.AUCTION_END, args);
+    events.emit(EVENTS.AUCTION_END, args);
     clock.tick(2000);
     expect(server.requests.length).to.equal(1);
 
@@ -288,7 +296,23 @@ describe('LiveIntent Analytics Adapter ', () => {
 
   it('track is called', () => {
     sandbox.stub(liAnalytics, 'track');
-    liAnalytics.enableAnalytics(config);
+    liAnalytics.enableAnalytics(configWithSamplingAll);
     expectEvents().to.beTrackedBy(liAnalytics.track);
+  })
+
+  it('no request is computed when sampling is 0', () => {
+    liAnalytics.enableAnalytics(configWithSamplingNone);
+    sandbox.stub(utils, 'generateUUID').returns(instanceId);
+    sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
+    sandbox.stub(auctionManager.index, 'getAuction').withArgs(auctionId).returns({ getWinningBids: () => winningBids });
+    events.emit(EVENTS.AUCTION_END, args);
+    clock.tick(2000);
+    expect(server.requests.length).to.equal(0);
+  });
+
+  it('track is not called', () => {
+    sandbox.stub(liAnalytics, 'track');
+    liAnalytics.enableAnalytics(configWithSamplingNone);
+    sinon.assert.callCount(liAnalytics.track, 0);
   })
 });

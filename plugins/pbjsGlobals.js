@@ -34,7 +34,8 @@ module.exports = function(api, options) {
     '$$PREBID_GLOBAL$$': pbGlobal,
     '$$DEFINE_PREBID_GLOBAL$$': defineGlobal,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
-    '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`
+    '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`,
+    '$$LIVE_INTENT_MODULE_MODE$$': (process && process.env && process.env.LiveConnectMode) || 'standard'
   };
 
   let identifierToStringLiteral = [

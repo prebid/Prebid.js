@@ -1,4 +1,4 @@
-/**
+/*
  TODO: old CMP no longer works; see if we can fix this with https://github.com/prebid/Prebid.js/issues/6377
 const expect = require('chai').expect;
 const { testPageURL, switchFrame, waitForElement } = require('../../../helpers/testing-utils');
@@ -59,4 +59,4 @@ describe('Prebid.js GDPR Ad Unit Test', function () {
     expect(ele.isExisting()).to.be.true;
   });
 });
-**/
+ */

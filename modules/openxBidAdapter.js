@@ -2,8 +2,9 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
@@ -12,12 +13,12 @@ export const SYNC_URL = 'https://u.openx.net/w/1.0/pd';
 export const DEFAULT_PH = '2d1251ae-7f3a-47cf-bd2a-2f288854a0ba';
 export const spec = {
   code: 'openx',
-  supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: 69,
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
-  transformBidParams
+  getUserSyncs
 };
 
 registerBidder(spec);
@@ -25,7 +26,12 @@ registerBidder(spec);
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    nativeRequest: {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]},
+      ]
+    }
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
@@ -48,7 +54,8 @@ const converter = ortbConverter({
     mergeDeep(req, {
       at: 1,
       ext: {
-        bc: `${bidderConfig}_${bidderVersion}`
+        bc: `${bidderConfig}_${bidderVersion}`,
+        pv: '$prebid.version$'
       }
     })
     const bid = context.bidRequests[0];
@@ -73,16 +80,23 @@ const converter = ortbConverter({
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
+    if (!context.mediaType && !bid.mtype) {
+      let mediaType = BANNER; // default media type
+      const vastKeywords = ['VAST ', 'vast ', 'videoad', 'VAST_VERSION', 'dc_vast', 'video '];
+      if (bid.adm && bid.adm.startsWith('{') && bid.adm.includes('"assets"')) {
+        mediaType = NATIVE;
+      } else if (bid.vastXml || bid.vastUrl || (bid.adm && vastKeywords.some(v => bid.adm.includes(v)))) {
+        mediaType = VIDEO;
+      }
+      bid.mediaType = mediaType;
+      bid.mtype = Object.keys(ORTB_MTYPES).find(key => ORTB_MTYPES[key] === mediaType);
+    }
+
     const bidResponse = buildBidResponse(bid, context);
     if (bid.ext) {
       bidResponse.meta.networkId = bid.ext.dsp_id;
       bidResponse.meta.advertiserId = bid.ext.buyer_id;
       bidResponse.meta.brandId = bid.ext.brand_id;
-    }
-    const {ortbResponse} = context;
-    if (ortbResponse.ext && ortbResponse.ext.paf) {
-      bidResponse.meta.paf = Object.assign({}, ortbResponse.ext.paf);
-      bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
     }
     return bidResponse;
   },
@@ -104,17 +118,19 @@ const converter = ortbConverter({
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
         return {
           bidId,
-          config: Object.assign({
-            auctionSignals: {},
-          }, cfg)
+          config: mergeDeep(Object.assign({}, cfg), {
+            auctionSignals: {
+              ortb2Imp: context.impContext[bidId]?.imp,
+            },
+          }),
         }
       });
       return {
         bids: response.bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       }
     } else {
-      return response.bids
+      return response
     }
   },
   overrides: {
@@ -139,21 +155,11 @@ const converter = ortbConverter({
             bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
           }
           orig(imp, bidRequest, context);
-          if (imp.video && videoParams?.context === 'outstream') {
-            imp.video.placement = imp.video.placement || 4;
-          }
         }
       }
     }
   }
 });
-
-function transformBidParams(params, isOpenRtb) {
-  return utils.convertTypes({
-    'unit': 'string',
-    'customFloor': 'number'
-  }, params);
-}
 
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||
@@ -170,8 +176,11 @@ function isBidRequestValid(bidRequest) {
 
 function buildRequests(bids, bidderRequest) {
   let videoBids = bids.filter(bid => isVideoBid(bid));
-  let bannerBids = bids.filter(bid => isBannerBid(bid));
-  let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
+  let bannerAndNativeBids = bids.filter(bid => isBannerBid(bid) || isNativeBid(bid))
+    // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
+    .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
+
+  let requests = bannerAndNativeBids.length ? [createRequest(bannerAndNativeBids, bidderRequest, null)] : [];
   videoBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
@@ -190,8 +199,13 @@ function isVideoBid(bid) {
   return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
+function isNativeBid(bid) {
+  return utils.deepAccess(bid, 'mediaTypes.native');
+}
+
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+  const isNotVideoOrNativeBid = !isVideoBid(bid) && !isNativeBid(bid)
+  return utils.deepAccess(bid, 'mediaTypes.banner') || isNotVideoOrNativeBid;
 }
 
 function interpretResponse(resp, req) {

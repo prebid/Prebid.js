@@ -11,12 +11,25 @@ module.exports = {
       node: {
         moduleDirectory: ['node_modules', './']
       }
+    },
+    'jsdoc': {
+      mode: 'typescript',
+      tagNamePreference: {
+        'tag constructor': 'constructor',
+        extends: 'extends',
+        method: 'method',
+        return: 'return',
+      }
     }
   },
-  extends: 'standard',
+  extends: [
+    'standard',
+    'plugin:jsdoc/recommended'
+  ],
   plugins: [
     'prebid',
-    'import'
+    'import',
+    'jsdoc'
   ],
   globals: {
     'BROWSERSTACK_USERNAME': false,
@@ -29,6 +42,7 @@ module.exports = {
     sourceType: 'module',
     ecmaVersion: 2018,
   },
+  ignorePatterns: ['libraries/creative-renderer*'],
 
   rules: {
     'comma-dangle': 'off',
@@ -46,6 +60,25 @@ module.exports = {
     'no-undef': 2,
     'no-useless-escape': 'off',
     'no-console': 'error',
+    'jsdoc/check-types': 'off',
+    'jsdoc/no-defaults': 'off',
+    'jsdoc/newline-after-description': 'off',
+    'jsdoc/require-jsdoc': 'off',
+    'jsdoc/require-param': 'off',
+    'jsdoc/require-param-description': 'off',
+    'jsdoc/require-param-name': 'off',
+    'jsdoc/require-param-type': 'off',
+    'jsdoc/require-property': 'off',
+    'jsdoc/require-property-description': 'off',
+    'jsdoc/require-property-name': 'off',
+    'jsdoc/require-property-type': 'off',
+    'jsdoc/require-returns': 'off',
+    'jsdoc/require-returns-check': 'off',
+    'jsdoc/require-returns-description': 'off',
+    'jsdoc/require-returns-type': 'off',
+    'jsdoc/require-yields': 'off',
+    'jsdoc/require-yields-check': 'off',
+    'jsdoc/tag-lines': 'off'
   },
   overrides: Object.keys(allowedModules).map((key) => ({
     files: key + '/**/*.js',
@@ -57,11 +90,48 @@ module.exports = {
           name: 'require',
           message: 'use import instead'
         }
+      ],
+      'prebid/no-global': [
+        'error',
+        ...['localStorage', 'sessionStorage'].map(name => ({name, message: 'use storageManager instead'})),
+        {
+          name: 'XMLHttpRequest',
+          message: 'use ajax.js instead'
+        },
+      ],
+      'prebid/no-member': [
+        'error',
+        {
+          name: 'cookie',
+          target: 'document',
+          message: 'use storageManager instead'
+        },
+        {
+          name: 'sendBeacon',
+          target: 'navigator',
+          message: 'use ajax.js instead'
+        },
+        ...['outerText', 'innerText'].map(name => ({
+          name,
+          message: 'use .textContent instead'
+        }))
       ]
     }
   })).concat([{
     // code in other packages (such as plugins/eslint) is not "seen" by babel and its parser will complain.
     files: 'plugins/*/**/*.js',
     parser: 'esprima'
+  }, {
+    files: '**BidAdapter.js',
+    rules: {
+      'no-restricted-imports': [
+        'error', {
+          patterns: [
+            '**/src/events.js',
+            '**/src/adloader.js'
+          ]
+        }
+      ]
+    }
   }])
 };

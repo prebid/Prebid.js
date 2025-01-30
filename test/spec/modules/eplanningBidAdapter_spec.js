@@ -53,6 +53,68 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBidWithSchain = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+    'schain': {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'directseller.com',
+          sid: '00001',
+          rid: 'BidRequest1',
+          hp: 1,
+          name: 'publisher',
+          domain: 'publisher.com'
+        }
+      ]
+    }
+  };
+  const validBidWithSchainNodes = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+    'schain': {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'directseller.com',
+          sid: '00001',
+          rid: 'BidRequest1',
+          hp: 1,
+          name: 'publisher',
+          domain: 'publisher.com'
+        },
+        {
+          asi: 'reseller.com',
+          sid: 'aaaaa',
+          rid: 'BidRequest2',
+          hp: 1,
+          name: 'publisher2',
+          domain: 'publisher2.com'
+        },
+        {
+          asi: 'reseller3.com',
+          sid: 'aaaaab',
+          rid: 'BidRequest3',
+          hp: 1,
+          name: 'publisher3',
+          domain: 'publisher3.com'
+        }
+      ]
+    }
+  };
   const ML = '1';
   const validBidMappingLinear = {
     'bidder': 'eplanning',
@@ -73,6 +135,53 @@ describe('E-Planning Adapter', function () {
       'sn': SN,
     },
     'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidSpaceNameWithBidFloor = {
+    bidder: 'eplanning',
+    'bidId': BID_ID,
+    params: {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidSpaceOutstreamWithBidFloor = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': [300, 600],
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceInstreamWithBidFloor = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'mediaTypes': {
+      'video': {
+        'context': 'instream',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
   };
   const validBidSpaceOutstream = {
     'bidder': 'eplanning',
@@ -573,6 +682,26 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal(SN + ':300x250,300x600');
     });
 
+    it('should return e parameter with space name attribute with value according to the adunit sizes and bidFloor', function () {
+      const e = spec.buildRequests([validBidSpaceNameWithBidFloor], bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600|' + validBidSpaceNameWithBidFloor.getFloor().floor);
+    });
+
+    it('should return correct e parameter with support vast with one space with size outstream and bidFloor', function () {
+      const data = spec.buildRequests([validBidSpaceOutstreamWithBidFloor], bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1|' + validBidSpaceOutstreamWithBidFloor.getFloor().floor);
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size instream with bidFloor', function () {
+      let bidRequests = [validBidSpaceInstreamWithBidFloor];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1|' + validBidSpaceInstreamWithBidFloor.getFloor().floor);
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+
     it('should return correct e parameter with more than one adunit', function () {
       const NEW_CODE = ADUNIT_CODE + '2';
       const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE + '2';
@@ -660,7 +789,18 @@ describe('E-Planning Adapter', function () {
       expect(data.vctx).to.equal(2);
       expect(data.vv).to.equal(3);
     });
-
+    it('should return sch parameter', function () {
+      let bidRequests = [validBidWithSchain], schainExpected, schain;
+      schain = validBidWithSchain.schain;
+      schainExpected = schain.ver + ',' + schain.complete + '!' + schain.nodes.map(node => node.asi + ',' + node.sid + ',' + node.hp + ',' + node.rid + ',' + node.name + ',' + node.domain).join('!');
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.sch).to.deep.equal(schainExpected);
+    });
+    it('should not return sch parameter', function () {
+      let bidRequests = [validBidWithSchainNodes];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.sch).to.equal(undefined);
+    });
     it('should return correct e parameter with linear mapping attribute with more than one adunit', function () {
       let bidRequestsML = [validBidMappingLinear];
       const NEW_CODE = ADUNIT_CODE + '2';
