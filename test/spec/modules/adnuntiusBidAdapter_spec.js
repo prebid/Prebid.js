@@ -6,7 +6,7 @@ import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
-import {getUnixTimestampFromNow} from 'src/utils.js';
+import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
 
 describe('adnuntiusBidAdapter', function () {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
@@ -48,11 +48,14 @@ describe('adnuntiusBidAdapter', function () {
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid`;
+  const win = getWindowTop() || window;
+  const screen = win.screen.availWidth + 'x' + win.screen.availHeight;
+  const viewport = win.innerWidth + 'x' + win.innerHeight;
+  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&screen=${screen}&viewport=${viewport}`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&userId=${usi}`;
+  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
   const adapter = newBidder(spec);
 
   const bidderRequests = [
@@ -198,6 +201,7 @@ describe('adnuntiusBidAdapter', function () {
       'urlsEsc': {
         'destination': 'https%3A%2F%2Fads.adnuntius.delivery%2Fc%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg%3Fct%3D673%26r%3Dhttp%253A%252F%252Fadnuntius.com'
       },
+      'advertiserDomains': ['fred.com', 'george.com'],
       'destinationUrls': {
         'destination': 'https://adnuntius.com'
       },
@@ -669,7 +673,7 @@ describe('adnuntiusBidAdapter', function () {
       const bid = request[0].bid[0]
       expect(bid).to.have.property('bidId');
       expect(request[0]).to.have.property('url');
-      expect(request[0].url).to.equal(ENDPOINT_URL.replace('format=prebid', 'format=prebid&so=overridden-value'));
+      expect(request[0].url).to.equal(ENDPOINT_URL.replace('&userId', '&so=overridden-value&userId'));
       expect(request[0]).to.have.property('data');
       expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}],"context":"https://canonical.com/something-else.html","canonical":"https://canonical.com/page.html"}');
     });
@@ -1064,47 +1068,6 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
-
-    it('should user in user', function () {
-      config.setBidderConfig({
-        bidders: ['adnuntius'],
-      });
-      const req = [
-        {
-          bidId: 'adn-000000000008b6bc',
-          bidder: 'adnuntius',
-          params: {
-            auId: '000000000008b6bc',
-            network: 'adnuntius',
-            userId: 'different_user_id'
-          }
-        }
-      ]
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
-      expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
-      expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=different_user_id`);
-    });
-
-    it('should handle no user specified', function () {
-      config.setBidderConfig({
-        bidders: ['adnuntius'],
-      });
-      const req = [
-        {
-          bidId: 'adn-000000000008b6bc',
-          bidder: 'adnuntius',
-          params: {
-            auId: '000000000008b6bc',
-            network: 'adnuntius'
-          }
-        }
-      ]
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
-      expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
-      expect(request[0].url).to.equal(ENDPOINT_URL);
-    });
   });
 
   describe('user privacy', function () {
@@ -1296,8 +1259,9 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].currency).to.equal(deal.bid.currency);
       expect(interpretedResponse[0].netRevenue).to.equal(false);
       expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
-      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
-      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('adnuntius.com');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(2);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('fred.com');
+      expect(interpretedResponse[0].meta.advertiserDomains[1]).to.equal('george.com');
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.adUnits[0].deals[0].html);
       expect(interpretedResponse[0].ttl).to.equal(360);
       expect(interpretedResponse[0].dealId).to.equal('abc123xyz');

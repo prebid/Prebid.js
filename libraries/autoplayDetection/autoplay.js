@@ -41,8 +41,12 @@ function startDetection() {
       // if the video is played on a WebView with playsinline = false, this stops the video, to prevent it from being displayed fullscreen
       videoElement.src = '';
     })
-    .catch(() => {
-      autoplayEnabled = false;
+    .catch((error) => {
+      if (error instanceof DOMException && error.name === 'NotSupportedError') {
+        // ignore this error caused by a Content Security Policy that disables data: scheme for media URLs
+      } else {
+        autoplayEnabled = false;
+      }
     });
 }
 

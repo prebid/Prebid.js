@@ -1,4 +1,4 @@
-import {deepAccess, isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
+import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
 import {config} from '../src/config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
@@ -107,9 +107,9 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam) {
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
-  const videoMediaType = deepAccess(index.getMediaTypes(bid), 'video');
-  const context = videoMediaType && deepAccess(videoMediaType, 'context');
-  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+  const videoMediaType = index.getMediaTypes(bid)?.video;
+  const context = videoMediaType && videoMediaType?.context;
+  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
   const adUnit = index.getAdUnit(bid);
 
   // if context not defined assume default 'instream' for video bids

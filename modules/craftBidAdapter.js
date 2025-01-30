@@ -120,7 +120,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     ad: rtbBid.rtb.banner.content,
     ttl: TTL,
     creativeId: rtbBid.creative_id,
-    netRevenue: false, // ???
+    netRevenue: true,
     dealId: rtbBid.deal_id,
     meta: null,
     _adUnitCode: bidRequest.adUnitCode,

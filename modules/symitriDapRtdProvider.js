@@ -159,29 +159,9 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       let deals = membership.deals; // Get list of Deals the user is mapped to
       deals.forEach((deal) => {
         deal = JSON.parse(deal);
-        if (bidResponse.dealId == deal.id) {
-          // Check if the bid response deal Id matches to the deals mapped to the user
+        if (bidResponse.dealId == deal.id) { // Check if the bid response deal Id matches to the deals mapped to the user
           let token = dapUtils.dapGetTokenFromLocalStorage();
-          let url =
-                        config.params.pixelUrl +
-                        '?token=' +
-                        token +
-                        '&ad_id=' +
-                        bidResponse.adId +
-                        '&bidder=' +
-                        bidResponse.bidder +
-                        '&bidder_code=' +
-                        bidResponse.bidderCode +
-                        '&cpm=' +
-                        bidResponse.cpm +
-                        '&creative_id=' +
-                        bidResponse.creativeId +
-                        '&deal_id=' +
-                        bidResponse.dealId +
-                        '&media_type=' +
-                        bidResponse.mediaType +
-                        '&response_timestamp=' +
-                        bidResponse.responseTimestamp;
+          let url = config.params.pixelUrl + '?token=' + token + '&ad_id=' + bidResponse.adId + '&bidder=' + bidResponse.bidder + '&bidder_code=' + bidResponse.bidderCode + '&cpm=' + bidResponse.cpm + '&creative_id=' + bidResponse.creativeId + '&deal_id=' + bidResponse.dealId + '&media_type=' + bidResponse.mediaType + '&response_timestamp=' + bidResponse.responseTimestamp;
           bidResponse.ad = `${bidResponse.ad}<script src="${url}"/>`;
         }
       });
@@ -683,6 +663,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       switch (config.api_version) {
         case 'x1':
         case 'x1-dev':
+        case 'x2':
           method = 'POST';
           path = '/data-activation/' + config.api_version + '/domain/' + config.domain + '/identity/tokenize';
           body = JSON.stringify(apiParams);
@@ -705,6 +686,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           switch (config.api_version) {
             case 'x1':
             case 'x1-dev':
+            case 'x2':
               token = request.getResponseHeader(headerPrefix + '-DAP-Token');
               break;
           }
@@ -764,8 +746,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         return;
       }
 
-      let path = '/data-activation/' +
-        config.api_version +
+      let path = '/data-activation/x1' +
         '/token/' + token +
         '/membership';
 
@@ -832,8 +813,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         error: (error, request) => { onError(request, request.status, error, onDone); }
       };
 
-      let path = '/data-activation/' +
-        config.api_version +
+      let path = '/data-activation/x1' +
         '/token/' + token +
         '/membership/encrypt';
 

@@ -10,7 +10,8 @@ import {
   getAdUnits,
   getServerTestingConfig,
   getServerTestingsAds,
-  getBidRequests
+  getBidRequests,
+  getTwinAdUnits
 } from 'test/fixtures/fixtures.js';
 import { EVENTS, S2S } from 'src/constants.js';
 import * as utils from 'src/utils.js';
@@ -1739,13 +1740,14 @@ describe('adapterManager tests', function () {
   });
 
   describe('makeBidRequests', function () {
-    let adUnits;
+    let adUnits, twinAdUnits;
     beforeEach(function () {
       resetAdUnitCounters();
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
         return adUnit;
       })
+      twinAdUnits = getTwinAdUnits();
     });
 
     function makeBidRequests(au = adUnits) {
@@ -1860,6 +1862,31 @@ describe('adapterManager tests', function () {
           rubicon: 2
         })
       })
+    });
+
+    describe('adUnitAuctionsCounter', () => {
+      it('should set and increment auctionsCount at adUnitCode level', () => {
+        const [au1, au2] = adUnits;
+        makeBidRequests([au1]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(1);
+        });
+        makeBidRequests([au1]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(2);
+        });
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(bid.adUnitCode === au1.code ? 3 : 1);
+        });
+      });
+
+      it('should increment the auctionsCount of each adUnitCode exactly once per auction for twin ad units', () => {
+        const [au1, au2] = twinAdUnits;
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(1);
+        });
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(2);
+        });
+      });
     });
 
     describe('and activity controls', () => {

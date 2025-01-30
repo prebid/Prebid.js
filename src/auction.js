@@ -66,9 +66,7 @@
  */
 
 import {
-  deepAccess,
   generateUUID,
-  getValue,
   isEmpty,
   isEmptyStr,
   isFn,
@@ -98,6 +96,8 @@ import {defer, GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
+import {ttlCollection} from './utils/ttlCollection.js';
+import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 
 const { syncUsers } = userSync;
 
@@ -153,7 +153,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _bidsRejected = [];
   let _callback = callback;
   let _bidderRequests = [];
-  let _bidsReceived = [];
+  let _bidsReceived = ttlCollection({
+    startTime: (bid) => bid.responseTimestamp,
+    ttl: (bid) => getMinBidCacheTTL() == null ? null : Math.max(getMinBidCacheTTL(), bid.ttl) * 1000
+  });
   let _noBids = [];
   let _winningBids = [];
   let _auctionStart;
@@ -162,8 +165,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _auctionStatus;
   let _nonBids = [];
 
+  onMinBidCacheTTLChange(() => _bidsReceived.refresh());
+
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
-  function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
+  function addBidReceived(bid) { _bidsReceived.add(bid); }
   function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
   function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
@@ -179,7 +184,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       labels: _labels,
       bidderRequests: _bidderRequests,
       noBids: _noBids,
-      bidsReceived: _bidsReceived,
+      bidsReceived: _bidsReceived.toArray(),
       bidsRejected: _bidsRejected,
       winningBids: _winningBids,
       timeout: _timeout,
@@ -219,7 +224,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       bidsBackCallback(_adUnits, function () {
         try {
           if (_callback != null) {
-            const bids = _bidsReceived
+            const bids = _bidsReceived.toArray()
               .filter(bid => _adUnitCodes.includes(bid.adUnitCode))
               .reduce(groupByPlacement, {});
             _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
@@ -246,7 +251,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function auctionDone() {
     config.resetBidder();
     // when all bidders have called done callback atleast once it means auction is complete
-    logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
+    logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived.toArray());
     _auctionStatus = AUCTION_COMPLETED;
     executeCallback(false);
   }
@@ -404,13 +409,14 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getAdUnits: () => _adUnits,
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
-    getBidsReceived: () => _bidsReceived,
+    getBidsReceived: () => _bidsReceived.toArray(),
     getNoBids: () => _noBids,
     getNonBids: () => _nonBids,
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
     end: done.promise,
-    requestsDone: requestsDone.promise
+    requestsDone: requestsDone.promise,
+    getProperties
   };
 }
 
@@ -559,13 +565,12 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
   let addBid = true;
 
-  const videoMediaType = deepAccess(
-    index.getMediaTypes({
-      requestId: bidResponse.originalRequestId || bidResponse.requestId,
-      adUnitId: bidResponse.adUnitId
-    }), 'video');
-  const context = videoMediaType && deepAccess(videoMediaType, 'context');
-  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+  const videoMediaType = index.getMediaTypes({
+    requestId: bidResponse.originalRequestId || bidResponse.requestId,
+    adUnitId: bidResponse.adUnitId
+  })?.video;
+  const context = videoMediaType && videoMediaType?.context;
+  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
 
   if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
@@ -684,7 +689,7 @@ function setupBidTargeting(bidObject) {
 export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
     if (FEATURES.VIDEO && mediaType === VIDEO) {
-      const context = deepAccess(mediaTypes, `${VIDEO}.context`, 'instream');
+      const context = mediaTypes?.[VIDEO]?.context ?? 'instream';
       if (mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
         return mediaTypePriceGranularity[`${VIDEO}-${context}`];
       }
@@ -757,7 +762,7 @@ export const getAdvertiserDomain = () => {
  */
 export const getDSP = () => {
   return (bid) => {
-    return (bid.meta && (bid.meta.networkId || bid.meta.networkName)) ? deepAccess(bid, 'meta.networkName') || deepAccess(bid, 'meta.networkId') : '';
+    return (bid.meta && (bid.meta.networkId || bid.meta.networkName)) ? bid?.meta?.networkName || bid?.meta?.networkId : '';
   }
 }
 
@@ -780,7 +785,7 @@ function createKeyVal(key, value) {
         return value(bidResponse, bidReq);
       }
       : function (bidResponse) {
-        return getValue(bidResponse, value);
+        return bidResponse[value];
       }
   };
 }
@@ -829,8 +834,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
-          return deepAccess(bidResponse, `adserverTargeting.${TARGETING_KEYS.CACHE_HOST}`)
-            ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_HOST] : urlInfo.hostname;
+          return bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname;
         }));
       }
     }

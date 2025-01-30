@@ -232,7 +232,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: getBidRequestUrlByRegion(),
     data: data,
-    options: {contentType: 'application/json;charset=UTF-8', withCredentials: false}
+    options: {
+      withCredentials: true,
+      contentType: 'application/json;charset=UTF-8',
+    }
   }
 }
 
