@@ -3601,15 +3601,15 @@ describe('Unit: Prebid Module', function () {
       }
 
       Object.entries({
-        'analytics=true': {
+        'events=true': {
           mark(options = {}) {
-            $$PREBID_GLOBAL$$.markWinningBidAsUsed(Object.assign({analytics: true}, options))
+            $$PREBID_GLOBAL$$.markWinningBidAsUsed(Object.assign({events: true}, options))
           },
           checkBidWon() {
             sinon.assert.calledWith(events.emit, EVENTS.BID_WON, markedBid);
           }
         },
-        'analytics=false': {
+        'events=false': {
           mark(options = {}) {
             $$PREBID_GLOBAL$$.markWinningBidAsUsed(options)
           },
