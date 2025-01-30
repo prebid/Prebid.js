@@ -364,64 +364,6 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   });
 }
 
-/**
- * map wurl to auction id and adId for use in the BID_WON event
- */
-let wurlMap = {};
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @param {string} wurl events.winurl passed from prebidServer as wurl
- */
-function addWurl(auctionId, adId, wurl) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = wurl;
-  }
-}
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- */
-function removeWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = undefined;
-  }
-}
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @return {(string|undefined)} events.winurl which was passed as wurl
- */
-function getWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    return wurlMap[`${auctionId}${adId}`];
-  }
-}
-
-/**
- * remove all cached wurls
- */
-export function resetWurlMap() {
-  wurlMap = {};
-}
-
-/**
- * BID_WON event to request the wurl
- * @param {Bid} bid the winning bid object
- */
-function bidWonHandler(bid) {
-  const wurl = getWurl(bid.auctionId, bid.adId);
-  if (isStr(wurl)) {
-    logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
-    triggerPixel(wurl);
-
-    // remove from wurl cache, since the wurl url was called
-    removeWurl(bid.auctionId, bid.adId);
-  }
-}
-
 function getMatchingConsentUrl(urlProp, gdprConsent) {
   const hasPurpose = hasPurpose1Consent(gdprConsent);
   const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent
@@ -516,9 +458,6 @@ export function PrebidServer() {
           } else {
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
               addBidResponse(adUnit, bid);
-              if (bid.pbsWurl) {
-                addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
-              }
             } else {
               addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
@@ -532,9 +471,6 @@ export function PrebidServer() {
       })
     }
   };
-
-  // Listen for bid won to call wurl
-  events.on(EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,
