@@ -355,7 +355,7 @@ export const spec = {
     if (bidRequests[0].userId) {
       let eids = [];
       const processEids = (uids) => {
-        uids?.forEach(eid => {
+        uids.forEach(eid => {
           if (!eid || !eid.uids || eid.uids.length < 1) { return; }
           eid.uids.forEach(uid => {
             let tmp = {'source': eid.source, 'id': uid.id};
