@@ -1381,17 +1381,19 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    it('fires billing url if present on s2s bid', function () {
-      const burl = 'http://www.example.com/burl';
+    it('fires impression trackers if present', function () {
+      const url = 'http://www.example.com/burl';
       pushBidResponseToAuction({
         ad: '<div>ad</div>',
         source: 's2s',
-        burl
+        eventtrackers: [
+          {event: 1, method: 1, url}
+        ]
       });
 
       return renderAd(doc, bidId).then(() => {
         sinon.assert.calledOnce(triggerPixelStub);
-        sinon.assert.calledWith(triggerPixelStub, burl);
+        sinon.assert.calledWith(triggerPixelStub, url);
       });
     });
 

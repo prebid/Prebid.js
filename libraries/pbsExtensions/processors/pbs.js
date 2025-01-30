@@ -6,7 +6,7 @@ import {setImpBidParams} from './params.js';
 import {setImpAdUnitCode} from './adUnitCode.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
-import {addWinTrackers} from "./eventTrackers.js";
+import {addEventTrackers} from "./eventTrackers.js";
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -77,7 +77,7 @@ export const PBS_PROCESSORS = {
     },
     pbsWinTrackers: {
       // converts "legacy" burl and ext.prebid.events.win into eventtrackers
-      fn: addWinTrackers
+      fn: addEventTrackers
     },
   },
   [RESPONSE]: {

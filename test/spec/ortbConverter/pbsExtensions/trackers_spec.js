@@ -1,5 +1,5 @@
 import {EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG} from '../../../../src/eventTrackers.js';
-import {addWinTrackers} from '../../../../libraries/pbsExtensions/processors/eventTrackers.js';
+import {addEventTrackers} from '../../../../libraries/pbsExtensions/processors/eventTrackers.js';
 
 describe('PBS event trackers', () => {
   let bidResponse;
@@ -32,18 +32,18 @@ describe('PBS event trackers', () => {
     }
 
     it(`should add ${t}`, () => {
-      addWinTrackers(bidResponse, bid);
+      addEventTrackers(bidResponse, bid);
       expect(getTracker()).to.exist;
     });
     it(`should append ${t}`, () => {
       bidResponse.eventtrackers = [{method: 123, event: 321, url: 'other-tracker'}];
-      addWinTrackers(bidResponse, bid);
+      addEventTrackers(bidResponse, bid);
       expect(getTracker()).to.exist;
       expect(bidResponse.eventtrackers.length).to.eql(2);
     });
     it('should NOT add a duplicate tracker', () => {
       bidResponse.eventtrackers = [{method: TRACKER_METHOD_IMG, event: type, url: 'tracker'}];
-      addWinTrackers(bidResponse, bid);
+      addEventTrackers(bidResponse, bid);
       expect(getTracker()).to.exist;
       expect(bidResponse.eventtrackers.length).to.eql(1);
     })
