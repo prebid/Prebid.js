@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { ajax } from '../src/ajax.js';
@@ -7,7 +7,9 @@ import { ajax } from '../src/ajax.js';
 const BIDDER_CODE = 'defineMedia';
 const IAB_GVL_ID = 755;
 const SUPPORTED_MEDIA_TYPES = [BANNER];
-const ENDPOINT_URL = 'https://rtb-dev.conative.network/openrtb2/auction';
+
+const ENDPOINT_URL_DEV = 'https://rtb-dev.conative.network/openrtb2/auction';
+const ENDPOINT_URL_PROD = 'https://rtb.conative.network/openrtb2/auction';
 const METHOD = 'POST';
 
 const converter = ortbConverter({
@@ -23,26 +25,33 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: (bid) => {
-    const isValid = Boolean(bid?.params?.mandantId);
-    utils.logInfo(`[${BIDDER_CODE}] isBidRequestValid for bid ${bid.bidId}:`, isValid);
+    const hasSupplierDomainName = Boolean(bid?.params?.supplierDomainName);
+    const isDevMode = Boolean(bid?.params?.devMode);
+    utils.logInfo(`[${BIDDER_CODE}] isBidRequestValid called with:`, { bid, hasSupplierDomainName, isDevMode });
+    const isValid = hasSupplierDomainName;
+    utils.logInfo(`[${BIDDER_CODE}] isBidRequestValid returned:`, isValid);
     return isValid;
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    utils.logInfo(`[${BIDDER_CODE}] buildRequests called with:`, { validBidRequests, bidderRequest });
-    const isValid = Boolean(validBidRequests[0]?.params?.mandantId);
-
-    if(!isValid) return [];
+    if (validBidRequests.length !== 1) {
+      utils.logWarn(`[${BIDDER_CODE}] buildRequests called with invalid number of validBidRequests:`, validBidRequests.length);
+      return [];
+    }
 
     const ortbRequest = converter.toORTB({validBidRequests, bidderRequest});
+    const params = validBidRequests[0].params;
+    const isDevMode = Boolean(params?.devMode);
+    const endpointUrl = isDevMode ? ENDPOINT_URL_DEV : ENDPOINT_URL_PROD;
 
-    utils.deepSetValue(ortbRequest.imp[0], 'ext.bidder.mandantId', validBidRequests[0].params.mandantId);
+    utils.deepSetValue(ortbRequest, 'source.schain.complete', 1);
+    utils.deepSetValue(ortbRequest, 'source.schain.nodes.0.asi', '' + params.supplierDomainName);
 
     utils.logInfo(`[${BIDDER_CODE}] Mapped ORTB Request:`, ortbRequest);
 
     return [{
       method: METHOD,
-      url: ENDPOINT_URL,
+      url: endpointUrl,
       data: ortbRequest,
       options: {
         contentType: 'application/json',
@@ -68,15 +77,15 @@ export const spec = {
 
   onBidWon: (bid) => {
     if (bid?.burl) {
-      ajax(bid.burl, null);
+      ajax(bid.burl, null, null);
     }
     utils.logInfo(`[${BIDDER_CODE}] onBidWon called with bid:`, bid);
   },
 
   onBidderError: ({ error, bidderRequest }) => {
-    if (bid?.lurl) {
-      ajax(bid.lurl, null);
-    }
+    /* if (bid?.lurl) {
+      ajax(bid.lurl, null, null);
+    } */
     utils.logError(`[${BIDDER_CODE}] onBidderError called with:`, { error, bidderRequest });
   },
 
