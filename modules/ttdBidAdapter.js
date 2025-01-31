@@ -433,7 +433,6 @@ export const spec = {
       });
     }
 
-
     let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
 
     let serverRequest = {
