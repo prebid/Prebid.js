@@ -396,6 +396,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const firstPartyData = bidderRequest.ortb2 || {};
+    const firstPartyImpData = bidderRequest.ortb2Imp || {};
     let topLevel = {
       id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
@@ -421,8 +422,8 @@ export const spec = {
       topLevel.app = firstPartyData.app;
     }
 
-    if (firstPartyData && firstPartyData.pmp) {
-      topLevel.imp = mergeDeep(topLevel.imp, firstPartyData.pmp);
+    if ((firstPartyData && firstPartyData.pmp) || (firstPartyImpData && firstPartyImpData.pmp)) {
+      topLevel.imp = mergeDeep(topLevel.imp, firstPartyData.pmp, firstPartyImpData.pmp);
     }
 
     let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
