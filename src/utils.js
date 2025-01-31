@@ -1019,9 +1019,7 @@ export function deepEqual(obj1, obj2, { checkTypes = false } = {}) {
       }
     }
     return true;
-  } 
-  // If only one is an array, they’re not equal
-  else if (Array.isArray(obj1) || Array.isArray(obj2)) {
+  } else if (Array.isArray(obj1) || Array.isArray(obj2)) {
     return false;
   }
 
@@ -1048,7 +1046,6 @@ export function deepEqual(obj1, obj2, { checkTypes = false } = {}) {
 
   return true;
 }
-
 
 export function mergeDeep(target, ...sources) {
   if (!sources.length) return target;
@@ -1273,7 +1270,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
  *
  * @param {Array} collection - Array of objects.
  * @param {String} key - Key of nested property.
- * @returns {any, undefined} - Value of nested property.
+ * @returns {any|undefined} - Value of nested property.
  */
 export function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
