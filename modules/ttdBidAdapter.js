@@ -418,11 +418,11 @@ export const spec = {
     }
 
     if (firstPartyData && firstPartyData.app) {
-      topLevel.app = firstPartyData.app
+      topLevel.app = firstPartyData.app;
     }
 
     if (firstPartyData && firstPartyData.pmp) {
-      topLevel.pmp = firstPartyData.pmp
+      topLevel.imp = mergeDeep(topLevel.imp, firstPartyData.pmp);
     }
 
     let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
