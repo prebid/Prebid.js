@@ -423,7 +423,7 @@ export const spec = {
     }
 
     if ((firstPartyData && firstPartyData.pmp) || (firstPartyImpData && firstPartyImpData.pmp)) {
-      topLevel.imp = utils.mergeDeep(topLevel.imp, firstPartyData?.pmp, firstPartyImpData?.pmp);
+      topLevel.imp = utils.mergeDeep(topLevel.imp, {pmp: firstPartyData?.pmp}, {pmp: firstPartyImpData?.pmp});
     }
 
     let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
