@@ -84,8 +84,8 @@ export const spec = {
     const subdomain = getSubdomain();
     const endpointURL = ESCALAX_URL
       .replace(ESCALAX_SUBDOMAIN_MACRO, subdomain || ESCALAX_DEFAULT_SUBDOMAIN)
-      .replace(ESCALAX_ACCOUNT_ID_MACRO, sourceId)
-      .replace(ESCALAX_SOURCE_ID_MACRO, accountId);
+      .replace(ESCALAX_SOURCE_ID_MACRO, sourceId)
+      .replace(ESCALAX_ACCOUNT_ID_MACRO, accountId);
     const request = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     return {
       method: 'POST',

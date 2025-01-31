@@ -1,7 +1,7 @@
 # Prebid.js - ORTB conversion library
 
-This library provides methods to convert Prebid.js bid request objects to ORTB requests, 
-and ORTB responses to Prebid.js bid response objects. 
+This library provides methods to convert Prebid.js bid request objects to ORTB requests,
+and ORTB responses to Prebid.js bid response objects.
 
 ## Usage
 
@@ -37,12 +37,24 @@ registerBidder({
 })
 ```
 
-Without any customization, the library will generate complete ORTB requests, but ignores your [bid params](#params). 
+Without any customization, the library will generate complete ORTB requests, but ignores your [bid params](#params).
 If your endpoint sets `response.seatbid[].bid[].mtype` (part of the ORTB 2.6 spec), it will also parse the response into complete bidResponse objects. See [setting response mediaTypes](#response-mediaTypes) if that is not the case.
 
 ### Module-specific conversions
 
 Prebid.js features that require a module also require it for their corresponding ORTB conversion logic. For example, `imp.bidfloor` is only populated if the `priceFloors` module is active; `request.cur` needs the `currency` module, and so on. Notably, this means that to get those fields populated from your unit tests, you must import those modules first; see [this suite](https://github.com/prebid/Prebid.js/blob/master/test/spec/modules/openxOrtbBidAdapter_spec.js) for an example.
+
+#### priceFloors extensions
+
+In addition to `imp.bidfloor` and `imp.bidfloorcur`, the `priceFloors` module also populates media type and `format` objects, if their floors differ:
+
+| Path                                                | `getFloor` invocation                                          | 
+|-----------------------------------------------------|----------------------------------------------------------------|
+| `imp.bidfloor` & `.bidfloorcur`                     | `.getFloor()`                                                  |
+| `imp.banner.ext.bidfloor` & `.bidfloorcur`          | `.getFloor({mediaType: 'banner', size: '*'})`                  |
+| `imp.banner.format[].ext.bidfloor` & `.bidfloorcur` | `.getFloor({mediaType: 'banner', size: [format.w, format.h]})` |
+| `imp.native.ext.bidfloor` & `.bidfloorcur`          | `.getFloor({mediaType: 'native', size: '*'})`                  |
+| `imp.video.ext.bidfloor` & `.bidfloorcur`           | `.getFloor({mediaType: 'video', size: '*'})`                   |           
 
 ## Customization
 
@@ -57,35 +69,35 @@ deepSetValue(data.imp[0], 'ext.myCustomParam', bidRequests[0].params.myCustomPar
 
 However, there are two restrictions (to avoid them, use the [other customization options](#fine-customization)):
 
- - you may not change the `imp[].id` returned by `toORTB`; they ared used internally to match responses to their requests.
-     ```javascript
-     const data = converter.toORTB({bidRequests, bidderRequest});
-     data.imp[0].id = 'custom-imp-id' // do not do this - it will cause an error later in `fromORTB`
-     ```
-   See also [overriding `imp.id`](#imp-id).
- - the `request` argument passed to `fromORTB` must be the same object returned by `toORTB`.
+- you may not change the `imp[].id` returned by `toORTB`; they ared used internally to match responses to their requests.
     ```javascript
-    let data = converter.toORTB({bidRequests, bidderRequest});
-   
-    data = mergeDeep(                                              // the original object is lost
-      {ext: {myCustomParam: bidRequests[0].params.myCustomParam}}, // `fromORTB` will later throw an error
-      data
-    ); 
-    
-    // do this instead:                                                                                     
-    mergeDeep(                                                     
-      data, 
-      {ext: {myCustomParam: bidRequests[0].params.myCustomParam}}, 
-      data
-    )   
+    const data = converter.toORTB({bidRequests, bidderRequest});
+    data.imp[0].id = 'custom-imp-id' // do not do this - it will cause an error later in `fromORTB`
     ```
+  See also [overriding `imp.id`](#imp-id).
+- the `request` argument passed to `fromORTB` must be the same object returned by `toORTB`.
+   ```javascript
+   let data = converter.toORTB({bidRequests, bidderRequest});
+  
+   data = mergeDeep(                                              // the original object is lost
+     {ext: {myCustomParam: bidRequests[0].params.myCustomParam}}, // `fromORTB` will later throw an error
+     data
+   ); 
+   
+   // do this instead:                                                                                     
+   mergeDeep(                                                     
+     data, 
+     {ext: {myCustomParam: bidRequests[0].params.myCustomParam}}, 
+     data
+   )   
+   ```
 
 ### <a id="fine-customization" /> Fine grained customization - imp, request, bidResponse, response
 
 When invoked, `toORTB({bidRequests, bidderRequest})` first loops through each request in `bidRequests`, converting them into ORTB `imp` objects.
 It then packages them into a single ORTB request, adding other parameters that are not imp-specific (such as for example `request.tmax`).
 
-Likewise, `fromORTB({request, response})` first loops through each `response.seatbid[].bid[]`, converting them into Prebid bidResponses; it then packages them into 
+Likewise, `fromORTB({request, response})` first loops through each `response.seatbid[].bid[]`, converting them into Prebid bidResponses; it then packages them into
 a single return value.
 
 You can customize each of these steps using the `ortbConverter` arguments `imp`, `request`, `bidResponse` and `response`:
@@ -98,8 +110,8 @@ The arguments are:
 - `buildImp`: a function taking `(bidRequest, context)` and returning an ORTB `imp` object;
 - `bidRequest`: the bid request object to convert;
 - `context`: a [context object](#context) that contains at least:
-   - `bidderRequest`: the `bidderRequest` argument passed to `toORTB`.
-   
+    - `bidderRequest`: the `bidderRequest` argument passed to `toORTB`.
+
 #### <a id="params" /> Example: attaching custom bid params
 
 ```javascript
@@ -194,7 +206,7 @@ const converter = ortbConverter({
 })
 ```
 
-If you know that a particular ORTB request/response pair deals with exclusively one mediaType, you may also pass it directly in the [context parameter](#context). 
+If you know that a particular ORTB request/response pair deals with exclusively one mediaType, you may also pass it directly in the [context parameter](#context).
 Note that - compared to the above - this has additional effects, because `context.mediaType` is also considered during `imp` generation - see [special context properties](#special-context).
 
 ```javascript
@@ -223,7 +235,7 @@ const converter = ortbConverter({
 
 ### <a id="response" /> Customizing the response: `response(buildResponse, bidResponses, ortbResponse, context)`
 
-Invoked once, after all `seatbid[].bid[]` objects have been converted to corresponding bid responses. The value returned 
+Invoked once, after all `seatbid[].bid[]` objects have been converted to corresponding bid responses. The value returned
 by this function is also the value returned by `fromORTB`.
 The arguments are:
 
@@ -249,7 +261,7 @@ const converter = ortbConverter({
 ### Even finer grained customization - processor overrides
 
 Each of the four conversion steps described above - imp, request, bidResponse and response - is further broken down into
-smaller units of work (called _processors_). For example, when the currency module is included, it adds a _request processor_ 
+smaller units of work (called _processors_). For example, when the currency module is included, it adds a _request processor_
 that sets `request.cur`; the priceFloors module adds an _imp processor_ that sets `imp.bidfloor` and `imp.bidfloorcur`, and so on.
 
 Each processor can be overridden or disabled through the `overrides` argument:
@@ -310,21 +322,21 @@ const converter = ortbConverter({
 Processor overrides are similar to the override options described above, except that they take the object to process as argument:
 
 - `imp` processor overrides take `(orig, imp, bidRequest, context)`, where:
-   - `orig` is the processor function being overridden, which itself takes `(imp, bidRequest, context)`;
-   - `imp` is the (partial) imp object to modify;
-   - `bidRequest` and `context` are the same arguments passed to [imp](#imp).
+    - `orig` is the processor function being overridden, which itself takes `(imp, bidRequest, context)`;
+    - `imp` is the (partial) imp object to modify;
+    - `bidRequest` and `context` are the same arguments passed to [imp](#imp).
 - `request` processor overrides take `(orig, ortbRequest, bidderRequest, context)`, where:
-   - `orig` is the processor function being overridden, and takes `(ortbRequest, bidderRequest, context)`;
-   - `ortbRequest` is the partial request to modify;
-   - `bidderRequest` and `context` are the same arguments passed to [request](#reuqest).
-- `bidResponse` processor overrides take `(orig, bidResponse, bid, context)`, where: 
-   - `orig` is the processor function being overridden, and takes `(bidResponse, bid, context)`;
-   - `bidResponse` is the partial bid response to modify;
-   - `bid` and `context` are the same arguments passed to [bidResponse](#bidResponse)
+    - `orig` is the processor function being overridden, and takes `(ortbRequest, bidderRequest, context)`;
+    - `ortbRequest` is the partial request to modify;
+    - `bidderRequest` and `context` are the same arguments passed to [request](#reuqest).
+- `bidResponse` processor overrides take `(orig, bidResponse, bid, context)`, where:
+    - `orig` is the processor function being overridden, and takes `(bidResponse, bid, context)`;
+    - `bidResponse` is the partial bid response to modify;
+    - `bid` and `context` are the same arguments passed to [bidResponse](#bidResponse)
 - `response` processor overrides take `(orig, response, ortbResponse, context)`, where:
-   - `orig` is the processor function being overriden, and takes `(response, ortbResponse, context)`;
-   - `response` is the partial response to modify;
-   - `ortbRespones` and `context` are the same arguments passed to [response](#response).
+    - `orig` is the processor function being overriden, and takes `(response, ortbResponse, context)`;
+    - `response` is the partial response to modify;
+    - `ortbRespones` and `context` are the same arguments passed to [response](#response).
 
 ### <a id="context" /> The `context` argument
 
@@ -354,19 +366,19 @@ const converter = ortbConverter({
 
 For ease of use, the conversion logic gives special meaning to some context properties:
 
- - `currency`: a currency string (e.g. `'EUR'`). If specified, overrides the currency to use for computing price floors and `request.cur`. If omitted, both default to `getConfig('currency.adServerCurrency')`.
- - `mediaType`: a bid mediaType (`'banner'`, `'video'`, or `'native'`). If specified:
+- `currency`: a currency string (e.g. `'EUR'`). If specified, overrides the currency to use for computing price floors and `request.cur`. If omitted, both default to `getConfig('currency.adServerCurrency')`.
+- `mediaType`: a bid mediaType (`'banner'`, `'video'`, or `'native'`). If specified:
     - disables `imp` generation for other media types (i.e., if `context.mediaType === 'banner'`, only `imp.banner` will be populated; `imp.video` and `imp.native` will not, even if the bid request specifies them);
     - is passed as the `mediaType` option to `bidRequest.getFloor` when computing price floors;
     - sets `bidResponse.mediaType`.
- - `nativeRequest`: a plain object that serves as the base value for `imp.native.request` (and is relevant only for native bid requests).
-      If not specified, the only property that is guaranteed to be populated is `assets`, since Prebid does not require anything else to define a native adUnit. You can use `context.nativeRequest` to provide other properties; for example, you may want to signal support for native impression trackers by setting it to `{eventtrackers: [{event: 1, methods: [1, 2]}]}` (see also the [ORTB Native spec](https://www.iab.com/wp-content/uploads/2018/03/OpenRTB-Native-Ads-Specification-Final-1.2.pdf)).
- - `netRevenue`: the value to set as `bidResponse.netRevenue`. This is a required property of bid responses that does not have a clear ORTB counterpart.
- - `ttl`: the default value to use for `bidResponse.ttl` (if the ORTB response does not provide one in `seatbid[].bid[].exp`).
-   
+- `nativeRequest`: a plain object that serves as the base value for `imp.native.request` (and is relevant only for native bid requests).
+  If not specified, the only property that is guaranteed to be populated is `assets`, since Prebid does not require anything else to define a native adUnit. You can use `context.nativeRequest` to provide other properties; for example, you may want to signal support for native impression trackers by setting it to `{eventtrackers: [{event: 1, methods: [1, 2]}]}` (see also the [ORTB Native spec](https://www.iab.com/wp-content/uploads/2018/03/OpenRTB-Native-Ads-Specification-Final-1.2.pdf)).
+- `netRevenue`: the value to set as `bidResponse.netRevenue`. This is a required property of bid responses that does not have a clear ORTB counterpart.
+- `ttl`: the default value to use for `bidResponse.ttl` (if the ORTB response does not provide one in `seatbid[].bid[].exp`).
+
 ## Prebid Server extensions
 
-If your endpoint is a Prebid Server instance, you may take advantage of the `pbsExtension` companion library, which adds a number of processors that can populate and parse PBS-specific extensions (typically prefixed `ext.prebid`); these include bidder params (with `transformBidParams`), bidder aliases, targeting keys, and others. 
+If your endpoint is a Prebid Server instance, you may take advantage of the `pbsExtension` companion library, which adds a number of processors that can populate and parse PBS-specific extensions (typically prefixed `ext.prebid`); these include bidder params (with `transformBidParams`), bidder aliases, targeting keys, and others.
 
 ```javascript
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js'

@@ -45,6 +45,13 @@ describe('Consent interpretation', () => {
       expect(isBasicConsentDenied(mkConsent({
         KnownChildSensitiveDataConsents: [0, null]
       }))).to.be.false;
+    });
+
+    it('should deny when Version = 2 & childconsent[3] is 1', () => {
+      expect(isBasicConsentDenied(mkConsent({
+        Version: 2,
+        KnownChildSensitiveDataConsents: [null, null, 1]
+      }))).to.be.true;
     })
   });
 
@@ -84,13 +91,60 @@ describe('Consent interpretation', () => {
       expect(result).to.equal(false);
     });
     Object.entries({
-      'health information': 2,
-      'biometric data': 6,
-    }).forEach(([t, flagNo]) => {
-      it(`'should be true (consent denied to add ufpd) if no consent to process ${t}'`, () => {
-        const consent = mkConsent();
-        consent.SensitiveDataProcessing[flagNo] = 1;
-        expect(isTransmitUfpdConsentDenied(consent)).to.be.true;
+      'health information': {
+        flagNo: 2,
+        consents: {
+          1: true,
+          2: false
+        },
+        versions: [1, 2]
+      },
+      'biometric data': {
+        flagNo: 6,
+        consents: {
+          1: true,
+          2: true
+        },
+        versions: [1, 2]
+      },
+      'consumer health data': {
+        flagNo: 12,
+        consents: {
+          1: true,
+          2: false
+        },
+        versions: [2]
+      },
+      'status as transgender': {
+        flagNo: 15,
+        consents: {
+          1: true,
+          2: true,
+        },
+        versions: [2]
+      }
+
+    }).forEach(([t, {flagNo, consents, versions}]) => {
+      describe(t, () => {
+        Object.entries(consents).forEach(([flagValue, shouldBeDenied]) => {
+          const flagDescription = ({
+            1: 'denied',
+            2: 'given'
+          })[flagValue]
+          describe(`consent is ${flagValue} (${flagDescription})`, () => {
+            let consent;
+            beforeEach(() => {
+              consent = mkConsent();
+              consent.SensitiveDataProcessing[flagNo] = parseInt(flagValue, 10);
+            });
+            versions.forEach(version => {
+              it(`should ${shouldBeDenied ? 'deny' : 'allow'} (version ${version})`, () => {
+                consent.Version = version;
+                expect(isTransmitUfpdConsentDenied(consent)).to.eql(shouldBeDenied);
+              })
+            })
+          })
+        })
       })
     });
 
@@ -181,8 +235,8 @@ describe('mspaRule', () => {
       expect(mkRule()().allow).to.equal(false);
     });
 
-    it('should deny when consent is using version != 1', () => {
-      consent = {Version: 2};
+    it('should deny when consent is using version other than 1/2', () => {
+      consent = {Version: 3};
       expect(mkRule()().allow).to.equal(false);
     })
 
