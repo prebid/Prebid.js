@@ -57,7 +57,7 @@ export const spec = {
       return bidResponses
     }
     const firstSeat = firstBid.ads[0]
-    if (firstSeat) {
+    if (!firstSeat) {
       return bidResponses
     }
     const bidResponse = {
