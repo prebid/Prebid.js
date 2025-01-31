@@ -715,7 +715,7 @@ describe('ttdBidAdapter', function () {
       let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.pmp.ext)
+      validateExtFirstPartyData(requestBody.imp[0].pmp.ext)
       expect(requestBody.imp[0].pmp.private_auction).to.equal(1)
     });
   });
