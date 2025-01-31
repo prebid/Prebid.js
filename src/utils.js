@@ -1009,9 +1009,11 @@ export function deepEqual(obj1, obj2, { checkTypes = false } = {}) {
   ) {
     return false;
   }
-
+  // Cache the Array checks
+  const isArr1 = Array.isArray(obj1);
+  const isArr2 = Array.isArray(obj2);
   // Special case: both are arrays
-  if (Array.isArray(obj1) && Array.isArray(obj2)) {
+  if (isArr1 && isArr2) {
     if (obj1.length !== obj2.length) return false;
     for (let i = 0; i < obj1.length; i++) {
       if (!deepEqual(obj1[i], obj2[i], { checkTypes })) {
@@ -1019,7 +1021,7 @@ export function deepEqual(obj1, obj2, { checkTypes = false } = {}) {
       }
     }
     return true;
-  } else if (Array.isArray(obj1) || Array.isArray(obj2)) {
+  } else if (isArr1 || isArr2) {
     return false;
   }
 
