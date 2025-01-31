@@ -1042,6 +1042,9 @@ function mergeDeepHelper(target, source) {
   const keys = Object.keys(source);
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
+    if (key === "__proto__" || key === "constructor") {
+      continue;
+    }
     const val = source[key];
 
     if (isPlainObject(val)) {
