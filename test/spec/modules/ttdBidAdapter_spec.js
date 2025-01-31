@@ -716,7 +716,7 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
       validateExtFirstPartyData(requestBody.pmp.ext)
-      expect(requestBody.pmp.private_auction).to.equal(1)
+      expect(requestBody.imp[0].pmp.private_auction).to.equal(1)
     });
   });
 
