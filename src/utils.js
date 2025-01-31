@@ -1023,38 +1023,50 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
 }
 
 export function mergeDeep(target, ...sources) {
-  if (!sources.length) return target;
-  const source = sources.shift();
-
-  if (isPlainObject(target) && isPlainObject(source)) {
-    for (const key in source) {
-      if (isPlainObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else if (isArray(source[key])) {
-        if (!target[key]) {
-          Object.assign(target, { [key]: [...source[key]] });
-        } else if (isArray(target[key])) {
-          source[key].forEach(obj => {
-            let addItFlag = 1;
-            for (let i = 0; i < target[key].length; i++) {
-              if (deepEqual(target[key][i], obj)) {
-                addItFlag = 0;
-                break;
-              }
-            }
-            if (addItFlag) {
-              target[key].push(obj);
-            }
-          });
-        }
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    if (!isPlainObject(source)) {
+      continue;
     }
+    mergeDeepHelper(target, source);
+  }
+  return target;
+}
+
+function mergeDeepHelper(target, source) {
+  // quick check
+  if (!isPlainObject(target) || !isPlainObject(source)) {
+    return;
   }
 
-  return mergeDeep(target, ...sources);
+  const keys = Object.keys(source);
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const val = source[key];
+
+    if (isPlainObject(val)) {
+      if (!target[key]) {
+        target[key] = {};
+      }
+      mergeDeepHelper(target[key], val);
+
+    } else if (Array.isArray(val)) {
+      if (!Array.isArray(target[key])) {
+        target[key] = [...val];
+      } else {
+        // deduplicate
+        val.forEach(obj => {
+          if (!target[key].some(item => deepEqual(item, obj))) {
+            target[key].push(obj);
+          }
+        });
+      }
+
+    } else {
+      // direct assignment
+      target[key] = val;
+    }
+  }
 }
 
 /**
