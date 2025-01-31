@@ -1049,7 +1049,6 @@ function mergeDeepHelper(target, source) {
         target[key] = {};
       }
       mergeDeepHelper(target[key], val);
-
     } else if (Array.isArray(val)) {
       if (!Array.isArray(target[key])) {
         target[key] = [...val];
@@ -1061,7 +1060,6 @@ function mergeDeepHelper(target, source) {
           }
         });
       }
-
     } else {
       // direct assignment
       target[key] = val;
@@ -1257,7 +1255,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
  *
  * @param {Array} collection - Array of objects.
  * @param {String} key - Key of nested property.
- * @returns {any, undefined} - Value of nested property.
+ * @returns {any|undefined} - Value of nested property.
  */
 export function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
