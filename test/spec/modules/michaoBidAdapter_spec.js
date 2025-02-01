@@ -486,7 +486,7 @@ describe('Michao Bid Adapter', () => {
       expect(triggerPixelSpy.calledOnce).to.be.false;
     });
 
-    it('generates billing when billing URL is a string', () => {
+    it('calls billing url when billing URL is a string', () => {
       const bid = {
         burl: 'https://example.com/burl',
         cpm: 1,
@@ -497,7 +497,18 @@ describe('Michao Bid Adapter', () => {
       expect(triggerPixelSpy.calledOnce).to.be.true;
     });
 
-    it('does not generate billing when billing URL is not a string', () => {
+    it('calls bidder billing url when billing URL includes bidder burl', () => {
+      const bid = {
+        burl: 'https://example.com/burl?burl=https://bidder.example.com/burl',
+        cpm: 1,
+      };
+
+      spec.onBidBillable(bid);
+
+      expect(triggerPixelSpy.calledTwice).to.be.true;
+    });
+
+    it('does not calls billing url when billing URL is not a string', () => {
       const bid = {
         burl: 123,
       };

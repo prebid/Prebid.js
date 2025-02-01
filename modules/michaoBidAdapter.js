@@ -124,7 +124,11 @@ export const spec = {
 
   onBidBillable: function (bid) {
     if (bid.burl && isStr(bid.burl)) {
-      triggerPixel(generateBillableUrl(bid));
+      const billingUrls = generateBillableUrls(bid);
+
+      billingUrls.forEach((billingUrl) => {
+        triggerPixel(billingUrl);
+      });
     }
   },
 };
@@ -183,8 +187,22 @@ function generateGdprParams(gdprConsent) {
   return gdprParams;
 }
 
-function generateBillableUrl(bid) {
-  return replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm);
+function generateBillableUrls(bid) {
+  const billingUrls = [];
+  const cpm = bid.originalCpm || bid.cpm;
+
+  const billingUrl = new URL(bid.burl);
+
+  const burlParam = billingUrl.searchParams.get('burl');
+
+  if (burlParam) {
+    billingUrl.searchParams.delete('burl');
+    billingUrls.push(replaceAuctionPrice(burlParam, cpm));
+  }
+
+  billingUrls.push(replaceAuctionPrice(billingUrl.toString(), cpm));
+
+  return billingUrls;
 }
 
 const converter = ortbConverter({
@@ -216,7 +234,11 @@ const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    deepSetValue(imp, 'ext.michao.placement', bidRequest.params.placement.toString());
+    deepSetValue(
+      imp,
+      'ext.michao.placement',
+      bidRequest.params.placement.toString()
+    );
 
     if (!bidRequest.mediaTypes?.native) {
       delete imp.native;
