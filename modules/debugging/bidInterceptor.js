@@ -185,12 +185,12 @@ Object.assign(BidInterceptor.prototype, {
     switch (bidResponse.mediaType) {
       case VIDEO:
         if (!bidResponse.hasOwnProperty('vastXml') && !bidResponse.hasOwnProperty('vastUrl')) {
-          bidResponse.vastXml = responseResolvers[VIDEO](bidResponse);
+          bidResponse.vastXml = responseResolvers[VIDEO]();
         }
         break;
       case NATIVE:
         if (!bidResponse.hasOwnProperty('native')) {
-          bidResponse.native = responseResolvers[NATIVE](bidResponse);
+          bidResponse.native = responseResolvers[NATIVE]();
         }
         break;
       case BANNER:
@@ -200,7 +200,7 @@ Object.assign(BidInterceptor.prototype, {
         }
     }
   },
-   /**
+  /**
    * Match a candidate bid against all registered rules.
    *
    * @param {{}} candidate
