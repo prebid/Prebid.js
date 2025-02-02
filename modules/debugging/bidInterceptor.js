@@ -1,3 +1,4 @@
+import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import {
   deepAccess,
   deepClone,
@@ -5,6 +6,7 @@ import {
   mergeDeep,
   hasNonSerializableProperty
 } from '../../src/utils.js';
+import responseResolvers from './responses.js';
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
@@ -143,9 +145,7 @@ Object.assign(BidInterceptor.prototype, {
     return (bid, ...args) => {
       const response = this.responseDefaults(bid);
       mergeDeep(response, replFn({args: [bid, ...args]}));
-      if (!response.hasOwnProperty('ad') && !response.hasOwnProperty('adUrl')) {
-        response.ad = this.defaultAd(bid, response);
-      }
+      this.setDefaultAd(bid, response);
       response.isDebug = true;
       return response;
     }
@@ -181,10 +181,26 @@ Object.assign(BidInterceptor.prototype, {
       meta: {}
     };
   },
-  defaultAd(bid, bidResponse) {
-    return `<html><head><style>#ad {width: ${bidResponse.width}px;height: ${bidResponse.height}px;background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width}x${bidResponse.height}</div></div></body></html>`;
+  setDefaultAd(bid, bidResponse) {
+    switch (bidResponse.mediaType) {
+      case VIDEO:
+        if (!bidResponse.hasOwnProperty('vastXml') && !bidResponse.hasOwnProperty('vastUrl')) {
+          bidResponse.vastXml = responseResolvers[VIDEO](bidResponse);
+        }
+        break;
+      case NATIVE:
+        if (!bidResponse.hasOwnProperty('native')) {
+          bidResponse.native = responseResolvers[NATIVE](bidResponse);
+        }
+        break;
+      case BANNER:
+      default:
+        if (!bidResponse.hasOwnProperty('ad') && !bidResponse.hasOwnProperty('adUrl')) {
+          bidResponse.ad = responseResolvers[BANNER](bid, bidResponse);
+        }
+    }
   },
-  /**
+   /**
    * Match a candidate bid against all registered rules.
    *
    * @param {{}} candidate
