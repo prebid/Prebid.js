@@ -4,6 +4,7 @@ import {
   lowEntropyData,
   wurflSubmodule,
   makeOrtb2DeviceType,
+  toNumber,
 } from 'modules/wurflRtdProvider';
 import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
@@ -116,8 +117,8 @@ describe('wurflRtdProvider', function () {
               h: 1920,
               w: 1080,
               ppi: 443,
-              pxratio: '3.0',
-              js: true,
+              pxratio: 3.0,
+              js: 1,
               ext: {
                 wurfl: {
                   advertised_browser: 'Chrome Mobile',
@@ -166,8 +167,8 @@ describe('wurflRtdProvider', function () {
               h: 1920,
               w: 1080,
               ppi: 443,
-              pxratio: '3.0',
-              js: true,
+              pxratio: 3.0,
+              js: 1,
               ext: {
                 wurfl: {
                   advertised_device_os: 'Android',
@@ -453,6 +454,36 @@ describe('wurflRtdProvider', function () {
       const wurflData = {};
       const result = makeOrtb2DeviceType(wurflData);
       expect(result).to.be.undefined;
+    });
+  });
+
+  describe("toNumber", () => {
+    it("converts valid numbers", () => {
+      expect(toNumber(42)).to.equal(42);
+      expect(toNumber(3.14)).to.equal(3.14);
+      expect(toNumber("100")).to.equal(100);
+      expect(toNumber("3.14")).to.equal(3.14);
+      expect(toNumber("  50  ")).to.equal(50); // Trimmed number
+    });
+
+    it("converts booleans correctly", () => {
+      expect(toNumber(true)).to.equal(1);
+      expect(toNumber(false)).to.equal(0);
+    });
+
+    it("handles special cases", () => {
+      expect(toNumber(null)).to.be.undefined; // Number(null) -> 0 but we want undefined
+      expect(toNumber("")).to.be.undefined;   // Number("") -> 0 but we want undefined
+    });
+
+    it("returns undefined for non-numeric values", () => {
+      expect(toNumber("abc")).to.be.undefined;
+      expect(toNumber(undefined)).to.be.undefined;
+      expect(toNumber(NaN)).to.be.undefined;
+      expect(toNumber({})).to.be.undefined;
+      expect(toNumber([1, 2, 3])).to.be.undefined; // Invalid array conversion
+      // WURFL.js cannot return [] so it is safe to not handle and return undefined instead of 0
+      expect(toNumber([])).to.equal(0);
     });
   });
 });
