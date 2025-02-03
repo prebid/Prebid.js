@@ -69,12 +69,15 @@ function flushEvents () {
   eventBuffer = [];
   callDepth++;
   try {
+    //check for recursion in case reportEvents propagates error events
+    //and execution doesn't finish before BATCH_SIZE is reached again
     if (callDepth >= MAX_CALL_DEPTH) {
       if (callDepth === MAX_CALL_DEPTH) {
         logError(`${MODULE_NAME}: Maximum call depth reached, discarding events`);
       }
       return;
     }
+    //clear out old data only in state without recursion
     if (callDepth === 1) {
       clearCache(bidsData);
       clearCache(auctionsData);
