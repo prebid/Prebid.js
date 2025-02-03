@@ -506,6 +506,18 @@ describe('IntentIQ tests', function () {
       expect(lsFirstPartyData.gdprString).to.equal(partnerProvidedParams.providedGDPR);
     });
 
+    it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', function() {
+      const ENDPOINT_GDPR = 'https://api-gdpr.intentiq.com';
+      mockConsentHandlers(uspData, gppData, gdprData);
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
+
+      submoduleCallback(callBackSpy);
+      let request = server.requests[0];
+
+      expect(request.url).to.contain(ENDPOINT_GDPR);
+    });
+
     it('should save "undefined" in localStorage and send it in request if allowGDPR, allowGPP, allowUSP are false', function () {
       const partnerProvidedParams = {allowGDPR: false, allowGPP: false, allowUSP: false}
       defaultConfigParams.params = {...defaultConfigParams.params, ...partnerProvidedParams};

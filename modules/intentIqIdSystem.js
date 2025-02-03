@@ -49,6 +49,8 @@ const encoderCH = {
   fullVersionList: 8
 };
 const INVALID_ID = 'INVALID_ID';
+const ENDPOINT = 'https://api.intentiq.com';
+const GDPR_ENDPOINT = 'https://api-gdpr.intentiq.com';
 export let firstPartyData;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
@@ -332,7 +334,7 @@ export const intentIqIdSubmodule = {
     }
 
     // use protocol relative urls for http or https
-    let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    let url = `${gdprDetected ? GDPR_ENDPOINT : ENDPOINT}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pcid ? '&pcid=' + encodeURIComponent(configParams.pcid) : '';
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
     url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';

@@ -15,6 +15,8 @@ import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/g
 const partner = 10;
 const defaultData = '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344", "group": "A"}';
 const version = VERSION;
+const REPORT_ENDPOINT = 'https://reports.intentiq.com/report';
+const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
@@ -124,11 +126,33 @@ describe('IntentIQ tests all', function () {
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
-    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
+    expect(request.url).to.contain(REPORT_ENDPOINT + '?pid=' + partner + '&mct=1');
     expect(request.url).to.contain(`&jsver=${version}`);
     expect(request.url).to.contain(`&vrref=${expectedVrref}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+  });
+
+  it('should send report to report-gdpr address if gdpr is detected', function () {
+    const cmpData = {
+      uspString: '1NYN',
+      gppString: '{"key1":"value1","key2":"value2"}',
+      gdprString: 'gdprConsent',
+    };
+
+    USERID_CONFIG[0].params.providedUSP = cmpData.uspString;
+    USERID_CONFIG[0].params.providedGPP = cmpData.gppString;
+    USERID_CONFIG[0].params.providedGDPR = cmpData.gdprString;
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+
+    expect(request.url).to.contain(REPORT_ENDPOINT_GDPR);
+    delete USERID_CONFIG[0].params.providedGDPR;
+    delete USERID_CONFIG[0].params.providedGPP;
+    delete USERID_CONFIG[0].params.providedUSP;
   });
 
   it('should initialize with default configurations', function () {
@@ -160,9 +184,8 @@ describe('IntentIQ tests all', function () {
     const dataToSend = preparePayload(wonRequest);
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
-    const expectedUrl = appendVrrefAndFui(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&payload=${payload}&uh=&gdpr=0`,
-      iiqAnalyticsAnalyticsAdapter.initOptions.domainName
+    const expectedUrl = appendVrrefAndFui(REPORT_ENDPOINT +
+      `?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&payload=${payload}&uh=&gdpr=0`, iiqAnalyticsAnalyticsAdapter.initOptions.domainName
     );
     expect(request.url).to.equal(expectedUrl);
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)

@@ -14,7 +14,8 @@ import {readData, defineStorageType} from '../libraries/intentIqUtils/storageUti
 
 const MODULE_NAME = 'iiqAnalytics'
 const analyticsType = 'endpoint';
-const defaultUrl = 'https://reports.intentiq.com/report';
+const REPORT_ENDPOINT = 'https://reports.intentiq.com/report';
+const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
 const prebidVersion = '$prebid.version$';
 export const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
@@ -57,7 +58,7 @@ const PARAMS_NAMES = {
   placementId: 'placementId'
 };
 
-let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl, analyticsType}), {
+let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl: REPORT_ENDPOINT, analyticsType}), {
   initOptions: {
     lsValueInitialized: false,
     partner: null,
@@ -282,8 +283,10 @@ function constructFullUrl(data) {
   let iiqConfig = getIntentIqConfig()
   let configParams = iiqConfig?.params || {};
   const cmpData = getCmpData(configParams);
+  const gdprDetected = cmpData.allowGDPR && cmpData.gdprString;
+  const baseUrl = gdprDetected ? REPORT_ENDPOINT_GDPR : REPORT_ENDPOINT;
 
-  let url = defaultUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
+  let url = baseUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
     '&mct=1' +
     ((iiqAnalyticsAnalyticsAdapter.initOptions?.fpid)
       ? '&iiqid=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.fpid.pcid) : '') +
