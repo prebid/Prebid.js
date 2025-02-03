@@ -252,7 +252,7 @@ function enrichOrtb2DeviceData(key, value, device, ortb2data) {
  * @returns {number|undefined} The converted number, or `undefined` if the conversion fails.
  */
 export function toNumber(value) {
-  if (value === "" || value === null) {
+  if (value === '' || value === null) {
     return undefined;
   }
   const num = Number(value);

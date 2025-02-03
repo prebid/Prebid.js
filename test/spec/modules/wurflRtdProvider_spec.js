@@ -457,32 +457,32 @@ describe('wurflRtdProvider', function () {
     });
   });
 
-  describe("toNumber", () => {
-    it("converts valid numbers", () => {
+  describe('toNumber', function () {
+    it('converts valid numbers', function () {
       expect(toNumber(42)).to.equal(42);
       expect(toNumber(3.14)).to.equal(3.14);
-      expect(toNumber("100")).to.equal(100);
-      expect(toNumber("3.14")).to.equal(3.14);
-      expect(toNumber("  50  ")).to.equal(50); // Trimmed number
+      expect(toNumber('100')).to.equal(100);
+      expect(toNumber('3.14')).to.equal(3.14);
+      expect(toNumber('  50  ')).to.equal(50);
     });
 
-    it("converts booleans correctly", () => {
+    it('converts booleans correctly', function () {
       expect(toNumber(true)).to.equal(1);
       expect(toNumber(false)).to.equal(0);
     });
 
-    it("handles special cases", () => {
-      expect(toNumber(null)).to.be.undefined; // Number(null) -> 0 but we want undefined
-      expect(toNumber("")).to.be.undefined;   // Number("") -> 0 but we want undefined
+    it('handles special cases', function () {
+      expect(toNumber(null)).to.be.undefined;
+      expect(toNumber('')).to.be.undefined;
     });
 
-    it("returns undefined for non-numeric values", () => {
-      expect(toNumber("abc")).to.be.undefined;
+    it('returns undefined for non-numeric values', function () {
+      expect(toNumber('abc')).to.be.undefined;
       expect(toNumber(undefined)).to.be.undefined;
       expect(toNumber(NaN)).to.be.undefined;
       expect(toNumber({})).to.be.undefined;
-      expect(toNumber([1, 2, 3])).to.be.undefined; // Invalid array conversion
-      // WURFL.js cannot return [] so it is safe to not handle and return undefined instead of 0
+      expect(toNumber([1, 2, 3])).to.be.undefined;
+      // WURFL.js cannot return [] so it is safe to not handle and return undefined
       expect(toNumber([])).to.equal(0);
     });
   });
