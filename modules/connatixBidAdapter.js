@@ -191,8 +191,7 @@ function _handleEids(payload, validBidRequests) {
 export function hasQueryParams(url) {
   try {
     const urlObject = new URL(url);
-    const searchParams = new URLSearchParams(urlObject.search);
-    return searchParams.size > 0;
+    return !!urlObject.search;
   } catch (e) {
     return false;
   }
