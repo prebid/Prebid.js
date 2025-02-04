@@ -1,66 +1,43 @@
 import { logInfo, logError, isNumber, isStr, isEmptyStr } from '../src/utils.js';
-// logWarn, isEmpty
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-// import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
-
-// eslint-disable-next-line no-console
-console.log('pubmaticIdSystem.js was loaded');
 
 const MODULE_NAME = 'pubmaticId';
 const GVLID = 76;
 export const STORAGE_NAME = 'pubmaticId';
 const STORAGE_EXPIRES = 30; // days
 const STORAGE_REFRESH_IN_SECONDS = 24 * 3600; // 24 Hours
-// const STORAGE_REFRESH_IN_SECONDS = 30; // 24 Hours
 const LOG_PREFIX = 'PubMatic User ID: ';
 const VERSION = '1';
 const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
+let doNotUseWithESP = false;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function generateQueryStringParams(config, consentData) {
-  // eslint-disable-next-line no-console
-  console.log('generateQueryStringParams invoked', { config, consentData });
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
 
   const params = {
     publisherId: config.params.publisherId,
-    // gdpr: (consentData && consentData.gdpr && consentData.gdpr.gdprApplies) ? 1 : 0,
     gdpr: (consentData && consentData?.gdprApplies) ? 1 : 0,
-    src: MODULE_NAME,
+    gdpr_consent: consentData && consentData?.consentString ? encodeURIComponent(consentData.consentString) : '',
+    src: 'pbjs_uid',
     ver: VERSION,
-    coppa: Number(coppaValue)
+    coppa: Number(coppaValue),
+    us_privacy: uspString ? encodeURIComponent(uspString) : '',
+    gpp: gppConsent?.gppString ? encodeURIComponent(gppConsent.gppString) : '',
+    gpp_sid: gppConsent?.applicableSections?.length ? encodeURIComponent(gppConsent.applicableSections.join(',')) : ''
   };
-
-  // if (consentData?.gdpr?.consentString) {
-  if (consentData && consentData?.consentString) {
-    params.gdpr_consent = encodeURIComponent(consentData.consentString);
-  }
-
-  if (uspString) {
-    params.us_privacy = encodeURIComponent(uspString);
-  }
-
-  if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-    params.gpp = encodeURIComponent(gppConsent.gppString);
-    params.gpp_sid = encodeURIComponent(gppConsent.applicableSections.join(','));
-  }
-
-  // eslint-disable-next-line no-console
-  console.log('generateQueryStringParams', { config, consentData, uspString, coppaValue, gppConsent, params });
 
   return params;
 }
 
 function buildUrl(config, consentData) {
-  // eslint-disable-next-line no-console
-  console.log('buildUrl invoked', { config, consentData });
   let baseUrl = `${API_URL}${config.params.publisherId}`;
   const params = generateQueryStringParams(config, consentData);
 
@@ -68,45 +45,46 @@ function buildUrl(config, consentData) {
     baseUrl += `&${key}=${params[key]}`;
   });
 
-  // eslint-disable-next-line no-console
-  console.log('buildUrl', { config, consentData, baseUrl, params });
-
   return baseUrl;
 }
 
+function deleteFromAllStorages(key, hostname) {
+  const cKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
+  cKeys.forEach((cKey) => {
+    if (storage.getCookie(cKey)) {
+      const dateInPast = new Date(0).toString();
+      storage.setCookie(cKey, '', dateInPast, null, '.' + hostname);
+    }
+  });
+
+  const lsKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`, '_GESPSK-esp.pubmatic.com'];
+  lsKeys.forEach((lsKey) => {
+    if (storage.getDataFromLocalStorage(lsKey)) {
+      storage.removeDataFromLocalStorage(lsKey);
+    }
+  });
+
+  doNotUseWithESP = true;
+}
+
 function getSuccessAndErrorHandler(callback) {
-  // eslint-disable-next-line no-console
-  console.log('getSuccessAndErrorHandler invoked', { callback });
   return {
     success: (response) => {
-      // eslint-disable-next-line no-console
-      console.log('success invoked', { response });
       let responseObj;
+
       try {
-        if (response) {
-          responseObj = JSON.parse(response);
-          // responseObj = {id: '720B2F5E-6E41-45A6-A3ED-C42EF6231AFB'};
-          logInfo(LOG_PREFIX + 'response received from the server', responseObj);
-          if (isStr(responseObj.id) && !isEmptyStr(responseObj.id)) {
-            callback(responseObj);
-          } else {
-            callback();
-          }
-        } else {
-          callback();
-        }
-        // eslint-disable-next-line no-console
-        console.log('success', { callback, response, responseObj });
-      } catch (error) {
-        logError(LOG_PREFIX + 'ID reading error:', error);
-        callback();
-        // eslint-disable-next-line no-console
-        console.log('success', { callback, response, responseObj, error });
+        responseObj = JSON.parse(response);
+        logInfo(LOG_PREFIX + 'response received from the server', responseObj);
+      } catch (error) {}
+
+      if (responseObj && isStr(responseObj.id) && !isEmptyStr(responseObj.id)) {
+        callback(responseObj);
+      } else {
+        deleteFromAllStorages(STORAGE_NAME, window.location.hostname);
       }
     },
     error: (error) => {
-      // eslint-disable-next-line no-console
-      console.log('error invoked', { callback, error });
+      deleteFromAllStorages(STORAGE_NAME, window.location.hostname);
       logError(LOG_PREFIX + 'getId fetch encountered an error', error);
       callback();
     }
@@ -114,9 +92,6 @@ function getSuccessAndErrorHandler(callback) {
 }
 
 function hasRequiredConfig(config) {
-  // eslint-disable-next-line no-console
-  console.log('hasRequiredConfig invoked', { config });
-
   if (!config || !config.storage || !config.params) {
     logError(LOG_PREFIX + 'config.storage and config.params should be passed.');
     return false;
@@ -149,35 +124,26 @@ export const pubmaticIdSubmodule = {
   name: MODULE_NAME,
   gvlid: GVLID,
   decode(value) {
-    // eslint-disable-next-line no-console
-    console.log('decode invoked', { value });
-
     if (isStr(value.id) && !isEmptyStr(value.id)) {
       return { pubmaticId: value.id };
     }
     return undefined;
   },
   getId(config, consentData) {
-    // eslint-disable-next-line no-console
-    console.log('getId invoked', { config, consentData });
-
     if (!hasRequiredConfig(config)) {
       return undefined;
     }
 
+    if (storage.getDataFromLocalStorage('_GESPSK-esp.pubmatic.com')) {
+      storage.removeDataFromLocalStorage('_GESPSK-esp.pubmatic.com');
+    }
+
     const resp = (callback) => {
-      // eslint-disable-next-line no-console
-      console.log('resp invoked', { callback });
       logInfo(LOG_PREFIX + 'requesting an ID from the server');
       const url = buildUrl(config, consentData);
-      // eslint-disable-next-line no-console
-      console.log('resp', { callback, url });
       ajax(url, getSuccessAndErrorHandler(callback), null, {
         method: 'GET',
         withCredentials: true,
-
-        // method: 'POST',
-        // contentType: 'application/json'
       });
     };
 
@@ -186,7 +152,14 @@ export const pubmaticIdSubmodule = {
   eids: {
     'pubmaticId': {
       source: 'esp.pubmatic.com',
-      atype: 1
+      atype: 1,
+      getValue: (data) => {
+        if (doNotUseWithESP) {
+          return null;
+        }
+
+        return data;
+      }
     },
   }
 };

@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Prebid PubMatic User ID Submodules Example</title>
+
+  <script>
+    var FAILSAFE_TIMEOUT = 2000;
+
+    var adUnits = [
+      {
+        code: 'test-div',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600], [728, 90]]
+          }
+        },
+        bids: [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '164074',
+              adSlot: '/43743431/owfledge',
+              pmzoneid: 'zone2',
+              kadpageurl: 'http://www.microsoft.com/key1=1&key2=2&fledge_type=1'
+            }
+          }
+        ]
+      }
+    ];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+  </script>
+  <script src="../../build/dev/prebid.js" async></script>
+
+  <!-- GPP -->
+  <script>
+    window.__gpp_addFrame = function (n) {
+      if (!window.frames[n]) {
+        if (document.body) {
+          var i = document.createElement('iframe');
+          i.style.cssText = 'display:none';
+          i.name = n;
+          document.body.appendChild(i);
+        }
+        else {
+          window.setTimeout(window.__gpp_addFrame, 10, n);
+        }
+      }
+    };
+
+    window.__gpp_stub = function () {
+      var b = arguments;
+      __gpp.queue = __gpp.queue || [];
+      if (!b.length) { return __gpp.queue; }
+      var result = {};
+      var cmd = b[0];
+      var clb = b.length > 1 ? b[1] : null;
+      var par = b.length > 2 ? b[2] : null;
+      if (cmd === 'ping') {
+        result = {
+          gppVersion: '1.1', // must be “Version.Subversion”, current: “1.1”
+          cmpStatus: 'stub', // possible values: stub, loading, loaded, error
+          cmpDisplayStatus: 'hidden', // possible values: hidden, visible, disabled
+          supportedAPIs: ['2:tcfeuv2', '5:tcfcav1', '6:uspv1'], // list of supported APIs
+          cmpId: 31, // IAB assigned CMP ID, may be 0 during stub/loading
+          sectionList: [],
+          applicableSections: [-1], //or 0 or ID set by publisher
+          gppString: ''
+        };
+      }
+      else if (cmd === 'addEventListener') {
+        __gpp.events = __gpp.events || [];
+        if (!('lastId' in __gpp)) { __gpp.lastId = 0; }
+        __gpp.lastId++;
+        var lnr = __gpp.lastId;
+        __gpp.events.push({
+          'id': lnr,
+          'callback': clb,
+          'parameter': par
+        });
+        result = {
+          eventName: "signalStatus",
+          listenerId: lnr, // Registered ID of the listener
+          data: true, // positive signal
+          pingData: {
+            sectionList: [2, 6, 7],            // the sections contained within the encoded GPP string as parsed from the header
+            applicableSections: [2, 7],        // Section ID considered to be in force for this transaction. In most cases, this field should have a single section ID. In rare occasions where such a single section ID can not be determined, the field may contain up to 2 values. The value can be 0 or a Section ID specified by the Publisher / Advertiser, during stub / load. When no section is applicable, the value will be -1.
+            gppString: 'DBACPeA~CPXuQIAPXuQIAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA.YAAAAAAAAAAA~1YNN~BAAAAAAAAQA.QA',
+            cmpStatus: 'loaded',         // possible values: stub, loading, loaded, error
+            gppVersion: '1.1',           // must be “Version.Subversion”, current: “1.0”
+            cmpDisplayStatus: 'visible', // possible values: hidden, visible, disabled
+            signalStatus: 'ready',               // possible values: not ready, ready
+            supportedAPIs: ['2:tcfeuv2', '5:tcfcav1', '6:uspv1', '7:usnat', '8:usca', '9:usva', '10:usco', '11:usut', '12:usct'],  // list of supported APIs (prefix strings),
+            cmpId: 31,                    // IAB assigned CMP ID, may be 0 during stub/loading
+            parsedSections: {
+              "usnat": [
+                {
+                  "Version": 1,
+                  "SharingNotice": 1,
+                  "SaleOptOutNotice": 1,
+                  "SharingOptOutNotice": 1,
+                  "TargetedAdvertisingOptOutNotice": 1,
+                  "SensitiveDataProcessingOptOutNotice": 1,
+                  "SensitiveDataLimitUseNotice": 1,
+                  "SaleOptOut": 2,
+                  "SharingOptOut": 2,
+                  "TargetedAdvertisingOptOut": 2,
+                  "SensitiveDataProcessing": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "KnownChildSensitiveDataConsents": [
+                    0,
+                    0
+                  ],
+                  "PersonalDataConsents": 1,
+                  "MspaCoveredTransaction": 2,
+                  "MspaOptOutOptionMode": 0,
+                  "MspaServiceProviderMode": 0
+                },
+                {
+                  "SubsectionType": 1,
+                  "Gpc": 0
+                }
+              ],
+              "tcfeuv2": [{
+                "Version": 2,
+                "Created": "Mon May 08 2023 16:27:18 GMT+0530 (India Standard Time)",
+                "LastUpdated": "Mon May 08 2023 16:27:18 GMT+0530 (India Standard Time)",
+                "CmpId": 28,
+                "CmpVersion": 1,
+                "ConsentScreen": 1,
+                "ConsentLanguage": "EN",
+                "VendorListVersion": 195,
+                "TcfPolicyVersion": 2,
+                "IsServiceSpecific": true,
+                "UseNonStandardStacks": false,
+                "SpecialFeatureOptIns": [],
+                "PurposeConsent": [
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ],
+                "PurposesLITransparency": [
+                  false,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ],
+                "PurposeOneTreatment": false,
+                "PublisherCC": "UK",
+                "VendorConsent": [
+                  1,
+                  2,
+                  4,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  18,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  36,
+                  37,
+                  39,
+                  40,
+                  41,
+                  42,
+                  44,
+                  45,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  55,
+                  57,
+                  58,
+                  59,
+                  60,
+                  61,
+                  62,
+                  63,
+                  65,
+                  66,
+                  67,
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  76,
+                  77,
+                  78,
+                  79,
+                  80,
+                  81,
+                  82,
+                  84,
+                  85,
+                  86,
+                  87,
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  97,
+                  98,
+                  100,
+                  101,
+                  102,
+                  104,
+                  108,
+                  109,
+                  110,
+                  111,
+                  114,
+                  115,
+                  119,
+                  120,
+                  122,
+                  124,
+                  127,
+                  128,
+                  129,
+                  130,
+                  131,
+                  132,
+                  133,
+                  134,
+                  136,
+                  137,
+                  138,
+                  139,
+                  140,
+                  141,
+                  142,
+                  143,
+                  144,
+                  145,
+                  147,
+                  148,
+                  149,
+                  150,
+                  151,
+                  152,
+                  153,
+                  154,
+                  155,
+                  156,
+                  157,
+                  158,
+                  159,
+                  160,
+                  161,
+                  162,
+                  163,
+                  164,
+                  165,
+                  167,
+                  168,
+                  170,
+                  173,
+                  174,
+                  177,
+                  178,
+                  179,
+                  183,
+                  184,
+                  185,
+                  190,
+                  192,
+                  193,
+                  194,
+                  195,
+                  196,
+                  198,
+                  199,
+                  200,
+                  202,
+                  203,
+                  206,
+                  208,
+                  209,
+                  210,
+                  211,
+                  212,
+                  213,
+                  215,
+                  216,
+                  217,
+                  218,
+                  223,
+                  224,
+                  226,
+                  227,
+                  228,
+                  230,
+                  231,
+                  232,
+                  234,
+                  235,
+                  236,
+                  237,
+                  238,
+                  239,
+                  240,
+                  241,
+                  242,
+                  243,
+                  244,
+                  246,
+                  248,
+                  249,
+                  250,
+                  251,
+                  252,
+                  253,
+                  254,
+                  255,
+                  256,
+                  259,
+                  261,
+                  262,
+                  263,
+                  264,
+                  265,
+                  266,
+                  270,
+                  272,
+                  273,
+                  274,
+                  275,
+                  276,
+                  277,
+                  280,
+                  281,
+                  282,
+                  284,
+                  285,
+                  289,
+                  290,
+                  293,
+                  294,
+                  295,
+                  297,
+                  298,
+                  299,
+                  301,
+                  302,
+                  303,
+                  304,
+                  308,
+                  310,
+                  311,
+                  312,
+                  314,
+                  315,
+                  316,
+                  317,
+                  318,
+                  319,
+                  321,
+                  323,
+                  325,
+                  326,
+                  328,
+                  329,
+                  331,
+                  333,
+                  335,
+                  336,
+                  337,
+                  343,
+                  345,
+                  347,
+                  349,
+                  350,
+                  351,
+                  354,
+                  358,
+                  359,
+                  360,
+                  361,
+                  365,
+                  368,
+                  371,
+                  373,
+                  374,
+                  375,
+                  377,
+                  378,
+                  380,
+                  381,
+                  382,
+                  385,
+                  387,
+                  388,
+                  394,
+                  397,
+                  402,
+                  404,
+                  408,
+                  409,
+                  410,
+                  412,
+                  413,
+                  416,
+                  418,
+                  422,
+                  423,
+                  424,
+                  427,
+                  428,
+                  429,
+                  430,
+                  434,
+                  435,
+                  436,
+                  438,
+                  439,
+                  440,
+                  444,
+                  447,
+                  448,
+                  450,
+                  452,
+                  454,
+                  455,
+                  458,
+                  459,
+                  461,
+                  462,
+                  467,
+                  468,
+                  469,
+                  471,
+                  473,
+                  475,
+                  479,
+                  482,
+                  486,
+                  488,
+                  490,
+                  491,
+                  493,
+                  495,
+                  496,
+                  497,
+                  498,
+                  501,
+                  505,
+                  506,
+                  507,
+                  508,
+                  509,
+                  511,
+                  512,
+                  516,
+                  517,
+                  519,
+                  520,
+                  521,
+                  524,
+                  527,
+                  528,
+                  530,
+                  531,
+                  534,
+                  535,
+                  536,
+                  539,
+                  541,
+                  543,
+                  544,
+                  545,
+                  546,
+                  547,
+                  549,
+                  550,
+                  553,
+                  554,
+                  556,
+                  559,
+                  561,
+                  565,
+                  568,
+                  569,
+                  570,
+                  571,
+                  573,
+                  574,
+                  577,
+                  578,
+                  579,
+                  580,
+                  584,
+                  587,
+                  590,
+                  591,
+                  593,
+                  596,
+                  597,
+                  598,
+                  601,
+                  602,
+                  606,
+                  607,
+                  609,
+                  610,
+                  613,
+                  614,
+                  615,
+                  617,
+                  618,
+                  620,
+                  621,
+                  624,
+                  625,
+                  626,
+                  628,
+                  630,
+                  631,
+                  638,
+                  639,
+                  644,
+                  645,
+                  646,
+                  647,
+                  648,
+                  649,
+                  650,
+                  652,
+                  653,
+                  654,
+                  655,
+                  656,
+                  657,
+                  658,
+                  659,
+                  662,
+                  663,
+                  664,
+                  665,
+                  666,
+                  668,
+                  670,
+                  671,
+                  672,
+                  673,
+                  674,
+                  675,
+                  676,
+                  677,
+                  678,
+                  681,
+                  682,
+                  683,
+                  684,
+                  685,
+                  686,
+                  687,
+                  690,
+                  691,
+                  694,
+                  697,
+                  699,
+                  702,
+                  703,
+                  707,
+                  708,
+                  709,
+                  711,
+                  712,
+                  713,
+                  714,
+                  715,
+                  716,
+                  717,
+                  718,
+                  719,
+                  720,
+                  721,
+                  722,
+                  723,
+                  724,
+                  725,
+                  726,
+                  727,
+                  728,
+                  729,
+                  730,
+                  732,
+                  733,
+                  734,
+                  735,
+                  736,
+                  737,
+                  738,
+                  739,
+                  740,
+                  741,
+                  742,
+                  743,
+                  744,
+                  745,
+                  746,
+                  747,
+                  748,
+                  749,
+                  750,
+                  753,
+                  754,
+                  755,
+                  756,
+                  757,
+                  758,
+                  759,
+                  760,
+                  761,
+                  763,
+                  764,
+                  765,
+                  766,
+                  767,
+                  768,
+                  769,
+                  770,
+                  771,
+                  773,
+                  775,
+                  776,
+                  777,
+                  778,
+                  779,
+                  780,
+                  781,
+                  782,
+                  783,
+                  784,
+                  785,
+                  786,
+                  787,
+                  788,
+                  789,
+                  790,
+                  791,
+                  792,
+                  793,
+                  794,
+                  795,
+                  796,
+                  797,
+                  798,
+                  799,
+                  800,
+                  801,
+                  802,
+                  803,
+                  804,
+                  805,
+                  806,
+                  807,
+                  808,
+                  809,
+                  810,
+                  811,
+                  812,
+                  813,
+                  814,
+                  815,
+                  816,
+                  817,
+                  818,
+                  819,
+                  820,
+                  821,
+                  822,
+                  823,
+                  824,
+                  825,
+                  826,
+                  827,
+                  828,
+                  829,
+                  831,
+                  832,
+                  833,
+                  834,
+                  835,
+                  836,
+                  837,
+                  839,
+                  840,
+                  842,
+                  843,
+                  844,
+                  846,
+                  847,
+                  848,
+                  849,
+                  850,
+                  851,
+                  852,
+                  854,
+                  855,
+                  856,
+                  857,
+                  858,
+                  859,
+                  860,
+                  861,
+                  862,
+                  863,
+                  864,
+                  865,
+                  866,
+                  867,
+                  868,
+                  869,
+                  870,
+                  871,
+                  874,
+                  875,
+                  876,
+                  877,
+                  878,
+                  879,
+                  880,
+                  881,
+                  882,
+                  883,
+                  884,
+                  885,
+                  886,
+                  887,
+                  888,
+                  889,
+                  890,
+                  891,
+                  892,
+                  893,
+                  894,
+                  895,
+                  896,
+                  897,
+                  899,
+                  900,
+                  901,
+                  902,
+                  903,
+                  904,
+                  905,
+                  906,
+                  907,
+                  908,
+                  909,
+                  910,
+                  912,
+                  913,
+                  914,
+                  915,
+                  917,
+                  918,
+                  919,
+                  920,
+                  921,
+                  922,
+                  924,
+                  926,
+                  928,
+                  929,
+                  930,
+                  931,
+                  932,
+                  933,
+                  934,
+                  935,
+                  936,
+                  937,
+                  938,
+                  939,
+                  940
+                ],
+                "VendorLegitimateInterest": [
+                  76
+                ],
+
+                "PublisherRestrictions": [],
+                "PublisherPurposesSegmentType": 3,
+                "PublisherConsents": [
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false,
+                  false
+                ],
+                "PublisherLegitimateInterests": [],
+                "NumCustomPurposes": 0,
+                "PublisherCustomConsents": [],
+                "PublisherCustomLegitimateInterests": [],
+                "VendorsAllowedSegmentType": 2,
+                "VendorsAllowed": [],
+                "VendorsDisclosedSegmentType": 1,
+                "VendorsDisclosed": []
+              }]
+            }
+          }
+        };
+      }
+      else if (cmd === 'removeEventListener') {
+        var success = false;
+        __gpp.events = __gpp.events || [];
+        for (var i = 0; i < __gpp.events.length; i++) {
+          if (__gpp.events[i].id == par) {
+            __gpp.events[i].splice(i, 1);
+            success = true;
+            break;
+          }
+        }
+        result = {
+          eventName: 'listenerRemoved',
+          listenerId: par, // Registered ID of the listener
+          data: success, // status info
+          pingData: {
+            gppVersion: '1.1',
+            cmpStatus: 'stub',
+            cmpDisplayStatus: 'hidden',
+            supportedAPIs: ['2:tcfeuv2', '5:tcfcav1', '9:usva', '7:usnat'],
+            cmpId: 31,
+            sectionList: [],
+            applicableSections: [-1], //or 0 or ID set by publisher
+            gppString: ''
+          }
+        };
+      }
+      //these commands must not be queued but may return null while in stub-mode
+      else if (cmd === 'hasSection' || cmd === 'getSection' || cmd === 'getField') {
+        result = null;
+      }
+      //queue all other commands
+      else {
+        __gpp.queue.push([].slice.apply(b));
+      }
+      clb(result, true);
+    };
+
+    window.__gpp_msghandler = function (event) {
+      var msgIsString = typeof event.data === 'string';
+      try { var json = msgIsString ? JSON.parse(event.data) : event.data; }
+      catch (e) { var json = null; }
+      if (typeof (json) === 'object' && json !== null && '__gppCall' in json) {
+        var i = json.__gppCall;
+        window.__gpp(i.command, function (retValue, success) {
+          var returnMsg = {
+            '__gppReturn': {
+              'returnValue': retValue,
+              'success': success,
+              'callId': i.callId
+            }
+          };
+          event.source.postMessage(msgIsString ? JSON.stringify(returnMsg) : returnMsg, '*');
+        }, 'parameter' in i ? i.parameter : null, 'version' in i ? i.version : '1.1');
+      }
+    };
+
+    if (!('__gpp' in window) || (typeof (window.__gpp) !== 'function')) {
+      window.__gpp = window.__gpp_stub;
+      window.addEventListener('message', window.__gpp_msghandler, false);
+      window.__gpp_addFrame('__gppLocator');
+    }
+  </script>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function () {
+      pbjs.setConfig({
+        coppa: true,
+        "debug": true,
+        // *************************************************************************
+        // ** COMMENT consentManagement BLOCK IF YOU DO NOT WANT TO SIMULATE GDPR **
+        // *************************************************************************
+        "consentManagement": {
+          "cmpApi": "static",
+          "consentData": {
+            "getTCData": {
+              "tcString": "CO-HDlqO-HDlqAKAXCENBDCsAP_AAH_AACiQHKNd_X_fb39j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vF36pq4KuR4Eu3LBIQFlHOHcTUmw6IkVqTPsak2Mr7NKJ7PEinMbe2dYGHtfn9VTuZKYr97s___z__-__v__75f_r-3_3_vp9V---_fA5QAkw1L4CLMSxwJJo0qhRAhCuJDoAQAUUIwtE1hASuCnZXAR-ggYAIDUBGBECDEFGLIIAAAAAkoiAkAPBAIgCIBAACAFSAhAARoAgsAJAwCAAUA0LACKAIQJCDI4KjlMCAiRaKCeSMASi72MMIQyigBoFH4AAAAA.cAAAAAAAAAAA",
+              "cmpId": 10,
+              "cmpVersion": 23,
+              "tcfPolicyVersion": 2,
+              "gdprApplies": true,
+              "cmpStatus": "loaded",
+              "eventStatus": "tcloaded",
+              "purpose": {
+                "consents": {
+                  "1": true,
+                  "2": true
+                }
+              },
+              "vendor": {
+                "consents": {
+                  "76": true,     // pubmaticId
+                }
+              }
+            }
+          },
+          // gpp: {
+          //   cmpApi: 'iab',
+          //   timeout: 8000
+          // },
+          // usp: {
+          //   cmpApi: 'static',
+          //   consentData: {
+          //     getUSPData: {
+          //       uspString: '1YYY'
+          //     }
+          //   }
+          // }
+        },
+        "userSync": {
+          "userIds": [
+            {
+              name: "pubmaticId",
+              params: {
+                publisherId: 123456
+              },
+              storage: {
+                name: "pubmaticId",
+                type: "cookie&html5",
+                expires: 30,
+                refreshInSeconds: 86400
+              }
+            }
+          ],
+          "syncDelay": 5000,
+          "auctionDelay": 1000,
+          encryptedSignalSources: {
+            "sources": [
+              {
+                source: ['esp.pubmatic.com'],
+                encrypt: false
+              }
+            ],
+            "registerDelay": 3000
+          }
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          pbjs.registerSignalSources();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+    }, FAILSAFE_TIMEOUT);
+  </script>
+
+  <script>
+    (function () {
+      var gads = document.createElement('script');
+      gads.async = true;
+      gads.type = 'text/javascript';
+      gads.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
+      var node = document.getElementsByTagName('script')[0];
+      node.parentNode.insertBefore(gads, node);
+    })();
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250], [300, 600], [728, 90]], 'test-div').addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+</head>
+
+<body>
+  <h2>Prebid PubMatic User ID Submodule Example</h2>
+
+  <h4>Generated EIDs</h4>
+  <script>
+    pbjs.que.push(function () {
+      var idsDiv = document.getElementById('ids-div');
+      idsDiv.innerHTML = JSON.stringify(pbjs.getUserIdsAsEids(), null, ' ');
+    });
+  </script>
+  <pre id="ids-div" style="border:1px solid #333; padding:5px; overflow: scroll"></pre>
+
+  <h4>Ad Slot</h4>
+  <div id="test-div" style="border:1px solid #333; padding:5px;">
+    <script>
+      googletag.cmd.push(function () { googletag.display('test-div'); });
+    </script>
+  </div>
+</body>
+
+</html>
