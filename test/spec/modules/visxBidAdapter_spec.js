@@ -4,6 +4,9 @@ import { config } from 'src/config.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 import { makeSlot } from '../integration/faker/googletag.js';
+import { mergeDeep } from '../../../src/utils.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -32,21 +35,21 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'uid': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when uid can not be parsed as number', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'uid': 'sdvsdv'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('it should fail on invalid video bid', function () {
@@ -89,6 +92,46 @@ describe('VisxAdapter', function () {
       timeout: 3000,
       refererInfo: {
         page: 'https://example.com'
+      },
+      ortb2: {
+        device: {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        site: {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       }
     };
     const referrer = bidderRequest.refererInfo.page;
@@ -109,7 +152,7 @@ describe('VisxAdapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       },
       {
         'bidder': 'visx',
@@ -120,7 +163,7 @@ describe('VisxAdapter', function () {
         'sizes': [[728, 90], [300, 250]],
         'bidId': '3150ccb55da321',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       },
       {
         'bidder': 'visx',
@@ -131,7 +174,7 @@ describe('VisxAdapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '42dbe3a7168a6a',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       },
       {
         'bidder': 'visx',
@@ -151,7 +194,7 @@ describe('VisxAdapter', function () {
         },
         'bidId': '39a4e3a7168a6a',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       }
     ];
 
@@ -217,7 +260,44 @@ describe('VisxAdapter', function () {
         'tmax': 3000,
         'cur': ['EUR'],
         'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {'page': referrer}
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       });
     });
 
@@ -235,13 +315,49 @@ describe('VisxAdapter', function () {
         'tmax': 3000,
         'cur': ['EUR'],
         'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {'page': referrer}
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       });
     });
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'GBP' : 'USD');
+      config.setConfig({currency: {bidderCurrencyDefault: {visx: 'GBP'}}})
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -255,32 +371,62 @@ describe('VisxAdapter', function () {
         'tmax': 3000,
         'cur': ['GBP'],
         'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {'page': referrer}
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       });
 
-      getConfigStub.restore();
+      config.resetConfig();
     });
 
     it('should add currency from currency.adServerCurrency', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'currency.bidderCurrencyDefault.visx' ? '' : 'USD');
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = parseRequest(request.url);
-      expect(payload).to.be.an('object');
-      expect(payload).to.have.property('auids', '903535,903535,903536,903537');
+      setCurrencyConfig({ adServerCurrency: 'USD' })
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        const request = spec.buildRequests(bidRequests, res);
+        const payload = parseRequest(request.url);
+        expect(payload).to.be.an('object');
+        expect(payload).to.have.property('auids', '903535,903535,903536,903537');
 
-      const postData = request.data;
-      expect(postData).to.be.an('object');
-      expect(postData).to.deep.equal({
-        'id': '22edbae2733bf6',
-        'imp': expectedFullImps,
-        'tmax': 3000,
-        'cur': ['USD'],
-        'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {'page': referrer}
+        const postData = request.data;
+        expect(postData).to.be.an('object');
+        expect(postData.cur).to.deep.equal(['USD']);
+        setCurrencyConfig({})
       });
-
-      getConfigStub.restore();
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
@@ -294,9 +440,50 @@ describe('VisxAdapter', function () {
         'tmax': 3000,
         'cur': ['EUR'],
         'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {'page': referrer},
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'regs': {
+          'ext': {
+            'gdpr': 1
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        },
         'user': {'ext': {'consent': 'AAA'}},
-        'regs': {'ext': {'gdpr': 1}}
       });
     });
 
@@ -311,7 +498,44 @@ describe('VisxAdapter', function () {
         'tmax': 3000,
         'cur': ['EUR'],
         'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {'page': referrer},
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        },
         'user': {'ext': {'consent': 'AAA'}},
         'regs': {'ext': {'gdpr': 0}}
       });
@@ -328,7 +552,44 @@ describe('VisxAdapter', function () {
         'tmax': 3000,
         'cur': ['EUR'],
         'source': {'ext': {'wrapperType': 'Prebid_js', 'wrapperVersion': '$prebid.version$'}},
-        'site': {'page': referrer},
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        },
         'user': {'ext': {'consent': 'AAA'}},
         'regs': {'ext': {'gdpr': 1}}
       });
@@ -359,7 +620,44 @@ describe('VisxAdapter', function () {
             'schain': schainObject
           }
         },
-        'site': {'page': referrer},
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       });
     });
 
@@ -408,7 +706,44 @@ describe('VisxAdapter', function () {
             'wrapperVersion': '$prebid.version$'
           }
         },
-        'site': {'page': referrer},
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        },
         'user': {'ext': {'eids': eids}}
       });
     });
@@ -429,7 +764,44 @@ describe('VisxAdapter', function () {
             'wrapperVersion': '$prebid.version$'
           }
         },
-        'site': {'page': referrer}
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       });
     });
   });
@@ -448,6 +820,46 @@ describe('VisxAdapter', function () {
       timeout: 3000,
       refererInfo: {
         page: 'https://example.com'
+      },
+      'ortb2': {
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       }
     };
     const referrer = bidderRequest.refererInfo.page;
@@ -467,7 +879,7 @@ describe('VisxAdapter', function () {
         },
         'bidId': '39aff3a7169a6a',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a476',
+        'auctionId': '1d1a030790a476'
       }
     ];
 
@@ -494,7 +906,6 @@ describe('VisxAdapter', function () {
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
       expect(payload).to.have.property('auids', '903538');
-
       const postData = request.data;
       expect(postData).to.be.an('object');
       expect(postData).to.deep.equal({
@@ -512,7 +923,50 @@ describe('VisxAdapter', function () {
             'wrapperVersion': '$prebid.version$'
           }
         },
-        'site': {'page': referrer}
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        },
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [
+                  '124'
+                ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [
+                  '124'
+                ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [
+                  '99'
+                ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        }
       });
     });
   });
@@ -531,6 +985,46 @@ describe('VisxAdapter', function () {
       timeout: 3000,
       refererInfo: {
         page: 'https://example.com'
+      },
+      ortb2: {
+        device: {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        site: {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       }
     };
     const referrer = bidderRequest.refererInfo.page;
@@ -544,7 +1038,7 @@ describe('VisxAdapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       },
       {
         'bidder': 'visx',
@@ -555,7 +1049,7 @@ describe('VisxAdapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       }
     ];
     let sandbox;
@@ -612,7 +1106,44 @@ describe('VisxAdapter', function () {
             'wrapperVersion': '$prebid.version$'
           }
         },
-        'site': {'page': referrer}
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       });
     });
 
@@ -641,7 +1172,44 @@ describe('VisxAdapter', function () {
             'wrapperVersion': '$prebid.version$'
           }
         },
-        'site': {'page': referrer}
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       });
     });
   });
@@ -669,7 +1237,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '300bfeb0d71a5b',
           'bidderRequestId': '5f2009617a7c0a',
-          'auctionId': '1cbd2feafe5e8b',
+          'auctionId': '1cbd2feafe5e8b'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -719,7 +1287,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '300bfeb0d71a5b',
           'bidderRequestId': '2c2bb1972df9a',
-          'auctionId': '1fa09aee5c8c99',
+          'auctionId': '1fa09aee5c8c99'
         },
         {
           'bidder': 'visx',
@@ -730,7 +1298,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '4dff80cc4ee346',
           'bidderRequestId': '2c2bb1972df9a',
-          'auctionId': '1fa09aee5c8c99',
+          'auctionId': '1fa09aee5c8c99'
         },
         {
           'bidder': 'visx',
@@ -741,7 +1309,7 @@ describe('VisxAdapter', function () {
           'sizes': [[728, 90]],
           'bidId': '5703af74d0472a',
           'bidderRequestId': '2c2bb1972df9a',
-          'auctionId': '1fa09aee5c8c99',
+          'auctionId': '1fa09aee5c8c99'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -823,7 +1391,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '300bfeb0d71a5b',
           'bidderRequestId': '5f2009617a7c0a',
-          'auctionId': '1cbd2feafe5e8b',
+          'auctionId': '1cbd2feafe5e8b'
         }
       ];
       const getConfigStub = sinon.stub(config, 'getConfig').returns('PLN');
@@ -888,7 +1456,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '300bfeb0d71321',
           'bidderRequestId': '2c2bb1972d23af',
-          'auctionId': '1fa09aee5c84d34',
+          'auctionId': '1fa09aee5c84d34'
         },
         {
           'bidder': 'visx',
@@ -899,7 +1467,7 @@ describe('VisxAdapter', function () {
           'sizes': [[728, 90]],
           'bidId': '300bfeb0d7183bb',
           'bidderRequestId': '2c2bb1972d23af',
-          'auctionId': '1fa09aee5c84d34',
+          'auctionId': '1fa09aee5c84d34'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -925,7 +1493,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '2164be6358b9',
           'bidderRequestId': '106efe3247',
-          'auctionId': '32a1f276cb87cb8',
+          'auctionId': '32a1f276cb87cb8'
         },
         {
           'bidder': 'visx',
@@ -936,7 +1504,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '326bde7fbf69',
           'bidderRequestId': '106efe3247',
-          'auctionId': '32a1f276cb87cb8',
+          'auctionId': '32a1f276cb87cb8'
         },
         {
           'bidder': 'visx',
@@ -947,7 +1515,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '4e111f1b66e4',
           'bidderRequestId': '106efe3247',
-          'auctionId': '32a1f276cb87cb8',
+          'auctionId': '32a1f276cb87cb8'
         },
         {
           'bidder': 'visx',
@@ -958,7 +1526,7 @@ describe('VisxAdapter', function () {
           'sizes': [[728, 90]],
           'bidId': '26d6f897b516',
           'bidderRequestId': '106efe3247',
-          'auctionId': '32a1f276cb87cb8',
+          'auctionId': '32a1f276cb87cb8'
         },
         {
           'bidder': 'visx',
@@ -969,7 +1537,7 @@ describe('VisxAdapter', function () {
           'sizes': [[728, 90]],
           'bidId': '1751cd90161',
           'bidderRequestId': '106efe3247',
-          'auctionId': '32a1f276cb87cb8',
+          'auctionId': '32a1f276cb87cb8'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -1075,7 +1643,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '5126e301f4be',
           'bidderRequestId': '171c5405a390',
-          'auctionId': '35bcbc0f7e79c',
+          'auctionId': '35bcbc0f7e79c'
         },
         {
           'bidder': 'visx',
@@ -1086,7 +1654,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '57b2ebe70e16',
           'bidderRequestId': '171c5405a390',
-          'auctionId': '35bcbc0f7e79c',
+          'auctionId': '35bcbc0f7e79c'
         },
         {
           'bidder': 'visx',
@@ -1097,7 +1665,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '225fcd44b18c',
           'bidderRequestId': '171c5405a390',
-          'auctionId': '35bcbc0f7e79c',
+          'auctionId': '35bcbc0f7e79c'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -1162,7 +1730,7 @@ describe('VisxAdapter', function () {
           'sizes': [[400, 300]],
           'bidId': '2164be6358b9',
           'bidderRequestId': '106efe3247',
-          'auctionId': '32a1f276cb87cb8',
+          'auctionId': '32a1f276cb87cb8'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -1214,7 +1782,7 @@ describe('VisxAdapter', function () {
           'sizes': [[400, 300]],
           'bidId': '2164be6358b9',
           'bidderRequestId': '106efe3247',
-          'auctionId': '32a1f276cb87cb8',
+          'auctionId': '32a1f276cb87cb8'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -1251,7 +1819,7 @@ describe('VisxAdapter', function () {
           'sizes': [[300, 250], [300, 600]],
           'bidId': '300bfeb0d71a5b',
           'bidderRequestId': '5f2009617a7c0a',
-          'auctionId': '1cbd2feafe5e8b',
+          'auctionId': '1cbd2feafe5e8b'
         }
       ];
       const request = spec.buildRequests(bidRequests);
@@ -1434,13 +2002,53 @@ describe('VisxAdapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       }
     ];
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
         page: 'https://example.com'
+      },
+      'ortb2': {
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        }
       }
     };
 
@@ -1509,6 +2117,185 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(storage.getDataFromLocalStorage(USER_ID_KEY)).to.be.a('string');
       expect(request.data.user.ext.vads).to.be.a('string');
+    });
+  });
+
+  describe('ortb2 data', function () {
+    const bidRequests = [
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': 903535
+        },
+        'adUnitCode': 'adunit-code-1',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }
+    ];
+    const bidderRequest = {
+      timeout: 3000,
+      refererInfo: {
+        page: 'https://example.com'
+      },
+      'ortb2': {
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        },
+        'user': {
+          'keywords': 'x,y',
+          'data': [
+            {
+              'name': 'exampleprovider.de',
+              'ext': {
+                'segtax': 5
+              },
+              'segment': [
+                {
+                  'id': '1'
+                }
+              ]
+            },
+            {
+              'ext': {
+                'segtax': 601,
+                'segclass': '5'
+              },
+              'segment': [
+                {
+                  'id': '140'
+                }
+              ],
+              'name': 'pa.openx.net'
+            },
+            {
+              'ext': {
+                'segtax': 601,
+                'segclass': '5'
+              },
+              'segment': [
+                {
+                  'id': '140'
+                }
+              ],
+              'name': 'ads.pubmatic.com'
+            }
+          ],
+          'ext': {
+            'data': {
+              'registered': true,
+              'interests': [
+                'ads'
+              ]
+            }
+          }
+        }
+      }
+    };
+
+    it('should pass interests if ortb2 has interests in user data', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user.ext.data.interests).not.to.be.undefined;
+    });
+
+    it('should pass device if ortb2 has device', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.device).not.to.be.undefined;
+    });
+
+    it('should pass site if ortb2 has site', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site).not.to.be.undefined;
+    });
+
+    it('should merge if user object exists', function () {
+      const user = {
+        'ext': {
+          'vads': 'cXaIRA425BmynEN1ratEnc_5e',
+          'data': {
+            'registered': true,
+            'interests': [
+              'ads'
+            ]
+          }
+        },
+        'keywords': 'x,y',
+        'data': [
+          {
+            'name': 'exampleprovider.de',
+            'ext': {
+              'segtax': 5
+            },
+            'segment': [
+              {
+                'id': '1'
+              }
+            ]
+          }
+        ]
+      };
+      const userOrtb2 = {
+        'keywords': 'x,y',
+        'data': [
+          {
+            'name': 'exampleprovider.de',
+            'ext': {
+              'segtax': 5
+            },
+            'segment': [
+              {
+                'id': '1'
+              }
+            ]
+          }
+        ],
+        'ext': {
+          'data': {
+            'registered': true,
+            'interests': [
+              'ads'
+            ]
+          }
+        }
+      }
+      const userReq = mergeDeep(user, userOrtb2);
+      expect(userReq.ext.vads).not.to.be.undefined;
     });
   });
 });

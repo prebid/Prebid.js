@@ -17,7 +17,7 @@
                     bidder: 'adnuntius',
                     params: {
                         auId: "201208",
-                        network: "adnuntius",
+                        network: "1287",
                         bidType: 'netBid'
                     }
                 }]
@@ -49,6 +49,12 @@
                     bidType: 'netBid'
                 }
             });
+
+            pbjs.bidderSettings = {
+                standard: {
+                    storageAllowed: true
+                }
+            };
 
             pbjs.addAdUnits(adUnits);
             pbjs.requestBids({bidsBackHandler: initAdserver});

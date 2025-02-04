@@ -1,8 +1,9 @@
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { logError, logInfo } from '../src/utils.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const timeoutIds = {};
 const tryUntil = (operationId, conditionCb, cb) => {
@@ -23,6 +24,7 @@ const clearTryUntilTimeouts = (timeouts) => {
   });
 };
 
+export const PBJS_INIT_EVENT_NAME = 'pbjsInit';
 const SEND_EVENTS_BUNDLE_TIMEOUT = 1500;
 const {
   BID_REQUESTED,
@@ -32,7 +34,10 @@ const {
   BIDDER_DONE,
   AUCTION_END,
   BID_TIMEOUT,
-} = CONSTANTS.EVENTS;
+  AD_RENDER_FAILED,
+  AD_RENDER_SUCCEEDED,
+  BIDDER_ERROR,
+} = EVENTS;
 
 export const EVENTS_TO_TRACK = [
   BID_REQUESTED,
@@ -42,6 +47,9 @@ export const EVENTS_TO_TRACK = [
   BIDDER_DONE,
   AUCTION_END,
   BID_TIMEOUT,
+  AD_RENDER_FAILED,
+  AD_RENDER_SUCCEEDED,
+  BIDDER_ERROR,
 ];
 
 const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), {
@@ -116,6 +124,9 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
       logError('Aborting yandex analytics provider initialization.');
     }, 25000);
 
+    yandexAnalytics.onEvent(PBJS_INIT_EVENT_NAME, {
+      'version': getGlobal().version,
+    });
     events.getEvents().forEach((event) => {
       if (event && EVENTS_TO_TRACK.indexOf(event.eventType) >= 0) {
         yandexAnalytics.onEvent(event.eventType, event);

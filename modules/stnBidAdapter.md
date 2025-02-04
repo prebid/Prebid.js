@@ -13,7 +13,7 @@ Module that connects to STN's demand sources.
 
 The STN adapter requires setup and approval from the STN. Please reach out to hb@stnvideo.com to create an STN account.
 
-The adapter supports Video(instream) & Banner.
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video
@@ -24,7 +24,6 @@ The adapter supports Video(instream) & Banner.
 | `floorPrice` | optional | Number | Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `placementId` | optional | String | A unique placement identifier                                     | "12345678"
 | `testMode` | optional | Boolean | This activates the test mode                                      | true
-| `currency` | optional | String | 3 letters currency                                                | "EUR"
 
 # Test Parameters
 ```javascript

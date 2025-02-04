@@ -182,7 +182,9 @@ describe('LogicadAdapter', function () {
       stack: []
     },
     auctionStart: 1563337198010,
-    fledgeEnabled: true
+    paapi: {
+      enabled: true
+    }
   };
   const serverResponse = {
     body: {
@@ -388,8 +390,8 @@ describe('LogicadAdapter', function () {
       const paapiRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
       const paapiInterpretedResponse = spec.interpretResponse(paapiServerResponse, paapiRequest);
       expect(paapiInterpretedResponse).to.have.property('bids');
-      expect(paapiInterpretedResponse).to.have.property('fledgeAuctionConfigs');
-      expect(paapiInterpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal(paapiServerResponse.body.ext.fledgeAuctionConfigs[0]);
+      expect(paapiInterpretedResponse).to.have.property('paapi');
+      expect(paapiInterpretedResponse.paapi[0]).to.deep.equal(paapiServerResponse.body.ext.fledgeAuctionConfigs[0]);
 
       // native
       const nativeRequest = spec.buildRequests(nativeBidRequests, bidderRequest)[0];

@@ -4,8 +4,8 @@
       "33acrossIdSystem",
       "admixerIdSystem",
       "adtelligentIdSystem",
+      "adqueryIdSystem",
       "amxIdSystem",
-      "britepoolIdSystem",
       "connectIdSystem",
       "czechAdIdSystem",
       "criteoIdSystem",
@@ -13,9 +13,11 @@
       "deepintentDpesIdSystem",
       "dmdIdSystem",
       "fabrickIdSystem",
+      "freepassIdSystem",
       "hadronIdSystem",
       "id5IdSystem",
       "ftrackIdSystem",
+      "gravitoIdSystem",
       "identityLinkIdSystem",
       "idxIdSystem",
       "imuIdSystem",
@@ -23,41 +25,45 @@
       "justIdSystem",
       "kinessoIdSystem",
       "liveIntentIdSystem",
+      "lmpIdSystem",
+      "lockrAIMIdSystem",
       "lotamePanoramaIdSystem",
       "merkleIdSystem",
       "mwOpenLinkIdSystem",
+      "mygaruIdSystem",
       "naveggIdSystem",
       "netIdSystem",
       "novatiqIdSystem",
       "oneKeyIdSystem",
-      "parrableIdSystem",
+      "operaadsIdSystem",
+      "permutiveIdentityManagerIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
+      "rewardedInterestIdSystem",
       "sharedIdSystem",
       "tapadIdSystem",
       "teadsIdSystem",
       "tncIdSystem",
-      "utiqSystem",
+      "utiqIdSystem",
+      "utiqMtpIdSystem",
       "uid2IdSystem",
       "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",
-      "adqueryIdSystem",
-      "gravitoIdSystem",
-      "freepassIdSystem",
-      "operaadsIdSystem",
-      "mygaruIdSystem"
+      "yandexIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
-      "dfpAdServerVideo"
+      "dfpAdpod"
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "51DegreesRtdProvider",
       "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
+      "adagioRtdProvider",
       "adlooxRtdProvider",
       "adnuntiusRtdProvider",
       "airgridRtdProvider",
@@ -77,6 +83,7 @@
       "greenbidsRtdProvider",
       "growthCodeRtdProvider",
       "hadronRtdProvider",
+      "humansecurityRtdProvider",
       "iasRtdProvider",
       "idWardRtdProvider",
       "imRtdProvider",
@@ -84,17 +91,21 @@
       "jwplayerRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
+      "mobianRtdProvider",
       "neuwoRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "oxxionRtdProvider",
       "permutiveRtdProvider",
+      "pubxaiRtdProvider",
       "qortexRtdProvider",
       "reconciliationRtdProvider",
       "relevadRtdProvider",
       "sirdataRtdProvider",
+      "symitriDapRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider",
+      "wurflRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
@@ -102,10 +113,12 @@
     ],
     "videoModule": [
       "jwplayerVideoProvider",
-      "videojsVideoProvider"
+      "videojsVideoProvider",
+      "adplayerproVideoProvider"
     ],
     "paapi": [
-      "fledgeForGpt"
+      "paapiForGpt",
+      "topLevelPaapi"
     ]
   }
 }

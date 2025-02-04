@@ -8,7 +8,7 @@ import {
   setConsentConfig,
   staticConsentData,
   userCMP
-} from 'modules/consentManagement.js';
+} from 'modules/consentManagementTcf.js';
 import {gdprDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
@@ -284,7 +284,7 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
-      it('should call gpdrDataHandler.setConsentData() when unknown CMP api is used', () => {
+      it('should call gdprDataHandler.setConsentData() when unknown CMP api is used', () => {
         setConsentConfig({gdpr: {cmpApi: 'invalid'}});
         let hookRan = false;
         requestBidsHook(() => { hookRan = true; }, {});

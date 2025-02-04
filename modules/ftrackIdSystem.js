@@ -142,7 +142,7 @@ export const ftrackIdSubmodule = {
         }
 
         // Creates an async script element and appends it to the document
-        loadExternalScript(config.params.url, MODULE_NAME);
+        loadExternalScript(config.params.url, MODULE_TYPE_UID, MODULE_NAME);
       }
     };
   },

@@ -10,21 +10,24 @@ import {
   isPlainObject,
   getBidIdParameter,
   getUniqueIdentifierStr,
+  formatQS,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
+import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
-const TRACK_EVENT_URL = 'https://rt.marphezis.com/prebid'
+const TRACK_EVENT_URL = 'https://rt.marphezis.com/prebid';
+const USER_SYNC_URL_IFRAME = 'https://rt.marphezis.com/sync?dpid=0';
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['brightcom', 'bcmssp'],
   gvlid: 883,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
@@ -36,7 +39,7 @@ export const spec = {
 function buildRequests(bidReqs, bidderRequest) {
   try {
     const impressions = bidReqs.map(bid => {
-      let bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes;
+      let bidSizes = bid?.mediaTypes?.banner?.sizes || bid?.mediaTypes?.video?.playerSize || bid.sizes;
       bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
       bidSizes = bidSizes.filter(size => isArray(size));
       const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
@@ -45,17 +48,28 @@ function buildRequests(bidReqs, bidderRequest) {
       const minSize = _getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), minSize) : 'na';
       const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+      const gpidData = _extractGpidData(bid);
 
       const imp = {
         id: bid.bidId,
-        banner: {
-          format: processedSizes,
-          ext: {
-            viewability: viewabilityAmountRounded
-          }
+        ext: {
+          ...gpidData
         },
         tagid: String(bid.adUnitCode)
       };
+
+      if (bid?.mediaTypes?.video) {
+        imp.video = {
+          ...bid.mediaTypes.video,
+        }
+      } else {
+        imp.banner = {
+          format: processedSizes,
+          ext: {
+            viewability: viewabilityAmountRounded,
+          }
+        }
+      }
 
       const bidFloor = _getBidFloor(bid);
 
@@ -132,7 +146,7 @@ function buildRequests(bidReqs, bidderRequest) {
 }
 
 function isBidRequestValid(bid) {
-  if (bid.bidder !== BIDDER_CODE || !bid.params || !bid.params.publisherId) {
+  if (!bid.params || !bid.params.publisherId) {
     return false;
   }
 
@@ -151,7 +165,7 @@ function interpretResponse(serverResponse) {
   try {
     if (id && seatbid && seatbid.length > 0 && seatbid[0].bid && seatbid[0].bid.length > 0) {
       response = seatbid[0].bid.map(bid => {
-        return {
+        const bidResponse = {
           requestId: bid.impid,
           cpm: parseFloat(bid.price),
           width: parseInt(bid.w),
@@ -159,13 +173,20 @@ function interpretResponse(serverResponse) {
           creativeId: bid.crid || bid.id,
           currency: 'USD',
           netRevenue: true,
-          mediaType: BANNER,
           ad: _getAdMarkup(bid),
           ttl: 300,
           meta: {
             advertiserDomains: bid?.adomain || []
           }
         };
+
+        if (bid.mtype === 2) {
+          bidResponse.mediaType = VIDEO;
+        } else {
+          bidResponse.mediaType = BANNER;
+        }
+
+        return bidResponse;
       });
     }
   } catch (e) {
@@ -175,9 +196,20 @@ function interpretResponse(serverResponse) {
   return response;
 }
 
-// Don't do user sync for now
-function getUserSyncs(syncOptions, responses, gdprConsent) {
-  return [];
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  const syncs = [];
+
+  if (syncOptions.iframeEnabled) {
+    let params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
+    params = Object.keys(params).length ? `&${formatQS(params)}` : '';
+
+    syncs.push({
+      type: 'iframe',
+      url: USER_SYNC_URL_IFRAME + params,
+    });
+  }
+
+  return syncs;
 }
 
 function onBidderError(errorData) {
@@ -239,6 +271,15 @@ function _isViewabilityMeasurable(element) {
 
 function _getViewability(element, topWin, {w, h} = {}) {
   return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, topWin, {w, h}) : 0;
+}
+
+function _extractGpidData(bid) {
+  return {
+    gpid: bid?.ortb2Imp?.ext?.gpid,
+    adserverName: bid?.ortb2Imp?.ext?.data?.adserver?.name,
+    adslot: bid?.ortb2Imp?.ext?.data?.adserver?.adslot,
+    pbadslot: bid?.ortb2Imp?.ext?.data?.pbadslot,
+  }
 }
 
 function _isIframe() {

@@ -5,8 +5,8 @@ import { ajaxBuilder } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
-import { generateUUID, logInfo } from '../src/utils.js';
-import CONSTANTS from '../src/constants.json';
+import { deepClone, hasNonSerializableProperty, generateUUID, logInfo } from '../src/utils.js';
+import { EVENTS } from '../src/constants.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
@@ -15,22 +15,20 @@ const ajax = ajaxBuilder(0);
 
 // Events needed
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_ADJUSTMENT,
-    BID_TIMEOUT,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    NO_BID,
-    BID_WON,
-    BIDDER_DONE,
-    SET_TARGETING,
-    REQUEST_BIDS,
-    ADD_AD_UNITS,
-    AD_RENDER_FAILED,
-  },
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_ADJUSTMENT,
+  BID_TIMEOUT,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  NO_BID,
+  BID_WON,
+  BIDDER_DONE,
+  SET_TARGETING,
+  REQUEST_BIDS,
+  ADD_AD_UNITS,
+  AD_RENDER_FAILED,
+} = EVENTS;
 
 const _VERSION = 1;
 const _pageViewId = generateUUID();
@@ -135,7 +133,12 @@ function flush() {
 }
 
 function handleEvent(eventType, eventArgs) {
-  eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
+  if (eventArgs) {
+    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
+  } else {
+    eventArgs = {}
+  }
+
   let invisiblyEvent = {};
 
   switch (eventType) {

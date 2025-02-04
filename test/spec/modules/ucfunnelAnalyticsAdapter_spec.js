@@ -6,7 +6,7 @@ import {
 import {expect} from 'chai';
 
 const events = require('src/events');
-const constants = require('src/constants.json');
+const constants = require('src/constants.js');
 
 const pbuid = 'pbuid-AA778D8A796AEA7A0843E2BBEB677766';
 const adid = 'test-ad-83444226E44368D1E32E49EEBE6D29';

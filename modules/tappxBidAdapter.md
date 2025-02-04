@@ -80,7 +80,7 @@ Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1
                         protocols: [ 2, 3 ],        // Optional
                         battr: [ 13, 14 ],          // Optional
                         linearity: 1,               // Optional
-                        placement: 2,               // Optional
+                        plcmt: 2,                   // Optional
                         minbitrate: 10,             // Optional
                         maxbitrate: 10              // Optional
                     },

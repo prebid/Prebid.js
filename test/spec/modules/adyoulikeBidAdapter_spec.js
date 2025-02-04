@@ -619,19 +619,19 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.size;
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.sizes;
 
-      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'placement': 0
       };
-      expect(!!spec.isBidRequestValid(bid)).to.equal(false);
+      expect(!!spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -810,6 +810,12 @@ describe('Adyoulike Adapter', function () {
       serverResponse = {
         body: {}
       }
+    });
+
+    it('handles 204 responses', function () {
+      serverResponse.body = '';
+      let result = spec.interpretResponse(serverResponse, []);
+      expect(result).deep.equal([]);
     });
 
     it('handles nobid responses', function () {
