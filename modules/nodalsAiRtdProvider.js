@@ -93,6 +93,7 @@ class NodalsAiRtdProvider {
     facts['page.url'] = getRefererInfo().page;
     const targetingEngine = window?.$nodals?.adTargetingEngine['latest'];
     try {
+      logInfo(`typeof ns: ${typeof window.$nodals}`);
       targetingEngine.init(config, facts);
       targetingData = targetingEngine.getTargetingData(
         adUnitArray,
@@ -206,14 +207,14 @@ class NodalsAiRtdProvider {
 
   /**
    * Checks if the provided data is stale.
-   * @param {Object} storedData - The data to check.
+   * @param {Object} dataEnvelope - The data envelope object.
    * @returns {boolean} - True if the data is stale, false otherwise.
    */
   // eslint-disable-next-line no-dupe-class-members
-  #dataIsStale(storedData) {
+  #dataIsStale(dataEnvelope) {
     const currentTime = Date.now();
-    const dataTime = storedData.createdAt || 0;
-    const staleThreshold = this.#overrides?.storageTTL ?? storedData?.meta?.ttl ?? STORAGE_TTL;
+    const dataTime = dataEnvelope.createdAt || 0;
+    const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? STORAGE_TTL;
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
