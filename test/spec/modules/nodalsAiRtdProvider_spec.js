@@ -217,7 +217,7 @@ describe('NodalsAI RTD Provider', () => {
       it('should detect stale data if remote defined TTL is exceeded', function () {
         const fiveMinutesAgoMs = Date.now() - (5 * 60 * 1000);
         setDataInLocalStorage({
-          data: { foo: 'bar', meta: { ttl: 4 * 60 }},
+          data: { foo: 'bar', meta: { ttl: 4 * 60 } },
           createdAt: fiveMinutesAgoMs,
         });
         const result = nodalsAiRtdSubmodule.init(validConfig, {});
@@ -228,7 +228,7 @@ describe('NodalsAI RTD Provider', () => {
       it('should respect pub defined TTL over remote defined TTL', function () {
         const fiveMinutesAgoMs = Date.now() - (5 * 60 * 1000);
         setDataInLocalStorage({
-          data: { foo: 'bar', meta: { ttl: 4 * 60 }},
+          data: { foo: 'bar', meta: { ttl: 4 * 60 } },
           createdAt: fiveMinutesAgoMs,
         });
         const config = Object.assign({}, validConfig);
