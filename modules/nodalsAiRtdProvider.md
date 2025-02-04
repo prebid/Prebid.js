@@ -6,7 +6,7 @@ Module Name: Nodals AI Rtd Provider
 Module Type: Rtd Provider
 Maintainer: prebid-integrations@nodals.ai
 
-Nodals AI provides a real-time data prebid module that will analyse first-party signals present on page load, determine the value of them to Nodals’ advertisers and add a key-value to the ad server call to indicate that value. The Nodals AI data module loads external code to evaluate the browser and page properties and determine whether to add targeting key-values to subsequent ad calls or bid requests.
+Nodals AI provides a real-time data prebid module that will analyse first-party signals present on page load, determine the value of them to Nodals’ advertisers and add a key-value to the ad server call to indicate that value. The Nodals AI RTD module loads external code as part of this process.
 
 In order to be able to utilise this module, please contact [info@nodals.ai](mailto:info@nodals.ai) for account setup and detailed GAM setup instructions.
 
