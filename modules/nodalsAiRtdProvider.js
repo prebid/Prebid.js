@@ -93,7 +93,6 @@ class NodalsAiRtdProvider {
     facts['page.url'] = getRefererInfo().page;
     const targetingEngine = window?.$nodals?.adTargetingEngine['latest'];
     try {
-      logInfo(`typeof ns: ${typeof window.$nodals}`);
       targetingEngine.init(config, facts);
       targetingData = targetingEngine.getTargetingData(
         adUnitArray,
