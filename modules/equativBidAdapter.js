@@ -17,7 +17,7 @@ const BIDDER_CODE = 'equativ';
 const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
 const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
 const LOG_PREFIX = 'Equativ:';
-const PID_COOKIE_NAME = 'eqt_pid';
+const PID_STORAGE_NAME = 'eqt_pid';
 
 let nwid = 0;
 
@@ -103,9 +103,7 @@ export const spec = {
           }, event.origin);
 
           if (event.data.pid) {
-            const exp = new Date();
-            exp.setTime(Date.now() + 31536000000); // in a year
-            storage.setCookie(PID_COOKIE_NAME, event.data.pid, exp.toUTCString());
+            storage.setDataInLocalStorage(PID_STORAGE_NAME, event.data.pid);
           }
 
           this.removeEventListener('message', handler);
@@ -178,7 +176,7 @@ export const converter = ortbConverter({
       });
     }
 
-    const pid = storage.getCookie(PID_COOKIE_NAME);
+    const pid = storage.getDataFromLocalStorage(PID_STORAGE_NAME);
     if (pid) {
       deepSetValue(req, 'user.buyeruid', pid);
     }
