@@ -759,6 +759,34 @@ describe('magnite analytics adapter', function () {
           expect(message.auctions[0].adUnits[0].bids[0].bidResponse.networkId).to.equal(test.expected);
         });
       });
+
+      // meta mediatype handler things
+      [
+        { input: undefined, expected: 'banner', hasOg: false },
+        { input: 'banner', expected: 'banner', hasOg: false },
+        { input: 'video', expected: 'video', hasOg: true }
+      ].forEach((test, index) => {
+        it(`should handle meta mediaType stuff correctly - #${index + 1}`, function () {
+          events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+          events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+          let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+          bidResponse.meta = {
+            mediaType: test.input
+          };
+
+          events.emit(BID_RESPONSE, bidResponse);
+          events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+          events.emit(AUCTION_END, MOCK.AUCTION_END);
+          events.emit(BID_WON, MOCK.BID_WON);
+          clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+          let message = JSON.parse(server.requests[0].requestBody);
+          expect(message.auctions[0].adUnits[0].bids[0].bidResponse.mediaType).to.equal(test.expected);
+          if (test.hasOg) expect(message.auctions[0].adUnits[0].bids[0].bidResponse.ogMediaType).to.equal('banner');
+          else expect(message.auctions[0].adUnits[0].bids[0].bidResponse).to.not.haveOwnProperty('ogMediaType');
+        });
+      });
     });
 
     describe('with session handling', function () {

@@ -1,5 +1,5 @@
 import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
-import {deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
+import {deepClone, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
 import {config} from '../../src/config.js';
 import {S2S, STATUS} from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
@@ -17,11 +17,24 @@ import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
 import {s2sDefaultConfig} from './index.js';
 import {premergeFpd} from './bidderConfig.js';
+import {ALL_MEDIATYPES, BANNER} from '../../src/mediaTypes.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
 const BIDDER_SPECIFIC_REQUEST_PROPS = new Set(['bidderCode', 'bidderRequestId', 'uniquePbsTid', 'bids', 'timeout']);
+
+const getMinimumFloor = (() => {
+  const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
+  return function(candidates) {
+    let min;
+    for (const candidate of candidates) {
+      if (candidate?.bidfloorcur == null || candidate?.bidfloor == null) return null;
+      min = min == null ? candidate : getMin(min, candidate);
+    }
+    return min;
+  }
+})();
 
 const PBS_CONVERTER = ortbConverter({
   processors: pbsExtensions,
@@ -126,24 +139,39 @@ const PBS_CONVERTER = ortbConverter({
           }
         }
       },
+      // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor/extBidfloor processing,
+      // and aggregate all of them into a single, minimum floor to put in the request
       bidfloor(orig, imp, proxyBidRequest, context) {
-        // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor processing,
-        // and aggregate all of them into a single, minimum floor to put in the request
-        const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
-        let min;
-        for (const req of context.actualBidRequests.values()) {
-          const floor = {};
-          orig(floor, req, context);
-          // if any bid does not have a valid floor, do not attempt to send any to PBS
-          if (floor.bidfloorcur == null || floor.bidfloor == null) {
-            min = null;
-            break;
+        const min = getMinimumFloor((function * () {
+          for (const req of context.actualBidRequests.values()) {
+            const floor = {};
+            orig(floor, req, context);
+            yield floor;
           }
-          min = min == null ? floor : getMin(min, floor);
-        }
+        })())
         if (min != null) {
           Object.assign(imp, min);
         }
+      },
+      extBidfloor(orig, imp, proxyBidRequest, context) {
+        function setExtFloor(target, minFloor) {
+          if (minFloor != null) {
+            deepSetValue(target, 'ext.bidfloor', minFloor.bidfloor);
+            deepSetValue(target, 'ext.bidfloorcur', minFloor.bidfloorcur);
+          }
+        }
+        const imps = Array.from(context.actualBidRequests.values())
+          .map(request => {
+            const requestImp = deepClone(imp);
+            orig(requestImp, request, context);
+            return requestImp;
+          });
+        Object.values(ALL_MEDIATYPES).forEach(mediaType => {
+          setExtFloor(imp[mediaType], getMinimumFloor(imps.map(imp => imp[mediaType]?.ext)))
+        });
+        (imp[BANNER]?.format || []).forEach((format, i) => {
+          setExtFloor(format, getMinimumFloor(imps.map(imp => imp[BANNER].format[i]?.ext)))
+        })
       }
     },
     [REQUEST]: {
