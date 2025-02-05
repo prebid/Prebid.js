@@ -16,6 +16,8 @@ const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
 const LOG_PREFIX = 'Equativ:';
 const PID_COOKIE_NAME = 'eqt_pid';
 
+let impIdMap = {};
+
 /**
  * Assigns values to new properties, removes temporary ones from an object
  * and remove temporary default bidfloor of -1
@@ -109,7 +111,8 @@ export const spec = {
       requests.push({
         data,
         method: 'POST',
-        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
+        // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169'
       })
     });
 
@@ -121,11 +124,18 @@ export const spec = {
    * @param bidRequest
    * @returns {Bid[]}
    */
-  interpretResponse: (serverResponse, bidRequest) =>
-    converter.fromORTB({
+  interpretResponse: (serverResponse, bidRequest) => {
+    bidRequest.data?.imp?.forEach(imp => imp.id = impIdMap[imp.id]);
+
+    serverResponse.body?.seatbid?.forEach(seat =>
+      seat?.bid.forEach(bid => bid.impid = impIdMap[bid.impid])
+    );
+
+    return converter.fromORTB({
       request: bidRequest.data,
       response: serverResponse.body,
-    }),
+    });
+  },
 
   /**
    * @param bidRequest
@@ -217,9 +227,9 @@ export const converter = ortbConverter({
         }
       };
 
-      item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format.w, format.h));
+      item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
       updateFloorMap('native', 'nativeTemp');
-      updateFloorMap('video', 'videoTemp', item.video.w, item.video.h);
+      updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
 
       Object.values(floorMap).forEach(obj => {
         [
@@ -228,9 +238,13 @@ export const converter = ortbConverter({
           ['video', 'videoTemp']
         ].forEach(([name, tempName]) => obj = cleanObject(obj, name, tempName));
 
-        obj.id = makeId();
+        if (obj.banner || obj.video || obj.native) {
+          const id = makeId();
+          impIdMap[id] = obj.id;
+          obj.id = id;
 
-        splitImps.push(obj);
+          splitImps.push(obj);
+        }
       });
     });
 
