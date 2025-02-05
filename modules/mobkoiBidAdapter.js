@@ -39,6 +39,7 @@ export const converter = ortbConverter({
     deepSetValue(ortbRequest, 'site.publisher.ext.adServerBaseUrl', utils.getAdServerEndpointBaseUrl(prebidBidRequest));
     // We only support one impression per request.
     deepSetValue(ortbRequest, 'imp.0.tagid', utils.getPlacementId(prebidBidRequest));
+    deepSetValue(ortbRequest, 'user.id', context.bidRequests[0].userId?.mobkoiId || null);
 
     return ortbRequest;
   },
@@ -267,7 +268,7 @@ export const utils = {
       CREATIVE_ID: ortbBidResponse.crid,
       CAMPAIGN_ID: ortbBidResponse.cid,
       ORTB_ID: ortbBidResponse.id,
-      PUBLISHER_ID: deepAccess(context, 'bidRequest.ortb2.site.publisher.id') || deepAccess(context, 'bidderRequest.ortb2.site.publisher.id')
+      PUBLISHER_ID: utils.getPublisherId(context.bidderRequest),
     };
 
     _each(ORTB_RESPONSE_FIELDS_SUPPORT_MACROS, ortbField => {
