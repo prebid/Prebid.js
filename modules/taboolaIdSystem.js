@@ -8,7 +8,7 @@ import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {logError} from '../src/utils.js';
-import {gdprDataHandler, uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
+import {gdprDataHandler, gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 /**
@@ -89,9 +89,7 @@ const userData = {
     }
     const [match] = cookieData.split('&').filter(item => item.startsWith(`${key}=`));
     if (match) {
-      // eslint-disable-next-line no-unused-vars
-      const [_, value] = match.split('=');
-      return value;
+      return match.split('=')[1];
     }
     return undefined;
   },
