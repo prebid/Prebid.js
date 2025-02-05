@@ -200,7 +200,7 @@ describe('Media.net Analytics Adapter', function() {
       medianetAnalytics.clearlogsQueue();
       expect(noBidLog.mtype).to.have.ordered.members([encodeURIComponent('banner|native|video'), encodeURIComponent('banner|video|native')]);
       expect(noBidLog.szs).to.have.ordered.members([encodeURIComponent('300x250|1x1|640x480'), encodeURIComponent('300x250|1x1|640x480')]);
-      expect(noBidLog.vplcmtt).to.equal('instream');
+      expect(noBidLog.vplcmtt).to.equal('1');
     });
 
     it('twin ad units should have correct sizes', function() {

@@ -2,8 +2,9 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
@@ -13,7 +14,7 @@ export const DEFAULT_PH = '2d1251ae-7f3a-47cf-bd2a-2f288854a0ba';
 export const spec = {
   code: 'openx',
   gvlid: 69,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
@@ -25,7 +26,12 @@ registerBidder(spec);
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300
+    ttl: 300,
+    nativeRequest: {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]},
+      ]
+    }
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
@@ -74,6 +80,18 @@ const converter = ortbConverter({
     return req;
   },
   bidResponse(buildBidResponse, bid, context) {
+    if (!context.mediaType && !bid.mtype) {
+      let mediaType = BANNER; // default media type
+      const vastKeywords = ['VAST ', 'vast ', 'videoad', 'VAST_VERSION', 'dc_vast', 'video '];
+      if (bid.adm && bid.adm.startsWith('{') && bid.adm.includes('"assets"')) {
+        mediaType = NATIVE;
+      } else if (bid.vastXml || bid.vastUrl || (bid.adm && vastKeywords.some(v => bid.adm.includes(v)))) {
+        mediaType = VIDEO;
+      }
+      bid.mediaType = mediaType;
+      bid.mtype = Object.keys(ORTB_MTYPES).find(key => ORTB_MTYPES[key] === mediaType);
+    }
+
     const bidResponse = buildBidResponse(bid, context);
     if (bid.ext) {
       bidResponse.meta.networkId = bid.ext.dsp_id;
@@ -158,8 +176,11 @@ function isBidRequestValid(bidRequest) {
 
 function buildRequests(bids, bidderRequest) {
   let videoBids = bids.filter(bid => isVideoBid(bid));
-  let bannerBids = bids.filter(bid => isBannerBid(bid));
-  let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
+  let bannerAndNativeBids = bids.filter(bid => isBannerBid(bid) || isNativeBid(bid))
+    // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
+    .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
+
+  let requests = bannerAndNativeBids.length ? [createRequest(bannerAndNativeBids, bidderRequest, null)] : [];
   videoBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
@@ -178,8 +199,13 @@ function isVideoBid(bid) {
   return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
+function isNativeBid(bid) {
+  return utils.deepAccess(bid, 'mediaTypes.native');
+}
+
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+  const isNotVideoOrNativeBid = !isVideoBid(bid) && !isNativeBid(bid)
+  return utils.deepAccess(bid, 'mediaTypes.banner') || isNotVideoOrNativeBid;
 }
 
 function interpretResponse(resp, req) {

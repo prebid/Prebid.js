@@ -436,13 +436,16 @@ function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}
     message: 'assetResponse',
     adId: data.adId,
   };
-  let renderData = getRenderingData(adObject).native;
+  let {native: renderData, rendererVersion} = getRenderingData(adObject);
   if (renderData) {
     // if we have native rendering data (set up by the nativeRendering module)
     // include it in full ("all assets") together with the renderer.
     // this is to allow PUC to use dynamic renderers without requiring changes in creative setup
-    msg.native = Object.assign({}, renderData);
-    msg.renderer = getCreativeRendererSource(adObject);
+    Object.assign(msg, {
+      native: Object.assign({}, renderData),
+      renderer: getCreativeRendererSource(adObject),
+      rendererVersion,
+    })
     if (keys != null) {
       renderData.assets = renderData.assets.filter(({key}) => keys.includes(key))
     }
