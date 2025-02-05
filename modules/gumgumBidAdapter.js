@@ -495,8 +495,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 export function getCids(site) {
   if (site.content && Array.isArray(site.content.data)) {
     for (const dataItem of site.content.data) {
-      if (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv')) {
-        return dataItem.ext.cids.join(',');
+      if (typeof dataItem?.name === 'string' && (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv'))) {
+        return Array.isArray(dataItem.ext?.cids) ? dataItem.ext.cids.join(',') : '';
       }
     }
   }
