@@ -58,7 +58,6 @@
     "videojsVideoProvider",
     "yahooAdsBidAdapter",
     "yieldmoBidAdapter",
-    "pulsepointBidAdapter",
     "sovrnBidAdapter",
     "gameraRtdProvider"
 ]
