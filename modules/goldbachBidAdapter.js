@@ -96,6 +96,7 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const ortbRequest = buildRequest(imps, bidderRequest, context);
     const { bidRequests = [] } = context;
+    const firstBidRequest = bidRequests?.[0];
 
     // Apply custom extensions to each impression
     bidRequests.forEach((bidRequest, index) => {
@@ -108,13 +109,24 @@ const converter = ortbConverter({
 
     // Apply custom extensions to the request
     if (bidRequests.length > 0) {
-      const firstBidRequest = bidRequests?.[0];
       ortbRequest.ext = ortbRequest.ext || {};
       ortbRequest.ext[BIDDER_CODE] = ortbRequest.ext[BIDDER_CODE] || {};
       ortbRequest.ext[BIDDER_CODE].targetings = firstBidRequest?.params?.customTargeting || {};
       ortbRequest.ext[BIDDER_CODE].publisherId = firstBidRequest?.params?.publisherId;
       ortbRequest.ext[BIDDER_CODE].mockResponse = firstBidRequest?.params?.mockResponse || false;
     }
+
+    // Apply gdpr consent data
+    if (bidderRequest?.gdprConsent) {
+      console.log("consent", bidderRequest.gdprConsent);
+      ortbRequest.regs = ortbRequest.regs || {};
+      ortbRequest.regs.ext = ortbRequest.regs.ext || {};
+      ortbRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      ortbRequest.user = ortbRequest.user || {};
+      ortbRequest.user.ext = ortbRequest.user.ext || {};
+      ortbRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
+    }
+
     return ortbRequest;
   },
   bidResponse(buildBidResponse, bid, context) {
