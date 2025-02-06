@@ -118,7 +118,6 @@ const converter = ortbConverter({
 
     // Apply gdpr consent data
     if (bidderRequest?.gdprConsent) {
-      console.log("consent", bidderRequest.gdprConsent);
       ortbRequest.regs = ortbRequest.regs || {};
       ortbRequest.regs.ext = ortbRequest.regs.ext || {};
       ortbRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
