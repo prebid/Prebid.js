@@ -5,7 +5,6 @@
     "appnexusBidAdapter",
     "atsAnalyticsAdapter",
     "carbonAnalyticsAdapter",
-    "carbonRtdProvider",
     "concertBidAdapter",
     "connectIdSystem",
     "consentManagementUsp",
