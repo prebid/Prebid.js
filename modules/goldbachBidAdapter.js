@@ -91,6 +91,30 @@ const getRendererForBid = (bidRequest, bidResponse) => {
 /* Converter config, applying custom extensions */
 const converter = ortbConverter({
   context: { netRevenue: true },
+  request(buildRequest, imps, bidderRequest, context) {
+    const ortbRequest = buildRequest(imps, bidderRequest, context);
+    const { bidRequests = [] } = context;
+
+    // Apply custom extensions to each impression
+    bidRequests.forEach((bidRequest, index) => {
+      const ortbImp = ortbRequest.imp[index];
+      ortbImp.ext = ortbImp.ext || {};
+      ortbImp.ext[BIDDER_CODE] = ortbImp.ext[BIDDER_CODE] || {};
+      ortbImp.ext[BIDDER_CODE].targetings = bidRequest?.params?.customTargeting || {};
+      ortbImp.ext[BIDDER_CODE].slotId = bidRequest?.params?.slotId || bidRequest?.adUnitCode;
+    });
+
+    // Apply custom extensions to the request
+    if (bidRequests.length > 0) {
+      const firstBidRequest = bidRequests?.[0];
+      ortbRequest.ext = ortbRequest.ext || {};
+      ortbRequest.ext[BIDDER_CODE] = ortbRequest.ext[BIDDER_CODE] || {};
+      ortbRequest.ext[BIDDER_CODE].targetings = firstBidRequest?.params?.customTargeting || {};
+      ortbRequest.ext[BIDDER_CODE].publisherId = firstBidRequest?.params?.publisherId;
+    }
+    console.log('ortbreq', ortbRequest);
+    return ortbRequest;
+  },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     const {bidRequest} = context;
