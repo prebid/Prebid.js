@@ -227,7 +227,7 @@ export const converter = ortbConverter({
         }
       };
 
-      item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
+      item.banner?.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
       updateFloorMap('native', 'nativeTemp');
       updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
 
