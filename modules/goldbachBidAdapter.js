@@ -1,5 +1,6 @@
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
@@ -12,6 +13,7 @@ const URL_LOGGING = 'https://l.da-services.ch/pb';
 const URL = 'https://goldlayer-api.prod.gbads.net/openrtb/2.5/auction';
 const URL_LOCAL = 'http://localhost:3000/openrtb/2.5/auction';
 const METHOD = 'POST';
+const DEFAULT_CURRENCY = 'USD';
 const LOGGING_PERCENTAGE_REGULAR = 0.0001;
 const LOGGING_PERCENTAGE_ERROR = 0.001;
 
@@ -90,7 +92,7 @@ const getRendererForBid = (bidRequest, bidResponse) => {
 
 /* Converter config, applying custom extensions */
 const converter = ortbConverter({
-  context: { netRevenue: true },
+  context: { netRevenue: true, ttl: 3600 },
   request(buildRequest, imps, bidderRequest, context) {
     const ortbRequest = buildRequest(imps, bidderRequest, context);
     const { bidRequests = [] } = context;
@@ -111,14 +113,28 @@ const converter = ortbConverter({
       ortbRequest.ext[BIDDER_CODE] = ortbRequest.ext[BIDDER_CODE] || {};
       ortbRequest.ext[BIDDER_CODE].targetings = firstBidRequest?.params?.customTargeting || {};
       ortbRequest.ext[BIDDER_CODE].publisherId = firstBidRequest?.params?.publisherId;
+      ortbRequest.ext[BIDDER_CODE].mockResponse = firstBidRequest?.params?.mockResponse || false;
     }
-    console.log('ortbreq', ortbRequest);
     return ortbRequest;
   },
   bidResponse(buildBidResponse, bid, context) {
+    // Setting context: media type
+    context.mediaType = deepAccess(bid, 'ext.prebid.type');
     const bidResponse = buildBidResponse(bid, context);
     const {bidRequest} = context;
-    // Outstream video renderer
+
+    // Setting required properties: cpm, currency
+    bidResponse.currency = bidResponse.currency || deepAccess(bid, 'ext.origbidcur') || DEFAULT_CURRENCY;
+    bidResponse.cpm = bidResponse.cpm || deepAccess(bid, 'price');
+
+    // Setting required properties: meta
+    bidResponse.meta = bidResponse.meta || {};
+    bidResponse.meta.advertiserDomains = deepAccess(bid, 'adomain');
+    bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
+    bidResponse.meta.primaryCatId = deepAccess(bid, 'ext.prebid.video.primary_category');
+    bidResponse.meta.secondaryCatIds = deepAccess(bid, 'ext.prebid.video.secondary_categories');
+
+    // Setting extensions: outstream video renderer
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = getRendererForBid(bidRequest, bidResponse);
     }
