@@ -6,7 +6,8 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { getCoreStorageManager } from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { logError, logInfo, deepAccess, insertUserSyncIframe } from '../src/utils.js';
 
 const GVL_ID = 898;
@@ -20,7 +21,7 @@ export const EQUATIV_NETWORK_ID = '5290';
  */
 const PARAM_NAME_AD_SERVER_BASE_URL = 'adServerBaseUrl';
 
-export const storage = getCoreStorageManager(MODULE_NAME);
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export const mobkoiIdSubmodule = {
   name: MODULE_NAME,
