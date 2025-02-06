@@ -1021,8 +1021,16 @@ describe('adnuntiusBidAdapter', function () {
       delete bidderRequests[0].params.targeting;
     });
 
-    it('should pass site data ext as key values to ad server with targeting in different format', function () {
+    it('should pass site.ext.data and user.ext.data as key values to ad server with targeting in different format', function () {
       const ortb2 = {
+        user: {
+          ext: {
+            data: {
+              'from': 'user',
+              '9090': 'from-user'
+            }
+          }
+        },
         site: {
           ext: {
             data: {
@@ -1043,12 +1051,14 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       const data = JSON.parse(request[0].data);
+      expect(countMatches(data.adUnits[0].kv, {'from': 'user'})).to.equal(1);
+      expect(countMatches(data.adUnits[0].kv, {'9090': 'from-user'})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'9090': ['take it over']})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'merge': ['this']})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'9090': 'should-be-retained'})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'45678': 'true'})).to.equal(1);
       expect(countMatches(data.adUnits[0].kv, {'12345': 'true'})).to.equal(1);
-      expect(data.adUnits[0].kv.length).to.equal(5);
+      expect(data.adUnits[0].kv.length).to.equal(7);
 
       delete bidderRequests[0].params.targeting;
     });
