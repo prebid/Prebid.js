@@ -1,7 +1,7 @@
 import {_each, isArray, isStr, logError, logWarn, pick, generateUUID} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON } from '../src/constants.js';
+import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON, REGEX_BROWSERS, BROWSER_MAPPING } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -201,6 +201,16 @@ function getDevicePlatform() {
     }
   } catch (ex) {}
   return deviceType;
+}
+
+function getBrowserType() {
+  const userAgent = navigator.userAgent;
+  let browserName = userAgent == null ? -1 : 0;
+
+  if (userAgent) {
+    browserName = BROWSER_MAPPING[(REGEX_BROWSERS.findIndex(regex => userAgent.match(regex)))] || 0;
+  }
+  return browserName;
 }
 
 function getValueForKgpv(bid, adUnitId) {
@@ -428,6 +438,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
   outputObj['pbv'] = '$prebid.version$' || '-1';
+  outputObj['bm'] = getBrowserType();
 
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData?.floorRequestData);
