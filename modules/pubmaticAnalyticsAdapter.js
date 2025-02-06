@@ -522,9 +522,9 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&origbidid=' + enc(winningBid?.bidResponse?.partnerImpId || winningBid?.bidResponse?.prebidBidId || winningBid.bidId);
   pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
-  const dspid = winningBid.bidResponse?.meta ? getMetadata(winningBid.bidResponse.meta).ds : undefined;
-  if (dspid) {
-    pixelURL += '&dspid=' + enc(dspid);
+  const ds = winningBid.bidResponse?.meta ? getMetadata(winningBid.bidResponse.meta).ds : undefined;
+  if (ds) {
+    pixelURL += '&ds=' + enc(ds);
   }
   pg && (pixelURL += '&pb=' + enc(pg));
 
