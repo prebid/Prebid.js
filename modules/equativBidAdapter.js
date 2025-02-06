@@ -111,7 +111,7 @@ export const spec = {
       });
 
       let url = tryAppendQueryString(COOKIE_SYNC_URL + '?', 'nwid', nwid);
-      url = tryAppendQueryString(url, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
+      url = tryAppendQueryString(url, 'gdpr', (gdprConsent.gdprApplies ? '1' : '0'));
 
       return [{ type: 'iframe', url }];
     }
