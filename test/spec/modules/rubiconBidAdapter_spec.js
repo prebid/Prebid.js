@@ -1971,7 +1971,7 @@ describe('the rubicon adapter', function () {
               architecture: 'x86'
             }
           });
-          it('should send m_ch_* params if ortb2.device.sua object is there', function () {
+          it('should send m_ch_* params if ortb2.device.sua object is there with igh entropy', function () {
             let bidRequestSua = utils.deepClone(bidderRequest);
             bidRequestSua.bids[0].ortb2 = { device: { sua: standardSuaObject } };
 
