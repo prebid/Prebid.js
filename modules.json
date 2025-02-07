@@ -59,5 +59,6 @@
     "yahooAdsBidAdapter",
     "yieldmoBidAdapter",
     "sovrnBidAdapter",
-    "gameraRtdProvider"
+    "gameraRtdProvider",
+    "taboolaBidAdapter"
 ]
