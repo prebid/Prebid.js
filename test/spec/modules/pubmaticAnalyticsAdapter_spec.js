@@ -664,6 +664,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.ss).to.equal('1');
       expect(data.fskp).to.equal('0');
       expect(data.af).to.equal('video');
+      expect(data.ffs).to.equal('1');
     });
 
     it('Logger : do not log floor fields when prebids floor shows noData in location property', function() {
