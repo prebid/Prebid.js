@@ -170,7 +170,7 @@ const targetingTool = (function() {
   const getSegmentsFromOrtb = function(bidderRequest) {
     const userData = deepAccess(bidderRequest.ortb2 || {}, 'user.data');
     let segments = [];
-    if (userData) {
+    if (userData && Array.isArray(userData)) {
       userData.forEach(userdat => {
         if (userdat.segment) {
           segments.push(...userdat.segment.map((segment) => {
@@ -183,8 +183,8 @@ const targetingTool = (function() {
     return segments
   };
 
-  const getKvsFromOrtb = function(bidderRequest) {
-    return deepAccess(bidderRequest.ortb2 || {}, 'site.ext.data');
+  const getKvsFromOrtb = function(bidderRequest, path) {
+    return deepAccess(bidderRequest.ortb2 || {}, path);
   };
 
   return {
@@ -203,15 +203,21 @@ const targetingTool = (function() {
       existingUrlRelatedData.segments = segments;
     },
     mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
-      const kv = getKvsFromOrtb(bidderRequest || {});
-      if (isEmpty(kv)) {
+      const siteKvs = getKvsFromOrtb(bidderRequest || {}, 'site.ext.data');
+      const userKvs = getKvsFromOrtb(bidderRequest || {}, 'user.ext.data');
+      if (isEmpty(siteKvs) && isEmpty(userKvs)) {
         return;
       }
       if (bidTargeting.kv && !Array.isArray(bidTargeting.kv)) {
         bidTargeting.kv = convertObjectToArray(bidTargeting.kv);
       }
       bidTargeting.kv = bidTargeting.kv || [];
-      bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(kv));
+      if (!isEmpty(siteKvs)) {
+        bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(siteKvs));
+      }
+      if (!isEmpty(userKvs)) {
+        bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(userKvs));
+      }
     }
   }
 })();
