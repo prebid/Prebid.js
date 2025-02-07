@@ -65,7 +65,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   }
 
   url.searchParams.set('mode', 'prebid')
-  logger.logMessage('url', url.toString());
+  url.searchParams.set('wurfl_id', 'true')
 
   try {
     loadExternalScript(url.toString(), MODULE_TYPE_RTD, MODULE_NAME, () => {
@@ -120,6 +120,9 @@ function enrichBidderRequests(reqBidsConfigObj, bidders, wjsResponse) {
  */
 export const bidderData = (wurflData, caps, filter) => {
   const data = {};
+  if ('wurfl_id' in wurflData) {
+    data['wurfl_id'] = wurflData.wurfl_id;
+  }
   caps.forEach((cap, index) => {
     if (!filter.includes(index)) {
       return;
@@ -151,6 +154,9 @@ export const lowEntropyData = (wurflData, lowEntropyCaps) => {
   }
   if ('brand_name' in wurflData) {
     data['brand_name'] = wurflData.brand_name;
+  }
+  if ('wurfl_id' in wurflData) {
+    data['wurfl_id'] = wurflData.wurfl_id;
   }
   return data;
 }

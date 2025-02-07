@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -12,7 +12,7 @@ const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
@@ -170,7 +170,7 @@ const targetingTool = (function() {
   const getSegmentsFromOrtb = function(bidderRequest) {
     const userData = deepAccess(bidderRequest.ortb2 || {}, 'user.data');
     let segments = [];
-    if (userData) {
+    if (userData && Array.isArray(userData)) {
       userData.forEach(userdat => {
         if (userdat.segment) {
           segments.push(...userdat.segment.map((segment) => {
@@ -183,8 +183,8 @@ const targetingTool = (function() {
     return segments
   };
 
-  const getKvsFromOrtb = function(bidderRequest) {
-    return deepAccess(bidderRequest.ortb2 || {}, 'site.ext.data');
+  const getKvsFromOrtb = function(bidderRequest, path) {
+    return deepAccess(bidderRequest.ortb2 || {}, path);
   };
 
   return {
@@ -203,15 +203,21 @@ const targetingTool = (function() {
       existingUrlRelatedData.segments = segments;
     },
     mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
-      const kv = getKvsFromOrtb(bidderRequest || {});
-      if (isEmpty(kv)) {
+      const siteKvs = getKvsFromOrtb(bidderRequest || {}, 'site.ext.data');
+      const userKvs = getKvsFromOrtb(bidderRequest || {}, 'user.ext.data');
+      if (isEmpty(siteKvs) && isEmpty(userKvs)) {
         return;
       }
       if (bidTargeting.kv && !Array.isArray(bidTargeting.kv)) {
         bidTargeting.kv = convertObjectToArray(bidTargeting.kv);
       }
       bidTargeting.kv = bidTargeting.kv || [];
-      bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(kv));
+      if (!isEmpty(siteKvs)) {
+        bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(siteKvs));
+      }
+      if (!isEmpty(userKvs)) {
+        bidTargeting.kv = bidTargeting.kv.concat(convertObjectToArray(userKvs));
+      }
     }
   }
 })();
@@ -319,6 +325,9 @@ export const spec = {
         const adUnit = {...bidTargeting, auId: bid.params.auId, targetId: targetId};
         if (mediaType === VIDEO) {
           adUnit.adType = 'VAST';
+        } else if (mediaType === NATIVE) {
+          adUnit.adType = 'NATIVE';
+          adUnit.nativeRequest = mediaTypeData.ortb;
         }
         const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
         if (maxDeals > 0) {
@@ -391,10 +400,13 @@ export const spec = {
       const isDeal = dealCount > 0;
       const renderSource = isDeal ? ad : adUnit;
       if (renderSource.vastXml) {
-        adResponse.vastXml = renderSource.vastXml
-        adResponse.mediaType = VIDEO
+        adResponse.vastXml = renderSource.vastXml;
+        adResponse.mediaType = VIDEO;
+      } else if (renderSource.nativeJson) {
+        adResponse.mediaType = NATIVE;
+        adResponse.native = renderSource.nativeJson;
       } else {
-        adResponse.ad = renderSource.html
+        adResponse.ad = renderSource.html;
       }
       return adResponse;
     }

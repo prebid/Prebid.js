@@ -74,6 +74,14 @@ describe('symitriDapRtdProvider', function() {
     'identity': sampleIdentity
   }
 
+  const sampleX2Config = {
+    'api_hostname': 'prebid.dap.akadns.net',
+    'api_version': 'x2',
+    'domain': 'prebid.org',
+    'segtax': 708,
+    'identity': sampleIdentity
+  }
+
   const esampleConfig = {
     'api_hostname': 'prebid.dap.akadns.net',
     'api_version': 'x1',
@@ -248,6 +256,34 @@ describe('symitriDapRtdProvider', function() {
 
     it('dapTokenize success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
+      let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
+        function(token, status, xhr, onDone) {
+        },
+        function(xhr, status, error, onDone) {
+        }
+      );
+      let request = server.requests[0];
+      request.respond(200, responseHeader, JSON.stringify('success'));
+      expect(submoduleCallback).to.equal(undefined);
+    });
+  });
+
+  describe('dapX2Tokenize', function () {
+    it('dapX2Tokenize error callback', function () {
+      let configAsync = JSON.parse(JSON.stringify(sampleX2Config));
+      let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
+        function(token, status, xhr, onDone) {
+        },
+        function(xhr, status, error, onDone) {
+        }
+      );
+      let request = server.requests[0];
+      request.respond(400, responseHeader, JSON.stringify('error'));
+      expect(submoduleCallback).to.equal(undefined);
+    });
+
+    it('dapX2Tokenize success callback', function () {
+      let configAsync = JSON.parse(JSON.stringify(sampleX2Config));
       let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
         function(token, status, xhr, onDone) {
         },
