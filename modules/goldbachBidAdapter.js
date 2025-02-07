@@ -56,8 +56,6 @@ export const OPENRTB = {
 /* Custom extensions */
 const getRendererForBid = (bidRequest, bidResponse) => {
   if (!bidRequest.renderer) {
-    const vastUrl = bidResponse.adm?.startsWith('http') ? bidResponse.adm : undefined;
-    const vastXml = (bidResponse.adm?.startsWith('<?xml') || bidResponse.adm?.startsWith('<VAST')) ? bidResponse.adm : undefined;
     const config = { documentResolver: (_, sourceDocument, renderDocument) => renderDocument ?? sourceDocument };
     const renderer = Renderer.install({
       id: bidRequest.bidId,
@@ -67,13 +65,17 @@ const getRendererForBid = (bidRequest, bidResponse) => {
     });
 
     renderer.setRender((bid, doc) => {
+      const { playbackmethod } = bidRequest?.params?.video || {}
+      const isMuted = typeof playbackmethod === 'number' ? [2, 6].includes(playbackmethod) : false;
+      const isAutoplay = typeof playbackmethod === 'number' ? [1, 2].includes(playbackmethod) : false;
+
       bid.renderer.push(() => {
         if (doc.defaultView?.GoldPlayer) {
           const options = {
-            vastUrl: vastUrl,
-            vastXML: vastXml,
-            autoplay: false,
-            muted: false,
+            vastUrl: bid.vastUrl,
+            vastXML: bid.vastXml,
+            autoplay: isAutoplay,
+            muted: isMuted,
             controls: true,
             styling: { progressbarColor: '#000' },
             videoHeight: Math.min(doc.defaultView?.innerWidth / 16 * 9, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_HEIGHT),
