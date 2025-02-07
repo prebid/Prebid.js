@@ -2041,6 +2041,60 @@ describe('the rubicon adapter', function () {
             // arch not sent
             expect(data.get('m_ch_arch')).to.be.null;
           });
+          it('should not send high entropy if not present when it is low entropy client hints', function () {
+            let bidRequestSua = utils.deepClone(bidderRequest);
+            bidRequestSua.bids[0].ortb2 = { device: { sua: {
+              'source': 1,
+              'platform': {
+                'brand': 'macOS'
+              },
+              'browsers': [
+                {
+                  'brand': 'Not A(Brand',
+                  'version': [
+                    '8'
+                  ]
+                },
+                {
+                  'brand': 'Chromium',
+                  'version': [
+                    '132'
+                  ]
+                },
+                {
+                  'brand': 'Google Chrome',
+                  'version': [
+                    '132'
+                  ]
+                }
+              ],
+              'mobile': 0
+            } } };
+
+            // How should fastlane query be constructed with default SUA
+            let expectedValues = {
+              m_ch_ua: `"Not A(Brand"|v="8","Chromium"|v="132","Google Chrome"|v="132"`,
+              m_ch_mobile: '?0',
+              m_ch_platform: 'macOS',
+            }
+
+            // Build Fastlane call
+            let [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
+            let data = new URLSearchParams(request.data);
+
+            // Loop through expected values and if they do not match push an error
+            const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              return accum;
+            }, []);
+
+            // should be no errors
+            expect(errors).to.deep.equal([]);
+
+            // make sure high entropy keys are not present
+            let highEntropyHints = ['m_ch_full_ver', 'm_ch_arch', 'm_ch_bitness', 'm_ch_platform_ver'];
+            highEntropyHints.forEach((hint) => { expect(data.get(hint)).to.be.null; });
+          });
         });
       });
 
