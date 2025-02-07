@@ -25,6 +25,14 @@
 
             pbjs.que.push(function () {
 
+                /**
+                 * BID RESPONSE SIMULATION SECTION START
+                 *
+                 * This section handles simulating a bidder
+                 * that will always respond with bid responses.
+                 *
+                 * This part should not be present in production.
+                 */
                 pbjs.registerBidAdapter(null, 'testBidder', {
                     supportedMediaTypes: ['banner', 'video', 'native'],
                     isBidRequestValid: () => true
@@ -44,7 +52,10 @@
                             }
                         ]
                     }
-                })
+                });
+                /**
+                 * BID RESPONSE SIMULATION SECTION END
+                 */
 
                 pbjs.addAdUnits(adUnits);
                 pbjs.requestBids({
