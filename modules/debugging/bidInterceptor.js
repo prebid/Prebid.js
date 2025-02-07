@@ -1,3 +1,4 @@
+import { auctionManager } from '../../src/auctionManager.js';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import {
   deepAccess,
@@ -169,17 +170,24 @@ Object.assign(BidInterceptor.prototype, {
   },
 
   responseDefaults(bid) {
-    return {
+    const response = {
       requestId: bid.bidId,
       cpm: 3.5764,
       currency: 'EUR',
-      width: 300,
-      height: 250,
+      width: 600,
+      height: 500,
       ttl: 360,
       creativeId: 'mock-creative-id',
       netRevenue: false,
       meta: {}
     };
+
+    if (!bid.mediaType) {
+      const adUnit = auctionManager.index.getAdUnit({adUnitId: bid.adUnitId}) || {mediaTypes: {}};
+      response.mediaType = Object.keys(adUnit.mediaTypes)[0] || 'banner';
+    }
+
+    return response;
   },
   setDefaultAd(bid, bidResponse) {
     switch (bidResponse.mediaType) {

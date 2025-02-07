@@ -1,0 +1,78 @@
+<html>
+    <head>
+        <title>Prebid Test Bidder Example</title>
+        <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+        <script src="../../build/dev/prebid.js" async></script>
+        <script>
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            const adUnitCode = 'adUnit-0000';
+
+            const adUnits = [{
+                mediaTypes: {
+                    video: {
+                        playerSize: [640, 360]
+                    }
+                },
+                code: adUnitCode,
+                bids: [
+                    {bidder: 'testBidder', params: {}}
+                ]
+            }]
+
+            pbjs.que.push(function () {
+
+                pbjs.registerBidAdapter(null, 'testBidder', {
+                    supportedMediaTypes: ['banner', 'video', 'native'],
+                    isBidRequestValid: () => true
+                });
+
+                pbjs.setConfig({
+                    debugging: {
+                        enabled: true,
+                        intercept: [
+                            {
+                                when: {
+                                    bidder: 'testBidder',
+                                },
+                                then: {
+                                    creativeId: 'testCreativeId',
+                                }
+                            }
+                        ]
+                    }
+                })
+
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    adUnitCodes: [adUnitCode],
+                    bidsBackHandler: function() {
+                        const bids = pbjs.getHighestCpmBids(adUnitCode);
+                        const winningBid = bids[0];
+                        jwplayer("player").setup({
+                            playlist: "https://cdn.jwplayer.com/v2/media/hWF9vG66",
+                            autostart: "viewable",
+                            width: 640,
+                            height: 360,   
+                            advertising: {
+                                client: "vast",
+                                schedule: [
+                                    { 
+                                        vastxml: winningBid.vastXml,
+                                        offset: 'pre'
+                                    }
+                                ]
+                            }
+                        });
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <h2>Prebid Test Bidder Example</h2>
+        <h5>Video ad</h5>
+        <div id="player"></div>
+    </body>
+</html>
