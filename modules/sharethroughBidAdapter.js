@@ -3,6 +3,10 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, generateUUID, inIframe, logWarn, mergeDeep } from '../src/utils.js';
 
+import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
+
+enablePreviousAuctionInfo({ bidderCode: 'sharethrough' });
+
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';

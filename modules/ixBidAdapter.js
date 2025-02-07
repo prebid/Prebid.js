@@ -24,6 +24,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
 
 const BIDDER_CODE = 'ix';
 const GLOBAL_VENDOR_ID = 10;
@@ -126,6 +127,9 @@ export const FEATURE_TOGGLES = {
     }
   }
 };
+
+enablePreviousAuctionInfo({ bidderCode: BIDDER_CODE });
+
 let siteID = 0;
 let gdprConsent = '';
 let usPrivacy = '';

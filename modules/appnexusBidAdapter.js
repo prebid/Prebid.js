@@ -38,6 +38,10 @@ import {convertCamelToUnderscore, fill, appnexusAliases} from '../libraries/appn
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
+
+enablePreviousAuctionInfo({ bidderCode: 'appnexus' });
+
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid

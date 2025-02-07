@@ -23,6 +23,9 @@ import {
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
+import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
+
+enablePreviousAuctionInfo({ bidderCode: 'rubicon' });
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
