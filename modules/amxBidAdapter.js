@@ -321,10 +321,10 @@ export const spec = {
       bidRequests[0] != null
         ? bidRequests[0]
         : {
-          bidderRequestsCount: 0,
-          bidderWinsCount: 0,
-          bidRequestsCount: 0,
-        };
+            bidderRequestsCount: 0,
+            bidderWinsCount: 0,
+            bidRequestsCount: 0,
+          };
 
     const payload = {
       a: generateUUID(),
