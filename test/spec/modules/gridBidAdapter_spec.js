@@ -30,12 +30,12 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'uid': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -950,6 +950,33 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.tmax).to.equal(null);
     })
 
+    it('should add ORTB2 device data to the request', function () {
+      const bidderRequestWithDevice = {
+        ...bidderRequest,
+        ...{
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            },
+          },
+        },
+      };
+
+      const [request] = spec.buildRequests([bidRequests[0]], bidderRequestWithDevice);
+      const payload = parseRequest(request.data);
+
+      expect(payload.device).to.deep.equal(bidderRequestWithDevice.ortb2.device);
+    });
+
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',
@@ -1352,7 +1379,7 @@ describe('TheMediaGrid Adapter', function () {
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'impid': '2164be6358b9', 'adid': '32_52_7543', 'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300, dealid: 11}], 'seat': '1'},
+        {'bid': [{'impid': '2164be6358b9', 'adid': '32_52_7543', 'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300, dealid: 11, 'ext': {'dsa': {'adrender': 1}}}], 'seat': '1'},
         {'bid': [{'impid': '4e111f1b66e4', 'adid': '32_54_4535', 'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 2, 'h': 600, 'w': 300, dealid: 12}], 'seat': '1'},
         {'bid': [{'impid': '26d6f897b516', 'adid': '32_53_75467', 'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 1, 'h': 90, 'w': 728}], 'seat': '1'},
         {'bid': [{'impid': '326bde7fbf69', 'adid': '32_54_12342', 'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 1, 'h': 600, 'w': 300}], 'seat': '1'},
@@ -1430,6 +1457,9 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
+            dsa: {
+              adrender: 1
+            },
             advertiserDomains: []
           },
         },

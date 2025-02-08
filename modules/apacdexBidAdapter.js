@@ -1,7 +1,7 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError } from '../src/utils.js';
+import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {parseDomain} from '../src/refererDetection.js';
 const BIDDER_CODE = 'apacdex';
 const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
@@ -85,7 +85,7 @@ export const spec = {
         bidReq.bidFloor = bidFloor;
       }
 
-      bids.push(JSON.parse(JSON.stringify(bidReq)));
+      bids.push(deepClone(bidReq));
     });
 
     const payload = {};
@@ -327,7 +327,7 @@ export function validateGeoObject(geo) {
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {float||null}
+ * @returns {?number}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

@@ -20,21 +20,18 @@ import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {auctionManager} from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
 import {
   getANKewyordParamFromMaps,
-  getANKeywordParam,
-  transformBidderParamKeywords
+  getANKeywordParam
 } from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 /**
@@ -350,31 +347,6 @@ export const spec = {
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       }];
     }
-  },
-
-  transformBidParams: function (params, isOpenRtb) {
-    params = convertTypes({
-      'member': 'string',
-      'invCode': 'string',
-      'placementId': 'number',
-      'keywords': transformBidderParamKeywords,
-      'publisherId': 'number'
-    }, params);
-
-    if (isOpenRtb) {
-      params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
-      if (params.usePaymentRule) { delete params.usePaymentRule; }
-
-      Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-    }
-
-    return params;
   },
 
   /**
@@ -757,7 +729,7 @@ function bidToTag(bid) {
   if (!isEmpty(bid.params.keywords)) {
     tag.keywords = getANKewyordParamFromMaps(bid.params.keywords);
   }
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -870,9 +842,7 @@ function bidToTag(bid) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
 
-  // TODO: why does this need to iterate through every ad unit?
-  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
-  if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
+  if (bid.mediaTypes?.banner) {
     tag.ad_types.push(BANNER);
   }
 
@@ -1066,7 +1036,7 @@ function hideSASIframe(elementId) {
 function outstreamRender(bid) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
-  // push to render queue because ANOutstreamVideo may not be loaded yet
+  // push to render queue because ANOutstreamVideo may not be loaded
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,

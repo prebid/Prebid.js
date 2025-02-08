@@ -111,8 +111,8 @@ function buildUrl(bid) {
 /**
  * Builds GI bid request from BidRequest.
  *
- * @param {BidRequest} bidRequest.
- * @return {object} GI bid request.
+ * @param {BidRequest} bidRequest
+ * @return {object} GI bid request
  */
 function buildGiBidRequest(bidRequest) {
   let giBidRequest = {
@@ -152,7 +152,7 @@ function getBidFloor(bidRequest, currency) {
       currency: currency || DEFAULT_CURRENCY,
       mediaType: bidRequest.mediaType,
       size: bidRequest.sizes || '*'
-    });
+    }) || {};
   }
 
   return {

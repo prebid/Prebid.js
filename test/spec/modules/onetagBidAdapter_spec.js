@@ -226,6 +226,7 @@ describe('onetag', function () {
             'bidId',
             'bidderRequestId',
             'pubId',
+            'ortb2Imp',
             'transactionId',
             'context',
             'playerSize',
@@ -240,6 +241,7 @@ describe('onetag', function () {
             'bidId',
             'bidderRequestId',
             'pubId',
+            'ortb2Imp',
             'transactionId',
             'mediaTypeInfo',
             'sizes',
@@ -270,9 +272,11 @@ describe('onetag', function () {
       expect(payload.bids).to.exist.and.to.have.length(1);
       expect(payload.bids[0].auctionId).to.equal(bannerBid.ortb2.source.tid);
       expect(payload.bids[0].transactionId).to.equal(bannerBid.ortb2Imp.ext.tid);
+      expect(payload.bids[0].ortb2Imp).to.deep.equal(bannerBid.ortb2Imp);
     });
     it('should send GDPR consent data', function () {
       let consentString = 'consentString';
+      let addtlConsent = '2~1.35.41.101~dv.9.21.81';
       let bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
@@ -280,7 +284,8 @@ describe('onetag', function () {
         'timeout': 3000,
         'gdprConsent': {
           consentString: consentString,
-          gdprApplies: true
+          gdprApplies: true,
+          addtlConsent: addtlConsent
         }
       };
       let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
@@ -289,6 +294,7 @@ describe('onetag', function () {
       expect(payload).to.exist;
       expect(payload.gdprConsent).to.exist;
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.addtlConsent).to.exist.and.to.equal(addtlConsent);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
     it('Should send GPP consent data', function () {
@@ -430,13 +436,15 @@ describe('onetag', function () {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
-        'fledgeEnabled': true
+        'paapi': {
+          'enabled': true
+        }
       };
       let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.fledgeEnabled);
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
     });
     it('Should send FLEDGE eligibility flag when FLEDGE is not enabled', function () {
       let bidderRequest = {
@@ -444,13 +452,15 @@ describe('onetag', function () {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
-        'fledgeEnabled': false
+        paapi: {
+          enabled: false
+        }
       };
       let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
       const payload = JSON.parse(serverRequest.data);
 
       expect(payload.fledgeEnabled).to.exist;
-      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.fledgeEnabled);
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.paapi.enabled);
     });
     it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
       let bidderRequest = {
@@ -479,7 +489,7 @@ describe('onetag', function () {
       expect(fledgeInterpretedResponse.bids).to.satisfy(function (value) {
         return value === null || Array.isArray(value);
       });
-      expect(fledgeInterpretedResponse.fledgeAuctionConfigs).to.be.an('array').that.is.not.empty;
+      expect(fledgeInterpretedResponse.paapi).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         let dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');

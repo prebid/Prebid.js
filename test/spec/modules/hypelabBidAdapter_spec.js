@@ -92,7 +92,7 @@ const mockBidRequest = {
     placement_slug: 'test_placement',
     provider_version: '0.0.1',
     provider_name: 'prebid',
-    referrer: 'https://example.com',
+    location: 'https://example.com',
     sdk_version: '7.51.0-pre',
     sizes: [[728, 90]],
     wids: [],
@@ -160,6 +160,9 @@ describe('hypelabBidAdapter', function () {
       expect(data.bidRequestsCount).to.be.a('number');
       expect(data.bidderRequestsCount).to.be.a('number');
       expect(data.bidderWinsCount).to.be.a('number');
+      expect(data.dpr).to.be.a('number');
+      expect(data.location).to.be.a('string');
+      expect(data.floor).to.equal(null);
     });
 
     describe('should set uuid to the first id in userIdAsEids', () => {
@@ -211,6 +214,7 @@ describe('hypelabBidAdapter', function () {
       expect(data.ad).to.be.a('string');
       expect(data.mediaType).to.be.a('string');
       expect(data.meta.advertiserDomains).to.be.an('array');
+      expect(data.meta.advertiserDomains[0]).to.be.a('string');
     });
 
     describe('should return a blank array if cpm is not set', () => {

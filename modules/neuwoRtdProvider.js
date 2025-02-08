@@ -3,7 +3,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 export const DATA_PROVIDER = 'neuwo.ai';
 const SEGTAX_IAB = 6 // IAB - Content Taxonomy version 2
@@ -42,7 +42,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     try {
       const jsonContent = JSON.parse(responseContent);
       if (jsonContent.marketing_categories) {
-        events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'request', billingId, vendor: neuwoRtdModule.name })
+        events.emit(EVENTS.BILLABLE_EVENT, { type: 'request', billingId, vendor: neuwoRtdModule.name })
       }
       injectTopics(jsonContent, reqBidsConfigObj, billingId)
     } catch (ex) {

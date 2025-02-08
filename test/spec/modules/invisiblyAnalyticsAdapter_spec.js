@@ -2,8 +2,8 @@ import invisiblyAdapter from 'modules/invisiblyAnalyticsAdapter.js';
 import { expect } from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
 import {server} from '../../mocks/xhr.js';
+import { EVENTS, STATUS } from 'src/constants.js';
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('Invisibly Analytics Adapter test suite', function () {
   let xhr;
@@ -26,7 +26,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       hb_source: 'client',
     },
     getStatusCode() {
-      return CONSTANTS.STATUS.GOOD;
+      return STATUS.GOOD;
     },
   };
 
@@ -54,7 +54,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       hb_source: 'server',
     },
     getStatusCode() {
-      return CONSTANTS.STATUS.GOOD;
+      return STATUS.GOOD;
     },
   };
 
@@ -204,11 +204,11 @@ describe('Invisibly Analytics Adapter test suite', function () {
             options: {},
           });
 
-          events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
-          events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END);
-          events.emit(constants.EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
-          events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
-          events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON);
+          events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
+          events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END);
+          events.emit(EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
+          events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
+          events.emit(EVENTS.BID_WON, MOCK.BID_WON);
           invisiblyAdapter.flush();
           sinon.assert.callCount(invisiblyAdapter.track, 0);
         });
@@ -230,7 +230,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for auction init event
       it('auction init event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -252,7 +252,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for bid adjustment event
       it('bid adjustment event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.BID_ADJUSTMENT, MOCK.BID_ADJUSTMENT);
+        events.emit(EVENTS.BID_ADJUSTMENT, MOCK.BID_ADJUSTMENT);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -274,7 +274,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for bid timeout event
       it('bid timeout event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.BID_TIMEOUT, MOCK.BID_TIMEOUT);
+        events.emit(EVENTS.BID_TIMEOUT, MOCK.BID_TIMEOUT);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -296,7 +296,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for bid requested event
       it('bid requested event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -318,7 +318,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for bid response event
       it('bid response event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
+        events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -338,7 +338,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for no bid event
       it('no bid event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.NO_BID, MOCK.NO_BID);
+        events.emit(EVENTS.NO_BID, MOCK.NO_BID);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -360,7 +360,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for bid won event
       it('bid won event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON);
+        events.emit(EVENTS.BID_WON, MOCK.BID_WON);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -378,7 +378,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for bidder done event
       it('bidder done event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(EVENTS.BIDDER_DONE, MOCK.BIDDER_DONE);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -403,7 +403,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for set targeting event
       it('set targeting event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.SET_TARGETING, MOCK.SET_TARGETING);
+        events.emit(EVENTS.SET_TARGETING, MOCK.SET_TARGETING);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -428,7 +428,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for request bids event
       it('request bids event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.REQUEST_BIDS, MOCK.REQUEST_BIDS);
+        events.emit(EVENTS.REQUEST_BIDS, MOCK.REQUEST_BIDS);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -450,7 +450,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for add ad units event
       it('add ad units event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.ADD_AD_UNITS, MOCK.ADD_AD_UNITS);
+        events.emit(EVENTS.ADD_AD_UNITS, MOCK.ADD_AD_UNITS);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -472,7 +472,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for ad render failed event
       it('ad render failed event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED);
+        events.emit(EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -494,7 +494,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       // spec for auction end event
       it('auction end event', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END);
+        events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END);
         invisiblyAdapter.flush();
 
         const invisiblyEvents = JSON.parse(
@@ -516,7 +516,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       it('it should not call sendEvent for this event emit', function () {
         sinon.spy(invisiblyAdapter, 'sendEvent');
         invisiblyAdapter.enableAnalytics(MOCK.config);
-        events.emit(constants.EVENTS.INVALID_EVENT, MOCK.INVALID_EVENT);
+        events.emit(EVENTS.INVALID_EVENT, MOCK.INVALID_EVENT);
         invisiblyAdapter.flush();
 
         expect(requests.length).to.equal(0);
@@ -529,19 +529,19 @@ describe('Invisibly Analytics Adapter test suite', function () {
         invisiblyAdapter.enableAnalytics(MOCK.config);
 
         expectEvents([
-          constants.EVENTS.AUCTION_INIT,
-          constants.EVENTS.AUCTION_END,
-          constants.EVENTS.BID_ADJUSTMENT,
-          constants.EVENTS.BID_TIMEOUT,
-          constants.EVENTS.BID_REQUESTED,
-          constants.EVENTS.BID_RESPONSE,
-          constants.EVENTS.NO_BID,
-          constants.EVENTS.BID_WON,
-          constants.EVENTS.BIDDER_DONE,
-          constants.EVENTS.SET_TARGETING,
-          constants.EVENTS.REQUEST_BIDS,
-          constants.EVENTS.ADD_AD_UNITS,
-          constants.EVENTS.AD_RENDER_FAILED
+          EVENTS.AUCTION_INIT,
+          EVENTS.AUCTION_END,
+          EVENTS.BID_ADJUSTMENT,
+          EVENTS.BID_TIMEOUT,
+          EVENTS.BID_REQUESTED,
+          EVENTS.BID_RESPONSE,
+          EVENTS.NO_BID,
+          EVENTS.BID_WON,
+          EVENTS.BIDDER_DONE,
+          EVENTS.SET_TARGETING,
+          EVENTS.REQUEST_BIDS,
+          EVENTS.ADD_AD_UNITS,
+          EVENTS.AD_RENDER_FAILED
         ]).to.beTrackedBy(invisiblyAdapter.track);
       });
     });
@@ -558,11 +558,11 @@ describe('Invisibly Analytics Adapter test suite', function () {
           },
         });
 
-        events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
-        events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END);
-        events.emit(constants.EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
-        events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
-        events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON);
+        events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END);
+        events.emit(EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
+        events.emit(EVENTS.BID_WON, MOCK.BID_WON);
         invisiblyAdapter.flush();
 
         sinon.assert.callCount(invisiblyAdapter.sendEvent, 0);

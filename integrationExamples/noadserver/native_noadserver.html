@@ -12,18 +12,33 @@
                 code: 'native-div',
                 mediaTypes: {
                     native: {
-                        adTemplate: document.getElementById('native-template').innerHTML,
-                        title: {
-                            required: true,
-                            len: 800
+                        ortb: {
+                            assets: [
+                                {
+                                    id: 1,
+                                    required: 1,
+                                    title: {
+                                        len: 800
+                                    }
+                                },
+                                {
+                                    id: 2,
+                                    required: 1,
+                                    img: {
+                                        type: 3,
+                                        w: 989,
+                                        h: 742
+                                    }
+                                },
+                                {
+                                    id: 3,
+                                    required: 1,
+                                    data: {
+                                        type: 1
+                                    }
+                                }
+                            ]
                         },
-                        image: {
-                            required: true,
-                            sizes: [989, 742],
-                        },
-                        sponsoredBy: {
-                            required: true
-                        }
                     }
                 },
                 bids: [{
@@ -59,31 +74,16 @@
 
             function renderNative(divId, bid) {
                 const slot = document.getElementById(divId);
-                const content = `
-                    <!DOCTYPE html>
-                    <html>
-                        <body>
-                            <script src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@latest/dist/native-render.js"> <\/script>
-                            <script>
-                                window.pbNativeData = {
-                                    pubUrl: '${encodeURI(document.location)}',
-                                    adId: '${bid.adId}',
-                                    requestAllAssets: true
-                                };
-                                pbNativeTag.renderNativeAd(pbNativeData);
-                            <\/script>
-                        </body>
-                    </html>
-                `;
-
                 const iframe = document.createElement('iframe');
-                slot.appendChild(iframe);
                 Object.entries({
                     frameBorder: 0,
                     marginWidth: 0,
                     marginHeight: 0,
-                    srcdoc: content
+                    scrolling: 'no',
+                    srcdoc: document.getElementById('native-template').innerHTML
                 }).forEach(([prop, val]) => iframe.setAttribute(prop, val));
+                slot.appendChild(iframe);
+                iframe.onload = () => pbjs.renderAd(iframe.contentDocument, bid.adId);
             }
         });
 
@@ -105,7 +105,7 @@
             font-size: 14px;
             line-height: 1.42857143;
             color: #333;
-            background: #fff url(##hb_native_image##) no-repeat center;
+            background: #fff url(##hb_native_asset_id_2##) no-repeat center;
             background-size: cover;
         }
 
@@ -151,17 +151,17 @@
         <div class="card">
             <div class="title">
                 <h1>
-                    <a href="##hb_native_linkurl##">##hb_native_title##</a>
+                    <a href="##hb_native_linkurl##" target="_blank">##hb_native_asset_id_1##</a>
                 </h1>
             </div>
             <div class="attribution">
-                ##hb_native_brand##
+                ##hb_native_asset_id_3##
             </div>
         </div>
     </div>
 </template>
 
-<h2>Prebid Native</h2>
+<h2>Prebid native - no ad server</h2>
 <div id='native-div'>
 </div>
 

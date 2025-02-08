@@ -49,7 +49,6 @@ function makeVideoImp(bid) {
     maxbitrate: video.maxbitrate,
     playbackmethod: video.playbackmethod,
     delivery: video.delivery,
-    placement: video.placement,
     api: video.api,
     w: video.w,
     h: video.h
@@ -58,7 +57,7 @@ function makeVideoImp(bid) {
   return {
     video: videoCopy,
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
@@ -76,7 +75,7 @@ function makeBannerImp(bid) {
       })
     },
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 

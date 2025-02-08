@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/lemmaDigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-const constants = require('src/constants.json');
+const constants = require('src/constants.js');
 
 describe('lemmaDigitalBidAdapter', function () {
   let bidRequests;

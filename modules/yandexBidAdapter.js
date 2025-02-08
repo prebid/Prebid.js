@@ -1,8 +1,8 @@
-import { formatQS, deepAccess, deepSetValue, triggerPixel, _each, _map } from '../src/utils.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { config } from '../src/config.js';
+import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -53,7 +53,7 @@ const DEFAULT_CURRENCY = 'EUR';
 /**
  * @type {MediaType[]}
  */
-const SUPPORTED_MEDIA_TYPES = [ BANNER, NATIVE ];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
 
 const IMAGE_ASSET_TYPES = {
@@ -121,22 +121,14 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let referrer = '';
-    let domain = '';
-    let page = '';
-
-    if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.ref;
-      domain = bidderRequest.refererInfo.domain;
-      page = bidderRequest.refererInfo.page;
-    }
+    const ortb2 = bidderRequest.ortb2;
 
     let timeout = null;
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
     }
 
-    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
@@ -146,7 +138,7 @@ export const spec = {
 
       const queryParams = {
         'imp-id': impId,
-        'target-ref': targetRef || domain,
+        'target-ref': targetRef || ortb2?.site?.domain,
         'ssp-id': SSP_ID,
       };
 
@@ -177,12 +169,10 @@ export const spec = {
       const data = {
         id: bidRequest.bidId,
         imp: [imp],
-        site: {
-          ref: referrer,
-          page,
-          domain,
-        },
+        site: ortb2?.site,
         tmax: timeout,
+        user: ortb2?.user,
+        device: ortb2?.device,
       };
 
       const eids = deepAccess(bidRequest, 'userIdAsEids');
@@ -190,13 +180,8 @@ export const spec = {
         deepSetValue(data, 'user.ext.eids', eids);
       }
 
-      const userData = deepAccess(bidRequest, 'ortb2.user.data');
-      if (userData && userData.length) {
-        deepSetValue(data, 'user.data', userData);
-      }
-
       const queryParamsString = formatQS(queryParams);
-      return {
+      const request = {
         method: 'POST',
         url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
         data,
@@ -205,6 +190,10 @@ export const spec = {
         },
         bidRequest,
       };
+
+      logInfo('ServerRequest', request);
+
+      return request;
     });
   },
 
@@ -274,8 +263,8 @@ function getBidfloor(bidRequest) {
         const floorInfo = bidRequest.getFloor({
           currency: DEFAULT_CURRENCY,
           mediaType: type,
-          size: bidRequest.sizes || '*' }
-        )
+          size: bidRequest.sizes || '*'
+        })
         floors.push(floorInfo);
       }
     });
@@ -332,7 +321,7 @@ function mapNative(bidRequest) {
 }
 
 function mapAsset(assetCode, adUnitAssetParams, nativeAsset) {
-  const [ nativeAssetId, nativeAssetType ] = nativeAsset;
+  const [nativeAssetId, nativeAssetType] = nativeAsset;
   const asset = {
     id: nativeAssetId,
   };

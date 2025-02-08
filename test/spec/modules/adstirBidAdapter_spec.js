@@ -166,6 +166,7 @@ describe('AdstirAdapter', function () {
         expect(d.ref.tloc).to.equal(bidderRequest.refererInfo.topmostLocation);
         expect(d.ref.referrer).to.equal(bidderRequest.refererInfo.ref);
         expect(d.sua).to.equal(null);
+        expect(d.user).to.equal(null);
         expect(d.gdpr).to.equal(false);
         expect(d.usp).to.equal(false);
         expect(d.schain).to.equal(null);

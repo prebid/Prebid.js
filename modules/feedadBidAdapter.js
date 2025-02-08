@@ -9,7 +9,7 @@ import {ajax} from '../src/ajax.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
- * @typedef {import('../src/adapters/bidderFactory.js').MediaTypes} MediaTypes
+ * @typedef {import('../src/adapters/bidderFactory.js').MediaType} MediaType
  */
 
 /**

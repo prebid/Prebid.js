@@ -4,6 +4,11 @@ import { spec } from 'modules/cointrafficBidAdapter.js';
 import { config } from 'src/config.js'
 import * as utils from 'src/utils.js'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 
 describe('cointrafficBidAdapter', function () {

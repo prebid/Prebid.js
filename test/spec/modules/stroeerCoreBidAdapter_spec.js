@@ -169,16 +169,17 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupSingleWindow(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    const win = createWindow('http://www.xyz.com/', {
-      parent: win, top: win, frameElement: createElement(undefined, 304), placementElements: placementElements
+    let singleWin = null
+    singleWin = createWindow('http://www.xyz.com/', {
+      parent: singleWin, top: singleWin, frameElement: createElement(undefined, 304), placementElements: placementElements
     });
 
-    win.innerHeight = 200;
+    singleWin.innerHeight = 200;
 
-    sandBox.stub(utils, 'getWindowSelf').returns(win);
-    sandBox.stub(utils, 'getWindowTop').returns(win);
+    sandBox.stub(utils, 'getWindowSelf').returns(singleWin);
+    sandBox.stub(utils, 'getWindowTop').returns(singleWin);
 
-    return win;
+    return singleWin;
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
@@ -407,7 +408,6 @@ describe('stroeerCore bid adapter', function () {
           'timeout': expectedTimeout,
           'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
-          'ssl': false,
           'url': 'https://www.example.com/monkey/index.html',
           'bids': [{
             'sid': 'NDA=',
@@ -533,6 +533,7 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [[300, 600], [160, 60]],
                 'fp': undefined
               },
+              'sfp': undefined,
             },
             {
               'sid': 'ABC=',
@@ -541,7 +542,8 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [[100, 200], [300, 500]],
                 'fp': undefined
               },
-              'viz': undefined
+              'viz': undefined,
+              'sfp': undefined,
             }
           ];
 
@@ -555,7 +557,8 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [640, 480],
                 'mim': ['video/mp4', 'video/quicktime'],
                 'fp': undefined
-              }
+              },
+              'sfp': undefined,
             }
           ];
 
@@ -597,7 +600,8 @@ describe('stroeerCore bid adapter', function () {
               'ban': {
                 'siz': [[100, 200], [300, 500]],
                 'fp': undefined
-              }
+              },
+              'sfp': undefined,
             }
           ];
 
@@ -611,14 +615,14 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [640, 480],
                 'mim': ['video/mp4', 'video/quicktime'],
                 'fp': undefined
-              }
+              },
+              'sfp': undefined,
             }
           ];
 
           assert.deepEqual(serverRequestInfo.data.bids, [...expectedBannerBids, ...expectedVideoBids]);
         });
       });
-
       describe('optional fields', () => {
         it('should skip viz field when unable to determine visibility of placement', () => {
           placementElements.length = 0;
@@ -844,6 +848,115 @@ describe('stroeerCore bid adapter', function () {
           assert.nestedPropertyVal(bid, 'ban.fp.cur', 'EUR');
           assert.deepNestedPropertyVal(bid, 'ban.fp.siz', [{w: 160, h: 60, p: 2.7}]);
         });
+
+        it('should add the DSA signals', () => {
+          const bidReq = buildBidderRequest();
+          const dsa = {
+            dsarequired: 3,
+            pubrender: 0,
+            datatopub: 2,
+            transparency: [
+              {
+                domain: 'testplatform.com',
+                dsaparams: [1],
+              },
+              {
+                domain: 'testdomain.com',
+                dsaparams: [1, 2]
+              }
+            ]
+          }
+          const ortb2 = {
+            regs: {
+              ext: {
+                dsa
+              }
+            }
+          }
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+
+          assert.deepEqual(sentOrtb2, ortb2);
+        });
+
+        it('should add the Cookie Deprecation Label', () => {
+          const bidReq = buildBidderRequest();
+
+          const cDepObj = {
+            cdep: 'example_label_1'
+          };
+
+          const ortb2 = {
+            device: {
+              ext: cDepObj
+            }
+          };
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+
+          assert.deepEqual(sentOrtb2, ortb2);
+        });
+
+        it('should add the special format parameters', () => {
+          const bidReq = buildBidderRequest();
+
+          const sfp0 = {
+            'field1': {
+              'abc': '123',
+            }
+          };
+
+          const sfp1 = {
+            'field3': 'xyz'
+          };
+
+          bidReq.bids[0].params.sfp = utils.deepClone(sfp0);
+          bidReq.bids[1].params.sfp = utils.deepClone(sfp1);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          assert.deepEqual(serverRequestInfo.data.bids[0].sfp, sfp0);
+          assert.deepEqual(serverRequestInfo.data.bids[1].sfp, sfp1);
+        });
+
+        it('should add the special format parameters even when it is an empty object', () => {
+          const bidReq = buildBidderRequest();
+
+          bidReq.bids[0].params.sfp = {};
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          assert.deepEqual(serverRequestInfo.data.bids[0].sfp, {});
+          assert.isUndefined(serverRequestInfo.data.bids[1].sfp);
+        });
+
+        it('should add the ortb2 site extension', () => {
+          const bidReq = buildBidderRequest();
+
+          const ortb2 = {
+            site: {
+              domain: 'example.com',
+              ext: {
+                data: {
+                  abc: '123'
+                }
+              }
+            }
+          };
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+          assert.deepEqual(sentOrtb2, {site: {ext: ortb2.site.ext}})
+        });
       });
     });
   });
@@ -882,13 +995,42 @@ describe('stroeerCore bid adapter', function () {
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
 
-    it('should add data to meta object', () => {
+    it('should add advertiser domains to meta object', () => {
       const response = buildBidderResponse();
       response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
       const result = spec.interpretResponse({body: response});
-      assert.deepPropertyVal(result[0], 'meta', {advertiserDomains: ['website.org', 'domain.com']});
-      // nothing provided for the second bid
-      assert.deepPropertyVal(result[1], 'meta', {advertiserDomains: undefined});
+      assert.deepPropertyVal(result[0].meta, 'advertiserDomains', ['website.org', 'domain.com']);
+      assert.propertyVal(result[1].meta, 'advertiserDomains', undefined);
+    });
+
+    it('should add dsa info to meta object', () => {
+      const dsaResponse = {
+        behalf: 'AdvertiserA',
+        paid: 'AdvertiserB',
+        transparency: [{
+          domain: 'dspexample.com',
+          dsaparams: [1, 2],
+        }],
+        adrender: 1
+      };
+
+      const response = buildBidderResponse();
+      response.bids[0] = Object.assign(response.bids[0], {dsa: utils.deepClone(dsaResponse)});
+
+      const result = spec.interpretResponse({body: response});
+
+      assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
+      assert.propertyVal(result[1].meta, 'dsa', undefined);
+    });
+
+    it('should add campaignType to meta object', () => {
+      const response = buildBidderResponse();
+      response.bids[1] = Object.assign(response.bids[1], {campaignType: 'RTB'});
+
+      const result = spec.interpretResponse({body: response});
+
+      assert.propertyVal(result[0].meta, 'campaignType', undefined);
+      assert.propertyVal(result[1].meta, 'campaignType', 'RTB');
     });
   });
 

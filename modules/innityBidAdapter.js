@@ -38,6 +38,9 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, request) {
     const res = serverResponse.body;
+    if (Object.keys(res).length === 0) {
+      return [];
+    }
     const bidResponse = {
       requestId: res.callback_uid,
       cpm: parseFloat(res.cpm) / 100,
