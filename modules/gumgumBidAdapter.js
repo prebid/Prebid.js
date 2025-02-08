@@ -190,7 +190,10 @@ function _getVidParams(attributes) {
     placement: pt,
     plcmt,
     protocols = [],
-    playerSize = []
+    playerSize = [],
+    skip,
+    api,
+    mimes
   } = attributes;
   const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
@@ -208,7 +211,10 @@ function _getVidParams(attributes) {
     pt,
     pr,
     viw,
-    vih
+    vih,
+    skip,
+    api,
+    mimes
   };
     // Add vplcmt property to the result object if plcmt is available
   if (plcmt !== undefined && plcmt !== null) {
@@ -416,6 +422,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
       setIrisId(data, bidderRequest.ortb2.site, params);
+      data.curl = bidderRequest.ortb2.site.content && bidderRequest.ortb2.site.content.url;
     }
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
