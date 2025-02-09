@@ -11,6 +11,7 @@ var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
 var opens = require('opn');
 var webpackConfig = require('./webpack.conf.js');
+const standaloneDebuggingConfig = require('./webpack.debugging.js');
 var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
@@ -127,21 +128,26 @@ function viewReview(done) {
 
 viewReview.displayName = 'view-review';
 
-function makeDevpackPkg() {
-  var cloned = _.cloneDeep(webpackConfig);
-  Object.assign(cloned, {
-    devtool: 'source-map',
-    mode: 'development'
-  })
+function makeVerbose(config = webpackConfig) {
+  return _.merge({}, config, {
+    optimization: {
+      minimizer: [
+        new TerserPlugin({
+          parallel: true,
+          terserOptions: {
+            mangle: false,
+            format: {
+              comments: 'all'
+            }
+          },
+          extractComments: false,
+        }),
+      ],
+    }
+  });
+}
 
-  const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/'});
-
-  // update babel config to set local dist url
-  cloned.module.rules
-    .flatMap((rule) => rule.use)
-    .filter((use) => use.loader === 'babel-loader')
-    .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
-
+function prebidSource(webpackCfg) {
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
@@ -149,26 +155,39 @@ function makeDevpackPkg() {
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(gulp.dest('build/dev'))
-    .pipe(connect.reload());
+    .pipe(webpackStream(webpackCfg, webpack));
 }
 
-function makeWebpackPkg(extraConfig = {}) {
-  var cloned = _.merge(_.cloneDeep(webpackConfig), extraConfig);
+function makeDevpackPkg(config = webpackConfig) {
+  return function() {
+    var cloned = _.cloneDeep(config);
+    Object.assign(cloned, {
+      devtool: 'source-map',
+      mode: 'development'
+    })
+
+    const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/'});
+
+    // update babel config to set local dist url
+    cloned.module.rules
+      .flatMap((rule) => rule.use)
+      .filter((use) => use.loader === 'babel-loader')
+      .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
+
+    return prebidSource(cloned)
+      .pipe(gulp.dest('build/dev'))
+      .pipe(connect.reload());
+  }
+}
+
+function makeWebpackPkg(config = webpackConfig) {
+  var cloned = _.cloneDeep(config)
   if (!argv.sourceMaps) {
     delete cloned.devtool;
   }
 
   return function buildBundle() {
-    var externalModules = helpers.getArgModules();
-
-    const analyticsSources = helpers.getAnalyticsSources();
-    const moduleSources = helpers.getModulePaths(externalModules);
-
-    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-      .pipe(helpers.nameModules(externalModules))
-      .pipe(webpackStream(cloned, webpack))
+    return prebidSource(cloned)
       .pipe(gulp.dest('build/dist'));
   }
 }
@@ -391,7 +410,9 @@ function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
-  const child = fork('./karmaRunner.js');
+  const child = fork('./karmaRunner.js', null, {
+    env: Object.assign({}, options.env, process.env)
+  });
   child.on('exit', (exitCode) => {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
@@ -404,7 +425,15 @@ function runKarma(options, done) {
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
-  runKarma({coverage: true, browserstack: false, watch: false, file: argv.file}, done);
+  runKarma({
+    coverage: true,
+    browserstack: false,
+    watch: false,
+    file: argv.file,
+    env: {
+      NODE_OPTIONS: '--max-old-space-size=8096'
+    }
+  }, done);
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
@@ -446,7 +475,15 @@ function startLocalServer(options = {}) {
     port: port,
     host: INTEG_SERVER_HOST,
     root: './',
-    livereload: options.livereload
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
   });
 }
 
@@ -487,26 +524,11 @@ gulp.task(escapePostbidConfig);
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
 
-gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
-gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
-  optimization: {
-    minimizer: [
-      new TerserPlugin({
-        parallel: true,
-        terserOptions: {
-          mangle: false,
-          format: {
-            comments: 'all'
-          }
-        },
-        extractComments: false,
-      }),
-    ],
-  }
-}), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, true)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);

@@ -1,6 +1,12 @@
-import {createTrackPixelHtml, deepAccess, inIframe, mergeDeep} from '../../../src/utils.js';
+import {
+  createTrackPixelHtml,
+  inIframe,
+  mergeDeep,
+  sizesToSizeTuples,
+  sizeTupleToRtbSize,
+  encodeMacroURI
+} from '../../../src/utils.js';
 import {BANNER} from '../../../src/mediaTypes.js';
-import {sizesToFormat} from '../lib/sizes.js';
 
 /**
  * fill in a request `imp` with banner parameters from `bidRequest`.
@@ -8,13 +14,13 @@ import {sizesToFormat} from '../lib/sizes.js';
 export function fillBannerImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== BANNER) return;
 
-  const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
+  const bannerParams = bidRequest?.mediaTypes?.banner;
   if (bannerParams) {
     const banner = {
       topframe: inIframe() === true ? 0 : 1
     };
     if (bannerParams.sizes) {
-      banner.format = sizesToFormat(bannerParams.sizes);
+      banner.format = sizesToSizeTuples(bannerParams.sizes).map(sizeTupleToRtbSize);
     }
     if (bannerParams.hasOwnProperty('pos')) {
       banner.pos = bannerParams.pos;
@@ -24,7 +30,7 @@ export function fillBannerImp(imp, bidRequest, context) {
   }
 }
 
-export function bannerResponseProcessor({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url))} = {}) {
+export function bannerResponseProcessor({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url), encodeMacroURI)} = {}) {
   return function fillBannerResponse(bidResponse, bid) {
     if (bidResponse.mediaType === BANNER) {
       if (bid.adm && bid.nurl) {

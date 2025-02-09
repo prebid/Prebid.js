@@ -9,7 +9,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {AUCTION_COMPLETED} from '../src/auction.js';
-import CONSTANTS from '../src/constants.json';
+import {EVENTS} from '../src/constants.js';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {
@@ -28,6 +28,7 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
 
@@ -80,8 +81,6 @@ const PARAMS_DEFAULT = {
   'id11': '$ADLOOX_WEBSITE'
 };
 
-const NOOP = function() {};
-
 let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
     if (!analyticsAdapter[`handle_${eventType}`]) return;
@@ -106,6 +105,10 @@ analyticsAdapter.enableAnalytics = function(config) {
   }
   if (!(config.options.js === undefined || isStr(config.options.js))) {
     logError(MODULE, 'invalid js options value');
+    return;
+  }
+  if (isStr(config.options.js) && !/\.adlooxtracking\.(com|ru)$/.test(parseUrl(config.options.js, { 'noDecodeWholeURL': true }).host)) {
+    logError(MODULE, "invalid js options value, must be a sub-domain of 'adlooxtracking.com'");
     return;
   }
   if (!(config.options.toselector === undefined || isFn(config.options.toselector))) {
@@ -220,22 +223,27 @@ analyticsAdapter.url = function(url, args, bid) {
   return url + a2qs(args);
 }
 
-analyticsAdapter[`handle_${CONSTANTS.EVENTS.AUCTION_END}`] = function(auctionDetails) {
+const preloaded = {};
+analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
-  analyticsAdapter[`handle_${CONSTANTS.EVENTS.AUCTION_END}`] = NOOP;
+
+  const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
+  const href = `${uri.protocol}://${uri.host}${uri.pathname}`;
+  if (preloaded[href]) return;
 
   logMessage(MODULE, 'preloading verification JS');
 
-  const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
-
   const link = document.createElement('link');
-  link.setAttribute('href', `${uri.protocol}://${uri.host}${uri.pathname}`);
+  link.setAttribute('href', href);
   link.setAttribute('rel', 'preload');
   link.setAttribute('as', 'script');
+  // TODO fix rules violation
   insertElement(link);
+
+  preloaded[href] = true;
 }
 
-analyticsAdapter[`handle_${CONSTANTS.EVENTS.BID_WON}`] = function(bid) {
+analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   if (deepAccess(bid, 'ext.adloox.video.adserver')) {
     logMessage(MODULE, `measuring '${bid.mediaType}' ad unit code '${bid.adUnitCode}' via Ad Server module`);
     return;
@@ -261,7 +269,7 @@ analyticsAdapter[`handle_${CONSTANTS.EVENTS.BID_WON}`] = function(bid) {
     [ 'creatype', '%%creatype%%' ]
   ]);
 
-  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), 'adloox');
+  loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
 }
 
 adapterManager.registerAnalyticsAdapter({

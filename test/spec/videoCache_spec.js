@@ -1,38 +1,12 @@
 import chai from 'chai';
-import {getCacheUrl, store} from 'src/videoCache.js';
+import {batchingCache, getCacheUrl, store, _internal, storeBatch} from 'src/videoCache.js';
 import {config} from 'src/config.js';
 import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
-import {batchingCache} from '../../src/auction.js';
+import * as utils from 'src/utils.js';
 
 const should = chai.should();
-
-function getMockBid(bidder, auctionId, bidderRequestId) {
-  return {
-    'bidder': bidder,
-    'params': {
-      'placementId': '10433394',
-      'member': 123,
-      'keywords': {
-        'foo': ['bar', 'baz'],
-        'fizz': ['buzz']
-      }
-    },
-    'bid_id': '12345abc',
-    'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'mediaTypes': {
-      'banner': {
-        'sizes': [[300, 250]]
-      }
-    },
-    'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
-    'sizes': [300, 250],
-    'bidId': '123',
-    'bidderRequestId': bidderRequestId,
-    'auctionId': auctionId
-  };
-}
 
 describe('The video cache', function () {
   function assertError(callbackSpy) {
@@ -126,9 +100,7 @@ describe('The video cache', function () {
     <Ad>
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        
-        <Creatives></Creatives>
+        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>\n        \n        <Creatives></Creatives>
       </Wrapper>
     </Ad>
   </VAST>`;
@@ -335,34 +307,36 @@ describe('The video cache', function () {
       JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
-    it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
-      const mockAfterBidAdded = function() {};
-      let callback = null;
-      let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
+    if (FEATURES.VIDEO) {
+      it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
+        const mockAfterBidAdded = function() {};
+        let callback = null;
+        let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
 
-      config.setConfig({
-        cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache',
-          batchSize: 3,
-          batchTimeout: 20
+        config.setConfig({
+          cache: {
+            url: 'https://prebid.adnxs.com/pbc/v1/cache',
+            batchSize: 3,
+            batchTimeout: 20
+          }
+        });
+
+        let stubCache = sinon.stub();
+        const batchAndStore = batchingCache(mockTimeout, stubCache);
+        for (let i = 0; i < 3; i++) {
+          batchAndStore({}, {}, mockAfterBidAdded);
         }
+
+        sinon.assert.calledOnce(mockTimeout);
+        sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
+
+        const expectedBatch = [{ afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }];
+
+        callback();
+
+        sinon.assert.calledWith(stubCache, expectedBatch);
       });
-
-      let stubCache = sinon.stub();
-      const batchAndStore = batchingCache(mockTimeout, stubCache);
-      for (let i = 0; i < 3; i++) {
-        batchAndStore({}, {}, mockAfterBidAdded);
-      }
-
-      sinon.assert.calledOnce(mockTimeout);
-      sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
-
-      const expectedBatch = [{ afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }];
-
-      callback();
-
-      sinon.assert.calledWith(stubCache, expectedBatch);
-    });
+    }
 
     function assertRequestMade(bid, expectedValue) {
       store([bid], function () { });
@@ -393,6 +367,35 @@ describe('The video cache', function () {
       return callback;
     }
   });
+
+  describe('storeBatch', () => {
+    let sandbox;
+    let err, cacheIds
+    beforeEach(() => {
+      err = null;
+      cacheIds = [];
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'logError');
+      sandbox.stub(_internal, 'store').callsFake((_, cb) => cb(err, cacheIds));
+    });
+    afterEach(() => {
+      sandbox.restore();
+    })
+    it('should log an error when store replies with an error', () => {
+      err = new Error('err');
+      storeBatch([]);
+      sinon.assert.called(utils.logError);
+    });
+    it('should not process returned uuids if they do not match the batch size', () => {
+      const el = {auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub()}
+      const batch = [el, el];
+      cacheIds = [{uuid: 'mock-id'}]
+      storeBatch(batch);
+      expect(el.bidResponse.videoCacheKey).to.not.exist;
+      sinon.assert.notCalled(batch[0].afterBidAdded);
+      sinon.assert.called(utils.logError);
+    })
+  })
 });
 
 describe('The getCache function', function () {

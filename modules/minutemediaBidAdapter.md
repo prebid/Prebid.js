@@ -13,7 +13,7 @@ Module that connects to MinuteMedia's demand sources.
 
 The MinuteMedia adapter requires setup and approval from the MinuteMedia. Please reach out to hb@minutemedia.com to create an MinuteMedia account.
 
-The adapter supports Video(instream) & Banner.
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video
@@ -24,7 +24,6 @@ The adapter supports Video(instream) & Banner.
 | `floorPrice` | optional | Number |  Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `placementId` | optional | String |  A unique placement identifier  | "12345678"
 | `testMode` | optional | Boolean |  This activates the test mode  | false
-| `currency` | optional | String | 3 letters currency | "EUR"
 
 # Test Parameters
 ```javascript

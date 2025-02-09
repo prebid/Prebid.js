@@ -4,7 +4,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { targeting } from '../src/targeting.js';
 import { config } from '../src/config.js';
-import CONSTANTS from '../src/constants.json';
+import {EVENTS} from '../src/constants.js';
 
 const TRACKER_HOST = 'tracker.konduit.me';
 const KONDUIT_PREBID_MODULE_VERSION = '1.0.0';
@@ -12,13 +12,13 @@ const KONDUIT_PREBID_MODULE_VERSION = '1.0.0';
 const analyticsType = 'endpoint';
 
 const eventDataComposerMap = {
-  [CONSTANTS.EVENTS.AUCTION_INIT]: obtainAuctionInfo,
-  [CONSTANTS.EVENTS.AUCTION_END]: obtainAuctionInfo,
-  [CONSTANTS.EVENTS.BID_REQUESTED]: obtainBidRequestsInfo,
-  [CONSTANTS.EVENTS.BID_TIMEOUT]: obtainBidTimeoutInfo,
-  [CONSTANTS.EVENTS.BID_RESPONSE]: obtainBidResponseInfo,
-  [CONSTANTS.EVENTS.BID_WON]: obtainWinnerBidInfo,
-  [CONSTANTS.EVENTS.NO_BID]: obtainNoBidInfo,
+  [EVENTS.AUCTION_INIT]: obtainAuctionInfo,
+  [EVENTS.AUCTION_END]: obtainAuctionInfo,
+  [EVENTS.BID_REQUESTED]: obtainBidRequestsInfo,
+  [EVENTS.BID_TIMEOUT]: obtainBidTimeoutInfo,
+  [EVENTS.BID_RESPONSE]: obtainBidResponseInfo,
+  [EVENTS.BID_WON]: obtainWinnerBidInfo,
+  [EVENTS.NO_BID]: obtainNoBidInfo,
 };
 
 // This function is copy from prebid core
@@ -43,7 +43,7 @@ function buildUrl(obj) {
 
 const getWinnerBidFromAggregatedEvents = () => {
   return konduitAnalyticsAdapter.context.aggregatedEvents
-    .filter(evt => evt.eventType === CONSTANTS.EVENTS.BID_WON)[0];
+    .filter(evt => evt.eventType === EVENTS.BID_WON)[0];
 };
 
 const isWinnerBidDetected = () => {
@@ -57,7 +57,7 @@ const konduitAnalyticsAdapter = Object.assign(
   adapter({ analyticsType }),
   {
     track ({ eventType, args }) {
-      if (CONSTANTS.EVENTS.AUCTION_INIT === eventType) {
+      if (EVENTS.AUCTION_INIT === eventType) {
         konduitAnalyticsAdapter.context.aggregatedEvents.splice(0);
       }
 
@@ -68,12 +68,12 @@ const konduitAnalyticsAdapter = Object.assign(
         });
       }
 
-      if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+      if (eventType === EVENTS.AUCTION_END) {
         if (!isWinnerBidDetected() && isWinnerBidExist()) {
-          const bidWonData = eventDataComposerMap[CONSTANTS.EVENTS.BID_WON](targeting.getWinningBids()[0]);
+          const bidWonData = eventDataComposerMap[EVENTS.BID_WON](targeting.getWinningBids()[0]);
 
           konduitAnalyticsAdapter.context.aggregatedEvents.push({
-            eventType: CONSTANTS.EVENTS.BID_WON,
+            eventType: EVENTS.BID_WON,
             data: bidWonData,
           });
         }

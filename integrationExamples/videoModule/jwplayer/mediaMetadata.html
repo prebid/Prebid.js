@@ -20,6 +20,13 @@
         },
 
         bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
           bidder: 'ix',
           params: {
             siteId: '300',
@@ -44,7 +51,9 @@
                     file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
                     title: 'Subaru Outback On Street And Dirt',
                     description: 'Smoking Tire takes the all-new Subaru Outback to the highest point we can find in hopes our customer-appreciation Balloon Launch will get some free T-shirts into the hands of our viewers.',
-                    advertising: { client: 'googima' }
+                    advertising: { client: 'googima' },
+                    width: 640,
+                    height: 480
                   }
                 }
               }

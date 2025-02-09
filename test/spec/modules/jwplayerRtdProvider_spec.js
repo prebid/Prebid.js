@@ -12,6 +12,7 @@ import {
   getVatFromCache,
   getVatFromPlayer,
   setOverrides,
+  getPlayer,
   jwplayerSubmodule
 } from 'modules/jwplayerRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
@@ -629,7 +630,7 @@ describe('jwplayerRtdProvider', function() {
 
       expect(ortb2Fragments.global).to.have.property('site');
       expect(ortb2Fragments.global.site).to.have.property('content');
-      expect(ortb2Fragments.global.site.content).to.have.property('id', 'jw_' + testIdForSuccess);
+      expect(ortb2Fragments.global.site.content).to.have.property('id', 'randomContentId');
       expect(ortb2Fragments.global.site.content).to.have.property('data');
       const data = ortb2Fragments.global.site.content.data;
       expect(data).to.have.length(3);
@@ -801,7 +802,7 @@ describe('jwplayerRtdProvider', function() {
   describe(' Add Ortb Site Content', function () {
     beforeEach(() => {
       setOverrides({
-        overrideContentId: 'always',
+        overrideContentId: 'whenEmpty',
         overrideContentUrl: 'whenEmpty',
         overrideContentTitle: 'whenEmpty',
         overrideContentDescription: 'whenEmpty'
@@ -865,16 +866,16 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      const expectedId = 'expectedId';
+      const newId = 'newId';
       const expectedUrl = 'expectedUrl';
       const expectedTitle = 'expectedTitle';
       const expectedDescription = 'expectedDescription';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(ortb2, expectedId, expectedData, expectedTitle, expectedDescription, expectedUrl);
+      addOrtbSiteContent(ortb2, newId, expectedData, expectedTitle, expectedDescription, expectedUrl);
       expect(ortb2).to.have.nested.property('site.random.random_sub', 'randomSub');
       expect(ortb2).to.have.nested.property('app.content.id', 'appId');
       expect(ortb2).to.have.nested.property('site.content.ext.random_field', 'randomField');
-      expect(ortb2).to.have.nested.property('site.content.id', expectedId);
+      expect(ortb2).to.have.nested.property('site.content.id', 'oldId');
       expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
       expect(ortb2).to.have.nested.property('site.content.title', expectedTitle);
       expect(ortb2).to.have.nested.property('site.content.ext.description', expectedDescription);
@@ -889,7 +890,7 @@ describe('jwplayerRtdProvider', function() {
       expect(ortb2).to.have.nested.property('site.content.id', expectedId);
     });
 
-    it('should override content id by default', function () {
+    it('should keep old content id by default', function () {
       const ortb2 = {
         site: {
           content: {
@@ -898,9 +899,8 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      const expectedId = 'expectedId';
-      addOrtbSiteContent(ortb2, expectedId);
-      expect(ortb2).to.have.nested.property('site.content.id', expectedId);
+      addOrtbSiteContent(ortb2, 'newId');
+      expect(ortb2).to.have.nested.property('site.content.id', 'oldId');
     });
 
     it('should keep previous content id when new value is not available', function () {
@@ -1601,6 +1601,66 @@ describe('jwplayerRtdProvider', function() {
       const rtd = bid.rtd;
       expect(rtd).to.have.property('jwplayer');
       expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+  });
+
+  describe('Player detection', function () {
+    const playerInstanceMock = {
+      getPlaylist: () => [],
+      getPlaylistItem: () => ({})
+    };
+
+    beforeEach(function () {
+      window.jwplayer = sinon.stub();
+    });
+
+    afterEach(function () {
+      delete window.jwplayer;
+    });
+
+    it('should fail if jwplayer global does not exist', function () {
+      delete window.jwplayer;
+      expect(getPlayer('divId')).to.be.undefined;
+    });
+
+    it('should return the player instance for the specified div id', function () {
+      window.jwplayer.returns(playerInstanceMock);
+      const player = getPlayer('divId');
+      expect(player).to.deep.equal(playerInstanceMock);
+    });
+
+    it('should request a player when the div id does not match a player on the page and only 1 player is in the DOM', function () {
+      const playerDomElement = document.createElement('div');
+      playerDomElement.className = 'jwplayer';
+      document.body.appendChild(playerDomElement);
+
+      window.jwplayer.withArgs('invalidDivId').returns(undefined);
+      window.jwplayer.returns(playerInstanceMock);
+
+      const playerInstance = getPlayer('invalidDivId');
+
+      expect(playerInstance).to.deep.equal(playerInstanceMock);
+
+      document.body.removeChild(playerDomElement);
+    });
+
+    it('should fail when the div id does not match a player on the page, and multiple players are instantiated', function () {
+      const firstPlayerDomElement = document.createElement('div');
+      const secondPlayerDomElement = document.createElement('div');
+      firstPlayerDomElement.className = 'jwplayer';
+      secondPlayerDomElement.className = 'jwplayer';
+      document.body.appendChild(firstPlayerDomElement);
+      document.body.appendChild(secondPlayerDomElement);
+
+      window.jwplayer.withArgs('invalidDivId').returns(undefined);
+      window.jwplayer.returns(playerInstanceMock);
+
+      const playerInstance = getPlayer('invalidDivId');
+
+      expect(playerInstance).to.be.undefined;
+
+      document.body.removeChild(firstPlayerDomElement);
+      document.body.removeChild(secondPlayerDomElement);
     });
   });
 

@@ -177,7 +177,7 @@ export const spec = {
         serverRequest.topics = topicsData;
       }
       if (eids.length) {
-        serverRequest.user = { eids };
+        deepSetValue(serverRequest, 'user.ext.eids', eids);
       };
       serverRequests.push({
         method: 'POST',
@@ -257,7 +257,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -337,8 +337,7 @@ function createNewVideoBid(response, bidRequest) {
       mediaType: VIDEO,
     },
   };
-
-  if (imp.video.placement && imp.video.placement !== 1) {
+  if (imp.video.plcmt && imp.video.plcmt !== 1) {
     const renderer = Renderer.install({
       url: OUTSTREAM_VIDEO_PLAYER_URL,
       config: {
@@ -349,7 +348,7 @@ function createNewVideoBid(response, bidRequest) {
         allowVpaid: true,
         autoPlay: true,
         preload: true,
-        mute: true
+        mute: true,
       },
       id: imp.tagid,
       loaded: false,
@@ -471,7 +470,7 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
@@ -653,15 +652,6 @@ function validateVideoParams(bid) {
     validate('video.mimes', val => isDefined(val), paramRequired);
     validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
-
-    const placement = validate('video.placement', val => isDefined(val), paramRequired);
-    validate('video.placement', val => val >= 1 && val <= 5, paramInvalid);
-    if (placement === 1) {
-      validate('video.startdelay', val => isDefined(val),
-        (field, v) => paramRequired(field, v, 'placement == 1'));
-      validate('video.startdelay', val => isNumber(val), paramInvalid, 'number, ex: 5');
-    }
-
     validate('video.protocols', val => isDefined(val), paramRequired);
 
     validate('video.api', val => isDefined(val), paramRequired);

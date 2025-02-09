@@ -3,7 +3,7 @@ import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
 
-import { getGlobal } from 'src/prebidGlobal.js';
+import {getGlobal} from 'src/prebidGlobal.js';
 
 import {
   setConfig,
@@ -13,9 +13,12 @@ import {
   responseReady
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
-import CONSTANTS from '../../../src/constants.json';
+import * as utils from 'src/utils.js';
+import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
+import { enrichFPD } from '../../../src/fpd/enrichment.js';
+import {requestBidsHook} from '../../../modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -28,7 +31,7 @@ describe('currency', function () {
   let fn = sinon.spy();
 
   function makeBid(bidProps) {
-    return Object.assign(createBid(CONSTANTS.STATUS.GOOD), bidProps);
+    return Object.assign(createBid(STATUS.GOOD), bidProps);
   }
 
   beforeEach(function () {
@@ -335,7 +338,7 @@ describe('currency', function () {
         addBidResponseHook(addBidResponse, 'au', bid, reject);
         fakeCurrencyFileServer.respond();
         sinon.assert.notCalled(addBidResponse);
-        sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+        sinon.assert.calledWith(reject, REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
       });
 
       it('attempts to load rates again on the next auction', () => {
@@ -344,7 +347,7 @@ describe('currency', function () {
         });
         fakeCurrencyFileServer.respond();
         fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
-        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {});
+        events.emit(EVENTS.AUCTION_INIT, {});
         addBidResponseHook(addBidResponse, 'au', bid, reject);
         fakeCurrencyFileServer.respond();
         sinon.assert.calledWith(addBidResponse, 'au', bid, reject);
@@ -462,12 +465,12 @@ describe('currency', function () {
       const addBidResponse = sinon.spy();
       addBidResponseHook(addBidResponse, 'au', bid, reject);
       addBidResponseHook(addBidResponse, 'au', noConversionBid, reject);
-      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, {auctionId: 'aid'});
+      events.emit(EVENTS.AUCTION_TIMEOUT, { auctionId: 'aid' });
       fakeCurrencyFileServer.respond();
       sinon.assert.calledOnce(addBidResponse);
       sinon.assert.calledWith(addBidResponse, 'au', noConversionBid, reject);
       sinon.assert.calledOnce(reject);
-      sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+      sinon.assert.calledWith(reject, REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
     })
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
@@ -520,6 +523,69 @@ describe('currency', function () {
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.0623');
       expect(innerBid.currency).to.equal('CNY');
+    });
+  });
+
+  describe('enrichFpd', function() {
+    function fpd(ortb2 = {}) {
+      return enrichFPD(Promise.resolve(ortb2));
+    }
+    it('should set adServerCurrency on ortb', function () {
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig({ adServerCurrency: 'EUR' });
+      return fpd({}).then((ortb) => {
+        expect(ortb.ext.prebid.adServerCurrency).to.eql('EUR')
+      })
+    })
+  });
+
+  describe('auctionDelay param', () => {
+    const continueAuction = sinon.stub();
+    let logWarnSpy;
+
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      clock.runAll();
+      sandbox.restore();
+      clock.restore();
+      utils.logWarn.restore();
+      continueAuction.resetHistory();
+    });
+
+    it('should delay auction start when auctionDelay set in module config', () => {
+      setConfig({auctionDelay: 2000, adServerCurrency: 'USD'});
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      clock.tick(1000);
+      expect(continueAuction.notCalled).to.be.true;
+    });
+
+    it('should start auction when auctionDelay time passed', () => {
+      setConfig({auctionDelay: 2000, adServerCurrency: 'USD'});
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      clock.tick(3000);
+      expect(logWarnSpy.calledOnce).to.equal(true);
+      expect(continueAuction.calledOnce).to.be.true;
+    });
+
+    it('should run auction if rates were fetched before auctionDelay time', () => {
+      setConfig({auctionDelay: 3000, adServerCurrency: 'USD'});
+      const reqBidsConfigObj = {
+        auctionId: '128937'
+      };
+      fakeCurrencyFileServer.respond();
+      requestBidsHook(continueAuction, reqBidsConfigObj);
+      expect(continueAuction.calledOnce).to.be.true;
     });
   });
 });

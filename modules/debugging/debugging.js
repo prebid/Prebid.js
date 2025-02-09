@@ -31,6 +31,7 @@ export function disableDebugging({hook, logger}) {
   }
 }
 
+// eslint-disable-next-line prebid/no-global
 function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorage, DEBUG_KEY} = {}) {
   if (!debugConfig.enabled) {
     try {
@@ -49,6 +50,7 @@ function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorag
   }
 }
 
+// eslint-disable-next-line prebid/no-global
 export function getConfig(debugging, {getStorage = () => window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
   if (debugging == null) return;
   let sessionStorage;
@@ -70,6 +72,7 @@ export function getConfig(debugging, {getStorage = () => window.sessionStorage, 
 export function sessionLoader({DEBUG_KEY, storage, config, hook, logger}) {
   let overrides;
   try {
+    // eslint-disable-next-line prebid/no-global
     storage = storage || window.sessionStorage;
     overrides = JSON.parse(storage.getItem(DEBUG_KEY));
   } catch (e) {
@@ -102,11 +105,13 @@ export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest
   ({bids, bidRequest} = interceptBids({
     bids,
     bidRequest,
-    addBid: cbs.onBid,
-    addPaapiConfig: (config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, config}),
+    addBid: wrapCallback(cbs.onBid),
+    addPaapiConfig: wrapCallback((config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, ...config})),
     done
   }));
   if (bids.length === 0) {
+    // eslint-disable-next-line no-unused-expressions
+    cbs.onResponse?.({}); // trigger onResponse so that the bidder may be marked as "timely" if necessary
     done();
   } else {
     next(spec, bids, bidRequest, ajax, wrapCallback, {...cbs, onCompletion: done});

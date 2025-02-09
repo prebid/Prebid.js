@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
-import CONSTANTS from '../src/constants.json';
+import { REJECTION_REASON } from '../src/constants.js';
 import {getHook} from '../src/hook.js';
 import {logInfo, logWarn} from '../src/utils.js';
 
@@ -18,18 +18,18 @@ export const addBidResponseHook = timedBidResponseHook('dsa', function (fn, adUn
     if (!bid.meta?.dsa) {
       if (dsaRequest.dsarequired === 1) {
         // request says dsa is supported; response does not have dsa info; warn about it
-        logWarn(`dsaControl: ${CONSTANTS.REJECTION_REASON.DSA_REQUIRED}; will still be accepted as regs.ext.dsa.dsarequired = 1`, bid);
+        logWarn(`dsaControl: ${REJECTION_REASON.DSA_REQUIRED}; will still be accepted as regs.ext.dsa.dsarequired = 1`, bid);
       } else if ([2, 3].includes(dsaRequest.dsarequired)) {
         // request says dsa is required; response does not have dsa info; reject it
-        rejectReason = CONSTANTS.REJECTION_REASON.DSA_REQUIRED;
+        rejectReason = REJECTION_REASON.DSA_REQUIRED;
       }
     } else {
       if (dsaRequest.pubrender === 0 && bid.meta.dsa.adrender === 0) {
         // request says publisher can't render; response says advertiser won't; reject it
-        rejectReason = CONSTANTS.REJECTION_REASON.DSA_MISMATCH;
+        rejectReason = REJECTION_REASON.DSA_MISMATCH;
       } else if (dsaRequest.pubrender === 2 && bid.meta.dsa.adrender === 1) {
         // request says publisher will render; response says advertiser will; reject it
-        rejectReason = CONSTANTS.REJECTION_REASON.DSA_MISMATCH;
+        rejectReason = REJECTION_REASON.DSA_MISMATCH;
       }
     }
   }

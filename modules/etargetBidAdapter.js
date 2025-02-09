@@ -1,8 +1,9 @@
-import { deepSetValue, isFn, isPlainObject } from '../src/utils.js';
+import { deepClone, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'etarget';
+const GVL_ID = 29;
 const countryMap = {
   1: 'sk',
   2: 'cz',
@@ -19,6 +20,7 @@ const countryMap = {
 }
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(bid.params.refid && bid.params.country);
@@ -26,7 +28,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     var i, l, bid, reqParams, netRevenue, gdprObject;
     var request = [];
-    var bids = JSON.parse(JSON.stringify(validBidRequests));
+    var bids = deepClone(validBidRequests);
     var lastCountry = 'sk';
     var floors = [];
     for (i = 0, l = bids.length; i < l; i++) {
