@@ -213,13 +213,21 @@ function _getVidParams(attributes) {
     viw,
     vih,
     skip,
-    api,
-    mimes
   };
-    // Add vplcmt property to the result object if plcmt is available
+
+  // Add vplcmt property to the result object if plcmt is available
   if (plcmt !== undefined && plcmt !== null) {
     result.vplcmt = plcmt;
   }
+  // Add api property to the result object if api is available
+  if (api && api.length) {
+    result.api = api.join(',');
+  }
+  // Add mimes property to the result object if mimes is available
+  if (mimes && mimes.length) {
+    result.mimes = mimes.join(',');
+  }
+
   return result;
 }
 
