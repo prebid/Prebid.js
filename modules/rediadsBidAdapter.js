@@ -78,15 +78,6 @@ export const spec = {
       data.imp.forEach((impression, idx) => {
         const bidRequest = bidRequests[idx];
         impression.tagid = bidRequest?.params?.slot;
-        if (bidRequest?.params?.ssi) {
-          deepSetValue(
-            impression,
-            'ext.prebid.storedrequest.id',
-            `${bidRequest.params.account_id}_${bidRequest.params.site}${
-              bidRequest.params.slot ? `_${bidRequest.params.slot}` : ""
-            }`
-          );
-        }
       });
     } catch (err) {
       logError(`${LOG_PREFIX} encountered an error while building bid requests :: ${err}`)
