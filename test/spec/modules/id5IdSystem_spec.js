@@ -1179,7 +1179,7 @@ describe('ID5 ID System', function () {
               expect(bid.userId.otherId.uid).is.eql('other-id-value');
               expect(bid.userIdAsEids[1]).is.eql({
                 source: 'other-id.com',
-                inserter: "id5-sync.com",
+                inserter: 'id5-sync.com',
                 uids: [{
                   id: 'other-id-value',
                   atype: 2,
