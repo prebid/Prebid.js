@@ -55,7 +55,8 @@ describe('PubMatic adapter', function () {
         bidder: 'pubmatic',
         mediaTypes: {
           banner: {
-            sizes: [[728, 90], [160, 600]]
+            sizes: [[728, 90], [160, 600]],
+            pos: 2
           }
         },
         params: {
@@ -96,7 +97,8 @@ describe('PubMatic adapter', function () {
         mediaTypes: {
           video: {
             playerSize: [640, 480],
-            context: 'instream'
+            context: 'instream',
+            pos: 3
           }
         },
         bidder: 'pubmatic',

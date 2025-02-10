@@ -560,7 +560,7 @@ function _createBannerRequest(bid) {
         bannerObj.format = format;
       }
     }
-    bannerObj.pos = 0;
+    bannerObj.pos = bid.mediaTypes.banner.pos;
     bannerObj.topframe = inIframe() ? 0 : 1;
 
     // Adding Banner custom params
@@ -590,6 +590,7 @@ function _createVideoRequest(bid) {
 
   if (FEATURES.VIDEO && videoData !== UNDEFINED) {
     videoObj = {};
+    videoObj.pos = bid.mediaTypes.video.pos;
     checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
