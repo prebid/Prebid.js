@@ -277,7 +277,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
   deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
-  const extractedUserId = bidRequest?.userId?.taboolaId ? bidRequest.userId.taboolaId : userData.getUserId(gdprConsent, uspConsent);
+  const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
   if (data.user == undefined) {
     data.user = {
       buyeruid: 0,
