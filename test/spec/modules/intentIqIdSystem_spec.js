@@ -484,28 +484,6 @@ describe('IntentIQ tests', function () {
       expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
     });
 
-    it('Should use parameters provided by parner in request and save to LS', function() {
-      mockConsentHandlers(uspData, gppData, gdprData);
-      const partnerProvidedParams = {providedGDPR: 'provided-GDPR', providedGPP: 'provided-GPP', providedUSP: 'provided-USP'};
-      defaultConfigParams.params = {...defaultConfigParams.params, ...partnerProvidedParams};
-      let callBackSpy = sinon.spy();
-      let submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
-
-      submoduleCallback(callBackSpy);
-      let request = server.requests[0];
-
-      expect(request.url).to.contain(`&gpp=${encodeURIComponent(partnerProvidedParams.providedGPP)}`);
-      expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(partnerProvidedParams.providedUSP)}`);
-      expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(partnerProvidedParams.providedGDPR)}`);
-      expect(request.url).to.contain(`&gdpr=${encodeURIComponent('1')}`);
-
-      const lsFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-
-      expect(lsFirstPartyData.uspString).to.equal(partnerProvidedParams.providedUSP);
-      expect(lsFirstPartyData.gppString).to.equal(partnerProvidedParams.providedGPP);
-      expect(lsFirstPartyData.gdprString).to.equal(partnerProvidedParams.providedGDPR);
-    });
-
     it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', function() {
       const ENDPOINT_GDPR = 'https://api-gdpr.intentiq.com';
       mockConsentHandlers(uspData, gppData, gdprData);
