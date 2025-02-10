@@ -186,34 +186,30 @@ describe('IntentIQ tests all', function () {
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
 
-  // it('should send CMP data in report if available', function () {
-  //   const cmpData = {
-  //     uspString: '1NYN',
-  //     gppString: '{"key1":"value1","key2":"value2"}',
-  //     gdprString: 'gdprConsent'
-  //   };
+  it('should send CMP data in report if available', function () {
+    const uspData = '1NYN';
+    const gppData = { gppString: '{"key1":"value1","key2":"value2"}' };
+    const gdprData = { consentString: 'gdprConsent' };
 
-  //   USERID_CONFIG[0].params.providedUSP = cmpData.uspString;
-  //   USERID_CONFIG[0].params.providedGPP = cmpData.gppString;
-  //   USERID_CONFIG[0].params.providedGDPR = cmpData.gdprString;
+    const gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(gppData);
+    const uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(uspData);
+    const gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns(gdprData);
 
-  //   getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876/'});
-  //   const expectedVrref = encodeURIComponent(getWindowLocationStub().href);
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
-  //   events.emit(EVENTS.BID_WON, wonRequest);
+    events.emit(EVENTS.BID_WON, wonRequest);
 
-  //   expect(server.requests.length).to.be.above(0);
-  //   const request = server.requests[0];
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
 
-  //   expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(cmpData.uspString)}`);
-  //   expect(request.url).to.contain(`&gpp=${encodeURIComponent(cmpData.gppString)}`);
-  //   expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(cmpData.gdprString)}`);
-  //   expect(request.url).to.contain(`&gdpr=1`);
-
-  //   delete USERID_CONFIG[0].params.providedGDPR;
-  //   delete USERID_CONFIG[0].params.providedGPP;
-  //   delete USERID_CONFIG[0].params.providedUSP;
-  // });
+    expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(uspData)}`);
+    expect(request.url).to.contain(`&gpp=${encodeURIComponent(gppData.gppString)}`);
+    expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
+    expect(request.url).to.contain(`&gdpr=1`);
+    gppStub.restore();
+    uspStub.restore();
+    gdprStub.restore();
+  });
 
   it('should not send request if manualWinReportEnabled is true', function () {
     iiqAnalyticsAnalyticsAdapter.initOptions.manualWinReportEnabled = true;
