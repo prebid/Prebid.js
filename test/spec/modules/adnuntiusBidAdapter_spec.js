@@ -116,6 +116,7 @@ describe('adnuntiusBidAdapter', function () {
       },
       mediaTypes: {
         native: {
+          sizes: [[200, 200], [300, 300]],
           ortb: {
             assets: [{
               id: 1,
@@ -1636,7 +1637,15 @@ describe('adnuntiusBidAdapter', function () {
     });
   });
 
-  describe('interpretNativeResponse', function () {
+  describe('Native ads handling', function () {
+    it('should pass requests on correctly', function () {
+      const request = spec.buildRequests(nativeBidderRequest.bid, {});
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('bid');
+      expect(request[0]).to.have.property('data');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"assets":[{"id":1,"required":1,"img":{"type":3,"w":250,"h":250}}]},"dimensions":[[200,200],[300,300]]}]}');
+    });
+
     it('should return valid response when passed valid server response', function () {
       const interpretedResponse = spec.interpretResponse(nativeResponse, nativeBidderRequest);
       const ad = nativeResponse.body.adUnits[0].ads[0]

@@ -333,7 +333,7 @@ export const spec = {
         if (maxDeals > 0) {
           adUnit.maxDeals = maxDeals;
         }
-        if (mediaType === BANNER && mediaTypeData && mediaTypeData.sizes) {
+        if (mediaType !== VIDEO && mediaTypeData && mediaTypeData.sizes) {
           adUnit.dimensions = mediaTypeData.sizes;
         }
         networks[network].adUnits.push(adUnit);
