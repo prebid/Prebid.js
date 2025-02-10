@@ -1,5 +1,5 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { createTrackPixelHtml } from '../src/utils.js';
+import { createTrackPixelHtml, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -18,16 +18,8 @@ function getBidRequestUrl(bidRequest, bidderRequest) {
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     return bidderRequest.refererInfo.page;
   }
-  const pageUrl = isInIframe() && document.referrer ? document.referrer : window.location.href;
+  const pageUrl = inIframe() && document.referrer ? document.referrer : window.location.href;
   return encodeURIComponent(pageUrl);
-}
-
-function isInIframe() {
-  try {
-    return window.self !== window.top;
-  } catch (e) {
-    return true;
-  }
 }
 
 function getTileImageUrl(tile) {
