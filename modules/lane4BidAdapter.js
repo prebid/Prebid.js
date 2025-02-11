@@ -10,7 +10,7 @@ import {
   getBannerResponse,
   getNativeResponse,
 } from '../libraries/audUtils/bidderUtils.js';
-  
+
 const EP = 'https://rtb.lane4.io/hb';
 // Export const spec
 export const spec = {
