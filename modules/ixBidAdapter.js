@@ -126,7 +126,6 @@ export const FEATURE_TOGGLES = {
     }
   }
 };
-
 let siteID = 0;
 let gdprConsent = '';
 let usPrivacy = '';
