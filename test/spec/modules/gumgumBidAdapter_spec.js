@@ -287,7 +287,7 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request], bidderRequest)[0];
       expect(bidRequest.data).to.have.property('irisid', 'iris_c73g5jq96mwso4d8');
     });
-    it('should set the curl param when found', function() {
+    it('should set the curl param if present', function() {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request], bidderRequest)[0];
       expect(bidRequest.data).to.have.property('curl', 'http://pub.com/news');
