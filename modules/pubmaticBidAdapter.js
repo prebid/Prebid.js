@@ -61,7 +61,8 @@ const VIDEO_CUSTOM_PARAMS = {
   'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
-  'skip': DATA_TYPES.NUMBER
+  'skip': DATA_TYPES.NUMBER,
+  'pos': DATA_TYPES.NUMBER
 }
 
 const NATIVE_ASSET_IMAGE_TYPE = {
@@ -70,7 +71,8 @@ const NATIVE_ASSET_IMAGE_TYPE = {
 }
 
 const BANNER_CUSTOM_PARAMS = {
-  'battr': DATA_TYPES.ARRAY
+  'battr': DATA_TYPES.ARRAY,
+  'pos': DATA_TYPES.NUMBER,
 }
 
 const NET_REVENUE = true;
@@ -560,7 +562,6 @@ function _createBannerRequest(bid) {
         bannerObj.format = format;
       }
     }
-    bannerObj.pos = bid.mediaTypes.banner?.pos ?? 0;
     bannerObj.topframe = inIframe() ? 0 : 1;
 
     // Adding Banner custom params
@@ -570,6 +571,7 @@ function _createBannerRequest(bid) {
         bannerObj[key] = _checkParamDataType(key, bannerCustomParams[key], BANNER_CUSTOM_PARAMS[key]);
       }
     }
+    bannerObj.pos = bannerObj?.pos || 0;
   } else {
     logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
@@ -590,7 +592,6 @@ function _createVideoRequest(bid) {
 
   if (FEATURES.VIDEO && videoData !== UNDEFINED) {
     videoObj = {};
-    videoObj.pos = bid.mediaTypes.video?.pos ?? 0;
     checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
