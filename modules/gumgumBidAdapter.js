@@ -194,7 +194,8 @@ function _getVidParams(attributes) {
     skip,
     api,
     mimes,
-    playbackmethod
+    playbackmethod,
+    playbackend: pbe
   } = attributes;
   const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
@@ -214,6 +215,7 @@ function _getVidParams(attributes) {
     viw,
     vih,
     skip,
+    pbe
   };
 
   if (plcmt !== undefined && plcmt !== null) {
