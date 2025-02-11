@@ -525,7 +525,8 @@ describe('gumgumAdapter', function () {
         protocols: [1, 2],
         skip: 1,
         api: [1, 2],
-        mimes: ['video/mp4', 'video/webm']
+        mimes: ['video/mp4', 'video/webm'],
+        playbackmethod: [1, 2]
       };
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -550,6 +551,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.skip).to.eq(videoVals.skip);
       expect(bidRequest.data.api).to.eq(videoVals.api.join(','));
       expect(bidRequest.data.mimes).to.eq(videoVals.mimes.join(','));
+      expect(bidRequest.data.pbm).to.eq(videoVals.playbackmethod.join(','));
     });
     it('should add parameters associated with invideo if invideo request param is found', function () {
       const inVideoVals = {
@@ -564,7 +566,8 @@ describe('gumgumAdapter', function () {
         protocols: [1, 2],
         skip: 1,
         api: [1, 2],
-        mimes: ['video/mp4', 'video/webm']
+        mimes: ['video/mp4', 'video/webm'],
+        playbackmethod: [6]
       };
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -589,6 +592,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.skip).to.eq(inVideoVals.skip);
       expect(bidRequest.data.api).to.eq(inVideoVals.api.join(','));
       expect(bidRequest.data.mimes).to.eq(inVideoVals.mimes.join(','));
+      expect(bidRequest.data.pbm).to.eq(inVideoVals.playbackmethod.join(','));
     });
     it('should not add additional parameters depending on params field', function () {
       const request = spec.buildRequests(bidRequests)[0];

@@ -193,7 +193,8 @@ function _getVidParams(attributes) {
     playerSize = [],
     skip,
     api,
-    mimes
+    mimes,
+    playbackmethod
   } = attributes;
   const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
@@ -215,17 +216,17 @@ function _getVidParams(attributes) {
     skip,
   };
 
-  // Add vplcmt property to the result object if plcmt is available
   if (plcmt !== undefined && plcmt !== null) {
     result.vplcmt = plcmt;
   }
-  // Add api property to the result object if api is available
   if (api && api.length) {
     result.api = api.join(',');
   }
-  // Add mimes property to the result object if mimes is available
   if (mimes && mimes.length) {
     result.mimes = mimes.join(',');
+  }
+  if (playbackmethod && playbackmethod.length) {
+    result.pbm = playbackmethod.join(',');
   }
 
   return result;
