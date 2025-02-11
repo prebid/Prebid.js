@@ -4,14 +4,16 @@ import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /* General config */
-const IS_LOCAL_MODE = true;
+const IS_LOCAL_MODE = false;
 const BIDDER_CODE = 'goldbach';
 const GVLID = 580;
-const URL_LOGGING = 'https://l.da-services.ch/pb';
 const URL = 'https://goldlayer-api.prod.gbads.net/openrtb/2.5/auction';
 const URL_LOCAL = 'http://localhost:3000/openrtb/2.5/auction';
+const URL_LOGGING = 'https://l.da-services.ch/pb';
+const URL_COOKIESYNC = 'https://goldlayer-api.prod.gbads.net/cookiesync';
 const METHOD = 'POST';
 const DEFAULT_CURRENCY = 'USD';
 const LOGGING_PERCENTAGE_REGULAR = 0.0001;
@@ -148,7 +150,7 @@ const converter = ortbConverter({
     bidResponse.meta.secondaryCatIds = deepAccess(bid, 'ext.prebid.video.secondary_categories');
 
     // Setting extensions: outstream video renderer
-    if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
+    if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream' && (bidResponse.vastUrl || bidResponse.vastXml)) {
       bidResponse.renderer = getRendererForBid(bidRequest, bidResponse);
     }
     return bidResponse;
@@ -174,9 +176,9 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return typeof bid.params.publisherId === 'string' && Array.isArray(bid.sizes);
   },
-  buildRequests: function (pbjsBidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const url = IS_LOCAL_MODE ? URL_LOCAL : URL;
-    const data = converter.toORTB({pbjsBidRequests, bidderRequest})
+    const data = converter.toORTB({ bidRequests, bidderRequest })
     return [{
       method: METHOD,
       url: url,
@@ -191,6 +193,19 @@ export const spec = {
   interpretResponse: function (ortbResponse, request) {
     const bids = converter.fromORTB({response: ortbResponse.body, request: request.data}).bids;
     return bids
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = []
+    if (hasPurpose1Consent(gdprConsent)) {
+      let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
+      if (type) {
+        syncs.push({
+          type: type,
+          url: `https://ib.adnxs.com/getuid?${URL_COOKIESYNC}?xandrId=$UID`
+        })
+      }
+    }
+    return syncs
   },
   onTimeout: function(timeoutData) {
     const payload = {
