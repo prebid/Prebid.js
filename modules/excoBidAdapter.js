@@ -1,3 +1,4 @@
+
 import { config } from 'src/config';
 import { _each, mergeDeep, deepAccess, logInfo, logWarn, insertUserSyncIframe, logError, isStr, generateUUID } from '../src/utils.js';
 import { registerBidder } from 'src/adapters/bidderFactory';
@@ -84,6 +85,25 @@ export class AdapterHelpers {
 
   isBannerBid(bid) {
     return deepAccess(bid, 'mediaTypes.banner') || !this.isVideoBid(bid);
+  }
+
+  isBannerRatioValid([width, height]) {
+    const r = parseInt(width, 10) / parseInt(height, 10);
+    return 0.7 < r && r < 1.7;
+  };
+
+  isBannerSizeValid(bannerSize) {
+    if (isArray(bannerSize) && bannerSize.length) {
+      if (isArray(bannerSize[0])) {
+        return bannerSize.every((sizes) => {
+          return this.isBannerRatioValid(sizes);
+        });
+      }
+
+      return this.isBannerRatioValid(bannerSize);
+    }
+
+    return false;
   }
 
   adoptVideoImp(imp, bidRequest) {
@@ -232,6 +252,10 @@ export const spec = {
         helpers.log('warn', `Error: '${prop}' must be a string (${suggestion}). ${message}`);
       });
 
+      return false;
+    }
+
+    if (helpers.isBannerBid(bid) && helpers.isBannerSizeValid(bid.sizes) === false) {
       return false;
     }
 
