@@ -10,10 +10,6 @@ import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
 
-import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
-
-enablePreviousAuctionInfo({ bidderCode: 'criteo' });
-
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid

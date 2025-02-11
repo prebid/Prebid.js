@@ -15,8 +15,6 @@ export const resetPreviousAuctionInfo = () => {
 };
 
 export const enablePreviousAuctionInfo = (config, cb = initHandlers) => {
-  // eslint-disable-next-line no-console
-  console.log('enablePreviousAuctionInfo: ', { config });
   const { bidderCode } = config;
   const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderCode);
   if (!enabledBidder) enabledBidders.push({ bidderCode, maxQueueLength: config.maxQueueLength || 10 });
@@ -87,12 +85,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
         }
       });
     }
-    // eslint-disable-next-line no-console
-    console.log('onAuctionEndHandler: ', { auctionState });
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-  }
+  } catch (error) {}
 }
 
 const onBidWonHandler = (winningBid) => {
@@ -105,8 +98,6 @@ export const onBidRequestedHandler = (bidRequest) => {
     if (enabledBidder && auctionState[bidRequest.bidderCode]) {
       auctionState[bidRequest.bidderCode].forEach(prevAuctPayload => {
         if (winningBidsMap[prevAuctPayload.transactionId]) {
-          // prevAuctPayload.targetedBidCpm = winningBidsMap[prevAuctPayload.transactionId]?.adserverTargeting.hb_pb;
-          // prevAuctPayload.highestBidCpm = winningBidsMap[prevAuctPayload.transactionId]?.cpm;
           prevAuctPayload.rendered = 1;
           delete winningBidsMap[prevAuctPayload.transactionId];
         }
@@ -116,21 +107,12 @@ export const onBidRequestedHandler = (bidRequest) => {
         }
       });
 
-      // Ensure ortb2, ext, and prebid exist
       bidRequest.ortb2 = Object.assign({}, bidRequest.ortb2);
       bidRequest.ortb2.ext = Object.assign({}, bidRequest.ortb2.ext);
       bidRequest.ortb2.ext.prebid = Object.assign({}, bidRequest.ortb2.ext.prebid);
 
-      // Assign previous auction data
       bidRequest.ortb2.ext.prebid.previousauctioninfo = auctionState[bidRequest.bidderCode];
-
-      // eslint-disable-next-line no-console
-      console.log('onBidRequestedHandler:', { bidRequestOrtb2: JSON.stringify(bidRequest.ortb2), auctionState });
-
       delete auctionState[bidRequest.bidderCode];
     }
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-  }
+  } catch (error) {}
 }

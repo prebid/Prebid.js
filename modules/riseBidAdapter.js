@@ -14,10 +14,6 @@ import {
   buildBidResponse,
 } from '../libraries/riseUtils/index.js';
 
-import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
-
-enablePreviousAuctionInfo({ bidderCode: 'rise' });
-
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'rise';
 const ADAPTER_VERSION = '6.0.0';
