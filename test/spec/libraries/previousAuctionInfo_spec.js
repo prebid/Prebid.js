@@ -124,7 +124,7 @@ describe('previous auction info', () => {
   });
 
   describe('onBidRequestedHandler', () => {
-    it('should update highestBidCpm and rendered fields if a pbjs bid wins', () => {
+    it('should update the rendered field if a pbjs bid wins', () => {
       const config = { bidderCode: 'testBidder3' };
       previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
 
@@ -134,20 +134,19 @@ describe('previous auction info', () => {
       };
 
       previousAuctionInfo.winningBidsMap['trans789'] = {
-        cpm: 5.6,
         transactionId: 'trans789',
-        adserverTargeting: { hb_pb: 5 }
+        rendered: 1
       };
 
       previousAuctionInfo.auctionState['testBidder3'] = [
-        { transactionId: 'trans789', highestBidCpm: 0, rendered: 0 }
+        { transactionId: 'trans789', rendered: 0 }
       ];
 
       previousAuctionInfo.onBidRequestedHandler(bidRequest);
       const updatedInfo = bidRequest.ortb2.ext.prebid.previousauctioninfo;
 
       expect(updatedInfo).to.be.an('array').with.lengthOf(1);
-      expect(updatedInfo[0]).to.include({ highestBidCpm: 5.6, targetedBidCpm: 5, rendered: 1 });
+      expect(updatedInfo[0]).to.include({ rendered: 1 });
     });
 
     it('should remove winning bid entry from winningBidsMap after updating auctionState', () => {
