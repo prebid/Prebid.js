@@ -69,7 +69,7 @@ function imp(buildImp, bidRequest, context) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER], // Supported media types
+  supportedMediaTypes: [BANNER],
 
   // Validate bid request
   isBidRequestValid: function (bid) {
