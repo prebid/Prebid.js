@@ -3,11 +3,14 @@ import {AuctionIndex} from '../../../../src/auctionIndex.js';
 describe('auction index', () => {
   let index, auctions;
 
-  function mockAuction(id, adUnits, bidderRequests) {
+  function mockAuction(id, adUnits, bidderRequests, ortb2) {
     return {
       getAuctionId() { return id },
       getAdUnits() { return adUnits; },
-      getBidRequests() { return bidderRequests; }
+      getBidRequests() { return bidderRequests; },
+      getFPD() {
+        return { global: { ortb2 } }
+      }
     }
   }
 
@@ -126,4 +129,27 @@ describe('auction index', () => {
       });
     })
   });
+
+  describe('getOrtb2', () => {
+    let bidderRequests, adUnits = [];
+    beforeEach(() => {
+      bidderRequests = [
+        {bidderRequestId: 'ber1', ortb2: {}, bids: [{bidId: 'b1', adUnitId: 'au1'}, {}]},
+        {bidderRequestId: 'ber2', bids: [{bidId: 'b2', adUnitId: 'au2'}]}
+      ]
+      auctions = [
+        mockAuction('a1', [adUnits[0]], [bidderRequests[0], {}]),
+        mockAuction('a2', [adUnits[1]], [bidderRequests[1]], {ortb2Field: true})
+      ]
+    });
+    it('should return ortb2 for bid if exists on bidder request', () => {
+      const ortb2 = index.getOrtb2({bidderRequestId: 'ber1'});
+      expect(ortb2).to.be.a('object');
+    })
+
+    it('should return ortb2 from auction if does not exist on bidder request', () => {
+      const ortb2 = index.getOrtb2({bidderRequestId: 'ber2', auctionId: 'a2'});
+      expect(ortb2).to.be.deep.equals({ortb2Field: true});
+    })
+  })
 });

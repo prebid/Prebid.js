@@ -1001,12 +1001,11 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            userIdAsEids: userIdAsEids
           }];
           // enrich bid request with userId key/value
-
+          mockBidderRequest.ortb2 = {user: {ext: {eids: userIdAsEids}}}
           const request = spec.buildRequests(bidRequestsWithUserId, mockBidderRequest);
-          expect(request[0].data.user.ext.eids).to.equal(userIdAsEids);
+          expect(request[0].data.user.ext.eids).to.eql(userIdAsEids);
         });
 
         it(`when no user ids are available, it should not send any extended ids`, function () {

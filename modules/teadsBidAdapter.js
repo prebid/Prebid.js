@@ -1,7 +1,8 @@
-import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
+import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
+import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -33,8 +34,8 @@ export const spec = {
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
-      let isValidPlacementId = _validateId(getValue(bid.params, 'placementId'));
-      let isValidPageId = _validateId(getValue(bid.params, 'pageId'));
+      let isValidPlacementId = _validateId(bid.params.placementId);
+      let isValidPageId = _validateId(bid.params.pageId);
       isValid = isValidPlacementId && isValidPageId;
     }
 
@@ -61,15 +62,16 @@ export const spec = {
       networkBandwidth: getConnectionDownLink(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
+      device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
-      historyLength: topWindow.history?.length,
+      historyLength: getHLen(),
       viewportHeight: topWindow.visualViewport?.height,
       viewportWidth: topWindow.visualViewport?.width,
-      hardwareConcurrency: topWindow.navigator?.hardwareConcurrency,
-      deviceMemory: topWindow.navigator?.deviceMemory,
+      hardwareConcurrency: getHC(),
+      deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -111,12 +113,12 @@ export const spec = {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
-    const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
+    const userAgentClientHints = firstBidRequest?.ortb2?.device?.sua;
     if (userAgentClientHints) {
       payload.userAgentClientHints = userAgentClientHints;
     }
 
-    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    const dsa = bidderRequest?.ortb2?.regs?.ext?.dsa;
     if (dsa) {
       payload.dsa = dsa;
     }
@@ -285,10 +287,10 @@ function findGdprStatus(gdprApplies, gdprData) {
 
 function buildRequestObject(bid) {
   const reqObj = {};
-  let placementId = getValue(bid.params, 'placementId');
-  let pageId = getValue(bid.params, 'pageId');
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
-  const videoPlcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
+  let placementId = bid.params.placementId;
+  let pageId = bid.params.pageId;
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
+  const videoPlcmt = bid?.mediaTypes?.video?.plcmt;
 
   reqObj.sizes = getSizes(bid);
   reqObj.bidId = getBidIdParameter('bidId', bid);
@@ -307,9 +309,9 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  let playerSize = bid?.mediaTypes?.video?.playerSize;
+  let videoSizes = bid?.mediaTypes?.video?.sizes;
+  let bannerSizes = bid?.mediaTypes?.banner?.sizes;
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
     let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
@@ -341,7 +343,7 @@ function _validateId(id) {
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
 function getFirstPartyTeadsIdParameter(validBidRequests) {
-  const firstPartyTeadsIdFromUserIdModule = deepAccess(validBidRequests, '0.userId.teadsId');
+  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userId?.teadsId;
 
   if (firstPartyTeadsIdFromUserIdModule) {
     return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};

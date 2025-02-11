@@ -26,6 +26,7 @@ const {
   BID_TIMEOUT,
   BILLABLE_EVENT,
   SEAT_NON_BID,
+  PBS_ANALYTICS,
   BID_REJECTED
 } = EVENTS;
 
@@ -639,6 +640,45 @@ describe('magnite analytics adapter', function () {
       ]);
     });
 
+    it('should pass along atag data', function () {
+      const PBS_ANALYTICS_EVENT = {
+        'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+        atag: [{
+          'stage': 'processed-auction-request',
+          'module': 'mgni-timeout-optimization',
+          'analyticstags': [{
+            activities: [{
+              name: 'optimize-tmax',
+              status: 'success',
+              results: [{
+                status: 'success',
+                values: {
+                  'scenario': 'a',
+                  'rule': 'b',
+                  'tmax': 3
+                }
+              }]
+            }]
+          }]
+        }]
+      }
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+      events.emit(PBS_ANALYTICS, PBS_ANALYTICS_EVENT)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(message.auctions[0].experiments[0]).to.deep.equal({
+        name: 'a',
+        rule: 'b',
+        value: 3
+      });
+    });
+
     it('should pass along user ids', function () {
       let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].userId = {
@@ -717,6 +757,34 @@ describe('magnite analytics adapter', function () {
 
           let message = JSON.parse(server.requests[0].requestBody);
           expect(message.auctions[0].adUnits[0].bids[0].bidResponse.networkId).to.equal(test.expected);
+        });
+      });
+
+      // meta mediatype handler things
+      [
+        { input: undefined, expected: 'banner', hasOg: false },
+        { input: 'banner', expected: 'banner', hasOg: false },
+        { input: 'video', expected: 'video', hasOg: true }
+      ].forEach((test, index) => {
+        it(`should handle meta mediaType stuff correctly - #${index + 1}`, function () {
+          events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+          events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+          let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+          bidResponse.meta = {
+            mediaType: test.input
+          };
+
+          events.emit(BID_RESPONSE, bidResponse);
+          events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+          events.emit(AUCTION_END, MOCK.AUCTION_END);
+          events.emit(BID_WON, MOCK.BID_WON);
+          clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+          let message = JSON.parse(server.requests[0].requestBody);
+          expect(message.auctions[0].adUnits[0].bids[0].bidResponse.mediaType).to.equal(test.expected);
+          if (test.hasOg) expect(message.auctions[0].adUnits[0].bids[0].bidResponse.ogMediaType).to.equal('banner');
+          else expect(message.auctions[0].adUnits[0].bids[0].bidResponse).to.not.haveOwnProperty('ogMediaType');
         });
       });
     });
@@ -2262,7 +2330,7 @@ describe('magnite analytics adapter', function () {
     const runNonBidAuction = () => {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(SEAT_NON_BID, seatnonbid)
+      events.emit(PBS_ANALYTICS, seatnonbid)
       events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
       clock.tick(rubiConf.analyticsBatchTimeout + 1000);

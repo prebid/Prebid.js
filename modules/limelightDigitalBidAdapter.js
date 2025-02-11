@@ -32,7 +32,7 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll', 'iionads', 'apester', 'adsyield'],
+  aliases: ['pll', 'iionads', 'apester', 'adsyield', 'tgm'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -128,6 +128,8 @@ function buildRequest(winTop, host, adUnits, bidderRequest) {
       deviceWidth: winTop.screen.width,
       deviceHeight: winTop.screen.height,
       adUnits: adUnits,
+      ortb2: bidderRequest?.ortb2,
+      refererInfo: bidderRequest?.refererInfo,
       sua: bidderRequest?.ortb2?.device?.sua,
       page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
     }
@@ -164,6 +166,7 @@ function buildPlacement(bidRequest) {
         }
       }),
       type: bidRequest.params.adUnitType.toUpperCase(),
+      ortb2Imp: bidRequest.ortb2Imp,
       publisherId: bidRequest.params.publisherId,
       userIdAsEids: bidRequest.userIdAsEids,
       supplyChain: bidRequest.schain,

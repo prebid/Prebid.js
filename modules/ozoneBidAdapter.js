@@ -22,7 +22,7 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const ORIGIN_DEV = 'https://test.ozpr.net';
-const OZONEVERSION = '2.9.2';
+const OZONEVERSION = '2.9.4';
 export const spec = {
   gvlid: 524,
   aliases: [{code: 'lmc', gvlid: 524}, {code: 'venatus', gvlid: 524}],
@@ -227,9 +227,13 @@ export const spec = {
     const getParams = this.getGetParametersAsObject();
     const wlOztestmodeKey = whitelabelPrefix + 'testmode';
     const isTestMode = getParams[wlOztestmodeKey] || null; // this can be any string, it's used for testing ads
-    ozoneRequest.device = {'w': window.innerWidth, 'h': window.innerHeight};
+    ozoneRequest.device = bidderRequest?.ortb2?.device || {};
     let placementIdOverrideFromGetParam = this.getPlacementIdOverrideFromGetParam(); // null or string
     let schain = null;
+    var auctionId = deepAccess(validBidRequests, '0.ortb2.source.tid');
+    if (auctionId === '0') {
+      auctionId = null;
+    }
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
       let placementId = placementIdOverrideFromGetParam || this.getPlacementId(ozoneBidRequest); // prefer to use a valid override param, else the bidRequest placement Id
@@ -329,6 +333,13 @@ export const spec = {
       if (gpid) {
         deepSetValue(obj, 'ext.gpid', gpid);
       }
+      let transactionId = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.tid');
+      if (transactionId) {
+        obj.ext[whitelabelBidder].transactionId = transactionId; // this is the transactionId PER adUnit, common across bidders for this unit
+      }
+      if (auctionId) {
+        obj.ext[whitelabelBidder].auctionId = auctionId; // we were sent a valid auctionId to use - this will also be used as the root id value for the request
+      }
       if (fledgeEnabled) { // fledge is enabled at some config level - pbjs.setBidderConfig or pbjs.setConfig
         const auctionEnvironment = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.ae'); // this will be set for one of 3 reasons; adunit, setBidderConfig, setConfig
         if (isInteger(auctionEnvironment)) {
@@ -407,22 +418,16 @@ export const spec = {
     }
     extObj[whitelabelBidder].cookieDeprecationLabel = deepAccess(bidderRequest, 'ortb2.device.ext.cdep', 'none');
     logInfo('cookieDeprecationLabel from bidderRequest object = ' + extObj[whitelabelBidder].cookieDeprecationLabel);
-    let ozUuid = generateUUID();
     let batchRequestsVal = this.getBatchRequests(); // false|numeric
     if (typeof batchRequestsVal === 'number') {
       logInfo('going to batch the requests');
       let arrRet = []; // return an array of objects containing data describing max 10 bids
       for (let i = 0; i < tosendtags.length; i += batchRequestsVal) {
-        if (bidderRequest.auctionId) {
-          logInfo('Found bidderRequest.auctionId - will pass these values through & not generate our own id');
-          ozoneRequest.id = bidderRequest.auctionId;
-          ozoneRequest.auctionId = bidderRequest.auctionId;
-          deepSetValue(ozoneRequest, 'source.tid', deepAccess(bidderRequest, 'ortb2.source.tid'));
-        } else {
-          logInfo('Did not find bidderRequest.auctionId - will generate our own id');
-          ozoneRequest.id = ozUuid; // Unique ID of the bid request, provided by the exchange. (REQUIRED)
-        }
+        ozoneRequest.id = generateUUID(); // Unique ID of the bid request, provided by the exchange. (REQUIRED)
         deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
+        if (auctionId) {
+          deepSetValue(ozoneRequest, 'source.tid', auctionId);
+        }
         ozoneRequest.imp = tosendtags.slice(i, i + batchRequestsVal);
         ozoneRequest.ext = extObj;
         if (ozoneRequest.imp.length > 0) {
@@ -440,18 +445,13 @@ export const spec = {
     logInfo('requests will not be batched.');
     if (singleRequest) {
       logInfo('buildRequests starting to generate response for a single request');
-      if (bidderRequest.auctionId) {
-        logInfo('Found bidderRequest.auctionId - will pass these values through & not generate our own id');
-        ozoneRequest.id = bidderRequest.auctionId;
-        ozoneRequest.auctionId = bidderRequest.auctionId;
-        deepSetValue(ozoneRequest, 'source.tid', deepAccess(bidderRequest, 'ortb2.source.tid'));
-      } else {
-        logInfo('Did not find bidderRequest.auctionId - will generate our own id');
-        ozoneRequest.id = ozUuid; // Unique ID of the bid request, provided by the exchange. (REQUIRED)
-      }
+      ozoneRequest.id = generateUUID(); // Unique ID of the bid request, provided by the exchange. (REQUIRED)
       ozoneRequest.imp = tosendtags;
       ozoneRequest.ext = extObj;
       deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
+      if (auctionId) {
+        deepSetValue(ozoneRequest, 'source.tid', auctionId);
+      }
       var ret = {
         method: 'POST',
         url: this.getAuctionUrl(),
@@ -470,6 +470,9 @@ export const spec = {
       ozoneRequestSingle.imp = [imp];
       ozoneRequestSingle.ext = extObj;
       deepSetValue(ozoneRequestSingle, 'user.ext.eids', userExtEids);
+      if (auctionId) {
+        deepSetValue(ozoneRequestSingle, 'source.tid', auctionId);
+      }
       logInfo('buildRequests RequestSingle (for non-single) = ', ozoneRequestSingle);
       return {
         method: 'POST',
@@ -491,13 +494,13 @@ export const spec = {
     logInfo('getFloorObjectForAuction mediaTypesSizes : ', mediaTypesSizes);
     let ret = {};
     if (mediaTypesSizes.banner) {
-      ret.banner = bidRequestRef.getFloor({mediaType: 'banner', currency: 'USD', size: mediaTypesSizes.banner});
+      ret.banner = bidRequestRef.getFloor({mediaType: 'banner', currency: 'USD', size: mediaTypesSizes.banner}) || {};
     }
     if (mediaTypesSizes.video) {
-      ret.video = bidRequestRef.getFloor({mediaType: 'video', currency: 'USD', size: mediaTypesSizes.video});
+      ret.video = bidRequestRef.getFloor({mediaType: 'video', currency: 'USD', size: mediaTypesSizes.video}) || {};
     }
     if (mediaTypesSizes.native) {
-      ret.native = bidRequestRef.getFloor({mediaType: 'native', currency: 'USD', size: mediaTypesSizes.native});
+      ret.native = bidRequestRef.getFloor({mediaType: 'native', currency: 'USD', size: mediaTypesSizes.native}) || {};
     }
     logInfo('getFloorObjectForAuction returning : ', deepClone(ret));
     return ret;
@@ -535,7 +538,7 @@ export const spec = {
       for (let j = 0; j < sb.bid.length; j++) {
         let thisRequestBid = this.getBidRequestForBidId(sb.bid[j].impid, request.bidderRequest.bids);
         logInfo(`seatbid:${i}, bid:${j} Going to set default w h for seatbid/bidRequest`, sb.bid[j], thisRequestBid);
-        const {defaultWidth, defaultHeight} = defaultSize(thisRequestBid);
+        let {defaultWidth, defaultHeight} = defaultSize(thisRequestBid);
         let thisBid = ozoneAddStandardProperties(sb.bid[j], defaultWidth, defaultHeight);
         thisBid.meta = {advertiserDomains: thisBid.adomain || []};
         let videoContext = null;
@@ -567,8 +570,8 @@ export const spec = {
           this.setBidMediaTypeIfNotExist(thisBid, BANNER);
         }
         if (enhancedAdserverTargeting) {
-          let allBidsForThisBidid = ozoneGetAllBidsForBidId(thisBid.bidId, serverResponse.seatbid);
-          logInfo('Going to iterate allBidsForThisBidId', allBidsForThisBidid);
+          let allBidsForThisBidid = ozoneGetAllBidsForBidId(thisBid.bidId, serverResponse.seatbid, defaultWidth, defaultHeight);
+          logInfo('Going to iterate allBidsForThisBidId', deepClone(allBidsForThisBidid));
           Object.keys(allBidsForThisBidid).forEach((bidderName, index, ar2) => {
             logInfo(`adding adserverTargeting for ${bidderName} for bidId ${thisBid.bidId}`);
             adserverTargeting[whitelabelPrefix + '_' + bidderName] = bidderName;
@@ -606,6 +609,7 @@ export const spec = {
           }
         }
         let {seat: winningSeat, bid: winningBid} = ozoneGetWinnerForRequestBid(thisBid.bidId, serverResponse.seatbid);
+        winningBid = ozoneAddStandardProperties(winningBid, defaultWidth, defaultHeight);
         adserverTargeting[whitelabelPrefix + '_auc_id'] = String(aucId); // was request.bidderRequest.auctionId
         adserverTargeting[whitelabelPrefix + '_winner'] = String(winningSeat);
         adserverTargeting[whitelabelPrefix + '_bid'] = 'true';
@@ -890,7 +894,9 @@ export const spec = {
       params: bid.params,
       price: bid.price,
       transactionId: bid.transactionId,
-      ttl: bid.ttl
+      ttl: bid.ttl,
+      ortb2: deepAccess(bid, 'ortb2'),
+      ortb2Imp: deepAccess(bid, 'ortb2Imp'),
     };
     if (bid.hasOwnProperty('floorData')) {
       logObj.floorData = bid.floorData;
@@ -899,7 +905,7 @@ export const spec = {
   }
 };
 export function injectAdIdsIntoAllBidResponses(seatbid) {
-  logInfo('injectAdIdsIntoAllBidResponses', seatbid);
+  logInfo('injectAdIdsIntoAllBidResponses', deepClone(seatbid));
   for (let i = 0; i < seatbid.length; i++) {
     let sb = seatbid[i];
     for (let j = 0; j < sb.bid.length; j++) {
@@ -951,7 +957,7 @@ export function ozoneGetWinnerForRequestBid(requestBidId, serverResponseSeatBid)
   }
   return {'seat': winningSeat, 'bid': thisBidWinner};
 }
-export function ozoneGetAllBidsForBidId(matchBidId, serverResponseSeatBid) {
+export function ozoneGetAllBidsForBidId(matchBidId, serverResponseSeatBid, defaultWidth, defaultHeight) {
   let objBids = {};
   for (let j = 0; j < serverResponseSeatBid.length; j++) {
     let theseBids = serverResponseSeatBid[j].bid;
@@ -960,10 +966,11 @@ export function ozoneGetAllBidsForBidId(matchBidId, serverResponseSeatBid) {
       if (theseBids[k].impid === matchBidId) {
         if (objBids.hasOwnProperty(thisSeat)) { // > 1 bid for an adunit from a bidder - only use the one with the highest bid
           if (objBids[thisSeat]['price'] < theseBids[k].price) {
-            objBids[thisSeat] = theseBids[k];
+            objBids[thisSeat] = ozoneAddStandardProperties(theseBids[k], defaultWidth, defaultHeight);
           }
         } else {
           objBids[thisSeat] = theseBids[k];
+          objBids[thisSeat] = ozoneAddStandardProperties(theseBids[k], defaultWidth, defaultHeight);
         }
       }
     }

@@ -142,7 +142,7 @@ function getFloor(bid) {
       size: '*',
       bidRequest: bid,
     });
-    return floor.floor;
+    return floor?.floor;
   } catch (e) {
     logError('call to getFloor failed: ', e);
     return DEFAULT_MIN_FLOOR;

@@ -58,19 +58,7 @@ const SOURCE_RTI_MAPPING = {
   'neustar.biz': 'fabrickId',
   'zeotap.com': 'zeotapIdPlus',
   'uidapi.com': 'UID2',
-  'adserver.org': 'TDID',
-  'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
-  'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
-  'epsilon.com': '', // Publisher Link, publinkId
-  'audigent.com': '', // Hadron ID from Audigent, hadronId
-  'pubcid.org': '', // SharedID, pubcid
-  'utiq.com': '', // Utiq
-  'criteo.com': '', // Criteo
-  'euid.eu': '', // EUID
-  'intimatemerger.com': '',
-  '33across.com': '',
-  'liveintent.indexexchange.com': '',
-  'google.com': ''
+  'adserver.org': 'TDID'
 };
 const PROVIDERS = [
   'lipbid',
@@ -508,6 +496,11 @@ function parseBid(rawBid, currency, bidRequest) {
   if (rawBid.ext?.dsa) {
     bid.meta.dsa = rawBid.ext.dsa
   }
+
+  if (rawBid.ext?.ibv) {
+    bid.ext = bid.ext || {}
+    bid.ext.ibv = rawBid.ext.ibv
+  }
   return bid;
 }
 
@@ -648,10 +641,9 @@ function getEidInfo(allEids) {
   if (isArray(allEids)) {
     for (const eid of allEids) {
       const isSourceMapped = SOURCE_RTI_MAPPING.hasOwnProperty(eid.source);
-      const allowAllEidsFeatureEnabled = FEATURE_TOGGLES.isFeatureEnabled('pbjs_allow_all_eids');
       const hasUids = deepAccess(eid, 'uids.0');
 
-      if ((isSourceMapped || allowAllEidsFeatureEnabled) && hasUids) {
+      if (hasUids) {
         seenSources[eid.source] = true;
 
         if (isSourceMapped && SOURCE_RTI_MAPPING[eid.source] !== '') {
@@ -659,7 +651,6 @@ function getEidInfo(allEids) {
             rtiPartner: SOURCE_RTI_MAPPING[eid.source]
           };
         }
-        delete eid.uids[0].atype;
         toSend.push(eid);
         if (toSend.length >= MAX_EID_SOURCES) {
           break;
@@ -765,8 +756,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         method: 'POST',
         url: exchangeUrl,
         data: deepClone(r),
-        option: {
+        options: {
           contentType: 'text/plain',
+          withCredentials: true
         },
         validBidRequests
       });

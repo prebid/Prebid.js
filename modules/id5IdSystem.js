@@ -13,14 +13,13 @@ import {
   isPlainObject,
   logError,
   logInfo,
-  logWarn,
-  safeJSONParse
+  logWarn
 } from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
+import {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {GreedyPromise} from '../src/utils/promise.js';
 import {loadExternalScript} from '../src/adloader.js';
@@ -34,18 +33,11 @@ import {loadExternalScript} from '../src/adloader.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
-const NB_EXP_DAYS = 30;
 export const ID5_STORAGE_NAME = 'id5id';
-export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
-const LOCAL_STORAGE = 'html5';
 const LOG_PREFIX = 'User ID - ID5 submodule: ';
 const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 const ID5_DOMAIN = 'id5-sync.com';
 const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
-
-// order the legacy cookie names in reverse priority order so the last
-// cookie in the array is the most preferred to use
-const LEGACY_COOKIE_NAMES = ['pbjs-id5id', 'id5id.1st', 'id5id'];
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
@@ -113,6 +105,49 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
  */
 
+const DEFAULT_EIDS = {
+  'id5id': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    source: ID5_DOMAIN,
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'euid': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function (data) {
+      return data.source;
+    },
+    atype: 3,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'trueLinkId': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function (data) {
+      return TRUE_LINK_SOURCE;
+    },
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  }
+};
+
 /** @type {Submodule} */
 export const id5IdSubmodule = {
   /**
@@ -135,6 +170,24 @@ export const id5IdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
+    if (value && value.ids !== undefined) {
+      const responseObj = {};
+      const eids = {};
+      Object.entries(value.ids).forEach(([key, value]) => {
+        let eid = value.eid;
+        let uid = eid?.uids?.[0]
+        responseObj[key] = {
+          uid: uid?.id,
+          ext: uid?.ext
+        };
+        eids[key] = function () {
+          return eid;
+        }; // register function to get eid for each id (key) decoded
+      });
+      this.eids = eids; // overwrite global eids
+      return responseObj;
+    }
+
     let universalUid, publisherTrueLinkId;
     let ext = {};
 
@@ -145,7 +198,7 @@ export const id5IdSubmodule = {
     } else {
       return undefined;
     }
-
+    this.eids = DEFAULT_EIDS;
     let responseObj = {
       id5id: {
         uid: universalUid,
@@ -163,7 +216,7 @@ export const id5IdSubmodule = {
 
     if (publisherTrueLinkId) {
       responseObj.trueLinkId = {
-        uid: publisherTrueLinkId,
+        uid: publisherTrueLinkId
       };
     }
 
@@ -231,7 +284,7 @@ export const id5IdSubmodule = {
    * @param {SubmoduleConfig} config
    * @param {ConsentData|undefined} consentData
    * @param {Object} cacheIdObj - existing id, if any
-   * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
+   * @return {IdResponse} A response object that contains id.
    */
   extendId(config, consentData, cacheIdObj) {
     if (!hasWriteConsentToLocalStorage(consentData)) {
@@ -239,54 +292,16 @@ export const id5IdSubmodule = {
       return cacheIdObj;
     }
 
-    const partnerId = validateConfig(config) ? config.params.partner : 0;
-    incrementNb(partnerId);
-
     logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
+    if (cacheIdObj) {
+      cacheIdObj.nbPage = incrementNb(cacheIdObj);
+    }
     return cacheIdObj;
   },
-  eids: {
-    'id5id': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      source: ID5_DOMAIN,
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'euid': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return data.source;
-      },
-      atype: 3,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'trueLinkId': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return TRUE_LINK_SOURCE;
-      },
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    }
-
+  primaryIds: ['id5id', 'trueLinkId'],
+  eids: DEFAULT_EIDS,
+  _reset() {
+    this.eids = DEFAULT_EIDS;
   }
 };
 
@@ -401,8 +416,8 @@ export class IdFetchFlow {
     const params = this.submoduleConfig.params;
     const hasGdpr = (this.gdprConsentData && typeof this.gdprConsentData.gdprApplies === 'boolean' && this.gdprConsentData.gdprApplies) ? 1 : 0;
     const referer = getRefererInfo();
-    const signature = (this.cacheIdObj && this.cacheIdObj.signature) ? this.cacheIdObj.signature : getLegacyCookieSignature();
-    const nbPage = incrementAndResetNb(params.partner);
+    const signature = this.cacheIdObj ? this.cacheIdObj.signature : undefined;
+    const nbPage = incrementNb(this.cacheIdObj);
     const trueLinkInfo = window.id5Bootstrap ? window.id5Bootstrap.getTrueLinkInfo() : {booted: false};
 
     const data = {
@@ -456,7 +471,6 @@ export class IdFetchFlow {
   #processFetchCallResponse(fetchCallResponse) {
     try {
       if (fetchCallResponse.privacy) {
-        storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(fetchCallResponse.privacy), NB_EXP_DAYS);
         if (window.id5Bootstrap && window.id5Bootstrap.setPrivacy) {
           window.id5Bootstrap.setPrivacy(fetchCallResponse.privacy);
         }
@@ -475,7 +489,7 @@ async function loadExternalModule(url) {
       resolve();
     } else {
       try {
-        loadExternalScript(url, 'id5', resolve);
+        loadExternalScript(url, MODULE_TYPE_UID, 'id5', resolve);
       } catch (error) {
         reject(error);
       }
@@ -507,89 +521,19 @@ function validateConfig(config) {
     logError(LOG_PREFIX + 'storage required to be set');
     return false;
   }
-
-  // in a future release, we may return false if storage type or name are not set as required
-  if (config.storage.type !== LOCAL_STORAGE) {
-    logWarn(LOG_PREFIX + `storage type recommended to be '${LOCAL_STORAGE}'. In a future release this may become a strict requirement`);
-  }
-  // in a future release, we may return false if storage type or name are not set as required
   if (config.storage.name !== ID5_STORAGE_NAME) {
-    logWarn(LOG_PREFIX + `storage name recommended to be '${ID5_STORAGE_NAME}'. In a future release this may become a strict requirement`);
+    logWarn(LOG_PREFIX + `storage name recommended to be '${ID5_STORAGE_NAME}'.`);
   }
 
   return true;
 }
 
-export function expDaysStr(expDays) {
-  return (new Date(Date.now() + (1000 * 60 * 60 * 24 * expDays))).toUTCString();
-}
-
-export function nbCacheName(partnerId) {
-  return `${ID5_STORAGE_NAME}_${partnerId}_nb`;
-}
-
-export function storeNbInCache(partnerId, nb) {
-  storeInLocalStorage(nbCacheName(partnerId), nb, NB_EXP_DAYS);
-}
-
-export function getNbFromCache(partnerId) {
-  let cacheNb = getFromLocalStorage(nbCacheName(partnerId));
-  return (cacheNb) ? parseInt(cacheNb) : 0;
-}
-
-function incrementNb(partnerId) {
-  const nb = (getNbFromCache(partnerId) + 1);
-  storeNbInCache(partnerId, nb);
-  return nb;
-}
-
-function incrementAndResetNb(partnerId) {
-  const result = incrementNb(partnerId);
-  storeNbInCache(partnerId, 0);
-  return result;
-}
-
-function getLegacyCookieSignature() {
-  let legacyStoredValue;
-  LEGACY_COOKIE_NAMES.forEach(function (cookie) {
-    if (storage.getCookie(cookie)) {
-      legacyStoredValue = safeJSONParse(storage.getCookie(cookie)) || legacyStoredValue;
-    }
-  });
-  return (legacyStoredValue && legacyStoredValue.signature) || '';
-}
-
-/**
- * This will make sure we check for expiration before accessing local storage
- * @param {string} key
- */
-export function getFromLocalStorage(key) {
-  const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
-  // empty string means no expiration set
-  if (storedValueExp === '') {
-    return storage.getDataFromLocalStorage(key);
-  } else if (storedValueExp) {
-    if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-      return storage.getDataFromLocalStorage(key);
-    }
+function incrementNb(cachedObj) {
+  if (cachedObj && cachedObj.nbPage !== undefined) {
+    return cachedObj.nbPage + 1;
+  } else {
+    return 1;
   }
-  // if we got here, then we have an expired item or we didn't set an
-  // expiration initially somehow, so we need to remove the item from the
-  // local storage
-  storage.removeDataFromLocalStorage(key);
-  return null;
-}
-
-/**
- * Ensure that we always set an expiration in local storage since
- * by default it's not required
- * @param {string} key
- * @param {any} value
- * @param {number} expDays
- */
-export function storeInLocalStorage(key, value, expDays) {
-  storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
-  storage.setDataInLocalStorage(`${key}`, value);
 }
 
 /**

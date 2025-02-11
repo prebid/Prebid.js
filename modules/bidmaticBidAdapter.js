@@ -3,9 +3,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { replaceAuctionPrice, isNumber, deepAccess, isFn } from '../src/utils.js';
 
-export const END_POINT = 'https://adapter.bidmatic.io/ortb-client';
+const HOST = 'https://adapter.bidmatic.io';
 const BIDDER_CODE = 'bidmatic';
 const DEFAULT_CURRENCY = 'USD';
+export const SYNC_URL = `${HOST}/sync.html`;
+export const END_POINT = `${HOST}/ortb-client`;
 
 export const converter = ortbConverter({
   context: {
@@ -59,6 +61,33 @@ export const converter = ortbConverter({
   }
 });
 
+const PROCESSED_SOURCES = {};
+
+export function createUserSyncs(processedSources, syncOptions, gdprConsent, uspConsent, gppConsent) {
+  if (syncOptions?.iframeEnabled) {
+    return Object.entries(processedSources)
+      .filter(([_, syncMade]) => syncMade === 0)
+      .map(([sourceId]) => {
+        processedSources[sourceId] = 1
+
+        let url = `${SYNC_URL}?aid=${sourceId}`
+        if (gdprConsent && gdprConsent.gdprApplies) {
+          url += `&gdpr=${+(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
+        }
+        if (uspConsent) {
+          url += `&usp=${uspConsent}`;
+        }
+        if (gppConsent) {
+          url += `&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections?.toString()}`
+        }
+        return {
+          type: 'iframe',
+          url
+        };
+      })
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -66,7 +95,9 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return isNumber(deepAccess(bid, 'params.source'))
   },
-
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+    return createUserSyncs(PROCESSED_SOURCES, syncOptions, gdprConsent, uspConsent, gppConsent);
+  },
   buildRequests: function (validBidRequests, bidderRequest) {
     const requestsBySource = validBidRequests.reduce((acc, bidRequest) => {
       acc[bidRequest.params.source] = acc[bidRequest.params.source] || [];
@@ -75,6 +106,9 @@ export const spec = {
     }, {});
 
     return Object.entries(requestsBySource).map(([source, bidRequests]) => {
+      if (!PROCESSED_SOURCES[source]) {
+        PROCESSED_SOURCES[source] = 0;
+      }
       const data = converter.toORTB({ bidRequests, bidderRequest });
       const url = new URL(END_POINT);
       url.searchParams.append('source', source);

@@ -88,7 +88,7 @@ Please note that failing to set these will result in the adapter not bidding at 
 To allow better targeting, you should provide as much context about the video as possible.
 There are three ways of doing this depending on if you're using Dailymotion player or a third party one.
 
-If you are using the Dailymotion player, you should only provide the video `xid` in your ad unit, example:
+If you are using the Dailymotion player, you must provide the video `xid` in the `video.id` field of your ad unit, example:
 
 ```javascript
 const adUnits = [
@@ -98,7 +98,10 @@ const adUnits = [
       params: {
         apiKey: 'dailymotion-testing',
         video: {
-          xid: 'x123456'     // Dailymotion infrastructure unique video ID
+          id: 'x123456'     // Dailymotion infrastructure unique video ID
+          autoplay: false,
+          playerName: 'dailymotion',
+          playerVolume: 8
         },
       }
     }],
@@ -117,9 +120,9 @@ const adUnits = [
 ```
 
 This will automatically fetch the most up-to-date information about the video.
-If you provide any other metadata in addition to the `xid`, they will be ignored.
+Please note that if you provide any video metadata not listed above, they will be replaced by the ones fetched from the `video.id`.
 
-If you are using a third party video player, you should not provide any `xid` and instead fill the following members:
+If you are using a third party video player, you should fill the following members:
 
 ```javascript
 const adUnits = [
@@ -143,6 +146,7 @@ const adUnits = [
           isCreatedForKids: false,
           videoViewsInSession: 1,
           autoplay: false,
+          playerName: 'video.js',
           playerVolume: 8
         }
       }
@@ -181,14 +185,14 @@ Each of the following video metadata fields can be added in bids.params.video.
 * `title` - Video title
 * `url` - URL of the content
 * `topics` - Main topics for the video, comma separated
-* `xid` - Dailymotion video identifier (only applicable if using the Dailymotion player)
 * `isCreatedForKids` - [The content is created for children as primary audience](https://faq.dailymotion.com/hc/en-us/articles/360020920159-Content-created-for-kids)
 
-The following contextual informations can also be added in bids.params.video.
+The following contextual information can also be added in bids.params.video.
 
-* `videoViewsInSession` - Number of videos viewed within the current user session
 * `autoplay` - Playback was launched without user interaction
+* `playerName` - Name of the player used to display the video
 * `playerVolume` - Player volume between 0 (muted, 0%) and 10 (100%)
+* `videoViewsInSession` - Number of videos viewed within the current user session
 
 If you already specify [First-Party data](https://docs.prebid.org/features/firstPartyData.html) through the `ortb2` object when calling [`pbjs.requestBids(requestObj)`](https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html), we will collect the following values and fallback to bids.params.video values when applicable. See the mapping below.
 

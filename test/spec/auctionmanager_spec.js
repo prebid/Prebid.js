@@ -5,7 +5,7 @@ import {
   adjustBids,
   getMediaTypeGranularity,
   getPriceByGranularity,
-  addBidResponse, resetAuctionState, responsesReady
+  addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
 import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
@@ -27,6 +27,9 @@ import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
 import '../../modules/currency.js'
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 import { REJECTION_REASON } from '../../src/constants.js';
+import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
+import {sandbox} from 'sinon';
+import {getMinBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -840,7 +843,30 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
-    describe('stale auctions', () => {
+    it('resolves .requestsDone', async () => {
+      const auction = auctionManager.createAuction({adUnits});
+      stubCallAdapters.reset();
+      auction.callBids();
+      await auction.requestsDone;
+    })
+
+    describe('setConfig(minBidCacheTTL)', () => {
+      it('should update getMinBidCacheTTL', () => {
+        expect(getMinBidCacheTTL()).to.eql(null);
+        config.setConfig({minBidCacheTTL: 123});
+        expect(getMinBidCacheTTL()).to.eql(123);
+      });
+
+      it('should run listeners registered with onMinBidCacheTTLChange', () => {
+        config.setConfig({minBidCacheTTL: 1});
+        let newTTL = null;
+        onMinBidCacheTTLChange((ttl) => { newTTL = ttl; });
+        config.setConfig({minBidCacheTTL: 2});
+        expect(newTTL).to.eql(2);
+      })
+    })
+
+    describe('minBidCacheTTL', () => {
       let clock, auction;
       beforeEach(() => {
         clock = sinon.useFakeTimers();
@@ -852,65 +878,121 @@ describe('auctionmanager.js', function () {
         config.resetConfig();
       });
 
-      it('are dropped after their last bid becomes stale (if minBidCacheTTL is set)', () => {
-        config.setConfig({
-          minBidCacheTTL: 0
-        });
-        bids = [
-          {
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 10
-          }, {
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 100
-          }
-        ];
-        auction.callBids();
-        return auction.end.then(() => {
-          clock.tick(50 * 1000);
-          expect(auctionManager.getBidsReceived().length).to.equal(2);
-          clock.tick(56 * 1000);
-          expect(auctionManager.getBidsReceived()).to.eql([]);
-        });
-      });
-
-      it('are dropped after `minBidCacheTTL` seconds if they had no bid', () => {
-        auction.callBids();
-        config.setConfig({
-          minBidCacheTTL: 2
-        });
-        return auction.end.then(() => {
-          expect(auctionManager.getNoBids().length).to.eql(1);
-          clock.tick(10 * 10000);
-          expect(auctionManager.getNoBids().length).to.eql(0);
+      describe('individual bids', () => {
+        beforeEach(() => {
+          bids = [
+            {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10
+            }, {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 100
+            }
+          ];
         })
-      });
-
-      Object.entries({
-        'bids': {
-          bd: [{
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 10
-          }],
-          entries: () => auctionManager.getBidsReceived()
-        },
-        'no bids': {
-          bd: [],
-          entries: () => auctionManager.getNoBids()
-        }
-      }).forEach(([t, {bd, entries}]) => {
-        it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
-          bids = bd;
+        it('are dropped when stale (if minBidCacheTTL is set)', () => {
+          config.setConfig({
+            minBidCacheTTL: 30
+          });
           auction.callBids();
           return auction.end.then(() => {
-            clock.tick(100 * 1000);
-            expect(entries().length > 0).to.be.true;
-          })
+            clock.tick(20 * 1000);
+            expect(auctionManager.getBidsReceived().length).to.equal(2);
+            clock.tick(50 * 1000);
+            expect(auctionManager.getBidsReceived().length).to.equal(1);
+          });
+        });
+
+        it('pick up updates to minBidCacheTTL that happen during bid lifetime', () => {
+          auction.callBids();
+          return auction.end.then(() => {
+            clock.tick(10 * 1000);
+            config.setConfig({
+              minBidCacheTTL: 20
+            })
+            clock.tick(20 * 1000);
+            expect(auctionManager.getBidsReceived().length).to.equal(1);
+          });
         })
-      });
+      })
+
+      describe('stale auctions', () => {
+        it('are dropped after their last bid becomes stale (if minBidCacheTTL is set)', () => {
+          config.setConfig({
+            minBidCacheTTL: 90
+          });
+          bids = [
+            {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10
+            }, {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 100
+            }
+          ];
+          auction.callBids();
+          return auction.end.then(() => {
+            clock.tick(50 * 1000);
+            expect(auctionManager.getBidsReceived().length).to.equal(2);
+            clock.tick(56 * 1000);
+            expect(auctionManager.getBidsReceived()).to.eql([]);
+          });
+        });
+
+        it('are dropped after `minBidCacheTTL` seconds if they had no bid', () => {
+          auction.callBids();
+          config.setConfig({
+            minBidCacheTTL: 2
+          });
+          return auction.end.then(() => {
+            expect(auctionManager.getNoBids().length).to.eql(1);
+            clock.tick(10 * 10000);
+            expect(auctionManager.getNoBids().length).to.eql(0);
+          })
+        });
+
+        it('are not dropped after `minBidCacheTTL` seconds if the page was hidden', () => {
+          auction.callBids();
+          config.setConfig({
+            minBidCacheTTL: 10
+          });
+          return auction.end.then(() => {
+            expect(auctionManager.getNoBids().length).to.eql(1);
+            setDocumentHidden(true);
+            clock.tick(10 * 10000);
+            setDocumentHidden(false);
+            expect(auctionManager.getNoBids().length).to.eql(1);
+          })
+        });
+
+        Object.entries({
+          'bids': {
+            bd: [{
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10
+            }],
+            entries: () => auctionManager.getBidsReceived()
+          },
+          'no bids': {
+            bd: [],
+            entries: () => auctionManager.getNoBids()
+          }
+        }).forEach(([t, {bd, entries}]) => {
+          it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
+            bids = bd;
+            auction.callBids();
+            return auction.end.then(() => {
+              clock.tick(100 * 1000);
+              expect(entries().length > 0).to.be.true;
+            })
+          })
+        });
+      })
     })
   });
 
@@ -1021,26 +1103,38 @@ describe('auctionmanager.js', function () {
         Object.entries({
           'on adUnit': () => adUnits[0],
           'on bid': () => bidderRequests[0].bids[0],
+          'on mediatype': () => bidderRequests[0].bids[0].mediaTypes.banner,
         }).forEach(([t, getObj]) => {
-          it(t, () => {
-            let renderer = {
+          let renderer, bid;
+          beforeEach(() => {
+            renderer = {
               url: 'renderer.js',
               render: (bid) => bid
             };
+          })
 
-            let bids1 = Object.assign({},
+          function getBid() {
+            let bid = Object.assign({},
               bids[0],
               {
                 bidderCode: BIDDER_CODE,
-                mediaType: 'video-outstream',
+                mediaType: 'banner',
               }
             );
             Object.assign(getObj(), {renderer});
-            spec.interpretResponse.returns(bids1);
+            spec.interpretResponse.returns(bid);
             auction.callBids();
-            const addedBid = auction.getBidsReceived().pop();
-            assert.equal(addedBid.renderer.url, 'renderer.js');
-          })
+            return auction.getBidsReceived().pop();
+          }
+
+          it(t, () => {
+            expect(getBid().renderer.url).to.eql('renderer.js');
+          });
+
+          it('allows renderers without URL', () => {
+            delete renderer.url;
+            expect(getBid().renderer.renderNow).to.be.true;
+          });
         })
       })
 
@@ -1408,10 +1502,10 @@ describe('auctionmanager.js', function () {
 
     it('should not alter bid requestID', function () {
       auction.callBids();
-
-      const addedBid2 = auction.getBidsReceived().pop();
+      const bidsReceived = auction.getBidsReceived();
+      const addedBid2 = bidsReceived.pop();
       assert.equal(addedBid2.requestId, bids1[0].requestId);
-      const addedBid1 = auction.getBidsReceived().pop();
+      const addedBid1 = bidsReceived.pop();
       assert.equal(addedBid1.requestId, bids[0].requestId);
     });
 
@@ -1722,6 +1816,42 @@ describe('auctionmanager.js', function () {
       })).to.equal('high');
     });
   });
+
+  describe('addWinningBid', () => {
+    let auction, bid, adUnits, sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(adapterManager, 'callBidWonBidder');
+      sandbox.stub(adapterManager, 'triggerBilling')
+      adUnits = [{code: 'au1'}, {code: 'au2'}]
+      auction = newAuction({adUnits});
+      bid = {
+        bidder: 'mock-bidder'
+      };
+    })
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should call bidWon', () => {
+      auction.addWinningBid(bid);
+      sinon.assert.calledWith(adapterManager.callBidWonBidder, bid.bidder, bid, adUnits);
+    });
+
+    [undefined, false].forEach(deferBilling => {
+      it(`should call onBidBillable if deferBilling = ${deferBilling}`, () => {
+        bid.deferBilling = deferBilling;
+        auction.addWinningBid(bid);
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+    })
+
+    it('should NOT call onBidBillable if deferBilling  = true', () => {
+      bid.deferBilling = true;
+      auction.addWinningBid(bid);
+      sinon.assert.notCalled(adapterManager.triggerBilling);
+    })
+  })
 
   function mockAuction(getBidRequests, start = 1) {
     return {

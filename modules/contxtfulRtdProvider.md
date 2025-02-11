@@ -8,7 +8,7 @@
 
 The Contxtful RTD module offers a unique feature—Receptivity. Receptivity is an efficiency metric, enabling the qualification of any instant in a session in real time based on attention. The core idea is straightforward: the likelihood of an ad’s success increases when it grabs attention and is presented in the right context at the right time.
 
-To utilize this module, you need to register for an account with [Contxtful](https://contxtful.com). For inquiries, please contact [contact@contxtful.com](mailto:contact@contxtful.com).
+To utilize this module, you need to register for an account with [Contxtful](https://contxtful.com). For inquiries, please reach out to  [contact@contxtful.com](mailto:contact@contxtful.com).
 
 ## Build Instructions
 
@@ -63,6 +63,7 @@ pbjs.setConfig({
   }
 });
 ```
+
 ## Parameters
 
 | Name                | Type     | Scope    | Description                                |
@@ -71,7 +72,7 @@ pbjs.setConfig({
 | `customer`          | `String` | Required | Your unique customer identifier.           |
 | `hostname`          | `String` | Optional | Target URL for CONTXTFUL external JavaScript file. Default is "api.receptivity.io". Changing default behaviour is not recommended. Please reach out to contact@contxtful.com if you experience issues. |
 | `adServerTargeting` | `Boolean`| Optional | Enables the `getTargetingData` to inject targeting value in ad units. Setting to true enables the feature, false disables the feature. Default is true      |
-| `bidders`           | `Array`  | Optional | Setting this array enables Receptivity in the `ortb2` object through `getBidRequestData` for all the listed `bidders`. Default is `[]` (an empty array). RECOMMENDED : Add all the bidders active like this `["bidderCode1", "bidderCode", "..."]` |
+| `bidders`           | `Array`  | Optional | Setting this array enables Receptivity in the `ortb2` object through `getBidRequestData` for all the listed `bidders`. Default is `[]` (an empty array). RECOMMENDED : Add all the active bidders like this `["bidderCode1", "bidderCode", "..."]` |
 
 ## Usage: Injection in Ad Servers
 

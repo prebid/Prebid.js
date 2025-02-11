@@ -107,19 +107,8 @@ function buildVideo(bidRequest) {
   const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
 
-  if (!w && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      w = parseInt(playerSize[0][0], 10);
-    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
-      w = parseInt(playerSize[0], 10);
-    }
-  }
-  if (!h && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      h = parseInt(playerSize[0][1], 10);
-    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
-      h = parseInt(playerSize[1], 10);
-    }
+  if (!h && !w && playerSize) {
+    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
@@ -171,6 +160,14 @@ function buildImpression(bidRequest) {
         adUnitId: bidRequest.params.adUnitId,
       },
     },
+  }
+
+  if (bidRequest?.params?.adUnitId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.adUnitId', bidRequest.params.adUnitId);
+  }
+
+  if (bidRequest?.params?.publisherId) {
+    deepSetValue(imp, 'ext.prebid.bidder.insticator.publisherId', bidRequest.params.publisherId);
   }
 
   let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
@@ -247,7 +244,7 @@ function buildDevice(bidRequest) {
   const device = {
     w: window.innerWidth,
     h: window.innerHeight,
-    js: true,
+    js: 1,
     ext: {
       localStorage: storage.localStorageIsEnabled(),
       cookies: storage.cookiesAreEnabled(),
@@ -569,24 +566,12 @@ function validateVideo(bid) {
   let w = deepAccess(bid, 'mediaTypes.video.w');
   let h = deepAccess(bid, 'mediaTypes.video.h');
   const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  if (!w && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      w = parseInt(playerSize[0][0], 10);
-    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
-      w = parseInt(playerSize[0], 10);
-    }
+
+  if (!h && !w && playerSize) {
+    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
   }
-  if (!h && playerSize) {
-    if (Array.isArray(playerSize[0])) {
-      h = parseInt(playerSize[0][1], 10);
-    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
-      h = parseInt(playerSize[1], 10);
-    }
-  }
-  const videoSize = [
-    w,
-    h,
-  ];
+
+  const videoSize = [w, h];
 
   if (
     !validateSize(videoSize)
@@ -623,6 +608,25 @@ function validateVideo(bid) {
   }
 
   return true;
+}
+
+function parsePlayerSizeToWidthHeight(playerSize, w, h) {
+  if (!w && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      w = parseInt(playerSize[0][0], 10);
+    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
+      w = parseInt(playerSize[0], 10);
+    }
+  }
+  if (!h && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      h = parseInt(playerSize[0][1], 10);
+    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
+      h = parseInt(playerSize[1], 10);
+    }
+  }
+
+  return { w, h };
 }
 
 export const spec = {

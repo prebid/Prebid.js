@@ -4,6 +4,7 @@ import {
   PrebidServer as Adapter,
   resetSyncedStatus,
   resetWurlMap,
+  validateConfig,
   s2sDefaultConfig
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, {PBS_ADAPTER_NAME} from 'src/adapterManager.js';
@@ -37,6 +38,11 @@ import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
 import {MODULE_TYPE_PREBID} from '../../../src/activities/modules.js';
+import {
+  consolidateEids,
+  extractEids,
+  getPBSBidderConfig
+} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
 
 let CONFIG = {
   accountId: '1',
@@ -559,6 +565,35 @@ function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
   }
 }
 
+describe('s2s configuration', () => {
+  let cfg1, cfg2;
+  beforeEach(() => {
+    cfg1 = {
+      enabled: true,
+      bidders: ['bidderB'],
+      accountId: '123456',
+      endpoint: {
+        p1Consent: 'first.endpoint'
+      }
+    };
+    cfg2 = {
+      enabled: true,
+      bidders: ['bidderA'],
+      accountId: '123456',
+      endpoint: {
+        p1Consent: 'second.endpoint',
+      }
+    };
+  })
+  it('sets prebid server adapter by default', () => {
+    expect(validateConfig(cfg1)[0].adapter).to.eql('prebidServer');
+  });
+  it('filters out disabled configs', () => {
+    cfg1.enabled = false;
+    expect(validateConfig([cfg1, cfg2])).to.eql([cfg2]);
+  })
+});
+
 describe('S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
@@ -825,7 +860,7 @@ describe('S2S Adapter', function () {
         })
       })
     })
-    
+
     it('should set customHeaders correctly when publisher has provided it', () => {
       let configWithCustomHeaders = utils.deepClone(CONFIG);
       configWithCustomHeaders.customHeaders = { customHeader1: 'customHeader1Value' };
@@ -1088,8 +1123,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.innerWidth,
-        h: window.innerHeight
+        w: window.screen.width,
+        h: window.screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1120,8 +1155,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.innerWidth,
-        h: window.innerHeight
+        w: window.screen.width,
+        h: window.screen.height,
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
@@ -1367,65 +1402,97 @@ describe('S2S Adapter', function () {
             updateBid(BID_REQUESTS[1].bids[0]);
             adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
             const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
-            expect(pbsReq.imp[0].bidfloor).to.be.undefined;
-            expect(pbsReq.imp[0].bidfloorcur).to.be.undefined;
+            [pbsReq.imp[0], pbsReq.imp[0].banner, pbsReq.imp[0].banner.format[0]].forEach(obj => {
+              expect(obj.bidfloor).to.be.undefined;
+              expect(obj.bidfloorcur).to.be.undefined;
+            })
           });
         })
 
         Object.entries({
-          'is available': {
-            expectDesc: 'minimum after conversion',
-            expectedFloor: 10,
-            expectedCur: '0.1',
-            conversionFn: (amount, from, to) => {
-              from = parseFloat(from);
-              to = parseFloat(to);
-              return amount * from / to;
-            },
+          'imp level floors': {
+            target: 'imp.0'
           },
-          'is not available': {
-            expectDesc: 'absolute minimum',
-            expectedFloor: 1,
-            expectedCur: '10',
-            conversionFn: null
+          'mediaType level floors': {
+            target: 'imp.0.banner.ext',
+            floorFilter: ({mediaType, size}) => size === '*' && mediaType !== '*'
           },
-          'is not working': {
-            expectDesc: 'absolute minimum',
-            expectedFloor: 1,
-            expectedCur: '10',
-            conversionFn: () => {
-              throw new Error();
-            }
+          'format level floors': {
+            target: 'imp.0.banner.format.0.ext',
+            floorFilter: ({size}) => size !== '*'
           }
-        }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
-          describe(`and currency conversion ${t}`, () => {
-            let mockConvertCurrency;
-            const origConvertCurrency = getGlobal().convertCurrency;
+        }).forEach(([t, {target, floorFilter}]) => {
+          describe(t, () => {
             beforeEach(() => {
-              if (conversionFn) {
-                getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
-              } else {
-                mockConvertCurrency = null;
-                delete getGlobal().convertCurrency;
+              if (floorFilter != null) {
+                BID_REQUESTS
+                  .flatMap(req => req.bids)
+                  .forEach(req => {
+                    req.getFloor = ((orig) => (params) => {
+                      if (floorFilter(params)) {
+                        return orig(params);
+                      }
+                    })(req.getFloor);
+                  })
               }
-            });
+            })
 
-            afterEach(() => {
-              if (origConvertCurrency != null) {
-                getGlobal().convertCurrency = origConvertCurrency;
-              } else {
-                delete getGlobal().convertCurrency;
+            Object.entries({
+              'is available': {
+                expectDesc: 'minimum after conversion',
+                expectedFloor: 10,
+                expectedCur: '0.1',
+                conversionFn: (amount, from, to) => {
+                  from = parseFloat(from);
+                  to = parseFloat(to);
+                  return amount * from / to;
+                },
+              },
+              'is not available': {
+                expectDesc: 'absolute minimum',
+                expectedFloor: 1,
+                expectedCur: '10',
+                conversionFn: null
+              },
+              'is not working': {
+                expectDesc: 'absolute minimum',
+                expectedFloor: 1,
+                expectedCur: '10',
+                conversionFn: () => {
+                  throw new Error();
+                }
               }
-            });
+            }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
+              describe(`and currency conversion ${t}`, () => {
+                let mockConvertCurrency;
+                const origConvertCurrency = getGlobal().convertCurrency;
+                beforeEach(() => {
+                  if (conversionFn) {
+                    getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
+                  } else {
+                    mockConvertCurrency = null;
+                    delete getGlobal().convertCurrency;
+                  }
+                });
 
-            it(`should pick the ${expectDesc}`, () => {
-              adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
-              const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
-              expect(pbsReq.imp[0].bidfloor).to.eql(expectedFloor);
-              expect(pbsReq.imp[0].bidfloorcur).to.eql(expectedCur);
+                afterEach(() => {
+                  if (origConvertCurrency != null) {
+                    getGlobal().convertCurrency = origConvertCurrency;
+                  } else {
+                    delete getGlobal().convertCurrency;
+                  }
+                });
+
+                it(`should pick the ${expectDesc}`, () => {
+                  adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
+                  const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+                  expect(deepAccess(pbsReq, `${target}.bidfloor`)).to.eql(expectedFloor);
+                  expect(deepAccess(pbsReq, `${target}.bidfloorcur`)).to.eql(expectedCur)
+                });
+              });
             });
-          });
-        });
+          })
+        })
       });
     });
 
@@ -1480,8 +1547,8 @@ describe('S2S Adapter', function () {
           adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
           sinon.assert.match(requestBid.device, {
-            w: window.innerWidth,
-            h: window.innerHeight
+            w: window.screen.width,
+            h: window.screen.height,
           })
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
@@ -2065,35 +2132,112 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
-      let consentConfig = { s2sConfig: CONFIG };
-      config.setConfig(consentConfig);
-
-      let userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      userIdBidRequest[0].bids[0].userId = {
-        criteoId: '44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU',
-        tdid: 'abc123',
-        pubcid: '1234',
-        parrableId: { eid: '01.1563917337.test-eid' },
-        lipb: {
-          lipbid: 'li-xyz',
-          segments: ['segA', 'segB']
-        },
-        idl_env: '0000-1111-2222-3333',
-        id5id: {
-          uid: '11111',
-          ext: {
-            linkType: 'some-link-type'
+    describe('user.ext.eids', () => {
+      let req;
+      beforeEach(() => {
+        const s2sConfig = {
+          ...CONFIG,
+          bidders: ['appnexus', 'rubicon']
+        }
+        config.setConfig({s2sConfig});
+        req = {
+          ...REQUEST,
+          s2sConfig,
+          ortb2Fragments: {
+            global: {
+              user: {
+                ext: {
+                  eids: [{source: 'idA', id: 1}, {source: 'idB', id: 2}]
+                }
+              }
+            },
+            bidder: {
+              appnexus: {
+                user: {
+                  ext: {
+                    eids: [{source: 'idC', id: 3}]
+                  }
+                }
+              }
+            }
           }
         }
-      };
-      userIdBidRequest[0].bids[0].userIdAsEids = [{id: 1}, {id: 2}];
+      })
+      it('should get picked up from from FPD', function () {
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        expect(payload.user.ext.eids).to.eql([
+          {source: 'idA', id: 1},
+          {source: 'idB', id: 2},
+          {source: 'idC', id: 3}
+        ]);
+        expect(payload.ext.prebid.data.eidpermissions).to.eql([{
+          bidders: ['appnexus'],
+          source: 'idC'
+        }]);
+      });
 
-      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(typeof requestBid.user.ext.eids).is.equal('object');
-      expect(requestBid.user.ext.eids).to.eql([{id: 1}, {id: 2}]);
-    });
+      it('should not set eidpermissions for unrequested bidders', () => {
+        req.ortb2Fragments.bidder.unknown = {
+          user: {
+            eids: [{source: 'idC', id: 3}, {source: 'idD', id: 4}]
+          }
+        }
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        expect(payload.ext.prebid.data.eidpermissions).to.eql([{
+          bidders: ['appnexus'],
+          source: 'idC'
+        }, {
+          bidders: [],
+          source: 'idD'
+        }]);
+      });
+
+      it('should repeat global EIDs when bidder-specific EIDs conflict', () => {
+        BID_REQUESTS.push({
+          ...BID_REQUESTS[0],
+          bidderCode: 'rubicon',
+          bids: [{
+            bidder: 'rubicon',
+            params: {}
+          }]
+        })
+        req.ortb2Fragments.bidder.rubicon = {
+          user: {
+            ext: {
+              eids: [{source: 'idC', id: 4}]
+            }
+          }
+        }
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        const globalEids = [
+          {source: 'idA', id: 1},
+          {source: 'idB', id: 2},
+        ]
+        expect(payload.user.ext.eids).to.eql(globalEids);
+        expect(payload.ext.prebid?.data?.eidpermissions).to.not.exist;
+        expect(payload.ext.prebid.bidderconfig).to.have.deep.members([
+          {
+            bidders: ['appnexus'],
+            config: {
+              ortb2: {
+                user: {ext: {eids: globalEids.concat([{source: 'idC', id: 3}])}}
+              }
+            }
+          },
+          {
+            bidders: ['rubicon'],
+            config: {
+              ortb2: {
+                user: {ext: {eids: globalEids.concat([{source: 'idC', id: 4}])}}
+              }
+            }
+          }
+        ])
+      })
+    })
 
     it('when config \'currency.adServerCurrency\' value is a string: ORTB has property \'cur\' value set to a single item array', function () {
       config.setConfig({
@@ -3155,6 +3299,39 @@ describe('S2S Adapter', function () {
       expect(event[1].response).to.deep.equal(responding);
     });
 
+    it('emits the PBS_ANALYTICS event and captures seatnonbid responses', function () {
+      const original = CONFIG;
+      CONFIG.extPrebid = { returnallbidstatus: true };
+      const nonbidResponse = {...RESPONSE_OPENRTB, ext: {seatnonbid: [{}]}};
+      config.setConfig({ CONFIG });
+      CONFIG = original;
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const responding = deepClone(nonbidResponse);
+      Object.assign(responding.ext.seatnonbid, [{auctionId: 2}])
+      server.requests[0].respond(200, {}, JSON.stringify(responding));
+      const event = events.emit.thirdCall.args;
+      expect(event[0]).to.equal(EVENTS.PBS_ANALYTICS);
+      expect(event[1].seatnonbid[0]).to.have.property('auctionId', 2);
+      expect(event[1].requestedBidders).to.deep.equal(['appnexus']);
+      expect(event[1].response).to.deep.equal(responding);
+    });
+
+    it('emits the PBS_ANALYTICS event and captures atag responses', function () {
+      const original = CONFIG;
+      CONFIG.extPrebid = { returnallbidstatus: true };
+      const atagResponse = {...RESPONSE_OPENRTB, ext: {prebid: {analytics: {tags: ['data']}}}};
+      config.setConfig({ CONFIG });
+      CONFIG = original;
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const responding = deepClone(atagResponse);
+      Object.assign(responding.ext.prebid.analytics.tags, ['stuff'])
+      server.requests[0].respond(200, {}, JSON.stringify(responding));
+      const event = events.emit.secondCall.args;
+      expect(event[0]).to.equal(EVENTS.PBS_ANALYTICS);
+      expect(event[1].atag[0]).to.deep.equal('stuff');
+      expect(event[1].response).to.deep.equal(responding);
+    });
+
     it('respects defaultTtl', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         defaultTtl: 30
@@ -3475,6 +3652,18 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('adapterCode', 'appnexus2');
     });
 
+    it('should set deferBilling and deferRendering to true when request has deferBilling = true', () => {
+      config.setConfig({ CONFIG });
+      const req = deepClone(REQUEST);
+      req.ad_units.forEach(au => au.deferBilling = true);
+      adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+      sinon.assert.match(addBidResponse.firstCall.args[1], {
+        deferBilling: true,
+        deferRendering: true
+      });
+    });
+
     describe('on sync requested with no cookie', () => {
       let cfg, req, csRes;
 
@@ -3578,18 +3767,32 @@ describe('S2S Adapter', function () {
         sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), sinon.match({config: {id: 2}}))
       }
 
-      it('calls addComponentAuction alongside addBidResponse', function () {
+      it('calls addPaapiConfig alongside addBidResponse', function () {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(mergeDeep({}, RESPONSE_OPENRTB, FLEDGE_RESP)));
         expect(addBidResponse.called).to.be.true;
         expectFledgeCalls();
       });
 
-      it('calls addComponentAuction when there is no bid in the response', () => {
+      it('calls addPaapiConfig when there is no bid in the response', () => {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
         expect(addBidResponse.called).to.be.false;
         expectFledgeCalls();
+      });
+
+      it('wraps call in runWithBidder', () => {
+        let fail = false;
+        fledgeStub.callsFake(({bidder}) => {
+          try {
+            expect(bidder).to.exist.and.to.eql(config.getCurrentBidder());
+          } catch (e) {
+            fail = true;
+          }
+        });
+        adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
+        expect(fail).to.be.false;
       })
     });
   });
@@ -3909,77 +4112,94 @@ describe('S2S Adapter', function () {
       expect(typeof config.getConfig('s2sConfig').syncUrlModifier.appnexus).to.equal('function')
     });
 
-    it('should set correct bidder names to bidders property when using an alias for that bidder', function () {
-      const s2sConfig = utils.deepClone(CONFIG);
-
-      // Add syncEndpoint so that the request goes to the User Sync endpoint
-      // Modify the bidders property to include an alias for Rubicon adapter
-      s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
-      s2sConfig.bidders = ['appnexus', 'rubicon-alias'];
-
-      const s2sBidRequest = utils.deepClone(REQUEST);
-      s2sBidRequest.s2sConfig = s2sConfig;
-
-      // Add another bidder, `rubicon-alias`
-      s2sBidRequest.ad_units[0].bids.push({
-        bidder: 'rubicon-alias',
-        params: {
-          accoundId: 14062,
-          siteId: 70608,
-          zoneId: 498816
+    Object.entries({
+      'an alias'() {
+        adapterManager.aliasBidAdapter('rubicon', 'rubicon-alias');
+      },
+      'a server side alias'(s2sConfig) {
+        s2sConfig.extPrebid = {
+          aliases: {
+            'rubicon-alias': 'rubicon'
+          }
         }
-      });
+      }
+    }).forEach(([t, setupAlias]) => {
+      describe(`when using ${t}`, () => {
+        afterEach(() => {
+          delete adapterManager.aliasRegistry['rubicon-alias'];
+        });
+        it(`should set correct bidder names to bidders property`, function () {
+          const s2sConfig = utils.deepClone(CONFIG);
 
-      // create an alias for the Rubicon Bid Adapter
-      adapterManager.aliasBidAdapter('rubicon', 'rubicon-alias');
+          // Add syncEndpoint so that the request goes to the User Sync endpoint
+          // Modify the bidders property to include an alias for Rubicon adapter
+          s2sConfig.syncEndpoint = {p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync'};
+          s2sConfig.bidders = ['appnexus', 'rubicon-alias'];
 
-      const bidRequest = utils.deepClone(BID_REQUESTS);
-      bidRequest.push({
-        'bidderCode': 'rubicon-alias',
-        'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4',
-        'bidderRequestId': '4b1a4f9c3e4546',
-        'tid': 'd7fa8342-ae22-4ca1-b237-331169350f84',
-        'bids': [
-          {
-            'bidder': 'rubicon-alias',
-            'params': {
-              'accountId': 14062,
-              'siteId': 70608,
-              'zoneId': 498816
-            },
-            'bid_id': '2a9523915411c3',
-            'mediaTypes': {
-              'banner': {
+          setupAlias(s2sConfig);
+
+          const s2sBidRequest = utils.deepClone(REQUEST);
+          s2sBidRequest.s2sConfig = s2sConfig;
+
+          // Add another bidder, `rubicon-alias`
+          s2sBidRequest.ad_units[0].bids.push({
+            bidder: 'rubicon-alias',
+            params: {
+              accoundId: 14062,
+              siteId: 70608,
+              zoneId: 498816
+            }
+          });
+
+          const bidRequest = utils.deepClone(BID_REQUESTS);
+          bidRequest.push({
+            'bidderCode': 'rubicon-alias',
+            'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4',
+            'bidderRequestId': '4b1a4f9c3e4546',
+            'tid': 'd7fa8342-ae22-4ca1-b237-331169350f84',
+            'bids': [
+              {
+                'bidder': 'rubicon-alias',
+                'params': {
+                  'accountId': 14062,
+                  'siteId': 70608,
+                  'zoneId': 498816
+                },
+                'bid_id': '2a9523915411c3',
+                'mediaTypes': {
+                  'banner': {
+                    'sizes': [
+                      [
+                        300,
+                        250
+                      ]
+                    ]
+                  }
+                },
+                'adUnitCode': 'div-gpt-ad-1460505748561-0',
+                'transactionId': '78ddc106-b7d8-45d1-bd29-86993098e53d',
                 'sizes': [
                   [
                     300,
                     250
                   ]
-                ]
+                ],
+                'bidId': '2a9523915411c3',
+                'bidderRequestId': '4b1a4f9c3e4546',
+                'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4'
               }
-            },
-            'adUnitCode': 'div-gpt-ad-1460505748561-0',
-            'transactionId': '78ddc106-b7d8-45d1-bd29-86993098e53d',
-            'sizes': [
-              [
-                300,
-                250
-              ]
             ],
-            'bidId': '2a9523915411c3',
-            'bidderRequestId': '4b1a4f9c3e4546',
-            'auctionId': '4146ab2b-9422-4040-9b1c-966fffbfe2d4'
-          }
-        ],
-        'auctionStart': 1569234122602,
-        'timeout': 1000,
-        'src': 's2s'
+            'auctionStart': 1569234122602,
+            'timeout': 1000,
+            'src': 's2s'
+          });
+
+          adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+
+          const requestBid = JSON.parse(server.requests[0].requestBody);
+          expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
+        });
       });
-
-      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
-
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
     });
 
     it('should add cooperative sync flag to cookie_sync request if property is present', function () {
@@ -4226,5 +4446,366 @@ describe('S2S Adapter', function () {
 
       expect(requestBid.ext.prebid.floors).to.deep.equal({ enabled: true, floorMin: 1, floorMinCur: 'CUR' });
     });
+  });
+
+  describe('getPBSBidderConfig', () => {
+    [
+      {
+        t: 'does not alter config when there are no conflicts',
+        global: {
+          k1: 'val'
+        },
+        bidder: {
+          bidderA: {
+            k2: 'val'
+          }
+        },
+        expected: {
+          bidderA: {
+            k2: 'val'
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (scalar/object)',
+        global: {
+          k1: 'val',
+          k2: 'val'
+        },
+        bidder: {
+          bidderA: {
+            k1: {k3: 'val'}
+          }
+        },
+        expected: {
+          bidderA: {
+            k1: {k3: 'val'}
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (array/object)',
+        global: {
+          k: [1, 2]
+        },
+        bidder: {
+          bidderA: {
+            k: {inner: 'val'}
+          }
+        },
+        expected: {
+          bidderA: {
+            k: {inner: 'val'}
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (object/array)',
+        global: {
+          k: {inner: 'val'}
+        },
+        bidder: {
+          bidderA: {
+            k: [1, 2]
+          }
+        },
+        expected: {
+          bidderA: {
+            k: [1, 2]
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (array/null)',
+        global: {
+          k: [1, 2]
+        },
+        bidder: {
+          bidderA: {
+            k: null
+          }
+        },
+        expected: {
+          bidderA: {
+            k: null
+          }
+        }
+      },
+      {
+        t: 'uses bidder config on type mismatch (null/array)',
+        global: {},
+        bidder: {
+          bidderA: {
+            k: [1, 2]
+          }
+        },
+        expected: {
+          bidderA: {
+            k: [1, 2]
+          }
+        }
+      },
+      {
+        t: 'concatenates arrays',
+        global: {
+          key: 'value',
+          array: [1]
+        },
+        bidder: {
+          bidderA: {
+            array: [2]
+          }
+        },
+        expected: {
+          bidderA: {
+            array: [1, 2]
+          }
+        }
+      },
+      {
+        t: 'concatenates nested arrays',
+        global: {
+          nested: {
+            array: [1]
+          }
+        },
+        bidder: {
+          bidderA: {
+            key: 'value',
+            nested: {
+              array: [2]
+            }
+          }
+        },
+        expected: {
+          bidderA: {
+            key: 'value',
+            nested: {
+              array: [1, 2]
+            }
+          }
+        }
+      },
+      {
+        t: 'does not repeat equal elements',
+        global: {
+          array: [{id: 1}]
+        },
+        bidder: {
+          bidderA: {
+            array: [{id: 1}, {id: 2}]
+          }
+        },
+        expected: {
+          bidderA: {
+            array: [{id: 1}, {id: 2}]
+          }
+        }
+      }
+    ].forEach(({t, global, bidder, expected}) => {
+      it(t, () => {
+        expect(getPBSBidderConfig({global, bidder})).to.eql(expected);
+      })
+    })
+  });
+  describe('EID handling', () => {
+    function mkEid(source, value = source) {
+      return {source, value};
+    }
+
+    function eidEntry(source, value = source, bidders = false) {
+      return {eid: {source, value}, bidders};
+    }
+
+    describe('extractEids', () => {
+      [
+        {
+          t: 'no bidder-specific eids',
+          global: {
+            user: {
+              ext: {
+                eids: [
+                  mkEid('idA', 'id1'),
+                  mkEid('idA', 'id2')
+                ]
+              },
+              eids: [mkEid('idB')]
+            }
+          },
+          expected: {
+            eids: [
+              eidEntry('idA', 'id1'),
+              eidEntry('idA', 'id2'),
+              eidEntry('idB')
+            ],
+            conflicts: ['idA']
+          }
+        },
+        {
+          t: 'bidder-specific eids',
+          global: {
+            user: {
+              eids: [
+                mkEid('idA')
+              ]
+            },
+          },
+          bidder: {
+            bidderA: {
+              user: {
+                ext: {
+                  eids: [
+                    mkEid('idB')
+                  ]
+                }
+              }
+            }
+          },
+          expected: {
+            eids: [
+              eidEntry('idA'),
+              eidEntry('idB', 'idB', ['bidderA'])
+            ]
+          }
+        },
+        {
+          t: 'conflicting bidder-specific eids',
+          global: {
+            user: {
+              eids: [mkEid('idA', 'idA1')]
+            },
+          },
+          bidder: {
+            bidderA: {
+              user: {
+                eids: [mkEid('idA', 'idA2'), mkEid('idB', 'idB1'), mkEid('idD')]
+              },
+            },
+            bidderB: {
+              user: {
+                ext: {
+                  eids: [mkEid('idB', 'idB2'), mkEid('idC'), mkEid('idD')]
+                }
+              }
+            },
+          },
+          expected: {
+            eids: [
+              eidEntry('idA', 'idA1'),
+              eidEntry('idA', 'idA2', ['bidderA']),
+              eidEntry('idB', 'idB1', ['bidderA']),
+              eidEntry('idB', 'idB2', ['bidderB']),
+              eidEntry('idC', 'idC', ['bidderB']),
+              eidEntry('idD', 'idD', ['bidderA', 'bidderB'])
+            ],
+            conflicts: ['idA', 'idB']
+          }
+        },
+        {
+          t: 'duplicated bidder-specific eids',
+          bidder: {
+            bidderA: {
+              user: {
+                eids: [mkEid('id'), mkEid('id')]
+              }
+            }
+          },
+          expected: {
+            eids: [
+              eidEntry('id', 'id', ['bidderA'])
+            ]
+          }
+        }
+      ].forEach(({t, global = {}, bidder = {}, expected}) => {
+        it(t, () => {
+          const {eids, conflicts} = extractEids({global, bidder});
+          expect(eids).to.have.deep.members(expected.eids);
+          expect(Array.from(conflicts)).to.have.members(expected.conflicts || []);
+        })
+      });
+    });
+    describe('consolidateEids', () => {
+      it('returns global EIDs without permissions', () => {
+        expect(consolidateEids({
+          eids: [eidEntry('idA'), eidEntry('idB')]
+        })).to.eql({
+          global: [mkEid('idA'), mkEid('idB')],
+          permissions: [],
+          bidder: {}
+        })
+      });
+
+      it('returns conflicting, but global EIDs', () => {
+        expect(consolidateEids({
+          eids: [eidEntry('idA', 'idA1'), eidEntry('idA', 'idA2')],
+          conflicts: new Set(['idA'])
+        })).to.eql({
+          global: [mkEid('idA', 'idA1'), mkEid('idA', 'idA2')],
+          permissions: [],
+          bidder: {}
+        })
+      })
+
+      it('sets permissions for bidder-speficic EIDS', () => {
+        expect(consolidateEids({
+          eids: [
+            eidEntry('idA'),
+            eidEntry('idB', 'idB', ['bidderB'])
+          ]
+        })).to.eql({
+          global: [mkEid('idA'), mkEid('idB')],
+          permissions: [{source: 'idB', bidders: ['bidderB']}],
+          bidder: {}
+        })
+      })
+
+      it('does not consolidate conflicting bidder-specific EIDs', () => {
+        expect(consolidateEids({
+          eids: [
+            eidEntry('global'),
+            eidEntry('idA', 'idA1', ['bidderA']),
+            eidEntry('idA', 'idA2', ['bidderB'])
+          ],
+          conflicts: new Set(['idA'])
+        })).to.eql({
+          global: [mkEid('global')],
+          permissions: [],
+          bidder: {
+            bidderA: [mkEid('idA', 'idA1')],
+            bidderB: [mkEid('idA', 'idA2')]
+          }
+        })
+      })
+
+      it('does not set permissions for conflicting bidder-specific eids', () => {
+        expect(consolidateEids({
+          eids: [eidEntry('idA', 'idA1'), eidEntry('idA', 'idA2', ['bidderA'])],
+          conflicts: new Set(['idA'])
+        })).to.eql({
+          global: [mkEid('idA', 'idA1')],
+          permissions: [],
+          bidder: {
+            bidderA: [mkEid('idA', 'idA2')]
+          }
+        })
+      });
+
+      it('can do partial consolidation when only some IDs are conflicting', () => {
+        expect(consolidateEids({
+          eids: [
+            eidEntry('idA', 'idA1'),
+            eidEntry('idB', 'idB', ['bidderB']),
+            eidEntry('idA', 'idA2', ['bidderA'])
+          ],
+          conflicts: new Set(['idA'])
+        })).to.eql({
+          global: [mkEid('idA', 'idA1'), mkEid('idB')],
+          permissions: [{source: 'idB', bidders: ['bidderB']}],
+          bidder: {
+            bidderA: [mkEid('idA', 'idA2')]
+          }
+        });
+      });
+    })
   });
 });
