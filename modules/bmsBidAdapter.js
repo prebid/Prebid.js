@@ -14,7 +14,6 @@ const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
   'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';
 const GVLID = 1105;
-const COOKIE_NAME = 'bmsCookieId';
 const DEFAULT_CURRENCY = 'USD';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -94,14 +93,6 @@ export const spec = {
     // Add extensions to the request
     ortbRequest.ext = ortbRequest.ext || {};
     deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
-
-    if (storage.localStorageIsEnabled()) {
-      // Include user cookie ID if available
-      const ckid = storage.getDataFromLocalStorage(COOKIE_NAME) || null;
-      if (ckid) {
-        deepSetValue(ortbRequest, 'user.ext.buyerid', ckid);
-      }
-    }
 
     return [
       {
