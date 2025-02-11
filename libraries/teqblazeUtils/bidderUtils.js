@@ -148,7 +148,11 @@ export const buildRequestsBase = (config) => {
     page,
     placements,
     coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
-    tmax: bidderRequest.timeout
+    tmax: bidderRequest.timeout,
+    bcat: deepAccess(bidderRequest, 'ortb2.bcat'),
+    badv: deepAccess(bidderRequest, 'ortb2.badv'),
+    bapp: deepAccess(bidderRequest, 'ortb2.bapp'),
+    battr: deepAccess(bidderRequest, 'ortb2.battr')
   };
 
   if (bidderRequest.uspConsent) {
