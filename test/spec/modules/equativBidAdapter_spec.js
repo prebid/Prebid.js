@@ -191,7 +191,16 @@ describe('Equativ bid adapter tests', () => {
         bidRequests: DEFAULT_BANNER_BID_REQUESTS,
       });
       expect(request[0]).to.deep.equal({
-        data: { ...dataFromConverter, id: request[0].data.id },
+        data: {
+          ...dataFromConverter,
+          id: request[0].data.id,
+          imp: [
+            {
+              ...dataFromConverter.imp[0],
+              id: request[0].data.imp[0].id,
+            }
+          ],
+        },
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
       });
