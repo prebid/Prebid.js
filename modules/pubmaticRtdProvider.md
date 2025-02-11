@@ -6,7 +6,7 @@
 
 ## Description
 
-This RTD module, provided by PubMatic, is used to set dynamic floors within Prebid.
+This RTD module, provided by PubMatic, sets dynamic floors within Prebid. It enhances floor functionality by supporting custom schemas beyond the existing fixed schema values. By leveraging real-time signals such as device, browser, time of day etc, it enables floor price recommendations based on user value rather than solely on historical data.
 
 ## Usage
 
