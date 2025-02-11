@@ -3,6 +3,7 @@ import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
   resetSyncedStatus,
+  validateConfig,
   s2sDefaultConfig
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, {PBS_ADAPTER_NAME} from 'src/adapterManager.js';
@@ -563,6 +564,35 @@ function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
     }
   }
 }
+
+describe('s2s configuration', () => {
+  let cfg1, cfg2;
+  beforeEach(() => {
+    cfg1 = {
+      enabled: true,
+      bidders: ['bidderB'],
+      accountId: '123456',
+      endpoint: {
+        p1Consent: 'first.endpoint'
+      }
+    };
+    cfg2 = {
+      enabled: true,
+      bidders: ['bidderA'],
+      accountId: '123456',
+      endpoint: {
+        p1Consent: 'second.endpoint',
+      }
+    };
+  })
+  it('sets prebid server adapter by default', () => {
+    expect(validateConfig(cfg1)[0].adapter).to.eql('prebidServer');
+  });
+  it('filters out disabled configs', () => {
+    cfg1.enabled = false;
+    expect(validateConfig([cfg1, cfg2])).to.eql([cfg2]);
+  })
+});
 
 describe('S2S Adapter', function () {
   let adapter,

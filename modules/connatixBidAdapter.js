@@ -5,9 +5,9 @@ import {
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
+import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
 import {
   deepAccess,
   deepSetValue,
@@ -35,7 +35,7 @@ const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
 const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000; // 30 days
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
-const IDENTITY_PROVIDER_RESOLVED_EVENT = 'cnx_identity_provider_resolved';
+const IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT = 'cnx_identity_provider_collection_updated';
 let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
@@ -188,6 +188,15 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
+export function hasQueryParams(url) {
+  try {
+    const urlObject = new URL(url);
+    return !!urlObject.search;
+  } catch (e) {
+    return false;
+  }
+}
+
 export function saveOnAllStorages(name, value, expirationTimeMs) {
   const date = new Date();
   date.setTime(date.getTime() + expirationTimeMs);
@@ -233,10 +242,10 @@ export const spec = {
     if (!isValid) {
       logError(
         `Invalid bid request:
-          hasBidId: ${hasBidId}, 
-          hasMediaTypes: ${hasMediaTypes}, 
-          isValidBanner: ${isValidBanner}, 
-          isValidVideo: ${isValidVideo}, 
+          hasBidId: ${hasBidId},
+          hasMediaTypes: ${hasMediaTypes},
+          isValidBanner: ${isValidBanner},
+          isValidVideo: ${isValidVideo},
           hasRequiredBidParams: ${hasRequiredBidParams}`
       );
     }
@@ -341,19 +350,20 @@ export const spec = {
     }
 
     window.addEventListener('message', function handler(event) {
-      if (!event.data || event.origin !== 'https://cds.connatix.com') {
+      if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
         return;
       }
 
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT) {
+      const { message, data } = event.data.cnx;
+
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
         this.removeEventListener('message', handler);
         event.stopImmediatePropagation();
       }
 
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT || event.data.type === IDENTITY_PROVIDER_RESOLVED_EVENT) {
-        const response = event.data;
-        if (response.data) {
-          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
+        if (data) {
+          saveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
         }
       }
     }, true)
@@ -361,7 +371,11 @@ export const spec = {
     const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
 
-    const url = queryParams ? `${syncUrl}?${queryParams}` : syncUrl;
+    let url = syncUrl;
+    if (queryParams) {
+      url += hasQueryParams(syncUrl) ? `&${queryParams}` : `?${queryParams}`;
+    }
+
     return [{
       type: 'iframe',
       url
