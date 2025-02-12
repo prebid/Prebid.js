@@ -55,8 +55,7 @@ describe('PubMatic adapter', function () {
         bidder: 'pubmatic',
         mediaTypes: {
           banner: {
-            sizes: [[728, 90], [160, 600]],
-            pos: 2
+            sizes: [[728, 90], [160, 600]]
           }
         },
         params: {
@@ -97,8 +96,7 @@ describe('PubMatic adapter', function () {
         mediaTypes: {
           video: {
             playerSize: [640, 480],
-            context: 'instream',
-            pos: 3
+            context: 'instream'
           }
         },
         bidder: 'pubmatic',
@@ -361,10 +359,12 @@ describe('PubMatic adapter', function () {
         mediaTypes: {
           video: {
             playerSize: [640, 480],
-            context: 'instream'
+            context: 'instream',
+            pos: 2
           },
           banner: {
-            sizes: [[300, 250], [300, 600]]
+            sizes: [[300, 250], [300, 600]],
+            pos: 1
           }
         },
         bidder: 'pubmatic',
@@ -2574,6 +2574,7 @@ describe('PubMatic adapter', function () {
           expect(data.imp[0].banner.w).to.equal(300); // width
           expect(data.imp[0].banner.h).to.equal(250); // height
           expect(data.imp[0].ext.pmZoneId).to.equal(multipleMediaRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+          expect(data.imp[0].banner.pos).to.equal(1);
 
           // video imp object check
           expect(data.imp[1].video).to.exist;
@@ -2609,6 +2610,7 @@ describe('PubMatic adapter', function () {
 
           expect(data.imp[1]['video']['w']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[0]);
           expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
+          expect(data.imp[1]['video']['pos']).to.equal(2);
         });
 
         // ================================================
