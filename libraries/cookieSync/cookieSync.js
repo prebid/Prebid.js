@@ -1,19 +1,7 @@
 import { getStorageManager } from '../../src/storageManager.js';
 const COOKIE_KEY_MGUID = '__mguid_';
-const DSP_MAP = {
-  mediago: {
-    origin: 'https://cdn.mediago.io',
-    iframeUrl: 'https://cdn.mediago.io/js/cookieSync.html'
-  },
-  discovery: {
-    origin: 'https://asset.popin.cc',
-    iframeUrl: 'https://asset.popin.cc/js/cookieSync.html'
-  }
-}
 
-export function cookieSync(syncOptions, gdprConsent, uspConsent, bidderCode, cookieTime) {
-  const cookieOrigin = DSP_MAP[bidderCode]['origin'];
-  const COOKY_SYNC_IFRAME_URL = DSP_MAP[bidderCode]['iframeUrl'];
+export function cookieSync(syncOptions, gdprConsent, uspConsent, bidderCode, cookieOrigin, ckIframeUrl, cookieTime) {
   const storage = getStorageManager({bidderCode: bidderCode});
   const origin = encodeURIComponent(location.origin || `https://${location.host}`);
   let syncParamUrl = `dm=${origin}`;
@@ -47,7 +35,7 @@ export function cookieSync(syncOptions, gdprConsent, uspConsent, bidderCode, coo
     return [
       {
         type: 'iframe',
-        url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+        url: `${ckIframeUrl}?${syncParamUrl}`
       }
     ];
   }

@@ -39,6 +39,7 @@ let itemMaps = {};
 export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
+const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 let reqTimes = 0;
 
 /**
@@ -384,7 +385,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
-    return cookieSync(syncOptions, gdprConsent, uspConsent, BIDDER_CODE, getCurrentTimeToUTCString());
+    return cookieSync(syncOptions, gdprConsent, uspConsent, BIDDER_CODE, THIRD_PARTY_COOKIE_ORIGIN, COOKY_SYNC_IFRAME_URL, getCurrentTimeToUTCString());
   },
 
   /**
