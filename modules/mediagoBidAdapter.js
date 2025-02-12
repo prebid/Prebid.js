@@ -172,6 +172,7 @@ function getItems(validBidRequests, bidderRequest) {
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+          publisher: params.publisher || '',
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
@@ -286,9 +287,7 @@ function getParam(validBidRequests, bidderRequest) {
         mobile: isMobile,
         cat: [], // todo
         publisher: {
-          // todo
-          id: domain,
-          name: domain
+         id: globals['publisher'],
         }
       },
       imp: items,
@@ -316,6 +315,9 @@ export const spec = {
     // });
     if (bid.params.token) {
       globals['token'] = bid.params.token;
+    }
+    if (bid.params.publisher) {
+        globals['publisher'] = bid.params.publisher;
     }
     return !!bid.params.token;
   },
