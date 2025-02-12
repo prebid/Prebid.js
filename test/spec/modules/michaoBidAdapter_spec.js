@@ -488,7 +488,7 @@ describe('Michao Bid Adapter', () => {
 
     it('calls billing url when billing URL is a string', () => {
       const bid = {
-        burl: 'https://example.com/burl',
+        burl: 'https://example.com/burls',
         cpm: 1,
       };
 
