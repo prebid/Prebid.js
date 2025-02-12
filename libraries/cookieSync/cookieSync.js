@@ -40,5 +40,4 @@ export function cookieSync(syncOptions, gdprConsent, uspConsent, bidderCode, coo
       }
     ];
   }
-  return;
 }
