@@ -592,7 +592,6 @@ function _createVideoRequest(bid) {
 
   if (FEATURES.VIDEO && videoData !== UNDEFINED) {
     videoObj = {};
-    videoObj.pos = bid.mediaTypes.video?.pos ?? 0;
     checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
