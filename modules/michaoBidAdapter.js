@@ -260,7 +260,7 @@ const converter = ortbConverter({
         id: bidRequest.bidId,
         adUnitCode: bidRequest.adUnitCode,
       });
-      renderer.render(() => {
+      renderer.setRender((bid) => {
         bid.renderer.push(() => {
           const inRenderer = new window.InVideoRenderer();
           inRenderer.render(bid.adUnitCode, bid);
