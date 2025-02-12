@@ -203,7 +203,7 @@ function executeBidsLoggerCall(event, highestCpmBids) {
 }
 
 function executeBidWonLoggerCall(auctionId, adUnitId) {
-  const winningBidId = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.bidWon;
+  const winningBidId = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.wonBidId;
   const winningBids = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.bids[winningBidId];
   if (!winningBids) {
     logWarn(LOG_PRE_FIX + 'Could not find winningBids for : ', auctionId);
@@ -289,7 +289,7 @@ const eventHandlers = {
       if (!cache.auctions[args.auctionId].adUnitCodes.hasOwnProperty(bid.adUnitCode)) {
         cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode] = {
           bids: {},
-          bidWon: false,
+          wonBidId: "",
           dimensions: bid.sizes
         };
       }
@@ -365,7 +365,7 @@ const eventHandlers = {
 
   bidWon: (args)=> {
     let auctionCache = cache.auctions[args.auctionId];
-    auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.originalRequestId || args.requestId;
+    auctionCache.adUnitCodes[args.adUnitCode].wonBidId = args.originalRequestId || args.requestId;
     auctionCache.adUnitCodes[args.adUnitCode].bidWonAdId = args.adId;
     executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
   },
