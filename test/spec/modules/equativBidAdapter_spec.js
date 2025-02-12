@@ -919,6 +919,25 @@ describe('Equativ bid adapter tests', () => {
         })
       );
     });
+
+    it('should not fail if bidRequest.data.imp is undefined', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      delete request.data.imp;
+      expect(spec.interpretResponse(SAMPLE_RESPONSE, request)).to.not.throw;
+    });
+
+    it('should not fail if serverResponse.body.seatbid is undefined', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      const response = utils.deepClone(SAMPLE_RESPONSE);
+      delete response.body.seatbid;
+      expect(spec.interpretResponse(response, request)).to.not.throw;
+    });
   });
 
   describe('isBidRequestValid', () => {

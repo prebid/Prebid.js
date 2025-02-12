@@ -124,11 +124,17 @@ export const spec = {
    * @returns {Bid[]}
    */
   interpretResponse: (serverResponse, bidRequest) => {
-    bidRequest.data?.imp?.forEach(imp => imp.id = impIdMap[imp.id]);
+    if (bidRequest.data?.imp?.length) {
+      bidRequest.data.imp.forEach(imp => imp.id = impIdMap[imp.id]);
+    }
 
-    serverResponse.body?.seatbid?.forEach(seat =>
-      seat?.bid.forEach(bid => bid.impid = impIdMap[bid.impid])
-    );
+    if (serverResponse.body?.seatbid?.length) {
+      serverResponse.body.seatbid
+        .filter(seat => seat?.bid?.length)
+        .forEach(seat =>
+          seat.bid.forEach(bid => bid.impid = impIdMap[bid.impid])
+        );
+    }
 
     return converter.fromORTB({
       request: bidRequest.data,
@@ -225,7 +231,9 @@ export const converter = ortbConverter({
         }
       };
 
-      item.banner?.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
+      if (item.banner?.format?.length) {
+        item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
+      }
       updateFloorMap('native', 'nativeTemp');
       updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
 
