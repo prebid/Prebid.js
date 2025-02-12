@@ -1,7 +1,7 @@
 import {_each, isArray, isStr, logError, logWarn, pick, generateUUID} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON } from '../src/constants.js';
+import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON, REGEX_BROWSERS, BROWSER_MAPPING } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -203,8 +203,8 @@ function executeBidsLoggerCall(event, highestCpmBids) {
 }
 
 function executeBidWonLoggerCall(auctionId, adUnitId) {
-  const winningBidId = cache.auctions[auctionId].adUnitCodes[adUnitId].bidWon;
-  const winningBids = cache.auctions[auctionId].adUnitCodes[adUnitId].bids[winningBidId];
+  const winningBidId = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.bidWon;
+  const winningBids = cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.bids[winningBidId];
   if (!winningBids) {
     logWarn(LOG_PRE_FIX + 'Could not find winningBids for : ', auctionId);
     return;
@@ -212,14 +212,14 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 
   let winningBid = winningBids[0];
   if (winningBids.length > 1) {
-    winningBid = winningBids.filter(bid => bid.adId === cache.auctions[auctionId].adUnitCodes[adUnitId].bidWonAdId)[0];
+    winningBid = winningBids.find(bid => bid.adId === cache.auctions[auctionId]?.adUnitCodes[adUnitId]?.bidWonAdId) || winningBid;
   }
 
   const adapterName = getAdapterNameForAlias(winningBid.adapterCode || winningBid.bidder);
   if (isOWPubmaticBid(adapterName) && isS2SBidder(winningBid.bidder)) {
     return;
   }
-  let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId) || {};
+  let origAdUnit = getAdUnit(cache.auctions[auctionId]?.origAdUnits, adUnitId) || {};
   let owAdUnitId = origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId;
   let auctionCache = cache.auctions[auctionId];
   let wiid = cache.auctions[auctionId]?.wiid || auctionId;
