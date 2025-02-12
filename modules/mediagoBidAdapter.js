@@ -287,7 +287,7 @@ function getParam(validBidRequests, bidderRequest) {
         mobile: isMobile,
         cat: [], // todo
         publisher: {
-         id: globals['publisher'],
+         id: globals['publisher']
         }
       },
       imp: items,

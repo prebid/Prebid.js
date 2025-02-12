@@ -57,7 +57,7 @@ describe('mediago:BidAdapterTests', function () {
               keywords: 'video, source=streaming'
             },
             publisher: {
-              domain: 'discovery.popin.cc'
+              domain: 'mediago.io'
             },
           },
           user: {
