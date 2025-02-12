@@ -1,4 +1,4 @@
-import { getStorageManager } from '../src/storageManager.js';
+import { getStorageManager } from '../../src/storageManager.js';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const COOKIE_KEY_MGUID = '__mguid_';
 const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
