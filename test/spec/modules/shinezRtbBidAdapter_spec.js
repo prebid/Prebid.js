@@ -427,7 +427,7 @@ describe('ShinezRtbBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -435,7 +435,7 @@ describe('ShinezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -443,10 +443,21 @@ describe('ShinezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.sweetgum.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.sweetgum.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
       }]);
-    })
+    });
+
+    it('should have valid user sync with coppa on response', function () {
+      config.setConfig({
+        coppa: 1
+      });
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://sync.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
+      }]);
+    });
   });
 
   describe('interpret response', function () {

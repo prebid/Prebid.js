@@ -166,14 +166,15 @@ export function createUserSyncGetter(options = {
   iframeSyncUrl: '',
   imageSyncUrl: ''
 }) {
-  return function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}, coppa = 0) {
+  return function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
     const syncs = [];
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
     const {gppString, applicableSections} = gppConsent;
+    const coppa = config.getConfig('coppa') ? 1 : 0;
 
     const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-    let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}&coppa=${encodeURIComponent((coppa) || 0)}`;
+    let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}&coppa=${encodeURIComponent((coppa))}`;
     if (gppString && applicableSections?.length) {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
