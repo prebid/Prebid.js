@@ -6,8 +6,8 @@ const DSP_MAP = {
     iframeUrl: 'https://cdn.mediago.io/js/cookieSync.html'
   },
   discovery: {
-    origin: 'https://cdn.mediago.io',
-    iframeUrl: 'https://cdn.mediago.io/js/cookieSync.html'
+    origin: 'https://asset.popin.cc',
+    iframeUrl: 'https://asset.popin.cc/js/cookieSync.html'
   }
 }
 
