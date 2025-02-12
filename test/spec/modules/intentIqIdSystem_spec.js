@@ -495,38 +495,6 @@ describe('IntentIQ tests', function () {
 
       expect(request.url).to.contain(ENDPOINT_GDPR);
     });
-
-    it('should save "undefined" in localStorage and send it in request if allowGDPR, allowGPP, allowUSP are false', function () {
-      const partnerProvidedParams = {allowGDPR: false, allowGPP: false, allowUSP: false}
-      defaultConfigParams.params = {...defaultConfigParams.params, ...partnerProvidedParams};
-
-      // Mocking the returned data from consent handlers
-      mockConsentHandlers(uspData, gppData, gdprData);
-      let callBackSpy = sinon.spy();
-      let submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
-
-      // Call callback
-      submoduleCallback(callBackSpy);
-      let request = server.requests[0];
-      request.respond(
-        200,
-        responseHeader,
-        JSON.stringify({ isOptedOut: false })
-      );
-
-      // Check that the URL contains the expected consent data
-      expect(request.url).to.contain(`&gpp=${encodeURIComponent('undefined')}`);
-      expect(request.url).to.contain(`&us_privacy=${encodeURIComponent('undefined')}`);
-      expect(request.url).to.contain(`&gdpr=${encodeURIComponent('0')}`);
-
-      // Mock the firstPartyData from localStorage
-      const lsFirstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
-
-      // Ensure that the values are set to undefined
-      expect(lsFirstPartyData.uspString).to.equal('undefined');
-      expect(lsFirstPartyData.gppString).to.equal('undefined');
-      expect(lsFirstPartyData.gdprString).to.equal('undefined');
-    });
   });
 
   it('should get and save client hints to storage', async () => {

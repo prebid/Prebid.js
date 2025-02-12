@@ -280,10 +280,8 @@ function constructFullUrl(data) {
   data = btoa(JSON.stringify(data));
   report.push(data);
 
-  let iiqConfig = getIntentIqConfig()
-  let configParams = iiqConfig?.params || {};
-  const cmpData = getCmpData(configParams);
-  const gdprDetected = cmpData.allowGDPR && cmpData.gdprString;
+  const cmpData = getCmpData();
+  const gdprDetected = cmpData.gdprString;
   const baseUrl = gdprDetected ? REPORT_ENDPOINT_GDPR : REPORT_ENDPOINT;
 
   let url = baseUrl + '?pid=' + iiqAnalyticsAnalyticsAdapter.initOptions.partner +
@@ -297,7 +295,7 @@ function constructFullUrl(data) {
     '&uh=' + encodeURIComponent(iiqAnalyticsAnalyticsAdapter.initOptions.clientsHints) +
     (cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '') +
     (cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '') +
-    (cmpData.allowGDPR && cmpData.gdprString
+    (cmpData.gdprString
       ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
       : '&gdpr=0');
 

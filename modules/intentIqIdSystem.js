@@ -213,8 +213,8 @@ export const intentIqIdSubmodule = {
     let partnerData = {};
     let shouldCallServer = false;
     const FIRST_PARTY_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
-    const cmpData = getCmpData(configParams);
-    const gdprDetected = cmpData.allowGDPR && cmpData.gdprString;
+    const cmpData = getCmpData();
+    const gdprDetected = cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage, storage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
 
@@ -314,7 +314,7 @@ export const intentIqIdSubmodule = {
       firstPartyData.uspString = cmpData.uspString;
       firstPartyData.gppString = cmpData.gppString;
       firstPartyData.gdprString = cmpData.gdprString;
-      firstPartyData.cttl = 0
+      firstPartyData.date = Date.now();
       shouldCallServer = true;
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
       storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
@@ -344,7 +344,7 @@ export const intentIqIdSubmodule = {
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
     url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
     url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
-    url += cmpData.allowGDPR && cmpData.gdprString
+    url += cmpData.gdprString
       ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
       : '&gdpr=0';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
