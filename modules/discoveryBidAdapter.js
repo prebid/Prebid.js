@@ -31,7 +31,6 @@ const COOKIE_KEY_PBUID = 'pub_pp_tag';
 const STORAGE_KEY_FTUID = 'fluct_ppUUIDv4';
 const STORAGE_KEY_IMUID = '__im_ppid';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
-const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://asset.popin.cc';
 
 const UTM_KEY = '_ss_pp_utm';
@@ -485,7 +484,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
-    cookieSync(syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent);
+    cookieSync(syncOptions, gdprConsent, uspConsent, THIRD_PARTY_COOKIE_ORIGIN, getCookieTimeToUTCString());
   },
 
   /**

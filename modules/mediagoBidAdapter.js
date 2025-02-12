@@ -26,7 +26,6 @@ const BIDDER_CODE = 'mediago';
 // const PROTOCOL = window.document.location.protocol;
 const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
 // const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
-const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
 
 const TIME_TO_LIVE = 500;
@@ -385,7 +384,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
-    cookieSync(syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent);
+    cookieSync(syncOptions, gdprConsent, uspConsent, THIRD_PARTY_COOKIE_ORIGIN, getCurrentTimeToUTCString());
   },
 
   /**
