@@ -111,7 +111,7 @@ export const spec = {
       requests.push({
         data,
         method: 'POST',
-        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
+        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
       })
     });
 
