@@ -433,7 +433,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
       setIrisId(data, bidderRequest.ortb2.site, params);
-      data.curl = bidderRequest.ortb2.site.content && bidderRequest.ortb2.site.content.url;
+      const curl = bidderRequest.ortb2.site.content?.url;
+      if (curl) data.curl = curl;
     }
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
