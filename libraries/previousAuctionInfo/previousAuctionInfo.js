@@ -1,26 +1,30 @@
 import {on as onEvent} from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
+import { config } from '../../src/config.js';
 
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
-export let winningBidsMap = {};
 
 export let auctionState = {};
 
 export const resetPreviousAuctionInfo = () => {
   previousAuctionInfoEnabled = false;
   enabledBidders = [];
-  winningBidsMap = {};
   auctionState = {};
 };
 
-export const enablePreviousAuctionInfo = (config, cb = initHandlers) => {
-  const { bidderCode } = config;
-  const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderCode);
-  if (!enabledBidder) enabledBidders.push({ bidderCode, maxQueueLength: config.maxQueueLength || 10 });
-  if (previousAuctionInfoEnabled) return;
-  previousAuctionInfoEnabled = true;
-  cb();
+export const enablePreviousAuctionInfo = (sspConfig, cb = initHandlers) => {
+  config.getConfig('previousAuctionInfo', (conf) => {
+    if (!conf.previousAuctionInfo) return;
+
+    const { bidderCode } = sspConfig;
+    const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderCode);
+
+    if (!enabledBidder) enabledBidders.push({ bidderCode, maxQueueLength: sspConfig.maxQueueLength || 10 });
+    if (previousAuctionInfoEnabled) return;
+    previousAuctionInfoEnabled = true;
+    cb();
+  });
 }
 
 export const initHandlers = () => {
@@ -88,23 +92,22 @@ export const onAuctionEndHandler = (auctionDetails) => {
   } catch (error) {}
 }
 
-const onBidWonHandler = (winningBid) => {
-  winningBidsMap[winningBid.transactionId] = winningBid;
-}
+export const onBidWonHandler = (winningBid) => {
+  const winningTid = winningBid.transactionId;
+
+  Object.values(auctionState).flat().forEach(prevAuctPayload => {
+    if (prevAuctPayload.transactionId === winningTid) {
+      prevAuctPayload.rendered = 1;
+    }
+  });
+};
 
 export const onBidRequestedHandler = (bidRequest) => {
   try {
     const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidRequest.bidderCode);
     if (enabledBidder && auctionState[bidRequest.bidderCode]) {
       auctionState[bidRequest.bidderCode].forEach(prevAuctPayload => {
-        if (winningBidsMap[prevAuctPayload.transactionId]) {
-          prevAuctPayload.rendered = 1;
-          delete winningBidsMap[prevAuctPayload.transactionId];
-        }
-
-        if (prevAuctPayload.transactionId) {
-          delete prevAuctPayload.transactionId;
-        }
+        if (prevAuctPayload.transactionId) delete prevAuctPayload.transactionId;
       });
 
       bidRequest.ortb2 = Object.assign({}, bidRequest.ortb2);

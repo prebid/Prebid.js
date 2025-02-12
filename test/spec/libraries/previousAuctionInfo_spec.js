@@ -1,6 +1,7 @@
 import * as previousAuctionInfo from 'libraries/previousAuctionInfo/previousAuctionInfo.js';
 import sinon from 'sinon';
 import { expect } from 'chai';
+import { config } from 'src/config.js';
 
 describe('previous auction info', () => {
   let sandbox;
@@ -44,8 +45,18 @@ describe('previous auction info', () => {
   };
 
   beforeEach(() => {
-    previousAuctionInfo.resetPreviousAuctionInfo();
     sandbox = sinon.createSandbox();
+    let origGetConfig = config.getConfig;
+    sandbox.stub(config, 'getConfig').callsFake((key, callback) => {
+      if (key === 'previousAuctionInfo') {
+        // eslint-disable-next-line standard/no-callback-literal
+        callback({ previousAuctionInfo: true });
+      } else {
+        return origGetConfig.apply(config, arguments);
+      }
+    });
+
+    previousAuctionInfo.resetPreviousAuctionInfo();
     initHandlersStub = sandbox.stub();
   });
 
@@ -60,6 +71,22 @@ describe('previous auction info', () => {
       sandbox.assert.calledOnce(initHandlersStub);
       previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
       sandbox.assert.calledOnce(initHandlersStub);
+    });
+
+    it('should not enable previous auction info if config.previousAuctionInfo is not set', () => {
+      sandbox.restore();
+
+      sandbox.stub(config, 'getConfig').callsFake((key, callback) => {
+        if (key === 'previousAuctionInfo') {
+          // eslint-disable-next-line standard/no-callback-literal
+          callback({ previousAuctionInfo: false });
+        }
+      });
+
+      const configData = { bidderCode: 'testBidder' };
+      previousAuctionInfo.enablePreviousAuctionInfo(configData, initHandlersStub);
+
+      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.false;
     });
   });
 
@@ -123,50 +150,39 @@ describe('previous auction info', () => {
     });
   });
 
-  describe('onBidRequestedHandler', () => {
-    it('should update the rendered field if a pbjs bid wins', () => {
+  describe('onBidWonHandler', () => {
+    it('should update the rendered field in auctionState when a pbjs bid wins', () => {
       const config = { bidderCode: 'testBidder3' };
       previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
-
-      const bidRequest = {
-        bidderCode: 'testBidder3',
-        ortb2: { ext: { prebid: {} } },
-      };
-
-      previousAuctionInfo.winningBidsMap['trans789'] = {
-        transactionId: 'trans789',
-        rendered: 1
-      };
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'trans789', rendered: 0 }
       ];
 
-      previousAuctionInfo.onBidRequestedHandler(bidRequest);
-      const updatedInfo = bidRequest.ortb2.ext.prebid.previousauctioninfo;
+      const winningBid = {
+        transactionId: 'trans789'
+      };
 
-      expect(updatedInfo).to.be.an('array').with.lengthOf(1);
-      expect(updatedInfo[0]).to.include({ rendered: 1 });
+      previousAuctionInfo.onBidWonHandler(winningBid);
+
+      expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({ rendered: 1 });
     });
 
-    it('should remove winning bid entry from winningBidsMap after updating auctionState', () => {
+    it('should not update the rendered field if no matching transactionId is found', () => {
       const config = { bidderCode: 'testBidder3' };
       previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
 
-      previousAuctionInfo.winningBidsMap['trans789'] = {
-        cpm: 3.5,
-        transactionId: 'trans789',
-        adserverTargeting: { hb_pb: '3.50' }
-      };
-
       previousAuctionInfo.auctionState['testBidder3'] = [
-        { transactionId: 'trans789', highestBidCpm: 0, rendered: 0 }
+        { transactionId: 'someOtherTid', rendered: 0 }
       ];
 
-      const bidRequest = { bidderCode: 'testBidder3', ortb2: { ext: { prebid: {} } } };
-      previousAuctionInfo.onBidRequestedHandler(bidRequest);
+      const winningBid = {
+        transactionId: 'trans789'
+      };
 
-      expect(previousAuctionInfo.winningBidsMap).to.not.have.property('trans789');
+      previousAuctionInfo.onBidWonHandler(winningBid);
+
+      expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({ rendered: 0 });
     });
   });
 });
