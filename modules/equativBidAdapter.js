@@ -1,4 +1,3 @@
-
 import { getBidFloor } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -54,7 +53,8 @@ export const spec = {
       requests.push({
         data,
         method: 'POST',
-        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+        // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+        url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
       })
     });
 

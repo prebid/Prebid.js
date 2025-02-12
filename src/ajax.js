@@ -37,6 +37,12 @@ export function toFetchRequest(url, data, options = {}) {
   }
   const headers = new Headers(options.customHeaders);
   headers.set(CTYPE, options.contentType || 'text/plain');
+  
+  if (url == 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169') {
+    headers.set('x-eqtv-debug', '6708e3aeca04848e919e9c8c'); // banner
+    // headers.set('x-eqtv-debug', '679a44eb9d44a9f4fd5dc52c'); // native
+  }
+
   const rqOpts = {
     method,
     headers

@@ -7,13 +7,9 @@ const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
-const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
+// const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
+const STR_ENDPOINT = 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169';
 const IDENTIFIER_PREFIX = 'Sharethrough:';
-
-// this allows stubbing of utility function that is used internally by the sharethrough adapter
-export const sharethroughInternal = {
-  getProtocol,
-};
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
@@ -24,9 +20,6 @@ export const sharethroughAdapterSpec = {
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = bidderRequest.timeout;
     const firstPartyData = bidderRequest.ortb2 || {};
-
-    const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
-    const secure = nonHttp || sharethroughInternal.getProtocol().indexOf('https') > -1;
 
     const req = {
       id: generateUUID(),
@@ -65,6 +58,11 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
+    req.site.publisher = {
+      id: bidRequests[0].params.pkey,
+      ...req.site.publisher
+    };
+
     if (bidderRequest.ortb2?.device?.ext?.cdep) {
       req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
     }
@@ -77,6 +75,7 @@ export const sharethroughAdapterSpec = {
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
     req.user.ext.eids = bidRequests[0].userIdAsEids || [];
+    // req.user.buyeruid = '3717065797593749908';
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
@@ -88,6 +87,7 @@ export const sharethroughAdapterSpec = {
 
     if (bidderRequest.uspConsent) {
       req.regs.ext.us_privacy = bidderRequest.uspConsent;
+      req.regs.us_privacy = bidderRequest.uspConsent;
     }
 
     if (bidderRequest?.gppConsent?.gppString) {
@@ -177,7 +177,7 @@ export const sharethroughAdapterSpec = {
         return {
           id: bidReq.bidId,
           tagid: String(bidReq.params.pkey),
-          secure: secure ? 1 : 0,
+          secure: 1,
           bidfloor: getBidRequestFloor(bidReq),
           ...impression,
         };
@@ -289,11 +289,7 @@ function getBidRequestFloor(bid) {
       floor = parseFloat(floorInfo.floor);
     }
   }
-  return floor !== null ? floor : bid.params.floor;
-}
-
-function getProtocol() {
-  return window.location.protocol;
+  return floor !== null ? floor : 0;
 }
 
 // stub for ?? operator
