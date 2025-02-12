@@ -708,6 +708,71 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal('123456');
     });
 
+    it('should add max_bids param in imp.ext objects when multibid is enabled for improve digital individually', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('multibid').returns([
+        {bidder: 'improvedigital', maxBids: 3},
+        {bidder: 'otherBidder', maxBids: 2},
+      ]);
+
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
+
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+    });
+
+    it('should add max_bids param in imp.ext objects when multibid is enabled for improve digital and others', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('multibid').returns([
+        {bidders: ['improvedigital', 'otherBidderWithMultiBid'], maxBids: 3},
+        {bidder: 'otherBidder', maxBids: 2},
+      ]);
+
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
+
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+    });
+
+    it('should not add max_bids param in imp.ext objects when multibid is not enabled at all', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('multibid').returns(undefined);
+
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
+
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+    });
+
+    it('should not add max_bids param in imp.ext objects when multibid is not enabled for improve digital', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('multibid').returns([
+        {bidders: ['otherBidderWithMultiBid'], maxBids: 3},
+        {bidder: 'otherBidder', maxBids: 2},
+      ]);
+
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
+
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+    });
+
     it('should set extend url when extend mode enabled in adunit params', function () {
       const bidRequest = deepClone(extendBidRequest);
       let request = spec.buildRequests([bidRequest], { bids: [bidRequest] })[0];
