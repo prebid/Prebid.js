@@ -172,6 +172,14 @@ export const CONVERTER = ortbConverter({
     }
     deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
 
+    const maxBids = config.getConfig('multibid')
+      ?.find(multiBidSetting => multiBidSetting?.bidder === BIDDER_CODE || multiBidSetting.bidders?.includes(BIDDER_CODE))
+      ?.maxBids;
+
+    if (maxBids) {
+      deepSetValue(imp, 'ext.max_bids', maxBids);
+    }
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
