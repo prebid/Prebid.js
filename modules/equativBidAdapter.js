@@ -208,21 +208,20 @@ export const converter = ortbConverter({
 
       const updateFloorMap = (type, name, width = 0, height = 0) => {
         const floor = getFloor(bid, type, width, height, currency);
-        if (floor) {
-          if (!floorMap[floor]) {
-            floorMap[floor] = {
-              ...item,
-              bidfloor: floor
-            };
-          }
 
-          if (!floorMap[floor][name]) {
-            floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type];
-          }
+        if (!floorMap[floor]) {
+          floorMap[floor] = {
+            ...item,
+            bidfloor: floor
+          };
+        }
 
-          if (type === 'banner') {
-            floorMap[floor][name].format.push({ w: width, h: height });
-          }
+        if (!floorMap[floor][name]) {
+          floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type];
+        }
+
+        if (type === 'banner') {
+          floorMap[floor][name].format.push({ w: width, h: height });
         }
       };
 

@@ -347,12 +347,12 @@ describe('Equativ bid adapter tests', () => {
       expect(request.data.dooh.publisher.id).to.equal(111);
     });
 
-    it('should send default floor of 0.0', () => {
+    it('should not send floor by default', () => {
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
       )[0];
-      expect(request.data.imp[0]).to.have.property('bidfloor').that.eq(0.0);
+      expect(request.data.imp[0]).to.not.have.property('bidfloor');
     });
 
     it('should send secure connection', () => {
