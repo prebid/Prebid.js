@@ -1,14 +1,14 @@
 import { getStorageManager } from '../../src/storageManager.js';
 const COOKIE_KEY_MGUID = '__mguid_';
 const DSP_MAP = {
-    mediago: {
-        origin: 'https://cdn.mediago.io',
-        iframeUrl: 'https://cdn.mediago.io/js/cookieSync.html'
-    },
-    popin: {
-        origin: 'https://cdn.mediago.io',
-        iframeUrl: 'https://cdn.mediago.io/js/cookieSync.html'
-    }
+  mediago: {
+    origin: 'https://cdn.mediago.io',
+    iframeUrl: 'https://cdn.mediago.io/js/cookieSync.html'
+  },
+  discovery: {
+    origin: 'https://cdn.mediago.io',
+    iframeUrl: 'https://cdn.mediago.io/js/cookieSync.html'
+  }
 }
 
 export function cookieSync(syncOptions, gdprConsent, uspConsent, bidderCode, cookieTime) {
