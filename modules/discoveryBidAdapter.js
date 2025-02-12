@@ -484,7 +484,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
-    cookieSync(syncOptions, gdprConsent, uspConsent, THIRD_PARTY_COOKIE_ORIGIN, getCookieTimeToUTCString());
+    cookieSync(syncOptions, gdprConsent, uspConsent, BIDDER_CODE, THIRD_PARTY_COOKIE_ORIGIN, getCookieTimeToUTCString());
   },
 
   /**
