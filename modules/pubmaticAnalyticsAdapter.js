@@ -38,13 +38,8 @@ let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
 
 /// /////////// HELPER FUNCTIONS //////////////
-function formatSource(src) {
-  if (typeof src === 'undefined') {
-    src = 'client';
-  } else if (src === 's2s') {
-    src = 'server';
-  }
-  return src.toLowerCase();
+function formatSource(src = 'client') {
+  return (src === 's2s' ? 'server' : src).toLowerCase();
 }
 
 function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
@@ -274,7 +269,7 @@ const eventHandlers = {
       let s2sConf = config.getConfig('s2sConfig');
       let s2sBidders = [];
       (s2sConf || []) &&
-        isArray(s2sConf) ? s2sConf.map(conf => s2sBidders.push(...conf.bidders)) : s2sBidders.push(...s2sConf.bidders);
+        isArray(s2sConf) ? s2sConf.map(conf => s2sBidders.push(...conf.bidders)) : s2sConf?.bidders ? s2sBidders.push(...s2sConf.bidders) : [];
       return s2sBidders || [];
     }());
     let cacheEntry = pick(args, [
