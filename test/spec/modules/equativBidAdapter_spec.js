@@ -136,6 +136,35 @@ describe('Equativ bid adapter tests', () => {
     }
   ];
 
+  const DEFAULT_MULTI_IMP_BID_REQUESTS = [
+    {
+      adUnitCode: 'eqtv_42',
+      bidId: 'abcd1234',
+      mediaTypes: {
+        banner: DEFAULT_BANNER_BID_REQUESTS[0].mediaTypes.banner,
+        video: DEFAULT_VIDEO_BID_REQUESTS[0].mediaTypes.video,
+        native: DEFAULT_NATIVE_BID_REQUESTS[0].mediaTypes.native,
+      },
+      nativeOrtbRequest,
+      bidder: 'equativ',
+      params: {
+        networkId: 111,
+      },
+      requestId: 'efgh5678',
+      ortb2Imp: {
+        ext: {
+          tid: 'zsfgzzg',
+        },
+      },
+      getFloor: ({ mediaType, size }) => {
+        if ((mediaType === 'banner' && size[0] === 300 && size[1] === 250) || mediaType === 'native') {
+          return { floor: 1.1 };
+        }
+        return { floor: 0.9 };
+      }
+    }
+  ];
+
   const DEFAULT_BANNER_BIDDER_REQUEST = {
     bidderCode: 'equativ',
     bids: DEFAULT_BANNER_BID_REQUESTS,
@@ -149,6 +178,11 @@ describe('Equativ bid adapter tests', () => {
   const DEFAULT_NATIVE_BIDDER_REQUEST = {
     bidderCode: 'equativ',
     bids: DEFAULT_NATIVE_BID_REQUESTS,
+  };
+
+  const DEFAULT_MULTI_IMP_BIDDER_REQUEST = {
+    bidderCode: 'equativ',
+    bids: DEFAULT_MULTI_IMP_BID_REQUESTS,
   };
 
   const SAMPLE_RESPONSE = {
@@ -203,6 +237,17 @@ describe('Equativ bid adapter tests', () => {
         },
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+      });
+    });
+
+    it('should generate a 14-char id for each imp object', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      );
+
+      request[0].data.imp.forEach(imp => {
+        expect(imp.id).to.have.lengthOf(14);
       });
     });
 
@@ -570,9 +615,6 @@ describe('Equativ bid adapter tests', () => {
 
     it('should build a native request properly under normal circumstances', () => {
       if (FEATURES.NATIVE) {
-        // ASSEMBLE
-        const expectedResult = true;
-
         // ACT
         const request = spec.buildRequests(DEFAULT_NATIVE_BID_REQUESTS, {})[0].data;
 
@@ -617,7 +659,7 @@ describe('Equativ bid adapter tests', () => {
     it('should warn about missing "assets" property for native requests', () => {
       if (FEATURES.NATIVE) {
         // ASSEMBLE
-        const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
+        const missingRequiredNativeRequest = utils.deepClone(DEFAULT_NATIVE_BID_REQUESTS[0]);
 
         // removing just "assets" for this test
         delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
@@ -638,9 +680,10 @@ describe('Equativ bid adapter tests', () => {
     it('should warn about other missing required properties for native requests', () => {
       if (FEATURES.NATIVE) {
         // ASSEMBLE
-        const missingRequiredNativeRequest = DEFAULT_NATIVE_BID_REQUESTS[0];
+        const missingRequiredNativeRequest = utils.deepClone(DEFAULT_NATIVE_BID_REQUESTS[0]);
 
         // ortbConverter library will warn about missing assets; we supply warnings for these properties here
+        delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.eventtrackers;
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
@@ -659,6 +702,55 @@ describe('Equativ bid adapter tests', () => {
         expect(utils.logWarn.getCall(3).args[0]).to.satisfy(arg => arg.includes('"mediaTypes.native.ortb.eventtrackers" is missing'));
       }
     });
+
+    it('should split banner sizes per floor', () => {
+      const bids = [
+        {
+          ...DEFAULT_BANNER_BID_REQUESTS[0],
+          getFloor: ({ size }) => ({ floor: size[0] * size[1] / 100_000 })
+        }
+      ];
+
+      const request = spec.buildRequests(
+        bids,
+        { ...DEFAULT_BANNER_BIDDER_REQUEST, bids }
+      );
+
+      expect(request[0].data.imp).to.have.lengthOf(2);
+
+      const firstImp = request[0].data.imp[0];
+      expect(firstImp.bidfloor).to.equal(300 * 250 / 100_000);
+      expect(firstImp.banner.format).to.have.lengthOf(1);
+      expect(firstImp.banner.format[0]).to.deep.equal({ w: 300, h: 250 });
+
+      const secondImp = request[0].data.imp[1];
+      expect(secondImp.bidfloor).to.equal(300 * 600 / 100_000);
+      expect(secondImp.banner.format).to.have.lengthOf(1);
+      expect(secondImp.banner.format[0]).to.deep.equal({ w: 300, h: 600 });
+    });
+
+    it('should group media types per floor', () => {
+      if (FEATURES.NATIVE) {
+        const request = spec.buildRequests(
+          DEFAULT_MULTI_IMP_BID_REQUESTS,
+          DEFAULT_MULTI_IMP_BIDDER_REQUEST
+        );
+
+        const firstImp = request[0].data.imp[0];
+        expect(firstImp.bidfloor).to.equal(1.1);
+        expect(firstImp.banner.format).to.have.lengthOf(1);
+        expect(firstImp.banner.format[0]).to.deep.equal({ w: 300, h: 250 });
+        expect(firstImp).to.have.property('native');
+        expect(firstImp).to.not.have.property('video');
+
+        const secondImp = request[0].data.imp[1];
+        expect(secondImp.bidfloor).to.equal(0.9);
+        expect(secondImp.banner.format).to.have.lengthOf(1);
+        expect(secondImp.banner.format[0]).to.deep.equal({ w: 300, h: 600 });
+        expect(secondImp).to.not.have.property('native');
+        expect(secondImp).to.have.property('video');
+      }
+    })
   });
 
   describe('getBidFloor', () => {

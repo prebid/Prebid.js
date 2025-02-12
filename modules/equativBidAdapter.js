@@ -31,7 +31,9 @@ function cleanObject(obj, key, tempKey) {
 
   for (const prop in obj) {
     if (prop === key) {
-      newObj[key] = obj[tempKey];
+      if (Object.prototype.hasOwnProperty.call(obj, tempKey)) {
+        newObj[key] = obj[tempKey];
+      }
     } else if (prop !== tempKey) {
       newObj[prop] = obj[prop];
     }
