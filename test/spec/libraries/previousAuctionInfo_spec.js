@@ -46,16 +46,6 @@ describe('previous auction info', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    let origGetConfig = config.getConfig;
-    sandbox.stub(config, 'getConfig').callsFake((key, callback) => {
-      if (key === 'previousAuctionInfo') {
-        // eslint-disable-next-line standard/no-callback-literal
-        callback({ previousAuctionInfo: true });
-      } else {
-        return origGetConfig.apply(config, arguments);
-      }
-    });
-
     previousAuctionInfo.resetPreviousAuctionInfo();
     initHandlersStub = sandbox.stub();
   });
@@ -65,27 +55,16 @@ describe('previous auction info', () => {
   });
 
   describe('config', () => {
-    it('should only be initialized once', () => {
-      const config = { bidderCode: 'testBidder' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
-      sandbox.assert.calledOnce(initHandlersStub);
-      previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
+    it('should initialize the module if publisher enabled', () => {
+      previousAuctionInfo.initPreviousAuctionInfo(initHandlersStub);
+      config.setConfig({ previousAuctionInfo: true });
       sandbox.assert.calledOnce(initHandlersStub);
     });
 
     it('should not enable previous auction info if config.previousAuctionInfo is not set', () => {
       sandbox.restore();
-
-      sandbox.stub(config, 'getConfig').callsFake((key, callback) => {
-        if (key === 'previousAuctionInfo') {
-          // eslint-disable-next-line standard/no-callback-literal
-          callback({ previousAuctionInfo: false });
-        }
-      });
-
-      const configData = { bidderCode: 'testBidder' };
-      previousAuctionInfo.enablePreviousAuctionInfo(configData, initHandlersStub);
-
+      previousAuctionInfo.initPreviousAuctionInfo(initHandlersStub);
+      config.setConfig({ previousAuctionInfo: false });
       expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.false;
     });
   });
@@ -93,7 +72,7 @@ describe('previous auction info', () => {
   describe('onAuctionEndHandler', () => {
     it('should store auction data for enabled bidders in auctionState', () => {
       const config = { bidderCode: 'testBidder2' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
+      previousAuctionInfo.enablePreviousAuctionInfo(config);
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
 
       expect(previousAuctionInfo.auctionState).to.have.property('testBidder2');
@@ -120,8 +99,8 @@ describe('previous auction info', () => {
     it('should store auction data for multiple bidders correctly', () => {
       const config1 = { bidderCode: 'testBidder1' };
       const config2 = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config1, initHandlersStub);
-      previousAuctionInfo.enablePreviousAuctionInfo(config2, initHandlersStub);
+      previousAuctionInfo.enablePreviousAuctionInfo(config1);
+      previousAuctionInfo.enablePreviousAuctionInfo(config2);
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
 
       expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
@@ -153,7 +132,7 @@ describe('previous auction info', () => {
   describe('onBidWonHandler', () => {
     it('should update the rendered field in auctionState when a pbjs bid wins', () => {
       const config = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
+      previousAuctionInfo.enablePreviousAuctionInfo(config);
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'trans789', rendered: 0 }
@@ -170,7 +149,7 @@ describe('previous auction info', () => {
 
     it('should not update the rendered field if no matching transactionId is found', () => {
       const config = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config, initHandlersStub);
+      previousAuctionInfo.enablePreviousAuctionInfo(config);
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'someOtherTid', rendered: 0 }

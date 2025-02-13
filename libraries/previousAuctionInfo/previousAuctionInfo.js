@@ -13,18 +13,23 @@ export const resetPreviousAuctionInfo = () => {
   auctionState = {};
 };
 
-export const enablePreviousAuctionInfo = (sspConfig, cb = initHandlers) => {
+export const initPreviousAuctionInfo = (cb = initHandlers) => {
   config.getConfig('previousAuctionInfo', (conf) => {
-    if (!conf.previousAuctionInfo) return;
+    if (!conf.previousAuctionInfo) {
+      if (previousAuctionInfoEnabled) { resetPreviousAuctionInfo(); }
+      return;
+    }
 
-    const { bidderCode } = sspConfig;
-    const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderCode);
-
-    if (!enabledBidder) enabledBidders.push({ bidderCode, maxQueueLength: sspConfig.maxQueueLength || 10 });
-    if (previousAuctionInfoEnabled) return;
     previousAuctionInfoEnabled = true;
     cb();
   });
+};
+
+export const enablePreviousAuctionInfo = (sspConfig) => {
+  const { bidderCode } = sspConfig;
+  const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderCode);
+
+  if (!enabledBidder) enabledBidders.push({ bidderCode, maxQueueLength: sspConfig.maxQueueLength || 10 });
 }
 
 export const initHandlers = () => {
@@ -119,3 +124,5 @@ export const onBidRequestedHandler = (bidRequest) => {
     }
   } catch (error) {}
 }
+
+initPreviousAuctionInfo();
