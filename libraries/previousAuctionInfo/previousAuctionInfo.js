@@ -1,4 +1,4 @@
-import {on as onEvent} from '../../src/events.js';
+import {on as onEvent, off as offEvent} from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { config } from '../../src/config.js';
 
@@ -7,10 +7,11 @@ let enabledBidders = [];
 
 export let auctionState = {};
 
-export const resetPreviousAuctionInfo = () => {
+export const resetPreviousAuctionInfo = (cb = deinitHandlers) => {
   previousAuctionInfoEnabled = false;
   enabledBidders = [];
   auctionState = {};
+  cb();
 };
 
 export const initPreviousAuctionInfo = (cb = initHandlers) => {
@@ -37,6 +38,12 @@ export const initHandlers = () => {
   onEvent(EVENTS.BID_WON, onBidWonHandler);
   onEvent(EVENTS.BID_REQUESTED, onBidRequestedHandler);
 };
+
+const deinitHandlers = () => {
+  offEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
+  offEvent(EVENTS.BID_WON, onBidWonHandler);
+  offEvent(EVENTS.BID_REQUESTED, onBidRequestedHandler);
+}
 
 export const onAuctionEndHandler = (auctionDetails) => {
   try {
