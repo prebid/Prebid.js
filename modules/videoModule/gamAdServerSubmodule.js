@@ -12,8 +12,13 @@ function GamAdServerProvider(dfpModule_) {
     return dfp.buildVideoUrl({ adUnit: adUnit, url: baseAdTag, params, bid });
   }
 
+  async function replaceVastAdTagWithBlobContent(gamVastWrapper, bid) {
+    return dfp.replaceVastAdTagWithBlobContent(gamVastWrapper, bid);
+  }
+
   return {
-    getAdTagUrl
+    getAdTagUrl,
+    replaceVastAdTagWithBlobContent
   }
 }
 

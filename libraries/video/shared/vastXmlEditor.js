@@ -91,7 +91,7 @@ export function VastXmlEditor(xmlUtil_) {
         vastAdTagUriElement.appendChild(cdata);
         return xmlUtil.serialize(xmlDoc);
       } else {
-        throw new Error();
+        throw new Error(`${VAST_TAG_URI_TAGNAME} tag not found in xml`);
       }
     } catch (error) {
       logError('Unable to process xml', error);

@@ -22,7 +22,9 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
-import pbjs from '../src/prebid.js';
+import { vastsLocalCache } from '../src/videoCache.js';
+import { vastXmlEditorFactory } from '../libraries/video/shared/vastXmlEditor.js';
+import { fetch } from '../src/ajax.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -250,15 +252,35 @@ function getCustParams(bid, options, urlCustParams) {
   return encodedParams;
 }
 
-// Function to handle scenarios without a video module.
-// Combines building the GAM ad tag URL and fetching the VAST.
-async function getAdXml(options) {
-  const adTagUrl = buildDfpVideoUrl(options);
-  const vastXml = await pbjs.getVast(adTagUrl, options.bid.videoCacheKey);
-  return vastXml;
+async function replaceVastAdTagWithBlobContent(gamVastWrapper, bid) {
+  const blobUrl = vastsLocalCache.get(bid.videoCacheKey);
+  if (!blobUrl) return gamVastWrapper;
+  const vastXmlEditor = vastXmlEditorFactory();
+  const finalVast = await vastXmlEditor.replaceVastAdTagWithBlobContent(gamVastWrapper, blobUrl, bid.videoCacheKey);
+  return finalVast;
 };
+
+async function getVast(options) {
+  const { bid } = options;
+  const vastUrl = buildDfpVideoUrl(options);
+  const response = await fetch(vastUrl);
+
+  if (!response.ok) {
+    throw new Error('Unable to fetch GAM VAST wrapper');
+  }
+
+  const gamVastWrapper = await response.text();
+
+  if (config.getConfig('cache.useLocal') && gamVastWrapper.includes(bid.videoCacheKey)) {
+    const vastXml = await replaceVastAdTagWithBlobContent(gamVastWrapper, bid);
+    return vastXml;
+  }
+
+  return gamVastWrapper;
+}
 
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
-  getAdXml
+  replaceVastAdTagWithBlobContent,
+  getVast
 });

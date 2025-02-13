@@ -50,8 +50,6 @@ import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
-import { vastsLocalCache } from './videoCache.js';
-import { vastXmlEditorFactory } from '../libraries/video/shared/vastXmlEditor.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -923,41 +921,6 @@ pbjsInstance.getHighestCpmBids = function (adUnitCode) {
 
 pbjsInstance.clearAllAuctions = function () {
   auctionManager.clearAllAuctions();
-};
-
-/**
- * Get VAST file for video bid by its vastUrl and
- * replace content with blob in case of GAM and local cache in use.
- * @property {string} vastUrl Bid's vast url
- * @property {string} videoCacheKey Bid's cache uuid
- * @property {Map} cacheMap map to search for the locally cached bids vasts
- *
- * @alias module:pbjs.getVast
- */
-pbjsInstance.getVast = async function (vastUrl, videoCacheKey, cacheMap = vastsLocalCache) {
-  try {
-    const response = await fetch(vastUrl);
-    if (!response.ok) {
-      throw new Error();
-    }
-
-    const vastXml = await response.text();
-
-    // If the fetched VAST XML is a GAM wrapper and local cached is being used,
-    // retrieve the bid's VAST blob from the local cache
-    // and replace the VastAdTagURI with its content.
-    if (config.getConfig('cache.useLocal') && vastXml.includes(videoCacheKey)) {
-      const blobUrl = cacheMap.get(videoCacheKey);
-      if (!blobUrl) return vastXml;
-      const vastXmlEditor = vastXmlEditorFactory();
-      const finalVast = await vastXmlEditor.replaceVastAdTagWithBlobContent(vastXml, blobUrl, videoCacheKey);
-      return finalVast;
-    }
-
-    return vastXml;
-  } catch (error) {
-    logError('Error during fetching vast file');
-  }
 };
 
 if (FEATURES.VIDEO) {

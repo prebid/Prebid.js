@@ -24,6 +24,7 @@ import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../l
 import {VIDEO} from '../../src/mediaTypes.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
+import { fetch } from '../../src/ajax.js';
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
@@ -85,8 +86,25 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   async function renderBid(divId, bid, vastUrl, options) {
-    const vastXml = await pbGlobal.getVast(vastUrl || bid.vastUrl, bid.videoCacheKey);
-    loadAd(vastXml, divId, options);
+    try {
+      const response = await fetch(vastUrl);
+      if (!response.ok) {
+        throw new Error('VAST fetch failed');
+      }
+
+      let vastXml = await response.text();
+
+      // If the fetched VAST XML is a GAM wrapper and local cached is being used,
+      // retrieve the bid's VAST blob from the local cache
+      // and replace the VastAdTagURI with its content.
+      if (config.getConfig('cache.useLocal') && vastXml.includes(bid.videoCacheKey)) {
+        vastXml = await gamSubmodule.replaceVastAdTagWithBlobContent(vastXml, bid);
+      }
+
+      loadAd(vastXml, divId, options);
+    } catch (error) {
+      logError('Error during fetching vast file', error);
+    }
   }
 
   function getOrtbVideo(divId) {
