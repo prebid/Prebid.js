@@ -12,24 +12,7 @@
                 mediaTypes: {
                     video: {
                         playerSize: [640, 360],
-                        context: 'outstream',
-                        renderer: {
-                            url: 'https://cdn.jwplayer.com/libraries/l5MchIxB.js',
-                            render: function (bid) {                               
-                                const player = jwplayer("player").setup({
-                                    width: 640, 
-                                    height: 360,
-                                    advertising: {
-                                        client: "vast",
-                                        outstream: true,
-                                        endstate: "close"
-                                    },
-                                });
-                                player.on('ready', function() {
-                                    player.loadAdXml(bid.vastXml);
-                                })
-                            }
-                        }
+                        context: 'outstream'
                     }
                 },
                 code: adUnitCode,

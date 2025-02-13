@@ -1,3 +1,4 @@
+import { Renderer } from '../../src/Renderer.js';
 import { auctionManager } from '../../src/auctionManager.js';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import {
@@ -194,6 +195,23 @@ Object.assign(BidInterceptor.prototype, {
       case VIDEO:
         if (!bidResponse.hasOwnProperty('vastXml') && !bidResponse.hasOwnProperty('vastUrl')) {
           bidResponse.vastXml = responseResolvers[VIDEO]();
+          bidResponse.renderer = Renderer.install({
+            url: 'https://cdn.jwplayer.com/libraries/l5MchIxB.js',
+          });
+          bidResponse.renderer.setRender(function (bid) {
+            const player = window.jwplayer('player').setup({
+              width: 640,
+              height: 360,
+              advertising: {
+                client: 'vast',
+                outstream: true,
+                endstate: 'close'
+              },
+            });
+            player.on('ready', function() {
+              player.loadAdXml(bid.vastXml);
+            });
+          })
         }
         break;
       case NATIVE:
