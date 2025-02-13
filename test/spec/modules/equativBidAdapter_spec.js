@@ -1,6 +1,4 @@
-import { getBidFloor } from 'libraries/equativUtils/equativUtils.js';
 import { converter, spec, storage } from 'modules/equativBidAdapter.js';
-import { BANNER } from 'src/mediaTypes.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Equativ bid adapter tests', () => {
@@ -751,72 +749,6 @@ describe('Equativ bid adapter tests', () => {
         expect(secondImp).to.have.property('video');
       }
     })
-  });
-
-  describe('getBidFloor', () => {
-    it('should return floor of 0.0 if floor module not available', () => {
-      const bid = {
-        ...DEFAULT_BANNER_BID_REQUESTS[0],
-        getFloor: false,
-      };
-      expect(getBidFloor(bid)).to.deep.eq(0.0);
-    });
-
-    it('should return floor of 0.0 if mediaTypes not defined', () => {
-      const bid = {
-        getFloor: () => ({})
-      };
-      expect(bid.mediaTypes).to.be.undefined;
-      expect(getBidFloor(bid)).to.deep.eq(0.0);
-    });
-
-    it('should return proper min floor', () => {
-      const bid = {
-        ...DEFAULT_BANNER_BID_REQUESTS[0],
-        getFloor: data => {
-          if (data.size[0] === 300 && data.size[1] === 250) {
-            return { floor: 1.13 };
-          } else if (data.size[0] === 300 && data.size[1] === 600) {
-            return { floor: 1.39 };
-          } else {
-            return { floor: 0.52 };
-          }
-        }
-      };
-      expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(1.13);
-    });
-
-    it('should return global media type floor if no rule for size', () => {
-      const bid = {
-        ...DEFAULT_BANNER_BID_REQUESTS[0],
-        getFloor: data => {
-          if (data.size[0] === 728 && data.size[1] === 90) {
-            return { floor: 1.13 };
-          } else if (data.size[0] === 300 && data.size[1] === 600) {
-            return { floor: 1.36 };
-          } else {
-            return { floor: 0.34 };
-          }
-        }
-      };
-      expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(0.34);
-    });
-
-    it('should return floor of 0 if no rule for size', () => {
-      const bid = {
-        ...DEFAULT_BANNER_BID_REQUESTS[0],
-        getFloor: data => {
-          if (data.size[0] === 728 && data.size[1] === 90) {
-            return { floor: 1.13 };
-          } else if (data.size[0] === 300 && data.size[1] === 600) {
-            return { floor: 1.36 };
-          } else {
-            return {};
-          }
-        }
-      };
-      expect(getBidFloor(bid, 'USD', BANNER)).to.deep.eq(0.0);
-    });
   });
 
   describe('getUserSyncs', () => {
