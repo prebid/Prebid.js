@@ -822,8 +822,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       ajax(url, cb, undefined, {
         method: 'GET',
+        contentType: 'application/json',
         customHeaders: {
-          'Content-Type': 'application/json',
           'Pragma': 'akamai-x-get-extracted-values'
         }
       });
