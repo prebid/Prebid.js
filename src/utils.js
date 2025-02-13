@@ -998,28 +998,55 @@ export function buildUrl(obj) {
  * @param {boolean} [options.checkTypes=false] - If set, two objects with identical properties but different constructors will *not* be considered equivalent.
  * @returns {boolean} - Returns `true` if the objects are equivalent, `false` otherwise.
  */
-export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
+export function deepEqual(obj1, obj2, { checkTypes = false } = {}) {
+  // Quick reference check
   if (obj1 === obj2) return true;
-  else if (
-    (typeof obj1 === 'object' && obj1 !== null) &&
-    (typeof obj2 === 'object' && obj2 !== null) &&
-    (!checkTypes || (obj1.constructor === obj2.constructor))
+
+  // If either is null or not an object, do a direct equality check
+  if (
+    typeof obj1 !== 'object' || obj1 === null ||
+    typeof obj2 !== 'object' || obj2 === null
   ) {
-    const props1 = Object.keys(obj1);
-    if (props1.length !== Object.keys(obj2).length) return false;
-    for (let prop of props1) {
-      if (obj2.hasOwnProperty(prop)) {
-        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
-          return false;
-        }
-      } else {
+    return false;
+  }
+  // Cache the Array checks
+  const isArr1 = Array.isArray(obj1);
+  const isArr2 = Array.isArray(obj2);
+  // Special case: both are arrays
+  if (isArr1 && isArr2) {
+    if (obj1.length !== obj2.length) return false;
+    for (let i = 0; i < obj1.length; i++) {
+      if (!deepEqual(obj1[i], obj2[i], { checkTypes })) {
         return false;
       }
     }
     return true;
-  } else {
+  } else if (isArr1 || isArr2) {
     return false;
   }
+
+  // If we’re checking types, compare constructors (e.g., plain object vs. Date)
+  if (checkTypes && obj1.constructor !== obj2.constructor) {
+    return false;
+  }
+
+  // Compare object keys. Cache keys for both to avoid repeated calls.
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+
+  if (keys1.length !== keys2.length) return false;
+
+  for (const key of keys1) {
+    // If `obj2` doesn't have this key or sub-values aren't equal, bail out.
+    if (!Object.prototype.hasOwnProperty.call(obj2, key)) {
+      return false;
+    }
+    if (!deepEqual(obj1[key], obj2[key], { checkTypes })) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 export function mergeDeep(target, ...sources) {
