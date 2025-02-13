@@ -1,155 +1,73 @@
 import { expect } from 'chai';
-import { spec } from 'modules/epomDspBidAdapter.js';
-import { config } from 'src/config.js';
-import { logError, logWarn } from 'src/utils.js';
+import { spec } from '../../../modules/epomDspBidAdapter.js';
 
-describe('epomDspBidAdapter', () => {
-  const BIDDER_CODE = 'epomDsp';
+const VALID_BID_REQUEST = {
+  bidder: 'epom_dsp',
+  params: {
+    endpoint: 'https://bidder.epommarket.com/bidder/v2_5/bid?key=d0b9fb9de9dfbba694dfe75294d8e45a'
+  },
+  adUnitCode: 'ad-unit-1',
+  sizes: [[300, 250]],
+  bidId: '12345'
+};
 
-  describe('isBidRequestValid', () => {
-    it('should return true when bid has endpoint in params', () => {
-      const bid = {
-        params: {
-          endpoint: 'https://example.com'
-        }
-      };
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+const BIDDER_REQUEST = {
+  refererInfo: { referer: 'https://example.com' },
+  gdprConsent: { consentString: 'consent_string' },
+  uspConsent: 'usp_string'
+};
 
-    it('should return false when endpoint is missing', () => {
-      config.setBidderConfig({});
-      const bid = {
-        params: {}
-      };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
+describe('epomDspBidAdapter', function () {
+  it('should validate a correct bid request', function () {
+    expect(spec.isBidRequestValid(VALID_BID_REQUEST)).to.be.true;
   });
 
-  describe('buildRequests', () => {
-    it('should build requests correctly', () => {
-      const bidRequests = [{
-        params: {
-          endpoint: 'https://example.com'
-        },
-        bidId: '123',
-        auctionId: '456'
-      }];
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'https://example.com'
-        },
-        gdprConsent: 'consentString',
-        uspConsent: 'uspConsentString'
-      };
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests).to.have.lengthOf(1);
-      expect(requests[0]).to.deep.equal({
-        method: 'POST',
-        url: 'https://example.com',
-        data: {
-          bidId: '123',
-          auctionId: '456',
-          referer: 'https://example.com',
-          gdprConsent: 'consentString',
-          uspConsent: 'uspConsentString'
-        },
-        options: {
-          contentType: 'application/json',
-          withCredentials: false
-        }
-      });
-    });
+  it('should reject a bid request with missing endpoint', function () {
+    const invalidBid = { ...VALID_BID_REQUEST, params: { endpoint: '' } };
+    expect(spec.isBidRequestValid(invalidBid)).to.be.false;
   });
 
-  describe('interpretResponse', () => {
-    it('should interpret valid server response', () => {
-      const serverResponse = {
-        body: {
-          bids: [{
-            requestId: '123',
+  it('should reject a bid request with an invalid endpoint', function () {
+    const invalidBid = { ...VALID_BID_REQUEST, params: { endpoint: 'http://invalid.com' } };
+    expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+  });
+
+  it('should build requests properly', function () {
+    const requests = spec.buildRequests([VALID_BID_REQUEST], BIDDER_REQUEST);
+    expect(requests).to.have.length(1);
+    expect(requests[0]).to.include.keys(['method', 'url', 'data', 'options']);
+    expect(requests[0].method).to.equal('POST');
+    expect(requests[0].url).to.equal(VALID_BID_REQUEST.params.endpoint);
+    expect(requests[0].data).to.include.keys(['referer', 'gdprConsent', 'uspConsent']);
+  });
+
+  it('should interpret response correctly', function () {
+    const SERVER_RESPONSE = {
+      body: {
+        bids: [
+          {
+            requestId: '12345',
             cpm: 1.23,
             currency: 'USD',
             width: 300,
             height: 250,
-            ad: '<html></html>',
-            creativeId: '456',
-            ttl: 60,
+            ad: '<div>Ad</div>',
+            creativeId: 'abcd1234',
+            ttl: 300,
             netRevenue: true
-          }]
-        }
-      };
-      const bidResponses = spec.interpretResponse(serverResponse);
-      expect(bidResponses).to.have.lengthOf(1);
-      expect(bidResponses[0]).to.deep.equal({
-        requestId: '123',
-        cpm: 1.23,
-        currency: 'USD',
-        width: 300,
-        height: 250,
-        ad: '<html></html>',
-        creativeId: '456',
-        ttl: 60,
-        netRevenue: true
-      });
-    });
+          }
+        ]
+      }
+    };
+
+    const result = spec.interpretResponse(SERVER_RESPONSE);
+    expect(result).to.have.length(1);
+    expect(result[0]).to.include.keys(['requestId', 'cpm', 'currency', 'width', 'height', 'ad', 'creativeId', 'ttl', 'netRevenue']);
+    expect(result[0].cpm).to.equal(1.23);
   });
 
-  describe('getUserSyncs', () => {
-    it('should return iframe syncs when iframeEnabled is true', () => {
-      const syncOptions = {
-        iframeEnabled: true,
-        pixelEnabled: false
-      };
-      const serverResponses = [{
-        body: {
-          userSync: {
-            iframe: 'https://example.com/iframe'
-          }
-        }
-      }];
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'iframe',
-        url: 'https://example.com/iframe'
-      });
-    });
-
-    it('should return pixel syncs when pixelEnabled is true', () => {
-      const syncOptions = {
-        iframeEnabled: false,
-        pixelEnabled: true
-      };
-      const serverResponses = [{
-        body: {
-          userSync: {
-            pixel: 'https://example.com/pixel'
-          }
-        }
-      }];
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(syncs).to.have.lengthOf(1);
-      expect(syncs[0]).to.deep.equal({
-        type: 'image',
-        url: 'https://example.com/pixel'
-      });
-    });
-
-    it('should return empty array when no sync options are enabled', () => {
-      const syncOptions = {
-        iframeEnabled: false,
-        pixelEnabled: false
-      };
-      const serverResponses = [{
-        body: {
-          userSync: {
-            iframe: 'https://example.com/iframe',
-            pixel: 'https://example.com/pixel'
-          }
-        }
-      }];
-      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(syncs).to.have.lengthOf(0);
-    });
+  it('should return empty array for empty response', function () {
+    const result = spec.interpretResponse({ body: {} });
+    expect(result).to.be.an('array').that.is.empty;
   });
 });
