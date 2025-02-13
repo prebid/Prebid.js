@@ -11,9 +11,42 @@
             const adUnits = [{
                 mediaTypes: {
                     native: {
-                        image: {
-                            required: true,
-                            sizes: [600, 500],
+                        ortb: {
+                            assets: [
+                                { 
+                                    required: true,
+                                    id: 1,
+                                    img: {
+                                        type: 3,
+                                        wmin: 100,
+                                        hmin: 100,
+                                    }
+                                },
+                                {
+                                    required: true,
+                                    id: 2,
+                                    img: {
+                                        type: 3,
+                                        wmin: 200,
+                                        hmin: 200
+                                    }
+                                },
+                                {
+                                    required: true,
+                                    id: 3,
+                                    data: {
+                                        type: 3,
+                                        len: 20
+                                    }
+                                },
+                                {
+                                    required: true,
+                                    id: 4,
+                                    title: {
+                                        len: 20
+                                    }
+                                }
+                            ]
                         }
                     }
                 },
@@ -93,15 +126,22 @@
                     font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
                     font-size: 14px;
                     line-height: 1.42857143;
+                    box-sizing: border-box;
+                    border: 3px dashed red;
+                    padding: 20px;
                     color: #333;
-                    background: #fff url(##hb_native_asset_id_0##) no-repeat center;
-                    background-size: cover;
-                    width: 600px;
-                    height: 500px;
-                }       
+                }
+
+                .img {
+                    width: 300px;
+                    height: 200px;
+                }
     
             </style>
             <div class="container">
+                <h1>##hb_native_asset_id_4##</h1>
+                <h3>Rating: ##hb_native_asset_id_3##</h3>
+                <img class="img" src="##hb_native_asset_id_1##" alt="bg" />
             </div>
         </template>
         <h2>Prebid Test Bidder Example</h2>

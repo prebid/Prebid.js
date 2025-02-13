@@ -198,13 +198,13 @@ Object.assign(BidInterceptor.prototype, {
         break;
       case NATIVE:
         if (!bidResponse.hasOwnProperty('native')) {
-          bidResponse.native = responseResolvers[NATIVE]();
+          bidResponse.native = responseResolvers[NATIVE](bid);
         }
         break;
       case BANNER:
       default:
         if (!bidResponse.hasOwnProperty('ad') && !bidResponse.hasOwnProperty('adUrl')) {
-          bidResponse.ad = responseResolvers[BANNER](bid, bidResponse);
+          bidResponse.ad = responseResolvers[BANNER]();
         }
     }
   },
