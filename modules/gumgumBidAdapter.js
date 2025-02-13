@@ -472,6 +472,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
+    const tId = deepAccess(ortb2Imp, 'ext.tid') || deepAccess(bidderRequest, 'ortb2.source.tid') || '';
+    data.tId = tId
     Object.assign(
       data,
       _getBrowserParams(topWindowUrl, mosttopLocation),
@@ -481,7 +483,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     bids.push({
       id: bidId,
       tmax: timeout,
-      tId: ortb2Imp?.ext?.tid,
+      tId: tId,
       pi: data.pi,
       selector: params.selector,
       sizes,
