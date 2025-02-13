@@ -569,13 +569,17 @@ pbjsInstance.requestBids = (function() {
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, function requestBids(req = {}) {
+  return wrapHook(delegate, delayIfPrerendering(function requestBids(req = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
+
+    // Note that we delay this when prerendering because in some configurations requestBids may happen outside of
+    // pbjs.que (e.g. NPM consumers).
 
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
+
     let adUnits = req.adUnits || pbjsInstance.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
@@ -584,7 +588,7 @@ pbjsInstance.requestBids = (function() {
     req.defer = defer({promiseFactory: (r) => new Promise(r)})
     delegate.call(this, req);
     return req.defer.promise;
-  });
+  }));
 })();
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
@@ -1019,15 +1023,35 @@ function processQueue(queue) {
 }
 
 /**
+ * Returns a wrapper around fn that delays execution until the page if activated, if it was prerendered.
+ * https://developer.chrome.com/docs/web-platform/prerender-pages
+ */
+function delayIfPrerendering(fn) {
+  return function () {
+    if (document.prerendering && !(config.getConfig('allowPrerendering') || getGlobal().allowPrerendering)) {
+      const that = this;
+      const args = Array.from(arguments);
+      return new Promise((resolve) => {
+        document.addEventListener('prerenderingchange', () => {
+          logInfo(`Auctions are suspended while page is prerendering. Set $$PREBID_GLOBAL$$.allowPrerendering = true to allow auctions during prerendering.`)
+          resolve(fn.apply(that, args))
+        }, {once: true})
+      })
+    } else {
+      return Promise.resolve(fn.apply(this, arguments));
+    }
+  }
+}
+/**
  * @alias module:pbjs.processQueue
  */
-pbjsInstance.processQueue = function () {
+pbjsInstance.processQueue = delayIfPrerendering(function () {
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
   processQueue(pbjsInstance.que);
   processQueue(pbjsInstance.cmd);
-};
+});
 
 /**
  * @alias module:pbjs.triggerBilling
