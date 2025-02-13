@@ -1655,7 +1655,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"assets":[{"id":1,"required":1,"img":{"type":3,"w":250,"h":250}}]},"dimensions":[[200,200],[300,300]]}]}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"ortb":{"assets":[{"id":1,"required":1,"img":{"type":3,"w":250,"h":250}}]}},"dimensions":[[200,200],[300,300]]}]}');
     });
 
     it('should return valid response when passed valid server response', function () {

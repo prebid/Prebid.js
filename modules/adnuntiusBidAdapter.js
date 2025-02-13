@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop} from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -361,7 +361,8 @@ export const spec = {
           adUnit.adType = 'VAST';
         } else if (mediaType === NATIVE) {
           adUnit.adType = 'NATIVE';
-          adUnit.nativeRequest = mediaTypeData.ortb;
+          adUnit.nativeRequest = deepClone(mediaTypeData);
+          delete adUnit.nativeRequest.sizes;
         }
         const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
         if (maxDeals > 0) {
