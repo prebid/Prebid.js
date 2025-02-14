@@ -10,12 +10,11 @@
 <html>
 
 <head>
-  <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/semiautomatic.js"
-    data-cmp-cdid="599af61faf55" data-cmp-host="delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net"
-    data-cmp-codesrc="1"></script>
+    <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/semiautomatic.js" 
+    data-cmp-cdid="599af61faf55" data-cmp-host="delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="1"></script>
 
 
-  <script async src="http://localhost:9999/build/dev/prebid.js"></script>
+  <script async src="../../build/dev/prebid.js"></script>
   <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
   <script>
     var FAILSAFE_TIMEOUT = 3300;
@@ -53,10 +52,20 @@
     pbjs.que.push(function () {
       pbjs.addAdUnits(adUnits);
       pbjs.setConfig({
+        userSync: {
+          filterSettings: {
+            iframe: {
+              bidders: ['appnexus'],
+              filter: 'include'
+            }
+          }
+        }
+      })
+      pbjs.setConfig({
         consentManagement: {
           gpp: {
             cmpApi: 'iab',
-            timeout: 8000
+            timeout: 5000
           },
           usp: {
             cmpApi: 'static',
@@ -66,46 +75,7 @@
               }
             }
           }
-        },
-        coppa: true,
-        "userSync": {
-          "userIds": [
-            {
-              name: "pubmaticId",
-              params: {
-                publisherId: 133799
-              },
-              storage: {
-                name: "pubmaticId",
-                type: "cookie",
-                expires: 30,
-                refreshInSeconds: 86400
-              }
-            },
-            // {
-            //   name: "criteo"
-            // },
-            // {
-            //   name: 'teadsId',
-            //   params: {
-            //     pubId: 1234
-            //   }
-            // },
-            // {
-            //   name: "33acrossId",
-            //   params: {
-            //     pid: "0010b00002GYU4eBAH", // Example ID
-            //     storeFpid: true
-            //   },
-            //   storage: {
-            //     name: "33acrossId",
-            //     type: "cookie&html5",
-            //     expires: 30,
-            //     refreshInSeconds: 8 * 3600
-            //   }
-            // }
-          ]
-        },
+        }
       })
       pbjs.requestBids({
         bidsBackHandler: sendAdserverRequest,

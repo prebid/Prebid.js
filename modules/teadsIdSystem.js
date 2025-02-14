@@ -57,8 +57,6 @@ export const teadsIdSubmodule = {
    * @returns {{teadsId:string}}
    */
   decode(value) {
-    // eslint-disable-next-line no-console
-    console.log('decode invoked', { value });
     return {teadsId: value}
   },
   /**
@@ -69,36 +67,22 @@ export const teadsIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(submoduleConfig, consentData) {
-    // eslint-disable-next-line no-console
-    console.log('getId invoked', { submoduleConfig, consentData });
     const resp = function (callback) {
-      // eslint-disable-next-line no-console
-      console.log('resp invoked', { callback });
       const url = buildAnalyticsTagUrl(submoduleConfig, consentData);
 
       const callbacks = {
         success: (bodyResponse, responseObj) => {
-          // eslint-disable-next-line no-console
-          console.log('success invoked', { bodyResponse, responseObj });
           if (responseObj && responseObj.status === 200) {
-            // eslint-disable-next-line no-console
-            console.log('success', { responseObj, responseObjStatus: responseObj.status });
             if (isStr(bodyResponse) && !isEmpty(bodyResponse)) {
-              // eslint-disable-next-line no-console
-              console.log('success: test 1');
               const cookiesMaxAge = getTimestampFromDays(365); // 1 year
               const expirationCookieDate = getCookieExpirationDate(cookiesMaxAge);
               storage.setCookie(FP_TEADS_ID_COOKIE_NAME, bodyResponse, expirationCookieDate);
               callback(bodyResponse);
             } else {
-              // eslint-disable-next-line no-console
-              console.log('success: test 2', { FP_TEADS_ID_COOKIE_NAME, EXPIRED_COOKIE_DATE });
               storage.setCookie(FP_TEADS_ID_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
               callback();
             }
           } else {
-            // eslint-disable-next-line no-console
-            console.log('success: test 3');
             logInfo(`${MODULE_NAME}: Server error while fetching ID`);
             callback();
           }
@@ -109,15 +93,8 @@ export const teadsIdSubmodule = {
         }
       };
 
-      // eslint-disable-next-line no-console
-      console.log('resp', { url, callbacks });
-
       ajax(url, callbacks, undefined, {method: 'GET'});
     };
-
-    // eslint-disable-next-line no-console
-    console.log('getId', { resp });
-
     return {callback: resp};
   }
 };
@@ -129,8 +106,6 @@ export const teadsIdSubmodule = {
  * @returns {string}
  */
 export function buildAnalyticsTagUrl(submoduleConfig, consentData) {
-  // eslint-disable-next-line no-console
-  console.log('buildAnalyticsTagUrl invoked', { submoduleConfig, consentData });
   const pubId = getPublisherId(submoduleConfig);
   const teadsViewerId = getTeadsViewerId();
   const status = getGdprStatus(consentData);

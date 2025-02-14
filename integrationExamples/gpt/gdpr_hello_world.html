@@ -1,7 +1,6 @@
 <html>
-
-<head>
-  <!-- <script>
+  <head>
+    <script>
         window._iub = window._iub || {};
         _iub.csConfiguration = {
             cookiePolicyId: 417383,
@@ -11,202 +10,97 @@
             enableTcf: true,
         };
     </script>
-    <script src="https://cdn.iubenda.com/cs/tcf/beta/stub.js"></script>
-    <script async src="https://cdn.iubenda.com/cs/beta/iubenda_cs.js"></script> -->
+    <script src="//cdn.iubenda.com/cs/tcf/beta/stub.js"></script>
+    <script async src="//cdn.iubenda.com/cs/beta/iubenda_cs.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
 
-  <script type="text/javascript">
-    var _iub = _iub || [];
-    _iub.csConfiguration = {
-      // "askConsentAtCookiePolicyUpdate":true,
-      // "enableTcf":true,  //enable IAB TCF 
-      // //"tcfVersion":"2.2", //use this parameter to switch the version of the TCF / use the new 2.2 version
-      // //"tcfVendors":"628,1111,92", //use this parameter to select manually the vendors you're using
+      <script>
+        var PREBID_TIMEOUT = 700;
+        var FAILSAFE_TIMEOUT = 2500;
 
-      // /*
-      // (OPTIONAL) Limit the legal basis and choose which TCF purposes to prompt 
-      // "tcfPurposes": {
-      //   "1":"true",
-      //   "2":"consent_only",
-      //   "3":"consent_only",
-      //   "4":"consent_only",
-      //   "5":"consent_only",
-      //   "6":"consent_only",
-      //   "7":"consent_only",
-      //   "8":"consent_only",
-      //   "9":"consent_only",
-      //   "10":"consent_only",
-      //   "11":"consent_only"
-      // },
-      // */
-      // "floatingPreferencesButtonDisplay":"bottom-right",
-      // "googleAdditionalConsentMode":true,
-      // "lang":"en",
-      // "perPurposeConsent":true, //enable per-category consent
-      // "siteId":3156898, //use your siteId
-      // "cookiePolicyId":36614288, //use your cookiePolicyId
+        var adUnits = [{
+          code: 'div-gpt-ad-1460505748561-0',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300,600]]
+            }
+          },
 
-      // "banner":{ 
-      //   "acceptButtonDisplay":true,
-      //   "closeButtonDisplay":false,
-      //   "customizeButtonDisplay":true,
-      //   "explicitWithdrawal":true,
-      //   "listPurposes":true,
-      //   "position":"float-top-center",
-      //   "rejectButtonDisplay":true 
-      // }
-      cookiePolicyId: 417383,
-      siteId: 1,
-      logLevel: 'error',
-      lang: 'en',
-      enableTcf: true,
-    };
-  </script>
-  <script type="text/javascript" src="//cdn.iubenda.com/cs/tcf/beta/stub-v2.js"></script>
-  <script type="text/javascript" src="//cdn.iubenda.com/cs/tcf/beta/safe-tcf-v2.js"></script>
-  <script type="text/javascript" src="//cdn.iubenda.com/cs/beta/iubenda_cs.js" charset="UTF-8" async></script>
+          // Replace this object to test a new Adapter!
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            }
+          }]
 
-  <script async src="../../build/dev/prebid.js"></script>
-  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+        }];
 
-  <script>
-    var PREBID_TIMEOUT = 700;
-    var FAILSAFE_TIMEOUT = 2500;
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
 
-    var adUnits = [{
-      code: 'div-gpt-ad-1460505748561-0',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 600]]
-        }
-      },
+      </script>
 
-      // Replace this object to test a new Adapter!
-      bids: [{
-        bidder: 'appnexus',
-        params: {
-          placementId: 13144370
-        }
-      }]
-
-    }];
-
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
-
-  </script>
-
-  <script>
-    var googletag = googletag || {};
-    googletag.cmd = googletag.cmd || [];
-    googletag.cmd.push(function () {
-      googletag.pubads().disableInitialLoad();
-    });
-
-    pbjs.que.push(function () {
-      pbjs.addAdUnits(adUnits);
-      pbjs.setConfig({
-        consentManagement: {
-          cmpApi: 'iab',
-          timeout: 5000,
-          // gpp: {
-          //   cmpApi: 'iab',
-          //   timeout: 8000
-          // },
-          // usp: {
-          //   cmpApi: 'static',
-          //   consentData: {
-          //     getUSPData: {
-          //       uspString: '1YYY'
-          //     }
-          //   }
-          // }
-        },
-        coppa: true,
-        "userSync": {
-          "userIds": [
-            {
-              name: "pubmaticId",
-              params: {
-                publisherId: 133799
-              },
-              storage: {
-                name: "pubmaticId",
-                type: "cookie",
-                expires: 30,
-                refreshInSeconds: 86400
-                // refreshInSeconds: 30
-              }
-            },
-            // {
-            //   name: "criteo"
-            // },
-            // {
-            //   name: 'teadsId',
-            //   params: {
-            //     pubId: 1234
-            //   }
-            // },
-            // {
-            //   name: "33acrossId",
-            //   params: {
-            //     pid: "0010b00002GYU4eBAH", // Example ID
-            //     storeFpid: true
-            //   },
-            //   storage: {
-            //     name: "33acrossId",
-            //     type: "cookie&html5",
-            //     expires: 30,
-            //     refreshInSeconds: 8 * 3600
-            //   }
-            // }
-          ]
-        },
-        pubcid: {
-          enable: false
-        }
-      });
-      pbjs.requestBids({
-        bidsBackHandler: sendAdserverRequest,
-        timeout: PREBID_TIMEOUT
-      });
-    });
-
-    function sendAdserverRequest() {
-      if (pbjs.adserverRequestSent) return;
-      pbjs.adserverRequestSent = true;
-      googletag.cmd.push(function () {
-        pbjs.que.push(function () {
-          pbjs.setTargetingForGPTAsync();
-          googletag.pubads().refresh();
+      <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function() {
+          googletag.pubads().disableInitialLoad();
         });
-      });
-    }
 
-    setTimeout(function () {
-      sendAdserverRequest();
-      console.log('timeout in main pbjs fired');
-    }, FAILSAFE_TIMEOUT);
+        pbjs.que.push(function() {
+          pbjs.addAdUnits(adUnits);
+          pbjs.setConfig({
+            consentManagement: {
+              cmpApi: 'iab',
+              timeout: 5000
+            },
+            pubcid: {
+              enable: false
+            }
+          });
+          pbjs.requestBids({
+            bidsBackHandler: sendAdserverRequest,
+            timeout: PREBID_TIMEOUT
+          });
+        });
 
-  </script>
-  <script>
-    googletag.cmd.push(function () {
-      googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+        function sendAdserverRequest() {
+          if (pbjs.adserverRequestSent) return;
+          pbjs.adserverRequestSent = true;
+          googletag.cmd.push(function() {
+            pbjs.que.push(function() {
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();
+            });
+          });
+        }
 
-      googletag.pubads().enableSingleRequest();
-      googletag.enableServices();
-    });
-  </script>
-</head>
+        setTimeout(function() {
+           sendAdserverRequest();
+           console.log('timeout in main pbjs fired');
+        }, FAILSAFE_TIMEOUT);
 
-<body>
+      </script>
+      <script>
+        googletag.cmd.push(function () {
+          googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+          googletag.pubads().enableSingleRequest();
+          googletag.enableServices();
+        });
+      </script>
+  </head>
+
+  <body>
 
   <h2>Prebid.js Test</h2>
   <h5>Div-1</h5>
   <div id='div-gpt-ad-1460505748561-0'>
-    <script type='text/javascript'>
-      googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
-    </script>
+      <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+      </script>
   </div>
-</body>
-
-</html>
+  </body>
+  </html>
