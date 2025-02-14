@@ -534,13 +534,15 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   (fskp != undefined) && (pixelURL += '&fskp=' + enc(fskp));
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData.floorRequestData);
-    const { ffs, fsrc, fp, mv } = floorRootValues || {};
-    const params = { ffs, fsrc, fp, fmv: mv };
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        pixelURL += `&${key}=${enc(value)}`;
-      }
-    });
+    if (floorRootValues) {
+      const { ffs, fsrc, fp, mv } = floorRootValues || {};
+      const params = { ffs, fsrc, fp, fmv: mv };
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          pixelURL += `&${key}=${enc(value)}`;
+        }
+      });
+    }
     const floorType = getFloorType(floorData.floorResponseData);
     if (floorType !== undefined) {
       pixelURL += '&ft=' + enc(floorType);
