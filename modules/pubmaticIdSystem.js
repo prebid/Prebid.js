@@ -48,12 +48,11 @@ function buildUrl(config, consentData) {
   return baseUrl;
 }
 
-function deleteFromAllStorages(key, hostname) {
+function deleteFromAllStorages(key) {
   const cKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
   cKeys.forEach((cKey) => {
     if (storage.getCookie(cKey)) {
-      const dateInPast = new Date(0).toString();
-      storage.setCookie(cKey, '', dateInPast, null, '.' + hostname);
+      storage.setCookie(cKey, '', new Date(0).toUTCString());
     }
   });
 
@@ -80,11 +79,11 @@ function getSuccessAndErrorHandler(callback) {
       if (responseObj && isStr(responseObj.id) && !isEmptyStr(responseObj.id)) {
         callback(responseObj);
       } else {
-        deleteFromAllStorages(STORAGE_NAME, window.location.hostname);
+        deleteFromAllStorages(STORAGE_NAME);
       }
     },
     error: (error) => {
-      deleteFromAllStorages(STORAGE_NAME, window.location.hostname);
+      deleteFromAllStorages(STORAGE_NAME);
       logError(LOG_PREFIX + 'getId fetch encountered an error', error);
       callback();
     }
