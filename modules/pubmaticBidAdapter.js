@@ -562,6 +562,7 @@ function _createBannerRequest(bid) {
         bannerObj.format = format;
       }
     }
+    bannerObj.pos = 0
     bannerObj.topframe = inIframe() ? 0 : 1;
 
     // Adding Banner custom params
@@ -571,7 +572,6 @@ function _createBannerRequest(bid) {
         bannerObj[key] = _checkParamDataType(key, bannerCustomParams[key], BANNER_CUSTOM_PARAMS[key]);
       }
     }
-    bannerObj.pos = bannerObj?.pos || 0;
   } else {
     logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
