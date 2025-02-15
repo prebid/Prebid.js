@@ -16,6 +16,9 @@ const QX_OUT_MESSAGE = {
   RTD_INITIALIZED: 'RTD-INITIALIZED',
   REQUEST_CONTEXT: 'REQUEST-CONTEXT'
 }
+const QX_VERSION = {
+  v: '1.0'
+}
 
 /**
  * Init if module configuration is valid
@@ -79,7 +82,7 @@ export function addContextToRequests (reqBidsConfig) {
     requestContextData();
   } else {
     if (checkPercentageOutcome(qortexSessionInfo.groupConfig?.prebidBidEnrichmentPercentage)) {
-      const fragment = { site: {content: qortexSessionInfo.currentSiteContext} }
+      const fragment = qortexSessionInfo.currentSiteContext
       if (qortexSessionInfo.bidderArray?.length > 0) {
         qortexSessionInfo.bidderArray.forEach(bidder => mergeDeep(reqBidsConfig.ortb2Fragments.bidder, {[bidder]: fragment}));
       } else if (!qortexSessionInfo.bidderArray) {
@@ -220,7 +223,7 @@ function shouldAllowBidEnrichment() {
  * @param {string} msg message string to be passed to CX-BID-ENRICH target on current page
  * @param {Object} data optional parameter object with additional data to send with post
  */
-function postBidEnrichmentMessage(msg, data = null) {
+function postBidEnrichmentMessage(msg, data = QX_VERSION) {
   window.postMessage({
     target: 'CX-BID-ENRICH',
     message: msg,
