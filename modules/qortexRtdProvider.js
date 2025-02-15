@@ -5,7 +5,7 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
-const QX_VERSION = { v: "1.0"}
+const QX_VERSION = { v: '1.0' }
 
 const qortexSessionInfo = {};
 const QX_IN_MESSAGE = {
