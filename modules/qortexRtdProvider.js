@@ -5,6 +5,8 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
+const QX_VERSION = { v: "1.0"}
+
 const qortexSessionInfo = {};
 const QX_IN_MESSAGE = {
   BID_ENRICH_INITIALIZED: 'CX-BID-ENRICH-INITIALIZED',
@@ -15,9 +17,6 @@ const QX_OUT_MESSAGE = {
   NO_CONTEXT: 'NO-CONTEXT',
   RTD_INITIALIZED: 'RTD-INITIALIZED',
   REQUEST_CONTEXT: 'REQUEST-CONTEXT'
-}
-const QX_VERSION = {
-  v: '1.0'
 }
 
 /**
