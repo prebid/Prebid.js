@@ -3478,11 +3478,46 @@ describe('ozone Adapter', function () {
     it('should add labels in the adserver request if they are present in the auction response', function () {
       const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest);
       let validres = JSON.parse(JSON.stringify(validResponse2Bids));
+      validres.body.seatbid.push(JSON.parse(JSON.stringify(validres.body.seatbid[0]))); // add another bidder
+      validres.body.seatbid[1].seat = 'marktest';
+      validres.body.seatbid[1].bid[0].ext.prebid.labels = ['b1', 'b2', 'b3'];
+      validres.body.seatbid[1].bid[0].price = 10; // will win
+      validres.body.seatbid[1].bid[1].price = 0; // will lose
       validres.body.seatbid[0].bid[0].ext.prebid.labels = ['bid1label1', 'bid1label2', 'bid1label3'];
       validres.body.seatbid[0].bid[1].ext.prebid.labels = ['bid2label'];
       const result = spec.interpretResponse(validres, request);
-      expect(utils.deepAccess(result[0].adserverTargeting, 'labels')).to.equal('bid1label1,bid1label2,bid1label3');
-      expect(utils.deepAccess(result[1].adserverTargeting, 'labels')).to.equal('bid2label');
+      expect(result.length).to.equal(4); // 4 bids will be returned; 2 from each bidder. All will have the winning keys attached.
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_winner')).to.equal('marktest'); // the first bid
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_labels')).to.equal('b1,b2,b3'); // the winner
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_labels')).to.equal('bid1label1,bid1label2,bid1label3');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_winner')).to.equal('appnexus'); // the second bid
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_appnexus_labels')).to.equal('bid2label');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_labels')).to.equal('bid2label'); // the second adslot winning label
+      expect(utils.deepAccess(result[2].adserverTargeting, 'oz_labels')).to.equal('b1,b2,b3'); // we're back to the first of the 2 bids again
+      expect(utils.deepAccess(result[3].adserverTargeting, 'oz_labels')).to.equal('bid2label'); // the second adslot winning label
+    });
+    it('should not add labels in the adserver request if they are present in the auction response when config contains ozone.enhancedAdserverTargeting', function () {
+      config.setConfig({'ozone': {'enhancedAdserverTargeting': false}});
+      const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest);
+      let validres = JSON.parse(JSON.stringify(validResponse2Bids));
+      validres.body.seatbid.push(JSON.parse(JSON.stringify(validres.body.seatbid[0]))); // add another bidder
+      validres.body.seatbid[1].seat = 'marktest';
+      validres.body.seatbid[1].bid[0].ext.prebid.labels = ['b1', 'b2', 'b3'];
+      validres.body.seatbid[1].bid[0].price = 10; // will win
+      validres.body.seatbid[1].bid[1].price = 0; // will lose
+      validres.body.seatbid[0].bid[0].ext.prebid.labels = ['bid1label1', 'bid1label2', 'bid1label3'];
+      validres.body.seatbid[0].bid[1].ext.prebid.labels = ['bid2label'];
+      const result = spec.interpretResponse(validres, request);
+      expect(result.length).to.equal(4); // 4 bids will be returned; 2 from each bidder. All will have the winning keys attached.
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_winner')).to.equal('marktest'); // the first bid
+      expect(result[0].adserverTargeting).to.not.have.property('oz_labels');
+      expect(result[0].adserverTargeting).to.not.have.property('oz_appnexus_labels');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_winner')).to.equal('appnexus'); // the second bid
+      expect(result[1].adserverTargeting).to.not.have.property('oz_appnexus_labels');
+      expect(result[1].adserverTargeting).to.not.have.property('oz_labels'); // the second adslot winning label
+      expect(result[2].adserverTargeting).to.not.have.property('oz_labels'); // we're back to the first of the 2 bids again
+      expect(result[3].adserverTargeting).to.not.have.property('oz_labels'); // the second adslot winning label
+      config.resetConfig();
     });
   });
   describe('userSyncs', function () {
