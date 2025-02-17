@@ -13,6 +13,8 @@ const ADAPTER_CODE = 'pubmatic';
 const VENDOR_OPENWRAP = 'openwrap';
 const SEND_TIMEOUT = 2000;
 const END_POINT_HOST = 'https://t.pubmatic.com/';
+const END_POINT_VERSION = 1;
+const INTEGRATION_TYPE = 'web';
 const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl?';
 const END_POINT_WIN_BID_LOGGER = END_POINT_HOST + 'wt?';
 const LOG_PRE_FIX = 'PubMatic-Analytics: ';
@@ -159,46 +161,56 @@ function getTgId() {
   return 0;
 }
 
-function createBidsLoggerPayload(auctionCache, auctionId) {
-  const referrer = config.getConfig('pageUrl') || auctionCache.referer || '';
+function getFeatureLevelDetails(auctionCache){
+  return {
+    flr: Object.assign({},auctionCache?.floorData.floorRequestData,{
+      enforcements: auctionCache?.floorData.floorResponseData?.enforcements
+    })
+  }
+}
 
+function getRootLevelDetails(auctionCache){
+  const referrer = config.getConfig('pageUrl') || auctionCache.referer || '';
+  return {
+    pubid: `${publisherId}`,
+    iid: `${auctionCache?.wiid || auctionId}`,
+    to: parseInt(`${auctionCache.timeout}`),  
+    purl: referrer,
+    tst: Math.round(Date.now() / 1000),
+    pid: `${profileId}`,
+    pdvid: `${profileVersionId}`,
+    pbv: '$prebid.version$' || '-1',
+    ortb2: auctionCache.ortb2,
+    tgid: getTgId(),
+    s2sls: s2sBidders
+  }
+}
+
+function createBidsLoggerPayload(auctionCache, auctionId) {
   return {
     sd: auctionCache.adUnitCodes,
-    fd: {
-      flr: Object.assign({},auctionCache?.floorData.floorRequestData,{
-        enforcements: auctionCache?.floorData.floorResponseData?.enforcements
-      })
-    },
-    rd: {
-      pubid: `${publisherId}`,
-      iid: `${auctionCache?.wiid || auctionId}`,
-      to: parseInt(`${auctionCache.timeout}`),  
-      purl: referrer,
-      tst: Math.round(Date.now() / 1000),
-      pid: `${profileId}`,
-      pdvid: `${profileVersionId}`,
-      pbv: '$prebid.version$' || '-1',
-      ortb2: auctionCache.ortb2,
-      tgid: getTgId(),
-      s2sls: s2sBidders
-    }
+    fd: getFeatureLevelDetails(auctionCache),
+    rd: getRootLevelDetails(auctionCache)
   };
 }
 
-function executeBidsLoggerCall(event, highestCpmBids) {
+function executeBidsLoggerCall(event) {
   const { auctionId } = event;
   const auctionCache = cache.auctions[auctionId];
 
   if (!auctionCache || auctionCache.sent) return;
 
-  const outputObj = createBidsLoggerPayload(auctionCache, auctionId);
+  const payload = createBidsLoggerPayload(auctionCache, auctionId);
   auctionCache.sent = true;
+
+  const urlParams = new URLSearchParams(payload.rd.purl);
+  const queryParams = `v=${END_POINT_VERSION}&it=${INTEGRATION_TYPE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
 
   sendAjaxRequest({
     endpoint: END_POINT_BID_LOGGER,
     method: 'POST',
-    queryParams: `pubid=${publisherId}&v=1&it=web&debug=1`,
-    body: JSON.stringify(outputObj)
+    queryParams,
+    body: JSON.stringify(payload)
   });
 }
 
@@ -222,27 +234,9 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   let origAdUnit = getAdUnit(cache.auctions[auctionId]?.origAdUnits, adUnitId) || {};
   let owAdUnitId = origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId;
   let auctionCache = cache.auctions[auctionId];
-  let wiid = cache.auctions[auctionId]?.wiid || auctionId;
-  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
-
   const payload = {
-    fd: {
-      flr: Object.assign({}, auctionCache?.floorData.floorRequestData, {
-        enforcements: auctionCache?.floorData.floorResponseData?.enforcements
-      })
-    },
-    rd: {
-      pubid: `${publisherId}`,
-      iid: wiid,
-      purl: referrer,
-      tst: Math.round(Date.now() / 1000),
-      pid: `${profileId}`,
-      pdvid: `${profileVersionId}`,
-      pbv: '$prebid.version$' || '-1',
-      ortb2: auctionCache.ortb2,
-      tgid: getTgId(),
-      s2sls: s2sBidders
-    },
+    fd: getFeatureLevelDetails(auctionCache),
+    rd: getRootLevelDetails(auctionCache),
     sd: {
       adapterName,
       adUnitId,
@@ -251,11 +245,13 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     }
   };
   
+  const urlParams = new URLSearchParams(payload.rd.purl);
+  const queryParams = `v=${END_POINT_VERSION}&it=${INTEGRATION_TYPE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
 
   sendAjaxRequest({
     endpoint: END_POINT_WIN_BID_LOGGER,
     method: 'POST',
-    queryParams: `pubid=${publisherId}&v=1&it=web&debug=1`,
+    queryParams,
     body: JSON.stringify(payload)
   });
 
@@ -281,6 +277,7 @@ const eventHandlers = {
     cacheEntry.floorData = {};
     cacheEntry.origAdUnits = args.adUnits;
     cacheEntry.referer = args.bidderRequests[0].refererInfo.topmostLocation;
+    cacheEntry.ortb2 = args.bidderRequests[0].ortb2
     cache.auctions[args.auctionId] = cacheEntry;
   },
 
