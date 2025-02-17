@@ -1,17 +1,26 @@
 
-import { config } from 'src/config';
-import { _each, mergeDeep, deepAccess, logInfo, logWarn, insertUserSyncIframe, logError, isStr, generateUUID } from '../src/utils.js';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { VIDEO, BANNER } from 'src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter';
-import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
+import {
+  mergeDeep,
+  deepAccess,
+  deepSetValue,
+  logInfo,
+  logWarn,
+  insertUserSyncIframe,
+  logError,
+  isStr,
+  generateUUID,
+} from '../src/utils.js';
 
-const SID = window.excoPid || window.pbPageIdentifier || generateUUID();
-const BIDDER_CODE = 'exco-ssp';
+const SID = window.excoPid || generateUUID();
+const BIDDER_CODE = 'exco';
 const VERSION = '0.0.1';
-
 const ENDPOINT = '//v.ex.co/se/openrtb/hb/pbjs';
-const SYNC_URL = '//cdn.ex.co/sync/0.0.1-488ee93/cookie_sync.html';
+const SYNC_URL = '//cdn.ex.co/sync/e15e216-l/cookie_sync.html';
 const CURRENCY = 'USD';
 
 const SYNC = {
@@ -19,9 +28,9 @@ const SYNC = {
 };
 
 export class AdapterHelpers {
-  doSync(gdprConsent = { consentString: '', gdprApplies: false }, network) {
+  doSync(gdprConsent = { consentString: '', gdprApplies: false }, accountId) {
     insertUserSyncIframe(
-      this.createSyncUrl(gdprConsent, network)
+      this.createSyncUrl(gdprConsent, accountId)
     );
   }
 
@@ -44,7 +53,7 @@ export class AdapterHelpers {
       }
 
       return url.toString();
-    } catch (error) {/* Do nothing */ }
+    } catch (error) { /* Do nothing */ }
 
     return null;
   }
@@ -144,19 +153,6 @@ export class AdapterHelpers {
       logInfo(msg);
     }
   }
-
-  dropMessage(eventName, eventData) {
-    try {
-      const message = { type: 'exco-ssp', eventName, eventData };
-      window.parent.postMessage(message, '*');
-
-      for (let i = 0; i < window.parent.frames.length; i++) {
-        window.parent.frames[i].postMessage(message, '*');
-      }
-    } catch (error) {
-      /* Do nothing */
-    }
-  }
 }
 
 const helpers = new AdapterHelpers();
@@ -214,7 +210,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const props = ['publisherId', 'tagId'];
+    const props = ['accountId', 'publisherId', 'tagId'];
     const missing = props.filter(prop => !bid.params[prop]);
     const nonStr = props.filter(prop => !isStr(bid.params[prop]));
     const message = `Bid will not be sent for ad unit '${bid.adUnitCode}'`;
@@ -271,7 +267,6 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     const body = response.body.Result || response.body || {};
-    helpers.dropMessage('exco-ssp-adapter-done', body.ext);
     return converter.fromORTB({response: body, request: request.data}).bids || [];
   },
 
