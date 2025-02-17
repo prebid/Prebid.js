@@ -3,7 +3,6 @@ import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { decryptData, handleClientHints, readData, setGamReporting } from '../../../modules/intentIqIdSystem';
-// import * as idSystem from '../../../modules/intentIqIdSystem';
 import {getGppValue} from '../../../libraries/intentIqUtils/getGppValue.js';
 import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
