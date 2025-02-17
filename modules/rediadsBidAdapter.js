@@ -77,7 +77,9 @@ export const spec = {
       // handle impression/bid level requirements
       data.imp.forEach((impression, idx) => {
         const bidRequest = bidRequests[idx];
-        impression.tagid = bidRequest?.params?.slot;
+        if (bidRequest?.params?.slot) {
+          impression.tagid = bidRequest?.params?.slot;
+        }
       });
     } catch (err) {
       logError(`${LOG_PREFIX} encountered an error while building bid requests :: ${err}`)
