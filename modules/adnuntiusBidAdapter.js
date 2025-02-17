@@ -9,14 +9,48 @@ const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
 const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
   return BIDDER_CODE_DEAL_ALIAS_BASE + num;
 });
-const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
-const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
 const METADATA_KEY_SEPARATOR = '@@@';
+
+const ENVS = {
+  localhost: {
+    id: 'localhost',
+    as: 'localhost:8078'
+  },
+  lcl: {
+    id: 'lcl',
+    as: 'adserver.dev.lcl.test'
+  },
+  andemu: {
+    id: 'andemu',
+    as: '10.0.2.2:8078'
+  },
+  dev: {
+    id: 'dev',
+    as: 'adserver.dev.adnuntius.com'
+  },
+  staging: {
+    id: 'staging',
+    as: 'adserver.staging.adnuntius.com'
+  },
+  production: {
+    id: 'production',
+    as: 'ads.adnuntius.delivery',
+    asEu: 'europe.delivery.adnuntius.com'
+  },
+  cloudflare: {
+    id: 'cloudflare',
+    as: 'ads.adnuntius.delivery'
+  },
+  limited: {
+    id: 'limited',
+    as: 'limited.delivery.adnuntius.com'
+  }
+};
 
 export const misc = {
   findHighestPrice: function(arr, bidType) {
@@ -333,7 +367,7 @@ export const spec = {
         if (maxDeals > 0) {
           adUnit.maxDeals = maxDeals;
         }
-        if (mediaType === BANNER && mediaTypeData && mediaTypeData.sizes) {
+        if (mediaType !== VIDEO && mediaTypeData && mediaTypeData.sizes) {
           adUnit.dimensions = mediaTypeData.sizes;
         }
         networks[network].adUnits.push(adUnit);
@@ -344,7 +378,11 @@ export const spec = {
     const networkKeys = Object.keys(networks);
     for (let j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
-      const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
+      let requestURL = gdprApplies ? ENVS.production.asEu : ENVS.production.as;
+      if (bidderConfig.env && ENVS[bidderConfig.env]) {
+        requestURL = ENVS[bidderConfig.env][bidderConfig.endPointType || 'as'];
+      }
+      requestURL = (bidderConfig.protocol || 'https') + '://' + requestURL + '/i';
       requests.push({
         method: 'POST',
         url: requestURL + '?' + queryParamsAndValues.join('&'),
