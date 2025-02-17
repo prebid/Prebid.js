@@ -518,6 +518,7 @@ export const spec = {
       return [];
     }
     let arrAllBids = [];
+    let labels;
     let enhancedAdserverTargeting = this.getWhitelabelConfigItem('ozone.enhancedAdserverTargeting');
     logInfo('enhancedAdserverTargeting', enhancedAdserverTargeting);
     if (typeof enhancedAdserverTargeting == 'undefined') {
@@ -597,6 +598,10 @@ export const spec = {
             if (bidderName.match(/^ozappnexus/)) {
               adserverTargeting[whitelabelPrefix + '_' + bidderName + '_sid'] = String(allBidsForThisBidid[bidderName].cid);
             }
+            labels = deepAccess(allBidsForThisBidid[bidderName], 'ext.prebid.labels', null);
+            if (labels) {
+              adserverTargeting[whitelabelPrefix + '_' + bidderName + '_labels'] = labels.join(',');
+            }
           });
         } else {
           let perBidInfo = `${whitelabelBidder}.enhancedAdserverTargeting is set to false. No per-bid keys will be sent to adserver.`;
@@ -613,11 +618,11 @@ export const spec = {
         adserverTargeting[whitelabelPrefix + '_bid'] = 'true';
         adserverTargeting[whitelabelPrefix + '_cache_id'] = deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_id', 'no-id');
         adserverTargeting[whitelabelPrefix + '_uuid'] = deepAccess(thisBid, 'ext.prebid.targeting.hb_uuid', 'no-id');
-        let labels = deepAccess(thisBid, 'ext.prebid.labels', null); // 20241105 - labels returned (array)
-        if (labels) {
-          adserverTargeting['labels'] = labels.join(',');
-        }
         if (enhancedAdserverTargeting) {
+          labels = deepAccess(winningBid, 'ext.prebid.labels', null);
+          if (labels) {
+            adserverTargeting[whitelabelPrefix + '_labels'] = labels.join(',');
+          }
           adserverTargeting[whitelabelPrefix + '_imp_id'] = String(winningBid.impid);
           adserverTargeting[whitelabelPrefix + '_pb_v'] = OZONEVERSION;
           adserverTargeting[whitelabelPrefix + '_pb'] = winningBid.price;
@@ -1092,3 +1097,4 @@ function outstreamRender(bid) {
 }
 registerBidder(spec);
 logInfo(`*BidAdapter ${OZONEVERSION} was loaded`);
+
