@@ -285,7 +285,7 @@ function getFloorsCommonField (floorData) {
   if (!floorData) return;
   const { location, fetchStatus, floorProvider, modelVersion } = floorData;
   return {
-	  ffs: {
+    ffs: {
       [FLOOR_VALUES.SUCCESS]: 1,
       [FLOOR_VALUES.ERROR]: 2,
       [FLOOR_VALUES.TIMEOUT]: 4,
@@ -522,6 +522,10 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&origbidid=' + enc(winningBid?.bidResponse?.partnerImpId || winningBid?.bidResponse?.prebidBidId || winningBid.bidId);
   pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
+  const ds = winningBid.bidResponse?.meta ? getMetadata(winningBid.bidResponse.meta).ds : undefined;
+  if (ds) {
+    pixelURL += '&ds=' + enc(ds);
+  }
   pg && (pixelURL += '&pb=' + enc(pg));
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
@@ -535,7 +539,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData.floorRequestData);
     const { fsrc, fp, mv } = floorRootValues || {};
-  	const params = { fsrc, fp, fmv: mv };
+    const params = { fsrc, fp, fmv: mv };
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
         pixelURL += `&${key}=${enc(value)}`;

@@ -105,6 +105,49 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
  */
 
+const DEFAULT_EIDS = {
+  'id5id': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    source: ID5_DOMAIN,
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'euid': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function (data) {
+      return data.source;
+    },
+    atype: 3,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'trueLinkId': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function (data) {
+      return TRUE_LINK_SOURCE;
+    },
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  }
+};
+
 /** @type {Submodule} */
 export const id5IdSubmodule = {
   /**
@@ -127,6 +170,24 @@ export const id5IdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
+    if (value && value.ids !== undefined) {
+      const responseObj = {};
+      const eids = {};
+      Object.entries(value.ids).forEach(([key, value]) => {
+        let eid = value.eid;
+        let uid = eid?.uids?.[0]
+        responseObj[key] = {
+          uid: uid?.id,
+          ext: uid?.ext
+        };
+        eids[key] = function () {
+          return eid;
+        }; // register function to get eid for each id (key) decoded
+      });
+      this.eids = eids; // overwrite global eids
+      return responseObj;
+    }
+
     let universalUid, publisherTrueLinkId;
     let ext = {};
 
@@ -137,7 +198,7 @@ export const id5IdSubmodule = {
     } else {
       return undefined;
     }
-
+    this.eids = DEFAULT_EIDS;
     let responseObj = {
       id5id: {
         uid: universalUid,
@@ -155,7 +216,7 @@ export const id5IdSubmodule = {
 
     if (publisherTrueLinkId) {
       responseObj.trueLinkId = {
-        uid: publisherTrueLinkId,
+        uid: publisherTrueLinkId
       };
     }
 
@@ -233,53 +294,14 @@ export const id5IdSubmodule = {
 
     logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
     if (cacheIdObj) {
-      cacheIdObj.nbPage = incrementNb(cacheIdObj)
+      cacheIdObj.nbPage = incrementNb(cacheIdObj);
     }
     return cacheIdObj;
   },
   primaryIds: ['id5id', 'trueLinkId'],
-  eids: {
-    'id5id': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      source: ID5_DOMAIN,
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'euid': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return data.source;
-      },
-      atype: 3,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'trueLinkId': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return TRUE_LINK_SOURCE;
-      },
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    }
-
+  eids: DEFAULT_EIDS,
+  _reset() {
+    this.eids = DEFAULT_EIDS;
   }
 };
 

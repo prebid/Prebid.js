@@ -10,6 +10,7 @@ import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
 // import { config } from '../src/config.js';
 // import { isPubcidEnabled } from './pubCommonId.js';
@@ -25,7 +26,6 @@ const BIDDER_CODE = 'mediago';
 // const PROTOCOL = window.document.location.protocol;
 const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
 // const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
-const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
 
 const TIME_TO_LIVE = 500;
@@ -39,6 +39,7 @@ let itemMaps = {};
 export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
+const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 let reqTimes = 0;
 
 /**
@@ -172,6 +173,7 @@ function getItems(validBidRequests, bidderRequest) {
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+          publisher: req.params.publisher || '',
           ...gdprConsent // gdpr
         },
         tagid: req.params && req.params.tagid
@@ -286,9 +288,7 @@ function getParam(validBidRequests, bidderRequest) {
         mobile: isMobile,
         cat: [], // todo
         publisher: {
-          // todo
-          id: domain,
-          name: domain
+          id: globals['publisher']
         }
       },
       imp: items,
@@ -316,6 +316,9 @@ export const spec = {
     // });
     if (bid.params.token) {
       globals['token'] = bid.params.token;
+    }
+    if (bid.params.publisher) {
+      globals['publisher'] = bid.params.publisher;
     }
     return !!bid.params.token;
   },
@@ -382,42 +385,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
-    const origin = encodeURIComponent(location.origin || `https://${location.host}`);
-    let syncParamUrl = `dm=${origin}`;
-
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      window.addEventListener('message', function handler(event) {
-        if (!event.data || event.origin != THIRD_PARTY_COOKIE_ORIGIN) {
-          return;
-        }
-
-        this.removeEventListener('message', handler);
-
-        event.stopImmediatePropagation();
-
-        const response = event.data;
-        if (!response.optout && response.mguid) {
-          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
-        }
-      }, true);
-      return [
-        {
-          type: 'iframe',
-          url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
-        }
-      ];
-    }
+    return cookieSync(syncOptions, gdprConsent, uspConsent, BIDDER_CODE, THIRD_PARTY_COOKIE_ORIGIN, COOKY_SYNC_IFRAME_URL, getCurrentTimeToUTCString());
   },
 
   /**
