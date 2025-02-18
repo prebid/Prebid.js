@@ -67,7 +67,6 @@ var adUnits = [{
 | `bidFloor` | optional | Bid floor price | `0.01` | `float` |
 | `bidFloorCur` | optional | Bid floor price currency. Supported values: USD (default), EUR, GBP, AUD, DKK, SEK, CZK, CHF, NOK | `'USD'` | `string` |
 | `extend` | optional | See the [Extend mode section](#extend-mode) | `true` | `boolean` |
-| `rendererConfig` | optional | Configuration object for JS renderer of the RAZR creatives. Provided by Improve Digital. | `{ key1: value1 }` | `object` |
 
 ## Configuration
 
@@ -78,20 +77,6 @@ By default, the adapter sends Prebid ad unit sizes to Improve Digital’s ad ser
 ```javascript
 pbjs.setConfig({
     improvedigital: { usePrebidSizes: false }
-});
-```
-
-### Renderer Config
-
-Global configuration for the special creative format renderer. Please use rendererConfig bid param for ad slot specific configuration.
-
-```javascript
-pbjs.setConfig({
-    improvedigital: {
-        rendererConfig: {
-            // Global config object provided by Improve Digital
-        }
-    }
 });
 ```
 
