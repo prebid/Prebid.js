@@ -222,7 +222,7 @@ function shouldAllowBidEnrichment() {
  * @param {string} msg message string to be passed to CX-BID-ENRICH target on current page
  * @param {Object} data optional parameter object with additional data to send with post
  */
-function postBidEnrichmentMessage(msg, data = QX_VERSION) {
+function postBidEnrichmentMessage(msg, data) {
   window.postMessage({
     target: 'CX-BID-ENRICH',
     message: msg,
@@ -243,7 +243,7 @@ export function windowPostMessageReceived(evt) {
         if (Boolean(data.params) && Boolean(data.params?.groupConfig)) {
           setGroupConfigData(data.params.groupConfig);
         }
-        postBidEnrichmentMessage(QX_OUT_MESSAGE.RTD_INITIALIZED);
+        postBidEnrichmentMessage(QX_OUT_MESSAGE.RTD_INITIALIZED, QX_VERSION);
         if (qortexSessionInfo?.auctionsEnded?.length > 0) {
           qortexSessionInfo.auctionsEnded.forEach(data => postBidEnrichmentMessage(QX_OUT_MESSAGE.AUCTION_END, data));
         }
