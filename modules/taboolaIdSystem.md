@@ -35,7 +35,7 @@ The below parameters apply only to the IDx integration.
                        Optionally specify where to store the ID, e.g. cookies or localStorage
                        storage: {
                          name: 'taboolaId',
-                         type: 'cookie', // or 'html5' or 'html5&cookie'
+                         type: 'html5', // or 'cookie' or 'html5&cookie'
                          expires: 365 // days
                        }
                      }
