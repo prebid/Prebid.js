@@ -699,7 +699,7 @@ export function newTargeting(auctionManager) {
 
   function getAdUnitTargeting() {
     function getTargetingObj(adUnit) {
-      return deepAccess(adUnit, JSON_MAPPING.ADSERVER_TARGETING);
+      return adUnit?.[JSON_MAPPING.ADSERVER_TARGETING];
     }
 
     function getTargetingValues(adUnit) {
