@@ -1094,7 +1094,7 @@ function getContextFromPlacement(ortbPlacement) {
 }
 
 function getContextFromStartDelay(ortbStartDelay) {
-  if (!ortbStartDelay) {
+  if (typeof ortbStartDelay === 'undefined') {
     return;
   }
 

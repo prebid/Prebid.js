@@ -36,6 +36,7 @@ const _approvedLoadExternalJSList = [
   '51Degrees',
   'symitridap',
   'wurfl',
+  'nodalsAi',
   // UserId Submodules
   'justtag',
   'tncId',
