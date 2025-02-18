@@ -183,14 +183,14 @@ function encodeId(value) {
  * @return {string}
  */
 function kinessoSyncUrl(accountId, consentData) {
-  const usPrivacyString = uspDataHandler.getConsentData();
+  const {gdpr, usp: usPrivacyString} = consentData ?? {};
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
     kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
   }
-  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return kinessoSyncUrl;
+  if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl;
 
-  kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${consentData.consentString}`;
+  kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`;
   return kinessoSyncUrl
 }
 
