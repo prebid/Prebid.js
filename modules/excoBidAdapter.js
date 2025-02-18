@@ -203,6 +203,7 @@ export const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
+
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -234,6 +235,7 @@ export const spec = {
 
     return true;
   },
+
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -259,6 +261,7 @@ export const spec = {
 
     return requests;
   },
+
   /**
    * Unpack the response from the server into a list of bids.
    *
