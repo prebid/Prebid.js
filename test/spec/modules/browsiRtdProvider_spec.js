@@ -78,27 +78,53 @@ describe('browsi Real time data sub module', function () {
       browsiRTD.setData({});
       expect(browsiRTD.browsiSubmodule.getTargetingData([], null, null, auction)).to.eql({});
     });
-
-    it('should return prediction from server', function () {
-      mockGpt.makeSlot({ code: 'hasPrediction', divId: 'hasPrediction' });
+    it('should return empty if GAM provider is not defined', function () {
+      mockGpt.makeSlot({ code: 'slot1', divId: 'slot1' });
       const data = {
-        plc: { 'hasPrediction': { browsiViewability: { 0: 0.234 } } },
+        plc: { 'slot1': { viewability: { 0: 0.234 } } },
         kn: 'bv',
-        pmd: undefined
+        pmd: undefined,
+        pr: ['bidder1']
       };
       browsiRTD.setData(data);
-      expect(browsiRTD.browsiSubmodule.getTargetingData(['hasPrediction'], null, null, auction)).to.eql({ hasPrediction: { bv: '0.20' } });
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['slotId'], null, null, auction)).to.eql({});
     });
-
-    it('should return NA if browsiViewability key is not defined', function () {
-      mockGpt.makeSlot({ code: 'hasPrediction', divId: 'hasPrediction' });
+    it('should return empty if viewability key is not defined', function () {
+      mockGpt.makeSlot({ code: 'slot2', divId: 'slot2' });
       const data = {
-        plc: { 'hasPrediction': { key: { 0: 0.234 } } },
+        plc: { 'slot2': { someKey: { 0: 0.234 } } },
         kn: 'bv',
-        pmd: undefined
+        pmd: undefined,
+        pr: ['bidder1', 'GAM']
       };
       browsiRTD.setData(data);
-      expect(browsiRTD.browsiSubmodule.getTargetingData(['hasPrediction'], null, null, auction)).to.eql({ hasPrediction: { bv: 'NA' } });
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['slot2'], null, null, auction)).to.eql({ 'slot2': {} });
+    });
+    it('should return all predictions from server', function () {
+      mockGpt.makeSlot({ code: 'slot3', divId: 'slot3' });
+      const data = {
+        pg: { scrollDepth: 0.456 },
+        plc: { 'slot3': { viewability: { 0: 0.234 }, revenue: { 0: 0.567 } } },
+        kn: 'bv',
+        pmd: undefined,
+        pr: ['bidder1', 'GAM']
+      };
+      browsiRTD.setData(data);
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['slot3'], null, null, auction)).to.eql({
+        'slot3': { bv: '0.20', browsiRevenue: 'medium', browsiScroll: '0.40' }
+      });
+    });
+    it('should return the available prediction', function () {
+      mockGpt.makeSlot({ code: 'slot4', divId: 'slot4' });
+      const data = {
+        pg: { scrollDepth: 0.456 },
+        plc: { 'slot4': { someKey: { 0: 0.234 } } },
+        kn: 'bv',
+        pmd: undefined,
+        pr: ['bidder1', 'GAM']
+      };
+      browsiRTD.setData(data);
+      expect(browsiRTD.browsiSubmodule.getTargetingData(['slot4'], null, null, auction)).to.eql({ 'slot4': { browsiScroll: '0.40' } });
     });
   })
 
@@ -372,6 +398,7 @@ describe('browsi Real time data sub module', function () {
       };
 
       timestampStub.returns(currentTimestemp);
+      browsiRTD.setTimestamp();
 
       expect(browsiRTD.getLatestAvgHighestBid(lahb)).to.deep.equal({ avg: 0.02, age: diffInDays });
     });
@@ -430,6 +457,7 @@ describe('browsi Real time data sub module', function () {
 
     before(() => {
       timestampStub.returns(currentTimestemp);
+      browsiRTD.setTimestamp();
     });
     it('should return undefined if bus is not defined', function () {
       expect(browsiRTD.getHighestBidMetrics(undefined)).to.equal(undefined);

@@ -90,7 +90,7 @@ export function sendPageviewEvent(eventType) {
   }
 }
 
-function setTimestamp() {
+export function setTimestamp() {
   TIMESTAMP = timestamp();
 }
 
@@ -333,7 +333,7 @@ function getAllSlots() {
  * @return {Object} key:value
  */
 function getKVObject(k, p) {
-  const prValue = (p < 0) ? 'NA' : p;
+  const prValue = (p < 0) ? 'NA' : p; // todo check NA
   let prObject = {};
   prObject[k] = prValue;
   return prObject;
@@ -495,7 +495,7 @@ export const browsiSubmodule = {
 
 function getRevenueTargetingValue(p) {
   if (!p || p < 0) {
-    return 'NA';
+    return undefined;
   } else if (p <= 0.3) {
     return 'low';
   } else if (p <= 0.6) {
@@ -505,14 +505,22 @@ function getRevenueTargetingValue(p) {
 }
 
 function getTargetingValue(p) {
-  return (!p || p < 0) ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
+  return (!p || p < 0) ? undefined : (Math.floor(p * 10) / 10).toFixed(2);
 }
 
 function getTargetingKeys() {
   return {
-    viewabilityKey: ((_moduleParams['keyName'] || VIEWABILITY_KEYNAME).toString()),
+    viewabilityKey: (_moduleParams['keyName'] || VIEWABILITY_KEYNAME).toString(),
     scrollKey: SCROLL_KEYNAME,
     revenueKey: REVENUE_KEYNAME,
+  }
+}
+
+function getTargetingValues(v) {
+  return {
+    viewabilityValue: getTargetingValue(v['viewability']),
+    scrollValue: getTargetingValue(v['scrollDepth']),
+    revenueValue: getRevenueTargetingValue(v['revenue'])
   }
 }
 
@@ -526,11 +534,13 @@ function getTargeting(uc) {
 
     return Object.fromEntries(
       Object.entries(rtd).map(([key, value]) => {
-        return [key, {
-          [scrollKey]: getTargetingValue(value['scrollDepth']),
-          [viewabilityKey]: getTargetingValue(value['viewability']),
-          [revenueKey]: getRevenueTargetingValue(value['revenue']),
-        }];
+        const { viewabilityValue, scrollValue, revenueValue } = getTargetingValues(value);
+        const result = {
+          ...(viewabilityValue ? { [viewabilityKey]: viewabilityValue } : {}),
+          ...(scrollValue ? { [scrollKey]: scrollValue } : {}),
+          ...(revenueValue ? { [revenueKey]: revenueValue } : {}),
+        }
+        return [key, result];
       })
     );
   } catch (e) {
