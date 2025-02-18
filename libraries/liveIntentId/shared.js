@@ -77,6 +77,10 @@ export function composeIdObject(value) {
     result.triplelift = { 'id': value.triplelift, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
+  if (value.zetassp) {
+    result.zetassp = { 'id': value.zetassp, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
   if (value.medianet) {
     result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
@@ -264,6 +268,18 @@ export const eids = {
   },
   'triplelift': {
     source: 'liveintent.triplelift.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'zetassp': {
+    source: 'zeta-ssp.liveintent.com',
     atype: 3,
     getValue: function(data) {
       return data.id;

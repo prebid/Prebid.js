@@ -26,7 +26,7 @@ const converter = ortbConverter({
     // set basic page, this might be updated later by adunit param
     deepSetValue(request, 'site.page', bidderRequest.refererInfo.page);
     deepSetValue(request, 'regs.ext.pb_ver', '$prebid.version$');
-    deepSetValue(request, 'cur', [config.getConfig('currency') || DEFAULT_CUR]);
+    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR]);
 
     // As this is client side, we get needed info from headers
     delete request.device;
