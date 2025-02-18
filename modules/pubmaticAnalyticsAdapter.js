@@ -203,7 +203,7 @@ function executeBidsLoggerCall(event) {
   const payload = createBidsLoggerPayload(auctionCache, auctionId);
   auctionCache.sent = true;
 
-  const urlParams = new URLSearchParams(payload.rd.purl);
+  const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
   const queryParams = `v=${END_POINT_VERSION}&it=${INTEGRATION_TYPE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
 
   sendAjaxRequest({
@@ -245,7 +245,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     }
   };
   
-  const urlParams = new URLSearchParams(payload.rd.purl);
+  const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
   const queryParams = `v=${END_POINT_VERSION}&it=${INTEGRATION_TYPE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
 
   sendAjaxRequest({
