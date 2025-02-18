@@ -167,8 +167,8 @@ function tryParse(data) {
  * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
  */
 export function setGamReporting(gamObjectReference, gamParameterName, userGroup) {
-  if (isPlainObject(gamObjectReference)) {
-    gamObjectReference.cmd?.push(() => {
+  if (isPlainObject(gamObjectReference) && Array.isArray(gamObjectReference.cmd)) {
+    gamObjectReference.cmd.push(() => {
       gamObjectReference
         .pubads()
         .setTargeting(gamParameterName, userGroup || NOT_YET_DEFINED);
