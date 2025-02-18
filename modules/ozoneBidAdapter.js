@@ -1097,4 +1097,3 @@ function outstreamRender(bid) {
 }
 registerBidder(spec);
 logInfo(`*BidAdapter ${OZONEVERSION} was loaded`);
-
