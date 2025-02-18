@@ -16,11 +16,11 @@ import {
   generateUUID,
 } from '../src/utils.js';
 
-const SID = window.excoPid || generateUUID();
-const BIDDER_CODE = 'exco';
-const VERSION = '0.0.1';
-const ENDPOINT = '//v.ex.co/se/openrtb/hb/pbjs';
+export const SID = window.excoPid || generateUUID();
+export const ENDPOINT = '//v.ex.co/se/openrtb/hb/pbjs';
 const SYNC_URL = '//cdn.ex.co/sync/e15e216-l/cookie_sync.html';
+export const BIDDER_CODE = 'exco';
+const VERSION = '0.0.1';
 const CURRENCY = 'USD';
 
 const SYNC = {
@@ -270,8 +270,8 @@ export const spec = {
    * @return {import('../src/auction.js').Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (response, request) {
-    const body = response.body.Result || response.body || {};
-    return converter.fromORTB({response: body, request: request.data}).bids || [];
+    const body = response?.body?.Result || response?.body || {};
+    return converter.fromORTB({response: body, request: request?.data}).bids || [];
   },
 
   /**
