@@ -3,7 +3,7 @@ import { spec } from 'modules/nexverseBidAdapter.js';
 import { getDeviceModel, buildEndpointUrl, parseNativeResponse } from '../../../libraries/nexverseUtils/index.js';
 import { getOsVersion } from '../../../libraries/advangUtils/index.js';
 
-const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai/';
+const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 
 describe('nexverseBidAdapterTests', () => {
   describe('isBidRequestValid', function () {
