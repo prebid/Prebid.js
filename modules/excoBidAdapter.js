@@ -158,7 +158,7 @@ export class AdapterHelpers {
 const helpers = new AdapterHelpers();
 
 /**
- * @doc https://github.com/prebid/Prebid.js/blob/master/libraries/ortbConverter/README.md
+ * @description https://github.com/prebid/Prebid.js/blob/master/libraries/ortbConverter/README.md
  */
 export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
@@ -207,7 +207,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {import('../src/auction.js').BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -239,7 +239,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {import('../src/auction.js').Bid[]} bids - an array of bids
+   * @param {import('../src/auction.js').BidderRequest} bidderRequest - bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bids, bidderRequest) {
@@ -265,8 +266,8 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {ServerResponse} response A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {object} response A successful response from the server.
+   * @return {import('../src/auction.js').Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (response, request) {
     const body = response.body.Result || response.body || {};
@@ -276,9 +277,9 @@ export const spec = {
   /**
    * Register the user sync pixels which should be dropped after the auction.
    *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
+   * @param {import('../src/adapters/bidderFactory.js').SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {object[]} serverResponses List of server's responses.
+   * @return {import('../src/adapters/bidderFactory.js').UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (
     syncOptions,
