@@ -8,7 +8,6 @@
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {uspDataHandler} from '../src/adapterManager.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
