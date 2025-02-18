@@ -4,6 +4,8 @@ import adapterManager from '../src/adapterManager.js';
 import {EVENTS} from '../src/constants.js';
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import {config} from '../src/config.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const ZETA_GVL_ID = 833;
 const ADAPTER_CODE = 'zeta_global_ssp';
@@ -27,10 +29,11 @@ function sendEvent(eventType, event) {
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function adRenderSucceededHandler(args) {
+  const page = config.getConfig('pageUrl') || args.doc?.location?.host + args.doc?.location?.pathname;
   const event = {
     zetaParams: zetaParams,
-    domain: args.doc?.location?.host,
-    page: args.doc?.location?.host + args.doc?.location?.pathname,
+    domain: parseDomain(page, {noLeadingWww: true}),
+    page: page,
     bid: {
       adId: args.bid?.adId,
       requestId: args.bid?.requestId,

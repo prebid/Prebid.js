@@ -673,7 +673,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           return;
       }
 
-      let customHeaders = { 'Content-Type': 'application/json' };
+      let customHeaders = {};
       let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
       if (dapSSID) {
         customHeaders[headerPrefix + '-DAP-SS-ID'] = dapSSID;
@@ -699,7 +699,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       ajax(url, cb, body, {
         method: method,
-        customHeaders: customHeaders
+        customHeaders: customHeaders,
+        contentType: 'application/json'
       });
     },
 
@@ -821,8 +822,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       ajax(url, cb, undefined, {
         method: 'GET',
+        contentType: 'application/json',
         customHeaders: {
-          'Content-Type': 'application/json',
           'Pragma': 'akamai-x-get-extracted-values'
         }
       });

@@ -819,6 +819,25 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
     });
+
+    it('should set tId from ortb2Imp.ext.tid if available', function () {
+      const ortb2Imp = { ext: { tid: 'test-tid-1' } };
+      const request = { ...bidRequests[0], ortb2Imp };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.tId).to.equal('test-tid-1');
+    });
+
+    it('should set tId from bidderRequest.ortb2.source.tid if ortb2Imp.ext.tid is not available', function () {
+      const ortb2 = { source: { tid: 'test-tid-2' } };
+      const fakeBidRequest = { ortb2 };
+      const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
+      expect(bidRequest.data.tId).to.equal('test-tid-2');
+    });
+
+    it('should set tId to an empty string if neither ortb2Imp.ext.tid nor bidderRequest.ortb2.source.tid are available', function () {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.tId).to.equal('');
+    })
   })
 
   describe('interpretResponse', function () {

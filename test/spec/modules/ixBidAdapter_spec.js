@@ -616,7 +616,8 @@ describe('IndexexchangeAdapter', function () {
               dspid: 50,
               pricelevel: '_100',
               advbrandid: 303325,
-              advbrand: 'OECTA'
+              advbrand: 'OECTA',
+              ibv: true
             },
             adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
           }
@@ -3608,6 +3609,9 @@ describe('IndexexchangeAdapter', function () {
             brandId: 303325,
             brandName: 'OECTA',
             advertiserDomains: ['www.abc.com']
+          },
+          ext: {
+            ibv: true
           }
         }
       ];
@@ -3719,6 +3723,9 @@ describe('IndexexchangeAdapter', function () {
             brandId: 303325,
             brandName: 'OECTA',
             advertiserDomains: ['www.abc.com']
+          },
+          ext: {
+            ibv: true
           }
         }
       ];
@@ -3775,6 +3782,9 @@ describe('IndexexchangeAdapter', function () {
             brandId: 303325,
             brandName: 'OECTA',
             advertiserDomains: ['www.abc.com']
+          },
+          ext: {
+            ibv: true
           }
         }
       ];
