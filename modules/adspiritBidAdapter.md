@@ -1,4 +1,4 @@
-  # Overview
+# Overview
   
   ```
 Module Name:  Adspirit Bid Adapter
