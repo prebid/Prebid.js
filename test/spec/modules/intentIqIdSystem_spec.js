@@ -263,6 +263,22 @@ describe('IntentIQ tests', function () {
     expect(setTargetingSpy.calledTwice).to.be.true;
   });
 
+  it('should use the provided gamParameterName from configParams', function () {
+    let callBackSpy = sinon.spy();
+    let mockGamObject = mockGAM();
+    let customParamName = 'custom_gam_param';
+
+    defaultConfigParams.params.gamObjectReference = mockGamObject;
+    defaultConfigParams.params.gamParameterName = customParamName;
+
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    mockGamObject.cmd.forEach(cb => cb());
+    let targetingKeys = mockGamObject.pubads().getTargetingKeys();
+
+    expect(targetingKeys).to.include(customParamName);
+  });
+
   it('should not throw Uncaught TypeError when IntentIQ endpoint returns empty response', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
