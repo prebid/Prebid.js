@@ -14,6 +14,8 @@ import * as adServer from 'src/adserver.js';
 import {hook} from '../../../src/hook.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
+import { replaceVastAdTagWithBlobContent } from '../../../modules/dfpAdServerVideo.js';
+import { server } from '../../mocks/xhr.js';
 
 describe('The DFP video support module', function () {
   before(() => {
@@ -705,5 +707,45 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('existing_key', 'existing_value');
     expect(customParams).to.have.property('other_key', 'other_value');
     expect(customParams).to.have.property('hb_rand', 'random');
+  });
+
+  it('should replace vast ad tag uri properly with blob content in data uri format', (done) => {
+    const uuid = '1234325';
+    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid' + uuid;
+    const input = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+    const blobUrl = 'blob:http://localhost:9999/uri';
+
+    const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>'
+    const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+    const expectedOutput = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+         `<Wrapper>` +
+            `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${dataUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+
+    server.respondWith('GET', blobUrl, [200, {}, blobContent]);
+
+    replaceVastAdTagWithBlobContent(input, blobUrl, uuid)
+      .then((vastXml) => {
+        expect(vastXml).to.deep.eql(expectedOutput);
+        done();
+      })
+      .catch(done);
+
+    server.respond();
   });
 });

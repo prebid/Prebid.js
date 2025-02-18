@@ -23,8 +23,8 @@ import {
 } from '../src/utils.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 import { vastsLocalCache } from '../src/videoCache.js';
-import { vastXmlEditorFactory } from '../libraries/video/shared/vastXmlEditor.js';
 import { fetch } from '../src/ajax.js';
+import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -57,6 +57,8 @@ import { fetch } from '../src/ajax.js';
 export const dep = {
   ri: getRefererInfo
 }
+
+export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
@@ -252,11 +254,10 @@ function getCustParams(bid, options, urlCustParams) {
   return encodedParams;
 }
 
-async function replaceVastAdTagWithBlobContent(gamVastWrapper, bid) {
+export async function getVastForLocallyCachedBid(gamVastWrapper, bid) {
   const blobUrl = vastsLocalCache.get(bid.videoCacheKey);
   if (!blobUrl) return gamVastWrapper;
-  const vastXmlEditor = vastXmlEditorFactory();
-  const finalVast = await vastXmlEditor.replaceVastAdTagWithBlobContent(gamVastWrapper, blobUrl, bid.videoCacheKey);
+  const finalVast = await replaceVastAdTagWithBlobContent(gamVastWrapper, blobUrl, bid.videoCacheKey);
   return finalVast;
 };
 
@@ -272,15 +273,55 @@ async function getVast(options) {
   const gamVastWrapper = await response.text();
 
   if (config.getConfig('cache.useLocal') && gamVastWrapper.includes(bid.videoCacheKey)) {
-    const vastXml = await replaceVastAdTagWithBlobContent(gamVastWrapper, bid);
+    const vastXml = await getVastForLocallyCachedBid(gamVastWrapper, bid);
     return vastXml;
   }
 
   return gamVastWrapper;
 }
 
+function replaceVastAdTagUri(xmlString, match, newContent) {
+  try {
+    const xmlUtil = XMLUtil();
+    const xmlDoc = xmlUtil.parse(xmlString);
+    const vastAdTagUriElements = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME);
+    const vastAdTagUriElement = Array.from(vastAdTagUriElements).find(adTag => adTag.textContent.includes(match));
+
+    if (vastAdTagUriElement) {
+      const cdata = xmlDoc.createCDATASection(newContent);
+      vastAdTagUriElement.textContent = '';
+      vastAdTagUriElement.appendChild(cdata);
+      return xmlUtil.serialize(xmlDoc);
+    } else {
+      throw new Error(`${VAST_TAG_URI_TAGNAME} tag not found in xml`);
+    }
+  } catch (error) {
+    logError('Unable to process xml', error);
+    return xmlString;
+  }
+};
+
+export async function replaceVastAdTagWithBlobContent(vastXml, blobUrl, videoCacheKey) {
+  try {
+    const response = await fetch(blobUrl);
+    if (!response.ok) {
+      logError('Unable to fetch blob');
+      return vastXml;
+    }
+
+    // Mechanism to handle cases where VAST tags are fetched
+    // from a context where the blob resource is not accessible.
+    // like IMA SDK iframe
+    const blobContent = await response.text();
+    const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+
+    return replaceVastAdTagUri(vastXml, videoCacheKey, dataUrl);
+  } catch (e) {
+    return vastXml;
+  }
+}
+
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
-  replaceVastAdTagWithBlobContent,
   getVast
 });

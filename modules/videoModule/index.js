@@ -85,25 +85,18 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  async function renderBid(divId, bid, vastUrl, options) {
-    try {
-      const response = await fetch(vastUrl);
-      if (!response.ok) {
-        throw new Error('VAST fetch failed');
-      }
+  function renderBid(divId, bid, options = {}) {
+    const adUrl = bid.vastUrl;
+    options.adXml = bid.vastXml;
+    options.winner = bid.bidder;
 
-      let vastXml = await response.text();
-
-      // If the fetched VAST XML is a GAM wrapper and local cached is being used,
-      // retrieve the bid's VAST blob from the local cache
-      // and replace the VastAdTagURI with its content.
-      if (config.getConfig('cache.useLocal') && vastXml.includes(bid.videoCacheKey)) {
-        vastXml = await gamSubmodule.replaceVastAdTagWithBlobContent(vastXml, bid);
-      }
-
-      loadAd(vastXml, divId, options);
-    } catch (error) {
-      logError('Error during fetching vast file', error);
+    if (options.adXml) {
+      loadAd(options.adXml, divId, options);
+    } else {
+      fetch(adUrl)
+        .then(response => response.text())
+        .then(vastXml => loadAd(vastXml, divId, options))
+        .catch((err) => logError(`Unable to fetch vast for bid ${bid.bidder}`, err))
     }
   }
 
@@ -220,7 +213,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return mergeDeep({}, globalVideoConfig.adServer, globalProviderConfig.adServer, adUnitVideoConfig.adServer);
   }
 
-  function renderWinningBid(adUnit) {
+  async function renderWinningBid(adUnit) {
     const adUnitCode = adUnit.code;
 
     const videoConfig = adUnit.video;
@@ -228,16 +221,14 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const adServerConfig = getAdServerConfig(videoConfig);
     const winningBid = getWinningBid(adUnitCode);
-    const vastUrl = !adServerConfig ? winningBid?.vastUrl : gamSubmodule.getAdTagUrl(
-      adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params, winningBid
-    );
 
-    if (!vastUrl) {
-      logError('Unable to determine vastUrl');
-      return;
+    if (adServerConfig) {
+      const gamVastWrapper = await gamSubmodule.getVast(
+        adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params, winningBid
+      );
+      winningBid.vastXml = gamVastWrapper;
     }
-
-    renderBid(divId, winningBid, vastUrl, {adUnitCode});
+    renderBid(divId, winningBid, { adUnitCode });
   }
 
   function getWinningBid(adUnitCode) {

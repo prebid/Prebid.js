@@ -1,9 +1,6 @@
-import { fetch } from '../../../src/ajax.js';
-import { logError } from '../../../src/utils.js';
-import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
-export const XML_MIME_TYPE = 'application/xml';
-export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
+import XMLUtil from '../../xmlUtils/xmlUtils.js';
+import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
 export function VastXmlEditor(xmlUtil_) {
   const xmlUtil = xmlUtil_;
@@ -48,8 +45,7 @@ export function VastXmlEditor(xmlUtil_) {
 
   return {
     getVastXmlWithTracking,
-    buildVastWrapper,
-    replaceVastAdTagWithBlobContent
+    buildVastWrapper
   }
 
   function getImpressionDoc(impressionUrl, impressionId) {
@@ -78,80 +74,6 @@ export function VastXmlEditor(xmlUtil_) {
     const doc = copy ? child.cloneNode(true) : child;
     node.appendChild(doc.documentElement);
   }
-
-  function replaceVastAdTagUri(xmlString, match, newContent) {
-    try {
-      const xmlDoc = xmlUtil.parse(xmlString);
-      const vastAdTagUriElements = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME);
-      const vastAdTagUriElement = Array.from(vastAdTagUriElements).find(adTag => adTag.textContent.includes(match));
-
-      if (vastAdTagUriElement) {
-        const cdata = xmlDoc.createCDATASection(newContent);
-        vastAdTagUriElement.textContent = '';
-        vastAdTagUriElement.appendChild(cdata);
-        return xmlUtil.serialize(xmlDoc);
-      } else {
-        throw new Error(`${VAST_TAG_URI_TAGNAME} tag not found in xml`);
-      }
-    } catch (error) {
-      logError('Unable to process xml', error);
-      return xmlString;
-    }
-  };
-
-  async function replaceVastAdTagWithBlobContent(vastXml, blobUrl, videoCacheKey) {
-    try {
-      const response = await fetch(blobUrl);
-      if (!response.ok) {
-        logError('Unable to fetch blob');
-        return vastXml;
-      }
-
-      // Mechanism to handle cases where VAST tags are fetched
-      // from a context where the blob resource is not accessible.
-      // like IMA SDK iframe
-      const blobContent = await response.text();
-      const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
-
-      return replaceVastAdTagUri(vastXml, videoCacheKey, dataUrl);
-    } catch (e) {
-      return vastXml;
-    }
-  }
-}
-
-function XMLUtil() {
-  let parser;
-  let serializer;
-
-  function getParser() {
-    if (!parser) {
-      // DOMParser instantiation is costly; instantiate only once throughout Prebid lifecycle.
-      parser = new DOMParser();
-    }
-    return parser;
-  }
-
-  function getSerializer() {
-    if (!serializer) {
-      // XMLSerializer instantiation is costly; instantiate only once throughout Prebid lifecycle.
-      serializer = new XMLSerializer();
-    }
-    return serializer;
-  }
-
-  function parse(xmlString) {
-    return getParser().parseFromString(xmlString, XML_MIME_TYPE);
-  }
-
-  function serialize(xmlDoc) {
-    return getSerializer().serializeToString(xmlDoc);
-  }
-
-  return {
-    parse,
-    serialize
-  };
 }
 
 export function vastXmlEditorFactory() {

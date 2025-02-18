@@ -2,6 +2,7 @@ import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
 import { EVENTS } from 'src/constants.js';
+import * as ajaxModule from 'src/ajax';
 
 let ortbVideoMock;
 let ortbContentMock;
@@ -41,7 +42,6 @@ function resetTestVars() {
     setConfig: sinon.spy(),
     getConfig: () => ({}),
     markWinningBidAsUsed: sinon.spy(),
-    getVast: sinon.spy()
   };
   pbEventsMock = {
     emit: sinon.spy(),
@@ -49,7 +49,8 @@ function resetTestVars() {
   };
   videoEventsMock = [];
   gamSubmoduleMock = {
-    getAdTagUrl: sinon.spy()
+    getAdTagUrl: sinon.spy(),
+    getVast: sinon.spy()
   };
 
   gamSubmoduleFactoryMock = sinon.spy(() => gamSubmoduleMock);
@@ -251,6 +252,7 @@ describe('Prebid Video', function () {
 
     beforeEach(() => {
       gamSubmoduleMock.getAdTagUrl.resetHistory();
+      gamSubmoduleMock.getVast.resetHistory();
       videoCoreMock.setAdTagUrl.resetHistory();
       adQueueCoordinatorMock.queueAd.resetHistory();
     });
@@ -260,7 +262,7 @@ describe('Prebid Video', function () {
       before: callback_ => beforeBidRequestCallback = callback_
     };
 
-    it('should request ad tag url from adServer when configured to use adServer', function () {
+    it('should request vast from adServer when configured to use adServer', function () {
       const expectedVastUrl = 'expectedVastUrl';
       const expectedVastXml = 'expectedVastXml';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
@@ -274,15 +276,17 @@ describe('Prebid Video', function () {
 
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
-      expect(gamSubmoduleMock.getAdTagUrl.calledOnce).to.be.true;
-      expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[0]).is.equal(expectedAdUnit);
-      expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[1]).is.equal(expectedAdTag);
+      expect(gamSubmoduleMock.getVast.calledOnce).to.be.true;
+      expect(gamSubmoduleMock.getVast.getCall(0).args[0]).is.equal(expectedAdUnit);
+      expect(gamSubmoduleMock.getVast.getCall(0).args[1]).is.equal(expectedAdTag);
     });
 
     it('should fetch vast wrapper when ad server is configured', function () {
       const gamWrapperUrl = 'https://gam-endpoint';
+      const getVast = sinon.spy();
       const gamSubmoduleFactory = () => ({
-        getAdTagUrl: () => gamWrapperUrl
+        getAdTagUrl: () => gamWrapperUrl,
+        getVast
       });
       const expectedVastUrl = 'expectedVastUrl';
       const expectedVastXml = 'expectedVastXml';
@@ -299,19 +303,17 @@ describe('Prebid Video', function () {
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
 
-      expect(pbGlobal.getVast.calledOnce).to.be.true;
-      sinon.assert.calledWith(pbGlobal.getVast, gamWrapperUrl, videoCacheKey);
+      expect(getVast.calledOnce).to.be.true;
     });
 
     it('should load vast from highest bid when ad server is not configured', function () {
+      const fetchStub = sinon.stub(ajaxModule, 'fetch').resolves()
       const expectedVastUrl = 'expectedVastUrl';
-      const expectedVastXml = 'expectedVastXml';
       const videoCacheKey = '1234';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
         requestBids,
         getHighestCpmBids: () => [{
           vastUrl: expectedVastUrl,
-          vastXml: expectedVastXml,
           videoCacheKey
         }, {}, {}, {}]
       });
@@ -325,8 +327,9 @@ describe('Prebid Video', function () {
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
 
-      expect(pbGlobal.getVast.calledOnce).to.be.true;
-      sinon.assert.calledWith(pbGlobal.getVast, expectedVastUrl, videoCacheKey);
+      sinon.assert.calledOnce(fetchStub);
+      fetchStub.calledWith(expectedVastUrl);
+      fetchStub.restore();
     });
   });
 
