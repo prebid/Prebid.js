@@ -125,7 +125,7 @@ describe('Equativ bid adapter tests', () => {
       nativeOrtbRequest,
       bidder: 'equativ',
       params: {
-        networkId: 777,
+        networkId: 111,
       },
       requestId: 'equativ_native_reqid_42',
       ortb2Imp: {
@@ -807,7 +807,7 @@ describe('Equativ bid adapter tests', () => {
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0]).to.deep.equal({
         type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=777&gdpr=1&'
+        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=1&'
       });
     });
 
@@ -820,7 +820,7 @@ describe('Equativ bid adapter tests', () => {
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0]).to.deep.equal({
         type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=777&gdpr=0&'
+        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=0&'
       });
     });
   });
