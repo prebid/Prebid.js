@@ -59,8 +59,10 @@ export const spec = {
       pageTitle: getPageTitle().slice(0, 300),
       pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
+      networkQuality: getNetworkQuality(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
+      domComplexity: document.querySelectorAll("*")?.length,
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
@@ -228,6 +230,12 @@ function getPageDescription() {
 
 function getConnectionDownLink(nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+}
+
+function getNetworkQuality(navigator) {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+  return connection?.effectiveType ?? ""
 }
 
 function getTimeToFirstByte(win) {

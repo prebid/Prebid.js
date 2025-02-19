@@ -247,6 +247,28 @@ describe('teadsBidAdapter', () => {
       }
     });
 
+    it('should add networkQuality info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      const networkQuality = window.navigator && window.navigator.connection && window.navigator.connection.effectiveType;
+
+      expect(payload.networkQuality).to.exist;
+
+      if (networkQuality) {
+        expect(payload.networkQuality).to.deep.equal(networkQuality.toString());
+      } else {
+        expect(payload.networkQuality).to.deep.equal('');
+      }
+    })
+
+    it('should add domComplexity info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.domComplexity).to.exist;
+    })
+
     it('should add pageReferrer info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
