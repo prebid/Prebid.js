@@ -14,7 +14,7 @@ const VENDOR_OPENWRAP = 'openwrap';
 const SEND_TIMEOUT = 2000;
 const END_POINT_HOST = 'https://t.pubmatic.com/';
 const END_POINT_VERSION = 1;
-const INTEGRATION_TYPE = 'web';
+const PAGE_SOURCE = 'web';
 const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl?';
 const END_POINT_WIN_BID_LOGGER = END_POINT_HOST + 'wt?';
 const LOG_PRE_FIX = 'PubMatic-Analytics: ';
@@ -204,7 +204,7 @@ function executeBidsLoggerCall(event) {
   auctionCache.sent = true;
 
   const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
-  const queryParams = `v=${END_POINT_VERSION}&it=${INTEGRATION_TYPE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
+  const queryParams = `v=${END_POINT_VERSION}&psrc=${PAGE_SOURCE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
 
   sendAjaxRequest({
     endpoint: END_POINT_BID_LOGGER,
@@ -246,7 +246,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   };
   
   const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
-  const queryParams = `v=${END_POINT_VERSION}&it=${INTEGRATION_TYPE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
+  const queryParams = `v=${END_POINT_VERSION}&psrc=${PAGE_SOURCE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
 
   sendAjaxRequest({
     endpoint: END_POINT_WIN_BID_LOGGER,
