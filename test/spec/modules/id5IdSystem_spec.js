@@ -11,7 +11,6 @@ import {config} from '../../../src/config.js';
 import * as events from '../../../src/events.js';
 import {EVENTS} from '../../../src/constants.js';
 import * as utils from '../../../src/utils.js';
-import {gppDataHandler, uspDataHandler} from '../../../src/adapterManager.js';
 import '../../../src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
@@ -333,11 +332,11 @@ describe('ID5 ID System', function () {
           }
         };
         expect(id5System.id5IdSubmodule.getId(config)).is.eq(undefined);
-        expect(id5System.id5IdSubmodule.getId(config, dataConsent)).is.eq(undefined);
+        expect(id5System.id5IdSubmodule.getId(config, {gdpr: dataConsent})).is.eq(undefined);
 
         const cacheIdObject = 'cacheIdObject';
         expect(id5System.id5IdSubmodule.extendId(config)).is.eq(undefined);
-        expect(id5System.id5IdSubmodule.extendId(config, dataConsent, cacheIdObject)).is.eq(cacheIdObject);
+        expect(id5System.id5IdSubmodule.extendId(config, {gdpr: dataConsent}, cacheIdObject)).is.eq(cacheIdObject);
       });
     });
   });
@@ -350,7 +349,6 @@ describe('ID5 ID System', function () {
     });
 
     afterEach(function () {
-      uspDataHandler.reset();
       gppStub?.restore();
     });
 
@@ -393,7 +391,7 @@ describe('ID5 ID System', function () {
       };
 
       // Trigger the fetch but we await on it later
-      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), {gdpr: consentData}, undefined);
 
       const fetchRequest = await xhrServerMock.expectFetchRequest();
       const requestBody = JSON.parse(fetchRequest.requestBody);
@@ -430,7 +428,6 @@ describe('ID5 ID System', function () {
 
     it('should call the ID5 server with us privacy consent', async function () {
       const usPrivacyString = '1YN-';
-      uspDataHandler.setConsentData(usPrivacyString);
       const xhrServerMock = new XhrServerMock(server);
       const consentData = {
         gdprApplies: true,
@@ -439,7 +436,7 @@ describe('ID5 ID System', function () {
       };
 
       // Trigger the fetch but we await on it later
-      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), {gdpr: consentData, usp: usPrivacyString}, undefined);
 
       const fetchRequest = await xhrServerMock.expectFetchRequest();
       const requestBody = JSON.parse(fetchRequest.requestBody);
@@ -828,13 +825,12 @@ describe('ID5 ID System', function () {
 
     it('should pass gpp_string and gpp_sid to ID5 server', function () {
       let xhrServerMock = new XhrServerMock(server);
-      gppStub = sinon.stub(gppDataHandler, 'getConsentData');
-      gppStub.returns({
+      const gppData = {
         ready: true,
         gppString: 'GPP_STRING',
         applicableSections: [2]
-      });
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      };
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
