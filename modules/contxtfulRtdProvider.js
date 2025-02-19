@@ -353,7 +353,6 @@ function tryMultipleDivIdPositions(adUnit) {
 function tryGetAdUnitPosition(adUnit) {
   let adUnitPosition = {};
   adUnit.ortb2Imp = adUnit.ortb2Imp || {};
-  const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
 
   // try to get position with the divId
   const divIdPosition = tryMultipleDivIdPositions(adUnit);
