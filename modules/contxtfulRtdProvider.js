@@ -16,10 +16,18 @@ import {
   buildUrl,
   isArray,
   generateUUID,
+  canAccessWindowTop,
+  deepAccess,
+  getSafeframeGeometry,
+  getWindowSelf,
+  getWindowTop,
+  inIframe,
+  isSafeFrameWindow,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
@@ -225,6 +233,162 @@ function getTargetingData(adUnits, config, _userConsent) {
   }
 }
 
+function getVisibilityStateElement(domElement, windowTop) {
+  if ('checkVisibility' in domElement) {
+    return domElement.checkVisibility();
+  }
+
+  const elementCss = windowTop.getComputedStyle(domElement, null);
+  return elementCss.display !== 'none';
+}
+
+function getElementFromTopWindowRecurs(element, currentWindow) {
+  try {
+    if (getWindowTop() === currentWindow) {
+      return element;
+    } else {
+      const frame = currentWindow.frameElement;
+      const frameClientRect = frame.getBoundingClientRect();
+      const elementClientRect = element.getBoundingClientRect();
+      if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
+        return undefined;
+      }
+      return getElementFromTopWindowRecurs(frame, currentWindow.parent);
+    }
+  } catch (err) {
+    logError(MODULE, err);
+    return undefined;
+  }
+}
+
+function getDivIdPosition(divId) {
+  if (!isSafeFrameWindow() && !canAccessWindowTop()) {
+    return {};
+  }
+
+  const position = {};
+
+  if (isSafeFrameWindow()) {
+    const { self } = getSafeframeGeometry() ?? {};
+
+    if (!self) {
+      return {};
+    }
+
+    position.x = Math.round(self.t);
+    position.y = Math.round(self.l);
+  } else {
+    try {
+      // window.top based computing
+      const wt = getWindowTop();
+      const d = wt.document;
+
+      let domElement;
+
+      if (inIframe() === true) {
+        const ws = getWindowSelf();
+        const currentElement = ws.document.getElementById(divId);
+        domElement = getElementFromTopWindowRecurs(currentElement, ws);
+      } else {
+        domElement = wt.document.getElementById(divId);
+      }
+
+      if (!domElement) {
+        return {};
+      }
+
+      let box = domElement.getBoundingClientRect();
+      const docEl = d.documentElement;
+      const body = d.body;
+      const clientTop = (d.clientTop ?? body.clientTop) ?? 0;
+      const clientLeft = (d.clientLeft ?? body.clientLeft) ?? 0;
+      const scrollTop = (wt.scrollY ?? docEl.scrollTop) ?? body.scrollTop;
+      const scrollLeft = (wt.scrollX ?? docEl.scrollLeft) ?? body.scrollLeft;
+
+      position.visibility = getVisibilityStateElement(domElement, wt);
+      position.x = Math.round(box.left + scrollLeft - clientLeft);
+      position.y = Math.round(box.top + scrollTop - clientTop);
+    } catch (err) {
+      logError(MODULE, err);
+      return {};
+    }
+  }
+
+  return position;
+}
+
+function tryGetDivIdPosition(divIdMethod) {
+  let divId = divIdMethod();
+  if (divId) {
+    const divIdPosition = getDivIdPosition(divId);
+    if (divIdPosition.x !== undefined && divIdPosition.y !== undefined) {
+      return divIdPosition;
+    }
+  }
+  return undefined;
+}
+
+function tryMultipleDivIdPositions(adUnit) {
+  let divMethods = [
+    // ortb2\
+    () => {
+      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+      const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+      return deepAccess(ortb2Imp, 'ext.data.divId');
+    },
+    // gpt
+    () => getGptSlotInfoForAdUnitCode(adUnit.code).divId,
+    // adunit code
+    () => adUnit.code
+  ];
+
+  for (const divMethod of divMethods) {
+    let divPosition = tryGetDivIdPosition(divMethod);
+    if (divPosition) {
+      return divPosition;
+    }
+  }
+}
+
+function tryGetAdUnitPosition(adUnit) {
+  let adUnitPosition = {};
+  adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+  const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+
+  // try to get position with the divId
+  const divIdPosition = tryMultipleDivIdPositions(adUnit);
+  if (divIdPosition) {
+    adUnitPosition.p = { x: divIdPosition.x, y: divIdPosition.y };
+    adUnitPosition.v = divIdPosition.visibility;
+    adUnitPosition.t = 'div';
+    return adUnitPosition;
+  }
+
+  // try to get IAB position
+  const iabPos = adUnit?.mediaTypes?.banner?.pos;
+  if (iabPos !== undefined) {
+    adUnitPosition.p = iabPos;
+    adUnitPosition.t = 'iab';
+    return adUnitPosition;
+  }
+
+  return undefined;
+}
+
+function getAdUnitPositions(bidReqConfig) {
+  const adUnits = bidReqConfig.adUnits || [];
+  let adUnitPositions = {};
+
+  for (const adUnit of adUnits) {
+    let adUnitPosition = tryGetAdUnitPosition(adUnit);
+    if (adUnitPosition) {
+      adUnitPositions[adUnit.code] = adUnitPosition;
+    }
+  }
+
+  return adUnitPositions;
+}
+
 /**
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} onDone Called on completion
@@ -237,6 +401,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   }
 
   logInfo(MODULE, 'getBidRequestData');
+  const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);
   const bidders = config?.params?.bidders || [];
   if (isEmpty(bidders) || !isArray(bidders)) {
     onReturn();
@@ -262,6 +427,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
               ext: {
                 rx: rxBatch[bidderCode],
                 events: singlePointEvents,
+                pos: btoa(JSON.stringify(adUnitsPositions)),
                 sm: sm(),
                 params: {
                   ev: config.params?.version,
