@@ -2,7 +2,7 @@ import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
 import { EVENTS } from 'src/constants.js';
-import * as ajaxModule from 'src/ajax';
+import { server } from '../../../mocks/xhr';
 
 let ortbVideoMock;
 let ortbContentMock;
@@ -41,7 +41,7 @@ function resetTestVars() {
     getBidResponsesForAdUnitCode: sinon.spy(),
     setConfig: sinon.spy(),
     getConfig: () => ({}),
-    markWinningBidAsUsed: sinon.spy(),
+    markWinningBidAsUsed: sinon.spy()
   };
   pbEventsMock = {
     emit: sinon.spy(),
@@ -49,8 +49,7 @@ function resetTestVars() {
   };
   videoEventsMock = [];
   gamSubmoduleMock = {
-    getAdTagUrl: sinon.spy(),
-    getVast: sinon.spy()
+    getAdTagUrl: sinon.spy()
   };
 
   gamSubmoduleFactoryMock = sinon.spy(() => gamSubmoduleMock);
@@ -252,7 +251,6 @@ describe('Prebid Video', function () {
 
     beforeEach(() => {
       gamSubmoduleMock.getAdTagUrl.resetHistory();
-      gamSubmoduleMock.getVast.resetHistory();
       videoCoreMock.setAdTagUrl.resetHistory();
       adQueueCoordinatorMock.queueAd.resetHistory();
     });
@@ -262,7 +260,7 @@ describe('Prebid Video', function () {
       before: callback_ => beforeBidRequestCallback = callback_
     };
 
-    it('should request vast from adServer when configured to use adServer', function () {
+    it('should request ad tag url from adServer when configured to use adServer', function () {
       const expectedVastUrl = 'expectedVastUrl';
       const expectedVastXml = 'expectedVastXml';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
@@ -276,45 +274,42 @@ describe('Prebid Video', function () {
 
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
-      expect(gamSubmoduleMock.getVast.calledOnce).to.be.true;
-      expect(gamSubmoduleMock.getVast.getCall(0).args[0]).is.equal(expectedAdUnit);
-      expect(gamSubmoduleMock.getVast.getCall(0).args[1]).is.equal(expectedAdTag);
+      expect(gamSubmoduleMock.getAdTagUrl.calledOnce).to.be.true;
+      expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[0]).is.equal(expectedAdUnit);
+      expect(gamSubmoduleMock.getAdTagUrl.getCall(0).args[1]).is.equal(expectedAdTag);
     });
 
-    it('should fetch vast wrapper when ad server is configured', function () {
-      const gamWrapperUrl = 'https://gam-endpoint';
-      const getVast = sinon.spy();
+    it('should load ad tag when ad server returns ad tag', function () {
+      const expectedAdTag = 'resulting ad tag';
       const gamSubmoduleFactory = () => ({
-        getAdTagUrl: () => gamWrapperUrl,
-        getVast
+        getAdTagUrl: () => expectedAdTag
       });
       const expectedVastUrl = 'expectedVastUrl';
       const expectedVastXml = 'expectedVastXml';
-      const videoCacheKey = '1234';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
         requestBids,
         getHighestCpmBids: () => [{
           vastUrl: expectedVastUrl,
-          vastXml: expectedVastXml,
-          videoCacheKey
+          vastXml: expectedVastXml
         }, {}, {}, {}]
       });
       pbVideoFactory(null, getConfig, pbGlobal, pbEvents, null, gamSubmoduleFactory);
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
-
-      expect(getVast.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.args[0][0]).to.be.equal(expectedAdTag);
+      expect(adQueueCoordinatorMock.queueAd.args[0][1]).to.be.equal(expectedDivId);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
     });
 
-    it('should load vast from highest bid when ad server is not configured', function () {
-      const fetchStub = sinon.stub(ajaxModule, 'fetch').resolves()
+    it('should load ad tag from highest bid when ad server is not configured', function () {
       const expectedVastUrl = 'expectedVastUrl';
-      const videoCacheKey = '1234';
+      const expectedVastXml = 'expectedVastXml';
       const pbGlobal = Object.assign({}, pbGlobalMock, {
         requestBids,
         getHighestCpmBids: () => [{
           vastUrl: expectedVastUrl,
-          videoCacheKey
+          vastXml: expectedVastXml
         }, {}, {}, {}]
       });
       const expectedAdUnit = {
@@ -326,10 +321,41 @@ describe('Prebid Video', function () {
       pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, pbEvents);
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
+      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.args[0][0]).to.be.equal(expectedVastUrl);
+      expect(adQueueCoordinatorMock.queueAd.args[0][1]).to.be.equal(expectedDivId);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adXml', expectedVastXml);
+    });
 
-      sinon.assert.calledOnce(fetchStub);
-      fetchStub.calledWith(expectedVastUrl);
-      fetchStub.restore();
+    it('should prefetch vast xml if local cache turned on', function () {
+      server.respondWith('expectedVastXml');
+      const expectedVastUrl = 'expectedVastUrl';
+      const expectedVastXml = 'expectedVastXml';
+      const pbGlobal = Object.assign({}, pbGlobalMock, {
+        requestBids,
+        getHighestCpmBids: () => [{
+          vastUrl: expectedVastUrl,
+          vastXml: expectedVastXml
+        }, {}, {}, {}]
+      });
+      const expectedAdUnit = {
+        code: expectedAdUnitCode,
+        video: { divId: expectedDivId }
+      };
+      const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
+      const getConfig = (key) => {
+        if (key === 'cache') {
+          return { useLocal: true }
+        }
+        return { providers: [] }
+      }
+      pbVideoFactory(null, getConfig, pbGlobal, pbEvents);
+      beforeBidRequestCallback(() => {}, {});
+      auctionEndCallback(auctionResults);
+      server.respond();
+      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('prefetchedVastXml', expectedVastXml);
     });
   });
 

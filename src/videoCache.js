@@ -21,7 +21,7 @@ import {addBidToAuction} from './auction.js';
  */
 const ttlBufferInSeconds = 15;
 
-export const vastsLocalCache = new Map();
+export const vastLocalCache = new Map();
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -174,7 +174,7 @@ export const storeLocally = (bid) => {
 
   assignVastUrlAndCacheId(bid, bidVastUrl);
 
-  vastsLocalCache.set(bid.videoCacheKey, bidVastUrl);
+  vastLocalCache.set(bid.videoCacheKey, bidVastUrl);
 };
 
 const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey) => {
@@ -228,11 +228,11 @@ if (FEATURES.VIDEO) {
       cleanupHandler = auctionManager.onExpiry((auction) => {
         auction.getBidsReceived()
           .forEach((bid) => {
-            const vastUrl = vastsLocalCache.get(bid.videoCacheKey)
+            const vastUrl = vastLocalCache.get(bid.videoCacheKey)
             if (vastUrl && vastUrl.startsWith('blob')) {
               URL.revokeObjectURL(vastUrl);
             }
-            vastsLocalCache.delete(bid.videoCacheKey);
+            vastLocalCache.delete(bid.videoCacheKey);
           })
       });
     }

@@ -22,7 +22,7 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
-import { vastsLocalCache } from '../src/videoCache.js';
+import { vastLocalCache } from '../src/videoCache.js';
 import { fetch } from '../src/ajax.js';
 import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 /**
@@ -255,7 +255,7 @@ function getCustParams(bid, options, urlCustParams) {
 }
 
 export async function getVastForLocallyCachedBid(gamVastWrapper, bid) {
-  const blobUrl = vastsLocalCache.get(bid.videoCacheKey);
+  const blobUrl = vastLocalCache.get(bid.videoCacheKey);
   if (!blobUrl) return gamVastWrapper;
   const finalVast = await replaceVastAdTagWithBlobContent(gamVastWrapper, blobUrl, bid.videoCacheKey);
   return finalVast;

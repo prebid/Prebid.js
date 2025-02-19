@@ -90,14 +90,19 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     options.adXml = bid.vastXml;
     options.winner = bid.bidder;
 
-    if (options.adXml) {
-      loadAd(options.adXml, divId, options);
-    } else {
+    const { useLocal } = getConfig('cache') || {};
+
+    // in case of using local cache, VAST should be prefetched
+    // needed for make blob always reachable, regardless of player context
+    if (useLocal && !options.prefetchedVastXml) {
       fetch(adUrl)
         .then(response => response.text())
-        .then(vastXml => loadAd(vastXml, divId, options))
+        .then(prefetchedVastXml => loadAd(adUrl, divId, {...options, prefetchedVastXml}))
         .catch((err) => logError(`Unable to fetch vast for bid ${bid.bidder}`, err))
+      return;
     }
+
+    loadAd(adUrl, divId, options);
   }
 
   function getOrtbVideo(divId) {
@@ -222,13 +227,28 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const adServerConfig = getAdServerConfig(videoConfig);
     const winningBid = getWinningBid(adUnitCode);
 
-    if (adServerConfig) {
+    const options = { adUnitCode };
+
+    async function prefetchVast() {
       const gamVastWrapper = await gamSubmodule.getVast(
         adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params, winningBid
       );
-      winningBid.vastXml = gamVastWrapper;
+      options.prefetchedVastXml = gamVastWrapper;
     }
-    renderBid(divId, winningBid, { adUnitCode });
+
+    if (adServerConfig) {
+      if (config.getConfig('cache.useLocal')) {
+        await prefetchVast();
+      } else {
+        const adTagUrl = gamSubmodule.getAdTagUrl(
+          adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params
+        );
+        loadAd(adTagUrl, divId, options);
+        return;
+      }
+    }
+
+    renderBid(divId, winningBid, options);
   }
 
   function getWinningBid(adUnitCode) {
@@ -240,8 +260,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return highestCpmBids.shift();
   }
 
-  function loadAd(adXml, divId, options) {
-    adQueueCoordinator.queueAd(adXml, divId, options);
+  function loadAd(adTagUrl, divId, options) {
+    adQueueCoordinator.queueAd(adTagUrl, divId, options);
   }
 
   function triggerVideoBidEvent(eventName, adEventPayload) {

@@ -202,7 +202,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function setAdTagUrl(adTagUrl, options) {
-    if (!player) {
+    if (!player || !adTagUrl) {
       return;
     }
 
@@ -210,7 +210,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function setAdXml(vastXml, options) {
-    if (!player) {
+    if (!player || !vastXml) {
       return;
     }
 
