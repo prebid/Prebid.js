@@ -201,7 +201,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
   function setAdTagUrl(adTagUrl, options) {
-    if (!player.ima) {
+    if (!player.ima || !adTagUrl) {
       return;
     }
 
@@ -217,7 +217,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
   }
 
   function setAdXml(vastXml) {
-    if (!player.ima) {
+    if (!player.ima || !vastXml) {
       return;
     }
 

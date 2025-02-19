@@ -202,11 +202,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function setAdTagUrl(adTagUrl, options) {
-    if (!player || !adTagUrl) {
+    if (!player) {
       return;
     }
 
-    player.playAd(adTagUrl, options);
+    player.playAd(adTagUrl || options.adXml, options);
   }
 
   function setAdXml(vastXml, options) {
