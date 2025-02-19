@@ -10,7 +10,6 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import { gppDataHandler } from '../src/adapterManager.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -59,14 +58,14 @@ export const identityLinkSubmodule = {
       utils.logError('identityLink: requires partner id to be defined');
       return;
     }
-    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    const gdprConsentString = hasGdpr ? consentData.consentString : '';
+    const {gdpr, gpp: gppData} = consentData ?? {};
+    const hasGdpr = (gdpr && typeof gdpr.gdprApplies === 'boolean' && gdpr.gdprApplies) ? 1 : 0;
+    const gdprConsentString = hasGdpr ? gdpr.consentString : '';
     // use protocol relative urls for http or https
     if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
       utils.logInfo('identityLink: Consent string is required to call envelope API.');
       return;
     }
-    const gppData = gppDataHandler.getConsentData();
     const gppString = gppData && gppData.gppString ? gppData.gppString : false;
     const gppSectionId = gppData && gppData.gppString && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== -1 ? gppData.applicableSections[0] : false;
     const hasGpp = gppString && gppSectionId;
