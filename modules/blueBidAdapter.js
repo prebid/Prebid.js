@@ -97,7 +97,7 @@ export const spec = {
         url: ENDPOINT_URL,
         data: ortbRequest,
         options: {
-          contentType: 'text/plain',
+          contentType: 'application/json',
         },
       },
     ];
