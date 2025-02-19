@@ -354,7 +354,7 @@ function tryGetAdUnitPosition(adUnit) {
   let adUnitPosition = {};
   adUnit.ortb2Imp = adUnit.ortb2Imp || {};
 
-  // try to get position with the divId
+  // Try to get position with the divId
   const divIdPosition = tryMultipleDivIdPositions(adUnit);
   if (divIdPosition) {
     adUnitPosition.p = { x: divIdPosition.x, y: divIdPosition.y };
@@ -363,7 +363,7 @@ function tryGetAdUnitPosition(adUnit) {
     return adUnitPosition;
   }
 
-  // try to get IAB position
+  // Try to get IAB position
   const iabPos = adUnit?.mediaTypes?.banner?.pos;
   if (iabPos !== undefined) {
     adUnitPosition.p = iabPos;
