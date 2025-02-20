@@ -99,8 +99,8 @@ describe('rediads Bid Adapter', function () {
                   impid: '2ab03f1234',
                   adm: '<div>Ad</div>',
                   crid: 'creative123',
-                  w: 300,
-                  h: 250,
+                  w: 123,
+                  h: 321,
                 },
               ],
             },
@@ -116,8 +116,8 @@ describe('rediads Bid Adapter', function () {
         requestId: '2ab03f1234',
         cpm: 1.23,
         creativeId: 'creative123',
-        width: 300,
-        height: 250,
+        width: 123,
+        height: 321,
         ad: '<div>Ad</div>',
       });
       expect(bid.mediaType).to.equal('banner');
