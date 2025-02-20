@@ -3,8 +3,10 @@ import * as priceFloors from '../../../modules/priceFloors';
 import * as utils from '../../../src/utils.js';
 import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
-import { registerSubModule, pubmaticSubmodule, getFloorsConfig, setFloorsConfig, setPriceFloors, fetchFloorRules,
-  getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getUtm} from '../../../modules/pubmaticRtdProvider.js';
+import {
+  registerSubModule, pubmaticSubmodule, getFloorsConfig, setFloorsConfig, setPriceFloors, fetchFloorRules,
+  getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, _country
+} from '../../../modules/pubmaticRtdProvider.js';
 
 let sandbox;
 
@@ -122,7 +124,7 @@ describe('Pubmatic RTD Provider', () => {
       { hour: 4, expected: 'night' }
     ];
 
-    testTimes.forEach(({hour, expected}) => {
+    testTimes.forEach(({ hour, expected }) => {
       it(`should return ${expected} at ${hour}:00`, () => {
         clock.setSystemTime(new Date().setHours(hour));
         const result = getCurrentTimeOfDay();
@@ -205,8 +207,13 @@ describe('Pubmatic RTD Provider', () => {
       expect(getCurrentTimeOfDay()).to.be.a('string');
     });
 
+    it('should set country correctly', () => {
+      expect(getCountry()).to.satisfy(value => typeof value === 'string' || value === undefined);
+    });
+
     it('should set UTM correctly', () => {
       expect(getUtm()).to.be.a('string');
+      expect(getUtm()).to.be.oneOf(['0', '1']);
     });
   });
 
@@ -222,6 +229,7 @@ describe('Pubmatic RTD Provider', () => {
         'timeOfDay',
         'browser',
         'os',
+        'country',
         'utm'
       ]);
 
@@ -249,6 +257,7 @@ describe('Pubmatic RTD Provider', () => {
       expect(result.floors.additionalSchemaFields.timeOfDay).to.equal(getCurrentTimeOfDay);
       expect(result.floors.additionalSchemaFields.browser).to.equal(getBrowserType);
       expect(result.floors.additionalSchemaFields.os).to.equal(getOs);
+      expect(result.floors.additionalSchemaFields.country).to.equal(getCountry);
       expect(result.floors.additionalSchemaFields.utm).to.equal(getUtm);
     });
   });
@@ -333,7 +342,7 @@ describe('Pubmatic RTD Provider', () => {
         'string',
         123,
         true,
-        () => {},
+        () => { },
         Symbol('test')
       ];
 
@@ -361,6 +370,10 @@ describe('Pubmatic RTD Provider', () => {
     });
 
     describe('fetchFloorRules', () => {
+      beforeEach(() => {
+        global._country = undefined;
+      });
+
       it('should successfully fetch and parse floor rules', async () => {
         const mockApiResponse = {
           data: {
@@ -370,10 +383,30 @@ describe('Pubmatic RTD Provider', () => {
           }
         };
 
-        fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200 }));
+        fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200, headers: { 'country_code': 'US' } }));
 
         const result = await fetchFloorRules('publisherId', 'profileId');
         expect(result).to.deep.equal(mockApiResponse);
+        expect(_country).to.equal('US');
+      });
+
+      it('should correctly extract the first unique country code from response headers', async () => {
+        fetchStub.resolves(new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'country_code': 'US,IN,US' }
+        }));
+
+        await fetchFloorRules('publisherId', 'profileId');
+        expect(_country).to.equal('US');
+      });
+
+      it('should set _country to undefined if country_code header is missing', async () => {
+        fetchStub.resolves(new Response(JSON.stringify({}), {
+          status: 200
+        }));
+
+        await fetchFloorRules('publisherId', 'profileId');
+        expect(_country).to.be.undefined;
       });
 
       it('should log error when JSON parsing fails', async () => {
@@ -429,11 +462,30 @@ describe('Pubmatic RTD Provider', () => {
   describe('getBidRequestData', () => {
     let _pubmaticFloorRulesPromiseMock;
     let continueAuctionStub;
+    let callback = sinon.spy();
 
     const reqBidsConfigObj = {
       adUnits: [{ code: 'ad-slot-code-0' }],
       auctionId: 'auction-id-0',
+      ortb2Fragments: {
+        bidder: {
+          user: {
+            ext: {
+              ctr: 'US',
+            }
+          }
+        }
+      }
     };
+
+    const Ortb2 = {
+      user: {
+        ext: {
+          ctr: 'US',
+        }
+      }
+    }
+
     const hookConfig = {
       reqBidsConfigObj,
       context: this,
@@ -448,7 +500,7 @@ describe('Pubmatic RTD Provider', () => {
 
     it('should call continueAuction once after _pubmaticFloorRulesPromise. Also getBidRequestData executed only once', async () => {
       _pubmaticFloorRulesPromiseMock = Promise.resolve();
-      pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, () => { });
+      pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
       await _pubmaticFloorRulesPromiseMock;
       expect(continueAuctionStub.calledOnce);
       expect(
@@ -456,6 +508,7 @@ describe('Pubmatic RTD Provider', () => {
           hookConfig
         )
       );
+      expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.include(Ortb2);
     });
   });
 });

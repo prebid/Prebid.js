@@ -197,20 +197,3 @@ export const MESSAGES = {
 };
 
 export const PB_LOCATOR = '__pb_locator__';
-
-export const REGEX_BROWSERS = [
-  /\b(?:crios)\/([\w\.]+)/i, // 1 - Chrome for iOS
-  /edg(?:e|ios|a)?\/([\w\.]+)/i, // 2 - Edge
-  /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, // 3 - Opera
-  /(?:ms|\()(ie) ([\w\.]+)/i, // 4 - Internet Explorer
-  /fxios\/([-\w\.]+)/i, // 5 - Firefox for iOS
-  /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, // 6 - Facebook In-App Browser
-  / wv\).+(chrome)\/([\w\.]+)/i, // 7 - Chrome WebView
-  /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, // 8 - Android Browser
-  /(chrome|chromium|crios)\/v?([\w\.]+)/i, // 9 - Chrome
-  /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, // 10 - Safari Mobile
-  /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, // 11 - Safari
-  /(firefox)\/([\w\.]+)/i, // 12 - Firefox
-];
-
-export const BROWSER_MAPPING = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];

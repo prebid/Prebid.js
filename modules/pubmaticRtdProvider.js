@@ -1,8 +1,8 @@
 import { submodule } from '../src/hook.js';
-import { logError, isStr, logMessage, isPlainObject, isEmpty, isFn } from '../src/utils.js';
+import { logError, isStr, logMessage, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
 import { config as conf } from '../src/config.js';
-import { REGEX_BROWSERS, BROWSER_MAPPING } from '../src/constants.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
+import { getLowEntropySUA } from '../src/fpd/sua.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -35,7 +35,23 @@ const CONSTANTS = Object.freeze({
   }
 });
 
+const BROWSER_REGEX_MAP = [
+  { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 },  // Chrome for iOS
+  { regex: /edg(?:e|ios|a)?\/([\w\.]+)/i, id: 2 },  // Edge
+  { regex: /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 },  // Opera
+  { regex: /(?:ms|\()(ie) ([\w\.]+)/i, id: 4 },  // Internet Explorer
+  { regex: /fxios\/([-\w\.]+)/i, id: 5 },  // Firefox for iOS
+  { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 },  // Facebook In-App Browser
+  { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 },  // Chrome WebView
+  { regex: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, id: 8 },  // Android Browser
+  { regex: /(chrome|chromium|crios)\/v?([\w\.]+)/i, id: 9 },  // Chrome
+  { regex: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, id: 10 },  // Safari Mobile
+  { regex: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, id: 11 },  // Safari
+  { regex: /(firefox)\/([\w\.]+)/i, id: 12 }  // Firefox
+];
+
 let _pubmaticFloorRulesPromise = null;
+export let _country;
 
 // Utility Functions
 export const getCurrentTimeOfDay = () => {
@@ -49,13 +65,25 @@ export const getCurrentTimeOfDay = () => {
 }
 
 export const getBrowserType = () => {
-  const userAgent = navigator.userAgent;
-  let browserName = userAgent == null ? -1 : 0;
+  const brandName = getLowEntropySUA()?.browsers
+    ?.map(b => b.brand.toLowerCase())
+    .join(' ') || '';
+
+  let browserIndex = brandName
+    ? BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id
+    : -1;
+
+  if (browserIndex > 0) {
+    return browserIndex.toString();
+  }
+
+  const userAgent = navigator?.userAgent;
+  browserIndex = userAgent == null ? -1 : 0;
 
   if (userAgent) {
-    browserName = BROWSER_MAPPING[(REGEX_BROWSERS.findIndex(regex => userAgent.match(regex)))] || 0;
+    browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
   }
-  return browserName.toString();
+  return browserIndex.toString();
 }
 
 // Getter Functions
@@ -63,6 +91,8 @@ export const getBrowserType = () => {
 export const getOs = () => getOS().toString();
 
 export const getDeviceType = () => fetchDeviceType().toString();
+
+export const getCountry = () => _country;
 
 export const getUtm = () => {
   const url = new URL(window.location?.href);
@@ -81,7 +111,8 @@ export const getFloorsConfig = (apiResponse) => {
         timeOfDay: getCurrentTimeOfDay,
         browser: getBrowserType,
         os: getOs,
-        utm: getUtm
+        utm: getUtm,
+        country: getCountry,
       },
       ...defaultFloorConfig
     },
@@ -116,6 +147,9 @@ export const fetchFloorRules = async (publisherId, profileId) => {
     if (!response?.ok) {
       logError(CONSTANTS.LOG_PRE_FIX + 'Error while fetching floors: No response');
     }
+
+    const cc = response.headers?.get('country_code');
+    _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
 
     const data = await response.json();
     return data;
@@ -161,7 +195,7 @@ const init = (config, _userConsent) => {
  * @param {Object} userConsent
  */
 
-const getBidRequestData = (reqBidsConfigObj, onDone) => {
+const getBidRequestData = (reqBidsConfigObj, callback) => {
   _pubmaticFloorRulesPromise.then(() => {
     const hookConfig = {
       reqBidsConfigObj,
@@ -171,9 +205,21 @@ const getBidRequestData = (reqBidsConfigObj, onDone) => {
       timer: null
     };
     continueAuction(hookConfig);
-    onDone();
+    const ortb2 = {
+      user: {
+        ext: {
+          ctr: _country,
+        }
+      }
+    }
+
+    mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+      [CONSTANTS.SUBMODULE_NAME]: ortb2
+    });
+    callback();
   }).catch((error) => {
     logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
+    callback();
   });
 }
 

@@ -1,7 +1,7 @@
 import {_each, isArray, isStr, logError, logWarn, pick, generateUUID} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON, REGEX_BROWSERS, BROWSER_MAPPING } from '../src/constants.js';
+import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -48,6 +48,22 @@ const MEDIATYPE = {
   VIDEO: 1,
   NATIVE: 2
 }
+
+// TODO : Remove - Once BM calculation moves to Server Side
+const BROWSER_REGEX_MAP = [
+  { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 },  // Chrome for iOS
+  { regex: /edg(?:e|ios|a)?\/([\w\.]+)/i, id: 2 },  // Edge
+  { regex: /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 },  // Opera
+  { regex: /(?:ms|\()(ie) ([\w\.]+)/i, id: 4 },  // Internet Explorer
+  { regex: /fxios\/([-\w\.]+)/i, id: 5 },  // Firefox for iOS
+  { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 },  // Facebook In-App Browser
+  { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 },  // Chrome WebView
+  { regex: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, id: 8 },  // Android Browser
+  { regex: /(chrome|chromium|crios)\/v?([\w\.]+)/i, id: 9 },  // Chrome
+  { regex: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, id: 10 },  // Safari Mobile
+  { regex: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, id: 11 },  // Safari
+  { regex: /(firefox)\/([\w\.]+)/i, id: 12 }  // Firefox
+];
 
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
@@ -203,14 +219,15 @@ function getDevicePlatform() {
   return deviceType;
 }
 
+// TODO : Remove - Once BM calculation moves to Server Side
 function getBrowserType() {
-  const userAgent = navigator.userAgent;
-  let browserName = userAgent == null ? -1 : 0;
+  const userAgent = navigator?.userAgent;
+  let browserIndex = userAgent == null ? -1 : 0;
 
   if (userAgent) {
-    browserName = BROWSER_MAPPING[(REGEX_BROWSERS.findIndex(regex => userAgent.match(regex)))] || 0;
+    browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
   }
-  return browserName;
+  return browserIndex;
 }
 
 function getValueForKgpv(bid, adUnitId) {
@@ -418,6 +435,10 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
+  const user = e.bidderRequests.length > 0
+    ? e.bidderRequests.find(bidder => bidder.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext || {}
+    : {};
+
   if (!auctionCache) {
     return;
   }
@@ -439,6 +460,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tgid'] = getTgId();
   outputObj['pbv'] = '$prebid.version$' || '-1';
   outputObj['bm'] = getBrowserType();
+  outputObj['ctr'] = Object.keys(user).length ? user.ctr : '';
 
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData?.floorRequestData);
