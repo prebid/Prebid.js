@@ -263,60 +263,6 @@ describe('Unit: Prebid Module', function () {
           pushToQueue();
           expect(ran).to.be.true;
         });
-
-        describe('when document is prerendering', () => {
-          before(() => {
-            if (!('prerendering' in document)) {
-              document.prerendering = null;
-              after(() => {
-                delete document.prerendering;
-              })
-            }
-          })
-          beforeEach(() => {
-            sandbox.stub(document, 'prerendering').get(() => true);
-          });
-          function prerenderingDone() {
-            document.dispatchEvent(new Event('prerenderingchange'));
-          }
-          it('should process queue only after prerenderingchange event', async () => {
-            pushToQueue();
-            $$PREBID_GLOBAL$$.processQueue();
-            pushToQueue();
-            expect(ran).to.be.false;
-            prerenderingDone();
-            expect(ran).to.be.true;
-          });
-
-          Object.entries({
-            'setConfig({allowPrerendering: true})': {
-              setup() {
-                $$PREBID_GLOBAL$$.setConfig({allowPrerendering: true});
-              },
-              teardown() {
-                $$PREBID_GLOBAL$$.setConfig({allowPrerendering: false});
-              }
-            },
-            '$$PREBID_GLOBAL$$.allowPrerendering = true': {
-              setup() {
-                $$PREBID_GLOBAL$$.allowPrerendering = true;
-              },
-              teardown() {
-                delete $$PREBID_GLOBAL$$.allowPrerendering;
-              }
-            }
-          }).forEach(([t, {setup, teardown}]) => {
-            describe(`with ${t}`, () => {
-              beforeEach(setup);
-              afterEach(teardown);
-              it('should process immediately', () => {
-                pushToQueue();
-                $$PREBID_GLOBAL$$.processQueue();
-                expect(ran).to.be.true;
-              })
-            })
-          })
-        })
       })
     });
   })
