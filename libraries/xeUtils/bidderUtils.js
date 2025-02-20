@@ -79,7 +79,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
     }
 
     request.gdprConsent = gdprConsent;
-    
+
     if (uspConsent) {
       request.usPrivacy = uspConsent;
     } else {
