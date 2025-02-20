@@ -77,13 +77,9 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
     } else {
       request.userEids = [];
     }
-    if (gdprConsent.gdprApplies) {
-      request.gdprApplies = Number(gdprConsent.gdprApplies);
-      request.consentString = gdprConsent.consentString;
-    } else {
-      request.gdprApplies = 0;
-      request.consentString = '';
-    }
+
+    request.gdprConsent = gdprConsent;
+    
     if (uspConsent) {
       request.usPrivacy = uspConsent;
     } else {
