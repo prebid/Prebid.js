@@ -12,7 +12,7 @@ import {
 } from '../src/utils.js';
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
-const GVLID = 620; // GVLID for your bidder
+const GVLID = 620;
 const DEFAULT_CURRENCY = 'USD';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
