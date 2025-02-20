@@ -1023,13 +1023,13 @@ function processQueue(queue) {
 /**
  * @alias module:pbjs.processQueue
  */
-pbjsInstance.processQueue = function () {
+pbjsInstance.processQueue = delayIfPrerendering(() => getGlobal().delayPrerendering, function () {
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
   processQueue(pbjsInstance.que);
   processQueue(pbjsInstance.cmd);
-};
+});
 
 /**
  * @alias module:pbjs.triggerBilling
