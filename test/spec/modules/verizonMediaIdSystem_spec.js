@@ -30,7 +30,7 @@ describe('Verizon Media ID Submodule', () => {
           gdprApplies: 1,
           consentString: 'GDPR_CONSENT_STRING'
         },
-        uspConsent: 'USP_CONSENT_STRING'
+        usp: 'USP_CONSENT_STRING'
       };
     });
 
@@ -88,7 +88,7 @@ describe('Verizon Media ID Submodule', () => {
         '1p': '0',
         gdpr: '1',
         gdpr_consent: consentData.gdpr.consentString,
-        us_privacy: consentData.uspConsent
+        us_privacy: consentData.usp
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -108,7 +108,7 @@ describe('Verizon Media ID Submodule', () => {
         '1p': '0',
         gdpr: '1',
         gdpr_consent: consentData.gdpr.consentString,
-        us_privacy: consentData.uspConsent
+        us_privacy: consentData.usp
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
