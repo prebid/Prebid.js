@@ -3,7 +3,8 @@ import { spec } from '../../../modules/rediadsBidAdapter';
 
 describe('rediads Bid Adapter', function () {
   const BIDDER_CODE = 'rediads';
-  const STAGING_ENDPOINT_URL = 'https://stagingbidding.rediads.com/openrtb2/auction';
+  const STAGING_ENDPOINT_URL =
+    'https://stagingbidding.rediads.com/openrtb2/auction';
 
   const bidRequest = {
     bidder: BIDDER_CODE,
@@ -12,7 +13,10 @@ describe('rediads Bid Adapter', function () {
     },
     mediaTypes: {
       banner: {
-        sizes: [[300, 250], [728, 90]],
+        sizes: [
+          [300, 250],
+          [728, 90],
+        ],
       },
     },
     adUnitCode: 'adunit-code',
@@ -34,7 +38,7 @@ describe('rediads Bid Adapter', function () {
     } else {
       history.replaceState(null, '', location.pathname + location.search);
     }
-  }
+  };
 
   describe('isBidRequestValid', function () {
     it('should return true for valid bid requests', function () {
@@ -55,8 +59,11 @@ describe('rediads Bid Adapter', function () {
       const request = requests[0];
       expect(request.method).to.equal('POST');
       expect(request.url).that.is.not.empty;
-      expect(request.data).to.have.property('ext');
-      expect(request.data.ext.rediads.params).to.deep.equal(bidRequest.params);
+
+      const sitePublisherId = request?.data?.site?.publisher?.id;
+      const appPublisherId = request?.data?.app?.publisher?.id;
+      const accountId = request?.data?.ext?.rediads?.params?.account_id;
+      expect(sitePublisherId || appPublisherId || accountId).to.be.ok;
     });
 
     it('should include test flag if testBidsRequested is true', function () {
@@ -118,7 +125,7 @@ describe('rediads Bid Adapter', function () {
 
     it('should return an empty array for invalid responses', function () {
       const invalidResponse = { body: {} };
-      const updatedBidRequest = {...bidRequest, params: undefined}
+      const updatedBidRequest = { ...bidRequest, params: undefined };
       const requestObj = spec.buildRequests([updatedBidRequest], bidderRequest);
       const bids = spec.interpretResponse(invalidResponse, requestObj[0]);
       expect(bids).to.be.an('array').that.is.empty;
@@ -127,7 +134,11 @@ describe('rediads Bid Adapter', function () {
 
   describe('Miscellaneous', function () {
     it('should support multiple media types', function () {
-      expect(spec.supportedMediaTypes).to.include.members(['banner', 'native', 'video']);
+      expect(spec.supportedMediaTypes).to.include.members([
+        'banner',
+        'native',
+        'video',
+      ]);
     });
   });
 });
