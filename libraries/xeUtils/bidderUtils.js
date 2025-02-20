@@ -43,6 +43,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
   const {refererInfo = {}, gdprConsent = {}, uspConsent} = bidderRequest;
   const requests = validBidRequests.map(req => {
     const request = {};
+    request.tmax = bidderRequest.timeout || 0;
     request.bidId = req.bidId;
     request.banner = deepAccess(req, 'mediaTypes.banner');
     request.auctionId = req.ortb2?.source?.tid;
