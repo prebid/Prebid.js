@@ -1394,17 +1394,19 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    it('fires billing url if present on s2s bid', function () {
-      const burl = 'http://www.example.com/burl';
+    it('fires impression trackers if present', function () {
+      const url = 'http://www.example.com/burl';
       pushBidResponseToAuction({
         ad: '<div>ad</div>',
         source: 's2s',
-        burl
+        eventtrackers: [
+          {event: 1, method: 1, url}
+        ]
       });
 
       return renderAd(doc, bidId).then(() => {
         sinon.assert.calledOnce(triggerPixelStub);
-        sinon.assert.calledWith(triggerPixelStub, burl);
+        sinon.assert.calledWith(triggerPixelStub, url);
       });
     });
 
@@ -3612,15 +3614,15 @@ describe('Unit: Prebid Module', function () {
       }
 
       Object.entries({
-        'analytics=true': {
+        'events=true': {
           mark(options = {}) {
-            $$PREBID_GLOBAL$$.markWinningBidAsUsed(Object.assign({analytics: true}, options))
+            $$PREBID_GLOBAL$$.markWinningBidAsUsed(Object.assign({events: true}, options))
           },
           checkBidWon() {
             sinon.assert.calledWith(events.emit, EVENTS.BID_WON, markedBid);
           }
         },
-        'analytics=false': {
+        'events=false': {
           mark(options = {}) {
             $$PREBID_GLOBAL$$.markWinningBidAsUsed(options)
           },

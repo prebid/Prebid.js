@@ -51,6 +51,7 @@ import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './v
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
+import { newBidder } from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -771,12 +772,14 @@ pbjsInstance.getEvents = function () {
  * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
+ * @param  {object} spec [description]
  * @alias module:pbjs.registerBidAdapter
  */
-pbjsInstance.registerBidAdapter = function (bidderAdaptor, bidderCode) {
+pbjsInstance.registerBidAdapter = function (bidderAdaptor, bidderCode, spec) {
   logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
-    adapterManager.registerBidAdapter(bidderAdaptor(), bidderCode);
+    const bidder = spec ? newBidder(spec) : bidderAdaptor();
+    adapterManager.registerBidAdapter(bidder, bidderCode);
   } catch (e) {
     logError('Error registering bidder adapter : ' + e.message);
   }
@@ -931,10 +934,12 @@ if (FEATURES.VIDEO) {
    * @typedef {Object} MarkBidRequest
    * @property {string} adUnitCode The ad unit code
    * @property {string} adId The id representing the ad we want to mark
+   * @property {boolean} events If true, fires tracking pixels and BID_WON handlers
+   * @property {boolean} analytics alias of `events` (for backwards compat)
    *
    * @alias module:pbjs.markWinningBidAsUsed
    */
-  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false}) {
+  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false, events = false}) {
     let bids;
     if (adUnitCode && adId == null) {
       bids = targeting.getWinningBids(adUnitCode);
@@ -944,7 +949,7 @@ if (FEATURES.VIDEO) {
       logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
     }
     if (bids.length > 0) {
-      if (analytics) {
+      if (analytics || events) {
         markWinningBid(bids[0]);
       } else {
         auctionManager.addWinningBid(bids[0]);
