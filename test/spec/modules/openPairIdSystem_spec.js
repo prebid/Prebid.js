@@ -25,7 +25,7 @@ describe('openPairId', function () {
   });
 
   it('should read publisher id from specified clean room if configured with storageKey', function() {
-    let publisherIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
+    let publisherIds = ['dGVzdC1wYWlyLWlkMQ==', 'test-pair-id2', 'test-pair-id3'];
     sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('habu_pairId_custom').returns(btoa(JSON.stringify({'envelope': publisherIds})));
 
     let id = openPairIdSubmodule.getId({
@@ -169,6 +169,20 @@ describe('openPairId', function () {
           ]
         }
       );
+    });
+  });
+
+  describe('encoding', () => {
+    it('encodes and decodes the original value with atob/btoa', function () {
+      const value = 'dGVzdC1wYWlyLWlkMQ=='; // 'test-pair-id1'
+
+      let publisherIds = [value];
+
+      const stored = btoa(JSON.stringify({'envelope': publisherIds})); // encodeds envelope and pub ids using JSON and then again with base64
+
+      const read = JSON.parse(atob(stored)); // decodes stored value with base64 and parses as JSON
+
+      expect(value).to.eq(read.envelope[0]); // expects for original base64 pair id value to not have been decoded in process
     });
   });
 
