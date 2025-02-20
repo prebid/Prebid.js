@@ -163,7 +163,7 @@ describe('openPairId', function () {
           source: 'google.com',
           uids: [
             {
-              atype: 517787,
+              atype: 571187,
               id: 'some-random-id-value'
             }
           ]

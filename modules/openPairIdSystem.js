@@ -25,7 +25,7 @@ const DEFAULT_STORAGE_PUBLISHER_ID_KEYS = {
 const DEFAULT_ATYPE = 3;
 const DEFAULT_SOURCE = 'pair-protocol.com';
 
-const GOOGLE_ATYPE = 517787;
+const GOOGLE_ATYPE = 571187;
 const GOOGLE_SOURCE = 'google.com';
 
 const MATCH_METHOD = 3;
