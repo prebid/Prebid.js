@@ -55,6 +55,8 @@ function copyRequiredBidDetails(bid) {
     'bidderCode',
     'adapterCode',
     'bidId',
+    'adUnitId', () => bid?.adUnitCode,
+    'owAdUnitId', () => getGptSlotInfoForAdUnitCode(bid?.adUnitCode)?.gptSlot || bid?.adUnitCode,
     'status', () => NO_BID, // default a bid to NO_BID until response is received or bid is timed out
     'finalSource as source',
     'params',
@@ -140,7 +142,7 @@ function isS2SBidder(bidder) {
 
 function isOWPubmaticBid(adapterName) {
   let s2sConf = config.getConfig('s2sConfig');
-  let s2sConfArray = isArray(s2sConf) ? s2sConf : [s2sConf];
+  let s2sConfArray = s2sConf ? (isArray(s2sConf) ? s2sConf : [s2sConf]) : [];
   return s2sConfArray.some(conf => {
     if (adapterName === ADAPTER_CODE && conf.defaultVendor === VENDOR_OPENWRAP &&
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
@@ -340,7 +342,7 @@ const eventHandlers = {
     if (args.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET) {
       args.cpm = 0;
       args.status = BID_STATUS.BID_REJECTED;
-      bidResponseHandler(args);
+      bidResponse(args);
     }
   },
 
