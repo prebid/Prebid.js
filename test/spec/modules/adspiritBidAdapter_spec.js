@@ -21,6 +21,21 @@ describe('Adspirit Bidder Spec', function () {
       expect(result).to.be.false;
     });
   });
+   // getSCript url case
+  describe('getScriptUrl', function () {
+    it('should return the correct script URL', function () {
+      expect(typeof spec.getScriptUrl).to.equal('function');
+      expect(spec.getScriptUrl()).to.equal('/adasync.min.js');
+    });
+
+    it('should return a string value', function () {
+      expect(spec.getScriptUrl()).to.be.a('string');
+    });
+
+    it('should not return an empty string', function () {
+      expect(spec.getScriptUrl()).to.not.equal('');
+    });
+  });
 
   // getBidderHost Case
   describe('getBidderHost', function () {
