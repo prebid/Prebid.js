@@ -208,7 +208,7 @@ export const intentIqIdSubmodule = {
     let runtimeEids = { eids: [] };
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
-    // Get consent information with priority for user-provided data
+    // Get consent information from CMP
     let rrttStrtTime = 0;
     let partnerData = {};
     let shouldCallServer = false;
