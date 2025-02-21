@@ -222,7 +222,7 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsentData) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, {gdpr: gdprConsentData} = {}) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 

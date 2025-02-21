@@ -1,22 +1,57 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop} from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
 const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
   return BIDDER_CODE_DEAL_ALIAS_BASE + num;
 });
-const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
-const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
 const METADATA_KEY_SEPARATOR = '@@@';
+
+const ENVS = {
+  localhost: {
+    id: 'localhost',
+    as: 'localhost:8078'
+  },
+  lcl: {
+    id: 'lcl',
+    as: 'adserver.dev.lcl.test'
+  },
+  andemu: {
+    id: 'andemu',
+    as: '10.0.2.2:8078'
+  },
+  dev: {
+    id: 'dev',
+    as: 'adserver.dev.adnuntius.com'
+  },
+  staging: {
+    id: 'staging',
+    as: 'adserver.staging.adnuntius.com'
+  },
+  production: {
+    id: 'production',
+    as: 'ads.adnuntius.delivery',
+    asEu: 'europe.delivery.adnuntius.com'
+  },
+  cloudflare: {
+    id: 'cloudflare',
+    as: 'ads.adnuntius.delivery'
+  },
+  limited: {
+    id: 'limited',
+    as: 'limited.delivery.adnuntius.com'
+  }
+};
 
 export const misc = {
   findHighestPrice: function(arr, bidType) {
@@ -327,13 +362,20 @@ export const spec = {
           adUnit.adType = 'VAST';
         } else if (mediaType === NATIVE) {
           adUnit.adType = 'NATIVE';
-          adUnit.nativeRequest = mediaTypeData.ortb;
+          if (!mediaTypeData.ortb) {
+            // assume it's using old format if ortb not specified
+            const oldStyleNativeRequest = deepClone(mediaTypeData);
+            delete oldStyleNativeRequest.sizes;
+            adUnit.nativeRequest = {ortb: toOrtbNativeRequest(oldStyleNativeRequest)}
+          } else {
+            adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
+          }
         }
         const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
         if (maxDeals > 0) {
           adUnit.maxDeals = maxDeals;
         }
-        if (mediaType === BANNER && mediaTypeData && mediaTypeData.sizes) {
+        if (mediaType !== VIDEO && mediaTypeData && mediaTypeData.sizes) {
           adUnit.dimensions = mediaTypeData.sizes;
         }
         networks[network].adUnits.push(adUnit);
@@ -344,7 +386,11 @@ export const spec = {
     const networkKeys = Object.keys(networks);
     for (let j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
-      const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
+      let requestURL = gdprApplies ? ENVS.production.asEu : ENVS.production.as;
+      if (bidderConfig.env && ENVS[bidderConfig.env]) {
+        requestURL = ENVS[bidderConfig.env][bidderConfig.endPointType || 'as'];
+      }
+      requestURL = (bidderConfig.protocol || 'https') + '://' + requestURL + '/i';
       requests.push({
         method: 'POST',
         url: requestURL + '?' + queryParamsAndValues.join('&'),
@@ -371,7 +417,7 @@ export const spec = {
       });
     }
 
-    function buildAdResponse(bidderCode, ad, adUnit, dealCount) {
+    function buildAdResponse(bidderCode, ad, adUnit, dealCount, bidOnRequest) {
       const advertiserDomains = ad.advertiserDomains || [];
       if (advertiserDomains.length === 0) {
         const destinationUrls = ad.destinationUrls || {};
@@ -404,7 +450,11 @@ export const spec = {
         adResponse.mediaType = VIDEO;
       } else if (renderSource.nativeJson) {
         adResponse.mediaType = NATIVE;
-        adResponse.native = renderSource.nativeJson;
+        if (!bidOnRequest.mediaTypes?.native?.ortb) {
+          adResponse.native = toLegacyResponse(renderSource.nativeJson);
+        } else {
+          adResponse.native = renderSource.nativeJson;
+        }
       } else {
         adResponse.ad = renderSource.html;
       }
@@ -440,7 +490,7 @@ export const spec = {
       });
     }
 
-    const bidsById = bidRequest.bid.reduce((response, bid) => {
+    const bidRequestsById = bidRequest.bid.reduce((response, bid) => {
       return {
         ...response,
         [bid.bidId]: bid
@@ -448,7 +498,7 @@ export const spec = {
     }, {});
 
     const hasBidAdUnits = highestYieldingAdUnits.filter((au) => {
-      const bid = bidsById[au.targetId];
+      const bid = bidRequestsById[au.targetId];
       if (bid && bid.bidder && BIDDER_CODE_DEAL_ALIASES.indexOf(bid.bidder) < 0) {
         return au.matchedAdCount > 0;
       } else {
@@ -462,19 +512,19 @@ export const spec = {
     });
 
     const dealAdResponses = hasDealsAdUnits.reduce((response, au) => {
-      const bid = bidsById[au.targetId];
-      if (bid) {
+      const selBidRequest = bidRequestsById[au.targetId];
+      if (selBidRequest) {
         (au.deals || []).forEach((deal, i) => {
-          response.push(buildAdResponse(bid.bidder, deal, au, i + 1));
+          response.push(buildAdResponse(selBidRequest.bidder, deal, au, i + 1, selBidRequest));
         });
       }
       return response;
     }, []);
 
     const bidAdResponses = hasBidAdUnits.reduce((response, au) => {
-      const bid = bidsById[au.targetId];
-      if (bid) {
-        response.push(buildAdResponse(bid.bidder, au.ads[0], au, 0));
+      const selBidRequest = bidRequestsById[au.targetId];
+      if (selBidRequest) {
+        response.push(buildAdResponse(selBidRequest.bidder, au.ads[0], au, 0, selBidRequest));
       }
       return response;
     }, []);

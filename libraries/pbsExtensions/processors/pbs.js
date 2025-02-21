@@ -6,6 +6,7 @@ import {setImpBidParams} from './params.js';
 import {setImpAdUnitCode} from './adUnitCode.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
+import {addEventTrackers} from './eventTrackers.js';
 
 export const PBS_PROCESSORS = {
   [REQUEST]: {
@@ -74,14 +75,9 @@ export const PBS_PROCESSORS = {
         bidResponse.meta = mergeDeep({}, deepAccess(bid, 'ext.prebid.meta'), bidResponse.meta);
       }
     },
-    pbsWurl: {
-      // sets bidResponse.pbsWurl from ext.prebid.events.win
-      fn(bidResponse, bid) {
-        const wurl = deepAccess(bid, 'ext.prebid.events.win');
-        if (isStr(wurl)) {
-          bidResponse.pbsWurl = wurl;
-        }
-      }
+    pbsWinTrackers: {
+      // converts "legacy" burl and ext.prebid.events.win into eventtrackers
+      fn: addEventTrackers
     },
   },
   [RESPONSE]: {
