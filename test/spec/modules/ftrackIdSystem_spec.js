@@ -105,41 +105,28 @@ describe('FTRACK ID System', () => {
   });
 
   describe(`ftrackIdSubmodule.isThereConsent():`, () => {
-    let uspDataHandlerStub;
-    beforeEach(() => {
-      uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
-    });
-
-    afterEach(() => {
-      uspDataHandlerStub.restore();
-    });
-
     describe(`returns 'false' if:`, () => {
       it(`GDPR: if gdprApplies is truthy`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: 1})).to.not.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: true})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: 1}})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: true}})).to.not.be.ok;
       });
 
       it(`US_PRIVACY version 1: if 'Opt Out Sale' is 'Y'`, () => {
-        uspDataHandlerStub.returns('1YYY');
-        expect(ftrackIdSubmodule.isThereConsent({})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({usp: '1YYY'})).to.not.be.ok;
       });
     });
 
     describe(`returns 'true' if`, () => {
       it(`GDPR: if gdprApplies is undefined, false or 0`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: 0})).to.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: false})).to.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: null})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: 0}})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: false}})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: null}})).to.be.ok;
         expect(ftrackIdSubmodule.isThereConsent({})).to.be.ok;
       });
 
       it(`US_PRIVACY version 1: if 'Opt Out Sale' is not 'Y' ('N','-')`, () => {
-        uspDataHandlerStub.returns('1NNN');
-        expect(ftrackIdSubmodule.isThereConsent(null)).to.be.ok;
-
-        uspDataHandlerStub.returns('1---');
-        expect(ftrackIdSubmodule.isThereConsent(null)).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({usp: '1NNN'})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({usp: '1---'})).to.be.ok;
       });
     });
   });
