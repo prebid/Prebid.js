@@ -244,14 +244,27 @@ describe('Unit: Prebid Module', function () {
     });
 
     ['cmd', 'que'].forEach(prop => {
-      it(`should patch ${prop}.push`, () => {
-        $$PREBID_GLOBAL$$[prop].push = false;
-        $$PREBID_GLOBAL$$.processQueue();
-        let ran = false;
-        $$PREBID_GLOBAL$$[prop].push(() => { ran = true; });
-        expect(ran).to.be.true;
+      describe(`using .${prop}`, () => {
+        let queue, ran;
+        beforeEach(() => {
+          ran = false;
+          queue = $$PREBID_GLOBAL$$[prop] = [];
+        });
+        after(() => {
+          $$PREBID_GLOBAL$$.processQueue();
+        })
+
+        function pushToQueue() {
+          queue.push(() => { ran = true });
+        }
+
+        it(`should patch .push`, () => {
+          $$PREBID_GLOBAL$$.processQueue();
+          pushToQueue();
+          expect(ran).to.be.true;
+        });
       })
-    })
+    });
   })
 
   describe('and global adUnits', () => {
