@@ -36,18 +36,18 @@ const CONSTANTS = Object.freeze({
 });
 
 const BROWSER_REGEX_MAP = [
-  { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 },  // Chrome for iOS
-  { regex: /edg(?:e|ios|a)?\/([\w\.]+)/i, id: 2 },  // Edge
-  { regex: /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 },  // Opera
-  { regex: /(?:ms|\()(ie) ([\w\.]+)/i, id: 4 },  // Internet Explorer
-  { regex: /fxios\/([-\w\.]+)/i, id: 5 },  // Firefox for iOS
-  { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 },  // Facebook In-App Browser
-  { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 },  // Chrome WebView
-  { regex: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, id: 8 },  // Android Browser
-  { regex: /(chrome|chromium|crios)\/v?([\w\.]+)/i, id: 9 },  // Chrome
-  { regex: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, id: 10 },  // Safari Mobile
-  { regex: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, id: 11 },  // Safari
-  { regex: /(firefox)\/([\w\.]+)/i, id: 12 }  // Firefox
+  { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 }, // Chrome for iOS
+  { regex: /edg(?:e|ios|a)?\/([\w\.]+)/i, id: 2 }, // Edge
+  { regex: /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 }, // Opera
+  { regex: /(?:ms|\()(ie) ([\w\.]+)/i, id: 4 }, // Internet Explorer
+  { regex: /fxios\/([-\w\.]+)/i, id: 5 }, // Firefox for iOS
+  { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 }, // Facebook In-App Browser
+  { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 }, // Chrome WebView
+  { regex: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, id: 8 }, // Android Browser
+  { regex: /(chrome|chromium|crios)\/v?([\w\.]+)/i, id: 9 }, // Chrome
+  { regex: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, id: 10 }, // Safari Mobile
+  { regex: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, id: 11 }, // Safari
+  { regex: /(firefox)\/([\w\.]+)/i, id: 12 } // Firefox
 ];
 
 let _pubmaticFloorRulesPromise = null;
