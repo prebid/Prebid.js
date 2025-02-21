@@ -55,8 +55,8 @@ function copyRequiredBidDetails(bid) {
     'bidderCode',
     'adapterCode',
     'bidId',
-    'adUnitId', () => bid?.adUnitCode,
-    'owAdUnitId', () => getGptSlotInfoForAdUnitCode(bid?.adUnitCode)?.gptSlot || bid?.adUnitCode,
+    'adUnitId', () => bid.adUnitCode,
+    'owAdUnitId', () => getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.gptSlot || bid.adUnitCode,
     'status', () => NO_BID, // default a bid to NO_BID until response is received or bid is timed out
     'finalSource as source',
     'params',
@@ -342,7 +342,7 @@ const eventHandlers = {
     if (args.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET) {
       args.cpm = 0;
       args.status = BID_STATUS.BID_REJECTED;
-      bidResponse(args);
+      eventHandlers['bidResponse'](args);
     }
   },
 
