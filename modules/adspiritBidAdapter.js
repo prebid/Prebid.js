@@ -1,3 +1,4 @@
+/* global $$PREBID_GLOBAL$$ */
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
@@ -17,6 +18,9 @@ export const spec = {
       return false;
     }
     return true;
+  },
+  getScriptUrl: function () {
+    return SCRIPT_URL;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
