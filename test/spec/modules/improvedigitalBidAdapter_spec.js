@@ -708,6 +708,28 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal('123456');
     });
 
+    it('should add max_bids param in imp.ext objects when bidLimit is specified in the bidderRequest', function () {
+      const bidderRequestDeepClone = deepClone(bidderRequest);
+      bidderRequestDeepClone.bidLimit = 3;
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequestDeepClone);
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+    });
+
+    it('should not add max_bids param in imp.ext objects when bidLimit is not specified in the bidderRequest', function () {
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+    });
+
     it('should set extend url when extend mode enabled in adunit params', function () {
       const bidRequest = deepClone(extendBidRequest);
       let request = spec.buildRequests([bidRequest], { bids: [bidRequest] })[0];
