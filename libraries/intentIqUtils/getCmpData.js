@@ -1,4 +1,4 @@
-import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../src/consentHandler.js';
+import { allConsent } from '../../src/consentHandler.js';
 
 /**
  * Retrieves consent data from the Consent Management Platform (CMP).
@@ -7,15 +7,12 @@ import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../src/conse
  * - `uspString` (string): USP consent string if available.
  * - `gppString` (string): GPP consent string if available.
  */
-
 export function getCmpData() {
-  const gppData = gppDataHandler.getConsentData();
-  const uspData = uspDataHandler.getConsentData();
-  const gdprData = gdprDataHandler.getConsentData();
+  const consentData = allConsent.getConsentData();
 
   return {
-    gdprString: typeof gdprData?.consentString === 'string' ? gdprData.consentString : null,
-    uspString: typeof uspData === 'string' ? uspData : null,
-    gppString: typeof gppData?.gppString === 'string' ? gppData.gppString : null,
+    gdprString: typeof consentData?.gdpr?.consentString === 'string' ? consentData.gdpr.consentString : null,
+    uspString: typeof consentData?.usp === 'string' ? consentData.usp : null,
+    gppString: typeof consentData?.gpp?.gppString === 'string' ? consentData.gpp.gppString : null,
   };
 }
