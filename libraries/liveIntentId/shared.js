@@ -59,11 +59,8 @@ export function composeIdObject(value) {
 
   // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
   const lipbid = value.nonId || value.unifiedId
-  if (lipbid) {
-    const lipb = { ...value, lipbid };
-    delete lipb.unifiedId;
-    result.lipb = lipb;
-  }
+  result.lipb = lipbid ? { ...value, lipbid } : value
+  delete result.lipb?.unifiedId
 
   // Lift usage of uid2 by exposing uid2 if we were asked to resolve it.
   // As adapters are applied in lexicographical order, we will always
@@ -74,6 +71,14 @@ export function composeIdObject(value) {
 
   if (value.bidswitch) {
     result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.triplelift) {
+    result.triplelift = { 'id': value.triplelift, ext: { provider: LI_PROVIDER_DOMAIN } }
+  }
+
+  if (value.zetassp) {
+    result.zetassp = { 'id': value.zetassp, ext: { provider: LI_PROVIDER_DOMAIN } }
   }
 
   if (value.medianet) {
@@ -251,6 +256,30 @@ export const eids = {
   },
   'sonobi': {
     source: 'liveintent.sonobi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'triplelift': {
+    source: 'liveintent.triplelift.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'zetassp': {
+    source: 'zeta-ssp.liveintent.com',
     atype: 3,
     getValue: function(data) {
       return data.id;

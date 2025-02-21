@@ -18,12 +18,12 @@ describe('Missena Adapter', function () {
   let sandbox = sinon.sandbox.create();
   sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
   sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
+  const viewport = { width: window.top.innerWidth, height: window.top.innerHeight };
 
   const bidId = 'abc';
   const bid = {
     bidder: 'missena',
     bidId: bidId,
-    sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
     ortb2: {
       device: {
@@ -55,14 +55,14 @@ describe('Missena Adapter', function () {
   const bidWithoutFloor = {
     bidder: 'missena',
     bidId: bidId,
-    sizes: [[1, 1]],
-    mediaTypes: { banner: { sizes: [[1, 1]] } },
+    mediaTypes: { banner: { sizes: [1, 1] } },
     params: {
       apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
   };
+
   const consentString = 'AAAAAAAAA==';
 
   const bidderRequest = {
@@ -156,6 +156,11 @@ describe('Missena Adapter', function () {
       expect(payload.referer_canonical).to.equal('https://canonical');
     });
 
+    it('should send viewport', function () {
+      expect(payload.viewport.width).to.equal(viewport.width);
+      expect(payload.viewport.height).to.equal(viewport.height);
+    });
+
     it('should send gdpr consent information to the request', function () {
       expect(payload.consent_string).to.equal(consentString);
       expect(payload.consent_required).to.equal(true);
@@ -176,6 +181,16 @@ describe('Missena Adapter', function () {
     it('should send screen', function () {
       expect(payload.screen.width).to.equal(screen.width);
       expect(payload.screen.height).to.equal(screen.height);
+    });
+
+    it('should send size', function () {
+      expect(payload.sizes[0].width).to.equal(1);
+      expect(payload.sizes[0].height).to.equal(1);
+    });
+
+    it('should send single size', function () {
+      expect(payloadNoFloor.sizes[0].width).to.equal(1);
+      expect(payloadNoFloor.sizes[0].height).to.equal(1);
     });
 
     getDataFromLocalStorageStub.restore();

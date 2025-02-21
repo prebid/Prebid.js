@@ -1,3 +1,6 @@
+import { Renderer } from '../../src/Renderer.js';
+import { auctionManager } from '../../src/auctionManager.js';
+import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import {
   deepAccess,
   deepClone,
@@ -5,6 +8,7 @@ import {
   mergeDeep,
   hasNonSerializableProperty
 } from '../../src/utils.js';
+import responseResolvers from './responses.js';
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
@@ -143,9 +147,7 @@ Object.assign(BidInterceptor.prototype, {
     return (bid, ...args) => {
       const response = this.responseDefaults(bid);
       mergeDeep(response, replFn({args: [bid, ...args]}));
-      if (!response.hasOwnProperty('ad') && !response.hasOwnProperty('adUrl')) {
-        response.ad = this.defaultAd(bid, response);
-      }
+      this.setDefaultAd(bid, response);
       response.isDebug = true;
       return response;
     }
@@ -169,20 +171,60 @@ Object.assign(BidInterceptor.prototype, {
   },
 
   responseDefaults(bid) {
-    return {
+    const response = {
       requestId: bid.bidId,
       cpm: 3.5764,
       currency: 'EUR',
-      width: 300,
-      height: 250,
+      width: 600,
+      height: 500,
       ttl: 360,
       creativeId: 'mock-creative-id',
       netRevenue: false,
       meta: {}
     };
+
+    if (!bid.mediaType) {
+      const adUnit = auctionManager.index.getAdUnit({adUnitId: bid.adUnitId}) || {mediaTypes: {}};
+      response.mediaType = Object.keys(adUnit.mediaTypes)[0] || 'banner';
+    }
+
+    return response;
   },
-  defaultAd(bid, bidResponse) {
-    return `<html><head><style>#ad {width: ${bidResponse.width}px;height: ${bidResponse.height}px;background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width}x${bidResponse.height}</div></div></body></html>`;
+  setDefaultAd(bid, bidResponse) {
+    switch (bidResponse.mediaType) {
+      case VIDEO:
+        if (!bidResponse.hasOwnProperty('vastXml') && !bidResponse.hasOwnProperty('vastUrl')) {
+          bidResponse.vastXml = responseResolvers[VIDEO]();
+          bidResponse.renderer = Renderer.install({
+            url: 'https://cdn.jwplayer.com/libraries/l5MchIxB.js',
+          });
+          bidResponse.renderer.setRender(function (bid) {
+            const player = window.jwplayer('player').setup({
+              width: 640,
+              height: 360,
+              advertising: {
+                client: 'vast',
+                outstream: true,
+                endstate: 'close'
+              },
+            });
+            player.on('ready', function() {
+              player.loadAdXml(bid.vastXml);
+            });
+          })
+        }
+        break;
+      case NATIVE:
+        if (!bidResponse.hasOwnProperty('native')) {
+          bidResponse.native = responseResolvers[NATIVE](bid);
+        }
+        break;
+      case BANNER:
+      default:
+        if (!bidResponse.hasOwnProperty('ad') && !bidResponse.hasOwnProperty('adUrl')) {
+          bidResponse.ad = responseResolvers[BANNER]();
+        }
+    }
   },
   /**
    * Match a candidate bid against all registered rules.

@@ -5,6 +5,7 @@ import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal';
 
 const sampleRequestId = '82c91e127a9b93e';
 const sampleDisplayAd = `<script src='https://assets.a-mo.net/tmode.v1.js'></script>`;
@@ -582,52 +583,86 @@ describe('AmxBidAdapter', () => {
       expect(parsed).to.eql([]);
     });
 
-    it('will read an bidderCode override from bid.ext.prebid.meta', () => {
-      const currentConfig = config.getConfig();
-      config.setConfig({
-        ...currentConfig,
-        bidderSettings: {
-          amx: {
-            allowAlternateBidderCodes: true
-          }
-        }
-      });
-
-      const parsed = spec.interpretResponse(
-        { body: {
-          ...sampleServerResponse,
-          r: {
-            [sampleRequestId]: [{
-              ...sampleServerResponse.r[sampleRequestId][0],
-              b: [{
-                ...sampleServerResponse.r[sampleRequestId][0].b[0],
-                ext: {
-                  bc: 'amx-pmp',
-                  ds: 'example',
-                }
-              }]
-            }]
-          }}},
-        baseRequest
-      );
-
-      config.setConfig(currentConfig);
-      expect(parsed.length).to.equal(1); // we removed one
-
-      // we should have display, video, display
-      expect(parsed[0]).to.deep.equal({
-        ...baseBidResponse,
-        meta: {
-          ...baseBidResponse.meta,
-          mediaType: BANNER,
-          demandSource: 'example'
+    const cases = [
+      [
+        'pbjs.bidderSettings',
+        (conf) => {
+          const before = getGlobal().bidderSettings;
+          getGlobal().bidderSettings = conf;
+          return before;
         },
-        mediaType: BANNER,
-        bidderCode: 'amx-pmp',
-        width: 300,
-        height: 600, // from the bid itself
-        ttl: 90,
-        ad: sampleDisplayAd,
+        (before) => {
+          getGlobal().bidderSettings = before;
+        },
+      ],
+      [
+        'setConfig / bidderSettings (legacy)',
+        (conf) => {
+          const before = config.getConfig();
+          config.setConfig({
+            bidderSettings: conf,
+          });
+
+          return before;
+        },
+        (before) => {
+          config.setConfig(before);
+        },
+      ],
+    ];
+
+    cases.forEach(([name, setup, teardown]) => {
+      it(`will read an bidderCode override from bid.ext.prebid.meta, set with ${name}`, () => {
+        const currentConfig = setup({
+          amx: {
+            allowAlternateBidderCodes: true,
+          },
+        });
+        const parsed = spec.interpretResponse(
+          {
+            body: {
+              ...sampleServerResponse,
+              r: {
+                [sampleRequestId]: [
+                  {
+                    ...sampleServerResponse.r[sampleRequestId][0],
+                    b: [
+                      {
+                        ...sampleServerResponse.r[sampleRequestId][0].b[0],
+                        ext: {
+                          bc: 'amx-pmp',
+                          ds: 'example',
+                          dsp: 'example-dsp',
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          baseRequest
+        );
+
+        teardown(currentConfig);
+        expect(parsed.length).to.equal(1); // we removed one
+
+        // we should have display, video, display
+        expect(parsed[0]).to.deep.equal({
+          ...baseBidResponse,
+          meta: {
+            ...baseBidResponse.meta,
+            mediaType: BANNER,
+            demandSource: 'example',
+            networkId: 'example-dsp',
+          },
+          mediaType: BANNER,
+          bidderCode: 'amx-pmp',
+          width: 300,
+          height: 600, // from the bid itself
+          ttl: 90,
+          ad: sampleDisplayAd,
+        });
       });
     });
 
@@ -758,14 +793,14 @@ describe('AmxBidAdapter', () => {
       ]);
 
       const [request] = server.requests;
-      request.respond(204, {'Content-Type': 'text/html'}, null);
+      request.respond(204, { 'Content-Type': 'text/html' }, null);
       expect(request.url).to.equal('https://1x1.a-mo.net/e');
 
       if (typeof Request !== 'undefined' && 'keepalive' in Request.prototype) {
         expect(request.fetch.request.keepalive).to.equal(true);
       }
 
-      const {c: common, e: events} = JSON.parse(request.requestBody)
+      const { c: common, e: events } = JSON.parse(request.requestBody);
       expect(common).to.deep.equal({
         V: '$prebid.version$',
         vg: '$$PREBID_GLOBAL$$',
@@ -775,7 +810,7 @@ describe('AmxBidAdapter', () => {
 
       expect(events.length).to.equal(1);
       const [event] = events;
-      expect(event.n).to.equal('g_pbto')
+      expect(event.n).to.equal('g_pbto');
       expect(event.A).to.equal('example');
       expect(event.mid).to.equal('tag-id');
       expect(event.cn).to.equal(300);

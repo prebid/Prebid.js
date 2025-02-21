@@ -101,9 +101,10 @@
 
 /**
  * @typedef {Object} ConsentData
- * @property {(string|undefined)} consentString
- * @property {(Object|undefined)} vendorData
- * @property {(boolean|undefined)} gdprApplies
+ * @property {Object} gdpr
+ * @property {Object} gpp
+ * @property {Object} usp
+ * @property {Object} coppa
  */
 
 /**
@@ -120,7 +121,7 @@ import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
-import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
+import adapterManager from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {EID_CONFIG, getEids} from './eids.js';
@@ -866,9 +867,7 @@ function consentChanged(submodule) {
 }
 
 function populateSubmoduleId(submodule, forceRefresh) {
-  // TODO: the ID submodule API only takes GDPR consent; it should be updated now that GDPR
-  // is only a tiny fraction of a vast consent universe
-  const gdprConsent = gdprDataHandler.getConsentData();
+  const consentData = allConsent.getConsentData();
 
   // There are two submodule configuration types to handle: storage or value
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
@@ -887,10 +886,10 @@ function populateSubmoduleId(submodule, forceRefresh) {
       const extendedConfig = Object.assign({ enabledStorageTypes: submodule.enabledStorageTypes }, submodule.config);
 
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(extendedConfig, gdprConsent, storedId);
+      response = submodule.submodule.getId(extendedConfig, consentData, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, gdprConsent, storedId);
+      response = submodule.submodule.extendId(submodule.config, consentData, storedId);
     }
 
     if (isPlainObject(response)) {
@@ -914,7 +913,7 @@ function populateSubmoduleId(submodule, forceRefresh) {
     // cache decoded value (this is copied to every adUnit bid)
     submodule.idObj = submodule.config.value;
   } else {
-    const response = submodule.submodule.getId(submodule.config, gdprConsent, undefined);
+    const response = submodule.submodule.getId(submodule.config, consentData);
     if (isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }

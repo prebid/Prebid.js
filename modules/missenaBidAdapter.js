@@ -12,6 +12,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
+import { normalizeBannerSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -87,6 +89,8 @@ function toPayload(bidRequest, bidderRequest) {
   payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
   payload.screen = { height: screen.height, width: screen.width };
+  payload.viewport = getViewportSize();
+  payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
 
   return {
     method: 'POST',

@@ -456,14 +456,54 @@ describe('User ID', function () {
             {'mockId2v1': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 1})}}),
           createMockIdSubmodule('mockId2v2', null, null,
             {'mockId2v2': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 2})}}),
+          createMockIdSubmodule('mockId2v3', null, null, {
+            'mockId2v3'(ids) {
+              return {
+                source: 'mock2source',
+                inserter: 'ins',
+                ext: {v: 2},
+                uids: ids.map(id => ({id, atype: 2}))
+              }
+            }
+          }),
+          createMockIdSubmodule('mockId2v4', null, null, {
+            'mockId2v4'(ids) {
+              return ids.map(id => ({
+                uids: [{id, atype: 0}],
+                source: 'mock2source',
+                inserter: 'ins',
+                ext: {v: 2}
+              }))
+            }
+          })
         ]);
       });
 
-      it('should group UIDs by source and ext', () => {
+      it('should filter out non-string uid returned by generator functions', () => {
+        const eids = createEidsArray({
+          mockId2v3: [null, 'id1', 123],
+        });
+        expect(eids[0].uids).to.eql([
+          {
+            atype: 2,
+            id: 'id1'
+          }
+        ]);
+      });
+
+      it('should filter out entire EID if none of the uids are strings', () => {
+        const eids = createEidsArray({
+          mockId2v3: [null],
+        });
+        expect(eids).to.eql([]);
+      })
+
+      it('should group UIDs by everything except uid', () => {
         const eids = createEidsArray({
           mockId1: ['mock-1-1', 'mock-1-2'],
           mockId2v1: ['mock-2-1', 'mock-2-2'],
-          mockId2v2: ['mock-2-1', 'mock-2-2']
+          mockId2v2: ['mock-2-1', 'mock-2-2'],
+          mockId2v3: ['mock-2-1', 'mock-2-2']
         });
         expect(eids).to.eql([
           {
@@ -510,10 +550,50 @@ describe('User ID', function () {
                 atype: 2,
               }
             ]
+          },
+          {
+            source: 'mock2source',
+            inserter: 'ins',
+            ext: {v: 2},
+            uids: [
+              {
+                id: 'mock-2-1',
+                atype: 2,
+              },
+              {
+                id: 'mock-2-2',
+                atype: 2,
+              }
+            ]
           }
         ])
       });
 
+      it('should group matching EIDs regardless of entry order', () => {
+        const eids = createEidsArray({
+          mockId2v3: ['id1', 'id2'],
+          mockId2v4: ['id3']
+        });
+        expect(eids).to.eql([{
+          source: 'mock2source',
+          inserter: 'ins',
+          uids: [
+            {
+              id: 'id1',
+              atype: 2,
+            },
+            {
+              id: 'id2',
+              atype: 2
+            },
+            {
+              id: 'id3',
+              atype: 0
+            }
+          ],
+          ext: {v: 2}
+        }])
+      })
       it('when merging with pubCommonId, should not alter its eids', () => {
         const uid = {
           pubProvidedId: [
@@ -704,6 +784,27 @@ describe('User ID', function () {
         done();
       });
     });
+
+    it('pbjs.getUserIdsAsEids should pass config to eid function', async function () {
+      const eidFn = sinon.stub();
+      init(config);
+      setSubmoduleRegistry([createMockIdSubmodule('mockId', null, null, {
+        mockId: eidFn
+      })]);
+      const moduleConfig = {
+        name: 'mockId',
+        value: {mockId: 'mockIdValue'},
+        some: 'config'
+      };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [moduleConfig]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+      sinon.assert.calledWith(eidFn, ['mockIdValue'], moduleConfig);
+    })
 
     it('pbjs.getUserIdsAsEids should prioritize user ids according to config available to core', () => {
       init(config);
@@ -1580,6 +1681,7 @@ describe('User ID', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
         config.resetConfig();
         sandbox.restore();
+        coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       });
 
       it('delays auction if auctionDelay is set, timing out at auction delay', function () {
@@ -2049,7 +2151,7 @@ describe('User ID', function () {
               'mid': value['MOCKID']
             };
           },
-          getId: function (config, storedId) {
+          getId: function (config, consentData, storedId) {
             if (storedId) return {};
             return {id: {'MOCKID': '1234'}};
           }

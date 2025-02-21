@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "9.24.0-pre",
+  "version": "9.32.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.public.js",
   "exports": {
@@ -143,7 +143,7 @@
     "fun-hooks": "^0.9.9",
     "gulp-wrap": "^0.15.0",
     "klona": "^2.0.6",
-    "live-connect-js": "^7.1.0"
+    "live-connect-js": "^7.2.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

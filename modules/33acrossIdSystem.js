@@ -60,7 +60,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorageTypes) {
+function calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -98,9 +98,9 @@ function calculateQueryStringParams({ pid, hem }, gdprConsentData, enabledStorag
     params.tp = encodeURIComponent(tp);
   }
 
-  const hemParam = hem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
-  if (hemParam) {
-    params.sha256 = encodeURIComponent(hemParam);
+  const hem = pubProvidedHem || getStoredValue(STORAGE_HEM_KEY, enabledStorageTypes);
+  if (hem) {
+    params.sha256 = encodeURIComponent(hem);
   }
 
   return params;
@@ -145,10 +145,51 @@ function getStoredValue(key, enabledStorageTypes) {
   return storedValue;
 }
 
-function handleSupplementalId(key, id, storageConfig) {
-  id
-    ? storeValue(key, id, storageConfig)
-    : deleteFromStorage(key);
+function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, envelopeAvailable }) {
+  const ids = [];
+
+  if (storeFpid) {
+    ids.push(
+      /**
+       * [
+       *   <storage key>,
+       *   < ID value to store or remove >,
+       *   < clear flag: indicates if existing storage item should be removed or not based on certain condition>
+       * ]
+       */
+      [STORAGE_FPID_KEY, fp, !fp],
+      [STORAGE_HEM_KEY, hem, !envelopeAvailable] // Clear hashed email if envelope is not available
+    );
+  }
+
+  if (storeTpid) {
+    ids.push([STORAGE_TPID_KEY, tp, !tp]);
+  }
+
+  return ids;
+}
+
+function updateSupplementalIdStorage(supplementalId, storageConfig) {
+  const [ key, id, clear ] = supplementalId;
+
+  if (clear) {
+    deleteFromStorage(key);
+
+    return;
+  }
+
+  if (id) {
+    storeValue(key, id, storageConfig);
+  }
+}
+
+function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }) {
+  filterEnabledSupplementalIds(ids, options).forEach((supplementalId) => {
+    updateSupplementalIdStorage(supplementalId, {
+      enabledStorageTypes,
+      expires
+    })
+  });
 }
 
 /** @type {Submodule} */
@@ -181,7 +222,7 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsentData) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, {gdpr: gdprConsentData} = {}) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -197,8 +238,10 @@ export const thirtyThreeAcrossIdSubmodule = {
     const {
       storeFpid = DEFAULT_1PID_SUPPORT,
       storeTpid = DEFAULT_TPID_SUPPORT, apiUrl = API_URL,
-      ...options
+      pid,
+      hem
     } = params;
+    const pubProvidedHem = hem || window._33across?.hem?.sha256;
 
     return {
       callback(cb) {
@@ -218,19 +261,17 @@ export const thirtyThreeAcrossIdSubmodule = {
               });
             }
 
-            if (storeFpid) {
-              handleSupplementalId(STORAGE_FPID_KEY, responseObj.fp, {
-                enabledStorageTypes,
-                expires: storageConfig.expires
-              });
-            }
-
-            if (storeTpid) {
-              handleSupplementalId(STORAGE_TPID_KEY, responseObj.tp, {
-                enabledStorageTypes,
-                expires: storageConfig.expires
-              });
-            }
+            handleSupplementalIds({
+              fp: responseObj.fp,
+              tp: responseObj.tp,
+              hem: pubProvidedHem
+            }, {
+              storeFpid,
+              storeTpid,
+              envelopeAvailable: !!responseObj.envelope,
+              enabledStorageTypes,
+              expires: storageConfig.expires
+            });
 
             cb(responseObj.envelope);
           },
@@ -239,7 +280,7 @@ export const thirtyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(options, gdprConsentData, enabledStorageTypes), {
+        }, calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes), {
           method: 'GET',
           withCredentials: true
         });

@@ -18,7 +18,8 @@ export const spec = {
   aliases: [
     {code: 'bcmint'},
     {code: 'bidgency'},
-    {code: 'kuantyx'}
+    {code: 'kuantyx'},
+    {code: 'cordless'}
   ],
 
   isBidRequestValid: bid => {
