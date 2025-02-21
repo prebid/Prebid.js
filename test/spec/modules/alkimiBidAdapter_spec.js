@@ -7,6 +7,12 @@ const REQUEST = {
   'bidder': 'alkimi',
   'sizes': [[300, 250]],
   'adUnitCode': 'bannerAdUnitCode',
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '/111/banner#300x250',
+      'tid': 'e64782a4-8e68-4c38-965b-80ccf115d46a'
+    }
+  },
   'mediaTypes': {
     'banner': {
       'sizes': [[300, 250]]
@@ -148,7 +154,7 @@ describe('alkimiBidAdapter', function () {
       expect(bidderRequest.data.requestId).to.not.equal(undefined)
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
       expect(bidderRequest.data.schain).to.deep.contains({ ver: '1.0', complete: 1, nodes: [{ asi: 'alkimi-onboarding.com', sid: '00001', hp: 1 }] })
-      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', bidFloor: 0.1, sizes: [{ width: 300, height: 250 }], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode', instl: undefined, exp: undefined, banner: { sizes: [[300, 250]] }, video: undefined })
+      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', bidFloor: 0.1, sizes: [{ width: 300, height: 250 }], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode', instl: undefined, exp: undefined, banner: { sizes: [[300, 250]] }, video: undefined, ext: { gpid: '/111/banner#300x250', tid: 'e64782a4-8e68-4c38-965b-80ccf115d46a' } })
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)

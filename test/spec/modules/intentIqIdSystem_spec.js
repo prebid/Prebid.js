@@ -2,12 +2,12 @@ import { expect } from 'chai';
 import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { decryptData, handleClientHints, readData } from '../../../modules/intentIqIdSystem';
+import { decryptData, handleClientHints, readData, setGamReporting } from '../../../modules/intentIqIdSystem';
 import {getGppValue} from '../../../libraries/intentIqUtils/getGppValue.js';
 import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
-import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, NOT_YET_DEFINED, WITH_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 
 const partner = 10;
 const pai = '11';
@@ -46,6 +46,24 @@ export const testClientHints = {
   platform: 'Linux',
   platformVersion: '6.5.0',
   wow64: false
+};
+
+const mockGAM = () => {
+  const targetingObject = {};
+  return {
+    cmd: [],
+    pubads: () => ({
+      setTargeting: (key, value) => {
+        targetingObject[key] = value;
+      },
+      getTargeting: (key) => {
+        return [targetingObject[key]];
+      },
+      getTargetingKeys: () => {
+        return Object.keys(targetingObject);
+      }
+    })
+  };
 };
 
 describe('IntentIQ tests', function () {
@@ -197,6 +215,68 @@ describe('IntentIQ tests', function () {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should set GAM targeting to U initially and update to A after server response', function () {
+    let callBackSpy = sinon.spy();
+    let mockGamObject = mockGAM();
+    let expectedGamParameterName = 'intent_iq_group';
+
+    const originalPubads = mockGamObject.pubads;
+    let setTargetingSpy = sinon.spy();
+    mockGamObject.pubads = function () {
+      const obj = { ...originalPubads.apply(this, arguments) };
+      const originalSetTargeting = obj.setTargeting;
+      obj.setTargeting = function (...args) {
+        setTargetingSpy(...args);
+        return originalSetTargeting.apply(this, args);
+      };
+      return obj;
+    };
+
+    defaultConfigParams.params.gamObjectReference = mockGamObject;
+
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+
+    mockGamObject.cmd.forEach(cb => cb());
+    mockGamObject.cmd = []
+
+    let groupBeforeResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
+
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ group: 'A', tc: 20 })
+    );
+
+    mockGamObject.cmd.forEach(item => item());
+
+    let groupAfterResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
+
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39');
+    expect(groupBeforeResponse).to.deep.equal([NOT_YET_DEFINED]);
+    expect(groupAfterResponse).to.deep.equal([WITH_IIQ]);
+
+    expect(setTargetingSpy.calledTwice).to.be.true;
+  });
+
+  it('should use the provided gamParameterName from configParams', function () {
+    let callBackSpy = sinon.spy();
+    let mockGamObject = mockGAM();
+    let customParamName = 'custom_gam_param';
+
+    defaultConfigParams.params.gamObjectReference = mockGamObject;
+    defaultConfigParams.params.gamParameterName = customParamName;
+
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    mockGamObject.cmd.forEach(cb => cb());
+    let targetingKeys = mockGamObject.pubads().getTargetingKeys();
+
+    expect(targetingKeys).to.include(customParamName);
   });
 
   it('should not throw Uncaught TypeError when IntentIQ endpoint returns empty response', function () {

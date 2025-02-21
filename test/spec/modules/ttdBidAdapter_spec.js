@@ -291,6 +291,13 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.publisher.id).to.equal(baseBannerBidRequests[0].params.publisherId);
     });
 
+    it('sends integration type header', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
+      expect(requestBody.options).to.be.not.null;
+      expect(requestBody.options.customHeaders).to.be.not.null;
+      expect(requestBody.options.customHeaders['x-integration-type']).to.equal(1);
+    });
+
     it('sends placement id in tagid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].tagid).to.equal(baseBannerBidRequests[0].params.placementId);
@@ -715,8 +722,8 @@ describe('ttdBidAdapter', function () {
       let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      validateExtFirstPartyData(requestBody.pmp.ext)
-      expect(requestBody.pmp.private_auction).to.equal(1)
+      validateExtFirstPartyData(requestBody.imp[0].pmp.ext)
+      expect(requestBody.imp[0].pmp.private_auction).to.equal(1)
     });
   });
 

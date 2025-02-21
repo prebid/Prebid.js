@@ -105,45 +105,45 @@ config.setDefaults({
 });
 
 /**
- * @param {S2SConfig} option
+ * @param {S2SConfig} s2sConfig
  * @return {boolean}
  */
-function updateConfigDefaultVendor(option) {
-  if (option.defaultVendor) {
-    let vendor = option.defaultVendor;
-    let optionKeys = Object.keys(option);
+function updateConfigDefaults(s2sConfig) {
+  if (s2sConfig.defaultVendor) {
+    let vendor = s2sConfig.defaultVendor;
+    let optionKeys = Object.keys(s2sConfig);
     if (S2S_VENDORS[vendor]) {
       // vendor keys will be set if either: the key was not specified by user
       // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(S2S_VENDORS[vendor]).forEach((vendorKey) => {
-        if (s2sDefaultConfig[vendorKey] === option[vendorKey] || !includes(optionKeys, vendorKey)) {
-          option[vendorKey] = S2S_VENDORS[vendor][vendorKey];
+        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !includes(optionKeys, vendorKey)) {
+          s2sConfig[vendorKey] = S2S_VENDORS[vendor][vendorKey];
         }
       });
     } else {
       logError('Incorrect or unavailable prebid server default vendor option: ' + vendor);
       return false;
     }
+  } else {
+    if (s2sConfig.adapter == null) {
+      s2sConfig.adapter = 'prebidServer';
+    }
   }
-  // this is how we can know if user / defaultVendor has set it, or if we should default to false
-  return option.enabled = typeof option.enabled === 'boolean' ? option.enabled : false;
+  return true;
 }
 
 /**
- * @param {S2SConfig} option
+ * @param {S2SConfig} s2sConfig
  * @return {boolean}
  */
-function validateConfigRequiredProps(option) {
-  const keys = Object.keys(option);
-  if (['accountId', 'endpoint'].filter(key => {
-    if (!includes(keys, key)) {
+function validateConfigRequiredProps(s2sConfig) {
+  for (const key of ['accountId', 'endpoint']) {
+    if (s2sConfig[key] == null) {
       logError(key + ' missing in server to server config');
-      return true;
+      return false;
     }
-    return false;
-  }).length > 0) {
-    return false;
   }
+  return true;
 }
 
 // temporary change to modify the s2sConfig for new format used for endpoint URLs;
@@ -164,40 +164,43 @@ function formatUrlParams(option) {
   });
 }
 
+export function validateConfig(options) {
+  if (!options) {
+    return;
+  }
+  options = Array.isArray(options) ? options : [options];
+  const activeBidders = new Set();
+  return options.filter(s2sConfig => {
+    formatUrlParams(s2sConfig);
+    if (
+      updateConfigDefaults(s2sConfig) &&
+      validateConfigRequiredProps(s2sConfig) &&
+      s2sConfig.enabled
+    ) {
+      if (Array.isArray(s2sConfig.bidders)) {
+        s2sConfig.bidders = s2sConfig.bidders.filter(bidder => {
+          if (activeBidders.has(bidder)) {
+            return false;
+          } else {
+            activeBidders.add(bidder);
+            return true;
+          }
+        })
+      }
+      return true;
+    } else {
+      logWarn('prebidServer: s2s config is disabled', s2sConfig);
+    }
+  })
+}
+
 /**
  * @param {(S2SConfig[]|S2SConfig)} options
  */
 function setS2sConfig(options) {
-  if (!options) {
-    return;
-  }
-  const normalizedOptions = Array.isArray(options) ? options : [options];
-
-  const activeBidders = [];
-  const optionsValid = normalizedOptions.every((option, i, array) => {
-    formatUrlParams(option);
-    const updateSuccess = updateConfigDefaultVendor(option);
-    if (updateSuccess !== false) {
-      const valid = validateConfigRequiredProps(option);
-      if (valid !== false) {
-        if (Array.isArray(option['bidders'])) {
-          array[i]['bidders'] = option['bidders'].filter(bidder => {
-            if (activeBidders.indexOf(bidder) === -1) {
-              activeBidders.push(bidder);
-              return true;
-            }
-            return false;
-          });
-        }
-        return true;
-      }
-    }
-    logWarn('prebidServer: s2s config is disabled');
-    return false;
-  });
-
-  if (optionsValid) {
-    return _s2sConfigs = normalizedOptions;
+  options = validateConfig(options);
+  if (options.length) {
+    _s2sConfigs = options;
   }
 }
 getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
@@ -364,64 +367,6 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   });
 }
 
-/**
- * map wurl to auction id and adId for use in the BID_WON event
- */
-let wurlMap = {};
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @param {string} wurl events.winurl passed from prebidServer as wurl
- */
-function addWurl(auctionId, adId, wurl) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = wurl;
-  }
-}
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- */
-function removeWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = undefined;
-  }
-}
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @return {(string|undefined)} events.winurl which was passed as wurl
- */
-function getWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    return wurlMap[`${auctionId}${adId}`];
-  }
-}
-
-/**
- * remove all cached wurls
- */
-export function resetWurlMap() {
-  wurlMap = {};
-}
-
-/**
- * BID_WON event to request the wurl
- * @param {Bid} bid the winning bid object
- */
-function bidWonHandler(bid) {
-  const wurl = getWurl(bid.auctionId, bid.adId);
-  if (isStr(wurl)) {
-    logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
-    triggerPixel(wurl);
-
-    // remove from wurl cache, since the wurl url was called
-    removeWurl(bid.auctionId, bid.adId);
-  }
-}
-
 function getMatchingConsentUrl(urlProp, gdprConsent) {
   const hasPurpose = hasPurpose1Consent(gdprConsent);
   const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent
@@ -516,9 +461,6 @@ export function PrebidServer() {
           } else {
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
               addBidResponse(adUnit, bid);
-              if (bid.pbsWurl) {
-                addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
-              }
             } else {
               addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
@@ -532,9 +474,6 @@ export function PrebidServer() {
       })
     }
   };
-
-  // Listen for bid won to call wurl
-  events.on(EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,
