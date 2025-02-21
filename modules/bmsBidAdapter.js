@@ -1,5 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { sendBeacon } from '../src/ajax.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
@@ -8,13 +9,13 @@ import {
   isPlainObject,
   deepSetValue,
   isEmpty,
-  triggerPixel,
 } from '../src/utils.js';
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
   'https://api.prebid.int.us-east-1.bluems.com/v1/bid?exchangeId=prebid';
 const GVLID = 1105;
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_BID_TTL = 1200;
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -98,9 +99,10 @@ export const spec = {
       {
         method: 'POST',
         url: ENDPOINT_URL,
-        data: ortbRequest,
+        data: JSON.stringify(ortbRequest),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
+          withCredentials: false,
         },
       },
     ];
@@ -118,7 +120,6 @@ export const spec = {
           adapterCode: BIDDER_CODE,
           cpm: bid.price,
           creativeId: bid.ext.bms.adId,
-          creative_id: bid.ext.bms.adId,
           currency: serverResponse.body.cur || 'USD',
           deferBilling: false,
           deferRendering: false,
@@ -130,7 +131,12 @@ export const spec = {
           originalCurrency: serverResponse.body.cur || 'USD',
           requestId: bid.impid,
           seatBidId: bid.id,
-          ttl: 1200,
+          ttl: typeof bid.exp === 'number' ? bid.exp : DEFAULT_BID_TTL,
+          meta: {
+            advertiserDomains: bid.adomain || [],
+            networkId: bid.ext?.networkId || 1105,
+            networkName: bid.ext?.networkName || 'BMS',
+          }
         });
       });
     });
@@ -139,13 +145,12 @@ export const spec = {
 
   onBidWon: function (bid) {
     const { burl, nurl } = bid || {};
-
     if (nurl) {
-      triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
+      sendBeacon(nurl);
     }
 
     if (burl) {
-      triggerPixel(replaceAuctionPrice(burl, bid.originalCpm || bid.cpm));
+      sendBeacon(burl);
     }
   },
 };

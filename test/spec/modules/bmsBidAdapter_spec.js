@@ -69,9 +69,9 @@ describe('bmsBidAdapter:', function () {
       const [request] = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT_URL);
-      expect(request.options.contentType).to.equal('application/json');
+      expect(request.options.contentType).to.equal('text/plain');
+      const ortbRequest = JSON.parse(request.data);
 
-      const ortbRequest = request.data;
       expect(ortbRequest.ext.gvlid).to.equal(GVLID);
       expect(ortbRequest.imp[0].bidfloor).to.equal(1.5);
       expect(ortbRequest.imp[0].bidfloorcur).to.equal(CURRENCY);
@@ -81,7 +81,7 @@ describe('bmsBidAdapter:', function () {
       validBidRequests[0].getFloor = undefined;
 
       const [request] = spec.buildRequests(validBidRequests, bidderRequest);
-      const ortbRequest = request.data;
+      const ortbRequest = JSON.parse(request.data);
 
       expect(ortbRequest.imp[0].bidfloor).to.be.undefined;
     });
