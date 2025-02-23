@@ -566,7 +566,7 @@ export const spec = {
             inserter || '',
             matcher || '',
             mm || '',
-            uidData?.ext?.rtipartner || ''
+            uidData?.ext?.rtiPartner || uidData?.ext?.rtipartner || ''
           ].join('^'); // Return a single string formatted with '^' delimiter
 
           const eidValue = buildEidValue(uidData); // Build the EID value string
@@ -922,7 +922,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const dsa = deepAccess(fpd, 'regs.ext.dsa');
-  const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
+  const SEGTAX = {user: [4], site: [1, 2, 5, 6, 7]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
@@ -1028,7 +1028,10 @@ function applyFPD(bidRequest, mediaType, data) {
           // reduce down into ua and full version list attributes
           const [ua, fullVer] = browsers.reduce((accum, browserData) => {
             accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
-            accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            // only set fullVer if long enough
+            if (browserData.version.length > 1) {
+              accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            }
             return accum;
           }, [[], []]);
           data.m_ch_ua = ua?.join?.(',');

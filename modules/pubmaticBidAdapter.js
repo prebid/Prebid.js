@@ -61,7 +61,8 @@ const VIDEO_CUSTOM_PARAMS = {
   'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
-  'skip': DATA_TYPES.NUMBER
+  'skip': DATA_TYPES.NUMBER,
+  'pos': DATA_TYPES.NUMBER
 }
 
 const NATIVE_ASSET_IMAGE_TYPE = {
@@ -70,7 +71,8 @@ const NATIVE_ASSET_IMAGE_TYPE = {
 }
 
 const BANNER_CUSTOM_PARAMS = {
-  'battr': DATA_TYPES.ARRAY
+  'battr': DATA_TYPES.ARRAY,
+  'pos': DATA_TYPES.NUMBER,
 }
 
 const NET_REVENUE = true;

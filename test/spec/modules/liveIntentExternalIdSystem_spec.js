@@ -269,11 +269,6 @@ describe('LiveIntentExternalId', function() {
     expect(window.liQHub).to.have.length(1) // instead of 2
   });
 
-  it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
-    const result = liveIntentExternalIdSubmodule.decode({ fireEventDelay: 1, additionalData: 'data' });
-    expect(result).to.be.eql({});
-  });
-
   it('should decode a unifiedId to lipbId and remove it', function() {
     const result = liveIntentExternalIdSubmodule.decode({ unifiedId: 'data' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'data'}});
@@ -316,6 +311,11 @@ describe('LiveIntentExternalId', function() {
     })
   });
 
+  it('should decode values with the segments but no nonId', function() {
+    const result = liveIntentExternalIdSubmodule.decode({segments: ['tak']}, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'segments': ['tak']}});
+  });
+
   it('should decode a uid2 to a separate object when present', function() {
     const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
@@ -323,7 +323,7 @@ describe('LiveIntentExternalId', function() {
 
   it('should decode values with uid2 but no nonId', function() {
     const result = liveIntentExternalIdSubmodule.decode({ uid2: 'bar' }, defaultConfigParams);
-    expect(result).to.eql({'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(result).to.eql({'lipb': {'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a bidswitch id to a separate object when present', function() {
@@ -456,8 +456,23 @@ describe('LiveIntentExternalId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
+  it('should decode a triplelift id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', triplelift: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'triplelift': 'bar'}, 'triplelift': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a zetassp id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', zetassp: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'zetassp': 'bar'}, 'zetassp': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
   it('should decode a vidazoo id to a separate object when present', function() {
     const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode the segments as part of lipb', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', 'segments': ['bar'] }, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'segments': ['bar']}});
   });
 });

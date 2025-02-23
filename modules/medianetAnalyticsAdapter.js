@@ -20,6 +20,8 @@ import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../sr
 import {includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {ADPOD} from '../src/mediaTypes.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
@@ -266,10 +268,22 @@ class AdSlot {
       tmax: this.tmax,
       targ: JSON.stringify(this.targeting),
       ismn: this.medianetPresent,
-      vplcmtt: this.context,
+      vplcmtt: this.getVideoPlacement(),
     },
     this.adext && {'adext': JSON.stringify(this.adext)},
     );
+  }
+  getVideoPlacement() {
+    switch (this.context) {
+      case INSTREAM:
+        return 1
+      case OUTSTREAM:
+        return 6
+      case ADPOD:
+        return 7
+      default:
+        return 0
+    }
   }
 }
 

@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
   resetSyncedStatus,
-  resetWurlMap,
+  validateConfig,
   s2sDefaultConfig
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager, {PBS_ADAPTER_NAME} from 'src/adapterManager.js';
@@ -42,6 +42,7 @@ import {
   extractEids,
   getPBSBidderConfig
 } from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import {markWinningBid} from '../../../src/adRendering.js';
 
 let CONFIG = {
   accountId: '1',
@@ -563,6 +564,35 @@ function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
     }
   }
 }
+
+describe('s2s configuration', () => {
+  let cfg1, cfg2;
+  beforeEach(() => {
+    cfg1 = {
+      enabled: true,
+      bidders: ['bidderB'],
+      accountId: '123456',
+      endpoint: {
+        p1Consent: 'first.endpoint'
+      }
+    };
+    cfg2 = {
+      enabled: true,
+      bidders: ['bidderA'],
+      accountId: '123456',
+      endpoint: {
+        p1Consent: 'second.endpoint',
+      }
+    };
+  })
+  it('sets prebid server adapter by default', () => {
+    expect(validateConfig(cfg1)[0].adapter).to.eql('prebidServer');
+  });
+  it('filters out disabled configs', () => {
+    cfg1.enabled = false;
+    expect(validateConfig([cfg1, cfg2])).to.eql([cfg2]);
+  })
+});
 
 describe('S2S Adapter', function () {
   let adapter,
@@ -1372,65 +1402,97 @@ describe('S2S Adapter', function () {
             updateBid(BID_REQUESTS[1].bids[0]);
             adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
             const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
-            expect(pbsReq.imp[0].bidfloor).to.be.undefined;
-            expect(pbsReq.imp[0].bidfloorcur).to.be.undefined;
+            [pbsReq.imp[0], pbsReq.imp[0].banner, pbsReq.imp[0].banner.format[0]].forEach(obj => {
+              expect(obj.bidfloor).to.be.undefined;
+              expect(obj.bidfloorcur).to.be.undefined;
+            })
           });
         })
 
         Object.entries({
-          'is available': {
-            expectDesc: 'minimum after conversion',
-            expectedFloor: 10,
-            expectedCur: '0.1',
-            conversionFn: (amount, from, to) => {
-              from = parseFloat(from);
-              to = parseFloat(to);
-              return amount * from / to;
-            },
+          'imp level floors': {
+            target: 'imp.0'
           },
-          'is not available': {
-            expectDesc: 'absolute minimum',
-            expectedFloor: 1,
-            expectedCur: '10',
-            conversionFn: null
+          'mediaType level floors': {
+            target: 'imp.0.banner.ext',
+            floorFilter: ({mediaType, size}) => size === '*' && mediaType !== '*'
           },
-          'is not working': {
-            expectDesc: 'absolute minimum',
-            expectedFloor: 1,
-            expectedCur: '10',
-            conversionFn: () => {
-              throw new Error();
-            }
+          'format level floors': {
+            target: 'imp.0.banner.format.0.ext',
+            floorFilter: ({size}) => size !== '*'
           }
-        }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
-          describe(`and currency conversion ${t}`, () => {
-            let mockConvertCurrency;
-            const origConvertCurrency = getGlobal().convertCurrency;
+        }).forEach(([t, {target, floorFilter}]) => {
+          describe(t, () => {
             beforeEach(() => {
-              if (conversionFn) {
-                getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
-              } else {
-                mockConvertCurrency = null;
-                delete getGlobal().convertCurrency;
+              if (floorFilter != null) {
+                BID_REQUESTS
+                  .flatMap(req => req.bids)
+                  .forEach(req => {
+                    req.getFloor = ((orig) => (params) => {
+                      if (floorFilter(params)) {
+                        return orig(params);
+                      }
+                    })(req.getFloor);
+                  })
               }
-            });
+            })
 
-            afterEach(() => {
-              if (origConvertCurrency != null) {
-                getGlobal().convertCurrency = origConvertCurrency;
-              } else {
-                delete getGlobal().convertCurrency;
+            Object.entries({
+              'is available': {
+                expectDesc: 'minimum after conversion',
+                expectedFloor: 10,
+                expectedCur: '0.1',
+                conversionFn: (amount, from, to) => {
+                  from = parseFloat(from);
+                  to = parseFloat(to);
+                  return amount * from / to;
+                },
+              },
+              'is not available': {
+                expectDesc: 'absolute minimum',
+                expectedFloor: 1,
+                expectedCur: '10',
+                conversionFn: null
+              },
+              'is not working': {
+                expectDesc: 'absolute minimum',
+                expectedFloor: 1,
+                expectedCur: '10',
+                conversionFn: () => {
+                  throw new Error();
+                }
               }
-            });
+            }).forEach(([t, {expectDesc, expectedFloor, expectedCur, conversionFn}]) => {
+              describe(`and currency conversion ${t}`, () => {
+                let mockConvertCurrency;
+                const origConvertCurrency = getGlobal().convertCurrency;
+                beforeEach(() => {
+                  if (conversionFn) {
+                    getGlobal().convertCurrency = mockConvertCurrency = sinon.stub().callsFake(conversionFn)
+                  } else {
+                    mockConvertCurrency = null;
+                    delete getGlobal().convertCurrency;
+                  }
+                });
 
-            it(`should pick the ${expectDesc}`, () => {
-              adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
-              const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
-              expect(pbsReq.imp[0].bidfloor).to.eql(expectedFloor);
-              expect(pbsReq.imp[0].bidfloorcur).to.eql(expectedCur);
+                afterEach(() => {
+                  if (origConvertCurrency != null) {
+                    getGlobal().convertCurrency = origConvertCurrency;
+                  } else {
+                    delete getGlobal().convertCurrency;
+                  }
+                });
+
+                it(`should pick the ${expectDesc}`, () => {
+                  adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
+                  const pbsReq = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+                  expect(deepAccess(pbsReq, `${target}.bidfloor`)).to.eql(expectedFloor);
+                  expect(deepAccess(pbsReq, `${target}.bidfloorcur`)).to.eql(expectedCur)
+                });
+              });
             });
-          });
-        });
+          })
+        })
       });
     });
 
@@ -2112,6 +2174,23 @@ describe('S2S Adapter', function () {
         expect(payload.ext.prebid.data.eidpermissions).to.eql([{
           bidders: ['appnexus'],
           source: 'idC'
+        }]);
+      });
+
+      it('should not set eidpermissions for unrequested bidders', () => {
+        req.ortb2Fragments.bidder.unknown = {
+          user: {
+            eids: [{source: 'idC', id: 3}, {source: 'idD', id: 4}]
+          }
+        }
+        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+        const payload = JSON.parse(server.requests[0].requestBody);
+        expect(payload.ext.prebid.data.eidpermissions).to.eql([{
+          bidders: ['appnexus'],
+          source: 'idC'
+        }, {
+          bidders: [],
+          source: 'idD'
         }]);
       });
 
@@ -3728,7 +3807,6 @@ describe('S2S Adapter', function () {
     });
 
     beforeEach(function () {
-      resetWurlMap();
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
       sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => {
@@ -3758,6 +3836,27 @@ describe('S2S Adapter', function () {
       triggerPixelStub.restore();
     });
 
+    it('should translate wurl and burl into eventtrackers', () => {
+      const burlEvent = {event: 1, method: 1, url: 'burl'};
+      const winEvent = {event: 500, method: 1, url: 'events.win'};
+      const trackerEvent = {event: 500, method: 1, url: 'eventtracker'};
+
+      const resp = utils.deepClone(RESPONSE_OPENRTB);
+      resp.seatbid[0].bid[0].ext.eventtrackers = [
+        trackerEvent,
+        burlEvent
+      ]
+      resp.seatbid[0].bid[0].ext.prebid.events = {
+        win: winEvent.url
+      };
+      resp.seatbid[0].bid[0].burl = burlEvent.url;
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(resp));
+      expect(addBidResponse.getCall(0).args[1].eventtrackers).to.have.deep.members([
+        burlEvent, trackerEvent, winEvent
+      ]);
+    })
+
     it('should call triggerPixel if wurl is defined', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
@@ -3767,32 +3866,11 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
 
-      events.emit(EVENTS.BID_WON, {
-        auctionId: '173afb6d132ba3',
-        adId: '1000'
-      });
-
       sinon.assert.calledOnce(addBidResponse);
+      markWinningBid(addBidResponse.getCall(0).args[1]);
+
       expect(utils.triggerPixel.called).to.be.true;
       expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
-    });
-
-    it('should not call triggerPixel if the wurl cache does not contain the winning bid', function () {
-      const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
-      clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
-        win: 'https://wurl.org'
-      };
-
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
-
-      events.emit(EVENTS.BID_WON, {
-        auctionId: '173afb6d132ba3',
-        adId: 'missingAdId'
-      });
-
-      sinon.assert.calledOnce(addBidResponse)
-      expect(utils.triggerPixel.called).to.be.false;
     });
 
     it('should not call triggerPixel if wurl is undefined', function () {
@@ -3802,12 +3880,8 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
 
-      events.emit(EVENTS.BID_WON, {
-        auctionId: '173afb6d132ba3',
-        adId: '1060'
-      });
-
-      sinon.assert.calledOnce(addBidResponse)
+      sinon.assert.calledOnce(addBidResponse);
+      markWinningBid(addBidResponse.getCall(0).args[1]);
       expect(utils.triggerPixel.called).to.be.false;
     });
   })
@@ -4621,6 +4695,21 @@ describe('S2S Adapter', function () {
             ],
             conflicts: ['idA', 'idB']
           }
+        },
+        {
+          t: 'duplicated bidder-specific eids',
+          bidder: {
+            bidderA: {
+              user: {
+                eids: [mkEid('id'), mkEid('id')]
+              }
+            }
+          },
+          expected: {
+            eids: [
+              eidEntry('id', 'id', ['bidderA'])
+            ]
+          }
         }
       ].forEach(({t, global = {}, bidder = {}, expected}) => {
         it(t, () => {
@@ -4710,8 +4799,8 @@ describe('S2S Adapter', function () {
           bidder: {
             bidderA: [mkEid('idA', 'idA2')]
           }
-        })
-      })
+        });
+      });
     })
   });
 });

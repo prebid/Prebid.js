@@ -171,10 +171,10 @@ export function createUserSyncGetter(options = {
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
     const {gppString, applicableSections} = gppConsent;
+    const coppa = config.getConfig('coppa') ? 1 : 0;
 
     const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-    let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`;
-
+    let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}&coppa=${encodeURIComponent((coppa))}`;
     if (gppString && applicableSections?.length) {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
@@ -247,6 +247,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
   const contentLang = deepAccess(bidderRequest, 'ortb2.site.content.language') || document.documentElement.lang;
   const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa', 0);
+  const device = deepAccess(bidderRequest, 'ortb2.device', {});
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -290,6 +291,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestsCount: bidderRequestsCount,
     bidderWinsCount: bidderWinsCount,
     bidderTimeout: bidderTimeout,
+    device,
     ...uniqueRequestData
   };
 

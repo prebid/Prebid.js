@@ -52,7 +52,7 @@ export function extractEids({global, bidder}) {
   function getEntry(eid) {
     let entry = entries.find((candidate) => deepEqual(candidate.eid, eid));
     if (entry == null) {
-      entry = {eid, bidders: []}
+      entry = {eid, bidders: new Set()}
       entries.push(entry);
     }
     if (bySource[eid.source] == null) {
@@ -74,12 +74,12 @@ export function extractEids({global, bidder}) {
       (deepAccess(bidderConfig, path) || []).forEach(eid => {
         const entry = getEntry(eid);
         if (entry.bidders !== false) {
-          entry.bidders.push(bidderCode);
+          entry.bidders.add(bidderCode);
         }
       })
     })
   })
-  return {eids: entries, conflicts};
+  return {eids: entries.map(({eid, bidders}) => ({eid, bidders: bidders && Array.from(bidders)})), conflicts};
 }
 
 /**
@@ -121,7 +121,7 @@ export function consolidateEids({eids, conflicts = new Set()}) {
   }
 }
 
-function replaceEids({global, bidder}) {
+function replaceEids({global, bidder}, requestedBidders) {
   const consolidated = consolidateEids(extractEids({global, bidder}));
   global = deepClone(global);
   bidder = deepClone(bidder);
@@ -134,6 +134,9 @@ function replaceEids({global, bidder}) {
   if (consolidated.global.length) {
     deepSetValue(global, 'user.ext.eids', consolidated.global);
   }
+  if (requestedBidders?.length) {
+    consolidated.permissions.forEach((permission) => permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder)));
+  }
   if (consolidated.permissions.length) {
     deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions);
   }
@@ -145,11 +148,11 @@ function replaceEids({global, bidder}) {
   return {global, bidder}
 }
 
-export function premergeFpd(ortb2Fragments) {
+export function premergeFpd(ortb2Fragments, requestedBidders) {
   if (ortb2Fragments == null || Object.keys(ortb2Fragments.bidder || {}).length === 0) {
     return ortb2Fragments;
   } else {
-    ortb2Fragments = replaceEids(ortb2Fragments);
+    ortb2Fragments = replaceEids(ortb2Fragments, requestedBidders);
     return {
       ...ortb2Fragments,
       bidder: getPBSBidderConfig(ortb2Fragments)

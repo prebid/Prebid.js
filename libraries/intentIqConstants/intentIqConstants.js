@@ -7,4 +7,4 @@ export const OPT_OUT = 'O';
 export const BLACK_LIST = 'L';
 export const CLIENT_HINTS_KEY = '_iiq_ch';
 export const EMPTY = 'EMPTY'
-export const VERSION = 0.24
+export const VERSION = 0.26
