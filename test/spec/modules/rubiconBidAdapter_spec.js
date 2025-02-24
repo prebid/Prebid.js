@@ -2916,6 +2916,29 @@ describe('the rubicon adapter', function () {
           expect(slotParams['tg_v.tax404']).is.equal(undefined);
         });
 
+        it('should support IAB segtax 7 in site segments', () => {
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.refererInfo = {domain: 'bob'};
+          config.setConfig({
+            rubicon: {
+              sendUserSegtax: [4],
+              sendSiteSegtax: [1, 2, 5, 6, 7]
+            }
+          });
+          localBidderRequest.ortb2.site = {
+            content: {
+              data: [{
+                ext: {
+                  segtax: '7'
+                },
+                segment: [{id: 8}, {id: 9}]
+              }]
+            }
+          };
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
+          expect(slotParams['tg_i.tax7']).to.equal('8,9');
+        });
+
         it('should add p_site.mobile if mobile is a number in ortb2.site', function () {
           // Set up a bidRequest with mobile property as a number
           const localBidderRequest = Object.assign({}, bidderRequest);
