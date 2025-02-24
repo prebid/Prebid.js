@@ -59,5 +59,6 @@
     "yieldmoBidAdapter",
     "pulsepointBidAdapter",
     "sovrnBidAdapter",
-    "gameraRtdProvider"
+    "gameraRtdProvider",
+    "bidResponseFilter"
 ]
