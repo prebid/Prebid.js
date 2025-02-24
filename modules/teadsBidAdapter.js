@@ -62,7 +62,7 @@ export const spec = {
       networkQuality: getNetworkQuality(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
-      domComplexity: document.querySelectorAll("*")?.length,
+      domComplexity: document.querySelectorAll('*')?.length,
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
@@ -235,7 +235,7 @@ function getConnectionDownLink(nav) {
 function getNetworkQuality(navigator) {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
-  return connection?.effectiveType ?? ""
+  return connection?.effectiveType ?? ''
 }
 
 function getTimeToFirstByte(win) {

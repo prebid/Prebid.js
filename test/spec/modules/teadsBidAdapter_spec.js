@@ -266,7 +266,13 @@ describe('teadsBidAdapter', () => {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
+      const domComplexity = document.querySelectorAll('*').length;
+
       expect(payload.domComplexity).to.exist;
+
+      if (domComplexity) {
+        expect(payload.domComplexity).to.deep.equal(domComplexity);
+      }
     })
 
     it('should add pageReferrer info to payload', function () {
