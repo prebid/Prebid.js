@@ -17,7 +17,7 @@ Navigate to https://docs.prebid.org/download.html and select the box labeled Ove
 
 Direct link to the Overtone module in the Prebid.js repository: 
 
-The client must provide Overtone with all the domains using the prebid module to whitelist those domains. Failure to whitelist domains will result in an invalid request to the Overtone Contextual API.
+The client must provide Overtone with all the addresses using the Prebid module to whitelist those domains. Failure to whitelist addresses will result in an invalid request to the Overtone Contextual API.
 
 
 ## Functionality

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { overtoneModule, overtoneRtdProvider } from '../../../modules/overtoneRtdProvider.js';
 import { logMessage } from '../../../src/utils.js';
-  
+
 const TEST_URLS = {
   success: 'https://www.theguardian.com/film/2024/nov/15/duncan-cowles-silent-men-interview',
   fail: 'https://www.nytimes.com',
