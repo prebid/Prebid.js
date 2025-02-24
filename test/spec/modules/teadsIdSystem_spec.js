@@ -25,8 +25,10 @@ describe('TeadsIdSystem', function () {
       };
 
       const consentData = {
-        gdprApplies: true,
-        consentString: 'abc123=='
+        gdpr: {
+          gdprApplies: true,
+          consentString: 'abc123=='
+        }
       }
 
       const result = buildAnalyticsTagUrl(submoduleConfig, consentData);

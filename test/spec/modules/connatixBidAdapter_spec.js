@@ -7,11 +7,12 @@ import {
   getBidFloor as connatixGetBidFloor,
   _getMinSize as connatixGetMinSize,
   _getViewability as connatixGetViewability,
+  hasQueryParams as connatixHasQueryParams,
   _isViewabilityMeasurable as connatixIsViewabilityMeasurable,
-  saveOnAllStorages as connatixSaveOnAllStorages,
   readFromAllStorages as connatixReadFromAllStorages,
-  storage,
-  spec
+  saveOnAllStorages as connatixSaveOnAllStorages,
+  spec,
+  storage
 } from '../../../modules/connatixBidAdapter.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as ajax from '../../../src/ajax.js';
@@ -731,11 +732,19 @@ describe('connatixBidAdapter', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
     const UserSyncEndpoint = 'https://connatix.com/sync'
+    const UserSyncEndpointWithParams = 'https://connatix.com/sync?param1=value1'
     const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
 
     const serverResponse = {
       body: {
         UserSyncEndpoint,
+        Bids: [ Bid ]
+      },
+      headers: function() { }
+    };
+    const serverResponse2 = {
+      body: {
+        UserSyncEndpoint: UserSyncEndpointWithParams,
         Bids: [ Bid ]
       },
       headers: function() { }
@@ -828,6 +837,17 @@ describe('connatixBidAdapter', function () {
       );
       const { url } = userSyncList[0];
       expect(url).to.equal(`${UserSyncEndpoint}?gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
+    });
+    it('Should correctly append all consents to the sync url if the url contains query params', function () {
+      const userSyncList = spec.getUserSyncs(
+        {iframeEnabled: true, pixelEnabled: true},
+        [serverResponse2],
+        {gdprApplies: true, consentString: 'test&2'},
+        '1YYYN',
+        {consent: '1'}
+      );
+      const { url } = userSyncList[0];
+      expect(url).to.equal(`${UserSyncEndpointWithParams}&gdpr=1&gdpr_consent=test%262&us_privacy=1YYYN`);
     });
   });
 
@@ -957,26 +977,26 @@ describe('connatixBidAdapter', function () {
     const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
 
     const mockData = {
-      providerName: 'nonId',
       data: {
         supplementalEids: [{ provider: 2, group: 1, eidsList: ['123', '456'] }]
       }
     };
 
     function messageHandler(event) {
-      if (!event.data || event.origin !== 'https://cds.connatix.com') {
+      if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
         return;
       }
 
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT) {
+      const { message, data } = event.data.cnx;
+
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
         window.removeEventListener('message', messageHandler);
         event.stopImmediatePropagation();
       }
 
-      if (event.data.type === ALL_PROVIDERS_RESOLVED_EVENT || event.data.type === IDENTITY_PROVIDER_RESOLVED_EVENT) {
-        const response = event.data;
-        if (response.data) {
-          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, response.data, CNX_IDS_EXPIRY);
+      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
+        if (data) {
+          connatixSaveOnAllStorages(CNX_IDS_LOCAL_STORAGE_COOKIES_KEY, data, CNX_IDS_EXPIRY);
         }
       }
     }
@@ -1000,7 +1020,7 @@ describe('connatixBidAdapter', function () {
 
     it('Should set a cookie and save to local storage when a valid message is received', () => {
       const fakeEvent = {
-        data: { type: 'cnx_all_identity_providers_resolved', data: mockData },
+        data: { cnx: { message: 'cnx_all_identity_providers_resolved', data: mockData } },
         origin: 'https://cds.connatix.com',
         stopImmediatePropagation: sinon.spy()
       };
@@ -1019,7 +1039,7 @@ describe('connatixBidAdapter', function () {
       expect(retrievedData).to.deep.equal(mockData);
     });
 
-    it('Should should not do anything when there is no data in the payload', () => {
+    it('Should not do anything when there is no data in the payload', () => {
       const fakeEvent = {
         data: null,
         origin: 'https://cds.connatix.com',
@@ -1034,9 +1054,9 @@ describe('connatixBidAdapter', function () {
       expect(storage.setDataInLocalStorage.notCalled).to.be.true;
     });
 
-    it('Should should not do anything when the origin is invalid', () => {
+    it('Should not do anything when the origin is invalid', () => {
       const fakeEvent = {
-        data: { type: 'cnx_all_identity_providers_resolved', data: mockData },
+        data: { cnx: { message: 'cnx_all_identity_providers_resolved', data: mockData } },
         origin: 'https://notConnatix.com',
         stopImmediatePropagation: sinon.spy()
       };
@@ -1047,6 +1067,31 @@ describe('connatixBidAdapter', function () {
       expect(window.removeEventListener.notCalled).to.be.true;
       expect(storage.setCookie.notCalled).to.be.true;
       expect(storage.setDataInLocalStorage.notCalled).to.be.true;
+    });
+  });
+  describe('connatixHasQueryParams', () => {
+    it('Should return false if there is no query param in the url', () => {
+      const url = 'http://example.com'
+      const result = connatixHasQueryParams(url);
+      expect(result).to.equal(false);
+    });
+
+    it('Should return true if there is one query param in the url', () => {
+      const url = 'http://example.com?query1=value1'
+      const result = connatixHasQueryParams(url);
+      expect(result).to.equal(true);
+    });
+
+    it('Should return true if there is multiple query params in the url', () => {
+      const url = 'http://example.com?query1=value1&query2=value2'
+      const result = connatixHasQueryParams(url);
+      expect(result).to.equal(true);
+    });
+
+    it('Should return false if the url is invalid', () => {
+      const url = 'example'
+      const result = connatixHasQueryParams(url);
+      expect(result).to.equal(false);
     });
   });
 });
