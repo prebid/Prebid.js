@@ -23,11 +23,6 @@ import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- */
-
 const BIDDER_CODE = 'winr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';

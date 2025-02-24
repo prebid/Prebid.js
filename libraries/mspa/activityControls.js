@@ -24,6 +24,8 @@ export function isBasicConsentDenied(cd) {
     cd.PersonalDataConsents === 2 ||
     // minors 13+ who have not given consent
     cd.KnownChildSensitiveDataConsents[0] === 1 ||
+    // minors 16+ who have not given consent (added in usnat version 2)
+    cd.KnownChildSensitiveDataConsents[2] === 1 ||
     // minors under 13 cannot consent
     isApplicable(cd.KnownChildSensitiveDataConsents[1]) ||
     // covered cannot be zero
@@ -53,14 +55,31 @@ export function isConsentDenied(cd) {
 }
 
 export const isTransmitUfpdConsentDenied = (() => {
-  // deny anything that smells like: genetic, biometric, state/national ID, financial, union membership,
-  // or personal communication data
-  const cannotBeInScope = [6, 7, 9, 10, 12].map(el => --el);
-  // require consent for everything else (except geo, which is treated separately)
-  const allExceptGeo = Array.from(Array(12).keys()).filter((el) => el !== SENSITIVE_DATA_GEO)
-  const mustHaveConsent = allExceptGeo.filter(el => !cannotBeInScope.includes(el));
+  const sensitiveFlags = (() => {
+    // deny anything that smells like: genetic, biometric, state/national ID, financial, union membership,
+    // personal communication data, status as victim of crime (version 2), status as transgender/nonbinary (version 2)
+    const cannotBeInScope = [6, 7, 9, 10, 12, 14, 16].map(el => --el);
+    // require consent for everything else (except geo, which is treated separately)
+    const allExceptGeo = Array.from(Array(16).keys()).filter((el) => el !== SENSITIVE_DATA_GEO)
+    const mustHaveConsent = allExceptGeo.filter(el => !cannotBeInScope.includes(el));
+
+    return Object.fromEntries(
+      Object.entries({
+        1: 12,
+        2: 16
+      }).map(([version, cardinality]) => {
+        const isInVersion = (el) => el < cardinality
+        return [version, {
+          cannotBeInScope: cannotBeInScope.filter(isInVersion),
+          allExceptGeo: allExceptGeo.filter(isInVersion),
+          mustHaveConsent: mustHaveConsent.filter(isInVersion)
+        }]
+      })
+    )
+  })()
 
   return function (cd) {
+    const {cannotBeInScope, mustHaveConsent, allExceptGeo} = sensitiveFlags[cd.Version];
     return isConsentDenied(cd) ||
       // no notice about sensitive data was given
       sensitiveNoticeIs(cd, 2) ||
@@ -97,7 +116,7 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
       if (consent == null) {
         return {allow: false, reason: 'consent data not available'};
       }
-      if (consent.Version !== 1) {
+      if (![1, 2].includes(consent.Version)) {
         return {allow: false, reason: `unsupported consent specification version "${consent.Version}"`}
       }
       if (denies(consent)) {

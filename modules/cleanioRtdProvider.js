@@ -17,10 +17,6 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-/**
- * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- */
-
 // ============================ MODULE STATE ===============================
 
 /**

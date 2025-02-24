@@ -1,5 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   _each,
   _map,
@@ -11,7 +12,6 @@ import {
   logWarn,
   setOnAny
 } from '../src/utils.js';
-import {config} from '../src/config.js';
 
 export const BIDDER_CODE = 'deltaprojects';
 export const BIDDER_ENDPOINT_URL = 'https://d5p.de17a.com/dogfight/prebid';
@@ -74,7 +74,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   // build bid specific
   return validBidRequests.map(validBidRequest => {
-    const openRTBRequest = buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs);
+    const openRTBRequest = buildOpenRTBRequest(validBidRequest, bidderRequest, id, site, device, user, tmax, regs);
     return {
       method: 'POST',
       url: BIDDER_ENDPOINT_URL,
@@ -85,9 +85,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 }
 
-function buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs) {
+function buildOpenRTBRequest(validBidRequest, bidderRequest, id, site, device, user, tmax, regs) {
   // build cur
-  const currency = config.getConfig('currency.adServerCurrency') || deepAccess(validBidRequest, 'params.currency');
+  const currency = getCurrencyFromBidderRequest(bidderRequest) || deepAccess(validBidRequest, 'params.currency');
   const cur = currency && [currency];
 
   // build impression

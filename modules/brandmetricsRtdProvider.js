@@ -16,10 +16,6 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-/**
- * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- */
-
 const MODULE_NAME = 'brandmetrics'
 const MODULE_CODE = MODULE_NAME
 const RECEIVED_EVENTS = []
