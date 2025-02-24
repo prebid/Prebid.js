@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as priceFloors from '../../../modules/priceFloors';
 import * as utils from '../../../src/utils.js';
+import * as suaModule from '../../../src/fpd/sua.js';
 import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
 import {
@@ -134,7 +135,7 @@ describe('Pubmatic RTD Provider', () => {
   });
 
   describe('getBrowserType', () => {
-    let userAgentStub;
+    let userAgentStub, getLowEntropySUAStub;
 
     const USER_AGENTS = {
       chrome: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -148,10 +149,12 @@ describe('Pubmatic RTD Provider', () => {
 
     beforeEach(() => {
       userAgentStub = sandbox.stub(navigator, 'userAgent');
+      getLowEntropySUAStub = sandbox.stub(suaModule, 'getLowEntropySUA').returns(undefined);
     });
 
     afterEach(() => {
       userAgentStub.restore();
+      getLowEntropySUAStub.restore();
     });
 
     it('should detect Chrome', () => {
@@ -478,7 +481,7 @@ describe('Pubmatic RTD Provider', () => {
       }
     };
 
-    const Ortb2 = {
+    const ortb2 = {
       user: {
         ext: {
           ctr: 'US',
@@ -508,7 +511,7 @@ describe('Pubmatic RTD Provider', () => {
           hookConfig
         )
       );
-      expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.include(Ortb2);
+      expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.include(ortb2);
     });
   });
 });

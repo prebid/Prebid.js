@@ -6,23 +6,31 @@
 
 ## Description
 
-This RTD module, provided by PubMatic, sets dynamic floors within Prebid. It enhances floor functionality by supporting custom schemas beyond the existing fixed schema values. By leveraging real-time signals such as device, browser, time of day etc, it enables floor price recommendations based on user value rather than solely on historical data.
+The PubMatic RTD module fetches pricing floor data and updates the Price Floors Module based on user's context in real-time as per Price Floors Modules Floor Data Provider Interface guidelines (https://docs.prebid.org/dev-docs/modules/floors.html#floor-data-provider-interface)
 
 ## Usage
 
-Ensure that the following modules are listed when building Prebid: `priceFloors`.
+Step 1: Contact PubMatic to get a publisher ID and create your first profile.
+
+Step 2: Integrate the PubMatic Analytics Adapter (see Prebid Analytics modules) as well as the Price Floors module.
+
+Step 3: Prepare the base Prebid file.
+
 For example:
 
 ```shell
 gulp build --modules=priceFloors
 ```
 
-To compile the RTD module into your Prebid build:
+To compile the PubMatic RTD module and PubMatic Analytics Adapter into your Prebid build:
 
 ```shell
-gulp build --modules=rtdModule,pubmaticRtdProvider
+gulp build --modules=rtdModule,pubmaticRtdProvider,pubmaticAnalyticsAdapter
 ```
 
+> Note : Ensure that the following modules are listed when building Prebid: `priceFloors`.
+
+Step 4: Set configuration and enable PubMatic RTD Module using pbjs.setConfig.
 To utilize the PubMatic RTD module, add `realTimeData` with the parameters mentioned below to the Prebid config.
 
 ```js
