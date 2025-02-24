@@ -213,9 +213,16 @@ export const spec = {
   isBidRequestValid: function (bid) {
     const props = ['accountId', 'publisherId', 'tagId'];
     const missing = props.filter(prop => !bid.params[prop]);
+    const existingLegacy = ['cId', 'pId'].filter(prop => bid.params[prop]);
     const nonStr = props.filter(prop => !isStr(bid.params[prop]));
     const message = `Bid will not be sent for ad unit '${bid.adUnitCode}'`;
     const suggestion = 'wrap it in quotes in your config';
+
+    if (existingLegacy.length) {
+      existingLegacy.forEach(prop => {
+        helpers.log('warn', `Warn: '${prop}' was deprecated.`);
+      });
+    }
 
     if (missing.length) {
       missing.forEach(prop => {
