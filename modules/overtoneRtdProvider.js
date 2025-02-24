@@ -57,11 +57,11 @@ export const overtoneRtdProvider = {
     fetchContextData()
       .then((contextData) => {
         if (contextData) {
-          logMessage('Fetched context data', contextData);
-          bidReqConfig.ortb2Fragments.global.site.ext = {
-            ...bidReqConfig.ortb2Fragments.global.site.ext,
-            data: contextData,
-          };
+          if (!bidReqConfig.ortb2Fragments.global.site.ext) {
+            bidReqConfig.ortb2Fragments.global.site.ext = {};
+          }
+
+          bidReqConfig.ortb2Fragments.global.site.ext.data = contextData;
         }
         callback();
       })
