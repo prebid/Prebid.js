@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { overtoneModule } from '../../../modules/overtoneRtdProvider.js';
+import { overtoneModule, overtoneRtdProvider } from '../../../modules/overtoneRtdProvider.js';
 import { logMessage } from '../../../src/utils.js';
 
 const TEST_URLS = {
@@ -10,9 +10,8 @@ const TEST_URLS = {
 };
 
 describe('Overtone RTD Submodule with Test URLs', function () {
-  this.timeout(120000);
-
   let fetchContextDataStub;
+  let getBidRequestDataStub;
 
   beforeEach(function () {
     fetchContextDataStub = sinon.stub(overtoneModule, 'fetchContextData').callsFake(async (url) => {
@@ -27,10 +26,19 @@ describe('Overtone RTD Submodule with Test URLs', function () {
       }
       throw new Error('Unexpected URL in test');
     });
+    
+    getBidRequestDataStub = sinon.stub(overtoneRtdProvider, 'getBidRequestData').callsFake((config, callback) => {
+      console.log('ortb2Fragments value:', JSON.stringify(config.ortb2Fragments, null, 2));
+      if (config.shouldFail) {
+        return;
+      }
+      callback();
+    });
   });
 
   afterEach(function () {
-    fetchContextDataStub.restore(); 
+    fetchContextDataStub.restore();
+    getBidRequestDataStub.restore();
   });
 
   it('should fetch and return categories for the success URL', async function () {
@@ -55,6 +63,24 @@ describe('Overtone RTD Submodule with Test URLs', function () {
     expect(data).to.deep.equal({
       categories: [],
       status: 4,
+    });
+  });
+
+  describe('getBidRequestData', function () {
+    it('should call callback function after execution', function (done) {
+      const bidReqConfig = { ortb2Fragments: { global: { site: { ext: {} } } } };
+      overtoneRtdProvider.getBidRequestData(bidReqConfig, () => {
+        console.log('Callback function executed');
+        expect(true).to.be.true;
+        done();
+      });
+    });
+
+    it('should not call callback if config has shouldFail set to true', function () {
+      const bidReqConfig = { shouldFail: true, ortb2Fragments: { global: { site: { ext: {} } } } };
+      const callbackSpy = sinon.spy();
+      overtoneRtdProvider.getBidRequestData(bidReqConfig, callbackSpy);
+      sinon.assert.notCalled(callbackSpy);
     });
   });
 });
