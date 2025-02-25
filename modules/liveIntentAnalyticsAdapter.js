@@ -16,7 +16,7 @@ let bidWonTimeout;
 
 function handleAuctionEnd(args) {
   setTimeout(() => {
-    const auction = auctionManager.index.getAuction(args.auctionId);
+    const auction = auctionManager.index.getAuction({auctionId: args.auctionId});
     const winningBids = (auction) ? auction.getWinningBids() : [];
     const data = createAnalyticsEvent(args, winningBids);
     sendAnalyticsEvent(data);

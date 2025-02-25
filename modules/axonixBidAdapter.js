@@ -21,7 +21,7 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  return floorInfo.floor || 0;
+  return floorInfo?.floor || 0;
 }
 
 function getPageUrl(bidRequest, bidderRequest) {

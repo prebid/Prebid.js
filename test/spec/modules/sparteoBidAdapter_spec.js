@@ -59,6 +59,7 @@ const VALID_REQUEST_BANNER = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -96,6 +97,7 @@ const VALID_REQUEST_VIDEO = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,
@@ -139,6 +141,7 @@ const VALID_REQUEST = {
   url: REQUEST_URL,
   data: {
     'imp': [{
+      'secure': 1,
       'id': '1a2b3c4d',
       'banner': {
         'format': [{
@@ -157,6 +160,7 @@ const VALID_REQUEST = {
         }
       }
     }, {
+      'secure': 1,
       'id': '5e6f7g8h',
       'video': {
         'w': 640,

@@ -160,16 +160,114 @@ describe('51DegreesRtdProvider', function() {
   });
 
   describe('get51DegreesJSURL', function() {
+    const hev = {
+      'brands': [
+        {
+          'brand': 'Chromium',
+          'version': '130'
+        },
+        {
+          'brand': 'Google Chrome',
+          'version': '130'
+        },
+        {
+          'brand': 'Not?A_Brand',
+          'version': '99'
+        }
+      ],
+      'fullVersionList': [
+        {
+          'brand': 'Chromium',
+          'version': '130.0.6723.92'
+        },
+        {
+          'brand': 'Google Chrome',
+          'version': '130.0.6723.92'
+        },
+        {
+          'brand': 'Not?A_Brand',
+          'version': '99.0.0.0'
+        }
+      ],
+      'mobile': false,
+      'model': '',
+      'platform': 'macOS',
+      'platformVersion': '14.6.1'
+    };
+    const mockWindow = {
+      ...window,
+      screen: {
+        height: 1117,
+        width: 1728,
+      },
+      devicePixelRatio: 2,
+    };
+
     it('returns the cloud URL if the resourceKey is provided', function() {
       const config = {resourceKey: 'TEST_RESOURCE_KEY'};
-      expect(get51DegreesJSURL(config)).to.equal(
-        'https://cloud.51degrees.com/api/v4/TEST_RESOURCE_KEY.js'
+      expect(get51DegreesJSURL(config, mockWindow)).to.equal(
+        'https://cloud.51degrees.com/api/v4/TEST_RESOURCE_KEY.js?' +
+        `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
+        `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
       );
     });
 
-    it('returns the on-premise URL if the onPremiseJSUrl is provided', function() {
+    it('returns the on-premise URL if the onPremiseJSUrl is provided', function () {
       const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js'};
-      expect(get51DegreesJSURL(config)).to.equal('https://example.com/51Degrees.core.js');
+      expect(get51DegreesJSURL(config, mockWindow)).to.equal(
+        `https://example.com/51Degrees.core.js?` +
+        `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
+        `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
+      );
+    });
+
+    it('doesn\'t override static query string parameters', function () {
+      const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js?test=1'};
+      expect(get51DegreesJSURL(config, mockWindow)).to.equal(
+        `https://example.com/51Degrees.core.js?test=1&` +
+        `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
+        `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
+      );
+    });
+
+    it('adds high entropy values to the query string, if available', async function () {
+      const config = {
+        onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
+        hev,
+      };
+      expect(get51DegreesJSURL(config, mockWindow)).to.equal(
+        `https://example.com/51Degrees.core.js?` +
+        `51D_GetHighEntropyValues=${btoa(JSON.stringify(hev))}&` +
+        `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
+        `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
+      );
+    });
+
+    it('doesn\'t add high entropy values to the query string if object is empty', function () {
+      const config = {
+        onPremiseJSUrl: 'https://example.com/51Degrees.core.js',
+        hev: {},
+      };
+      expect(get51DegreesJSURL(config, mockWindow)).to.equal(
+        `https://example.com/51Degrees.core.js?` +
+        `51D_ScreenPixelsHeight=${mockWindow.screen.height}&` +
+        `51D_ScreenPixelsWidth=${mockWindow.screen.width}&` +
+        `51D_PixelRatio=${mockWindow.devicePixelRatio}`
+      );
+    });
+
+    it('keeps the original URL if none of the additional parameters are available', function () {
+      // delete screen and devicePixelRatio properties to test the case when they are not available
+      delete mockWindow.screen;
+      delete mockWindow.devicePixelRatio;
+
+      const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js'};
+      expect(get51DegreesJSURL(config, mockWindow)).to.equal('https://example.com/51Degrees.core.js');
+      expect(get51DegreesJSURL(config, window)).to.not.equal('https://example.com/51Degrees.core.js');
     });
   });
 

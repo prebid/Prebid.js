@@ -80,7 +80,7 @@ const CONVERTER = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
-    imp.secure = Number(window.location.protocol === 'https:');
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
       imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
@@ -232,7 +232,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: getBidRequestUrlByRegion(),
     data: data,
-    options: {contentType: 'application/json;charset=UTF-8', withCredentials: false}
+    options: {
+      withCredentials: true,
+      contentType: 'application/json;charset=UTF-8',
+    }
   }
 }
 

@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {OUTSTREAM} from '../src/video.js';
-import {_map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize, isPlainObject} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
@@ -353,7 +353,7 @@ function _getFloor(bid, type) {
     mediaType: type,
     size: '*'
   });
-  if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+  if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
     return parseFloat(floorInfo.floor);
   }
   return null;

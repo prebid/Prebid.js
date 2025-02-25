@@ -1,5 +1,4 @@
 import {
-  deepAccess,
   deepClone, getDefinedParams,
   insertHtmlIntoIframe,
   isArray,
@@ -17,6 +16,7 @@ import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB,
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
+import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -90,20 +90,6 @@ const SUPPORTED_TYPES = {
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const NATIVE_ASSET_TYPES_INVERSE = inverse(NATIVE_ASSET_TYPES);
 
-const TRACKER_METHODS = {
-  img: 1,
-  js: 2,
-  1: 'img',
-  2: 'js'
-}
-
-const TRACKER_EVENTS = {
-  impression: 1,
-  'viewable-mrc50': 2,
-  'viewable-mrc100': 3,
-  'viewable-video50': 4,
-}
-
 export function isNativeResponse(bidResponse) {
   // check for native data and not mediaType; it's possible
   // to treat banner responses as native
@@ -129,7 +115,7 @@ export function processNativeAdUnitParams(params) {
 export function decorateAdUnitsWithNativeParams(adUnits) {
   adUnits.forEach(adUnit => {
     const nativeParams =
-      adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
+      adUnit.nativeParams || adUnit?.mediaTypes?.native;
     if (nativeParams) {
       adUnit.nativeParams = processNativeAdUnitParams(nativeParams);
     }
@@ -213,7 +199,7 @@ function typeIsSupported(type) {
  */
 export const nativeAdUnit = adUnit => {
   const mediaType = adUnit.mediaType === 'native';
-  const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
+  const mediaTypes = adUnit?.mediaTypes?.native;
   return mediaType || mediaTypes;
 }
 export const nativeBidder = bid => includes(nativeAdapters, bid.bidder);
@@ -236,7 +222,7 @@ export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
 }
 
 export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
-  if (!deepAccess(bidORTB, 'link.url')) {
+  if (!bidORTB?.link?.url) {
     logError(`native response doesn't have 'link' property. Ortb response: `, bidORTB);
     return false;
   }
@@ -290,15 +276,9 @@ export function fireNativeTrackers(message, bidResponse) {
 }
 
 export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel} = {}) {
-  const impTrackers = (nativeResponse.eventtrackers || [])
-    .filter(tracker => tracker.event === TRACKER_EVENTS.impression);
-
-  let {img, js} = impTrackers.reduce((tally, tracker) => {
-    if (TRACKER_METHODS.hasOwnProperty(tracker.method)) {
-      tally[TRACKER_METHODS[tracker.method]].push(tracker.url)
-    }
-    return tally;
-  }, {img: [], js: []});
+  let {[TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = []} = parseEventTrackers(
+    nativeResponse.eventtrackers || []
+  )[EVENT_TYPE_IMPRESSION] || {};
 
   if (nativeResponse.imptrackers) {
     img = img.concat(nativeResponse.imptrackers);
@@ -364,10 +344,7 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   let keyValues = {};
   const adUnit = index.getAdUnit(bid);
 
-  const globalSendTargetingKeys = adUnit?.nativeParams?.ortb == null && deepAccess(
-    adUnit,
-    `nativeParams.sendTargetingKeys`
-  ) !== false;
+  const globalSendTargetingKeys = adUnit?.nativeParams?.ortb == null && adUnit?.nativeParams?.sendTargetingKeys !== false;
 
   const nativeKeys = getNativeKeys(adUnit);
 
@@ -376,15 +353,15 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
 
   Object.keys(flatBidNativeKeys).forEach(asset => {
     const key = nativeKeys[asset];
-    let value = getAssetValue(bid.native[asset]) || getAssetValue(deepAccess(bid, `native.ext.${asset}`));
+    let value = getAssetValue(bid.native[asset]) || getAssetValue(bid?.native?.ext?.[asset]);
 
     if (asset === 'adTemplate' || !key || !value) {
       return;
     }
 
-    let sendPlaceholder = deepAccess(adUnit, `nativeParams.${asset}.sendId`);
+    let sendPlaceholder = adUnit?.nativeParams?.[asset]?.sendId;
     if (typeof sendPlaceholder !== 'boolean') {
-      sendPlaceholder = deepAccess(adUnit, `nativeParams.ext.${asset}.sendId`);
+      sendPlaceholder = adUnit?.nativeParams?.ext?.[asset]?.sendId;
     }
 
     if (sendPlaceholder) {
@@ -392,9 +369,9 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
       value = placeholder;
     }
 
-    let assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.${asset}.sendTargetingKeys`);
+    let assetSendTargetingKeys = adUnit?.nativeParams?.[asset]?.sendTargetingKeys;
     if (typeof assetSendTargetingKeys !== 'boolean') {
-      assetSendTargetingKeys = deepAccess(adUnit, `nativeParams.ext.${asset}.sendTargetingKeys`);
+      assetSendTargetingKeys = adUnit?.nativeParams?.ext?.[asset]?.sendTargetingKeys;
     }
 
     const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
@@ -440,13 +417,16 @@ function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}
     message: 'assetResponse',
     adId: data.adId,
   };
-  let renderData = getRenderingData(adObject).native;
+  let {native: renderData, rendererVersion} = getRenderingData(adObject);
   if (renderData) {
     // if we have native rendering data (set up by the nativeRendering module)
     // include it in full ("all assets") together with the renderer.
     // this is to allow PUC to use dynamic renderers without requiring changes in creative setup
-    msg.native = Object.assign({}, renderData);
-    msg.renderer = getCreativeRendererSource(adObject);
+    Object.assign(msg, {
+      native: Object.assign({}, renderData),
+      renderer: getCreativeRendererSource(adObject),
+      rendererVersion,
+    })
     if (keys != null) {
       renderData.assets = renderData.assets.filter(({key}) => keys.includes(key))
     }
@@ -482,7 +462,7 @@ function getAssetValue(value) {
 function getNativeKeys(adUnit) {
   const extraNativeKeys = {}
 
-  if (deepAccess(adUnit, 'nativeParams.ext')) {
+  if (adUnit?.nativeParams?.ext) {
     Object.keys(adUnit.nativeParams.ext).forEach(extKey => {
       extraNativeKeys[extKey] = `hb_native_${extKey}`;
     })
@@ -727,8 +707,8 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
       case 'impressionTrackers':
         (Array.isArray(value) ? value : [value]).forEach(url => {
           response.eventtrackers.push({
-            event: TRACKER_EVENTS.impression,
-            method: TRACKER_METHODS.img,
+            event: EVENT_TYPE_IMPRESSION,
+            method: TRACKER_METHOD_IMG,
             url
           });
         });
@@ -831,10 +811,10 @@ export function toLegacyResponse(ortbResponse, ortbRequest) {
     legacyResponse.impressionTrackers.push(...ortbResponse.imptrackers);
   }
   for (const eventTracker of ortbResponse?.eventtrackers || []) {
-    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.img) {
+    if (eventTracker.event === EVENT_TYPE_IMPRESSION && eventTracker.method === TRACKER_METHOD_IMG) {
       legacyResponse.impressionTrackers.push(eventTracker.url);
     }
-    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.js) {
+    if (eventTracker.event === EVENT_TYPE_IMPRESSION && eventTracker.method === TRACKER_METHOD_JS) {
       jsTrackers.push(eventTracker.url);
     }
   }

@@ -20,6 +20,22 @@ describe('AdGrid Bid Adapter', function () {
     }
   }];
 
+  const videoRequest = [{
+    bidId: 123456,
+    auctionId: 98765,
+    mediaTypes: {
+      video: {
+        playerSize: [
+          [640, 480]
+        ],
+        context: 'instream'
+      }
+    },
+    params: {
+      domainId: 12345
+    }
+  }];
+
   describe('isBidRequestValid', function () {
     it('Should return true when domainId exist inside params object', function () {
       const isBidValid = spec.isBidRequestValid(bannerRequest[0]);
@@ -34,6 +50,7 @@ describe('AdGrid Bid Adapter', function () {
 
   describe('buildRequests', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const requestVideo = spec.buildRequests(videoRequest, videoRequest[0]);
     const payload = request.data;
     const apiURL = request.url;
     const method = request.method;
@@ -50,8 +67,22 @@ describe('AdGrid Bid Adapter', function () {
       expect(apiURL).to.equal(globalConfig.endPoint);
     });
 
-    it('Test the API Method', function () {
+    it('should send the correct method', function () {
       expect(method).to.equal(globalConfig.method);
+    });
+
+    it('should send the correct requestId', function () {
+      expect(request.data.bids[0].requestId).to.equal(bannerRequest[0].bidId);
+      expect(requestVideo.data.bids[0].requestId).to.equal(videoRequest[0].bidId);
+    });
+
+    it('should send the correct sizes array', function () {
+      expect(request.data.bids[0].sizes).to.be.an('array');
+    });
+
+    it('should send the correct media type', function () {
+      expect(request.data.bids[0].mediaType).to.equal('banner')
+      expect(requestVideo.data.bids[0].mediaType).to.equal('video')
     });
   });
 

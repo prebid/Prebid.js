@@ -45,6 +45,16 @@ function loadScript(url, doc) {
   });
 }
 
+function getRenderFrames(node) {
+  return Array.from(node.querySelectorAll('iframe[srcdoc*="render"]'))
+}
+
+function getInnerHTML(node) {
+  const clone = node.cloneNode(true);
+  getRenderFrames(clone).forEach(node => node.parentNode.removeChild(node));
+  return clone.innerHTML;
+}
+
 export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) {
   const {rendererUrl, assets, ortb, adTemplate} = nativeData;
   const doc = win.document;
@@ -58,21 +68,32 @@ export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) 
       return win.renderAd(payload);
     });
   } else {
-    return Promise.resolve(replacer(adTemplate ?? doc.body.innerHTML));
+    return Promise.resolve(replacer(adTemplate ?? getInnerHTML(doc.body)));
   }
 }
 
 export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
   const {head, body} = win.document;
-  const resize = () => sendMessage(MESSAGE_NATIVE, {
-    action: ACTION_RESIZE,
-    height: body.offsetHeight,
-    width: body.offsetWidth
-  });
+  const resize = () => {
+    // force redraw - for some reason this is needed to get the right dimensions
+    body.style.display = 'none';
+    body.style.display = 'block';
+    sendMessage(MESSAGE_NATIVE, {
+      action: ACTION_RESIZE,
+      height: body.offsetHeight,
+      width: body.offsetWidth
+    });
+  }
+  function replaceMarkup(target, markup) {
+    // do not remove the rendering logic if it's embedded in this window; things will break otherwise
+    const renderFrames = getRenderFrames(target);
+    Array.from(target.childNodes).filter(node => !renderFrames.includes(node)).forEach(node => target.removeChild(node));
+    target.insertAdjacentHTML('afterbegin', markup);
+  }
   const replacer = getReplacer(adId, native);
-  head && (head.innerHTML = replacer(head.innerHTML));
+  replaceMarkup(head, replacer(getInnerHTML(head)));
   return getMarkup(adId, native, replacer, win).then(markup => {
-    body.innerHTML = markup;
+    replaceMarkup(body, markup);
     if (typeof win.postRenderAd === 'function') {
       win.postRenderAd({adId, ...native});
     }

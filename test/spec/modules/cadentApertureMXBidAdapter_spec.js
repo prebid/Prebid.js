@@ -48,49 +48,11 @@ describe('cadent_aperture_mx Adapter', function () {
         'auctionId': '1d1a01234a475'
       };
       let noBid = {};
-      let otherBid = {
-        'bidder': 'emxdigital',
-        'params': {
-          'tagid': '25251'
-        },
-        'mediaTypes': {
-          'banner': {
-            'sizes': [[300, 250]]
-          }
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [
-          [300, 250],
-          [300, 600]
-        ],
-        'bidId': '30b31c2501de1e',
-        'bidderRequestId': '22edbae3120bf6',
-        'auctionId': '1d1a01234a475'
-      };
-      let noMediaSizeBid = {
-        'bidder': 'emxdigital',
-        'params': {
-          'tagid': '25251'
-        },
-        'mediaTypes': {
-          'banner': {}
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [
-          [300, 250],
-          [300, 600]
-        ],
-        'bidId': '30b31c2501de1e',
-        'bidderRequestId': '22edbae3120bf6',
-        'auctionId': '1d1a01234a475'
-      };
 
       it('should return true when required params found', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
         expect(spec.isBidRequestValid(badBid)).to.equal(false);
         expect(spec.isBidRequestValid(noBid)).to.equal(false);
-        expect(spec.isBidRequestValid(otherBid)).to.equal(false);
-        expect(spec.isBidRequestValid(noMediaSizeBid)).to.equal(false);
       });
     });
 

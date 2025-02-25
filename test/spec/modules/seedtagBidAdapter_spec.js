@@ -49,15 +49,13 @@ function createInStreamSlotConfig(mediaType) {
   return getSlotConfigs(mediaType, {
     publisherId: PUBLISHER_ID,
     adUnitId: ADUNIT_ID,
-    placement: 'inStream',
   });
 }
 
-const createBannerSlotConfig = (placement, mediatypes) => {
+const createBannerSlotConfig = (mediatypes) => {
   return getSlotConfigs(mediatypes || { banner: {} }, {
     publisherId: PUBLISHER_ID,
     adUnitId: ADUNIT_ID,
-    placement,
   });
 };
 
@@ -72,49 +70,69 @@ describe('Seedtag Adapter', function () {
   describe('isBidRequestValid method', function () {
     describe('returns true', function () {
       describe('when banner slot config has all mandatory params', () => {
-        const placements = ['inBanner', 'inImage', 'inScreen', 'inArticle'];
-        placements.forEach((placement) => {
-          it(placement + 'should be valid', function () {
+        it('should be valid', function () {
+          const isBidRequestValid = spec.isBidRequestValid(
+            createBannerSlotConfig()
+          );
+          expect(isBidRequestValid).to.equal(true);
+        });
+
+        it('should be valid when has display and video mediatypes, and video context is outstream',
+          function () {
             const isBidRequestValid = spec.isBidRequestValid(
-              createBannerSlotConfig(placement)
+              createBannerSlotConfig({
+                banner: {},
+                video: {
+                  context: 'outstream',
+                  playerSize: [[600, 200]],
+                },
+              })
             );
             expect(isBidRequestValid).to.equal(true);
-          });
+          }
+        );
 
-          it(
-            placement +
-              ' should be valid when has display and video mediatypes, and video context is outstream',
-            function () {
-              const isBidRequestValid = spec.isBidRequestValid(
-                createBannerSlotConfig(placement, {
-                  banner: {},
-                  video: {
-                    context: 'outstream',
-                    playerSize: [[600, 200]],
-                  },
-                })
-              );
-              expect(isBidRequestValid).to.equal(true);
-            }
-          );
-
-          it(
-            placement +
-              " shouldn't be valid when has display and video mediatypes, and video context is instream",
-            function () {
-              const isBidRequestValid = spec.isBidRequestValid(
-                createBannerSlotConfig(placement, {
-                  banner: {},
-                  video: {
-                    context: 'instream',
-                    playerSize: [[600, 200]],
-                  },
-                })
-              );
-              expect(isBidRequestValid).to.equal(false);
-            }
-          );
-        });
+        it('should be valid when has only video mediatypes, and video context is outstream',
+          function () {
+            const isBidRequestValid = spec.isBidRequestValid(
+              createBannerSlotConfig({
+                video: {
+                  context: 'outstream',
+                  playerSize: [[600, 200]],
+                },
+              })
+            );
+            expect(isBidRequestValid).to.equal(true);
+          }
+        );
+        it('should be valid when has display and video mediatypes, and video context is instream',
+          function () {
+            const isBidRequestValid = spec.isBidRequestValid(
+              createBannerSlotConfig({
+                banner: {},
+                video: {
+                  context: 'instream',
+                  playerSize: [[600, 200]],
+                },
+              })
+            );
+            expect(isBidRequestValid).to.equal(false);
+          }
+        );
+        it("shouldn't be valid when has display and video mediatypes, and video context is instream",
+          function () {
+            const isBidRequestValid = spec.isBidRequestValid(
+              createBannerSlotConfig({
+                banner: {},
+                video: {
+                  context: 'instream',
+                  playerSize: [[600, 200]],
+                },
+              })
+            );
+            expect(isBidRequestValid).to.equal(false);
+          }
+        );
       });
       describe('when video slot has all mandatory params', function () {
         it('should return true, when video context is instream', function () {
@@ -127,40 +145,13 @@ describe('Seedtag Adapter', function () {
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
           expect(isBidRequestValid).to.equal(true);
         });
-        it('should return true, when video context is instream and mediatype is video and banner', function () {
+        it('should return false, when video context is instream and mediatype is video and banner', function () {
           const slotConfig = createInStreamSlotConfig({
             video: {
               context: 'instream',
               playerSize: [[600, 200]],
             },
             banner: {},
-          });
-          const isBidRequestValid = spec.isBidRequestValid(slotConfig);
-          expect(isBidRequestValid).to.equal(true);
-        });
-        it('should return false, when video context is instream, but placement is not inStream', function () {
-          const slotConfig = getSlotConfigs(
-            {
-              video: {
-                context: 'instream',
-                playerSize: [[600, 200]],
-              },
-            },
-            {
-              publisherId: PUBLISHER_ID,
-              adUnitId: ADUNIT_ID,
-              placement: 'inBanner',
-            }
-          );
-          const isBidRequestValid = spec.isBidRequestValid(slotConfig);
-          expect(isBidRequestValid).to.equal(false);
-        });
-        it('should return false, when video context is outstream', function () {
-          const slotConfig = createInStreamSlotConfig({
-            video: {
-              context: 'outstream',
-              playerSize: [[600, 200]],
-            },
           });
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
           expect(isBidRequestValid).to.equal(false);
@@ -176,7 +167,6 @@ describe('Seedtag Adapter', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotConfig({
               adUnitId: ADUNIT_ID,
-              placement: 'inBanner',
             })
           );
           expect(isBidRequestValid).to.equal(false);
@@ -185,26 +175,6 @@ describe('Seedtag Adapter', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotConfig({
               publisherId: PUBLISHER_ID,
-              placement: 'inBanner',
-            })
-          );
-          expect(isBidRequestValid).to.equal(false);
-        });
-        it('does not have the placement.', function () {
-          const isBidRequestValid = spec.isBidRequestValid(
-            createSlotConfig({
-              publisherId: PUBLISHER_ID,
-              adUnitId: ADUNIT_ID,
-            })
-          );
-          expect(isBidRequestValid).to.equal(false);
-        });
-        it('does not have a the correct placement.', function () {
-          const isBidRequestValid = spec.isBidRequestValid(
-            createSlotConfig({
-              publisherId: PUBLISHER_ID,
-              adUnitId: ADUNIT_ID,
-              placement: 'another_thing',
             })
           );
           expect(isBidRequestValid).to.equal(false);
@@ -224,17 +194,7 @@ describe('Seedtag Adapter', function () {
           );
           expect(isBidRequestValid).to.equal(false);
         });
-        it('is outstream ', function () {
-          const isBidRequestValid = spec.isBidRequestValid(
-            createInStreamSlotConfig({
-              video: {
-                context: 'outstream',
-                playerSize: [[600, 200]],
-              },
-            })
-          );
-          expect(isBidRequestValid).to.equal(false);
-        });
+
         describe('order does not matter', function () {
           it('when video is not the first slot', function () {
             const isBidRequestValid = spec.isBidRequestValid(
@@ -262,12 +222,10 @@ describe('Seedtag Adapter', function () {
     const mandatoryDisplayParams = {
       publisherId: PUBLISHER_ID,
       adUnitId: ADUNIT_ID,
-      placement: 'inBanner',
     };
     const mandatoryVideoParams = {
       publisherId: PUBLISHER_ID,
       adUnitId: ADUNIT_ID,
-      placement: 'inStream',
     };
     const validBidRequests = [
       getSlotConfigs({ banner: {} }, mandatoryDisplayParams),
