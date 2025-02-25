@@ -7,7 +7,8 @@ const ORTB_NATIVE_ASSET_TYPES = ['img', 'video', 'link', 'data', 'title'];
 export default {
   [BANNER]: (bid, bidResponse) => {
     if (!bidResponse.hasOwnProperty('ad') && !bidResponse.hasOwnProperty('adUrl')) {
-      bidResponse.ad = `<html><head><style>#ad {width: ${bidResponse.width}px;height: ${bidResponse.height}px;background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width}x${bidResponse.height}</div></div></body></html>`;
+      const [size, repeat] = bidResponse.width < bidResponse.height ? [bidResponse.width, 'repeat-y'] : [bidResponse.height, 'repeat-x'];
+      bidResponse.ad = `<html><body><div style="display: inline-block; height: ${bidResponse.height}px; width: ${bidResponse.width}px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: ${size}px; background-repeat: ${repeat}"></div></body></html>`;
     }
   },
   [VIDEO]: (bid, bidResponse) => {
