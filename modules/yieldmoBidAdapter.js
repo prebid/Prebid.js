@@ -258,8 +258,8 @@ function hasVideoMediaType(bidRequest) {
  */
 function addPlacement(request) {
   const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
-  const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
-  const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
+  const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
+  const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
