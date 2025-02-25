@@ -1,0 +1,113 @@
+<html>
+  <head>
+    <title>Individual Ad Unit Refresh Example</title>
+    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="http://localhost:9999/build/dev/prebid.js"></script>
+    <script>
+      var sizes = [[300, 250]];
+      var PREBID_TIMEOUT = 1000;
+
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      var adUnits = [
+        {
+          code: "/19968336/header-bid-tag-0",
+          mediaTypes: {
+            banner: {
+              sizes: sizes,
+            },
+          },
+          bids: [
+            {
+              bidder: "appnexus",
+              params: {
+                placementId: 13144370,
+              },
+              cpm: 2.5,
+              ad: '<html><body><img src="https://files.prebid.org/creatives/prebid300x250.png"></body></html>',
+            },
+          ],
+        },
+      ];
+
+      pbjs.que.push(function () {
+        pbjs.addAdUnits(adUnits);
+
+        // -----------------------------------------------
+        // pubxai RTD module
+
+        pbjs.setConfig({
+          debug: "true",
+          realTimeData: {
+            auctionDelay: 2500,
+            dataProviders: [
+              {
+                name: "pubxai",
+                waitForIt: true,
+                params: {
+                  pubxId: "74d8356b-35a7-514b-c648-e7e4ad72af63",
+                  endpoint: "http://localhost:3001/floors", // (optional)
+                  floorMin: 3, // (optional)
+                  enforcement: {
+                    bidAdjustment: true,
+                    enforceJS: false,
+                  }, // (optional)
+                  data: {
+                    currency: "USD",
+                    modelVersion: "default",
+                    schema: { fields: ["gptSlot", "mediaType", "size"] },
+                    values: { "*|banner|*": 0.02 },
+                  }, // (optional)
+                },
+              },
+            ],
+          },
+        });
+
+        // -----------------------------------------------
+      });
+    </script>
+
+    <script>
+      var slot1;
+      googletag.cmd.push(function () {
+        slot1 = googletag
+          .defineSlot("/19968336/header-bid-tag-0", [[300, 250]], "div-1")
+          .addService(googletag.pubads());
+        googletag.pubads().disableInitialLoad();
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+
+      function refreshBid() {
+        pbjs.que.push(function () {
+          pbjs.requestBids({
+            timeout: PREBID_TIMEOUT,
+            adUnitCodes: ["/19968336/header-bid-tag-0"],
+            bidsBackHandler: function () {
+              pbjs.setTargetingForGPTAsync(["/19968336/header-bid-tag-0"]);
+              googletag.pubads().refresh([slot1]);
+            },
+          });
+        });
+      }
+    </script>
+  </head>
+
+  <body>
+    <h1>Individual Ad Unit Refresh Example</h1>
+    <h5>Div-1</h5>
+    <p><button onclick="refreshBid()">Refresh Ad Unit</button></p>
+    <div id="div-1">
+      <script type="text/javascript">
+        googletag.cmd.push(function () {
+          googletag.display("div-1");
+        });
+      </script>
+    </div>
+  </body>
+</html>

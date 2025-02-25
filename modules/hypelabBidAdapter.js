@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { generateUUID } from '../src/utils.js';
+import { generateUUID, isFn, isPlainObject } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 export const BIDDER_CODE = 'hypelab';
@@ -12,7 +12,7 @@ export const REPORTING_ROUTE = '';
 
 const PREBID_VERSION = '$prebid.version$';
 const PROVIDER_NAME = 'prebid';
-const PROVIDER_VERSION = '0.0.1';
+const PROVIDER_VERSION = '0.0.2';
 
 const url = (route) => ENDPOINT_URL + route;
 
@@ -38,18 +38,24 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
 
+    const floor = getBidFloor(request, request.sizes || []);
+
+    const dpr = typeof window != 'undefined' ? window.devicePixelRatio : 1;
+
     const payload = {
       property_slug: request.params.property_slug,
       placement_slug: request.params.placement_slug,
       provider_version: PROVIDER_VERSION,
       provider_name: PROVIDER_NAME,
-      referrer:
+      location:
         bidderRequest.refererInfo?.page || typeof window != 'undefined'
           ? window.location.href
           : '',
       sdk_version: PREBID_VERSION,
       sizes: request.sizes,
       wids: [],
+      floor,
+      dpr,
       uuid,
       bidRequestsCount: request.bidRequestsCount,
       bidderRequestsCount: request.bidderRequestsCount,
@@ -79,6 +85,26 @@ function generateTemporaryUUID() {
   return 'tmp_' + generateUUID();
 }
 
+function getBidFloor(bid, sizes) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidFloor ? bid.params.bidFloor : null;
+  }
+
+  let floor;
+
+  let floorInfo = bid.getFloor({
+    currency: 'USD',
+    mediaType: 'banner',
+    size: sizes.length === 1 ? sizes[0] : '*'
+  });
+
+  if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+    floor = parseFloat(floorInfo.floor);
+  }
+
+  return floor;
+}
+
 function interpretResponse(serverResponse, bidRequest) {
   const { data } = serverResponse.body;
 
@@ -94,12 +120,12 @@ function interpretResponse(serverResponse, bidRequest) {
     creativeId: data.creative_set_slug,
     currency: data.currency,
     netRevenue: true,
-    referrer: bidRequest.data.referrer,
+    referrer: bidRequest.data.location,
     ttl: data.ttl,
     ad: data.html,
     mediaType: serverResponse.body.data.media_type,
     meta: {
-      advertiserDomains: data.advertiserDomains || [],
+      advertiserDomains: data.advertiser_domains || [],
     },
   };
 

@@ -1,8 +1,9 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS, STATUS } from 'src/constants.js';
 import {
+  FLOOR_SKIPPED_REASON,
   _floorDataForAuction,
   getFloorsDataForAuction,
   getFirstMatchingFloor,
@@ -737,7 +738,7 @@ describe('the price floors module', function () {
       handleSetFloorsConfig(floorConfig);
 
       const floorData = createFloorsDataForAuction(adUnits, 'id');
-      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.NOT_FOUND);
+      expect(floorData.skippedReason).to.equal(FLOOR_SKIPPED_REASON.NOT_FOUND);
     });
 
     it('should have skippedReason set to "random" if there is floor data and skipped is true', function() {
@@ -746,7 +747,7 @@ describe('the price floors module', function () {
       handleSetFloorsConfig(floorConfig);
 
       const floorData = createFloorsDataForAuction(adUnits, 'id');
-      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.RANDOM);
+      expect(floorData.skippedReason).to.equal(FLOOR_SKIPPED_REASON.RANDOM);
     });
   });
 
@@ -1750,7 +1751,7 @@ describe('the price floors module', function () {
         const req = utils.deepClone(bidRequest);
         _floorDataForAuction[req.auctionId] = utils.deepClone(basicFloorConfig);
 
-        expect(guardTids('mock-bidder').bidRequest(req).getFloor({})).to.deep.equal({
+        expect(guardTids({bidderCode: 'mock-bidder'}).bidRequest(req).getFloor({})).to.deep.equal({
           currency: 'USD',
           floor: 1.0
         });
@@ -1864,159 +1865,194 @@ describe('the price floors module', function () {
         });
       });
 
-      it('should use inverseFloorAdjustment function before bidder cpm adjustment', function () {
-        let functionUsed;
-        getGlobal().bidderSettings = {
-          rubicon: {
-            bidCpmAdjustment: function (bidCpm, bidResponse) {
-              functionUsed = 'Rubicon Adjustment';
-              bidCpm *= 0.5;
-              if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
-              return bidCpm;
+      describe('inverse adjustment', () => {
+        beforeEach(() => {
+          _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
+          _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
+        });
+
+        it('should use inverseFloorAdjustment function before bidder cpm adjustment', function () {
+          let functionUsed;
+          getGlobal().bidderSettings = {
+            rubicon: {
+              bidCpmAdjustment: function (bidCpm, bidResponse) {
+                functionUsed = 'Rubicon Adjustment';
+                bidCpm *= 0.5;
+                if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
+                return bidCpm;
+              },
+              inverseBidAdjustment: function (bidCpm, bidRequest) {
+                functionUsed = 'Rubicon Inverse';
+                // if video is the only mediaType on Bid Request => add 0.18
+                if (bidRequest.mediaTypes.video && Object.keys(bidRequest.mediaTypes).length === 1) bidCpm += 0.18;
+                return bidCpm / 0.5;
+              },
             },
-            inverseBidAdjustment: function (bidCpm, bidRequest) {
-              functionUsed = 'Rubicon Inverse';
-              // if video is the only mediaType on Bid Request => add 0.18
-              if (bidRequest.mediaTypes.video && Object.keys(bidRequest.mediaTypes).length === 1) bidCpm += 0.18;
-              return bidCpm / 0.5;
-            },
+            appnexus: {
+              bidCpmAdjustment: function (bidCpm, bidResponse) {
+                functionUsed = 'Appnexus Adjustment';
+                bidCpm *= 0.75;
+                if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
+                return bidCpm;
+              },
+              inverseBidAdjustment: function (bidCpm, bidRequest) {
+                functionUsed = 'Appnexus Inverse';
+                // if video is the only mediaType on Bid Request => add 0.18
+                if (bidRequest.mediaTypes.video && Object.keys(bidRequest.mediaTypes).length === 1) bidCpm += 0.18;
+                return bidCpm / 0.75;
+              },
+            }
+          };
+
+          // start with banner as only mediaType
+          bidRequest.mediaTypes = { banner: { sizes: [[300, 250]] } };
+          let appnexusBid = {
+            ...bidRequest,
+            bidder: 'appnexus',
+          };
+
+          // should be same as the adjusted calculated inverses above test (banner)
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 2.0
+          });
+
+          // should use rubicon inverse
+          expect(functionUsed).to.equal('Rubicon Inverse');
+
+          // appnexus just using banner should be same
+          expect(appnexusBid.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 1.3334
+          });
+
+          expect(functionUsed).to.equal('Appnexus Inverse');
+
+          // now since asking for 'video' only mediaType inverse function should include the .18
+          bidRequest.mediaTypes = { video: { context: 'instream' } };
+          expect(bidRequest.getFloor({ mediaType: 'video' })).to.deep.equal({
+            currency: 'USD',
+            floor: 2.36
+          });
+
+          expect(functionUsed).to.equal('Rubicon Inverse');
+
+          // now since asking for 'video' inverse function should include the .18
+          appnexusBid.mediaTypes = { video: { context: 'instream' } };
+          expect(appnexusBid.getFloor({ mediaType: 'video' })).to.deep.equal({
+            currency: 'USD',
+            floor: 1.5734
+          });
+
+          expect(functionUsed).to.equal('Appnexus Inverse');
+        });
+
+        it('should pass inverseFloorAdjustment the bidRequest object so it can be used', function () {
+          // Adjustment factors based on Bid Media Type
+          const mediaTypeFactors = {
+            banner: 0.5,
+            native: 0.7,
+            video: 0.9
+          }
+          getGlobal().bidderSettings = {
+            rubicon: {
+              bidCpmAdjustment: function (bidCpm, bidResponse) {
+                return bidCpm * mediaTypeFactors[bidResponse.mediaType];
+              },
+              inverseBidAdjustment: function (bidCpm, bidRequest) {
+                // For the inverse we add up each mediaType in the request and divide by number of Mt's to get the inverse number
+                let factor = Object.keys(bidRequest.mediaTypes).reduce((sum, mediaType) => sum += mediaTypeFactors[mediaType], 0);
+                factor = factor / Object.keys(bidRequest.mediaTypes).length;
+                return bidCpm / factor;
+              },
+            }
+          };
+
+          // banner only should be 2
+          bidRequest.mediaTypes = { banner: {} };
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 2.0
+          });
+
+          // native only should be 1.4286
+          bidRequest.mediaTypes = { native: {} };
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 1.4286
+          });
+
+          // video only should be 1.1112
+          bidRequest.mediaTypes = { video: {} };
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 1.1112
+          });
+
+          // video and banner should even out to 0.7 factor so 1.4286
+          bidRequest.mediaTypes = { video: {}, banner: {} };
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 1.4286
+          });
+
+          // video and native should even out to 0.8 factor so -- 1.25
+          bidRequest.mediaTypes = { video: {}, native: {} };
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 1.25
+          });
+
+          // banner and native should even out to 0.6 factor so -- 1.6667
+          bidRequest.mediaTypes = { banner: {}, native: {} };
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 1.6667
+          });
+
+          // all 3 banner video and native should even out to 0.7 factor so -- 1.4286
+          bidRequest.mediaTypes = { banner: {}, native: {}, video: {} };
+          expect(bidRequest.getFloor()).to.deep.equal({
+            currency: 'USD',
+            floor: 1.4286
+          });
+        });
+
+        Object.entries({
+          'both unspecified': {
+            getFloorParams: undefined,
+            inverseParams: {}
           },
-          appnexus: {
-            bidCpmAdjustment: function (bidCpm, bidResponse) {
-              functionUsed = 'Appnexus Adjustment';
-              bidCpm *= 0.75;
-              if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
-              return bidCpm;
-            },
-            inverseBidAdjustment: function (bidCpm, bidRequest) {
-              functionUsed = 'Appnexus Inverse';
-              // if video is the only mediaType on Bid Request => add 0.18
-              if (bidRequest.mediaTypes.video && Object.keys(bidRequest.mediaTypes).length === 1) bidCpm += 0.18;
-              return bidCpm / 0.75;
-            },
+          'only mediaType': {
+            getFloorParams: {mediaType: 'video'},
+            inverseParams: {mediaType: 'video'}
+          },
+          'only size': {
+            getFloorParams: {mediaType: '*', size: [1, 2]},
+            inverseParams: {size: [1, 2]}
+          },
+          'both': {
+            getFloorParams: {mediaType: 'banner', size: [1, 2]},
+            inverseParams: {mediaType: 'banner', size: [1, 2]}
           }
-        };
-
-        _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
-
-        _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
-
-        // start with banner as only mediaType
-        bidRequest.mediaTypes = { banner: { sizes: [[300, 250]] } };
-        let appnexusBid = {
-          ...bidRequest,
-          bidder: 'appnexus',
-        };
-
-        // should be same as the adjusted calculated inverses above test (banner)
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 2.0
-        });
-
-        // should use rubicon inverse
-        expect(functionUsed).to.equal('Rubicon Inverse');
-
-        // appnexus just using banner should be same
-        expect(appnexusBid.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 1.3334
-        });
-
-        expect(functionUsed).to.equal('Appnexus Inverse');
-
-        // now since asking for 'video' only mediaType inverse function should include the .18
-        bidRequest.mediaTypes = { video: { context: 'instream' } };
-        expect(bidRequest.getFloor({ mediaType: 'video' })).to.deep.equal({
-          currency: 'USD',
-          floor: 2.36
-        });
-
-        expect(functionUsed).to.equal('Rubicon Inverse');
-
-        // now since asking for 'video' inverse function should include the .18
-        appnexusBid.mediaTypes = { video: { context: 'instream' } };
-        expect(appnexusBid.getFloor({ mediaType: 'video' })).to.deep.equal({
-          currency: 'USD',
-          floor: 1.5734
-        });
-
-        expect(functionUsed).to.equal('Appnexus Inverse');
-      });
-
-      it('should pass inverseFloorAdjustment the bidRequest object so it can be used', function () {
-        // Adjustment factors based on Bid Media Type
-        const mediaTypeFactors = {
-          banner: 0.5,
-          native: 0.7,
-          video: 0.9
-        }
-        getGlobal().bidderSettings = {
-          rubicon: {
-            bidCpmAdjustment: function (bidCpm, bidResponse) {
-              return bidCpm * mediaTypeFactors[bidResponse.mediaType];
-            },
-            inverseBidAdjustment: function (bidCpm, bidRequest) {
-              // For the inverse we add up each mediaType in the request and divide by number of Mt's to get the inverse number
-              let factor = Object.keys(bidRequest.mediaTypes).reduce((sum, mediaType) => sum += mediaTypeFactors[mediaType], 0);
-              factor = factor / Object.keys(bidRequest.mediaTypes).length;
-              return bidCpm / factor;
-            },
-          }
-        };
-
-        _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
-
-        _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
-
-        // banner only should be 2
-        bidRequest.mediaTypes = { banner: {} };
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 2.0
-        });
-
-        // native only should be 1.4286
-        bidRequest.mediaTypes = { native: {} };
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 1.4286
-        });
-
-        // video only should be 1.1112
-        bidRequest.mediaTypes = { video: {} };
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 1.1112
-        });
-
-        // video and banner should even out to 0.7 factor so 1.4286
-        bidRequest.mediaTypes = { video: {}, banner: {} };
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 1.4286
-        });
-
-        // video and native should even out to 0.8 factor so -- 1.25
-        bidRequest.mediaTypes = { video: {}, native: {} };
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 1.25
-        });
-
-        // banner and native should even out to 0.6 factor so -- 1.6667
-        bidRequest.mediaTypes = { banner: {}, native: {} };
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 1.6667
-        });
-
-        // all 3 banner video and native should even out to 0.7 factor so -- 1.4286
-        bidRequest.mediaTypes = { banner: {}, native: {}, video: {} };
-        expect(bidRequest.getFloor()).to.deep.equal({
-          currency: 'USD',
-          floor: 1.4286
-        });
+        }).forEach(([t, {getFloorParams, inverseParams}]) => {
+          it(`should pass inverseFloorAdjustment mediatype and size (${t})`, () => {
+            getGlobal().bidderSettings = {
+              standard: {
+                inverseBidAdjustment: sinon.stub()
+              }
+            }
+            bidRequest.mediaTypes = {
+              video: {},
+              native: {},
+              banner: {
+                sizes: [[100, 200], [200, 300]]
+              }
+            }
+            bidRequest.getFloor(getFloorParams);
+            sinon.assert.calledWith(getGlobal().bidderSettings.standard.inverseBidAdjustment, 1, bidRequest, inverseParams);
+          });
+        })
       });
 
       it('should use standard cpmAdjustment if no bidder cpmAdjustment', function () {
@@ -2218,7 +2254,7 @@ describe('the price floors module', function () {
       let next = (adUnitCode, bid) => {
         returnedBidResponse = bid;
       };
-      addBidResponseHook(next, bidResp.adUnitCode, Object.assign(createBid(CONSTANTS.STATUS.GOOD, {auctionId: AUCTION_ID}), bidResp), reject);
+      addBidResponseHook(next, bidResp.adUnitCode, Object.assign(createBid(STATUS.GOOD, { auctionId: AUCTION_ID }), bidResp), reject);
     };
     it('continues with the auction if not floors data is present without any flooring', function () {
       runBidResponse();
@@ -2345,7 +2381,7 @@ describe('the price floors module', function () {
     it('should wait 3 seconds before deleting auction floor data', function () {
       handleSetFloorsConfig({enabled: true});
       _floorDataForAuction[AUCTION_END_EVENT.auctionId] = utils.deepClone(basicFloorConfig);
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT);
+      events.emit(EVENTS.AUCTION_END, AUCTION_END_EVENT);
       // should still be here
       expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.not.be.undefined;
       // tick for 4 seconds
@@ -2400,3 +2436,87 @@ describe('the price floors module', function () {
     })
   });
 });
+
+describe('setting null as rule value', () => {
+  const nullFloorData = {
+    modelVersion: 'basic model',
+    modelWeight: 10,
+    modelTimestamp: 1606772895,
+    currency: 'USD',
+    schema: {
+      delimiter: '|',
+      fields: ['mediaType', 'size']
+    },
+    values: {
+      'banner|600x300': null,
+    }
+  };
+
+  const basicBidRequest = {
+    bidder: 'rubicon',
+    adUnitCode: 'test_div_1',
+    auctionId: '1234-56-789',
+    transactionId: 'tr_test_div_1',
+    adUnitId: 'tr_test_div_1',
+  };
+
+  it('should validate for null values', function () {
+    let data = utils.deepClone(nullFloorData);
+    data.floorsSchemaVersion = 1;
+    expect(isFloorsDataValid(data)).to.to.equal(true);
+  });
+
+  it('getFloor should not return numeric value if null set as value', function () {
+    const bidRequest = { ...basicBidRequest, getFloor };
+    const basicFloorConfig = {
+      enabled: true,
+      auctionDelay: 0,
+      endpoint: {},
+      enforcement: {
+        enforceJS: true,
+        enforcePBS: false,
+        floorDeals: false,
+        bidAdjustment: true
+      },
+      data: nullFloorData
+    }
+    _floorDataForAuction[bidRequest.auctionId] = basicFloorConfig;
+
+    let inputParams = {mediaType: 'banner', size: [600, 300]};
+    expect(bidRequest.getFloor(inputParams)).to.deep.equal(null);
+  })
+
+  it('getFloor should not return numeric value if null set as value - external floor provider', function () {
+    const basicFloorConfig = {
+      enabled: true,
+      auctionDelay: 0,
+      endpoint: {},
+      enforcement: {
+        enforceJS: true,
+        enforcePBS: false,
+        floorDeals: false,
+        bidAdjustment: true
+      },
+      data: nullFloorData
+    }
+    server.respondWith(JSON.stringify(nullFloorData));
+    let exposedAdUnits;
+
+    handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', endpoint: {url: 'http://www.fakefloorprovider.json/'}});
+
+    const adUnits = [{
+      cod: 'test_div_1',
+      mediaTypes: {banner: { sizes: [[600, 300]] }, native: {}},
+      bids: [{bidder: 'someBidder', adUnitCode: 'test_div_1'}, {bidder: 'someOtherBidder', adUnitCode: 'test_div_1'}]
+    }];
+
+    requestBidsHook(config => exposedAdUnits = config.adUnits, {
+      auctionId: basicBidRequest.auctionId,
+      adUnits
+    });
+
+    let inputParams = {mediaType: 'banner', size: [600, 300]};
+
+    expect(exposedAdUnits[0].bids[0].getFloor(inputParams)).to.deep.equal(null);
+  });
+})

@@ -7,6 +7,12 @@ const REQUEST = {
   'bidder': 'alkimi',
   'sizes': [[300, 250]],
   'adUnitCode': 'bannerAdUnitCode',
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '/111/banner#300x250',
+      'tid': 'e64782a4-8e68-4c38-965b-80ccf115d46a'
+    }
+  },
   'mediaTypes': {
     'banner': {
       'sizes': [[300, 250]]
@@ -91,11 +97,11 @@ describe('alkimiBidAdapter', function () {
     })
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, REQUEST)
+      let bid = JSON.parse(JSON.stringify(REQUEST))
       delete bid.params.token
       expect(spec.isBidRequestValid(bid)).to.equal(false)
 
-      bid = Object.assign({}, REQUEST)
+      bid = JSON.parse(JSON.stringify(REQUEST))
       delete bid.params
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
@@ -115,38 +121,44 @@ describe('alkimiBidAdapter', function () {
       uspConsent: 'uspConsent',
       ortb2: {
         site: {
-          keywords: 'test1, test2'
+          keywords: 'test1, test2',
+          cat: ['IAB2'],
+          pagecat: ['IAB3'],
+          sectioncat: ['IAB4']
         },
         at: 2,
         bcat: ['BSW1', 'BSW2'],
         wseat: ['16', '165']
       }
     }
-    const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
     it('should return a properly formatted request with eids defined', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.data.eids).to.deep.equal(REQUEST.userIdAsEids)
     })
 
     it('should return a properly formatted request with gdpr defined', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.data.gdprConsent.consentRequired).to.equal(true)
       expect(bidderRequest.data.gdprConsent.consentString).to.equal('test-consent')
     })
 
     it('should return a properly formatted request with uspConsent defined', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.data.uspConsent).to.equal('uspConsent')
     })
 
     it('sends bid request to ENDPOINT via POST', function () {
+      const bidderRequest = spec.buildRequests(bidRequests, requestData)
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data.requestId).to.not.equal(undefined)
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
       expect(bidderRequest.data.schain).to.deep.contains({ ver: '1.0', complete: 1, nodes: [{ asi: 'alkimi-onboarding.com', sid: '00001', hp: 1 }] })
-      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', bidFloor: 0.1, sizes: [{ width: 300, height: 250 }], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode', instl: undefined, exp: undefined, banner: { sizes: [[300, 250]] }, video: undefined })
+      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', bidFloor: 0.1, sizes: [{ width: 300, height: 250 }], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode', instl: undefined, exp: undefined, banner: { sizes: [[300, 250]] }, video: undefined, ext: { gpid: '/111/banner#300x250', tid: 'e64782a4-8e68-4c38-965b-80ccf115d46a' } })
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)
-      expect(bidderRequest.data.ortb2).to.deep.contains({ at: 2, wseat: ['16', '165'], bcat: ['BSW1', 'BSW2'], site: { keywords: 'test1, test2' }, })
+      expect(bidderRequest.data.ortb2).to.deep.contains({ at: 2, wseat: ['16', '165'], bcat: ['BSW1', 'BSW2'], site: { keywords: 'test1, test2', cat: ['IAB2'], pagecat: ['IAB3'], sectioncat: ['IAB4'] } })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)

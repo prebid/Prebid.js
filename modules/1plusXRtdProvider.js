@@ -1,5 +1,7 @@
 import { submodule } from '../src/hook.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { ajax } from '../src/ajax.js';
+import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
 import {
   logMessage, logError,
   deepAccess, deepSetValue, mergeDeep,
@@ -13,6 +15,9 @@ const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 const OPE_FPID = 'ope_fpid'
+
+export const fpidStorage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
+
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
   AUDIENCE: 526,
@@ -53,7 +58,19 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
     throw new Error('No bidRequestConfig bidder found in moduleConfig bidders');
   }
 
-  return { customerId, timeout, bidders };
+  const fpidStorageType = deepAccess(moduleConfig, 'params.fpidStorageType',
+    STORAGE_TYPE_LOCALSTORAGE)
+
+  if (
+    fpidStorageType !== STORAGE_TYPE_COOKIES &&
+    fpidStorageType !== STORAGE_TYPE_LOCALSTORAGE
+  ) {
+    throw new Error(
+      `fpidStorageType must be ${STORAGE_TYPE_LOCALSTORAGE} or ${STORAGE_TYPE_COOKIES}`
+    )
+  }
+
+  return { customerId, timeout, bidders, fpidStorageType };
 }
 
 /**
@@ -81,16 +98,20 @@ export const extractConsent = ({ gdpr }) => {
 }
 
 /**
- * Extracts the OPE first party id field from local storage
+ * Extracts the OPE first party id field
+ * @param {string} fpidStorageType indicates where fpid should be read from
  * @returns fpid string if found, else null
  */
-export const extractFpid = () => {
+export const extractFpid = (fpidStorageType) => {
   try {
-    const fpid = window.localStorage.getItem(OPE_FPID);
-    if (fpid) {
-      return fpid;
+    switch (fpidStorageType) {
+      case STORAGE_TYPE_COOKIES: return fpidStorage.getCookie(OPE_FPID)
+      case STORAGE_TYPE_LOCALSTORAGE: return fpidStorage.getDataFromLocalStorage(OPE_FPID)
+      default: {
+        logError(`Got unknown fpidStorageType ${fpidStorageType}. Aborting...`)
+        return null
+      }
     }
-    return null;
   } catch (error) {
     return null;
   }
@@ -231,10 +252,10 @@ const init = (config, userConsent) => {
 const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Get the required config
-    const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
+    const { customerId, bidders, fpidStorageType } = extractConfig(moduleConfig, reqBidsConfigObj);
     const { ortb2Fragments: { bidder: biddersOrtb2 } } = reqBidsConfigObj;
     // Get PAPI URL
-    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid())
+    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid(fpidStorageType))
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {

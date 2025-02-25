@@ -278,7 +278,6 @@ function extractTrackingURL(htmlContent, ret) {
   const trackingUrlDiv = htmlContent.querySelectorAll('[bidder-tracking-url]')[0];
   if (trackingUrlDiv) {
     const trackingUrl = trackingUrlDiv.getAttribute('bidder-tracking-url');
-    // eslint-disable-next-line no-console
     logInfo(LOG_PREFIX + 'parseXML: trackingUrl: ', trackingUrl)
     ret.trackingUrl = trackingUrl;
   }
@@ -304,10 +303,8 @@ export function parseXML(xml, bid) {
       ret.userSyncs = extractSyncs(htmlContent);
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     logError(LOG_PREFIX + 'Error parsing XML', e);
   }
-  // eslint-disable-next-line no-console
   logInfo(LOG_PREFIX + 'parseXML RET:', ret);
 
   return ret;
@@ -341,7 +338,6 @@ export function isAllowedToBidUp(html, currentURL) {
       }
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     logError(LOG_PREFIX + 'isAllowedToBidUp', e);
   }
   return allowedToPush;
@@ -399,7 +395,6 @@ function onBidWon(bid) {
   }
 }
 function onTimeOut() {
-  // eslint-disable-next-line no-console
   logInfo(LOG_PREFIX + 'TIMEOUT');
 }
 

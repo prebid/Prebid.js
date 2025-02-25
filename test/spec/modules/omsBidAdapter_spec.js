@@ -107,9 +107,9 @@ describe('omsBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -128,6 +128,45 @@ describe('omsBidAdapter', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+    });
+
+    it('sets the proper video object when ad unit media type is video', function () {
+      const bidRequests = [
+        {
+          'bidder': 'oms',
+          'params': {
+            'publisherId': 1234567
+          },
+          'adUnitCode': 'adunit-code',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream',
+              'playerSize': [640, 480]
+            }
+          },
+          'bidId': '5fb26ac22bde4',
+          'bidderRequestId': '4bf93aeb730cb9',
+          'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
+          'schain': {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'exchange1.com',
+                'sid': '1234',
+                'hp': 1,
+                'rid': 'bid-request-1',
+                'name': 'publisher',
+                'domain': 'publisher.com'
+              }
+            ]
+          },
+        }
+      ]
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].video.context).to.equal('instream');
+      expect(payload.imp[0].video.playerSize).to.deep.equal([640, 480]);
     });
 
     it('accepts a single array as a size', function () {
@@ -247,6 +286,28 @@ describe('omsBidAdapter', function () {
       expect(data.user.ext.ids).is.deep.equal(userId);
     });
 
+    it('sends gpid parameters', function () {
+      bidRequests[0].ortb2Imp = {
+        'ext': {
+          'gpid': '/1111/home-left',
+          'data': {
+            'adserver': {
+              'name': 'gam',
+              'adslot': '/1111/home'
+            },
+            'pbadslot': '/1111/home-left'
+          }
+        }
+      }
+
+      const data = JSON.parse(spec.buildRequests(bidRequests).data);
+      expect(data.imp[0].ext).to.not.be.undefined;
+      expect(data.imp[0].ext.gpid).to.not.be.undefined;
+      expect(data.imp[0].ext.adserverName).to.not.be.undefined;
+      expect(data.imp[0].ext.adslot).to.not.be.undefined;
+      expect(data.imp[0].ext.pbadslot).to.not.be.undefined;
+    });
+
     context('when element is fully in view', function () {
       it('returns 100', function () {
         Object.assign(element, {width: 600, height: 400});
@@ -357,6 +418,45 @@ describe('omsBidAdapter', function () {
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
+    it('should get the correct bid response for video bids', function () {
+      let expectedResponse = [{
+        'requestId': '283a9f4cd2415d',
+        'cpm': 0.35743275,
+        'width': 300,
+        'height': 250,
+        'creativeId': '376874781',
+        'currency': 'USD',
+        'netRevenue': true,
+        'mediaType': 'video',
+        'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
+        'ttl': 300,
+        'meta': {
+          'advertiserDomains': ['example.com']
+        }
+      }];
+      const response = {
+        body: {
+          'id': '37386aade21a71',
+          'seatbid': [{
+            'bid': [{
+              'id': '376874781',
+              'impid': '283a9f4cd2415d',
+              'price': 0.35743275,
+              'nurl': '<!-- NURL -->',
+              'adm': '<!-- Creative -->',
+              'w': 300,
+              'h': 250,
+              'adomain': ['example.com'],
+              'mtype': 2
+            }]
+          }]
+        }
+      };
+
+      let result = spec.interpretResponse(response);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
     it('crid should default to the bid id if not on the response', function () {
       let expectedResponse = [{
         'requestId': '283a9f4cd2415d',
@@ -388,11 +488,67 @@ describe('omsBidAdapter', function () {
   });
 
   describe('getUserSyncs ', () => {
-    let syncOptions = {iframeEnabled: true, pixelEnabled: true};
+    const syncOptions = { iframeEnabled: true };
+    const userSyncUrlIframe = 'https://rt.marphezis.com/sync?dpid=0';
 
-    it('should not return', () => {
-      let returnStatement = spec.getUserSyncs(syncOptions, []);
-      expect(returnStatement).to.be.empty;
+    it('returns empty syncs arr when syncOptions.iframeEnabled is false', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.be.empty;
+    });
+
+    it('returns syncs arr when syncOptions.iframeEnabled is true', () => {
+      expect(spec.getUserSyncs(syncOptions, {}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe',
+        url: userSyncUrlIframe
+      }]);
+    });
+
+    it('should pass gdpr param when gdprConsent.gdprApplies type is boolean', () => {
+      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: true }, undefined)).to.deep.equal([{
+        type: 'iframe',
+        url: `${userSyncUrlIframe}&gdpr=1`
+      }]);
+      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: false }, undefined)).to.deep.equal([{
+        type: 'iframe',
+        url: `${userSyncUrlIframe}&gdpr=0`
+      }]);
+    });
+
+    it('should pass gdpr_consent param when gdprConsent.consentString type is string', () => {
+      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: false, consentString: 'test' }, undefined)).to.deep.equal([{
+        type: 'iframe',
+        url: `${userSyncUrlIframe}&gdpr=0&gdpr_consent=test`
+      }]);
+    });
+
+    it('should pass no params when gdprConsent.consentString and gdprConsent.gdprApplies types dont match', () => {
+      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: 'true', consentString: 1 }, undefined)).to.deep.equal([{
+        type: 'iframe',
+        url: `${userSyncUrlIframe}`
+      }]);
+    });
+
+    it('should pass us_privacy param when uspConsent is defined', function () {
+      expect(spec.getUserSyncs(syncOptions, {}, undefined, 'test')).to.deep.equal([{
+        type: 'iframe', url: `${userSyncUrlIframe}&us_privacy=test`
+      }]);
+    });
+
+    it('should pass gpp and gpp_sid params when gppConsent.gppString is defined', function () {
+      expect(spec.getUserSyncs(syncOptions, {}, {}, undefined, {
+        gppString: 'test',
+        applicableSections: [1, 2]
+      })).to.deep.equal([{
+        type: 'iframe', url: `${userSyncUrlIframe}&gpp=test&gpp_sid=1,2`
+      }]);
+    });
+
+    it('should pass all params correctly', function () {
+      expect(spec.getUserSyncs(syncOptions, {}, { gdprApplies: false, consentString: 'test' }, 'test', {
+        gppString: 'test',
+        applicableSections: []
+      })).to.deep.equal([{
+        type: 'iframe', url: `${userSyncUrlIframe}&gdpr=0&gdpr_consent=test&us_privacy=test&gpp=test&gpp_sid=`
+      }]);
     });
   });
 });

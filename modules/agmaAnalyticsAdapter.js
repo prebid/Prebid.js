@@ -3,13 +3,15 @@ import {
   generateUUID,
   logInfo,
   logError,
+  getWindowSelf,
+  getWindowTop,
   getPerformanceNow,
   isEmpty,
   isEmptyStr,
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
@@ -17,23 +19,19 @@ import { config } from '../src/config.js';
 const GVLID = 1122;
 const ModuleCode = 'agma';
 const analyticsType = 'endpoint';
-const scriptVersion = '1.7.1';
+const scriptVersion = '1.9.0';
 const batchDelayInMs = 1000;
 const agmaURL = 'https://pbc.agma-analytics.de/v1';
 const pageViewId = generateUUID();
 
-const {
-  EVENTS: { AUCTION_INIT },
-} = CONSTANTS;
-
 // Helper functions
 const getScreen = () => {
-  const w = window;
+  const win = getWindowTop();
   const d = document;
   const e = d.documentElement;
   const g = d.getElementsByTagName('body')[0];
-  const x = w.innerWidth || e.clientWidth || g.clientWidth;
-  const y = w.innerHeight || e.clientHeight || g.clientHeight;
+  const x = win.innerWidth || e.clientWidth || g.clientWidth;
+  const y = win.innerHeight || e.clientHeight || g.clientHeight;
   return { x, y };
 };
 
@@ -44,32 +42,13 @@ const getUserIDs = () => {
   return [];
 };
 
-export const getOrtb2Data = (options) => {
-  let site = null;
-  let user = null;
-
-  // check if data is provided via config
-  if (options.ortb2) {
-    if (options.ortb2.user) {
-      user = options.ortb2.user;
-    }
-    if (options.ortb2.site) {
-      site = options.ortb2.site;
-    }
-    if (site && user) {
-      return { site, user };
-    }
+export const getOrtb2Data = (options = {}) => {
+  const configData = config.getConfig();
+  const win = getWindowSelf();
+  return {
+    site: win.agma?.ortb2?.site ?? options.ortb2?.site ?? configData.ortb2?.site,
+    user: win.agma?.ortb2?.user ?? options.ortb2?.user ?? configData.ortb2?.user,
   }
-  try {
-    const configData = config.getConfig();
-    // try to fallback to global config
-    if (configData.ortb2) {
-      site = site || configData.ortb2.site;
-      user = user || configData.ortb2.user;
-    }
-  } catch (e) {}
-
-  return { site, user };
 };
 
 export const getTiming = () => {
@@ -127,6 +106,7 @@ export const getPayload = (auctionIds, options) => {
   };
 
   if (useExtendedPayload) {
+    const device = config.getConfig('device') || {};
     const { x, y } = getScreen();
     const userIdsAsEids = getUserIDs();
     payload = {
@@ -141,6 +121,8 @@ export const getPayload = (auctionIds, options) => {
       pageUrl: ri.page,
       screenWidth: x,
       screenHeight: y,
+      deviceWidth: device.w || screen.width,
+      deviceHeight: device.h || screen.height,
       userIdsAsEids,
     };
   }
@@ -209,7 +191,7 @@ agmaAnalytics.enableAnalytics = function (config = {}) {
   }
 
   agmaAnalytics.options = {
-    triggerEvent: AUCTION_INIT,
+    triggerEvent: EVENTS.AUCTION_INIT,
     ...options,
   };
 

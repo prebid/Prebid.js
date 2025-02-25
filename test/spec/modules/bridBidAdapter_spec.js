@@ -1,4 +1,5 @@
 import { spec } from '../../../modules/bridBidAdapter.js'
+import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
 
 describe('Brid Bid Adapter', function() {
   const videoRequest = [{
@@ -125,5 +126,24 @@ describe('Brid Bid Adapter', function() {
 
     expect(payload.regs.ext.gdpr).to.be.undefined;
     expect(payload.regs.ext.us_privacy).to.equal(uspConsentString);
+  });
+
+  it('Test userSync have only one object and it should have a property type=iframe', function () {
+    let userSync = spec.getUserSyncs({ iframeEnabled: true });
+    expect(userSync).to.be.an('array');
+    expect(userSync.length).to.be.equal(1);
+    expect(userSync[0]).to.have.property('type');
+    expect(userSync[0].type).to.be.equal('iframe');
+  });
+
+  it('Test userSync valid sync url for iframe', function () {
+    let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=brid&gdpr=0&gdpr_consent=anyString');
+    expect(userSync.type).to.be.equal('iframe');
+  });
+
+  it('Test userSyncs iframeEnabled=false', function () {
+    let userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    expect(userSyncs).to.have.lengthOf(0);
   });
 });

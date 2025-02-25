@@ -40,17 +40,17 @@
               {
                 name: "azerionedge",
                 waitForIt: true,
-                params: { bidders: ["appnexus"] },
+                params: { bidders: ["improvedigital"] },
               },
             ],
           },
         });
-        pbjs.setBidderConfig({ bidders: ["appnexus"], config: {} });
+        pbjs.setBidderConfig({ bidders: ["improvedigital"], config: {} });
         pbjs.addAdUnits([
           {
             code: TEST_DIV,
             mediaTypes: { banner: { sizes: TEST_SIZES } },
-            bids: [{ bidder: "appnexus", params: { placementId: 13144370 } }],
+            bids: [{ bidder: "improvedigital", params: { placementId: 13144370 } }],
           },
         ]);
         pbjs.requestBids({

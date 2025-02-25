@@ -9,7 +9,7 @@ import {
   logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
 } from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
 import {PBS, registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
@@ -230,7 +230,7 @@ export const resetMultibidUnits = () => multibidUnits = {};
  */
 function init() {
   // TODO: does this reset logic make sense - what about simultaneous auctions?
-  events.on(CONSTANTS.EVENTS.AUCTION_INIT, resetMultibidUnits);
+  events.on(EVENTS.AUCTION_INIT, resetMultibidUnits);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
   getHook('addBidResponse').before(addBidResponseHook, 3);
   setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, targetBidPoolHook);
