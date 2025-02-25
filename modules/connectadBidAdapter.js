@@ -243,7 +243,7 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  let floor = floorInfo.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
+  let floor = floorInfo?.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
 
   return floor;
 }

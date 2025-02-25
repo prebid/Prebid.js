@@ -400,22 +400,10 @@ describe('contxtful bid adapter', function () {
       expect(userSyncs2).to.have.lengthOf(0);
     });
 
-    describe('on timeout callback', () => {
-      it('will never call server if sampling is 0 with sendBeacon available', () => {
+    describe('onTimeout callback', () => {
+      it('will always call server with sendBeacon available', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 0.0}},
-        });
-
-        const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(true);
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
-        expect(spec.onTimeout({'customData': 'customvalue'})).to.not.throw;
-        expect(beaconStub.called).to.be.false;
-        expect(ajaxStub.called).to.be.false;
-      });
-
-      it('will always call server if sampling is 1 with sendBeacon available', () => {
-        config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 1.0}},
+          contxtful: {customer: CUSTOMER, version: VERSION},
         });
 
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(true);
@@ -425,9 +413,9 @@ describe('contxtful bid adapter', function () {
         expect(ajaxStub.called).to.be.false;
       });
 
-      it('will always call server if sampling is 1 with sendBeacon not available', () => {
+      it('will always call server with sendBeacon not available', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onTimeout': 1.0}},
+          contxtful: {customer: CUSTOMER, version: VERSION},
         });
 
         const ajaxStub = sandbox.stub(ajax, 'ajax');
@@ -440,9 +428,9 @@ describe('contxtful bid adapter', function () {
     });
 
     describe('on onBidderError callback', () => {
-      it('will always call server if sampling is 1', () => {
+      it('will always call server', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION, 'sampling': {'onBidderError': 1.0}},
+          contxtful: {customer: CUSTOMER, version: VERSION},
         });
 
         const ajaxStub = sandbox.stub(ajax, 'ajax');
@@ -468,9 +456,9 @@ describe('contxtful bid adapter', function () {
     });
 
     describe('on onBidBillable callback', () => {
-      it('will always call server', () => {
+      it('will always call server when sampling rate is configured to be 1.0', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION},
+          contxtful: {customer: CUSTOMER, version: VERSION, sampling: {onBidBillable: 1.0}},
         });
         const ajaxStub = sandbox.stub(ajax, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
@@ -481,9 +469,9 @@ describe('contxtful bid adapter', function () {
     });
 
     describe('on onAdRenderSucceeded callback', () => {
-      it('will always call server', () => {
+      it('will always call server when sampling rate is configured to be 1.0', () => {
         config.setConfig({
-          contxtful: {customer: CUSTOMER, version: VERSION},
+          contxtful: {customer: CUSTOMER, version: VERSION, sampling: {onAdRenderSucceeded: 1.0}},
         });
         const ajaxStub = sandbox.stub(ajax, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);

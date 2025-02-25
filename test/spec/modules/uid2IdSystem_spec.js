@@ -223,7 +223,7 @@ describe(`UID2 module`, function () {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       const consentConfig = setGdprApplies();
       let configObj = makePrebidConfig(legacyConfigParams);
-      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], consentConfig.consentData);
+      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], {gdpr: consentConfig.consentData});
       expect(result?.id).to.not.exist;
     });
 

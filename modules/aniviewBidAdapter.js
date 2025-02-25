@@ -4,11 +4,9 @@ import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
   deepAccess,
-  deepSetValue,
   mergeDeep,
   isFn,
   isStr,
-  isEmptyStr,
   isPlainObject,
   getUniqueIdentifierStr
 } from '../src/utils.js';
@@ -31,8 +29,7 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const { mediaType } = context;
     const imp = buildImp(bidRequest, context);
-    const isBanner = mediaType === BANNER;
-    const { width, height } = getSize(context, bidRequest);
+    const { width, height } = getSize(mediaType, bidRequest);
     const floor = getFloor(bidRequest, { width, height }, mediaType);
 
     imp.tagid = deepAccess(bidRequest, 'params.AV_CHANNELID');
@@ -42,9 +39,8 @@ const converter = ortbConverter({
       imp.bidfloorcur = DEFAULT_CURRENCY;
     }
 
-    if (isBanner) {
-      // TODO: remove once serving will be fixed
-      deepSetValue(imp, 'banner', { w: width, h: height });
+    if (isBannerType(mediaType)) {
+      mergeDeep(imp.banner, { w: width, h: height });
     }
 
     return imp;
@@ -67,41 +63,38 @@ const converter = ortbConverter({
 
   bidResponse(buildBidResponse, bid, context) {
     const { bidRequest, mediaType } = context;
-    const { width, height } = getSize(context, bidRequest);
-    const isVideoBid = mediaType === VIDEO;
-    const isBannerBid = mediaType === BANNER;
+    const { width, height } = getSize(mediaType, bidRequest);
 
-    if (isVideoBid) {
-      context.vastXml = bid.adm;
+    if (!bid.w || !bid.h) {
+      bid.w = width;
+      bid.h = height;
     }
 
-    const bidResponse = buildBidResponse(bid, context);
+    bid.crid ??= getUniqueIdentifierStr();
+    bid.adid ??= getUniqueIdentifierStr();
+    bid.bidid ??= getUniqueIdentifierStr();
 
-    if (isEmptyStr(bidRequest?.bidId) || !bid.adm || bidResponse.cpm <= 0) {
-      return bidResponse;
+    const prebidBid = buildBidResponse(bid, context);
+
+    if (!bid.adm || prebidBid.cpm <= 0) {
+      return prebidBid;
     }
 
-    mergeDeep(bidResponse, {
-      width,
-      height,
-      creativeId: bid.crid || 'creativeId',
-      meta: { advertiserDomains: [] },
-      adId: getUniqueIdentifierStr(),
-    });
+    mergeDeep(prebidBid, { meta: { advertiserDomains: bid.adomain || [] } });
 
-    if (isVideoBid) {
+    if (isVideoType(mediaType)) {
       if (bidRequest.mediaTypes.video.context === 'outstream') {
-        bidResponse.renderer = createRenderer(bidRequest);
+        prebidBid.renderer = createRenderer(bidRequest);
       }
-    } else if (isBannerBid) {
+    } else if (isBannerType(mediaType)) {
       if (bid.adm?.trim().startsWith('<VAST')) {
-        bidResponse.renderer = createRenderer(bidRequest);
+        prebidBid.renderer = createRenderer(bidRequest);
       } else {
-        bidResponse.ad = bid.adm;
+        prebidBid.ad = bid.adm;
       }
     }
 
-    return bidResponse;
+    return prebidBid;
   }
 });
 
@@ -126,7 +119,7 @@ export const spec = {
           method: 'POST',
           url: endpoint,
           bids: [bidRequest],
-          options: { withCredentials: false },
+          options: { withCredentials: true },
           data: converter.toORTB({
             bidderRequest,
             bidRequests: [bidRequest],
@@ -140,39 +133,37 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, bidderRequest) {
-    const { bids, data } = bidderRequest;
     const { body } = serverResponse;
-    const bidResponse = body?.seatbid?.[0]?.bid?.[0];
+    const bids = body?.seatbid?.flatMap(seatbid => seatbid?.bid || []) || [];
 
-    if (!bids || !data || !bidResponse) {
+    if (!bidderRequest.data || bids.length <= 0) {
       return [];
     }
 
-    const response = converter.fromORTB({ response: body, request: data });
-
-    return response.bids.map(bid => {
+    return converter.fromORTB({ response: body, request: bidderRequest.data }).bids.map((prebidBid, index) => {
+      const bid = bids[index];
       const replacements = {
-        auctionPrice: bid.cpm,
-        auctionId: bid.requestId,
-        auctionBidId: bidResponse.impid,
-        auctionImpId: bidResponse.impid,
-        auctionSeatId: bid.seatBidId,
-        auctionAdId: bid.adId,
+        auctionPrice: prebidBid.cpm,
+        auctionId: prebidBid.requestId,
+        auctionBidId: bid.bidid,
+        auctionImpId: bid.impid,
+        auctionSeatId: prebidBid.seatBidId,
+        auctionAdId: bid.adid,
       };
 
-      const bidAdmWithReplacedMacros = replaceMacros(bidResponse.adm, replacements);
+      const bidAdmWithReplacedMacros = replaceMacros(bid.adm, replacements);
 
-      if (bid.mediaType === VIDEO) {
-        bid.vastXml = bidAdmWithReplacedMacros;
+      if (isVideoType(prebidBid.mediaType)) {
+        prebidBid.vastXml = bidAdmWithReplacedMacros;
 
-        if (bidResponse?.nurl) {
-          bid.vastUrl = replaceMacros(bidResponse.nurl, replacements);
+        if (bid?.nurl) {
+          prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
         }
       } else {
-        bid.ad = bidAdmWithReplacedMacros;
+        prebidBid.ad = bidAdmWithReplacedMacros;
       }
 
-      return bid;
+      return prebidBid;
     });
   },
 
@@ -193,6 +184,14 @@ export const spec = {
   },
 };
 
+function isVideoType(mediaType) {
+  return mediaType === VIDEO;
+}
+
+function isBannerType(mediaType) {
+  return mediaType === BANNER;
+}
+
 function getValidSyncs(syncs, options) {
   return syncs
     .filter(sync => isSyncValid(sync, options))
@@ -210,14 +209,19 @@ function processSync(sync) {
   return { url: sync.url, type: sync.t === 1 ? 'image' : 'iframe' };
 }
 
-function getSize(context, bid) {
-  const isVideoBid = context.mediaType === VIDEO;
+function getSize(mediaType, bidRequest) {
+  const { mediaTypes, sizes } = bidRequest;
+  const videoSizes = mediaTypes?.video?.playerSize;
+  const bannerSizes = mediaTypes?.banner?.sizes;
+
   let size = [640, 480];
 
-  if (isVideoBid && bid.mediaTypes?.video?.playerSize?.length) {
-    size = bid.mediaTypes.video.playerSize[0];
-  } else if (bid.sizes?.length) {
-    size = bid.sizes[0];
+  if (isVideoType(mediaType) && videoSizes?.length > 0) {
+    size = videoSizes[0];
+  } else if (isBannerType(mediaType) && bannerSizes?.length > 0) {
+    size = bannerSizes[0];
+  } else if (sizes?.length > 0) {
+    size = sizes[0];
   }
 
   return {
@@ -227,13 +231,13 @@ function getSize(context, bid) {
 }
 
 // https://docs.prebid.org/dev-docs/modules/floors.html#example-getfloor-scenarios
-function getFloor(bid, size, mediaType) {
-  if (!isFn(bid?.getFloor)) {
+function getFloor(bidRequest, size, mediaType) {
+  if (!isFn(bidRequest?.getFloor)) {
     return null;
   }
 
   try {
-    const bidFloor = bid.getFloor({
+    const bidFloor = bidRequest.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType, // or '*' for all media types
       size: [size.width, size.height], // or '*' for all sizes

@@ -133,7 +133,7 @@ function getBidFloor(bid) {
       mediaType: '*',
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (_) {
     return 0;
   }

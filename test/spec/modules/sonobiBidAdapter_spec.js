@@ -4,9 +4,18 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
-
+import { parseQS } from '../../../src/utils'
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
+  const originalBuildRequests = spec.buildRequests;
+  spec.buildRequests = (...args) => {
+    const result = originalBuildRequests(...args);
+    if (result && result.data) {
+      result.data = parseQS(result.data); // Translate back into a js object so we can validate it
+    }
+
+    return result;
+  }
   describe('.code', function () {
     it('should return a bidder code of sonobi', function () {
       expect(spec.code).to.equal('sonobi')
@@ -408,21 +417,21 @@ describe('SonobiBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, { ...bidderRequests, ortb2 });
-      expect(bidRequests.data.fpd).to.equal(JSON.stringify(ortb2));
+      expect(bidRequests.data.fpd).to.equal(encodeURIComponent(JSON.stringify(ortb2)));
     });
 
     it('should populate coppa as 1 if set in config', function () {
       config.setConfig({ coppa: true });
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
 
-      expect(bidRequests.data.coppa).to.equal(1);
+      expect(bidRequests.data.coppa).to.equal(encodeURIComponent(1));
     });
 
     it('should populate coppa as 0 if set in config', function () {
       config.setConfig({ coppa: false });
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
 
-      expect(bidRequests.data.coppa).to.equal(0);
+      expect(bidRequests.data.coppa).to.equal(encodeURIComponent(0));
     });
 
     it('should have storageAllowed set to true', function () {
@@ -433,13 +442,13 @@ describe('SonobiBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       const bidRequestsPageViewID = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.key_maker).to.deep.equal(JSON.stringify(keyMakerData))
+      expect(bidRequests.method).to.equal('POST')
+      expect(decodeURIComponent(bidRequests.data.key_maker)).to.deep.equal(JSON.stringify((keyMakerData)))
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.pv).to.equal(bidRequestsPageViewID.data.pv)
-      expect(JSON.parse(bidRequests.data.iqid).pcid).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
-      expect(JSON.parse(bidRequests.data.iqid).pcidDate).to.match(/^[0-9]{13}$/)
+      expect(JSON.parse(decodeURIComponent(bidRequests.data.iqid)).pcid).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+      expect(JSON.parse(decodeURIComponent(bidRequests.data.iqid)).pcidDate).to.match(/^[0-9]{13}$/)
       expect(bidRequests.data.hfa).to.not.exist
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
       expect(bidRequests.data.ref).to.equal('overrides_top_window_location');
@@ -449,24 +458,24 @@ describe('SonobiBidAdapter', function () {
     it('should return a properly formatted request with GDPR applies set to true', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr).to.equal('true')
-      expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
+      expect(bidRequests.data.consent_string).to.equal(encodeURIComponent('BOJ/P2HOJ/P2HABABMAAAAAZ+A=='))
     })
 
     it('should return a properly formatted request with referer', function () {
       bidRequest[0].params.referrer = ''
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.data.ref).to.equal('https://example.com')
+      expect(bidRequests.data.ref).to.equal(encodeURIComponent('https://example.com'))
     })
 
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr).to.equal('false')
-      expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
+      expect(bidRequests.data.consent_string).to.equal(encodeURIComponent('BOJ/P2HOJ/P2HABABMAAAAAZ+A=='))
     })
     it('should return a properly formatted request with GDPR applies set to false with no consent_string param', function () {
       let bidderRequests = {
@@ -484,7 +493,7 @@ describe('SonobiBidAdapter', function () {
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr).to.equal('false')
       expect(bidRequests.data).to.not.include.keys('consent_string')
     })
@@ -504,7 +513,7 @@ describe('SonobiBidAdapter', function () {
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr).to.equal('true')
       expect(bidRequests.data).to.not.include.keys('consent_string')
     })
@@ -513,7 +522,7 @@ describe('SonobiBidAdapter', function () {
       bidRequest[1].params.hfa = 'hfakey'
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
@@ -533,18 +542,18 @@ describe('SonobiBidAdapter', function () {
     it('should set ius as 0 if Sonobi cannot drop iframe pixels', function () {
       userSync.canBidderRegisterSync.returns(false);
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.ius).to.equal(0);
+      expect(bidRequests.data.ius).to.equal(encodeURIComponent(0));
     });
 
     it('should set ius as 1 if Sonobi can drop iframe pixels', function () {
       userSync.canBidderRegisterSync.returns(true);
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.ius).to.equal(1);
+      expect(bidRequests.data.ius).to.equal(encodeURIComponent(1));
     });
 
     it('should return a properly formatted request with schain defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(JSON.parse(bidRequests.data.schain)).to.deep.equal(bidRequest[0].schain)
+      expect(JSON.parse(decodeURIComponent(bidRequests.data.schain))).to.deep.equal(bidRequest[0].schain)
     });
 
     it('should return a properly formatted request with eids as a JSON-encoded set of eids', function () {
@@ -572,10 +581,10 @@ describe('SonobiBidAdapter', function () {
       ];
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
-      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
-      expect(JSON.parse(bidRequests.data.eids)).to.eql([
+      expect(JSON.parse(decodeURIComponent(bidRequests.data.eids))).to.eql([
         {
           'source': 'pubcid.org',
           'uids': [
@@ -593,7 +602,7 @@ describe('SonobiBidAdapter', function () {
       bidRequest[1].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
-      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.userid).to.be.undefined;
@@ -601,7 +610,7 @@ describe('SonobiBidAdapter', function () {
 
     it('should return a properly formatted request with keywrods included as a csv of strings', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.kw).to.equal('sports,news,some_other_keyword');
+      expect(bidRequests.data.kw).to.equal(encodeURIComponent('sports,news,some_other_keyword'));
     });
 
     it('should return a properly formatted request with us_privacy included', function () {
@@ -626,7 +635,7 @@ describe('SonobiBidAdapter', function () {
 
   describe('.interpretResponse', function () {
     const bidRequests = {
-      'method': 'GET',
+      'method': 'POST',
       'url': 'https://apex.go.sonobi.com/trinity.json',
       'withCredentials': true,
       'data': {

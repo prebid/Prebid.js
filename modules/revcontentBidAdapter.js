@@ -207,7 +207,7 @@ function buildImp(bid, id) {
       currency: 'USD',
       mediaType: '*',
       size: '*'
-    }).floor;
+    })?.floor;
   } else {
     bidfloor = deepAccess(bid, `params.bidfloor`) || 0.1;
   }

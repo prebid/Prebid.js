@@ -16,6 +16,13 @@ import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import adapterManager from '../../../src/adapterManager.js';
+import {filters} from 'src/targeting.js';
+import {
+  EVENT_TYPE_IMPRESSION,
+  EVENT_TYPE_WIN,
+  TRACKER_METHOD_IMG,
+  TRACKER_METHOD_JS
+} from '../../../src/eventTrackers.js';
 
 describe('adRendering', () => {
   let sandbox;
@@ -178,6 +185,31 @@ describe('adRendering', () => {
       })
     });
 
+    describe('markWinningBid', () => {
+      let bid;
+      beforeEach(() => {
+        bid = {adId: '123'};
+        sandbox.stub(utils, 'triggerPixel');
+      });
+      it('should fire BID_WON', () => {
+        markWinningBid(bid);
+        sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bid);
+      })
+      it('should fire win tracking pixels', () => {
+        bid.eventtrackers = [{event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker'}];
+        markWinningBid(bid);
+        sinon.assert.calledWith(utils.triggerPixel, 'tracker');
+      });
+      it('should NOT fire non-win or non-pixel trackers', () => {
+        bid.eventtrackers = [
+          {event: EVENT_TYPE_WIN, method: TRACKER_METHOD_JS, url: 'ignored'},
+          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'ignored'}
+        ];
+        markWinningBid(bid);
+        sinon.assert.notCalled(utils.triggerPixel);
+      });
+    })
+
     describe('deferRendering', () => {
       let fn, markWin;
       function markWinHook(next, bidResponse) {
@@ -305,6 +337,26 @@ describe('adRendering', () => {
         });
         it('should skip rendering if suppressStaleRender', () => {
           config.setConfig({auctionOptions: {suppressStaleRender: true}});
+          handleRender({adId, bidResponse});
+          sinon.assert.notCalled(doRenderStub);
+        })
+      });
+
+      describe('when bid has already expired', () => {
+        let isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
+        beforeEach(() => {
+          isBidNotExpiredStub.returns(false);
+        });
+        afterEach(() => {
+          isBidNotExpiredStub.restore();
+        })
+        it('should emit EXPIRED_RENDER', () => {
+          handleRender({adId, bidResponse});
+          sinon.assert.calledWith(events.emit, EVENTS.EXPIRED_RENDER, bidResponse);
+          sinon.assert.called(doRenderStub);
+        });
+        it('should skip rendering if suppressExpiredRender', () => {
+          config.setConfig({auctionOptions: {suppressExpiredRender: true}});
           handleRender({adId, bidResponse});
           sinon.assert.notCalled(doRenderStub);
         })

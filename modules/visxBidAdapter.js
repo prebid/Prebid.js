@@ -6,6 +6,7 @@ import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
@@ -57,9 +58,8 @@ export const spec = {
     const bids = validBidRequests || [];
     const currency =
       config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
-      config.getConfig('currency.adServerCurrency') ||
+      getCurrencyFromBidderRequest(bidderRequest) ||
       DEFAULT_CUR;
-
     let request;
     let reqId;
     let payloadSchain;
