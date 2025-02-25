@@ -11,6 +11,7 @@ export function getCmpData() {
   const consentData = allConsent.getConsentData();
 
   return {
+    gdprApplies: consentData?.gdpr?.gdprApplies || false,
     gdprString: typeof consentData?.gdpr?.consentString === 'string' ? consentData.gdpr.consentString : null,
     uspString: typeof consentData?.usp === 'string' ? consentData.usp : null,
     gppString: typeof consentData?.gpp?.gppString === 'string' ? consentData.gpp.gppString : null,

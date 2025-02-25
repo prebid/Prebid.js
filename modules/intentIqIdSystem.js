@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {logError, logInfo, isPlainObject} from '../src/utils.js';
+import {logError, isPlainObject} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
@@ -15,7 +15,7 @@ import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
 import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
-import {readData, defineStorageType} from '../libraries/intentIqUtils/storageUtils.js';
+import {readData, storeData, defineStorageType} from '../libraries/intentIqUtils/storageUtils.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -32,8 +32,6 @@ import {
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
-
-const PCID_EXPIRY = 365;
 
 const MODULE_NAME = 'intentIqId';
 
@@ -86,32 +84,6 @@ export function encryptData(plainText) {
 export function decryptData(encryptedText) {
   const bytes = AES.decrypt(encryptedText, MODULE_NAME);
   return bytes.toString(Utf8);
-}
-
-/**
- * Store Intent IQ data in cookie, local storage or both of them
- * expiration date: 365 days
- * @param key
- * @param {string} value IntentIQ ID value to sintentIqIdSystem_spec.jstore
- */
-export function storeData(key, value, allowedStorage) {
-  try {
-    if (firstPartyData?.isOptedOut && key !== FIRST_PARTY_KEY) {
-      return;
-    }
-    logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
-    if (value) {
-      if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-        storage.setDataInLocalStorage(key, value);
-      }
-      if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-        const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
-        storage.setCookie(key, value, expiresStr, 'LAX');
-      }
-    }
-  } catch (error) {
-    logError(error);
-  }
 }
 
 /**
@@ -281,10 +253,10 @@ export const intentIqIdSubmodule = {
         gdprString: EMPTY,
         date: Date.now()
       };
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, storage, firstPartyData);
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, storage, firstPartyData);
     }
 
     if (gdprDetected && !('isOptedOut' in firstPartyData)) {
@@ -310,7 +282,7 @@ export const intentIqIdSubmodule = {
         ])
         .then(ch => {
           clientHints = handleClientHints(ch);
-          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage)
+          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, storage, firstPartyData)
         });
     }
 
@@ -320,7 +292,7 @@ export const intentIqIdSubmodule = {
 
       if (partnerData.wsrvcll) {
         partnerData.wsrvcll = false;
-        storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+        storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, storage, firstPartyData);
       }
     }
 
@@ -337,8 +309,8 @@ export const intentIqIdSubmodule = {
       firstPartyData.gdprString = cmpData.gdprString;
       firstPartyData.date = Date.now();
       shouldCallServer = true;
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, storage, firstPartyData);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, storage, firstPartyData);
     } else if (firstPartyData.isOptedOut) {
       partnerData.data = runtimeEids = { eids: [] };
       firePartnerCallback()
@@ -365,7 +337,7 @@ export const intentIqIdSubmodule = {
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
     url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
     url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
-    url += cmpData.gdprString
+    url += cmpData.gdprApplies
       ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
       : '&gdpr=0';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
@@ -377,8 +349,8 @@ export const intentIqIdSubmodule = {
 
     const storeFirstPartyData = () => {
       partnerData.eidl = runtimeEids?.eids?.length || -1
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, storage, firstPartyData);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, storage, firstPartyData);
     }
 
     const resp = function (callback) {
@@ -404,7 +376,7 @@ export const intentIqIdSubmodule = {
               partnerData.terminationCause = respJson.tc;
               if (respJson.tc == 41) {
                 firstPartyData.group = WITHOUT_IIQ;
-                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, storage, firstPartyData);
                 defineEmptyDataAndFireCallback();
                 if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
                 return
@@ -427,7 +399,7 @@ export const intentIqIdSubmodule = {
 
                 keysToRemove.forEach(key => removeDataByKey(key, allowedStorage));
 
-                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, storage, firstPartyData);
                 firePartnerCallback();
                 callback(runtimeEids);
                 return
@@ -489,7 +461,7 @@ export const intentIqIdSubmodule = {
       rrttStrtTime = Date.now();
 
       partnerData.wsrvcll = true;
-      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, storage, firstPartyData);
       ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
     const respObj = {callback: resp};

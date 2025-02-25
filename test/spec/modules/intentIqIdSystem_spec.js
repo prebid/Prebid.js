@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { intentIqIdSubmodule, storage, decryptData, handleClientHints, readData, firstPartyData as moduleFPD } from '../../../modules/intentIqIdSystem';
+import { intentIqIdSubmodule, storage, decryptData, handleClientHints, firstPartyData as moduleFPD } from '../../../modules/intentIqIdSystem';
+import {readData} from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
@@ -461,7 +462,7 @@ describe('IntentIQ tests', function () {
       // Initialize data here so it can be reused in all tests
       uspData = '1NYN';
       gppData = { gppString: '{"key1":"value1","key2":"value2"}' };
-      gdprData = { consentString: 'gdprConsent' };
+      gdprData = { gdprApplies: true, consentString: 'gdprConsent' };
     });
 
     afterEach(function () {
