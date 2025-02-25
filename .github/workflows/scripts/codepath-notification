@@ -1,0 +1,16 @@
+# when a changed file paths matches the regex, send an alert email
+# structure of the file is:
+#
+# javascriptRegex : email address
+#
+# For example, in the Prebid.js repo, the file pattern is generally
+#
+# /modules/BIDDERCODE
+#
+# The aim is to find a minimal set of regex patterns that matches any file in these paths
+
+/modules/rubicon|/modules/magnite : header-bidding@magnite.com
+/modules/ix : pdu-supply-prebid@indexexchange.com
+/modules/appnexus : prebid@microsoft.com
+/modules/pubmatic : header-bidding@pubmatic.com
+/modules/openx : prebid@openx.com
