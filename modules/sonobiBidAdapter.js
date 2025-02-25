@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject, parseQueryStringParameters } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -170,10 +170,13 @@ export const spec = {
     }
 
     return {
-      method: 'GET',
+      method: 'POST',
       url: url,
+      options: {
+        contentType: 'application/x-www-form-urlencoded'
+      },
       withCredentials: true,
-      data: payload,
+      data: parseQueryStringParameters(payload),
       bidderRequests: validBidRequests
     };
   },
@@ -414,8 +417,6 @@ export function _getPlatform(context = window) {
  * @return {object} firstPartyData - Data object containing first party information
  */
 function loadOrCreateFirstPartyData() {
-  var localStorageEnabled;
-
   var FIRST_PARTY_KEY = '_iiq_fdata';
   var tryParse = function (data) {
     try {
@@ -426,19 +427,14 @@ function loadOrCreateFirstPartyData() {
   };
   var readData = function (key) {
     if (hasLocalStorage()) {
+      // TODO FIX RULES VIOLATION
+      // eslint-disable-next-line prebid/no-global
       return window.localStorage.getItem(key);
     }
     return null;
   };
+  // TODO FIX RULES VIOLATION - USE STORAGE MANAGER
   var hasLocalStorage = function () {
-    if (typeof localStorageEnabled != 'undefined') { return localStorageEnabled; } else {
-      try {
-        localStorageEnabled = !!window.localStorage;
-        return localStorageEnabled;
-      } catch (e) {
-        localStorageEnabled = false;
-      }
-    }
     return false;
   };
   var generateGUID = function () {
@@ -452,6 +448,8 @@ function loadOrCreateFirstPartyData() {
   var storeData = function (key, value) {
     try {
       if (hasLocalStorage()) {
+        // TODO FIX RULES VIOLATION
+        // eslint-disable-next-line prebid/no-global
         window.localStorage.setItem(key, value);
       }
     } catch (error) {

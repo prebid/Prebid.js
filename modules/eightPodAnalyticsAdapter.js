@@ -1,4 +1,4 @@
-import {logError, logInfo} from '../src/utils.js';
+import {logError, logInfo, logMessage} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
@@ -14,7 +14,6 @@ const MODULE = `${MODULE_NAME}AnalyticProvider`;
  * Custom tracking server that gets internal events from EightPod's ad unit
  */
 const trackerUrl = 'https://demo.8pod.com/tracker/track';
-
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
 
 const {
@@ -22,12 +21,12 @@ const {
 } = EVENTS;
 
 export let queue = [];
-export let context;
+let context = {};
 
 /**
  * Create eightPod Analytic adapter
  */
-let eightPodAnalytics = Object.assign(adapter({ analyticsType }), {
+let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}), {
   /**
    * Execute on bid won - setup basic settings, save context about EightPod's bid. We will send it with our events later
    */
@@ -35,43 +34,49 @@ let eightPodAnalytics = Object.assign(adapter({ analyticsType }), {
     switch (eventType) {
       case BID_WON:
         if (args.bidder === 'eightPod') {
+          context[args.adUnitCode] = makeContext(args);
+
           eightPodAnalytics.setupPage(args);
-          context = makeContext(args);
           break;
         }
     }
   },
 
   /**
-   * Execute on bid won - subscribe on events from adUnit
+   * Execute on bid won upload events from local storage
    */
   setupPage() {
-    eightPodAnalytics.eventSubscribe();
-    queue = getEventFromLocalStorage();
+    queue = this.getEventFromLocalStorage();
   },
+
   /**
    * Subscribe on internal ad unit tracking events
    */
   eventSubscribe() {
     window.addEventListener('message', async (event) => {
-      const data = event?.data;
+      const data = event.data;
 
-      if (!data?.detail?.name) {
-        return;
-      }
+      const frameElement = event.source?.frameElement;
+      const parentElement = frameElement?.parentElement;
+      const adUnitCode = parentElement?.id;
 
-      trackEvent(data);
+      trackEvent(data, adUnitCode);
     });
 
-    // Send queue of event every 10 seconds
-    setInterval(sendEvents, 10_000);
+    if (!this._interval) {
+      this._interval = setInterval(sendEvents, 10_000);
+    }
   },
   resetQueue() {
     queue = [];
   },
   getContext() {
     return context;
-  }
+  },
+  resetContext() {
+    context = {};
+  },
+  getEventFromLocalStorage,
 });
 
 /**
@@ -81,8 +86,8 @@ function makeContext(args) {
   const params = args?.params?.[0];
   return {
     bidId: args.seatBidId,
-    variantId: args.creativeId || 'variantId',
-    campaignId: 'campaignId',
+    variantId: args.creativeId || '',
+    campaignId: args.cid || '',
     publisherId: params.publisherId,
     placementId: params.placementId,
   };
@@ -91,12 +96,13 @@ function makeContext(args) {
 /**
  * Create event, add context and push it to queue
  */
-export function trackEvent(event) {
+export function trackEvent(event, adUnitCode) {
   if (!event.detail) {
     return;
   }
+
   const fullEvent = {
-    context: eightPodAnalytics.getContext(),
+    context: eightPodAnalytics.getContext()[adUnitCode],
     eventType: event.detail.type,
     eventClass: 'adunit',
     timestamp: new Date().getTime(),
@@ -104,6 +110,7 @@ export function trackEvent(event) {
     payload: event.detail.payload
   };
 
+  logMessage(fullEvent);
   addEvent(fullEvent);
 }
 
@@ -155,7 +162,7 @@ function sendEvents() {
  * Send event to our custom tracking server
  */
 function sendEventsApi(eventList, callbacks) {
-  ajax(trackerUrl, callbacks, JSON.stringify(eventList));
+  ajax(trackerUrl, callbacks, JSON.stringify(eventList), {keepalive: true});
 }
 
 /**
@@ -170,10 +177,22 @@ eightPodAnalytics.originEnableAnalytics = eightPodAnalytics.enableAnalytics;
 eightPodAnalytics.eventsStorage = [];
 
 // override enableAnalytics so we can get access to the config passed in from the page
+// Subscribe on events from adUnit
 eightPodAnalytics.enableAnalytics = function (config) {
   eightPodAnalytics.originEnableAnalytics(config);
   logInfo(MODULE, 'init', config);
+  eightPodAnalytics.eventSubscribe();
 };
+
+eightPodAnalytics.disableAnalytics = ((orig) => {
+  return function () {
+    if (this._interval) {
+      clearInterval(this._interval);
+      this._interval = null;
+    }
+    return orig.apply(this, arguments);
+  }
+})(eightPodAnalytics.disableAnalytics)
 
 /**
  * Register Analytics Adapter

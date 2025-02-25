@@ -25,7 +25,7 @@ let styleParamsMap = {
 };
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['oas', '152media'], // short code and customer aliases
+  aliases: ['oas', '152media', 'paradocs'], // short code and customer aliases
   isBidRequestValid: function (bid) {
     switch (true) {
       case !('params' in bid):

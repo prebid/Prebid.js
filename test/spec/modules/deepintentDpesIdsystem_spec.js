@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { deepintentDpesSubmodule } from 'modules/deepintentDpesIdSystem.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const DI_COOKIE_OBJECT = {id: '2cf40748c4f7f60d343336e08f80dc99'};
 const DI_UPDATED_STORAGE = '2cf40748c4f7f60d343336e08f80dc99';
@@ -59,4 +61,20 @@ describe('Deepintent DPES System', () => {
       expect(deepintentDpesSubmodule.eids.deepintentId.getValue(DI_UPDATED_STORAGE)).to.be.eq(DI_UPDATED_STORAGE);
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(deepintentDpesSubmodule);
+    })
+    it('deepintentId', function() {
+      const userId = {
+        deepintentId: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'deepintent.com',
+        uids: [{id: 'some-random-id-value', atype: 3}]
+      });
+    });
+  })
 });

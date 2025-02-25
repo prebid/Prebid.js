@@ -119,12 +119,6 @@ export const spec = {
       const pos = getBidIdParameter('pos', bid.params) || 1;
       const api = getBidIdParameter('api', bid.params) || [2];
       const protocols = getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
-      var contextcustom = deepAccess(bid, 'mediaTypes.video.context');
-      var placement = 1;
-
-      if (contextcustom === 'outstream') {
-        placement = 3;
-      }
 
       let smartxReq = [{
         id: bid.bidId,
@@ -144,7 +138,6 @@ export const spec = {
           maxbitrate: maxbitrate,
           delivery: delivery,
           pos: pos,
-          placement: placement,
           api: api,
           ext: ext
         },
@@ -429,6 +422,12 @@ function createOutstreamConfig(bid) {
 
   var playerListener = function callback(event) {
     switch (event) {
+      case 'AdError':
+        try {
+          window.sc_smartIntxtError();
+        } catch (f) {}
+        break;
+
       case 'AdSlotStarted':
         try {
           window.sc_smartIntxtStart();

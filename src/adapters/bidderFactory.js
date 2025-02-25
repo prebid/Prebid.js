@@ -5,7 +5,7 @@ import {createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
-import { EVENTS, STATUS, REJECTION_REASON } from '../constants.js';
+import {EVENTS, REJECTION_REASON, STATUS} from '../constants.js';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import {
@@ -13,9 +13,11 @@ import {
   isArray,
   isPlainObject,
   logError,
-  logWarn, memoize,
+  logWarn,
+  memoize,
   parseQueryStringParameters,
-  parseSizesInput, pick,
+  parseSizesInput,
+  pick,
   uniques
 } from '../utils.js';
 import {hook} from '../hook.js';
@@ -190,7 +192,7 @@ export function registerBidder(spec) {
   }
 }
 
-export function guardTids(bidderCode) {
+export const guardTids = memoize(({bidderCode}) => {
   if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
     return {
       bidRequest: (br) => br,
@@ -228,7 +230,7 @@ export function guardTids(bidderCode) {
       }
     })
   }
-}
+});
 
 /**
  * Make a new bidder from the given spec. This is exported mainly for testing.
@@ -246,7 +248,7 @@ export function newBidder(spec) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
-      const tidGuard = guardTids(bidderRequest.bidderCode);
+      const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
@@ -287,7 +289,7 @@ export function newBidder(spec) {
         }
       });
 
-      processBidderRequests(spec, validBidRequests.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest), ajax, configEnabledCallback, {
+      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
         onRequest: requestObject => events.emit(EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
@@ -296,7 +298,7 @@ export function newBidder(spec) {
         onPaapi: (paapiConfig) => {
           const bidRequest = bidRequestMap[paapiConfig.bidId];
           if (bidRequest) {
-            addComponentAuction(bidRequest, paapiConfig.config);
+            addPaapiConfig(bidRequest, paapiConfig);
           } else {
             logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
           }
@@ -308,7 +310,7 @@ export function newBidder(spec) {
           }
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
-          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
+          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, {bidRequests: validBidRequests});
         },
         onBid: (bid) => {
           const bidRequest = bidRequestMap[bid.requestId];
@@ -323,6 +325,8 @@ export function newBidder(spec) {
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
+            bid.deferBilling = bidRequest.deferBilling;
+            bid.deferRendering = bid.deferBilling && (bid.deferRendering ?? typeof spec.onBidBillable !== 'function');
             const prebidBid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
@@ -361,17 +365,7 @@ export function newBidder(spec) {
   }
 }
 
-// Transition from 'fledge' to 'paapi'
-// TODO: remove this in prebid 9
-const PAAPI_RESPONSE_PROPS = ['paapiAuctionConfigs', 'fledgeAuctionConfigs'];
-const RESPONSE_PROPS = ['bids'].concat(PAAPI_RESPONSE_PROPS);
-function getPaapiConfigs(adapterResponse) {
-  const [paapi, fledge] = PAAPI_RESPONSE_PROPS.map(prop => adapterResponse[prop]);
-  if (paapi != null && fledge != null) {
-    throw new Error(`Adapter response should use ${PAAPI_RESPONSE_PROPS[0]} over ${PAAPI_RESPONSE_PROPS[1]}, not both`);
-  }
-  return paapi ?? fledge;
-}
+const RESPONSE_PROPS = ['bids', 'paapi']
 
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
@@ -391,8 +385,8 @@ function getPaapiConfigs(adapterResponse) {
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}) {
   const metrics = adapterMetrics(bidderRequest);
   onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
-
-  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids, bidderRequest));
+  const tidGuard = guardTids(bidderRequest);
+  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest)));
 
   if (!requests || requests.length === 0) {
     onCompletion();
@@ -437,12 +431,12 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       // adapters can reply with:
       // a single bid
       // an array of bids
-      // a BidderAuctionResponse object ({bids: [*], paapiAuctionConfigs: [*]})
+      // a BidderAuctionResponse object
 
       let bids, paapiConfigs;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
-        paapiConfigs = getPaapiConfigs(response);
+        paapiConfigs = response.paapi;
       } else {
         bids = response;
       }
@@ -531,10 +525,9 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
 export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
-    let filterConfig = config.getConfig('userSync.filterSettings');
     let syncs = spec.getUserSyncs({
-      iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
-      pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
+      iframeEnabled: userSync.canBidderRegisterSync('iframe', spec.code),
+      pixelEnabled: userSync.canBidderRegisterSync('image', spec.code),
     }, responses, gdprConsent, uspConsent, gppConsent);
     if (syncs) {
       if (!Array.isArray(syncs)) {
@@ -548,8 +541,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
-}, 'addComponentAuction');
+export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
+}, 'addPaapiConfig');
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
@@ -619,6 +612,6 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   return true;
 }
 
-function adapterMetrics(bidderRequest) {
+export function adapterMetrics(bidderRequest) {
   return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`])
 }

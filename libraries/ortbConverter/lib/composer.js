@@ -11,13 +11,13 @@ const SORTED = new WeakMap();
 
 /**
  *
- * @param {Object[string, Component]} components to compose
- * @param {Object[string, function|boolean]} overrides a map from component name, to a function that should override that component.
+ * @param {Object.<string, Component>} components - An object where keys are component names and values are components to compose.
+ * @param {Object.<string, (function|boolean)>} overrides - A map from component names to functions that should override those components.
  * Override functions are replacements, except that they get the original function they are overriding as their first argument. If the override
  * is `false`, the component is disabled.
  *
- * @return a function that will run all components in order of priority, with functions from `overrides` taking
- * precedence over components that match names
+ * @return {function} - A function that will run all components in order of priority, with functions from `overrides` taking
+ * precedence over components that match names.
  */
 export function compose(components, overrides = {}) {
   if (!SORTED.has(components)) {

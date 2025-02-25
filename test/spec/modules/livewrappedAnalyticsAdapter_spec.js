@@ -59,6 +59,24 @@ const BID2 = Object.assign({}, BID1, {
   dealId: undefined
 });
 
+const BID2_2 = Object.assign({}, BID2, {
+  width: 320,
+  height: 320,
+  cpm: 10.0,
+  originalCpm: 20.0,
+  currency: 'USD',
+  originalCurrency: 'FOO',
+  timeToRespond: 300,
+  bidId: '3ecff0db240758',
+  requestId: '3ecff0db240757',
+  adId: '3ecff0db240758',
+  mediaType: 'video',
+  meta: {
+    data: 'value2_2'
+  },
+  dealId: 'deal2_2'
+});
+
 const BID3 = {
   bidId: '4ecff0db240757',
   requestId: '4ecff0db240757',
@@ -99,7 +117,8 @@ const MOCK = {
   },
   BID_RESPONSE: [
     BID1,
-    BID2
+    BID2,
+    BID2_2
   ],
   AUCTION_END: {
   },
@@ -281,6 +300,7 @@ function performStandardAuction() {
   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
   events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[2]);
   events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
   events.emit(AUCTION_END, MOCK.AUCTION_END);
   events.emit(SET_TARGETING, MOCK.SET_TARGETING);
@@ -341,7 +361,6 @@ describe('Livewrapped analytics adapter', function () {
     });
 
     it('should build a batched message from prebid events', function () {
-      sandbox.stub(utils, 'getWindowTop').returns({});
       performStandardAuction();
 
       clock.tick(BID_WON_TIMEOUT + 1000);
@@ -401,20 +420,6 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.timeouts.length).to.equal(1);
       expect(message.timeouts[0].bidder).to.equal('livewrapped');
       expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
-    });
-
-    it('should detect adblocker recovered request', function () {
-      sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
-      performStandardAuction();
-
-      clock.tick(BID_WON_TIMEOUT + 1000);
-
-      expect(server.requests.length).to.equal(1);
-      let request = server.requests[0];
-
-      let message = JSON.parse(request.requestBody);
-
-      expect(message.rcv).to.equal(true);
     });
 
     it('should forward GDPR data', function () {
@@ -621,6 +626,81 @@ describe('Livewrapped analytics adapter', function () {
       let request = server.requests[0];
 
       expect(request.url).to.equal('https://whitelabeled.com/analytics/10');
+    });
+  });
+
+  describe('when given extended options', function () {
+    adapterManager.registerAnalyticsAdapter({
+      code: 'livewrapped',
+      adapter: livewrappedAnalyticsAdapter
+    });
+
+    beforeEach(function () {
+      adapterManager.enableAnalytics({
+        provider: 'livewrapped',
+        options: {
+          publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
+          ext: {
+            testparam: 123
+          }
+        }
+      });
+    });
+
+    afterEach(function () {
+      livewrappedAnalyticsAdapter.disableAnalytics();
+    });
+
+    it('should forward the extended options', function () {
+      performStandardAuction();
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.ext).to.not.equal(null);
+      expect(message.ext.testparam).to.equal(123);
+    });
+
+    it('should forward the correct winning bid from a multi-bid response', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[2]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, Object.assign({}, BID2_2, {
+        'status': 'rendered',
+        'requestId': '3ecff0db240757'
+      }));
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.wins.length).to.equal(1);
+      expect(message.wins[0]).to.deep.equal({
+        timeStamp: 1519149562216,
+        adUnit: 'box_d_1',
+        adUnitId: 'adunitid',
+        bidder: 'livewrapped',
+        width: 320,
+        height: 320,
+        cpm: 10.0,
+        orgCpm: 200,
+        mediaType: 4,
+        dealId: 'deal2_2',
+        gdpr: 0,
+        auctionId: 0,
+        meta: {
+          data: 'value2_2'
+        }
+      });
     });
   });
 });

@@ -66,6 +66,11 @@ const BIDDER_REQUEST_1 = {
       'http://example.com/iframe1.html',
       'http://example.com/iframe2.html'
     ]
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -130,6 +135,11 @@ const BIDDER_REQUEST_2 = {
       'http://example.com/iframe1.html',
       'http://example.com/iframe2.html'
     ]
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -177,6 +187,11 @@ const BIDDER_REQUEST_VIDEO = {
       'http://example.com/iframe1.html',
       'http://example.com/iframe2.html'
     ]
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -188,6 +203,11 @@ const BIDDER_REQUEST_EMPTY = {
   gdprConsent: {
     consentString: 'consent-test',
     gdprApplies: false
+  },
+  ortb2: {
+    device: {
+      language: 'en'
+    }
   }
 };
 
@@ -519,6 +539,12 @@ describe('Consumable BidAdapter', function () {
       expect(data1.placements[0].bidfloor).to.equal(0.05);
       expect(data2.placements[0].bidfloor).to.equal(0.15);
     });
+    it('should contain the language param', function () {
+      let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+
+      expect(data.lang).to.equal('en');
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
@@ -727,6 +753,48 @@ describe('Consumable BidAdapter', function () {
       let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
       let data = JSON.parse(request.data);
       expect(data.user.eids).to.deep.equal(bidderRequest.bidRequest[0].userIdAsEids);
+    });
+
+    it('Request should remove non-objects for userIdAsEids', function () {
+      bidderRequest.bidRequest[0].userId = {};
+      bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
+      bidderRequest.bidRequest[0].userIdAsEids = [
+        {
+          source: 'adserver.org',
+          uids: [
+            {
+              id: 'TTD_ID_FROM_USER_ID_MODULE',
+              atype: 1,
+              ext: {
+                rtiPartner: 'TDID',
+              },
+            },
+          ],
+        },
+        'RANDOM_IDENTIFIER_STRING'
+      ];
+      let scrubbedEids = [
+        {
+          source: 'adserver.org',
+          uids: [
+            {
+              id: 'TTD_ID_FROM_USER_ID_MODULE',
+              atype: 1,
+              ext: {
+                rtiPartner: 'TDID',
+              },
+            },
+          ],
+        },
+      ];
+      let request = spec.buildRequests(
+        bidderRequest.bidRequest,
+        BIDDER_REQUEST_1
+      );
+      let data = JSON.parse(request.data);
+      expect(data.user.eids).to.deep.equal(
+        scrubbedEids
+      );
     });
 
     it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {

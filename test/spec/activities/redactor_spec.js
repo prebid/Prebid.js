@@ -1,6 +1,8 @@
 import {
   objectTransformer,
   ORTB_EIDS_PATHS, ORTB_GEO_PATHS,
+  ORTB_IPV4_PATHS,
+  ORTB_IPV6_PATHS,
   ORTB_UFPD_PATHS,
   redactorFactory, redactRule
 } from '../../../src/activities/redactor.js';
@@ -297,6 +299,22 @@ describe('redactor', () => {
           deepSetValue(ortb2, path, 1.2345);
           redactor.ortb2(ortb2);
           expect(deepAccess(ortb2, path)).to.eql(allowed ? 1.2345 : 1.23);
+        })
+      })
+      ORTB_IPV4_PATHS.forEach(path => {
+        it(`should ${allowed ? 'NOT ' : ''} round down ${path}`, () => {
+          const ortb2 = {};
+          deepSetValue(ortb2, path, '192.168.1.1');
+          redactor.ortb2(ortb2);
+          expect(deepAccess(ortb2, path)).to.eql(allowed ? '192.168.1.1' : '192.168.1.0');
+        })
+      })
+      ORTB_IPV6_PATHS.forEach(path => {
+        it(`should ${allowed ? 'NOT ' : ''} round down ${path}`, () => {
+          const ortb2 = {};
+          deepSetValue(ortb2, path, '2001:0000:130F:0000:0000:09C0:876A:130B');
+          redactor.ortb2(ortb2);
+          expect(deepAccess(ortb2, path)).to.eql(allowed ? '2001:0000:130F:0000:0000:09C0:876A:130B' : '2001:0:130f:0:0:0:0:0');
         })
       })
     });

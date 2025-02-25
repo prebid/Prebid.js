@@ -1,4 +1,4 @@
-import { timestamp, logInfo, getWindowTop } from '../src/utils.js';
+import { timestamp, logInfo } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, STATUS } from '../src/constants.js';
@@ -77,6 +77,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         logInfo('LIVEWRAPPED_BID_RESPONSE:', args);
 
         let bidResponse = cache.auctions[args.auctionId].bids[args.requestId];
+        if (bidResponse.cpm > args.cpm) break; // For now we only store the highest bid
         bidResponse.isBid = args.getStatusCode() === STATUS.GOOD;
         bidResponse.width = args.width;
         bidResponse.height = args.height;
@@ -84,7 +85,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.originalCpm = prebidGlobal.convertCurrency(args.originalCpm, args.originalCurrency, args.currency);
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
-        bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
+        bidResponse.mediaType = getMediaTypeEnum(args.mediaType);
         bidResponse.floorData = args.floorData;
         bidResponse.meta = args.meta;
 
@@ -115,6 +116,11 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         logInfo('LIVEWRAPPED_BID_WON:', args);
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
+        wonBid.width = args.width;
+        wonBid.height = args.height;
+        wonBid.cpm = args.cpm;
+        wonBid.originalCpm = prebidGlobal.convertCurrency(args.originalCpm, args.originalCurrency, args.currency);
+        wonBid.mediaType = getMediaTypeEnum(args.mediaType);
         wonBid.floorData = args.floorData;
         wonBid.rUp = args.rUp;
         wonBid.meta = args.meta;
@@ -171,7 +177,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     timeouts: getTimeouts(sentRequests.gdpr, sentRequests.auctionIds),
     bidAdUnits: getbidAdUnits(),
     rf: getAdRenderFailed(sentRequests.auctionIds),
-    rcv: getAdblockerRecovered()
+    ext: initOptions.ext
   };
 
   if (events.requests.length == 0 &&
@@ -185,10 +191,8 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
 };
 
-function getAdblockerRecovered() {
-  try {
-    return getWindowTop().I12C && getWindowTop().I12C.Morph === 1;
-  } catch (e) {}
+function getMediaTypeEnum(mediaType) {
+  return mediaType == 'native' ? 2 : (mediaType == 'video' ? 4 : 1);
 }
 
 function getSentRequests() {
