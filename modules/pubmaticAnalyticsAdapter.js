@@ -334,6 +334,8 @@ const eventHandlers = {
     bid.partnerTimeToRespond = latency > (auctionTime + 150) ? (auctionTime + 150) : latency;
     bid.clientLatencyTimeMs = Date.now() - cache.auctions[args.auctionId].timestamp;
     bid.bidResponse = parseBidResponse(args);
+    bid.bidderCode =  args.bidderCode;
+    bid.adapterName = getAdapterNameForAlias(args.adapterCode || bid.bidderCode);
   },
 
   bidRejected: (args)=>{
