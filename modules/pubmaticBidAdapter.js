@@ -153,22 +153,22 @@ let publisherId = 0;
 let isInvalidNativeRequest = false;
 let biddersList = ['pubmatic'];
 const allBiddersList = ['all'];
-let bidCpmAdjustment;
+let cpmAdjustment;
 
 function _calculateBidCpmAdjustment(bid) {
   if (!bid) return;
 
   const { originalCurrency, currency, cpm, originalCpm, meta } = bid;
-  const adjustedCpm = originalCurrency !== currency && isFn(bid.getCpmInNewCurrency)
+  const convertedCpm = originalCurrency !== currency && isFn(bid.getCpmInNewCurrency)
     ? bid.getCpmInNewCurrency(originalCurrency)
     : cpm;
-  const mediaType = meta?.mediaType;
-  bidCpmAdjustment = bidCpmAdjustment || {};
+  const mediaType = meta?.mediaType || bid.mediaType;
+  cpmAdjustment = cpmAdjustment || {};
 
   if (mediaType) {
-    bidCpmAdjustment[mediaType] = Number(((originalCpm - adjustedCpm) / originalCpm).toFixed(2));
+    cpmAdjustment[mediaType] = Number(((originalCpm - convertedCpm) / originalCpm).toFixed(2));
+    cpmAdjustment.currency = originalCurrency;
   }
-  bidCpmAdjustment.currency = originalCurrency;
 };
 
 export function _getDomainFromURL(url) {
@@ -1228,8 +1228,8 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
-    // Set BidCpmAdjustment of last auction
-    payload.ext.bidCpmAdjustment = bidCpmAdjustment;
+    // Set cpmAdjustment of last auction
+    payload.ext.cpmAdjustment = cpmAdjustment;
     const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (allowAlternateBidder !== undefined) {
       payload.ext.marketplace = {};
