@@ -66,6 +66,7 @@ function getAdUnitsData(args) {
 
 function handleAuctionEnd(args) {
   const event = {
+    et: 'auction_data_sent',
     to: getTimeOffset(_staticData.t),
     pvid: _staticData.pvid,
     pk: _staticData.pk,
@@ -75,11 +76,8 @@ function handleAuctionEnd(args) {
     aid: _staticData.aid,
     pbv: _staticData.version,
     url: _staticData.url,
-    events: [{
-      et: 'auction_data_sent',
-      aucid: args.auctionId,
-      ad_units: getAdUnitsData(args)
-    }]
+    aucid: args.auctionId,
+    ad_units: getAdUnitsData(args)
   }
   sendEvent(event, 'rtd_demand');
 }
@@ -90,6 +88,7 @@ function handleModuleInit(args) {
   const { geo, device } = _staticData;
 
   const event = {
+    et: 'rtd_init',
     to: getTimeOffset(_staticData.t || args.t),
     pvid: _staticData.pvid || args.pvid,
     pk: _staticData.pk || args.pk,
@@ -98,9 +97,6 @@ function handleModuleInit(args) {
     url: _staticData.url,
     ...(geo ? { geo } : {}),
     ...(device ? { dp: device } : {}),
-    events: [{
-      et: 'rtd_init'
-    }]
   }
   sendEvent(event, 'rtd_supply');
 }
@@ -124,7 +120,7 @@ function sendEvent(event, topic) {
   const { pvid } = _staticData;
 
   try {
-    const body = JSON.stringify(event);
+    const body = JSON.stringify([event]);
     ajax(`${EVENT_SERVER_URL}/${topic}?p=${pvid}`, () => { }, body, {
       contentType: 'application/json',
       method: 'POST'

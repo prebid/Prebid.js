@@ -209,25 +209,26 @@ describe('browsi analytics adapter', function () {
     expect(search).to.deep.equal({'p': '123456'});
 
     const body = JSON.parse(request.requestBody);
-    expect(body.to).to.equal(timestamp - dataSet1.t);
-    expect(body.pvid).to.equal(dataSet1.pvid);
-    expect(body.pk).to.equal(dataSet1.pk);
-    expect(body.sk).to.equal(dataSet1.sk);
-    expect(body.geo).to.equal(dataSet1.g);
-    expect(body.dp).to.equal(dataSet1.d);
-    expect(body.aid).to.equal(dataSet1.aid);
-    expect(body.pbv).to.equal(getGlobal().version);
-    expect(body.url).to.equal(encodeURIComponent(window.location.href));
+    expect(body.length).to.equal(1);
 
-    expect(body.events).to.have.length(1);
-    expect(body.events[0].et).to.equal('auction_data_sent');
-    expect(body.events[0].aucid).to.equal(auctionId);
-    expect(body.events[0].ad_units).to.have.length(2);
+    const event = body[0];
+    expect(event.to).to.equal(timestamp - dataSet1.t);
+    expect(event.pvid).to.equal(dataSet1.pvid);
+    expect(event.pk).to.equal(dataSet1.pk);
+    expect(event.sk).to.equal(dataSet1.sk);
+    expect(event.geo).to.equal(dataSet1.g);
+    expect(event.dp).to.equal(dataSet1.d);
+    expect(event.aid).to.equal(dataSet1.aid);
+    expect(event.pbv).to.equal(getGlobal().version);
+    expect(event.url).to.equal(encodeURIComponent(window.location.href));
+    expect(event.et).to.equal('auction_data_sent');
+    expect(event.aucid).to.equal(auctionId);
+    expect(event.ad_units).to.have.length(2);
 
-    expect(body.events[0].ad_units[0].plid).to.equal('realtid_mobile-mobil-1_:r1:');
-    expect(body.events[0].ad_units[0].au).to.be.null;
-    expect(body.events[0].ad_units[0].pbd).to.deep.equal(['livewrapped', 'leeads']);
-    expect(body.events[0].ad_units[0].rtm).to.deep.equal({
+    expect(event.ad_units[0].plid).to.equal('realtid_mobile-mobil-1_:r1:');
+    expect(event.ad_units[0].au).to.be.null;
+    expect(event.ad_units[0].pbd).to.deep.equal(['livewrapped', 'leeads']);
+    expect(event.ad_units[0].rtm).to.deep.equal({
       'scrollDepth': 0.4,
       'density': 0.6,
       'numberOfAds': 3,
@@ -238,10 +239,10 @@ describe('browsi analytics adapter', function () {
       'revenue': 0.44,
       'adLocation': 1220
     });
-    expect(body.events[0].ad_units[1].plid).to.equal('realtid_mobile-mobil-2_:r2:');
-    expect(body.events[0].ad_units[1].au).to.be.null;
-    expect(body.events[0].ad_units[1].pbd).to.deep.equal(['livewrapped']);
-    expect(body.events[0].ad_units[1].rtm).to.deep.equal({
+    expect(event.ad_units[1].plid).to.equal('realtid_mobile-mobil-2_:r2:');
+    expect(event.ad_units[1].au).to.be.null;
+    expect(event.ad_units[1].pbd).to.deep.equal(['livewrapped']);
+    expect(event.ad_units[1].rtm).to.deep.equal({
       'scrollDepth': 0.4,
       'density': 0.6,
       'numberOfAds': 3,
@@ -264,8 +265,11 @@ describe('browsi analytics adapter', function () {
 
     const request = server.requests[1];
     const body = JSON.parse(request.requestBody);
-    expect(body.events[0].ad_units[0].rtm).to.be.undefined;
-    expect(body.events[0].ad_units[1].rtm).to.be.undefined;
+    expect(body.length).to.equal(1);
+
+    const event = body[0];
+    expect(event.ad_units[0].rtm).to.be.undefined;
+    expect(event.ad_units[1].rtm).to.be.undefined;
   });
   it('should send rtd init event', function () {
     window.browsitag = window.browsitag || {};
@@ -287,15 +291,18 @@ describe('browsi analytics adapter', function () {
     expect(search).to.deep.equal({'p': '123456'});
 
     const body = JSON.parse(request.requestBody);
-    expect(body.events[0].et).to.equal('rtd_init');
-    expect(body.to).to.equal(timestamp - dataSet1.t);
-    expect(body.pvid).to.equal(dataSet1.pvid);
-    expect(body.pk).to.equal(dataSet1.pk);
-    expect(body.sk).to.equal(dataSet1.sk);
-    expect(body.geo).to.equal(dataSet1.g);
-    expect(body.dp).to.equal(dataSet1.d);
-    expect(body.pbv).to.equal(getGlobal().version);
-    expect(body.url).to.equal(encodeURIComponent(window.location.href));
+    expect(body.length).to.equal(1);
+
+    const event = body[0];
+    expect(event.et).to.equal('rtd_init');
+    expect(event.to).to.equal(timestamp - dataSet1.t);
+    expect(event.pvid).to.equal(dataSet1.pvid);
+    expect(event.pk).to.equal(dataSet1.pk);
+    expect(event.sk).to.equal(dataSet1.sk);
+    expect(event.geo).to.equal(dataSet1.g);
+    expect(event.dp).to.equal(dataSet1.d);
+    expect(event.pbv).to.equal(getGlobal().version);
+    expect(event.url).to.equal(encodeURIComponent(window.location.href));
   });
   it('should send rtd init event without browsitag.rtd', function () {
     browsiAnalytics.enableAnalytics({
@@ -308,15 +315,18 @@ describe('browsi analytics adapter', function () {
 
     const request = server.requests[3];
     const body = JSON.parse(request.requestBody);
-    expect(body.events[0].et).to.equal('rtd_init');
-    expect(body.to).to.equal(timestamp - browsiInit.t);
-    expect(body.pvid).to.equal(browsiInit.pvid);
-    expect(body.pk).to.equal(browsiInit.pk);
-    expect(body.sk).to.equal(browsiInit.sk);
-    expect(body.geo).to.be.undefined;
-    expect(body.dp).to.be.undefined;
-    expect(body.pbv).to.equal(getGlobal().version);
-    expect(body.url).to.equal(encodeURIComponent(window.location.href));
+    expect(body.length).to.equal(1);
+
+    const event = body[0];
+    expect(event.et).to.equal('rtd_init');
+    expect(event.to).to.equal(timestamp - browsiInit.t);
+    expect(event.pvid).to.equal(browsiInit.pvid);
+    expect(event.pk).to.equal(browsiInit.pk);
+    expect(event.sk).to.equal(browsiInit.sk);
+    expect(event.geo).to.be.undefined;
+    expect(event.dp).to.be.undefined;
+    expect(event.pbv).to.equal(getGlobal().version);
+    expect(event.url).to.equal(encodeURIComponent(window.location.href));
   });
   it('should not send rtd init event if event module name is not browsi', function () {
     browsiAnalytics.enableAnalytics({
