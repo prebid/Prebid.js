@@ -423,10 +423,8 @@ describe('fluctAdapter', function () {
         Object.assign({}, bidderRequest, {
           ortb2: {
             regs: {
-              gpp: {
-                gppString: 'gpp-consent-string',
-                applicableSections: [1, 2, 3],
-              },
+              gpp: 'gpp-consent-string',
+              gpp_sid: [1, 2, 3],
             },
           },
         }),
