@@ -462,7 +462,7 @@ const interpretedBids = [
     ad: '<div>test</div>',
     ttl: 1000,
     creativeId: 'ABCDE',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'JPY'
   }, {
     requestId: '31e2b28ced2475',
@@ -472,7 +472,7 @@ const interpretedBids = [
     ad: '<div>test</div>',
     ttl: 1000,
     creativeId: 'abcde',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'JPY'
   }, {
     requestId: '40a333e047a9bd',
@@ -482,7 +482,7 @@ const interpretedBids = [
     ad: '<div>test</div>',
     ttl: 1000,
     creativeId: 'XYZXYZ',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'JPY'
   }
 ];

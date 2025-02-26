@@ -3,7 +3,6 @@ import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { find } from '../src/polyfill.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { Renderer } from '../src/Renderer.js';
 import {
@@ -19,7 +18,8 @@ import {
   mergeDeep,
   parseSizesInput,
   pick,
-  _each
+  _each,
+  isPlainObject
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
@@ -499,6 +499,8 @@ export const spec = {
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
       'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
+      'ip': bidRequest.ortb2?.device?.ip,
+      'ipv6': bidRequest.ortb2?.device?.ipv6,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
@@ -519,7 +521,7 @@ export const spec = {
       } catch (e) {
         logError('Rubicon: getFloor threw an error: ', e);
       }
-      data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+      data['rp_hard_floor'] = isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
 
     // Send multiformat data if requested
@@ -542,42 +544,47 @@ export const spec = {
     if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
     }
+    // If the bid request contains a 'mobile' property under 'ortb2.site', add it to 'data' as 'p_site.mobile'.
+    if (typeof bidRequest?.ortb2?.site?.mobile === 'number') {
+      data['p_site.mobile'] = bidRequest.ortb2.site.mobile
+    }
 
     addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
-    if (bidRequest.userIdAsEids) {
-      bidRequest.userIdAsEids.forEach(eid => {
+    if (bidRequest?.ortb2?.user?.ext?.eids) {
+      bidRequest.ortb2.user.ext.eids.forEach(({ source, uids = [], inserter, matcher, mm, ext = {} }) => {
         try {
-          // special cases
-          if (eid.source === 'adserver.org') {
-            data['tpid_tdid'] = eid.uids[0].id;
-            data['eid_adserver.org'] = eid.uids[0].id;
-          } else if (eid.source === 'liveintent.com') {
-            data['tpid_liveintent.com'] = eid.uids[0].id;
-            data['eid_liveintent.com'] = eid.uids[0].id;
-            if (eid.ext && Array.isArray(eid.ext.segments) && eid.ext.segments.length) {
-              data['tg_v.LIseg'] = eid.ext.segments.join(',');
-            }
-          } else if (eid.source === 'liveramp.com') {
-            data['x_liverampidl'] = eid.uids[0].id;
-          } else if (eid.source === 'id5-sync.com') {
-            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
-          } else {
-            // add anything else with this generic format
-            // if rubicon drop ^
-            const id = eid.source === 'rubiconproject.com' ? eid.uids[0].id : `${eid.uids[0].id}^${eid.uids[0].atype || ''}`
-            data[`eid_${eid.source}`] = id;
-          }
-          // send AE "ppuid" signal if exists, and hasn't already been sent
+          // Ensure there is at least one valid UID in the 'uids' array
+          const uidData = uids[0];
+          if (!uidData) return; // Skip processing if no valid UID exists
+
+          // Function to build the EID value in the required format
+          const buildEidValue = (uidData) => [
+            uidData.id, // uid: The user ID
+            uidData.atype || '',
+            '', // third: Always empty, as specified in the requirement
+            inserter || '',
+            matcher || '',
+            mm || '',
+            uidData?.ext?.rtiPartner || uidData?.ext?.rtipartner || ''
+          ].join('^'); // Return a single string formatted with '^' delimiter
+
+          const eidValue = buildEidValue(uidData); // Build the EID value string
+
+          // Store the constructed EID value for the given source
+          data[`eid_${source}`] = eidValue;
+
+          // Handle the "ppuid" signal, ensuring it is set only once
           if (!data['ppuid']) {
-            // get the first eid.uids[*].ext.stype === 'ppuid', if one exists
-            const ppId = find(eid.uids, uid => uid.ext && uid.ext.stype === 'ppuid');
-            if (ppId && ppId.id) {
-              data['ppuid'] = ppId.id;
+            // Search for a UID with the 'stype' field equal to 'ppuid' in its extension
+            const ppId = uids.find(uid => uid.ext?.stype === 'ppuid');
+            if (ppId?.id) {
+              data['ppuid'] = ppId.id; // Store the ppuid if found
             }
           }
         } catch (e) {
-          logWarn('Rubicon: error reading eid:', eid, e);
+          // Log any errors encountered during processing
+          logWarn('Rubicon: error reading eid:', { source, uids }, e);
         }
       });
     }
@@ -840,7 +847,7 @@ function renderBid(bid) {
       height: bid.height,
       vastUrl: bid.vastUrl,
       placement: {
-        attachTo: adUnitElement,
+        attachTo: `#${bid.adUnitCode}`,
         align: config.align,
         position: config.position
       },
@@ -915,7 +922,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const dsa = deepAccess(fpd, 'regs.ext.dsa');
-  const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
+  const SEGTAX = {user: [4], site: [1, 2, 5, 6, 7]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
@@ -1021,7 +1028,10 @@ function applyFPD(bidRequest, mediaType, data) {
           // reduce down into ua and full version list attributes
           const [ua, fullVer] = browsers.reduce((accum, browserData) => {
             accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
-            accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            // only set fullVer if long enough
+            if (browserData.version.length > 1) {
+              accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            }
             return accum;
           }, [[], []]);
           data.m_ch_ua = ua?.join?.(',');

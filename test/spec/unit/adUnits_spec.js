@@ -61,4 +61,17 @@ describe('Adunit Counter', function () {
     adunitCounter.incrementBidderWinsCounter(adCode, BIDDER_ID_2);
     expect(adunitCounter.getBidderWinsCounter(adCode, BIDDER_ID_2)).to.be.equal(1);
   });
+  it('increments and checks auctions counter of adunit 1', function () {
+    adunitCounter.incrementAuctionsCounter(ADUNIT_ID_1);
+    expect(adunitCounter.getAuctionsCounter(ADUNIT_ID_1)).to.be.equal(1);
+  });
+  it('increments and checks auctions counter of adunit 2', function () {
+    adunitCounter.incrementAuctionsCounter(ADUNIT_ID_2);
+    expect(adunitCounter.getAuctionsCounter(ADUNIT_ID_2)).to.be.equal(1);
+  });
+  it('increments and checks auctions counter if adUnitCode has a dots in it', function () {
+    const adUnitCode = 'adunit.1'
+    adunitCounter.incrementAuctionsCounter(adUnitCode);
+    expect(adunitCounter.getAuctionsCounter(adUnitCode)).to.be.equal(1);
+  });
 });

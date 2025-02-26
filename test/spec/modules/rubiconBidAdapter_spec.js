@@ -709,6 +709,28 @@ describe('the rubicon adapter', function () {
           expect(data.get('o_cdep')).to.equal('3');
         });
 
+        it('should correctly send ip signal when ortb2.device.ip is provided', () => {
+          const ipRequest = utils.deepClone(bidderRequest);
+          ipRequest.bids[0].ortb2 = { device: { ip: '123.45.67.89' } };
+
+          let [request] = spec.buildRequests(ipRequest.bids, ipRequest);
+          let data = new URLSearchParams(request.data);
+
+          // Verify if 'ip' is correctly added to the request data
+          expect(data.get('ip')).to.equal('123.45.67.89');
+        });
+
+        it('should correctly send ipv6 signal when ortb2.device.ipv6 is provided', () => {
+          const ipv6Request = utils.deepClone(bidderRequest);
+          ipv6Request.bids[0].ortb2 = { device: { ipv6: '2001:db8::ff00:42:8329' } };
+
+          let [request] = spec.buildRequests(ipv6Request.bids, ipv6Request);
+          let data = new URLSearchParams(request.data);
+
+          // Verify if 'ipv6' is correctly added to the request data
+          expect(data.get('ipv6')).to.equal('2001:db8::ff00:42:8329');
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -1331,173 +1353,60 @@ describe('the rubicon adapter', function () {
         });
 
         describe('user id config', function () {
-          it('should send tpid_tdid when userIdAsEids contains unifiedId', function () {
-            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-            clonedBid.userId = {
-              tdid: 'abcd-efgh-ijkl-mnop-1234'
-            };
-            clonedBid.userIdAsEids = [
-              {
-                'source': 'adserver.org',
-                'uids': [
-                  {
-                    'id': 'abcd-efgh-ijkl-mnop-1234',
-                    'atype': 1,
-                    'ext': {
-                      'rtiPartner': 'TDID'
-                    }
-                  }
-                ]
-              }
-            ];
-            let [request] = spec.buildRequests([clonedBid], bidderRequest);
-            let data = new URLSearchParams(request.data);
-
-            expect(data.get('tpid_tdid')).to.equal('abcd-efgh-ijkl-mnop-1234');
-            expect(data.get('eid_adserver.org')).to.equal('abcd-efgh-ijkl-mnop-1234');
-          });
-
-          describe('LiveIntent support', function () {
-            it('should send tpid_liveintent.com when userIdAsEids contains liveintentId', function () {
-              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userId = {
-                lipb: {
-                  lipbid: '0000-1111-2222-3333',
-                  segments: ['segA', 'segB']
-                }
-              };
-              clonedBid.userIdAsEids = [
-                {
-                  'source': 'liveintent.com',
-                  'uids': [
-                    {
-                      'id': '0000-1111-2222-3333',
-                      'atype': 3
-                    }
-                  ],
-                  'ext': {
-                    'segments': [
-                      'segA',
-                      'segB'
-                    ]
-                  }
-                }
-              ];
-              let [request] = spec.buildRequests([clonedBid], bidderRequest);
-              let data = new URLSearchParams(request.data);
-
-              expect(data.get('tpid_liveintent.com')).to.equal('0000-1111-2222-3333');
-              expect(data.get('eid_liveintent.com')).to.equal('0000-1111-2222-3333');
-              expect(data.get('tg_v.LIseg')).to.equal('segA,segB');
-            });
-
-            it('should send tg_v.LIseg when userIdAsEids contains liveintentId with ext.segments as array', function () {
-              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userId = {
-                lipb: {
-                  lipbid: '1111-2222-3333-4444',
-                  segments: ['segD', 'segE']
-                }
-              };
-              clonedBid.userIdAsEids = [
-                {
-                  'source': 'liveintent.com',
-                  'uids': [
-                    {
-                      'id': '1111-2222-3333-4444',
-                      'atype': 3
-                    }
-                  ],
-                  'ext': {
-                    'segments': [
-                      'segD',
-                      'segE'
-                    ]
-                  }
-                }
-              ]
-              let [request] = spec.buildRequests([clonedBid], bidderRequest);
-              const unescapedData = unescape(request.data);
-
-              expect(unescapedData.indexOf('&tpid_liveintent.com=1111-2222-3333-4444&') !== -1).to.equal(true);
-              expect(unescapedData.indexOf('&tg_v.LIseg=segD,segE&') !== -1).to.equal(true);
-            });
-          });
-
-          describe('LiveRamp support', function () {
-            it('should send x_liverampidl when userIdAsEids contains liverampId', function () {
-              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userId = {
-                idl_env: '1111-2222-3333-4444'
-              };
-              clonedBid.userIdAsEids = [
-                {
-                  'source': 'liveramp.com',
-                  'uids': [
-                    {
-                      'id': '1111-2222-3333-4444',
-                      'atype': 3
-                    }
-                  ]
-                }
-              ]
-              let [request] = spec.buildRequests([clonedBid], bidderRequest);
-              let data = new URLSearchParams(request.data);
-
-              expect(data.get('x_liverampidl')).to.equal('1111-2222-3333-4444');
-            });
-          });
-
           describe('pubcid support', function () {
-            it('should send eid_pubcid.org when userIdAsEids contains pubcid', function () {
+            it('should send eid_pubcid.org when ortb2.user.ext.eids contains pubcid', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 pubcid: '1111'
               };
-              clonedBid.userIdAsEids = [
-                {
-                  'source': 'pubcid.org',
-                  'uids': [
-                    {
-                      'id': '1111',
-                      'atype': 1
-                    }
-                  ]
+              clonedBid.ortb2 = {
+                user: {
+                  ext: {
+                    eids: [{
+                      'source': 'pubcid.org',
+                      'uids': [{
+                        'id': '1111',
+                        'atype': 1
+                      }]
+                    }]
+                  }
                 }
-              ]
+              };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = new URLSearchParams(request.data);
 
-              expect(data.get('eid_pubcid.org')).to.equal('1111^1');
+              expect(data.get('eid_pubcid.org')).to.equal('1111^1^^^^^');
             });
           });
 
           describe('Criteo support', function () {
-            it('should send eid_criteo.com when userIdAsEids contains criteo', function () {
+            it('should send eid_criteo.com when ortb2.user.ext.eids contains criteo', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 criteoId: '1111'
               };
-              clonedBid.userIdAsEids = [
-                {
-                  'source': 'criteo.com',
-                  'uids': [
-                    {
-                      'id': '1111',
-                      'atype': 1
-                    }
-                  ]
+              clonedBid.ortb2 = {
+                user: {
+                  ext: {
+                    eids: [{
+                      'source': 'criteo.com',
+                      'uids': [{
+                        'id': '1111',
+                        'atype': 1
+                      }]
+                    }]
+                  }
                 }
-              ]
+              };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = new URLSearchParams(request.data);
 
-              expect(data.get('eid_criteo.com')).to.equal('1111^1');
+              expect(data.get('eid_criteo.com')).to.equal('1111^1^^^^^');
             });
           });
 
           describe('pubProvidedId support', function () {
-            it('should send pubProvidedId when userIdAsEids contains pubProvidedId ids', function () {
+            it('should send pubProvidedId when ortb2.user.ext.eids contains pubProvidedId ids', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 pubProvidedId: [{
@@ -1515,27 +1424,27 @@ describe('the rubicon adapter', function () {
                   }]
                 }]
               };
-              clonedBid.userIdAsEids = [
-                {
-                  'source': 'example.com',
-                  'uids': [
+              clonedBid.ortb2 = {
+                user: {
+                  ext: {
+                    eids: [{
+                      'source': 'example.com',
+                      'uids': [{
+                        'id': '11111',
+                        'ext': {
+                          'stype': 'ppuid'
+                        }
+                      }]
+                    },
                     {
-                      'id': '11111',
-                      'ext': {
-                        'stype': 'ppuid'
-                      }
-                    }
-                  ]
-                },
-                {
-                  'source': 'id-partner.com',
-                  'uids': [
-                    {
-                      'id': '222222'
-                    }
-                  ]
+                      'source': 'id-partner.com',
+                      'uids': [{
+                        'id': '222222'
+                      }]
+                    }]
+                  }
                 }
-              ];
+              };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = new URLSearchParams(request.data);
 
@@ -1544,7 +1453,7 @@ describe('the rubicon adapter', function () {
           });
 
           describe('ID5 support', function () {
-            it('should send ID5 id when userIdAsEids contains ID5', function () {
+            it('should send ID5 id when ortb2.user.ext.eids contains ID5', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 id5id: {
@@ -1554,24 +1463,26 @@ describe('the rubicon adapter', function () {
                   }
                 }
               };
-              clonedBid.userIdAsEids = [
-                {
-                  'source': 'id5-sync.com',
-                  'uids': [
-                    {
-                      'id': '11111',
-                      'atype': 1,
-                      'ext': {
-                        'linkType': '22222'
-                      }
-                    }
-                  ]
+              clonedBid.ortb2 = {
+                user: {
+                  ext: {
+                    eids: [{
+                      'source': 'id5-sync.com',
+                      'uids': [{
+                        'id': '11111',
+                        'atype': 1,
+                        'ext': {
+                          'linkType': '22222'
+                        }
+                      }]
+                    }]
+                  }
                 }
-              ];
+              };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = new URLSearchParams(request.data);
 
-              expect(data.get('eid_id5-sync.com')).to.equal('11111^1^22222');
+              expect(data.get('eid_id5-sync.com')).to.equal('11111^1^^^^^');
             });
           });
 
@@ -1579,36 +1490,115 @@ describe('the rubicon adapter', function () {
             it('should send user id with generic format', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
-              clonedBid.userIdAsEids = [{
-                source: 'catchall',
-                uids: [{
-                  id: '11111',
-                  atype: 2
-                }]
-              }]
+              clonedBid.ortb2 = {
+                user: {
+                  ext: {
+                    eids: [{
+                      'source': 'catchall',
+                      'uids': [{
+                        'id': '11111',
+                        'atype': 2
+                      }]
+                    }]
+                  }
+                }
+              };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = new URLSearchParams(request.data);
 
-              expect(data.get('eid_catchall')).to.equal('11111^2');
+              expect(data.get('eid_catchall')).to.equal('11111^2^^^^^');
             });
 
             it('should send rubiconproject special case', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
-              clonedBid.userIdAsEids = [{
-                source: 'rubiconproject.com',
-                uids: [{
-                  id: 'some-cool-id',
-                  atype: 3
-                }]
-              }]
+              clonedBid.ortb2 = {
+                user: {
+                  ext: {
+                    eids: [{
+                      source: 'rubiconproject.com',
+                      uids: [{
+                        id: 'some-cool-id',
+                        atype: 3
+                      }]
+                    }]
+                  }
+                }
+              };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = new URLSearchParams(request.data);
 
-              expect(data.get('eid_rubiconproject.com')).to.equal('some-cool-id');
+              expect(data.get('eid_rubiconproject.com')).to.equal('some-cool-id^3^^^^^');
+            });
+            describe('Full eidValue format validation', function () {
+              it('should send complete eidValue in the format uid^atype^third^inserter^matcher^mm^rtipartner', function () {
+                const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+                // Simulating a full EID object with multiple fields
+                clonedBid.ortb2 = {
+                  user: {
+                    ext: {
+                      eids: [{
+                        source: 'example.com',
+                        uids: [{
+                          id: '11111', // UID
+                          atype: 2, // atype
+                          ext: {
+                            rtipartner: 'rtipartner123', // rtipartner
+                            stype: 'ppuid' // stype
+                          }
+                        }],
+                        inserter: 'inserter123', // inserter
+                        matcher: 'matcher123', // matcher
+                        mm: 'mm123' // mm
+                      }]
+                    }
+                  }
+                };
+
+                let [request] = spec.buildRequests([clonedBid], bidderRequest);
+                let data = new URLSearchParams(request.data);
+
+                // Expected format: uid^atype^third^inserter^matcher^mm^rtipartner
+                const expectedEidValue = '11111^2^^inserter123^matcher123^mm123^rtipartner123';
+
+                // Check if the generated EID value matches the expected format
+                expect(data.get('eid_example.com')).to.equal(expectedEidValue);
+              });
+              it('should generate eidValue with all attributes including rtiPartner', function () {
+                const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+                // Simulating a full EID object with multiple fields
+                clonedBid.ortb2 = {
+                  user: {
+                    ext: {
+                      eids: [{
+                        source: 'example.com',
+                        uids: [{
+                          id: '11111', // UID
+                          atype: 2, // atype
+                          ext: {
+                            rtiPartner: 'rtipartner123', // rtiPartner (note the different capitalization)
+                            stype: 'ppuid' // stype
+                          }
+                        }],
+                        inserter: 'inserter123', // inserter
+                        matcher: 'matcher123', // matcher
+                        mm: 'mm123' // mm
+                      }]
+                    }
+                  }
+                };
+
+                let [request] = spec.buildRequests([clonedBid], bidderRequest);
+                let data = new URLSearchParams(request.data);
+
+                // Expected format: uid^atype^third^inserter^matcher^mm^rtipartner
+                const expectedEidValue = '11111^2^^inserter123^matcher123^mm123^rtipartner123';
+
+                // Check if the generated EID value matches the expected format
+                expect(data.get('eid_example.com')).to.equal(expectedEidValue);
+              });
             });
           });
-
           describe('Config user.id support', function () {
             it('should send ppuid when config defines user.id', function () {
               config.setConfig({user: {id: '123'}});
@@ -1980,7 +1970,7 @@ describe('the rubicon adapter', function () {
               architecture: 'x86'
             }
           });
-          it('should send m_ch_* params if ortb2.device.sua object is there', function () {
+          it('should send m_ch_* params if ortb2.device.sua object is there with igh entropy', function () {
             let bidRequestSua = utils.deepClone(bidderRequest);
             bidRequestSua.bids[0].ortb2 = { device: { sua: standardSuaObject } };
 
@@ -2049,6 +2039,60 @@ describe('the rubicon adapter', function () {
 
             // arch not sent
             expect(data.get('m_ch_arch')).to.be.null;
+          });
+          it('should not send high entropy if not present when it is low entropy client hints', function () {
+            let bidRequestSua = utils.deepClone(bidderRequest);
+            bidRequestSua.bids[0].ortb2 = { device: { sua: {
+              'source': 1,
+              'platform': {
+                'brand': 'macOS'
+              },
+              'browsers': [
+                {
+                  'brand': 'Not A(Brand',
+                  'version': [
+                    '8'
+                  ]
+                },
+                {
+                  'brand': 'Chromium',
+                  'version': [
+                    '132'
+                  ]
+                },
+                {
+                  'brand': 'Google Chrome',
+                  'version': [
+                    '132'
+                  ]
+                }
+              ],
+              'mobile': 0
+            } } };
+
+            // How should fastlane query be constructed with default SUA
+            let expectedValues = {
+              m_ch_ua: `"Not A(Brand"|v="8","Chromium"|v="132","Google Chrome"|v="132"`,
+              m_ch_mobile: '?0',
+              m_ch_platform: 'macOS',
+            }
+
+            // Build Fastlane call
+            let [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
+            let data = new URLSearchParams(request.data);
+
+            // Loop through expected values and if they do not match push an error
+            const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              return accum;
+            }, []);
+
+            // should be no errors
+            expect(errors).to.deep.equal([]);
+
+            // make sure high entropy keys are not present
+            let highEntropyHints = ['m_ch_full_ver', 'm_ch_arch', 'm_ch_bitness', 'm_ch_platform_ver'];
+            highEntropyHints.forEach((hint) => { expect(data.get(hint)).to.be.null; });
           });
         });
       });
@@ -2869,6 +2913,59 @@ describe('the rubicon adapter', function () {
           expect(slotParams['tg_v.tax9']).is.equal('1,2');
           expect(slotParams['tg_i.tax10']).is.equal('2,3');
           expect(slotParams['tg_v.tax404']).is.equal(undefined);
+        });
+
+        it('should support IAB segtax 7 in site segments', () => {
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.refererInfo = {domain: 'bob'};
+          config.setConfig({
+            rubicon: {
+              sendUserSegtax: [4],
+              sendSiteSegtax: [1, 2, 5, 6, 7]
+            }
+          });
+          localBidderRequest.ortb2.site = {
+            content: {
+              data: [{
+                ext: {
+                  segtax: '7'
+                },
+                segment: [{id: 8}, {id: 9}]
+              }]
+            }
+          };
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
+          expect(slotParams['tg_i.tax7']).to.equal('8,9');
+        });
+
+        it('should add p_site.mobile if mobile is a number in ortb2.site', function () {
+          // Set up a bidRequest with mobile property as a number
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.bids[0].ortb2 = {
+            site: {
+              mobile: 1 // Valid mobile value (number)
+            }
+          };
+
+          // Call the function
+          const slotParams = spec.createSlotParams(localBidderRequest.bids[0], localBidderRequest);
+          // Check that p_site.mobile was added to the slotParams with the correct value
+          expect(slotParams['p_site.mobile']).to.equal(1);
+        });
+        it('should not add p_site.mobile if mobile is not a number in ortb2.site', function () {
+          // Set up a bidRequest with mobile property as a string (invalid value)
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.bids[0].ortb2 = {
+            site: {
+              mobile: 'not-a-number' // Invalid mobile value (string)
+            }
+          };
+
+          // Call the function
+          const slotParams = spec.createSlotParams(localBidderRequest.bids[0], localBidderRequest);
+
+          // Check that p_site.mobile is not added to the slotParams
+          expect(slotParams['p_site.mobile']).to.be.undefined;
         });
       });
 
@@ -4209,6 +4306,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
+            const adUnitSelector = `#${bid.adUnitCode}`
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 
@@ -4222,7 +4320,7 @@ describe('the rubicon adapter', function () {
               label: undefined,
               placement: {
                 align: 'left',
-                attachTo: adUnit,
+                attachTo: adUnitSelector,
                 position: 'append',
               },
               vastUrl: 'https://test.com/vast.xml',
@@ -4278,6 +4376,7 @@ describe('the rubicon adapter', function () {
             const bid = bids[0];
             bid.adUnitCode = 'outstream_video1_placement';
             const adUnit = document.createElement('div');
+            const adUnitSelector = `#${bid.adUnitCode}`
             adUnit.id = bid.adUnitCode;
             document.body.appendChild(adUnit);
 
@@ -4291,7 +4390,7 @@ describe('the rubicon adapter', function () {
               label: undefined,
               placement: {
                 align: 'left',
-                attachTo: adUnit,
+                attachTo: adUnitSelector,
                 position: 'append',
               },
               vastUrl: 'https://test.com/vast.xml',

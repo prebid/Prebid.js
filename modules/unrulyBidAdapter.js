@@ -31,7 +31,7 @@ const addBidFloorInfo = (validBid) => {
         currency: 'USD',
         mediaType: key,
         size: '*'
-      }).floor || 0;
+      })?.floor || 0;
     } else {
       floor = validBid.params.floor || 0;
     }

@@ -5,15 +5,17 @@
  * @requires module:modules/userId
  */
 
-import {logError, logInfo} from '../src/utils.js';
+import {logError, logInfo, isPlainObject} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {gppDataHandler, uspDataHandler} from '../src/consentHandler.js';
+import {uspDataHandler} from '../src/consentHandler.js';
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
-import {detectBrowser} from '../libraries/detectBrowserUtils/detectBrowserUtils.js';
+import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
+import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
+import {getGppValue} from '../libraries/intentIqUtils/getGppValue.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
@@ -158,19 +160,20 @@ function tryParse(data) {
 }
 
 /**
- * Convert GPP data to an object
- * @param {Object} data
- * @return {string} The JSON string representation of the input data.
+ * Configures and updates A/B testing group in Google Ad Manager (GAM).
+ *
+ * @param {object} gamObjectReference - Reference to the GAM object, expected to have a `cmd` queue and `pubads()` API.
+ * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
+ * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
  */
-export function handleGPPData(data = {}) {
-  if (Array.isArray(data)) {
-    let obj = {};
-    for (const element of data) {
-      obj = Object.assign(obj, element);
-    }
-    return JSON.stringify(obj);
+export function setGamReporting(gamObjectReference, gamParameterName, userGroup) {
+  if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
+    gamObjectReference.cmd.push(() => {
+      gamObjectReference
+        .pubads()
+        .setTargeting(gamParameterName, userGroup || NOT_YET_DEFINED);
+    });
   }
-  return JSON.stringify(data);
 }
 
 /**
@@ -230,17 +233,22 @@ export const intentIqIdSubmodule = {
   getId(config) {
     const configParams = (config?.params) || {};
     let decryptedData, callbackTimeoutID;
-    let callbackFired = false
-    let runtimeEids = {}
+    let callbackFired = false;
+    let runtimeEids = { eids: [] };
+    let gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
+    let gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+    const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
+    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group)
 
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
         callbackFired = true;
         if (callbackTimeoutID) clearTimeout(callbackTimeoutID);
+        if (isGroupB) runtimeEids = { eids: [] };
         configParams.callback(runtimeEids, firstPartyData?.group || NOT_YET_DEFINED);
       }
     }
@@ -275,22 +283,14 @@ export const intentIqIdSubmodule = {
     // Get consent information
     const cmpData = {};
     const uspData = uspDataHandler.getConsentData();
-    const gppData = gppDataHandler.getConsentData();
+    const gppData = getGppValue();
 
     if (uspData) {
       cmpData.us_privacy = uspData;
     }
 
-    if (gppData) {
-      cmpData.gpp = '';
-      cmpData.gpi = 1;
-
-      if (gppData.parsedSections && 'usnat' in gppData.parsedSections) {
-        cmpData.gpp = handleGPPData(gppData.parsedSections['usnat']);
-        cmpData.gpi = 0
-      }
-      cmpData.gpp_sid = gppData.applicableSections;
-    }
+    cmpData.gpp = gppData.gppString;
+    cmpData.gpi = gppData.gpi;
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
@@ -335,6 +335,11 @@ export const intentIqIdSubmodule = {
     const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY, allowedStorage))
     if (savedData) {
       partnerData = savedData;
+
+      if (partnerData.wsrvcll) {
+        partnerData.wsrvcll = false;
+        storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      }
     }
 
     if (partnerData.data) {
@@ -344,9 +349,9 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_value !== cmpData.gpp) {
+    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_string_value !== cmpData.gpp) {
       firstPartyData.uspapi_value = cmpData.us_privacy;
-      firstPartyData.gpp_value = cmpData.gpp;
+      firstPartyData.gpp_string_value = cmpData.gpp;
       firstPartyData.isOptedOut = false
       firstPartyData.cttl = 0
       shouldCallServer = true;
@@ -363,8 +368,9 @@ export const intentIqIdSubmodule = {
     }
 
     if (!shouldCallServer) {
+      if (isGroupB) runtimeEids = { eids: [] };
       firePartnerCallback();
-      return {id: runtimeEids?.eids || []};
+      return { id: runtimeEids.eids };
     }
 
     // use protocol relative urls for http or https
@@ -377,11 +383,14 @@ export const intentIqIdSubmodule = {
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
     url += cmpData.us_privacy ? '&pa=' + encodeURIComponent(cmpData.us_privacy) : '';
-    url += cmpData.gpp ? '&gpv=' + encodeURIComponent(cmpData.gpp) : '';
+    url += cmpData.gpp ? '&gpp=' + encodeURIComponent(cmpData.gpp) : '';
     url += cmpData.gpi ? '&gpi=' + cmpData.gpi : '';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
+
+    // Add vrref and fui to the URL
+    url = appendVrrefAndFui(url, configParams.domainName);
 
     const storeFirstPartyData = () => {
       partnerData.eidl = runtimeEids?.eids?.length || -1
@@ -398,8 +407,7 @@ export const intentIqIdSubmodule = {
             partnerData.date = Date.now();
             firstPartyData.date = Date.now();
             const defineEmptyDataAndFireCallback = () => {
-              respJson.data = partnerData.data = runtimeEids = {};
-              partnerData.data = ''
+              respJson.data = partnerData.data = runtimeEids = { eids: [] };
               storeFirstPartyData()
               firePartnerCallback()
               callback(runtimeEids)
@@ -415,9 +423,11 @@ export const intentIqIdSubmodule = {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
                 defineEmptyDataAndFireCallback();
+                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
                 return
               } else {
                 firstPartyData.group = WITH_IIQ;
+                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
               }
             }
             if ('isOptedOut' in respJson) {
@@ -451,6 +461,14 @@ export const intentIqIdSubmodule = {
               partnerData.data = respJson.data;
             }
 
+            if ('ct' in respJson) {
+              partnerData.ct = respJson.ct;
+            }
+
+            if ('sid' in respJson) {
+              partnerData.siteId = respJson.sid;
+            }
+
             if (rrttStrtTime && rrttStrtTime > 0) {
               partnerData.rrtt = Date.now() - rrttStrtTime;
             }
@@ -476,7 +494,10 @@ export const intentIqIdSubmodule = {
           callback(runtimeEids);
         }
       };
+      rrttStrtTime = Date.now();
 
+      partnerData.wsrvcll = true;
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
       ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
     const respObj = {callback: resp};

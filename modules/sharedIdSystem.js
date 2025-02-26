@@ -7,7 +7,6 @@
 
 import {parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import {coppaDataHandler} from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
@@ -118,9 +117,7 @@ export const sharedIdSystemSubmodule = {
       logInfo('PubCommonId: Has opted-out');
       return;
     }
-    const coppa = coppaDataHandler.getCoppa();
-
-    if (coppa) {
+    if (consentData?.coppa) {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
@@ -164,8 +161,7 @@ export const sharedIdSystemSubmodule = {
       logInfo('PubCommonId: Has opted-out');
       return {id: undefined};
     }
-    const coppa = coppaDataHandler.getCoppa();
-    if (coppa) {
+    if (consentData?.coppa) {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
@@ -183,9 +179,15 @@ export const sharedIdSystemSubmodule = {
 
   domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
   eids: {
-    'pubcid': {
-      source: 'pubcid.org',
-      atype: 1
+    'pubcid'(values, config) {
+      const eid = {
+        source: 'pubcid.org',
+        uids: values.map(id => ({id, atype: 1}))
+      }
+      if (config?.params?.inserter != null) {
+        eid.inserter = config.params.inserter;
+      }
+      return eid;
     },
   }
 };

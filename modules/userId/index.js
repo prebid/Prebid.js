@@ -101,9 +101,10 @@
 
 /**
  * @typedef {Object} ConsentData
- * @property {(string|undefined)} consentString
- * @property {(Object|undefined)} vendorData
- * @property {(boolean|undefined)} gdprApplies
+ * @property {Object} gdpr
+ * @property {Object} gpp
+ * @property {Object} usp
+ * @property {Object} coppa
  */
 
 /**
@@ -120,7 +121,7 @@ import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
-import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
+import adapterManager from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {EID_CONFIG, getEids} from './eids.js';
@@ -131,7 +132,6 @@ import {
   STORAGE_TYPE_LOCALSTORAGE
 } from '../../src/storageManager.js';
 import {
-  deepAccess,
   deepSetValue,
   delayExecution,
   isArray,
@@ -164,9 +164,6 @@ export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
   isAllowed: isActivityAllowed
 }
-
-/** @type {boolean} */
-let addedUserIdHook = false;
 
 /** @type {SubmoduleContainer[]} */
 let submodules = [];
@@ -662,7 +659,7 @@ let initIdSystem;
 function getPPID(eids = getUserIdsAsEids() || []) {
   // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
   const matchingUserId = ppidSource && eids.find(userID => userID.source === ppidSource);
-  if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
+  if (matchingUserId && typeof matchingUserId?.uids?.[0]?.id === 'string') {
     const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
     if (ppidValue.length >= 32 && ppidValue.length <= 150) {
       return ppidValue;
@@ -692,6 +689,25 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
     fn.call(this, reqBidsConfigObj);
   });
 });
+
+/**
+ * Append user id data from config to bids to be accessed in adapters when there are no submodules.
+ * @param {function} fn required; The next function in the chain, used by hook.js
+ * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
+ */
+export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
+  addIdData(reqBidsConfigObj);
+  // calling fn allows prebid to continue processing
+  fn.call(this, reqBidsConfigObj);
+});
+
+/**
+ * Is startAuctionHook added
+ * @returns {boolean}
+ */
+function addedStartAuctionHook() {
+  return !!startAuction.getHooks({hook: startAuctionHook}).length;
+}
 
 /**
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
@@ -851,9 +867,7 @@ function consentChanged(submodule) {
 }
 
 function populateSubmoduleId(submodule, forceRefresh) {
-  // TODO: the ID submodule API only takes GDPR consent; it should be updated now that GDPR
-  // is only a tiny fraction of a vast consent universe
-  const gdprConsent = gdprDataHandler.getConsentData();
+  const consentData = allConsent.getConsentData();
 
   // There are two submodule configuration types to handle: storage or value
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
@@ -872,10 +886,10 @@ function populateSubmoduleId(submodule, forceRefresh) {
       const extendedConfig = Object.assign({ enabledStorageTypes: submodule.enabledStorageTypes }, submodule.config);
 
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(extendedConfig, gdprConsent, storedId);
+      response = submodule.submodule.getId(extendedConfig, consentData, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, gdprConsent, storedId);
+      response = submodule.submodule.extendId(submodule.config, consentData, storedId);
     }
 
     if (isPlainObject(response)) {
@@ -899,7 +913,7 @@ function populateSubmoduleId(submodule, forceRefresh) {
     // cache decoded value (this is copied to every adUnit bid)
     submodule.idObj = submodule.config.value;
   } else {
-    const response = submodule.submodule.getId(submodule.config, gdprConsent, undefined);
+    const response = submodule.submodule.getId(submodule.config, consentData);
     if (isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
@@ -1110,11 +1124,11 @@ function updateSubmodules() {
     .forEach((sm) => submodules.push(sm));
 
   if (submodules.length) {
-    if (!addedUserIdHook) {
+    if (!addedStartAuctionHook()) {
+      startAuction.getHooks({hook: addUserIdsHook}).remove();
       startAuction.before(startAuctionHook, 100) // use higher priority than dataController / rtd
       adapterManager.callDataDeletionRequest.before(requestDataDeletion);
       coreGetPPID.after((next) => next(getPPID()));
-      addedUserIdHook = true;
     }
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
   }
@@ -1221,6 +1235,10 @@ export function init(config, {mkDelay = delay} = {}) {
   (getGlobal()).refreshUserIds = normalizePromise(refreshUserIds);
   (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
+  if (!addedStartAuctionHook()) {
+    // Add ortb2.user.ext.eids even if 0 submodules are added
+    startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd
+  }
 }
 
 export function resetUserIds() {

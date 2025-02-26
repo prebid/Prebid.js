@@ -100,7 +100,10 @@ export const spec = {
     {code: 'global_sun'},
     {code: 'rxnetwork'},
     {code: 'revbid'},
-    {code: 'spinx', gvlid: 1308}
+    {code: 'spinx', gvlid: 1308},
+    {code: 'oppamedia'},
+    {code: 'pixelpluses', gvlid: 1209},
+    {code: 'urekamedia'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -264,7 +267,7 @@ function buildImps(bidRequest, secure) {
     'tagid': bidRequest.adUnitCode
   };
   if (secure) {
-    imp.secure = 1;
+    imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
   var sizes = [];
   let mediaTypes = bidRequest.mediaTypes;
