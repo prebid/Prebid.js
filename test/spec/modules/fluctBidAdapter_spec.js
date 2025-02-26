@@ -433,6 +433,7 @@ describe('fluctAdapter', function () {
       )[0];
       expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
       expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
+    });
   });
 
   describe('should interpretResponse', function() {
