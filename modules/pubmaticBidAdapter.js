@@ -1,4 +1,4 @@
-import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger, generateUUID } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger, generateUUID, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -153,6 +153,23 @@ let publisherId = 0;
 let isInvalidNativeRequest = false;
 let biddersList = ['pubmatic'];
 const allBiddersList = ['all'];
+let bidCpmAdjustment;
+
+function _calculateBidCpmAdjustment(bid) {
+  if (!bid) return;
+
+  const { originalCurrency, currency, cpm, originalCpm, meta } = bid;
+  const adjustedCpm = originalCurrency !== currency && isFn(bid.getCpmInNewCurrency)
+    ? bid.getCpmInNewCurrency(originalCurrency)
+    : cpm;
+  const mediaType = meta?.mediaType;
+  bidCpmAdjustment = bidCpmAdjustment || {};
+
+  if (mediaType) {
+    bidCpmAdjustment[mediaType] = Number(((originalCpm - adjustedCpm) / originalCpm).toFixed(2));
+  }
+  bidCpmAdjustment.currency = originalCurrency;
+};
 
 export function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
@@ -1211,6 +1228,8 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
+    // Set BidCpmAdjustment of last auction
+    payload.ext.bidCpmAdjustment = bidCpmAdjustment;
     const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (allowAlternateBidder !== undefined) {
       payload.ext.marketplace = {};
@@ -1517,6 +1536,10 @@ export const spec = {
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
     }
+  },
+
+  onBidWon: (bid) => {
+    _calculateBidCpmAdjustment(bid);
   }
 };
 
