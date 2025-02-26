@@ -90,6 +90,16 @@ export function sendPageviewEvent(eventType) {
   }
 }
 
+function sendModuleInitEvent() {
+  events.emit(EVENTS.BROWSI_INIT, {
+    moduleName: MODULE_NAME,
+    sk: _moduleParams.siteKey,
+    pk: _moduleParams.pubKey,
+    t: TIMESTAMP,
+    pvid: PVID,
+  });
+}
+
 export function setTimestamp() {
   TIMESTAMP = timestamp();
 }
@@ -236,6 +246,29 @@ function waitForData(callback) {
   }
 }
 
+function setBrowsiTag(data) {
+  window.browsitag = window.browsitag || {};
+  window.browsitag.rtd = {
+    pvid: PVID || data.pvid,
+    d: data.d,
+    g: data.g,
+    aid: data.aid,
+    es: data.es,
+    sk: _moduleParams.siteKey,
+    pk: _moduleParams.pubKey,
+    t: TIMESTAMP
+  };
+  window.browsitag.data = window.browsitag.data || {};
+  window.browsitag.data.get = getBrowsiTagRTD;
+  window.browsitag.apiReady = true;
+}
+
+function getBrowsiTagRTD(identifier) {
+  const uc = identifier || 'placeholder';
+  const rtd = getRTD([uc]);
+  return rtd[uc];
+}
+
 export function setData(data) {
   _browsiData = data;
   if (!PVID) { PVID = data.pvid; }
@@ -333,10 +366,8 @@ function getAllSlots() {
  * @return {Object} key:value
  */
 function getKVObject(k, p) {
-  const prValue = (p < 0) ? 'NA' : p; // todo check NA
-  let prObject = {};
-  prObject[k] = prValue;
-  return prObject;
+  if (p < 0) return {};
+  return {[k]: p};
 }
 
 /**
@@ -402,7 +433,8 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data) {
-              setData({ p: data.p, pmd: data.pmd, bet: data.bet, plc: data.plc, pg: data.pg, pr: data.pr, d: data.d, pvid: data.pvid });
+              setData({ p: data.p, pmd: data.pmd, bet: data.bet, plc: data.plc, pg: data.pg, pr: data.pr, d: data.d, pvid: data.pvid, g: data.g, aid: data.aid, es: data.es });
+              setBrowsiTag(data);
             } else {
               setData({});
             }
@@ -494,11 +526,13 @@ export const browsiSubmodule = {
 };
 
 function getRevenueTargetingValue(p) {
-  if (!p || p < 0) {
+  if (!p) {
     return undefined;
+  } else if (p <= 0) {
+    return 'no fill';
   } else if (p <= 0.3) {
     return 'low';
-  } else if (p <= 0.6) {
+  } else if (p <= 0.7) {
     return 'medium';
   }
   return 'high';
@@ -575,8 +609,9 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   _moduleParams.siteKey = moduleConfig.params.siteKey || moduleConfig.params.sitekey;
   _moduleParams.pubKey = moduleConfig.params.pubKey || moduleConfig.params.pubkey;
+  setTimestamp();
+  sendModuleInitEvent();
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
-    setTimestamp();
     collectData();
     setKeyValue(_moduleParams.splitKey);
   } else {
