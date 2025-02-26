@@ -7,7 +7,7 @@ import * as ajax from 'src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { hook } from '../../../src/hook';
 import { config } from '../../../src/config.js';
-import {addFPDToBidderRequest } from '../../helpers/fpd';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
@@ -1129,20 +1129,20 @@ describe('The inmobi bidding adapter', function () {
             hmin: 100,
           }
         },
-          {
-            required: 1,
-            id: 2,
-            title: {
-              len: 140,
-            }
-          },
-          {
-            required: 1,
-            id: 3,
-            data: {
-              type: 1,
-            }
-          }];
+        {
+          required: 1,
+          id: 2,
+          title: {
+            len: 140,
+          }
+        },
+        {
+          required: 1,
+          id: 3,
+          data: {
+            type: 1,
+          }
+        }];
         const bidRequests = [
           {
             mediaTypes: {
@@ -1292,20 +1292,20 @@ describe('The inmobi bidding adapter', function () {
             hmin: 100,
           }
         },
-          {
-            required: 1,
-            id: 2,
-            title: {
-              len: 140,
-            }
-          },
-          {
-            required: 1,
-            id: 3,
-            data: {
-              type: 1,
-            }
-          }];
+        {
+          required: 1,
+          id: 2,
+          title: {
+            len: 140,
+          }
+        },
+        {
+          required: 1,
+          id: 3,
+          data: {
+            type: 1,
+          }
+        }];
         const bidRequests = [
           {
             bidder: 'inmobi',
@@ -1926,18 +1926,18 @@ describe('The inmobi bidding adapter', function () {
             }
           }
         },
-          {
-            adUnitCode: 'impId',
-            bidId: 'bidId2',
-            mediaTypes: {
-              banner: {
-                sizes: [[320, 50]]
-              }
-            },
-            params: {
-              plc: '123',
+        {
+          adUnitCode: 'impId',
+          bidId: 'bidId2',
+          mediaTypes: {
+            banner: {
+              sizes: [[320, 50]]
             }
-          }];
+          },
+          params: {
+            plc: '123',
+          }
+        }];
         const response = mockResponseNative('bidId', 4);
         const expectedAdmNativeOrtb = JSON.parse(response.seatbid[0].bid[0].adm).native;
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
