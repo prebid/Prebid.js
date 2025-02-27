@@ -20,7 +20,7 @@
             code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250]],
+                    sizes: [[300, 250], [600, 250], [970, 250]],
                 }
             },
 
@@ -32,7 +32,44 @@
                 }
             }]
 
-        }];
+        },
+          {
+            code: 'div-gpt-ad-1460505748561-1',
+            mediaTypes: {
+              banner: {
+                sizes: [[250, 250], [250, 600]],
+              }
+            },
+
+            // Replace this object to test a new Adapter!
+            bids: [{
+              bidder: 'sonarads',
+              params: {
+                siteId: 'timesofisrael-1',
+                bidfloor: 0.01
+              }
+            }]
+
+          }
+          ,
+          {
+            code: 'div-gpt-ad-1460505748561-2',
+            mediaTypes: {
+              banner: {
+                sizes: [[250, 250], [300, 250]],
+              }
+            },
+
+            // Replace this object to test a new Adapter!
+            bids: [{
+              bidder: 'sonarads',
+              params: {
+                siteId: 'timesofisrael-1',
+                bidfloor: 0.01
+              }
+            }]
+
+          }];
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -48,6 +85,14 @@
 
         pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
+
+            pbjs.setConfig({
+              priceGranularity: {
+                buckets: [{
+                  increment: 0.01
+                }]
+              }
+            });
 
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
@@ -74,20 +119,93 @@
 
     <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600], [970, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-1', [[250, 250], [250, 600]], 'div-gpt-ad-1460505748561-1').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-2', [[250, 250], [300, 250]], 'div-gpt-ad-1460505748561-2').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
     </script>
+    <style>
+        .banner-placeholder {
+            position: relative;
+            min-height: 250px;
+            clear: both;
+            width: 100%;
+            display: inline-block;
+            margin: 10px;
+            max-width: min-content
+        }
+        .banner-placeholder .banner-label {
+            font-family: "Roboto",sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            line-height: 11px;
+            color: #878787;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        .container-row {
+            border: groove;
+            max-width: min-content;
+        }
+        .article {
+            max-height: 300px;
+            padding: 5px;
+            align-self: normal;
+        }
+
+    </style>
 </head>
 
 <body>
-    <h2>Prebid.js Test</h2>
-    <h5>Div-1</h5>
-    <div id='div-gpt-ad-1460505748561-0'>
+    <div id='container' style="text-align: center;display: flex;flex-direction: column;align-items: center;">
+        <h2>Site Title</h2>
+        <span class="banner-label">Advertisement</span>
+        <div id='div-gpt-ad-1460505748561-0' class="banner-placeholder" style="text-align: center">
+            <script type='text/javascript'>
+              googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+            </script>
+        </div>
+        <div style="text-align: center; border: 1px solid #ccc; padding: 16px; margin: 16px; font-family: Arial, sans-serif; max-width: 980px;">
+            <h2 style="margin-top: 0; font-size: 24px; color: #333;">Breaking News: Major Event Unfolds</h2>
+            <img src="https://openexpoeurope.com/wp-content/uploads/2019/04/mr-cup-fabien-barral-634461-unsplash.jpg" alt="News Image" style="width: 100%; height: auto; display: block; margin-bottom: 12px;">
+            <p style="font-size: 16px; color: #555; line-height: 1.5;">
+                In a surprising turn of events, major changes have taken place in the industry today. Experts say that this development could have a significant impact on the economy and the daily lives of millions.
+            </p>
+            <a href="#" style="text-decoration: none; color: #1a0dab; font-weight: bold;">Read more...</a>
+        </div>
+        <div class='container-row' style="text-align: center;display: flex;flex-direction: row;align-items: center; max-width: min-content;">
+            <div class="article">
+                <img src="//a57.foxnews.com/prod-hp.foxnews.com/images/2025/02/343/193/c1c28859b7980b26c6612f4270b22a58.png?tl=1&amp;ve=1">
+                <header class="info-header">
+                    <h3 class="title ">
+                        <a>Apple announces historic US investment in bet on American innovation</a>
+                    </h3>
+                </header>
+            </div>
+            <div class="article">
+                <img src="//a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2023/12/343/193/Paige-Spiranac3.jpg?tl=1&ve=1">
+                <header class="info-header">
+                    <h3 class="title ">
+                        <a>Golf influencer wants AimPoint putting method banned after LPGA Tour controversy</a>
+                    </h3>
+                </header>
+            </div>
+            <div class="banner-placeholder">
+                <span class="banner-label">Advertisement</span>
+                <div id='div-gpt-ad-1460505748561-2' class="banner-placeholder">
+                    <script type='text/javascript'>
+                      googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-2'); });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id='div-gpt-ad-1460505748561-1' class="banner-placeholder" style="position:fixed; top: 150px; right: 20px">
         <script type='text/javascript'>
-            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+          googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-1'); });
         </script>
     </div>
 </body>
