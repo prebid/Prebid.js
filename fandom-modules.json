@@ -1,0 +1,18 @@
+[
+    "appnexusBidAdapter",
+    "kargoBidAdapter",
+    "pubmaticBidAdapter",
+    "yieldmoBidAdapter",
+    "tripleliftBidAdapter",
+    "smartadserverBidAdapter",
+    "smaatoBidAdapter",
+    "undertoneBidAdapter",
+    "sharethroughBidAdapter",
+    "riseBidAdapter",
+    "medianetBidAdapter",
+    "cadentApertureMXBidAdapter",
+    "consentManagementGpp",
+    "topicsFpdModule",
+    "gptPreAuction",
+    "dfpAdServerVideo"
+]
