@@ -441,9 +441,6 @@ export const spec = {
       data: topLevel,
       options: {
         withCredentials: true,
-        customHeaders: {
-          'x-integration-type': 1,
-        },
       }
     };
 
