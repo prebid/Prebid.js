@@ -7,8 +7,11 @@ const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
+const COOKIE_SYNC_ORIGIN = 'https://demo.smartadserver.com';
+const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/shared/diff/templates/asset/csync.html`;
 // const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 const STR_ENDPOINT = 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169';
+// const STR_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=169';
 const IDENTIFIER_PREFIX = 'Sharethrough:';
 
 export const sharethroughAdapterSpec = {
@@ -192,6 +195,11 @@ export const sharethroughAdapterSpec = {
           ...req,
           imp: [impression],
         },
+        options: {
+          customHeaders: {
+            'X-Eqtv-Debug': '6708e3aeca04848e919e9c8c'
+          }
+        }
       };
     });
   },
@@ -260,11 +268,40 @@ export const sharethroughAdapterSpec = {
     }
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
-    const shouldCookieSync =
-      syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
+    let sync = [];
 
-    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
+    if (syncOptions.iframeEnabled) {
+      if (gdprConsent?.gdprApplies) {
+        window.addEventListener('message', function handler(event) {
+          if (event.origin === COOKIE_SYNC_ORIGIN && event.data.action === 'getConsent') {
+            event.source.postMessage({
+              action: 'consentResponse',
+              id: event.data.id,
+              consents: gdprConsent.vendorData.vendor.consents
+            }, event.origin);
+
+            this.removeEventListener('message', handler);
+          }
+        });
+      }
+
+      sync.push({
+        type: 'iframe',
+        url: COOKIE_SYNC_URL + '?dc=us&gdpr=' + (gdprConsent?.gdprApplies ? 1 : 0)
+      });
+    }
+
+    if (syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls')) {
+      serverResponses[0].body.cookieSyncUrls.map((url) => 
+        sync.push({
+          type: 'image',
+          url
+        })
+      );
+    }
+
+    return sync;
   },
 
   // Empty implementation for prebid core to be able to find it
