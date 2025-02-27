@@ -112,7 +112,7 @@ async function getAccessToken(clientId, clientSecret, refreshToken) {
       const emailBody = `
         ${email},
         <p>
-        Files owned by you have been changed in open source ${repo}. The <a href="https://github.com/${repo}/pull/${prNumber}">pull request is #${prNumber}</a>. These are the files you own that have been modified:
+        Files relevant to your integration have been changed in open source ${repo}. The <a href="https://github.com/${repo}/pull/${prNumber}">pull request is #${prNumber}</a>. These are the files you own that have been modified:
         <ul>
           ${files.map(file => `<li>${file}</li>`).join('')}
         </ul>
