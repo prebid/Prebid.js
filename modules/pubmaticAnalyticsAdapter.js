@@ -56,7 +56,6 @@ function copyRequiredBidDetails(bid) {
     'adapterCode',
     'bidId',
     'adUnitId', () => bid.adUnitCode,
-    'owAdUnitId', () => getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.gptSlot || bid.adUnitCode,
     'status', () => NO_BID, // default a bid to NO_BID until response is received or bid is timed out
     'finalSource as source',
     'params',
@@ -163,12 +162,15 @@ function getTgId() {
   return 0;
 }
 
-function getFeatureLevelDetails(auctionCache){
-  return {
-    flr: Object.assign({},auctionCache?.floorData.floorRequestData,{
-      enforcements: auctionCache?.floorData.floorResponseData?.enforcements
-    })
-  }
+function getFeatureLevelDetails(auctionCache) {
+  if (!auctionCache?.floorData?.floorRequestData) return {};
+  
+  const flrData = {
+    ...auctionCache.floorData.floorRequestData,
+    ...(auctionCache.floorData.floorResponseData?.enforcements && { enforcements: auctionCache.floorData.floorResponseData.enforcements })
+  };
+
+  return { flr: flrData };
 }
 
 function getRootLevelDetails(auctionCache, auctionId){
@@ -201,6 +203,15 @@ function executeBidsLoggerCall(event) {
   const auctionCache = cache.auctions[auctionId];
 
   if (!auctionCache || auctionCache.sent) return;
+
+  // Fetching slotinfo at event level results to undefined so Running loop over the codes to get the GPT slot name.
+  Object.values(auctionCache?.adUnitCodes).forEach(adUnit => {
+    Object.values(adUnit?.bids).forEach(bidArray => {
+        bidArray.forEach(bid => {
+            bid['owAdUnitId'] = getGptSlotInfoForAdUnitCode(bid?.adUnit?.adUnitCode)?.gptSlot || bid.adUnit?.adUnitCode
+        });
+    });
+  });
 
   const payload = createBidsLoggerPayload(auctionCache, auctionId);
   auctionCache.sent = true;
