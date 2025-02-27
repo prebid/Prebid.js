@@ -1,0 +1,517 @@
+import { expect } from 'chai';
+import * as priceFloors from '../../../modules/priceFloors';
+import * as utils from '../../../src/utils.js';
+import * as suaModule from '../../../src/fpd/sua.js';
+import { config as conf } from '../../../src/config';
+import * as hook from '../../../src/hook.js';
+import {
+    registerSubModule, pubmaticSubmodule, getFloorsConfig, setFloorsConfig, setPriceFloors, fetchFloorsData, fetchProfileConfigs,
+    getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, _country,
+    _profileConfigs, _floorsData
+} from '../../../modules/pubmaticRtdProvider.js';
+import sinon from 'sinon';
+
+let sandbox;
+
+beforeEach(() => {
+    sandbox = sinon.createSandbox();
+});
+
+afterEach(() => {
+    sandbox.restore();
+});
+
+describe('Pubmatic RTD Provider', () => {
+    describe('registerSubModule', () => {
+        it('should register RTD submodule provider', () => {
+            let submoduleStub = sinon.stub(hook, 'submodule');
+            registerSubModule();
+            assert(submoduleStub.calledOnceWith('realTimeData', pubmaticSubmodule));
+            submoduleStub.restore();
+        });
+    });
+
+    describe('submodule', () => {
+        describe('name', () => {
+            it('should be pubmatic', () => {
+                expect(pubmaticSubmodule.name).to.equal('pubmatic');
+            });
+        });
+    });
+
+    describe('init', () => {
+        let logErrorStub;
+        let continueAuctionStub;
+
+        const getConfig = () => ({
+            params: {
+                publisherId: 'test-publisher-id',
+                profileId: 'test-profile-id'
+            },
+        });
+
+        beforeEach(() => {
+            logErrorStub = sandbox.stub(utils, 'logError');
+            continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
+        });
+
+        it('should return false if publisherId is missing', () => {
+            const config = {
+                params: {
+                    profileId: 'test-profile-id'
+                }
+            };
+            expect(pubmaticSubmodule.init(config)).to.be.false;
+        });
+
+        it('should return false if profileId is missing', () => {
+            const config = {
+                params: {
+                    publisherId: 'test-publisher-id'
+                }
+            };
+            expect(pubmaticSubmodule.init(config)).to.be.false;
+        });
+
+        it('should return false if publisherId is not a string', () => {
+            const config = {
+                params: {
+                    publisherId: 123,
+                    profileId: 'test-profile-id'
+                }
+            };
+            expect(pubmaticSubmodule.init(config)).to.be.false;
+        });
+
+        it('should return false if profileId is not a string', () => {
+            const config = {
+                params: {
+                    publisherId: 'test-publisher-id',
+                    profileId: 345
+                }
+            };
+            expect(pubmaticSubmodule.init(config)).to.be.false;
+        });
+
+        it('should initialize successfully with valid config', () => {
+            expect(pubmaticSubmodule.init(getConfig())).to.be.true;
+        });
+
+        it('should handle empty config object', () => {
+            expect(pubmaticSubmodule.init({})).to.be.false;
+            expect(logErrorStub.calledWith(sinon.match(/Missing publisher Id/))).to.be.true;
+        });
+
+        it('should return false if continueAuction is not a function', () => {
+            continueAuctionStub.value(undefined);
+            expect(pubmaticSubmodule.init(getConfig())).to.be.false;
+            expect(logErrorStub.calledWith(sinon.match(/continueAuction is not a function/))).to.be.true;
+        });
+    });
+
+    describe('getCurrentTimeOfDay', () => {
+        let clock;
+
+        beforeEach(() => {
+            clock = sandbox.useFakeTimers(new Date('2024-01-01T12:00:00')); // Set fixed time for testing
+        });
+
+        afterEach(() => {
+            clock.restore();
+        });
+
+        const testTimes = [
+            { hour: 6, expected: 'morning' },
+            { hour: 13, expected: 'afternoon' },
+            { hour: 18, expected: 'evening' },
+            { hour: 22, expected: 'night' },
+            { hour: 4, expected: 'night' }
+        ];
+
+        testTimes.forEach(({ hour, expected }) => {
+            it(`should return ${expected} at ${hour}:00`, () => {
+                clock.setSystemTime(new Date().setHours(hour));
+                const result = getCurrentTimeOfDay();
+                expect(result).to.equal(expected);
+            });
+        });
+    });
+
+    describe('getBrowserType', () => {
+        let userAgentStub, getLowEntropySUAStub;
+
+        const USER_AGENTS = {
+            chrome: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            firefox: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+            edge: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/91.0.864.67 Safari/537.36',
+            safari: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.6 Mobile/15E148 Safari/604.1',
+            ie: 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
+            opera: 'Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.16',
+            unknown: 'UnknownBrowser/1.0'
+        };
+
+        beforeEach(() => {
+            userAgentStub = sandbox.stub(navigator, 'userAgent');
+            getLowEntropySUAStub = sandbox.stub(suaModule, 'getLowEntropySUA').returns(undefined);
+        });
+
+        afterEach(() => {
+            userAgentStub.restore();
+            getLowEntropySUAStub.restore();
+        });
+
+        it('should detect Chrome', () => {
+            userAgentStub.value(USER_AGENTS.chrome);
+            expect(getBrowserType()).to.equal('9');
+        });
+
+        it('should detect Firefox', () => {
+            userAgentStub.value(USER_AGENTS.firefox);
+            expect(getBrowserType()).to.equal('12');
+        });
+
+        it('should detect Edge', () => {
+            userAgentStub.value(USER_AGENTS.edge);
+            expect(getBrowserType()).to.equal('2');
+        });
+
+        it('should detect Internet Explorer', () => {
+            userAgentStub.value(USER_AGENTS.ie);
+            expect(getBrowserType()).to.equal('4');
+        });
+
+        it('should detect Opera', () => {
+            userAgentStub.value(USER_AGENTS.opera);
+            expect(getBrowserType()).to.equal('3');
+        });
+
+        it('should return 0 for unknown browser', () => {
+            userAgentStub.value(USER_AGENTS.unknown);
+            expect(getBrowserType()).to.equal('0');
+        });
+
+        it('should return -1 when userAgent is null', () => {
+            userAgentStub.value(null);
+            expect(getBrowserType()).to.equal('-1');
+        });
+    });
+
+    describe('Utility functions', () => {
+        it('should set browser correctly', () => {
+            expect(getBrowserType()).to.be.a('string');
+        });
+
+        it('should set OS correctly', () => {
+            expect(getOs()).to.be.a('string');
+        });
+
+        it('should set device type correctly', () => {
+            expect(getDeviceType()).to.be.a('string');
+        });
+
+        it('should set time of day correctly', () => {
+            expect(getCurrentTimeOfDay()).to.be.a('string');
+        });
+
+        it('should set country correctly', () => {
+            expect(getCountry()).to.satisfy(value => typeof value === 'string' || value === undefined);
+        });
+
+        it('should set UTM correctly', () => {
+            expect(getUtm()).to.be.a('string');
+            expect(getUtm()).to.be.oneOf(['0', '1']);
+        });
+    });
+
+    describe('getFloorsConfig', () => {
+        let floorsData, profileConfigs;
+        let sandbox;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+            floorsData = {
+                "currency": "USD",
+                "floorProvider": "PM",
+                "floorsSchemaVersion": 2,
+                "modelGroups": [
+                    {
+                        "modelVersion": "M_1",
+                        "modelWeight": 100,
+                        "schema": {
+                            "fields": [
+                                "domain"
+                            ]
+                        },
+                        "values": {
+                            "*": 2.00
+                        }
+                    }
+                ],
+                "skipRate": 0
+            };
+            profileConfigs = {
+                'plugins': {
+                    'dynamicFloors': {
+                        'enabled': true,
+                        'config': {
+                            'enforcement': {
+                                'floorDeals': false,
+                                'enforceJS': false
+                            },
+                            'auctionDelay': 1111,
+                            'floorMin': 0.1111,
+                            'trafficAllocation': 0,
+                            'skipRate': 11
+                        }
+                    }
+                }
+            }
+        });
+
+        it('should return correct config structure', () => {
+            const result = getFloorsConfig(floorsData, profileConfigs);
+
+            expect(result.floors).to.be.an('object');
+            expect(result.floors).to.be.an('object');
+            expect(result.floors).to.have.property('enforcement');
+            expect(result.floors.enforcement).to.have.property('floorDeals', false);
+            expect(result.floors.enforcement).to.have.property('enforceJS', false);
+            expect(result.floors).to.have.property('auctionDelay', 1111);
+            expect(result.floors).to.have.property('floorMin', 0.1111);
+
+            // Verify the additionalSchemaFields structure
+            expect(result.floors.additionalSchemaFields).to.have.all.keys([
+                'deviceType',
+                'timeOfDay',
+                'browser',
+                'os',
+                'country',
+                'utm'
+            ]);
+
+            Object.values(result.floors.additionalSchemaFields).forEach(field => {
+                expect(field).to.be.a('function');
+            });
+        });
+
+        it('should not merge floors and config data when plugin is disabled', () => {
+            sandbox.stub(conf, 'getConfig').callsFake(() => {
+                return {
+                    floors: {
+                        'enforcement': {
+                            'floorDeals': true,
+                            'enforceJS': true
+                        }
+                    }
+                };
+            });
+
+            profileConfigs.plugins.dynamicFloors.enabled = false;
+            const result = getFloorsConfig(floorsData, profileConfigs);
+
+            expect(result.floors).to.deep.equal({ 'enforcement': { 'floorDeals': true, 'enforceJS': true } });
+        });
+
+        it('should not replace skipRate fron config when trafficAllocation is 1', () => {
+            profileConfigs.plugins.dynamicFloors.config.trafficAllocation = 1;
+            const result = getFloorsConfig(floorsData, profileConfigs);
+
+            expect(result.floors.data).to.have.property('skipRate', 11);
+        });
+
+        it('should maintain correct function references', () => {
+            const result = getFloorsConfig(floorsData, profileConfigs);
+
+            expect(result.floors.additionalSchemaFields.deviceType).to.equal(getDeviceType);
+            expect(result.floors.additionalSchemaFields.timeOfDay).to.equal(getCurrentTimeOfDay);
+            expect(result.floors.additionalSchemaFields.browser).to.equal(getBrowserType);
+            expect(result.floors.additionalSchemaFields.os).to.equal(getOs);
+            expect(result.floors.additionalSchemaFields.country).to.equal(getCountry);
+            expect(result.floors.additionalSchemaFields.utm).to.equal(getUtm);
+        });
+    });
+
+    describe('fetchProfileConfigs', () => {
+        let logErrorStub;
+        let fetchStub;
+        let confStub;
+
+        beforeEach(() => {
+            logErrorStub = sandbox.stub(utils, 'logError');
+            fetchStub = sandbox.stub(window, 'fetch');
+            confStub = sandbox.stub(conf, 'setConfig');
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should successfully fetch profile configs', async () => {
+            const mockApiResponse = {
+                "profileName": "profie name",
+                "desc": "description",
+                "plugins": {
+                    "dynamicFloors": {
+                        "enabled": false
+                    }
+                }
+            };
+
+            fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200 }));
+
+            const result = await fetchProfileConfigs('publisherId', 'profileId');
+            expect(result).to.deep.equal(mockApiResponse);
+        });
+
+        it('should log error when JSON parsing fails', async () => {
+            fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
+
+            await fetchProfileConfigs('publisherId', 'profileId');
+            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching profile configs:');
+        });
+
+        it('should log error when response is not ok', async () => {
+            fetchStub.resolves(new Response(null, { status: 500 }));
+
+            await fetchProfileConfigs('publisherId', 'profileId');
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching profile configs: Not ok/))).to.be.true;
+        });
+
+        it('should log error on network failure', async () => {
+            fetchStub.rejects(new Error('Network Error'));
+
+            await fetchProfileConfigs('publisherId', 'profileId');
+            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching profile configs');
+        });
+    });
+
+    describe('fetchFloorsData', () => {
+        let logErrorStub;
+        let fetchStub;
+        let confStub;
+
+        beforeEach(() => {
+            logErrorStub = sandbox.stub(utils, 'logError');
+            fetchStub = sandbox.stub(window, 'fetch');
+            confStub = sandbox.stub(conf, 'setConfig');
+            global._country = undefined;
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should successfully fetch and parse floor rules', async () => {
+            const mockApiResponse = {
+                data: {
+                    currency: 'USD',
+                    modelGroups: [],
+                    values: {}
+                }
+            };
+
+            fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200, headers: { 'country_code': 'US' } }));
+
+            const result = await fetchFloorsData('publisherId', 'profileId');
+            expect(result).to.deep.equal(mockApiResponse);
+            expect(_country).to.equal('US');
+        });
+
+        it('should correctly extract the first unique country code from response headers', async () => {
+            fetchStub.resolves(new Response(JSON.stringify({}), {
+                status: 200,
+                headers: { 'country_code': 'US,IN,US' }
+            }));
+
+            await fetchFloorsData('publisherId', 'profileId');
+            expect(_country).to.equal('US');
+        });
+
+        it('should set _country to undefined if country_code header is missing', async () => {
+            fetchStub.resolves(new Response(JSON.stringify({}), {
+                status: 200
+            }));
+
+            await fetchFloorsData('publisherId', 'profileId');
+            expect(_country).to.be.undefined;
+        });
+
+        it('should log error when JSON parsing fails', async () => {
+            fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
+
+            await fetchFloorsData('publisherId', 'profileId');
+            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
+        });
+
+        it('should log error when response is not ok', async () => {
+            fetchStub.resolves(new Response(null, { status: 500 }));
+
+            await fetchFloorsData('publisherId', 'profileId');
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching floors: No response/))).to.be.true;
+        });
+
+        it('should log error on network failure', async () => {
+            fetchStub.rejects(new Error('Network Error'));
+
+            await fetchFloorsData('publisherId', 'profileId');
+            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
+        });
+    });
+
+    describe('getBidRequestData', () => {
+        let _mergedConfigPromise;
+        let continueAuctionStub;
+        let callback = sinon.spy();
+
+        const reqBidsConfigObj = {
+            adUnits: [{ code: 'ad-slot-code-0' }],
+            auctionId: 'auction-id-0',
+            ortb2Fragments: {
+                bidder: {
+                    user: {
+                        ext: {
+                            ctr: 'US',
+                        }
+                    }
+                }
+            }
+        };
+
+        const ortb2 = {
+            user: {
+                ext: {
+                    ctr: 'US',
+                }
+            }
+        }
+
+        const hookConfig = {
+            reqBidsConfigObj,
+            context: this,
+            nextFn: () => true,
+            haveExited: false,
+            timer: null
+        };
+
+        beforeEach(() => {
+            continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
+        });
+
+        it('should call continueAuction once after _pubmaticFloorRulesPromise. Also getBidRequestData executed only once', async () => {
+            _mergedConfigPromise = Promise.resolve();
+            pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+            await _mergedConfigPromise;
+            expect(continueAuctionStub.calledOnce);
+            expect(
+                continueAuctionStub.alwaysCalledWith(
+                    hookConfig
+                )
+            );
+            expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.include(ortb2);
+        });
+    });
+});
