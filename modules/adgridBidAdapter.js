@@ -178,12 +178,28 @@ function getBidData(bid) {
   return bidData;
 }
 
+/**
+ * Register the user sync pixels/iframe which should be dropped after the auction.
+ */
+function getUserSyncs(syncOptions, response, gdprConsent, uspConsent) {
+  if (typeof response !== 'object' || response === null || response.length === 0) {
+    return [];
+  }
+
+  if (response[0]?.body?.ext?.cookies && response[0].body.ext.cookies === 'object') {
+    return response[0].body.ext.cookies.slice(0, 5);
+  } else {
+    return [];
+  }
+};
+
 export const spec = {
   code: BIDDER.CODE,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  supportedMediaTypes: BIDDER.SUPPORTED_MEDIA_TYPES
+  supportedMediaTypes: BIDDER.SUPPORTED_MEDIA_TYPES,
+  getUserSyncs
 };
 
 registerBidder(spec);
