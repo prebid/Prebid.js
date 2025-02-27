@@ -539,8 +539,8 @@ function getTargetingValues(v) {
 
 function getTargeting(uc) {
   try {
-    const pr = (_browsiData && _browsiData.pr);
-    if (!pr?.includes('GAM')) return {};
+    const sg = !!(_browsiData && _browsiData.sg);
+    if (!sg) return {};
 
     const rtd = getRTD(uc);
     const { viewabilityKey, scrollKey, revenueKey } = getTargetingKeys();

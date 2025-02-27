@@ -78,13 +78,13 @@ describe('browsi Real time data sub module', function () {
       browsiRTD.setData({});
       expect(browsiRTD.browsiSubmodule.getTargetingData([], null, null, auction)).to.eql({});
     });
-    it('should return empty if GAM provider is not defined', function () {
+    it('should return empty if GAM is not defined', function () {
       mockGpt.makeSlot({ code: 'slot1', divId: 'slot1' });
       const data = {
         plc: { 'slot1': { viewability: { 0: 0.234 } } },
         kn: 'bv',
         pmd: undefined,
-        pr: ['bidder1']
+        sg: false
       };
       browsiRTD.setData(data);
       expect(browsiRTD.browsiSubmodule.getTargetingData(['slotId'], null, null, auction)).to.eql({});
@@ -95,7 +95,7 @@ describe('browsi Real time data sub module', function () {
         plc: { 'slot2': { someKey: { 0: 0.234 } } },
         kn: 'bv',
         pmd: undefined,
-        pr: ['bidder1', 'GAM']
+        sg: true
       };
       browsiRTD.setData(data);
       expect(browsiRTD.browsiSubmodule.getTargetingData(['slot2'], null, null, auction)).to.eql({ 'slot2': {} });
@@ -107,7 +107,7 @@ describe('browsi Real time data sub module', function () {
         plc: { 'slot3': { viewability: { 0: 0.234 }, revenue: { 0: 0.567 } } },
         kn: 'bv',
         pmd: undefined,
-        pr: ['bidder1', 'GAM']
+        sg: true
       };
       browsiRTD.setData(data);
       expect(browsiRTD.browsiSubmodule.getTargetingData(['slot3'], null, null, auction)).to.eql({
@@ -121,7 +121,7 @@ describe('browsi Real time data sub module', function () {
         plc: { 'slot4': { someKey: { 0: 0.234 } } },
         kn: 'bv',
         pmd: undefined,
-        pr: ['bidder1', 'GAM']
+        sg: true
       };
       browsiRTD.setData(data);
       expect(browsiRTD.browsiSubmodule.getTargetingData(['slot4'], null, null, auction)).to.eql({ 'slot4': { browsiScroll: '0.40' } });
