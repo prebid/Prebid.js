@@ -258,9 +258,11 @@ function setBrowsiTag(data) {
     pk: _moduleParams.pubKey,
     t: TIMESTAMP
   };
-  window.browsitag.data = window.browsitag.data || {};
-  window.browsitag.data.get = getBrowsiTagRTD;
-  window.browsitag.apiReady = true;
+  if (data.eap) {
+    window.browsitag.data = window.browsitag.data || {};
+    window.browsitag.data.get = getBrowsiTagRTD;
+    window.browsitag.apiReady = true;
+  }
 }
 
 function getBrowsiTagRTD(identifier) {
@@ -433,7 +435,20 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data) {
-              setData({ p: data.p, pmd: data.pmd, bet: data.bet, plc: data.plc, pg: data.pg, pr: data.pr, d: data.d, pvid: data.pvid, g: data.g, aid: data.aid, es: data.es });
+              setData({
+                p: data.p,
+                pmd: data.pmd,
+                bet: data.bet,
+                plc: data.plc,
+                pg: data.pg,
+                pr: data.pr,
+                d: data.d,
+                pvid: data.pvid,
+                g: data.g,
+                aid: data.aid,
+                es: data.es,
+                eap: data.eap
+              });
               setBrowsiTag(data);
             } else {
               setData({});
