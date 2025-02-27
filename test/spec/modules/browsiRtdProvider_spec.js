@@ -400,7 +400,7 @@ describe('browsi Real time data sub module', function () {
       timestampStub.returns(currentTimestemp);
       browsiRTD.setTimestamp();
 
-      expect(browsiRTD.getLatestAvgHighestBid(lahb)).to.deep.equal({ avg: 0.02, age: diffInDays });
+      expect(browsiRTD.getLahb(lahb)).to.deep.equal({ avg: 0.02, age: diffInDays });
     });
   })
 
@@ -414,7 +414,7 @@ describe('browsi Real time data sub module', function () {
         [oneDayAgoTimestemp]: { 'sum': 25, 'smp': 10 },
         [twoDayAgoTimestemp]: { 'sum': 30, 'smp': 12 }
       };
-      expect(browsiRTD.getRecentAvgHighestBid(rahb)).to.deep.equal({ avg: 2.5 });
+      expect(browsiRTD.getRahb(rahb)).to.deep.equal({ avg: 2.5 });
     });
     it('should return rahb without timestamps older than a week', function () {
       const currentTimestemp = new Date().getTime();
@@ -432,7 +432,7 @@ describe('browsi Real time data sub module', function () {
         [oneDayAgoTimestemp]: { 'sum': 25, 'smp': 10 },
         [twoDayAgoTimestemp]: { 'sum': 30, 'smp': 12 },
       };
-      expect(browsiRTD.getRecentAvgBidByTimestamp(rahb)).to.deep.equal(expected);
+      expect(browsiRTD.getRahbByTs(rahb)).to.deep.equal(expected);
     });
     it('should return an empty object if all timestamps are older than a week', function () {
       const currentTimestemp = new Date().getTime();
@@ -442,7 +442,7 @@ describe('browsi Real time data sub module', function () {
         [eightDaysAgoTimestemp]: { 'sum': 20, 'smp': 8 },
         [twoWeekAgoTimestemp]: { 'sum': 25, 'smp': 10 }
       };
-      expect(browsiRTD.getRecentAvgBidByTimestamp(rahb)).to.deep.equal({});
+      expect(browsiRTD.getRahbByTs(rahb)).to.deep.equal({});
     });
   })
 
@@ -460,12 +460,12 @@ describe('browsi Real time data sub module', function () {
       browsiRTD.setTimestamp();
     });
     it('should return undefined if bus is not defined', function () {
-      expect(browsiRTD.getHighestBidMetrics(undefined)).to.equal(undefined);
+      expect(browsiRTD.getHbm(undefined)).to.equal(undefined);
     });
     it('should return metrics if bus is defined', function () {
       const bus = { uahb, lahb, rahb };
 
-      expect(browsiRTD.getHighestBidMetrics(bus)).to.deep.equal({
+      expect(browsiRTD.getHbm(bus)).to.deep.equal({
         uahb: bus.uahb,
         rahb: { avg: 2.5 },
         lahb: { avg: bus.lahb.avg, age: 1 }
@@ -474,7 +474,7 @@ describe('browsi Real time data sub module', function () {
     it('should return metrics without lahb if its not defined', function () {
       const bus = { uahb, rahb };
 
-      expect(browsiRTD.getHighestBidMetrics(bus)).to.deep.equal({
+      expect(browsiRTD.getHbm(bus)).to.deep.equal({
         uahb: bus.uahb,
         rahb: { avg: 2.5 },
         lahb: undefined
@@ -483,7 +483,7 @@ describe('browsi Real time data sub module', function () {
     it('should return metrics without rahb if its not defined', function () {
       const bus = { uahb, lahb };
 
-      expect(browsiRTD.getHighestBidMetrics(bus)).to.deep.equal({
+      expect(browsiRTD.getHbm(bus)).to.deep.equal({
         uahb: bus.uahb,
         rahb: undefined,
         lahb: { avg: bus.lahb.avg, age: 1 }
@@ -492,7 +492,7 @@ describe('browsi Real time data sub module', function () {
     it('should return metrics without uahb if its not defined', function () {
       const bus = { lahb, rahb };
 
-      expect(browsiRTD.getHighestBidMetrics(bus)).to.deep.equal({
+      expect(browsiRTD.getHbm(bus)).to.deep.equal({
         uahb: undefined,
         rahb: { avg: 2.5 },
         lahb: { avg: bus.lahb.avg, age: 1 }
@@ -501,7 +501,7 @@ describe('browsi Real time data sub module', function () {
     it('should return metrics without rahb if timestamps are older than a week', function () {
       const bus = { uahb, lahb, rahb: { [twoWeekAgoTimestemp]: { sum: 25, smp: 10 } } };
 
-      expect(browsiRTD.getHighestBidMetrics(bus)).to.deep.equal({
+      expect(browsiRTD.getHbm(bus)).to.deep.equal({
         uahb: bus.uahb,
         rahb: undefined,
         lahb: { avg: bus.lahb.avg, age: 1 }

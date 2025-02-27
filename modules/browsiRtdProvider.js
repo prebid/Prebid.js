@@ -27,6 +27,7 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { setKeyValue as setGptKeyValue } from '../libraries/gptUtils/gptUtils.js';
+import { getUUID, getDaysDifference, isEngagingUser, toUrlParams } from '../libraries/browsiUtils/browsiUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -36,7 +37,7 @@ const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 const RANDOM = Math.floor(Math.random() * 10) + 1;
-let PVID = generateUUID();
+let PVID = getUUID();
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -90,13 +91,14 @@ export function sendPageviewEvent(eventType) {
   }
 }
 
-function sendModuleInitEvent() {
+function sendModuleInitEvent(status) {
   events.emit(EVENTS.BROWSI_INIT, {
     moduleName: MODULE_NAME,
     sk: _moduleParams.siteKey,
     pk: _moduleParams.pubKey,
     t: TIMESTAMP,
     pvid: PVID,
+    ...(status ? { s: status } : {})
   });
 }
 
@@ -115,7 +117,9 @@ function getLocalStorageData() {
   }
   try {
     bus = storage.getDataFromLocalStorage('__bus');
-  } catch (e) { }
+  } catch (e) {
+    logError('unable to parse __bus');
+  }
 
   return { brtd, bus };
 }
@@ -130,7 +134,7 @@ export function collectData() {
   const { brtd, bus } = getLocalStorageData();
 
   const convertedBus = convertBusData(bus);
-  const highestBidMetrics = convertedBus ? getHighestBidMetrics(convertedBus) : undefined;
+  const hbm = convertedBus ? getHbm(convertedBus) : undefined;
 
   let predictorData = {
     ...{
@@ -146,9 +150,9 @@ export function collectData() {
     ...(brtd ? { us: brtd } : { us: '{}' }),
     ...(document.referrer ? { r: document.referrer } : {}),
     ...(document.title ? { at: document.title } : {}),
-    ...(highestBidMetrics?.rahb ? { rahb: highestBidMetrics.rahb.avg.toFixed(3) } : {}),
-    ...(highestBidMetrics?.uahb ? { uahb: highestBidMetrics.uahb.avg.toFixed(3) } : {}),
-    ...(highestBidMetrics?.lahb ? { lahb: highestBidMetrics.lahb.avg.toFixed(3), lbsa: highestBidMetrics.lahb.age.toFixed(3) } : {}),
+    ...(hbm?.rahb ? { rahb: hbm.rahb.avg.toFixed(3) } : {}),
+    ...(hbm?.uahb ? { uahb: hbm.uahb.avg.toFixed(3) } : {}),
+    ...(hbm?.lahb ? { lahb: hbm.lahb.avg.toFixed(3), lbsa: hbm.lahb.age.toFixed(3) } : {}),
   };
   getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`); // TODO change route
 }
@@ -163,23 +167,20 @@ function convertBusData(bus) {
   }
 }
 
-export function getHighestBidMetrics(bus) {
+export function getHbm(bus) {
   try {
-    const rahbByTimestamp = bus.rahb && Object.keys(bus.rahb).length && getRecentAvgBidByTimestamp(bus.rahb);
-    const isValidRahb = rahbByTimestamp && Object.keys(rahbByTimestamp).length;
-    const isValidUahb = bus.uahb && Object.keys(bus.uahb).length;
-    const isValidLahb = bus.lahb && Object.keys(bus.lahb).length;
+    const rahbByTs = getRahbByTs(bus.rahb);
     return {
-      uahb: isValidUahb ? bus.uahb : undefined,
-      lahb: isValidLahb ? getLatestAvgHighestBid(bus.lahb) : undefined,
-      rahb: isValidRahb ? getRecentAvgHighestBid(rahbByTimestamp) : undefined,
+      uahb: (bus.uahb && Object.keys(bus.uahb).length) ? bus.uahb : undefined,
+      lahb: (bus.lahb && Object.keys(bus.lahb).length) ? getLahb(bus.lahb) : undefined,
+      rahb: (rahbByTs && Object.keys(rahbByTs).length) ? getRahb(rahbByTs) : undefined,
     }
   } catch (e) {
     return undefined;
   }
 }
 
-export function getLatestAvgHighestBid(lahb) {
+export function getLahb(lahb) {
   try {
     return {
       avg: lahb.avg,
@@ -190,33 +191,27 @@ export function getLatestAvgHighestBid(lahb) {
   }
 }
 
-function getDaysDifference(firstDate, secondDate) {
-  const diffInMilliseconds = Math.abs(firstDate - secondDate);
-  const millisecondsPerDay = 24 * 60 * 60 * 1000;
-  return diffInMilliseconds / millisecondsPerDay;
-}
-
-export function getRecentAvgHighestBid(rahb) {
+export function getRahb(rahb) {
   try {
-    let recentSum = { sum: 0, smp: 0 };
-    recentSum = Object.keys(rahb).reduce((sum, curTimestamp) => {
+    let rs = { sum: 0, smp: 0 };
+    rs = Object.keys(rahb).reduce((sum, curTimestamp) => {
       sum.sum += rahb[curTimestamp].sum;
       sum.smp += rahb[curTimestamp].smp;
       return sum;
-    }, recentSum);
+    }, rs);
 
     return {
-      avg: recentSum.sum / recentSum.smp
+      avg: rs.sum / rs.smp
     }
   } catch (e) {
     return undefined;
   }
 }
 
-export function getRecentAvgBidByTimestamp(rahb) {
+export function getRahbByTs(rahb) {
   try {
     const weekAgoTimestamp = TIMESTAMP - (7 * 24 * 60 * 60 * 1000);
-    Object.keys(rahb).forEach((timestamp) => {
+    rahb && Object.keys(rahb)?.forEach((timestamp) => {
       if (parseInt(timestamp) < weekAgoTimestamp) {
         delete rahb[timestamp];
       }
@@ -225,11 +220,6 @@ export function getRecentAvgBidByTimestamp(rahb) {
   } catch (e) {
     return undefined;
   }
-}
-
-export function isEngagingUser() {
-  const pageYOffset = window.scrollY || (document.compatMode === 'CSS1Compat' ? document.documentElement?.scrollTop : document.body?.scrollTop);
-  return pageYOffset > 0;
 }
 
 /**
@@ -283,11 +273,9 @@ export function setData(data) {
 function getOnPageData(auc) {
   try {
     const dataMap = {};
-    if (window.browsitag?.apiReady) {
-      auc.forEach(uc => {
-        dataMap[uc] = window.browsitag.data.get(uc)
-      });
-    }
+    auc.forEach(uc => {
+      dataMap[uc] = window.browsitag.data.get(uc)
+    });
     return dataMap;
   } catch (e) {
     return {};
@@ -435,20 +423,7 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data) {
-              setData({
-                p: data.p,
-                pmd: data.pmd,
-                bet: data.bet,
-                plc: data.plc,
-                pg: data.pg,
-                pr: data.pr,
-                d: data.d,
-                pvid: data.pvid,
-                g: data.g,
-                aid: data.aid,
-                es: data.es,
-                eap: data.eap
-              });
+              setData(data);
               setBrowsiTag(data);
             } else {
               setData({});
@@ -470,17 +445,6 @@ function getPredictionsFromServer(url) {
       }
     }
   );
-}
-
-/**
- * serialize object and return query params string
- * @param {Object} data
- * @return {string}
- */
-function toUrlParams(data) {
-  return Object.keys(data)
-    .map(key => key + '=' + encodeURIComponent(data[key]))
-    .join('&');
 }
 
 function mergeAdUnitData(rtdData = {}, onPageData = {}) {
@@ -625,12 +589,13 @@ function init(moduleConfig) {
   _moduleParams.siteKey = moduleConfig.params.siteKey || moduleConfig.params.sitekey;
   _moduleParams.pubKey = moduleConfig.params.pubKey || moduleConfig.params.pubkey;
   setTimestamp();
-  sendModuleInitEvent();
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
+    sendModuleInitEvent();
     collectData();
     setKeyValue(_moduleParams.splitKey);
   } else {
     logError('missing params for Browsi provider');
+    sendModuleInitEvent('missing params');
   }
   return true;
 }

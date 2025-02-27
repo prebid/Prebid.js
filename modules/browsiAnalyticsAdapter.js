@@ -97,6 +97,7 @@ function handleModuleInit(args) {
     url: _staticData.url,
     ...(geo ? { geo } : {}),
     ...(device ? { dp: device } : {}),
+    ...(args.s ? { s: args.s } : {}),
   }
   sendEvent(event, 'rtd_supply');
 }
