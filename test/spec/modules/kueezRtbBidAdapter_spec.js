@@ -2,7 +2,9 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
-  storage
+  storage,
+  getAndSetFirstPartyData,
+  createFirstPartyData,
 } from 'modules/kueezRtbBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
@@ -251,6 +253,7 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('build requests', function () {
     let sandbox;
+    let createFirstPartyDataStub;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         kueezrtb: {
@@ -259,6 +262,10 @@ describe('KueezRtbBidAdapter', function () {
       };
       sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
+      createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
+        pcid: 'pcid',
+        pcidDate: 1000
+      });
     });
 
     it('should build video request', function () {
@@ -295,6 +302,8 @@ describe('KueezRtbBidAdapter', function () {
           referrer: 'https://www.somereferrer.com',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           schain: VIDEO_BID.schain,
+          iiqpcid: 'pcid',
+          iiqpcidDate: 1000,
           sizes: ['545x307'],
           sua: {
             'source': 2,
@@ -363,6 +372,8 @@ describe('KueezRtbBidAdapter', function () {
           auctionId: 'auction_id',
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
+          iiqpcid: 'pcid',
+          iiqpcidDate: 1000,
           bidderWinsCount: 1,
           bidderTimeout: 3000,
           bidderRequestId: '1fdb5ff1b6eaa7',
@@ -666,6 +677,38 @@ describe('KueezRtbBidAdapter', function () {
       const parsed = tryParseJSON(value);
       expect(typeof parsed).to.be.equal('number');
       expect(parsed).to.be.equal(value);
+    });
+  });
+
+  describe('First party data', () => {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kueezrtb: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      storage.removeDataFromLocalStorage('_iiq_fdata');
+    })
+
+    it('should create first party data', function () {
+      const data = createFirstPartyData();
+      expect(data).to.have.property('pcid');
+      expect(data).to.have.property('pcidDate');
+    });
+
+    it('should get and set first party data', function () {
+      storage.removeDataFromLocalStorage('_iiq_fdata');
+
+      const data = getAndSetFirstPartyData();
+      expect(data).to.have.property('pcid');
+      expect(data).to.have.property('pcidDate');
+
+      const stored = storage.getDataFromLocalStorage('_iiq_fdata');
+      const parsed = tryParseJSON(stored);
+      expect(parsed).to.deep.equal(data);
     });
   });
 });
