@@ -1,11 +1,12 @@
-import {Renderer} from '../src/Renderer.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice} from '../src/utils.js';
-import {find} from '../src/polyfill.js';
-import {config} from '../src/config.js';
-import {OUTSTREAM} from '../src/video.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { find } from '../src/polyfill.js';
+import { isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice } from '../src/utils.js';
+import { OUTSTREAM } from '../src/video.js';
 import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEMENTS } from '../libraries/braveUtils/nativeAssets.js';
 
 /**
@@ -310,7 +311,7 @@ function buildImpFromAdUnit(adUnit, bidderRequest) {
   if (!mediaType) return null;
 
   const media = IMP_BUILDER[mediaType](mediaTypes[mediaType], bidderRequest, adUnit)
-  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+  const currency = getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
   const bidfloor = getMainFloor(adUnit, media.format, mediaType, currency);
 
   return {
@@ -641,7 +642,7 @@ function getFloor(adUnit, size, mediaType, currency) {
 
   const floorResult = adUnit.getFloor({ currency, mediaType, size });
 
-  return floorResult.currency === currency ? floorResult.floor : 0;
+  return floorResult?.currency === currency ? floorResult?.floor : 0;
 }
 
 /**

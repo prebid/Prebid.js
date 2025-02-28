@@ -37,6 +37,8 @@ const BANNER_SIZE = { width: 250, height: 250 };
 const CUSTOM_RENDERER_URL = `https://${CUSTOM_DOMAIN}/script/6.1/prebidRenderer.js`;
 const DEFAULT_RENDERER_URL = `https://player.aniview.com/script/6.1/prebidRenderer.js`;
 
+const REPLACEMENT_1 = '12345';
+
 const MOCK = {
   bidRequest: () => ({
     bidderCode: 'aniview',
@@ -67,6 +69,9 @@ const MOCK = {
           AV_PUBLISHERID: PUBLISHER_ID_2,
           AV_CHANNELID: CHANNEL_ID_2,
           playerDomain: CUSTOM_DOMAIN,
+          replacements: {
+            AV_CDIM1: REPLACEMENT_1,
+          },
         },
         mediaTypes: {
           video: {
@@ -200,6 +205,13 @@ describe('Aniview Bid Adapter', function () {
       expect(imp.bidfloorcur).equal(CURRENCY);
     });
 
+    it('should have replacements in request', function () {
+      const bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
+      const { replacements } = bidRequest[1].data.ext.aniview;
+
+      expect(replacements.AV_CDIM1).equal(REPLACEMENT_1);
+    });
+
     it('should not have floor data in imp if getFloor returns empty object', function () {
       videoBidRequest.bids[1].getFloor = () => ({});
 
@@ -265,9 +277,8 @@ describe('Aniview Bid Adapter', function () {
         const bids = spec.interpretResponse(bidderResponse, bidRequests[0]);
         const bid = bids[0];
 
-        expect(bid.width).to.not.exist;
-        expect(bid.height).to.not.exist;
-        expect(bid.creativeId).to.not.exist;
+        expect(bid.renderer).to.not.exist;
+        expect(bid.ad).to.not.exist;
       });
 
       it('should return empty bids array if no bids in response', function () {

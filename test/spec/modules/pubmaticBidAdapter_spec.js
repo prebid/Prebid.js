@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setIBVField, setTTL } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -356,13 +356,20 @@ describe('PubMatic adapter', function () {
     bannerAndVideoBidRequests = [
       {
         code: 'div-banner-video',
+        ortb2Imp: {
+          banner: {
+            pos: 1
+          }
+        },
         mediaTypes: {
           video: {
             playerSize: [640, 480],
-            context: 'instream'
+            context: 'instream',
+            pos: 2
           },
           banner: {
-            sizes: [[300, 250], [300, 600]]
+            sizes: [[300, 250], [300, 600]],
+            pos: 1
           }
         },
         bidder: 'pubmatic',
@@ -2556,9 +2563,9 @@ describe('PubMatic adapter', function () {
           expect(data.user.yob).to.equal(parseInt(multipleMediaRequests[0].params.yob)); // YOB
           expect(data.user.gender).to.equal(multipleMediaRequests[0].params.gender); // Gender
           expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
-  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
-  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
-  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
+  		    expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		    expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		    expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
           expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
           expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
           expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -2621,6 +2628,7 @@ describe('PubMatic adapter', function () {
           expect(data.banner.h).to.equal(250);
           expect(data.banner.format).to.exist;
           expect(data.banner.format.length).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes.length);
+          expect(data.banner.pos).to.equal(1);
 
           // Case: when size is not present in adslo
           bannerAndVideoBidRequests[0].params.adSlot = '/15671365/DMDemo';
@@ -2638,6 +2646,7 @@ describe('PubMatic adapter', function () {
           expect(data.video).to.exist;
           expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);
           expect(data.video.h).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[1]);
+          expect(data.video.pos).to.equal(2);
         });
 
         it('Request params - should handle banner, video and native format in single adunit', function() {
@@ -2652,6 +2661,7 @@ describe('PubMatic adapter', function () {
           expect(data.banner.h).to.equal(250);
           expect(data.banner.format).to.exist;
           expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length);
+          expect(data.banner.pos).to.equal(0);
 
           expect(data.video).to.exist;
           expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);
@@ -3463,7 +3473,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(true);
-        expect(response[0].ttl).to.equal(300);
+        expect(response[0].ttl).to.equal(360);
         expect(response[0].meta.networkId).to.equal(123);
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
         expect(response[0].meta.buyerId).to.equal('seat-id');
@@ -3488,7 +3498,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].dealId).to.equal(bidResponses.body.seatbid[1].bid[0].dealid);
         expect(response[1].currency).to.equal('USD');
         expect(response[1].netRevenue).to.equal(true);
-        expect(response[1].ttl).to.equal(300);
+        expect(response[1].ttl).to.equal(360);
         expect(response[1].meta.networkId).to.equal(422);
         expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
         expect(response[1].meta.buyerId).to.equal(832);
@@ -3577,6 +3587,33 @@ describe('PubMatic adapter', function () {
         });
         let response = spec.interpretResponse(bidResponses, request);
         expect(response[0].renderer).to.not.exist;
+      });
+
+      it('should set ibv field in bid.ext when bid.ext.ibv exists', function() {
+        let request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+
+        let copyOfBidResponse = utils.deepClone(bannerBidResponse);
+        let bidExt = utils.deepClone(copyOfBidResponse.body.seatbid[0].bid[0].ext);
+        copyOfBidResponse.body.seatbid[0].bid[0].ext = Object.assign(bidExt, {
+          ibv: true
+        });
+
+        let response = spec.interpretResponse(copyOfBidResponse, request);
+        expect(response[0].ext.ibv).to.equal(true);
+        expect(response[0].meta.mediaType).to.equal('video');
+      });
+
+      it('should not set ibv field when bid.ext does not exist ', function() {
+        let request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+
+        let response = spec.interpretResponse(bannerBidResponse, request);
+        expect(response[0].ext).to.not.exist;
+        expect(response[0].meta).to.exist;
+        expect(response[0].meta.mediaType).to.equal('banner');
       });
 
       if (FEATURES.VIDEO) {
@@ -3878,10 +3915,12 @@ describe('PubMatic adapter', function () {
             // dchain: 'dc',
             // demandSource: 'ds',
             // secondaryCatIds: ['secondaryCatIds']
-          }
+          },
         };
 
-        const br = {};
+        const br = {
+          mediaType: 'video'
+        };
         prepareMetaObject(br, bid, null);
         expect(br.meta.networkId).to.equal(6); // dspid
         expect(br.meta.buyerId).to.equal('12'); // adid
@@ -3900,6 +3939,7 @@ describe('PubMatic adapter', function () {
         expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
         expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
         expect(br.meta.dsa).to.equal(dsa); // dsa
+        expect(br.meta.mediaType).to.equal('video'); // mediaType
       });
 
       it('Should be empty, when ext and adomain is absent in bid object', function () {
@@ -4176,6 +4216,58 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0]['banner']['battr']).to.equal(undefined);
       });
     });
+
+    describe('setIBVField', function() {
+      it('should set ibv field in newBid.ext when bid.ext.ibv exists', function() {
+        const bid = {
+          ext: {
+            ibv: true
+          }
+        };
+        const newBid = {};
+        setIBVField(bid, newBid);
+        expect(newBid.ext).to.exist;
+        expect(newBid.ext.ibv).to.equal(true);
+        expect(newBid.meta).to.exist;
+        expect(newBid.meta.mediaType).to.equal('video');
+      });
+
+      it('should not set ibv field when bid.ext.ibv does not exist', function() {
+        const bid = {
+          ext: {}
+        };
+        const newBid = {};
+        setIBVField(bid, newBid);
+        expect(newBid.ext).to.not.exist;
+        expect(newBid.meta).to.not.exist;
+      });
+
+      it('should not set ibv field when bid.ext does not exist', function() {
+        const bid = {};
+        const newBid = {};
+        setIBVField(bid, newBid);
+        expect(newBid.ext).to.not.exist;
+        expect(newBid.meta).to.not.exist;
+      });
+
+      it('should preserve existing newBid.ext properties', function() {
+        const bid = {
+          ext: {
+            ibv: true
+          }
+        };
+        const newBid = {
+          ext: {
+            existingProp: 'should remain'
+          }
+        };
+        setIBVField(bid, newBid);
+        expect(newBid.ext.existingProp).to.equal('should remain');
+        expect(newBid.ext.ibv).to.equal(true);
+        expect(newBid.meta).to.exist;
+        expect(newBid.meta.mediaType).to.equal('video');
+      });
+    });
   });
 
   if (FEATURES.VIDEO) {
@@ -4299,6 +4391,51 @@ describe('PubMatic adapter', function () {
       let response = spec.interpretResponse(newBidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].bidderCode).to.equal('groupm');
+    });
+  });
+
+  describe('setTTL', function() {
+    it('should set ttl field in newBid.ttl when bid.exp exists', function() {
+      const bid = {
+        exp: 200
+      };
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(200);
+    });
+
+    it('should set ttl as 360 mediatype banner', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'banner'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
+    });
+
+    it('should set ttl as 1800 mediatype video', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'video'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
+    });
+
+    it('should set ttl as 1800 mediatype native', function() {
+      const bid = {};
+      const newBid = {
+        mediaType: 'native'
+      };
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(1800);
+    });
+
+    it('should set ttl as 360 as default if all condition fails', function() {
+      const bid = {};
+      const newBid = {};
+      setTTL(bid, newBid);
+      expect(newBid.ttl).to.equal(360);
     });
   });
 });

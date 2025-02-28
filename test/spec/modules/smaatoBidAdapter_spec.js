@@ -174,6 +174,7 @@ describe('smaatoBidAdapterTest', () => {
             id: 'bidId',
             banner: BANNER_OPENRTB_IMP,
             tagid: 'adspaceId',
+            secure: 1
           }
         ]);
       });
