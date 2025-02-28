@@ -10,7 +10,6 @@ import { ajax } from '../src/ajax.js';
 import { logInfo, logWarn } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { gppDataHandler } from '../src/adapterManager.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -57,12 +56,12 @@ export const lockrAIMSubmodule = {
    * @returns {lockrAIMId}
    */
   getId(config, consentData) {
-    if (consentData?.gdprApplies === true) {
+    if (consentData?.gdpr?.gdprApplies === true) {
       _logWarn('lockrAIM is not intended for use where GDPR applies. The lockrAIM module will not run');
       return undefined;
     }
 
-    const gppConsent = gppDataHandler.getConsentData();
+    const gppConsent = consentData?.gpp;
     let gppString = '';
     if (gppConsent) {
       gppString = gppConsent.gppString;

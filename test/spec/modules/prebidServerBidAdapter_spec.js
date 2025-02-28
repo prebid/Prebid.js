@@ -3,7 +3,6 @@ import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
   resetSyncedStatus,
-  resetWurlMap,
   validateConfig,
   s2sDefaultConfig
 } from 'modules/prebidServerBidAdapter/index.js';
@@ -43,6 +42,7 @@ import {
   extractEids,
   getPBSBidderConfig
 } from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import {markWinningBid} from '../../../src/adRendering.js';
 
 let CONFIG = {
   accountId: '1',
@@ -3807,7 +3807,6 @@ describe('S2S Adapter', function () {
     });
 
     beforeEach(function () {
-      resetWurlMap();
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
       sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => {
@@ -3837,6 +3836,27 @@ describe('S2S Adapter', function () {
       triggerPixelStub.restore();
     });
 
+    it('should translate wurl and burl into eventtrackers', () => {
+      const burlEvent = {event: 1, method: 1, url: 'burl'};
+      const winEvent = {event: 500, method: 1, url: 'events.win'};
+      const trackerEvent = {event: 500, method: 1, url: 'eventtracker'};
+
+      const resp = utils.deepClone(RESPONSE_OPENRTB);
+      resp.seatbid[0].bid[0].ext.eventtrackers = [
+        trackerEvent,
+        burlEvent
+      ]
+      resp.seatbid[0].bid[0].ext.prebid.events = {
+        win: winEvent.url
+      };
+      resp.seatbid[0].bid[0].burl = burlEvent.url;
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(resp));
+      expect(addBidResponse.getCall(0).args[1].eventtrackers).to.have.deep.members([
+        burlEvent, trackerEvent, winEvent
+      ]);
+    })
+
     it('should call triggerPixel if wurl is defined', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
@@ -3846,32 +3866,11 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
 
-      events.emit(EVENTS.BID_WON, {
-        auctionId: '173afb6d132ba3',
-        adId: '1000'
-      });
-
       sinon.assert.calledOnce(addBidResponse);
+      markWinningBid(addBidResponse.getCall(0).args[1]);
+
       expect(utils.triggerPixel.called).to.be.true;
       expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
-    });
-
-    it('should not call triggerPixel if the wurl cache does not contain the winning bid', function () {
-      const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
-      clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
-        win: 'https://wurl.org'
-      };
-
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
-
-      events.emit(EVENTS.BID_WON, {
-        auctionId: '173afb6d132ba3',
-        adId: 'missingAdId'
-      });
-
-      sinon.assert.calledOnce(addBidResponse)
-      expect(utils.triggerPixel.called).to.be.false;
     });
 
     it('should not call triggerPixel if wurl is undefined', function () {
@@ -3881,12 +3880,8 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
 
-      events.emit(EVENTS.BID_WON, {
-        auctionId: '173afb6d132ba3',
-        adId: '1060'
-      });
-
-      sinon.assert.calledOnce(addBidResponse)
+      sinon.assert.calledOnce(addBidResponse);
+      markWinningBid(addBidResponse.getCall(0).args[1]);
       expect(utils.triggerPixel.called).to.be.false;
     });
   })

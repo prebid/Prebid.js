@@ -19,7 +19,6 @@ import {fetch} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {GreedyPromise} from '../src/utils/promise.js';
 import {loadExternalScript} from '../src/adloader.js';
@@ -256,13 +255,13 @@ export const id5IdSubmodule = {
       return undefined;
     }
 
-    if (!hasWriteConsentToLocalStorage(consentData)) {
+    if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.');
       return undefined;
     }
 
     const resp = function (cbFunction) {
-      const fetchFlow = new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData(), gppDataHandler.getConsentData());
+      const fetchFlow = new IdFetchFlow(submoduleConfig, consentData?.gdpr, cacheIdObj, consentData?.usp, consentData?.gpp);
       fetchFlow.execute()
         .then(response => {
           cbFunction(response);
@@ -287,7 +286,7 @@ export const id5IdSubmodule = {
    * @return {IdResponse} A response object that contains id.
    */
   extendId(config, consentData, cacheIdObj) {
-    if (!hasWriteConsentToLocalStorage(consentData)) {
+    if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.');
       return cacheIdObj;
     }

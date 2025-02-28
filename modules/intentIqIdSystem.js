@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {logError, logInfo} from '../src/utils.js';
+import {logError, logInfo, isPlainObject} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
@@ -160,6 +160,23 @@ function tryParse(data) {
 }
 
 /**
+ * Configures and updates A/B testing group in Google Ad Manager (GAM).
+ *
+ * @param {object} gamObjectReference - Reference to the GAM object, expected to have a `cmd` queue and `pubads()` API.
+ * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
+ * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
+ */
+export function setGamReporting(gamObjectReference, gamParameterName, userGroup) {
+  if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
+    gamObjectReference.cmd.push(() => {
+      gamObjectReference
+        .pubads()
+        .setTargeting(gamParameterName, userGroup || NOT_YET_DEFINED);
+    });
+  }
+}
+
+/**
  * Processes raw client hints data into a structured format.
  * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
@@ -218,11 +235,14 @@ export const intentIqIdSubmodule = {
     let decryptedData, callbackTimeoutID;
     let callbackFired = false;
     let runtimeEids = { eids: [] };
+    let gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
+    let gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
+    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group)
 
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
@@ -403,9 +423,11 @@ export const intentIqIdSubmodule = {
                 firstPartyData.group = WITHOUT_IIQ;
                 storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
                 defineEmptyDataAndFireCallback();
+                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
                 return
               } else {
                 firstPartyData.group = WITH_IIQ;
+                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
               }
             }
             if ('isOptedOut' in respJson) {
