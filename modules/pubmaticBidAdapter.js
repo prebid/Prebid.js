@@ -153,23 +153,43 @@ let publisherId = 0;
 let isInvalidNativeRequest = false;
 let biddersList = ['pubmatic'];
 const allBiddersList = ['all'];
-let cpmAdjustment;
+export let cpmAdjustment;
 
-function _calculateBidCpmAdjustment(bid) {
+export function _calculateBidCpmAdjustment(bid) {
   if (!bid) return;
 
   const { originalCurrency, currency, cpm, originalCpm, meta } = bid;
   const convertedCpm = originalCurrency !== currency && isFn(bid.getCpmInNewCurrency)
     ? bid.getCpmInNewCurrency(originalCurrency)
     : cpm;
-  const mediaType = meta?.mediaType || bid.mediaType;
-  cpmAdjustment = cpmAdjustment || {};
 
-  if (mediaType) {
-    cpmAdjustment[mediaType] = Number(((originalCpm - convertedCpm) / originalCpm).toFixed(2));
-    cpmAdjustment.currency = originalCurrency;
-  }
-};
+  const mediaType = bid.mediaType;
+  const metaMediaType = meta?.mediaType;
+
+  cpmAdjustment = cpmAdjustment || {
+    currency,
+    originalCurrency,
+    adjustment: []
+  };
+
+  const adjustmentValue = Number(((originalCpm - convertedCpm) / originalCpm).toFixed(2));
+
+  const adjustmentEntry = {
+    cpmAdjustment: adjustmentValue,
+    mediaType,
+    metaMediaType,
+    cpm: convertedCpm,
+    originalCpm
+  };
+
+  const existingIndex = cpmAdjustment?.adjustment?.findIndex(
+    (entry) => entry?.mediaType === mediaType && entry?.metaMediaType === metaMediaType
+  );
+
+  existingIndex !== -1
+    ? cpmAdjustment.adjustment.splice(existingIndex, 1, adjustmentEntry)
+    : cpmAdjustment.adjustment.push(adjustmentEntry); 
+}
 
 export function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
