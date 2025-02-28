@@ -1,5 +1,5 @@
 /**
- * This module adds browsi provider to the eal time data module
+ * This module adds browsi provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
  * The module will fetch predictions from browsi server
  * The module will place browsi bootstrap script on page
@@ -16,17 +16,18 @@
  * @property {?string} splitKey
  */
 
-import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {ajaxBuilder} from '../src/ajax.js';
-import {loadExternalScript} from '../src/adloader.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {find, includes} from '../src/polyfill.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID, timestamp } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { loadExternalScript } from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { find, includes } from '../src/polyfill.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
-import {EVENTS} from '../src/constants.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
-import {setKeyValue as setGptKeyValue} from '../libraries/gptUtils/gptUtils.js';
+import { EVENTS } from '../src/constants.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { setKeyValue as setGptKeyValue } from '../libraries/gptUtils/gptUtils.js';
+import { getUUID, getDaysDifference, isEngagingUser, toUrlParams } from '../libraries/browsiUtils/browsiUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -34,19 +35,26 @@ import {setKeyValue as setGptKeyValue} from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE_NAME = 'browsi';
 
-const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 const RANDOM = Math.floor(Math.random() * 10) + 1;
+let PVID = getUUID();
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
 /** @type {null|Object} */
 let _browsiData = null;
-/** @type {string} */
-const DEF_KEYNAME = 'browsiViewability';
 /** @type {null | function} */
 let _dataReadyCallback = null;
 /** @type {null|Object} */
 let _ic = {};
+/** @type {null|number} */
+let TIMESTAMP = null;
+/** @type {string} */
+const VIEWABILITY_KEYNAME = 'browsiViewability';
+/** @type {string} */
+const SCROLL_KEYNAME = 'browsiScroll';
+/** @type {string} */
+const REVENUE_KEYNAME = 'browsiRevenue';
 
 /**
  * add browsi script to page
@@ -62,6 +70,7 @@ export function addBrowsiTag(data) {
   script.setAttribute('src', data.u);
   script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
   script.brwRandom = RANDOM;
+  Object.assign(script.prebidData, { pvid: PVID || data.pvid, t: TIMESTAMP });
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
@@ -82,6 +91,39 @@ export function sendPageviewEvent(eventType) {
   }
 }
 
+function sendModuleInitEvent(status) {
+  events.emit(EVENTS.BROWSI_INIT, {
+    moduleName: MODULE_NAME,
+    sk: _moduleParams.siteKey,
+    pk: _moduleParams.pubKey,
+    t: TIMESTAMP,
+    pvid: PVID,
+    ...(status ? { s: status } : {})
+  });
+}
+
+export function setTimestamp() {
+  TIMESTAMP = timestamp();
+}
+
+function getLocalStorageData() {
+  let brtd = null;
+  let bus = null;
+
+  try {
+    brtd = storage.getDataFromLocalStorage('__brtd');
+  } catch (e) {
+    logError('unable to parse __brtd');
+  }
+  try {
+    bus = storage.getDataFromLocalStorage('__bus');
+  } catch (e) {
+    logError('unable to parse __bus');
+  }
+
+  return { brtd, bus };
+}
+
 /**
  * collect required data from page
  * send data to browsi server to get predictions
@@ -89,12 +131,10 @@ export function sendPageviewEvent(eventType) {
 export function collectData() {
   const win = window.top;
   const doc = win.document;
-  let browsiData = null;
-  try {
-    browsiData = storage.getDataFromLocalStorage('__brtd');
-  } catch (e) {
-    logError('unable to parse __brtd');
-  }
+  const { brtd, bus } = getLocalStorageData();
+
+  const convertedBus = convertBusData(bus);
+  const hbm = convertedBus ? getHbm(convertedBus) : undefined;
 
   let predictorData = {
     ...{
@@ -103,12 +143,83 @@ export function collectData() {
       sw: (win.screen && win.screen.width) || -1,
       sh: (win.screen && win.screen.height) || -1,
       url: `${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`,
+      eu: isEngagingUser(),
+      t: TIMESTAMP,
+      pvid: PVID
     },
-    ...(browsiData ? {us: browsiData} : {us: '{}'}),
-    ...(document.referrer ? {r: document.referrer} : {}),
-    ...(document.title ? {at: document.title} : {})
+    ...(brtd ? { us: brtd } : { us: '{}' }),
+    ...(document.referrer ? { r: document.referrer } : {}),
+    ...(document.title ? { at: document.title } : {}),
+    ...(hbm?.rahb ? { rahb: hbm.rahb.avg.toFixed(3) } : {}),
+    ...(hbm?.uahb ? { uahb: hbm.uahb.avg.toFixed(3) } : {}),
+    ...(hbm?.lahb ? { lahb: hbm.lahb.avg.toFixed(3), lbsa: hbm.lahb.age.toFixed(3) } : {}),
   };
-  getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`);
+  getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`); // TODO change route
+}
+
+function convertBusData(bus) {
+  try {
+    if (!bus) return undefined;
+    const busObj = JSON.parse(bus);
+    return busObj && Object.keys(busObj).length ? busObj : undefined;
+  } catch (e) {
+    return undefined;
+  }
+}
+
+export function getHbm(bus) {
+  try {
+    const rahbByTs = getRahbByTs(bus.rahb);
+    return {
+      uahb: (bus.uahb && Object.keys(bus.uahb).length) ? bus.uahb : undefined,
+      lahb: (bus.lahb && Object.keys(bus.lahb).length) ? getLahb(bus.lahb) : undefined,
+      rahb: (rahbByTs && Object.keys(rahbByTs).length) ? getRahb(rahbByTs) : undefined,
+    }
+  } catch (e) {
+    return undefined;
+  }
+}
+
+export function getLahb(lahb) {
+  try {
+    return {
+      avg: lahb.avg,
+      age: getDaysDifference(TIMESTAMP, lahb.time)
+    }
+  } catch (error) {
+    return undefined;
+  }
+}
+
+export function getRahb(rahb) {
+  try {
+    let rs = { sum: 0, smp: 0 };
+    rs = Object.keys(rahb).reduce((sum, curTimestamp) => {
+      sum.sum += rahb[curTimestamp].sum;
+      sum.smp += rahb[curTimestamp].smp;
+      return sum;
+    }, rs);
+
+    return {
+      avg: rs.sum / rs.smp
+    }
+  } catch (e) {
+    return undefined;
+  }
+}
+
+export function getRahbByTs(rahb) {
+  try {
+    const weekAgoTimestamp = TIMESTAMP - (7 * 24 * 60 * 60 * 1000);
+    rahb && Object.keys(rahb)?.forEach((timestamp) => {
+      if (parseInt(timestamp) < weekAgoTimestamp) {
+        delete rahb[timestamp];
+      }
+    });
+    return rahb;
+  } catch (e) {
+    return undefined;
+  }
 }
 
 /**
@@ -125,35 +236,76 @@ function waitForData(callback) {
   }
 }
 
+function setBrowsiTag(data) {
+  window.browsitag = window.browsitag || {};
+  window.browsitag.rtd = {
+    pvid: PVID || data.pvid,
+    d: data.d,
+    g: data.g,
+    aid: data.aid,
+    es: data.es,
+    sk: _moduleParams.siteKey,
+    pk: _moduleParams.pubKey,
+    t: TIMESTAMP
+  };
+  if (data.eap) {
+    window.browsitag.data = window.browsitag.data || {};
+    window.browsitag.data.get = getBrowsiTagRTD;
+    window.browsitag.apiReady = true;
+  }
+}
+
+function getBrowsiTagRTD(identifier) {
+  const uc = identifier || 'placeholder';
+  const rtd = getRTD([uc]);
+  return rtd[uc];
+}
+
 export function setData(data) {
   _browsiData = data;
+  if (!PVID) { PVID = data.pvid; }
   if (isFn(_dataReadyCallback)) {
     _dataReadyCallback();
     _dataReadyCallback = null;
   }
 }
 
+function getOnPageData(auc) {
+  try {
+    const dataMap = {};
+    auc.forEach(uc => {
+      dataMap[uc] = window.browsitag.data.get(uc)
+    });
+    return dataMap;
+  } catch (e) {
+    return {};
+  }
+}
+
 function getRTD(auc) {
   logInfo(`Browsi RTD provider is fetching data for ${auc}`);
   try {
-    const _bp = (_browsiData && _browsiData.p) || {};
+    const _pg = (_browsiData && _browsiData.pg) || {};
+    const _plc = (_browsiData && _browsiData.plc) || {};
     return auc.reduce((rp, uc) => {
       _ic[uc] = _ic[uc] || 0;
       const _c = _ic[uc];
       if (!uc) {
         return rp
       }
+      rp[uc] = {};
+      Object.assign(rp[uc], _pg);
       const adSlot = getSlotByCode(uc);
       const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
-      const _pd = _bp[identifier];
+      const _pd = _plc[identifier];
       if (!_pd) {
         return rp
       }
-      if (_pd.ps) {
-        if (!isIdMatchingAdUnit(adSlot, _pd.w)) {
-          return rp;
-        }
-        rp[uc] = getKVObject(getCurrentData(_pd.ps, _c));
+      if (Object.keys(_pd).length) {
+        Object.entries(_pd).forEach(([key, value]) => {
+          const kv = getKVObject(key, getCurrentData(value, _c));
+          Object.assign(rp[uc], kv);
+        });
       }
       return rp;
     }, {});
@@ -165,22 +317,25 @@ function getRTD(auc) {
 /**
  * get prediction
  * return -1 if prediction not found
- * @param {object} predictionObject
+ * @param {object} prediction
  * @param {number} _c
  * @return {number}
  */
-export function getCurrentData(predictionObject, _c) {
-  if (!predictionObject || !isNumber(_c)) {
+export function getCurrentData(prediction, _c) {
+  if (!prediction || !isNumber(_c)) {
     return -1;
   }
-  if (isNumber(predictionObject[_c])) {
-    return predictionObject[_c];
+  if (isNumber(prediction)) {
+    return prediction;
   }
-  if (Object.keys(predictionObject).length > 1) {
+  if (isNumber(prediction[_c])) {
+    return prediction[_c];
+  }
+  if (Object.keys(prediction).length > 1) {
     while (_c > 0) {
       _c--;
-      if (isNumber(predictionObject[_c])) {
-        return predictionObject[_c];
+      if (isNumber(prediction[_c])) {
+        return prediction[_c];
       }
     }
   }
@@ -196,31 +351,13 @@ function getAllSlots() {
 }
 /**
  * get prediction and return valid object for key value set
+ * @param {string} k
  * @param {number} p
  * @return {Object} key:value
  */
-function getKVObject(p) {
-  const prValue = p < 0 ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
-  let prObject = {};
-  prObject[getKey()] = prValue.toString();
-  return prObject;
-}
-
-function getKey() {
-  return ((_moduleParams['keyName'] || (_browsiData && _browsiData['kn']) || DEF_KEYNAME).toString())
-}
-/**
- * check if placement id matches one of given ad units
- * @param {Object} slot google slot
- * @param {string[]} whitelist ad units
- * @return {boolean}
- */
-export function isIdMatchingAdUnit(slot, whitelist) {
-  if (!whitelist || !whitelist.length || !slot) {
-    return true;
-  }
-  const slotAdUnits = slot.getAdUnitPath();
-  return whitelist.indexOf(slotAdUnits) !== -1;
+function getKVObject(k, p) {
+  if (p < 0) return {};
+  return {[k]: p};
 }
 
 /**
@@ -286,7 +423,8 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data) {
-              setData({p: data.p, kn: data.kn, pmd: data.pmd, bet: data.bet});
+              setData(data);
+              setBrowsiTag(data);
             } else {
               setData({});
             }
@@ -309,15 +447,12 @@ function getPredictionsFromServer(url) {
   );
 }
 
-/**
- * serialize object and return query params string
- * @param {Object} data
- * @return {string}
- */
-function toUrlParams(data) {
-  return Object.keys(data)
-    .map(key => key + '=' + encodeURIComponent(data[key]))
-    .join('&');
+function mergeAdUnitData(rtdData = {}, onPageData = {}) {
+  const mergedData = {};
+  Object.keys({ ...rtdData, ...onPageData }).forEach((key) => {
+    mergedData[key] = { ...onPageData[key], ...rtdData[key] };
+  });
+  return mergedData;
 }
 
 function setBidRequestsData(bidObj, callback) {
@@ -329,12 +464,22 @@ function setBidRequestsData(bidObj, callback) {
     adUnitCodes = adUnits.map(au => au.code);
   }
   waitForData(() => {
-    const data = getRTD(adUnitCodes);
-    if (data) {
+    const pr = (_browsiData && _browsiData.pr);
+    if (!pr || !pr.length) { return; }
+
+    const onPageData = getOnPageData(adUnitCodes);
+    const rtdData = getRTD(adUnitCodes);
+    if (!Object.keys(rtdData).length && !Object.keys(onPageData).length) { return; }
+
+    const data = mergeAdUnitData(rtdData, onPageData);
+    if (Object.keys(data).length) {
       adUnits.forEach(adUnit => {
         const adUnitCode = adUnit.code;
         if (data[adUnitCode]) {
-          deepSetValue(adUnit, 'ortb2Imp.ext.data.browsi', {[getKey()]: data[adUnitCode][getKey()]});
+          const validBidders = adUnit.bids.filter(bid => pr.includes(bid.bidder));
+          validBidders.forEach(bid => {
+            deepSetValue(bid, 'ortb2Imp.ext.data.browsi', data[adUnitCode]);
+          });
         }
       });
     }
@@ -359,8 +504,65 @@ export const browsiSubmodule = {
   getBidRequestData: setBidRequestsData
 };
 
+function getRevenueTargetingValue(p) {
+  if (!p) {
+    return undefined;
+  } else if (p <= 0) {
+    return 'no fill';
+  } else if (p <= 0.3) {
+    return 'low';
+  } else if (p <= 0.7) {
+    return 'medium';
+  }
+  return 'high';
+}
+
+function getTargetingValue(p) {
+  return (!p || p < 0) ? undefined : (Math.floor(p * 10) / 10).toFixed(2);
+}
+
+function getTargetingKeys() {
+  return {
+    viewabilityKey: (_moduleParams['keyName'] || VIEWABILITY_KEYNAME).toString(),
+    scrollKey: SCROLL_KEYNAME,
+    revenueKey: REVENUE_KEYNAME,
+  }
+}
+
+function getTargetingValues(v) {
+  return {
+    viewabilityValue: getTargetingValue(v['viewability']),
+    scrollValue: getTargetingValue(v['scrollDepth']),
+    revenueValue: getRevenueTargetingValue(v['revenue'])
+  }
+}
+
+function getTargeting(uc) {
+  try {
+    const sg = !!(_browsiData && _browsiData.sg);
+    if (!sg) return {};
+
+    const rtd = getRTD(uc);
+    const { viewabilityKey, scrollKey, revenueKey } = getTargetingKeys();
+
+    return Object.fromEntries(
+      Object.entries(rtd).map(([key, value]) => {
+        const { viewabilityValue, scrollValue, revenueValue } = getTargetingValues(value);
+        const result = {
+          ...(viewabilityValue ? { [viewabilityKey]: viewabilityValue } : {}),
+          ...(scrollValue ? { [scrollKey]: scrollValue } : {}),
+          ...(revenueValue ? { [revenueKey]: revenueValue } : {}),
+        }
+        return [key, result];
+      })
+    );
+  } catch (e) {
+    return {};
+  }
+}
+
 function getTargetingData(uc, c, us, a) {
-  const targetingData = getRTD(uc);
+  const targetingData = getTargeting(uc);
   const auctionId = a.auctionId;
   const sendAdRequestEvent = (_browsiData && _browsiData['bet'] === 'AD_REQUEST');
   uc.forEach(auc => {
@@ -384,11 +586,16 @@ function getTargetingData(uc, c, us, a) {
 
 function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
+  _moduleParams.siteKey = moduleConfig.params.siteKey || moduleConfig.params.sitekey;
+  _moduleParams.pubKey = moduleConfig.params.pubKey || moduleConfig.params.pubkey;
+  setTimestamp();
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
+    sendModuleInitEvent();
     collectData();
     setKeyValue(_moduleParams.splitKey);
   } else {
     logError('missing params for Browsi provider');
+    sendModuleInitEvent('missing params');
   }
   return true;
 }
