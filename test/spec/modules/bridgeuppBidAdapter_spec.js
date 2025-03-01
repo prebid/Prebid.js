@@ -6,7 +6,7 @@ import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
 import { hook } from '../../../src/hook';
 import { config } from '../../../src/config.js';
-import { syncAddFPDToBidderRequest } from '../../helpers/fpd';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
@@ -85,7 +85,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       },
     };
 
-    it('request should build with correct siteId', function () {
+    it('request should build with correct siteId', async function () {
       const bidRequests = [
         {
           bidId: 'bidId',
@@ -102,12 +102,12 @@ describe('bridgeuppBidAdapter_spec', function () {
         },
       ];
 
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.imp[0].ext.bidder.siteId).to.deep.equal('site-id-12');
     });
 
-    it('request should build with correct imp', function () {
+    it('request should build with correct imp', async function () {
       const expectedMetric = {
         url: 'https://sonarads.com'
       }
@@ -134,7 +134,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           bidfloorcur: 'USD'
         }
       }];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.imp).to.have.lengthOf(1);
       expect(ortbRequest.imp[0].id).to.deep.equal('bidId');
@@ -148,7 +148,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.imp[0].rwdd).to.equal(1);
     });
 
-    it('request should build with proper site data', function () {
+    it('request should build with proper site data', async function () {
       const bidRequests = [
         {
           bidder: 'sonarads',
@@ -179,7 +179,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
       expect(ortbRequest.site.domain).to.equal(SITE_DOMAIN_NAME);
       expect(ortbRequest.site.publisher.domain).to.equal('sonarads.com');
       expect(ortbRequest.site.page).to.equal(SITE_PAGE);
@@ -193,7 +193,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.site.content.url).to.equal(SITE_PAGE + '/games1')
     });
 
-    it('request should build with proper device data', function () {
+    it('request should build with proper device data', async function () {
       const bidRequests = [
         {
           bidder: 'sonarads',
@@ -228,7 +228,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
       expect(ortbRequest.device.dnt).to.equal(1);
       expect(ortbRequest.device.lmt).to.equal(0);
       expect(ortbRequest.device.js).to.equal(0);
@@ -245,8 +245,8 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.device.geo.lon).to.deep.equal(2.3522);
     });
 
-    it('should properly build a request with source object', function () {
-      const expectedSchain = { id: 'prebid' };
+    it('should properly build a request with source object', async function () {
+      const expectedSchain = {id: 'prebid'};
       const ortb2 = {
         source: {
           pchain: 'sonarads',
@@ -268,12 +268,12 @@ describe('bridgeuppBidAdapter_spec', function () {
           },
         },
       ];
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
       expect(ortbRequest.source.schain).to.deep.equal(expectedSchain);
       expect(ortbRequest.source.pchain).to.equal('sonarads');
     });
 
-    it('should properly user object', function () {
+    it('should properly user object', async function () {
       const bidRequests = [
         {
           bidder: 'sonarads',
@@ -314,7 +314,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         }
       }
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(br));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(br));
       const ortbRequest = request.data;
       expect(ortbRequest.user.yob).to.deep.equal(2012);
       expect(ortbRequest.user.keyowrds).to.deep.equal('test test');
@@ -333,7 +333,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       ]);
     });
 
-    it('should properly build a request regs object', function () {
+    it('should properly build a request regs object', async function () {
       const bidRequests = [
         {
           bidder: 'sonarads',
@@ -357,14 +357,14 @@ describe('bridgeuppBidAdapter_spec', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
       expect(ortbRequest.regs.gpp).to.equal('consent_string');
       expect(ortbRequest.regs.gpp_sid).to.deep.equal([0, 1, 2]);
       expect(ortbRequest.regs.us_privacy).to.deep.equal('yes us privacy applied');
     });
 
-    it('gdpr test', function () {
+    it('gdpr test', async function () {
       // using privacy params from global bidder Request
       const bidRequests = [
         {
@@ -380,12 +380,12 @@ describe('bridgeuppBidAdapter_spec', function () {
           },
         },
       ];
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs.ext.gdpr).to.deep.equal(1);
       expect(ortbRequest.user.ext.consent).to.equal('consentDataString');
     });
 
-    it('should properly set tmax if available', function () {
+    it('should properly set tmax if available', async function () {
       // using tmax from global bidder Request
       const bidRequests = [
         {
@@ -402,12 +402,12 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         },
       ];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.tmax).to.equal(bidderRequest.timeout);
     });
 
-    it('should properly build a request with bcat field', function () {
+    it('should properly build a request with bcat field', async function () {
       const bcat = ['IAB1', 'IAB2'];
       const bidRequests = [
         {
@@ -429,11 +429,11 @@ describe('bridgeuppBidAdapter_spec', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.bcat).to.deep.equal(bcat);
     });
 
-    it('should properly build a request with badv field', function () {
+    it('should properly build a request with badv field', async function () {
       const badv = ['nike.com'];
       const bidRequests = [
         {
@@ -455,11 +455,11 @@ describe('bridgeuppBidAdapter_spec', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.badv).to.deep.equal(badv);
     });
 
-    it('should properly build a request with bapp field', function () {
+    it('should properly build a request with bapp field', async function () {
       const bapp = ['nike.com'];
       const bidRequests = [
         {
@@ -481,11 +481,11 @@ describe('bridgeuppBidAdapter_spec', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.bapp).to.deep.equal(bapp);
     });
 
-    it('banner request test', function () {
+    it('banner request test', async function () {
       const bidderRequest = {};
       const bidRequests = [
         {
@@ -510,7 +510,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         },
       ];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.imp[0].banner).not.to.be.null;
       expect(ortbRequest.imp[0].banner.format[0].w).to.equal(320);
@@ -521,7 +521,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.imp[0].banner.mimes).to.deep.equal(['image/jpg', 'image/gif']);
     });
 
-    it('banner request test with sizes > 1', function () {
+    it('banner request test with sizes > 1', async function () {
       const bidderRequest = {};
       const bidRequests = [
         {
@@ -538,7 +538,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         },
       ];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.imp[0].banner).not.to.be.null;
       expect(ortbRequest.imp[0].banner.format[0].w).to.equal(336);
@@ -547,32 +547,32 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.imp[0].banner.format[1].h).to.equal(50);
     });
 
-    it('should properly build a request when coppa is true', function () {
+    it('should properly build a request when coppa is true', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({ coppa: true });
+      config.setConfig({coppa: true});
 
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
     });
 
-    it('should properly build a request when coppa is false', function () {
+    it('should properly build a request when coppa is false', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({ coppa: false });
-      let buildRequests = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      config.setConfig({coppa: false});
+      let buildRequests = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = buildRequests.data;
       expect(ortbRequest.regs.coppa).to.equal(0);
     });
 
-    it('should properly build a request when coppa is not defined', function () {
+    it('should properly build a request when coppa is not defined', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs?.coppa).to.be.undefined;
     });
 
-    it('build a banner request with bidFloor', function () {
+    it('build a banner request with bidFloor', async function () {
       const bidRequests = [
         {
           bidder: 'sonarads',
@@ -589,12 +589,12 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         }
       ];
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.imp[0].bidfloor).to.deep.equal(1);
       expect(ortbRequest.imp[0].bidfloorcur).to.deep.equal('USD');
     });
 
-    it('build a banner request with getFloor', function () {
+    it('build a banner request with getFloor', async function () {
       const bidRequests = [
         {
           bidder: 'sonarads',
@@ -608,11 +608,11 @@ describe('bridgeuppBidAdapter_spec', function () {
             siteId: 'site-id-12'
           },
           getFloor: () => {
-            return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
+            return {currency: 'USD', floor: 1.23, size: '*', mediaType: '*'};
           }
         }
       ];
-      const ortbRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest)).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.imp[0].bidfloor).equal(1.23);
       expect(ortbRequest.imp[0].bidfloorcur).equal('USD');
     });
@@ -680,9 +680,9 @@ describe('bridgeuppBidAdapter_spec', function () {
       }
     }
 
-    it('should returns an empty array when bid response is empty', function () {
+    it('should returns an empty array when bid response is empty', async function () {
       const bidRequests = [];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const serverResponse = {
         headers: {
           get: function () {
@@ -697,16 +697,16 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(spec.reportEventsEnabled).to.equal(false);
     });
 
-    it('should return an empty array when there is no bid response', function () {
+    it('should return an empty array when there is no bid response', async function () {
       const bidRequests = [];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const serverResponse = {
         headers: {
           get: function () {
             return undefined
           }
         },
-        body: { seatbid: [] }
+        body: {seatbid: []}
       };
 
       const interpretedBids = spec.interpretResponse(serverResponse, request);
@@ -714,7 +714,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(spec.reportEventsEnabled).to.equal(false);
     });
 
-    it('return banner response', function () {
+    it('return banner response', async function () {
       const bidRequests = [{
         adUnitCode: 'impId',
         bidId: 'bidId',
@@ -727,7 +727,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           siteId: 'site-id-12',
         }
       }];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const serverResponse = {
         headers: {
           get: function () {
@@ -750,7 +750,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(interpretedBids[0].meta.advertiserDomains[0]).to.deep.equal('advertiserDomain.sandbox.sonarads.com');
     });
 
-    it('should set the reportEventsEnabled to true as part of the response', function () {
+    it('should set the reportEventsEnabled to true as part of the response', async function () {
       const bidRequests = [{
         adUnitCode: 'impId',
         bidId: 'bidId',
@@ -779,7 +779,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           siteId: 'site-id-12',
         }
       }];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const serverResponse = {
         headers: {
           get: function (header) {
@@ -796,7 +796,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(interpretedBids).to.have.length(1);
     });
 
-    it('bid response when banner wins among two ad units', function () {
+    it('bid response when banner wins among two ad units', async function () {
       const bidRequests = [{
         adUnitCode: 'impId',
         bidId: 'bidId',
@@ -825,7 +825,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           siteId: 'site-id-12',
         }
       }];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const serverResponse = {
         headers: {
           get: function (header) {
