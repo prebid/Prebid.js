@@ -53,10 +53,10 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
 
   function loadAd(divId, adTagUrl, options) {
     triggerEvent(AUCTION_AD_LOAD_ATTEMPT, adTagUrl, options);
-    if (!options.prefetchedVastXml) {
-      videoCore.setAdTagUrl(adTagUrl, divId, options);
-    } else {
+    if (options.prefetchedVastXml) {
       videoCore.setAdXml(options.prefetchedVastXml, divId, options);
+    } else {
+      videoCore.setAdTagUrl(adTagUrl, divId, options);
     }
   }
 

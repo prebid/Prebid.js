@@ -254,26 +254,32 @@ function getCustParams(bid, options, urlCustParams) {
   return encodedParams;
 }
 
-export async function getVastForLocallyCachedBid(gamVastWrapper, bid) {
-  const blobUrl = vastLocalCache.get(bid.videoCacheKey);
-  if (!blobUrl) return gamVastWrapper;
-  const finalVast = await replaceVastAdTagWithBlobContent(gamVastWrapper, blobUrl, bid.videoCacheKey);
-  return finalVast;
+async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
+  try {
+    const [videoCacheKey, blobUrl] = Array.from(localCacheMap).find(([uuid]) => gamVastWrapper.includes(uuid)) || [];
+    if (!videoCacheKey || !blobUrl) {
+      return gamVastWrapper;
+    }
+
+    const modifiedVast = await replaceVastAdTagWithBlobContent(gamVastWrapper, blobUrl, videoCacheKey);
+    return modifiedVast;
+  } catch (error) {
+    logError('Error during gam vast wrapper replacement', error);
+    return gamVastWrapper;
+  }
 };
 
-async function getVast(options) {
-  const { bid } = options;
+export async function getVastXml(options, localCacheMap = vastLocalCache) {
   const vastUrl = buildDfpVideoUrl(options);
   const response = await fetch(vastUrl);
-
   if (!response.ok) {
     throw new Error('Unable to fetch GAM VAST wrapper');
   }
 
   const gamVastWrapper = await response.text();
 
-  if (config.getConfig('cache.useLocal') && gamVastWrapper.includes(bid.videoCacheKey)) {
-    const vastXml = await getVastForLocallyCachedBid(gamVastWrapper, bid);
+  if (config.getConfig('cache.useLocal')) {
+    const vastXml = await getVastForLocallyCachedBids(gamVastWrapper, localCacheMap);
     return vastXml;
   }
 
@@ -302,26 +308,20 @@ function replaceVastAdTagUri(xmlString, match, newContent) {
 };
 
 export async function replaceVastAdTagWithBlobContent(vastXml, blobUrl, videoCacheKey) {
-  try {
-    const response = await fetch(blobUrl);
-    if (!response.ok) {
-      logError('Unable to fetch blob');
-      return vastXml;
-    }
-
-    // Mechanism to handle cases where VAST tags are fetched
-    // from a context where the blob resource is not accessible.
-    // like IMA SDK iframe
-    const blobContent = await response.text();
-    const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
-
-    return replaceVastAdTagUri(vastXml, videoCacheKey, dataUrl);
-  } catch (e) {
+  const response = await fetch(blobUrl);
+  if (!response.ok) {
+    logError('Unable to fetch blob');
     return vastXml;
   }
+  // Mechanism to handle cases where VAST tags are fetched
+  // from a context where the blob resource is not accessible.
+  // like IMA SDK iframe
+  const blobContent = await response.text();
+  const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+  return replaceVastAdTagUri(vastXml, videoCacheKey, dataUrl);
 }
 
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
-  getVast
+  getVastXml
 });

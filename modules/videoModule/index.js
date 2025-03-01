@@ -230,7 +230,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const options = { adUnitCode };
 
     async function prefetchVast() {
-      const gamVastWrapper = await gamSubmodule.getVast(
+      const gamVastWrapper = await gamSubmodule.getVastXml(
         adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params, winningBid
       );
       options.prefetchedVastXml = gamVastWrapper;
