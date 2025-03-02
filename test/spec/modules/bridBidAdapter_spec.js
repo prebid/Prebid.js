@@ -1,5 +1,6 @@
 import { spec } from '../../../modules/bridBidAdapter.js'
 import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
+import { deepClone } from '../../../src/utils.js';
 
 describe('Brid Bid Adapter', function() {
   const videoRequest = [{
@@ -35,6 +36,29 @@ describe('Brid Bid Adapter', function() {
       version: '$prebid.version$'
     });
     expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal(12345);
+  });
+
+  it('Test the request schain sending', function() {
+    const globalSchain = {
+      ver: '1.0',
+      complete: 1,
+      nodes: [{
+        asi: 'examplewebsite.com',
+        sid: '00001',
+        hp: 1
+      }]
+    };
+
+    let videoRequestCloned = deepClone(videoRequest);
+    videoRequestCloned[0].schain = globalSchain;
+
+    const request = spec.buildRequests(videoRequestCloned, videoRequestCloned[0]);
+    expect(request).to.not.be.empty;
+
+    const payload = JSON.parse(request[0].data);
+    expect(payload).to.not.be.empty;
+    expect(payload.source.ext.schain).to.exist;
+    expect(payload.source.ext.schain).to.deep.equal(globalSchain);
   });
 
   it('Test nobid responses', function () {
