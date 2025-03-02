@@ -423,7 +423,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         },
       ];
-      const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.auctionStart).to.equal(bidderRequest.auctionStart);
     });
