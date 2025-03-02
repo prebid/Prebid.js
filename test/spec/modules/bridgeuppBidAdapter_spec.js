@@ -402,7 +402,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         },
       ];
-      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       const ortbRequest = request.data;
       expect(ortbRequest.tmax).to.equal(bidderRequest.timeout);
     });
@@ -423,7 +423,7 @@ describe('bridgeuppBidAdapter_spec', function () {
           }
         },
       ];
-      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       const ortbRequest = request.data;
       expect(ortbRequest.auctionStart).to.equal(bidderRequest.auctionStart);
     });
