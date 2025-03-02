@@ -178,6 +178,7 @@ describe('ExcoBidAdapter', function () {
         creativeId: 'h6bvt3rl',
         creative_id: 'h6bvt3rl',
         ttl: 3000,
+        eventtrackers: [],
         meta: {
           advertiserDomains: [
             'crest.com'
