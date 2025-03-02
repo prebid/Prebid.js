@@ -13,7 +13,7 @@ import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
 import {createBid} from '../../../../src/bidfactory.js';
-import {hook} from '../../../../src/hook.js';
+import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
 
 function mkBid(bid, status = STATUS.GOOD) {
@@ -451,6 +451,20 @@ describe('targeting tests', function () {
       expect(logWarnStub.calledTwice).to.be.true;
       expect(logErrorStub.calledOnce).to.be.true;
     });
+
+    it('does not include adunit targeting for ad units that are not requested', () => {
+      sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+        {
+          code: 'au1',
+          [JSON_MAPPING.ADSERVER_TARGETING]: {'aut': 'v1'}
+        },
+        {
+          code: 'au2',
+          [JSON_MAPPING.ADSERVER_TARGETING]: {'aut': 'v2'}
+        }
+      ]));
+      expect(targetingInstance.getAllTargeting('au1').au2).to.not.exist;
+    })
 
     describe('when bidLimit is present in setConfig', function () {
       let bid4;
@@ -955,6 +969,40 @@ describe('targeting tests', function () {
       expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
     });
   }); // end getAllTargeting tests
+
+  describe('getAllTargeting will work correctly when a hook raises has modified flag in getHighestCpmBidsFromBidPool', function () {
+    let bidsReceived;
+    let amGetAdUnitsStub;
+    let amBidsReceivedStub;
+    let bidExpiryStub;
+
+    beforeEach(function () {
+      bidsReceived = [bid2, bid1].map(deepClone);
+
+      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+        return bidsReceived;
+      });
+      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+        return ['/123456/header-bid-tag-0'];
+      });
+      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+
+      setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, function (fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
+        fn.call(this, bidsReceived, highestCpmCallback, adUnitBidLimit, true);
+      });
+    });
+
+    afterEach(function () {
+      getHighestCpmBidsFromBidPool.getHooks().remove();
+    })
+
+    it('will apply correct targeting', function () {
+      let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+      expect(targeting['/123456/header-bid-tag-0']['hb_pb']).to.equal('0.53');
+      expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal('148018fe5e');
+    })
+  });
 
   describe('getAllTargeting without bids return empty object', function () {
     let amBidsReceivedStub;

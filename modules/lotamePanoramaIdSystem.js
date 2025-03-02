@@ -297,10 +297,10 @@ export const lotamePanoramaIdSubmodule = {
 
       let consentString;
       if (consentData) {
-        if (isBoolean(consentData.gdprApplies)) {
-          queryParams.gdpr_applies = consentData.gdprApplies;
+        if (isBoolean(consentData.gdpr?.gdprApplies)) {
+          queryParams.gdpr_applies = consentData.gdpr.gdprApplies;
         }
-        consentString = consentData.consentString;
+        consentString = consentData.gdpr?.consentString;
       }
       if (consentString) {
         queryParams.gdpr_consent = consentString;
