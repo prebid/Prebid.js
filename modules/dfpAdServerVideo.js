@@ -256,15 +256,31 @@ function getCustParams(bid, options, urlCustParams) {
 
 async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
   try {
-    const [videoCacheKey, blobUrl] = Array.from(localCacheMap).find(([uuid]) => gamVastWrapper.includes(uuid)) || [];
-    if (!videoCacheKey || !blobUrl) {
+    const xmlUtil = XMLUtil();
+    const xmlDoc = xmlUtil.parse(gamVastWrapper);
+    const vastAdTagUriElement = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME)[0];
+
+    if (!vastAdTagUriElement || !vastAdTagUriElement.textContent) {
       return gamVastWrapper;
     }
 
-    const modifiedVast = await replaceVastAdTagWithBlobContent(gamVastWrapper, blobUrl, videoCacheKey);
-    return modifiedVast;
+    const uuidExp = new RegExp(`.*(?:([A-Fa-f0-9]{8}-(?:[A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}).*)+`, 'gi');
+    const uuid = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp))[0][1];
+
+    if (uuid) {
+      const blobUrl = localCacheMap.get(uuid);
+      if (!blobUrl) throw new Error(`Unable to find uuid ${uuid} in local cache map`)
+        
+      const base64BlobContent = await getBase64BlobContent(blobUrl);
+      const cdata = xmlDoc.createCDATASection(base64BlobContent);
+      vastAdTagUriElement.textContent = '';
+      vastAdTagUriElement.appendChild(cdata);
+      return xmlUtil.serialize(xmlDoc);
+    } else {
+      throw new Error('Unable to find uuid in ad tag');
+    }
   } catch (error) {
-    logError('Error during gam vast wrapper replacement', error);
+    logError('Unable to process xml', error);
     return gamVastWrapper;
   }
 };
@@ -286,39 +302,18 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   return gamVastWrapper;
 }
 
-function replaceVastAdTagUri(xmlString, match, newContent) {
-  try {
-    const xmlUtil = XMLUtil();
-    const xmlDoc = xmlUtil.parse(xmlString);
-    const vastAdTagUriElements = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME);
-    const vastAdTagUriElement = Array.from(vastAdTagUriElements).find(adTag => adTag.textContent.includes(match));
-
-    if (vastAdTagUriElement) {
-      const cdata = xmlDoc.createCDATASection(newContent);
-      vastAdTagUriElement.textContent = '';
-      vastAdTagUriElement.appendChild(cdata);
-      return xmlUtil.serialize(xmlDoc);
-    } else {
-      throw new Error(`${VAST_TAG_URI_TAGNAME} tag not found in xml`);
-    }
-  } catch (error) {
-    logError('Unable to process xml', error);
-    return xmlString;
-  }
-};
-
-export async function replaceVastAdTagWithBlobContent(vastXml, blobUrl, videoCacheKey) {
+export async function getBase64BlobContent(blobUrl) {
   const response = await fetch(blobUrl);
   if (!response.ok) {
     logError('Unable to fetch blob');
-    return vastXml;
+    throw new Error('Blob not found');
   }
   // Mechanism to handle cases where VAST tags are fetched
   // from a context where the blob resource is not accessible.
   // like IMA SDK iframe
   const blobContent = await response.text();
   const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
-  return replaceVastAdTagUri(vastXml, videoCacheKey, dataUrl);
+  return dataUrl;
 }
 
 registerVideoSupport('dfp', {

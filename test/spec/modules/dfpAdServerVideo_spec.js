@@ -16,6 +16,7 @@ import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
 import { getVastXml } from '../../../modules/dfpAdServerVideo.js';
 import { server } from '../../mocks/xhr.js';
+import { generateUUID } from '../../../src/utils.js';
 
 describe('The DFP video support module', function () {
   before(() => {
@@ -736,7 +737,7 @@ describe('The DFP video support module', function () {
     const url = 'https://pubads.g.doubleclick.net/gampad/ads'
     const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>';
     const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
-    const uuid = '1234325';
+    const uuid = generateUUID();
     const localMap = new Map([[uuid, blobUrl]]);
 
     const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuid;
