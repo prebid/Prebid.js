@@ -122,7 +122,7 @@ export const converter = ortbConverter({
 
     imp.ext = imp.ext || {};
 
-    imp.ext.luponmedia = imp.ext.prebid.bidder.luponmedia || {};
+    imp.ext.luponmedia = imp.ext.luponmedia || {};
     imp.ext.luponmedia.placement_id = bidRequest.adUnitCode;
     imp.ext.luponmedia.keyId = bidRequest.params.keyId;
     imp.ext.luponmedia.siteId = bidRequest.params.siteId;
