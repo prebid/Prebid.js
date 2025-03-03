@@ -270,8 +270,6 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
 
     if (uuid) {
       const blobUrl = localCacheMap.get(uuid);
-      if (!blobUrl) throw new Error(`Unable to find uuid ${uuid} in local cache map`)
-
       const base64BlobContent = await getBase64BlobContent(blobUrl);
       const cdata = xmlDoc.createCDATASection(base64BlobContent);
       vastAdTagUriElement.textContent = '';
