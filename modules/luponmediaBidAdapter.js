@@ -139,9 +139,6 @@ export const spec = {
     return true;
   },
   buildRequests: function (bidRequests, bidderRequest) {
-    console.log(bidRequests, 'bid requests');
-    console.log(bidderRequest, 'bidder request')
-
     const filteredRequests = bidRequests.filter(bidRequest => Boolean(bidRequest?.adUnitCode))
 
     const data = converter.toORTB({ bidderRequest, bidRequests: filteredRequests })
