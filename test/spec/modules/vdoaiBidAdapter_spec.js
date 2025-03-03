@@ -1,411 +1,744 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/vdoaiBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-
-const ENDPOINT_URL = 'https://prebid-v2.vdo.ai/auction';
+import { expect } from 'chai';
+import { spec } from '../../../modules/vdoaiBidAdapter.js';
 
 describe('vdoaiBidAdapter', function () {
-  const adapter = newBidder(spec);
-  const sandbox = sinon.sandbox.create();
-  beforeEach(function() {
-    sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
-  });
-  afterEach(function() {
-    sandbox.restore();
-  });
-  describe('isBidRequestValid', function () {
-    let bid = {
-      'bidder': 'vdoai',
-      'params': {
-        placementId: 'testPlacementId'
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250]
-      ],
-      'bidId': '1234asdf1234',
-      'bidderRequestId': '1234asdf1234asdf',
-      'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf120'
-    };
-    let invalidParams = {
-      'bidder': 'vdoai',
-      'params': {
-        placementId: false
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250]
-      ],
-      'bidId': '1234asdf1234',
-      'bidderRequestId': '1234asdf1234asdf',
-      'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf120'
-    };
-    it('should return true where required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-    it('should return false where required params not found', function () {
-      expect(spec.isBidRequestValid(invalidParams)).to.equal(false);
-    });
-  });
-  describe('buildRequests', function () {
-    let bidRequests = [
-      {
-        'bidder': 'vdoai',
-        'params': {
-          placementId: 'testPlacementId',
-          bidFloor: 0.1
-        },
-        'sizes': [
-          [300, 250]
-        ],
-        'bidId': '23beaa6af6cdde',
-        'bidderRequestId': '19c0c1efdf37e7',
-        'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
-        'mediaType': 'banner',
-        'adUnitCode': '1234',
-        'mediaTypes': {
-          banner: {
-            sizes: [300, 250]
-          }
-        }
-      },
-      {
-        'bidder': 'vdoai',
-        'params': {
-          placementId: 'testPlacementId',
-          bidFloor: 0.1
-        },
-        'width': '300',
-        'height': '200',
-        'bidId': 'bidId123',
-        'referer': 'www.example.com',
-        'mediaType': 'video',
-        'mediaTypes': {
-          video: {
-            context: 'instream',
-            playerSize: [[640, 360]]
-          }
+  const bid1 = {
+    bidId: '2dd581a2b6281d',
+    bidder: 'vdoai',
+    bidderRequestId: '145e1d6a7837c9',
+    params: {
+      host: 'exchange.ortb.net',
+      adUnitId: 123,
+      adUnitType: 'banner',
+      publisherId: 'perfectPublisher',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    placementCode: 'placement_0',
+    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      }
+    },
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
         }
       }
-    ];
-
-    let bidderRequests = {
-      timeout: 3000,
-      'refererInfo': {
-        'numIframes': 0,
-        'reachedTop': true,
-        'referer': 'https://example.com',
-        'stack': ['https://example.com'],
-        'page': 'example.com',
-        'ref': 'example2.com'
-      },
-      'ortb2': {
-        source: {
-          tid: 123456789
-        },
-        'site': {
-          'domain': 'abc.com',
-          'publisher': {
-            'domain': 'abc.com'
-          }
-        }
-      },
-      'ortb2Imp': {
-        ext: {
-          tid: '12345',
-          gpid: '1234'
-        }
-      },
-      gdprConsent: {
-        consentString: 'abc',
-        gdprApplies: true,
-        addtlConsent: 'xyz'
-      },
-      gppConsent: {
-        gppString: 'abcd',
-        applicableSections: ''
-      },
-      uspConsent: {
-        uspConsent: '12345'
-      },
-      userIdAsEids: {},
-      schain: {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
+    },
+    userIdAsEids: [
+      {
+        source: 'test1.org',
+        uids: [
           {
-            'asi': 'vdo.ai',
-            'sid': '4359',
-            'hp': 1
+            id: '123',
           }
         ]
       }
-    };
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
+  }
+  const bid2 = {
+    bidId: '58ee9870c3164a',
+    bidder: 'vdoai',
+    bidderRequestId: '209fdaf1c81649',
+    params: {
+      host: 'ads.vdo.ai',
+      adUnitId: 456,
+      adUnitType: 'banner',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    placementCode: 'placement_1',
+    auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
+    sizes: [[350, 200]],
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
+      }
+    },
+    userIdAsEids: [
+      {
+        source: 'test2.org',
+        uids: [
+          {
+            id: '234',
+          }
+        ]
+      }
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        },
+        {
+          asi: 'example1.com',
+          sid: '2',
+          hp: 1
+        }
+      ]
+    }
+  }
+  const bid3 = {
+    bidId: '019645c7d69460',
+    bidder: 'vdoai',
+    bidderRequestId: 'f2b15f89e77ba6',
+    params: {
+      host: 'exchange.ortb.net',
+      adUnitId: 789,
+      adUnitType: 'video',
+      publisherId: 'secondPerfectPublisher',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    placementCode: 'placement_2',
+    auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
+    sizes: [[800, 600]],
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
+      }
+    },
+    userIdAsEids: [
+      {
+        source: 'test3.org',
+        uids: [
+          {
+            id: '345',
+          },
+          {
+            id: '456',
+          }
+        ]
+      }
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
+  }
+  const bid4 = {
+    bidId: '019645c7d69460',
+    bidder: 'vdoai',
+    bidderRequestId: 'f2b15f89e77ba6',
+    params: {
+      host: 'exchange.ortb.net',
+      adUnitId: 789,
+      adUnitType: 'video',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    placementCode: 'placement_2',
+    auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
+    video: {
+      playerSize: [800, 600]
+    },
+    ortb2Imp: {
+      ext: {
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
+      }
+    },
+    userIdAsEids: [
+      {
+        source: 'test.org',
+        uids: [
+          {
+            id: '111',
+          }
+        ]
+      }
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
+  }
 
-    const request = spec.buildRequests(bidRequests, bidderRequests);
-    it('sends bid request to our endpoint via POST', function () {
-      expect(request[0].method).to.equal('POST');
-    });
-    it('attaches source and version to endpoint URL as query params', function () {
-      expect(request[0].url).to.equal(ENDPOINT_URL);
-    });
-    it('should contain all keys', function() {
-      expect(request[0].data.pageInfo).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'xOffset', 'yOffset', 'version');
+  describe('buildRequests', function () {
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          sua: {
+            browsers: [],
+            platform: [],
+            mobile: 1,
+            architecture: 'arm'
+          }
+        }
+      },
+      refererInfo: {
+        page: 'testPage'
+      }
+    }
+    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
+    it('Creates two ServerRequests', function() {
+      expect(serverRequests).to.exist
+      expect(serverRequests).to.have.lengthOf(2)
     })
-    it('should return empty array if no valid bid was passed', function () {
-      expect(spec.buildRequests([], bidderRequests)).to.be.empty;
-    });
-    it('should not send invalid schain', function () {
-      delete bidderRequests.schain.nodes[0].asi;
-      let result = spec.buildRequests(bidRequests, bidderRequests);
-      expect(result[0].data.schain).to.be.undefined;
-    });
-    it('should not send invalid schain', function () {
-      delete bidderRequests.schain;
-      let result = spec.buildRequests(bidRequests, bidderRequests);
-      expect(result[0].data.schain).to.be.undefined;
-    });
-    it('should check for correct sizes', function () {
-      delete bidRequests[1].mediaTypes.video.playerSize;
-      let result = spec.buildRequests(bidRequests, bidderRequests);
-      expect(result[1].data.playerSize).to.be.empty;
-    });
-    it('should not pass undefined in GDPR string', function () {
-      delete bidderRequests.gdprConsent;
-      let result = spec.buildRequests(bidRequests, bidderRequests);
-      expect(result[0].data.gdprConsent).to.be.undefined;
-    });
-
-    it('should not pass undefined in gppConsent', function () {
-      delete bidderRequests.gppConsent;
-      let result = spec.buildRequests(bidRequests, bidderRequests);
-      expect(result[0].data.gppConsent).to.be.undefined;
-    });
-
-    it('should not pass undefined in uspConsent', function () {
-      delete bidderRequests.uspConsent;
-      let result = spec.buildRequests(bidRequests, bidderRequests);
-      expect(result[0].data.uspConsent).to.be.undefined;
+    serverRequests.forEach(serverRequest => {
+      it('Creates a ServerRequest object with method, URL and data', function () {
+        expect(serverRequest).to.exist
+        expect(serverRequest.method).to.exist
+        expect(serverRequest.url).to.exist
+        expect(serverRequest.data).to.exist
+      })
+      it('Returns POST method', function () {
+        expect(serverRequest.method).to.equal('POST')
+      })
+      it('Returns valid data if array of bids is valid', function () {
+        let data = serverRequest.data;
+        expect(data).to.be.an('object');
+        expect(data).to.have.all.keys(
+          'deviceWidth',
+          'deviceHeight',
+          'secure',
+          'adUnits',
+          'sua',
+          'page',
+          'ortb2',
+          'refererInfo'
+        );
+        expect(data.deviceWidth).to.be.a('number');
+        expect(data.deviceHeight).to.be.a('number');
+        expect(data.secure).to.be.a('boolean');
+        data.adUnits.forEach(adUnit => {
+          expect(adUnit).to.have.all.keys(
+            'id',
+            'bidId',
+            'type',
+            'sizes',
+            'transactionId',
+            'publisherId',
+            'userIdAsEids',
+            'supplyChain',
+            'custom1',
+            'custom2',
+            'custom3',
+            'custom4',
+            'custom5',
+            'ortb2Imp'
+          );
+          expect(adUnit.id).to.be.a('number');
+          expect(adUnit.bidId).to.be.a('string');
+          expect(adUnit.type).to.be.a('string');
+          expect(adUnit.transactionId).to.be.a('string');
+          expect(adUnit.sizes).to.be.an('array');
+          expect(adUnit.userIdAsEids).to.be.an('array');
+          expect(adUnit.supplyChain).to.be.an('object');
+          expect(adUnit.custom1).to.be.a('string');
+          expect(adUnit.custom2).to.be.a('string');
+          expect(adUnit.custom3).to.be.a('string');
+          expect(adUnit.custom4).to.be.a('string');
+          expect(adUnit.custom5).to.be.a('string');
+          expect(adUnit.ortb2Imp).to.be.an('object');
+        })
+        expect(data.sua.browsers).to.be.a('array');
+        expect(data.sua.platform).to.be.a('array');
+        expect(data.sua.mobile).to.be.a('number');
+        expect(data.sua.architecture).to.be.a('string');
+        expect(data.page).to.be.a('string');
+        expect(data.page).to.be.equal('testPage');
+        expect(data.ortb2).to.be.an('object');
+      })
+    })
+    it('Returns valid URL', function () {
+      expect(serverRequests[0].url).to.equal('https://exchange.ortb.net/hb')
+      expect(serverRequests[1].url).to.equal('https://ads.vdo.ai/hb')
+    })
+    it('Returns valid adUnits', function () {
+      validateAdUnit(serverRequests[0].data.adUnits[0], bid1)
+      validateAdUnit(serverRequests[1].data.adUnits[0], bid2)
+      validateAdUnit(serverRequests[0].data.adUnits[1], bid3)
+    })
+    it('Returns empty data if no valid requests are passed', function () {
+      const serverRequests = spec.buildRequests([])
+      expect(serverRequests).to.be.an('array').that.is.empty
+    })
+    it('Returns request with page field value from ortb2 object if ortb2 has page field', function () {
+      bidderRequest.ortb2.site = {
+        page: 'testSitePage'
+      }
+      const serverRequests = spec.buildRequests([bid1], bidderRequest)
+      expect(serverRequests).to.have.lengthOf(1)
+      serverRequests.forEach(serverRequest => {
+        expect(serverRequest.data.page).to.be.a('string');
+        expect(serverRequest.data.page).to.be.equal('testSitePage');
+      })
+    })
+  })
+  describe('interpretBannerResponse', function () {
+    let resObject = {
+      body: [ {
+        requestId: '123',
+        cpm: 0.3,
+        width: 320,
+        height: 50,
+        ad: '<h1>Hello ad</h1>',
+        ttl: 1000,
+        creativeId: '123asd',
+        netRevenue: true,
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ['example.com'],
+          mediaType: 'banner'
+        }
+      } ]
+    };
+    let serverResponses = spec.interpretResponse(resObject);
+    it('Returns an array of valid server responses if response object is valid', function () {
+      expect(serverResponses).to.be.an('array').that.is.not.empty;
+      for (let i = 0; i < serverResponses.length; i++) {
+        let dataItem = serverResponses[i];
+        expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
+          'netRevenue', 'currency', 'meta');
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.ad).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains).to.be.an('array');
+        expect(dataItem.meta.mediaType).to.be.a('string');
+      }
+      it('Returns an empty array if invalid response is passed', function () {
+        serverResponses = spec.interpretResponse('invalid_response');
+        expect(serverResponses).to.be.an('array').that.is.empty;
+      });
     });
   });
-
-  describe('interpretResponse', function () {
-    let bidRequest = [
-      {
-        'method': 'POST',
-        'url': ENDPOINT_URL,
-        'data': {
-          'placementId': 'testPlacementId',
-          'width': '300',
-          'height': '200',
-          'bidId': 'bidId123',
-          'referer': 'www.example.com'
+  describe('interpretVideoResponse', function () {
+    let resObject = {
+      body: [ {
+        requestId: '123',
+        cpm: 0.3,
+        width: 320,
+        height: 50,
+        vastXml: '<VAST></VAST>',
+        ttl: 1000,
+        creativeId: '123asd',
+        netRevenue: true,
+        currency: 'USD',
+        meta: {
+          advertiserDomains: ['example.com'],
+          mediaType: 'video'
         }
-
+      } ]
+    };
+    let serverResponses = spec.interpretResponse(resObject);
+    it('Returns an array of valid server responses if response object is valid', function () {
+      expect(serverResponses).to.be.an('array').that.is.not.empty;
+      for (let i = 0; i < serverResponses.length; i++) {
+        let dataItem = serverResponses[i];
+        expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
+          'netRevenue', 'currency', 'meta');
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.vastXml).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains).to.be.an('array');
+        expect(dataItem.meta.mediaType).to.be.a('string');
       }
-    ];
-    let serverResponse = {
-      body:
-      {
-        'price': 2,
-        'adid': 'test-ad',
-        'adomain': [
-          'text.abc'
-        ],
-        'w': 300,
-        'h': 250,
-        'vdoCreative': '<html><h3>I am an ad</h3></html>',
-        'bidId': '31d1375caab87a',
-        'mediaType': 'banner'
-      }
+      it('should return an empty array if invalid response is passed', function () {
+        serverResponses = spec.interpretResponse('invalid_response');
+        expect(serverResponses).to.be.an('array').that.is.empty;
+      });
+    });
+  });
+  describe('isBidRequestValid', function() {
+    let bid = {
+      bidId: '2dd581a2b6281d',
+      bidder: 'vdoai',
+      bidderRequestId: '145e1d6a7837c9',
+      params: {
+        host: 'exchange.ortb.net',
+        adUnitId: 123,
+        adUnitType: 'banner'
+      },
+      placementCode: 'placement_0',
+      auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+      sizes: [[300, 250]],
+      transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
     };
 
-    it('should get the correct bid response', function () {
-      let expectedResponse = [{
-        'requestId': '31d1375caab87a',
-        'cpm': 2,
-        'width': 300,
-        'height': 250,
-        'creativeId': 'test-ad',
-        'currency': 'USD',
-        'netRevenue': true,
-        'ttl': 60,
-        'ad': '<html><h3>I am an ad</h3></html>',
-        'meta': {
-          'advertiserDomains': ['text.abc']
-        }
-      }];
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
-      expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
+    it('should return true when required params found', function() {
+      [bid, bid1, bid2, bid3].forEach(bid => {
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
     });
 
-    it('handles instream video responses', function () {
-      let serverResponse = {
-        body: {
-          'vdoCreative': '<!-- VAST Creative -->',
-          'price': 2,
-          'adid': '12345asdfg',
-          'currency': 'USD',
-          'statusMessage': 'Bid available',
-          'requestId': 'bidId123',
-          'width': 300,
-          'height': 250,
-          'netRevenue': true,
-          'mediaType': 'video'
-        }
+    it('should return true when adUnitId is zero', function() {
+      bid.params.adUnitId = 0;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false when required params are not passed', function() {
+      let bidFailed = {
+        bidder: 'vdoai',
+        bidderRequestId: '145e1d6a7837c9',
+        params: {
+          adUnitId: 123,
+          adUnitType: 'banner'
+        },
+        placementCode: 'placement_0',
+        auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+        sizes: [[300, 250]],
+        transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
       };
-      let bidRequest = [
+      expect(spec.isBidRequestValid(bidFailed)).to.equal(false);
+    });
+  });
+  describe('interpretResponse', function() {
+    let resObject = {
+      requestId: '123',
+      cpm: 0.3,
+      width: 320,
+      height: 50,
+      ad: '<h1>Hello ad</h1>',
+      ttl: 1000,
+      creativeId: '123asd',
+      netRevenue: true,
+      currency: 'USD',
+      meta: {
+        advertiserDomains: ['example.com'],
+        mediaType: 'banner'
+      }
+    };
+    it('should skip responses which do not contain required params', function() {
+      let bidResponses = {
+        body: [ {
+          cpm: 0.3,
+          ttl: 1000,
+          currency: 'USD',
+          meta: {
+            advertiserDomains: ['example.com'],
+            mediaType: 'banner'
+          }
+        }, resObject ]
+      }
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+    });
+    it('should skip responses which do not contain advertiser domains', function() {
+      let resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
+      resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
+      delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
+      let bidResponses = {
+        body: [ resObjectWithoutAdvertiserDomains, resObject ]
+      }
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+    });
+    it('should return responses which contain empty advertiser domains', function() {
+      let resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
+      resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
+      resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
+      let bidResponses = {
+        body: [ resObjectWithEmptyAdvertiserDomains, resObject ]
+      }
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
+    });
+    it('should skip responses which do not contain meta media type', function() {
+      let resObjectWithoutMetaMediaType = Object.assign({}, resObject);
+      resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
+      delete resObjectWithoutMetaMediaType.meta.mediaType;
+      let bidResponses = {
+        body: [ resObjectWithoutMetaMediaType, resObject ]
+      }
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+    });
+  });
+  describe('getUserSyncs', function () {
+    it('should return trackers for lm(only iframe) if server responses contain lm user sync header and iframe and image enabled', function () {
+      const serverResponses = [
         {
-          'method': 'POST',
-          'url': ENDPOINT_URL,
-          'data': {
-            'placementId': 'testPlacementId',
-            'width': '300',
-            'height': '200',
-            'bidId': 'bidId123',
-            'referer': 'www.example.com',
-            'mediaType': 'video',
-            'mediaTypes': {
-              video: {
-                context: 'instream',
-                playerSize: [[640, 360]]
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
-          }
+          },
+          body: []
         }
       ];
-
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(result[0]).to.have.property('vastXml');
-      expect(result[0]).to.have.property('mediaType', 'video');
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://tracker-lm.ortb.net/sync.html'
+        }
+      ]);
     });
-    it('should not return invalid responses', function() {
-      serverResponse.body.w = 0;
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(result).to.be.empty;
-    });
-    it('should not return invalid responses with invalid height', function() {
-      serverResponse.body.w = 300;
-      serverResponse.body.h = 0;
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(result).to.be.empty;
-    });
-    it('should not return invalid responses with invalid cpm', function() {
-      serverResponse.body.h = 250;
-      serverResponse.body.price = 0;
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(result).to.be.empty;
-    });
-    it('should not return invalid responses with invalid creative ID', function() {
-      serverResponse.body.price = 2;
-      serverResponse.body.adid = undefined;
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(result).to.be.empty;
-    });
-  });
-  describe('getUserSyncs', function() {
-    it('should return correct sync urls', function() {
-      let serverResponse = [{
-        body: {
-          'vdoCreative': '<!-- VAST Creative -->',
-          'price': 2,
-          'adid': '12345asdfg',
-          'currency': 'USD',
-          'statusMessage': 'Bid available',
-          'requestId': 'bidId123',
-          'width': 300,
-          'height': 250,
-          'netRevenue': true,
-          'mediaType': 'video',
-          'cookiesync': {
-            'status': 'no_cookie',
-            'bidder_status': [
-              {
-                'bidder': 'vdoai',
-                'no_cookie': true,
-                'usersync': {
-                  'url': 'https://rtb.vdo.ai/setuid/',
-                  'type': 'iframe'
-                }
+    it('should return empty array if all sync types are disabled', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-1.ortb.net/sync';
               }
-            ]
-          }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-1.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
         }
-      }];
-
-      let syncUrls = spec.getUserSyncs({
-        iframeEnabled: true
-      }, serverResponse);
-      expect(syncUrls[0].url).to.be.equal(serverResponse[0].body.cookiesync.bidder_status[0].usersync.url);
-
-      syncUrls = spec.getUserSyncs({
-        iframeEnabled: false
-      }, serverResponse);
-      expect(syncUrls[0]).to.be.undefined;
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: false
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
     });
-    it('should not return invalid sync urls', function() {
-      let serverResponse = [{
-        body: {
-          'vdoCreative': '<!-- VAST Creative -->',
-          'price': 2,
-          'adid': '12345asdfg',
-          'currency': 'USD',
-          'statusMessage': 'Bid available',
-          'requestId': 'bidId123',
-          'width': 300,
-          'height': 250,
-          'netRevenue': true,
-          'mediaType': 'video',
-          'cookiesync': {
-            'status': 'no_cookie',
-            'bidder_status': [
-            ]
-          }
+    it('should return no pixels if iframe sync is enabled and headers are blank', function () {
+      const serverResponses = [
+        {
+          headers: null,
+          body: []
         }
-      }];
-
-      var syncUrls = spec.getUserSyncs({
-        iframeEnabled: true
-      }, serverResponse);
-      expect(syncUrls[0]).to.be.undefined;
-
-      delete serverResponse[0].body.cookiesync.bidder_status;
-      syncUrls = spec.getUserSyncs({
-        iframeEnabled: true
-      }, serverResponse);
-      expect(syncUrls[0]).to.be.undefined;
-
-      delete serverResponse[0].body.cookiesync;
-      syncUrls = spec.getUserSyncs({
-        iframeEnabled: true
-      }, serverResponse);
-      expect(syncUrls[0]).to.be.undefined;
-
-      delete serverResponse[0].body;
-      syncUrls = spec.getUserSyncs({
-        iframeEnabled: true
-      }, serverResponse);
-      expect(syncUrls[0]).to.be.undefined;
+      ];
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: false
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
     });
-  });
-
-  describe('onTimeout', function() {
-    it('should run without errors', function() {
-      spec.onTimeout();
+    it('should return image sync urls for lm if pixel sync is enabled and headers have lm pixel', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://tracker-lm.ortb.net/sync'
+        }
+      ]);
     });
-  });
-
-  describe('onBidWon', function() {
-    it('should run without errors', function() {
-      spec.onBidWon();
+    it('should return image sync urls for client1 and clien2 if pixel sync is enabled and two responses and headers have two pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-1.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-1.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        },
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-2.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-2.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://tracker-1.ortb.net/sync'
+        },
+        {
+          type: 'image',
+          url: 'https://tracker-2.ortb.net/sync'
+        }
+      ]);
     });
-  });
-
-  describe('onSetTargeting', function() {
-    it('should run without errors', function() {
-      spec.onSetTargeting();
+    it('should return image sync url for pll if pixel sync is enabled and two responses and headers have two same pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        },
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://tracker-lm.ortb.net/sync'
+        }
+      ]);
+    });
+    it('should return iframe sync url for pll if pixel sync is enabled and iframe is enables and headers have both iframe and img pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://tracker-lm.ortb.net/sync.html'
+        }
+      ]);
     });
   });
 });
+
+function validateAdUnit(adUnit, bid) {
+  expect(adUnit.id).to.equal(bid.params.adUnitId);
+  expect(adUnit.bidId).to.equal(bid.bidId);
+  expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
+  expect(adUnit.transactionId).to.equal(bid.ortb2Imp.ext.tid);
+  let bidSizes = [];
+  if (bid.mediaTypes) {
+    if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
+      bidSizes = bidSizes.concat([bid.mediaTypes.video.playerSize]);
+    }
+    if (bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
+      bidSizes = bidSizes.concat(bid.mediaTypes.banner.sizes);
+    }
+  }
+  if (bid.sizes) {
+    bidSizes = bidSizes.concat(bid.sizes || []);
+  }
+  expect(adUnit.sizes).to.deep.equal(bidSizes.map(size => {
+    return {
+      width: size[0],
+      height: size[1]
+    }
+  }));
+  expect(adUnit.publisherId).to.equal(bid.params.publisherId);
+  expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
+  expect(adUnit.supplyChain).to.deep.equal(bid.schain);
+  expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
+}
