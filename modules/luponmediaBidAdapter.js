@@ -101,7 +101,7 @@ var sizeMap = {
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
 
-const keyIdRegex = /^uid(?:@\w+)?_(.+)$/;
+const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/;
 
 const buildServerUrl = (keyId) => {
   const match = String(keyId).match(/@([^_]+)_/);
