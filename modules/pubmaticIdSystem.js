@@ -13,7 +13,6 @@ const STORAGE_REFRESH_IN_SECONDS = 24 * 3600; // 24 Hours
 const LOG_PREFIX = 'PubMatic User ID: ';
 const VERSION = '1';
 const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
-let doNotUseWithESP = false;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -56,14 +55,12 @@ function deleteFromAllStorages(key) {
     }
   });
 
-  const lsKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`, '_GESPSK-esp.pubmatic.com'];
+  const lsKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
   lsKeys.forEach((lsKey) => {
     if (storage.getDataFromLocalStorage(lsKey)) {
       storage.removeDataFromLocalStorage(lsKey);
     }
   });
-
-  doNotUseWithESP = true;
 }
 
 function getSuccessAndErrorHandler(callback) {
@@ -133,10 +130,6 @@ export const pubmaticIdSubmodule = {
       return undefined;
     }
 
-    if (storage.getDataFromLocalStorage('_GESPSK-esp.pubmatic.com')) {
-      storage.removeDataFromLocalStorage('_GESPSK-esp.pubmatic.com');
-    }
-
     const resp = (callback) => {
       logInfo(LOG_PREFIX + 'requesting an ID from the server');
       const url = buildUrl(config, consentData);
@@ -153,10 +146,6 @@ export const pubmaticIdSubmodule = {
       source: 'esp.pubmatic.com',
       atype: 1,
       getValue: (data) => {
-        if (doNotUseWithESP) {
-          return null;
-        }
-
         return data;
       }
     },
