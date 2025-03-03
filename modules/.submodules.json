@@ -103,6 +103,7 @@
       "qortexRtdProvider",
       "reconciliationRtdProvider",
       "relevadRtdProvider",
+      "semantiqRtdProvider",
       "sirdataRtdProvider",
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
