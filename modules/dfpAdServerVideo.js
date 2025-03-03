@@ -265,12 +265,13 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
     }
 
     const uuidExp = new RegExp(`.*(?:([A-Fa-f0-9]{8}-(?:[A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}).*)+`, 'gi');
-    const uuid = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp))[0][1];
+    const matchResult = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp))[0];
+    const uuid = Array.from(localCacheMap.keys()).find((videoCacheKey) => matchResult.includes(videoCacheKey));
 
     if (uuid) {
       const blobUrl = localCacheMap.get(uuid);
       if (!blobUrl) throw new Error(`Unable to find uuid ${uuid} in local cache map`)
-        
+
       const base64BlobContent = await getBase64BlobContent(blobUrl);
       const cdata = xmlDoc.createCDATASection(base64BlobContent);
       vastAdTagUriElement.textContent = '';
