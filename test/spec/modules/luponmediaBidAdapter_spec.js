@@ -1,12 +1,11 @@
 import { resetUserSync, spec, hasValidSupplyChainParams } from 'modules/luponmediaBidAdapter.js';
-const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
 
 describe('luponmediaBidAdapter', function () {
   describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'luponmedia',
       'params': {
-        'keyId': 'uid_test_4o2c4'
+        'keyId': 'uid@eu_test_300_600'
       },
       'adUnitCode': 'test-div',
       'sizes': [[300, 250]],
@@ -19,9 +18,17 @@ describe('luponmediaBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return true with required and without optional param', function () {
+      bid.params = {
+        'keyId': 'uid_test_300_600'
+      };
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should return false when keyId is not in the required format', function () {
       bid.params = {
-        'key': 12345
+        'keyId': 12345
       };
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -33,7 +40,7 @@ describe('luponmediaBidAdapter', function () {
       {
         'bidder': 'luponmedia',
         'params': {
-          'keyId': 'uid_test_4o2c4',
+          'keyId': 'uid_test_300_600',
           'placement_id': 'test-div'
         },
         'ortb2Imp': {
@@ -151,7 +158,7 @@ describe('luponmediaBidAdapter', function () {
         {
           'bidder': 'luponmedia',
           'params': {
-            'keyId': 'uid_unicef_300x600',
+            'keyId': 'uid_test_300_600',
             'placement_id': 'test-div'
           },
           'ortb2Imp': {
@@ -360,14 +367,23 @@ describe('luponmediaBidAdapter', function () {
       'start': 1741002030345
     }
 
-    it('sends bid request to ENDPOINT via POST', function () {
+    it('sends bid request to default endpoint', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       const data = JSON.parse(requests.data);
 
-      expect(requests.url).to.equal(ENDPOINT_URL);
+      expect(requests.url).to.equal('https://rtb.adxpremium.services/openrtb2/auction');
       expect(requests.method).to.equal('POST');
       expect(data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
-      expect(data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_4o2c4');
+      expect(data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
+    });
+
+    it('sends bid request to endpoint specified in keyId', function () {
+      bidRequests[0].params.keyId = 'uid@eu_test_300_600';
+      bidderRequest.bids[0].params.keyId = 'uid@eu_test_300_600';
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(requests.url).to.equal('https://eu.adxpremium.services/openrtb2/auction');
     });
   });
 

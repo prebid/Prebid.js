@@ -6,7 +6,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
 
 const BIDDER_CODE = 'luponmedia';
-const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
 
 var sizeMap = {
   1: '468x60',
@@ -103,6 +102,20 @@ var sizeMap = {
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
 
+const keyIdRegex = /^uid(?:@\w+)?_(.+)$/;
+
+const buildServerUrl = (keyId) => {
+  const match = String(keyId).match(/@([^_]+)_/);
+
+  let host = 'rtb';
+
+  if (match) {
+    host = match[1];
+  }
+
+  return `https://${host}.adxpremium.services/openrtb2/auction`
+}
+
 export const converter = ortbConverter({
   processors: pbsExtensions,
   imp(buildImp, bidRequest, context) {
@@ -126,8 +139,6 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    const keyIdRegex = /^uid_(?:[a-zA-Z0-9_-]+_)?[a-zA-Z0-9]+$/;
-
     if (!bid?.params?.keyId) {
       return false;
     }
@@ -143,9 +154,11 @@ export const spec = {
 
     const data = converter.toORTB({ bidderRequest, bidRequests: filteredRequests })
 
+    const serverUrl = buildServerUrl(bidRequests[0].params.keyId);
+
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: serverUrl,
       data: JSON.stringify(data),
       options: {},
       bidderRequest
