@@ -130,8 +130,6 @@ export const converter = ortbConverter({
     imp.ext.luponmedia.keyId = bidRequest.params.keyId;
     imp.ext.luponmedia.siteId = bidRequest.params.siteId;
 
-    imp.ext.context.data.adslot = bidRequest.adUnitCode;
-
     return imp;
   }
 });
