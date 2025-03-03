@@ -1,7 +1,6 @@
 import { isArray, logMessage, logWarn, logError, _each } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
 
@@ -240,19 +239,6 @@ export const spec = {
     hasSynced = true;
     return allUserSyncs;
   },
-  onBidWon: bid => {
-    const bidString = JSON.stringify(bid);
-    spec.sendWinningsToServer(bidString);
-  },
-  sendWinningsToServer: data => {
-    let mutation = `mutation {createWin(input: {win: {eventData: "${window.btoa(data)}"}}) {win {createTime } } }`;
-    let dataToSend = JSON.stringify({ query: mutation });
-
-    ajax('https://analytics.adxpremium.services/graphql', null, dataToSend, {
-      contentType: 'application/json',
-      method: 'POST'
-    });
-  }
 };
 
 export function hasValidSupplyChainParams(schain) {
