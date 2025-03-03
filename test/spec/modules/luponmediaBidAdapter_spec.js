@@ -6,8 +6,7 @@ describe('luponmediaBidAdapter', function () {
     let bid = {
       'bidder': 'luponmedia',
       'params': {
-        'siteId': 12345,
-        'keyId': '4o2c4'
+        'keyId': 'uid_test_4o2c4'
       },
       'adUnitCode': 'test-div',
       'sizes': [[300, 250]],
@@ -16,162 +15,359 @@ describe('luponmediaBidAdapter', function () {
       'auctionId': '20384rlek235',
     };
 
-    it('should return true when required params are found', function () {
+    it('should return true when required param is found and it is valid', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
-      delete invalidBid.params;
-      invalidBid.params = {
-        'siteId': 12345
+    it('should return false when keyId is not in the required format', function () {
+      bid.params = {
+        'key': 12345
       };
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'luponmedia',
         'params': {
-          'siteId': 303522,
-          'keyId': '4o2c4'
+          'keyId': 'uid_test_4o2c4',
+          'placement_id': 'test-div'
         },
-        'crumbs': {
-          'pubcid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'
+        'ortb2Imp': {
+          'ext': {
+            'tid': 'df103a09-d255-48cc-b372-faf80adedb6d'
+          }
         },
         'mediaTypes': {
           'banner': {
             'sizes': [
               [
                 300,
-                250
+                600
               ]
             ]
           }
         },
-        'adUnitCode': 'div-gpt-ad-1533155193780-2',
-        'transactionId': '585d96a5-bd93-4a89-b8ea-0f546f3aaa82',
+        'adUnitCode': 'test-div',
+        'transactionId': 'df103a09-d255-48cc-b372-faf80adedb6d',
+        'adUnitId': '13c08b91-a866-4308-b240-ea671d3b1902',
         'sizes': [
           [
             300,
-            250
+            600
           ]
         ],
-        'bidId': '268a30af10dd6f',
-        'bidderRequestId': '140411b5010a2a',
-        'auctionId': '7376c117-b7aa-49f5-a661-488543deeefd',
+        'bidId': '3913ea5825f4d6',
+        'bidderRequestId': '2edea9c2757aff',
+        'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
         'src': 'client',
+        'metrics': {
+          'requestBids.validate': 0.09999999403953552,
+          'requestBids.makeRequests': 0.5999999940395355,
+          'requestBids.total': 4224.600000023842,
+          'requestBids.callBids': 4214.5,
+          'adapter.client.net': [
+            4210.699999988079
+          ],
+          'adapters.client.luponmedia.net': [
+            4210.699999988079
+          ],
+          'adapter.client.interpretResponse': [
+            0.09999999403953552
+          ],
+          'adapters.client.luponmedia.interpretResponse': [
+            0.09999999403953552
+          ],
+          'adapter.client.validate': 0,
+          'adapters.client.luponmedia.validate': 0,
+          'adapter.client.buildRequests': 1.199999988079071,
+          'adapters.client.luponmedia.buildRequests': 1.199999988079071,
+          'adapter.client.total': 4212.5999999940395,
+          'adapters.client.luponmedia.total': 4212.5999999940395
+        },
+        'auctionsCount': 1,
         'bidRequestsCount': 1,
         'bidderRequestsCount': 1,
         'bidderWinsCount': 0,
-        'schain': {
-          'ver': '1.0',
-          'complete': 1,
-          'nodes': [
-            {
-              'asi': 'novi.ba',
-              'sid': '199424',
-              'hp': 1
+        'deferBilling': false,
+        'ortb2': {
+          'source': {
+            'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
+          },
+          'site': {
+            'publisher': {},
+            'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
+          },
+          'device': {
+            'w': 3008,
+            'h': 1692,
+            'dnt': 1,
+            'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+            'language': 'sr',
+            'ext': {
+              'vpw': 1522,
+              'vph': 714
+            },
+            'sua': {
+              'source': 1,
+              'platform': {
+                'brand': 'macOS'
+              },
+              'browsers': [
+                {
+                  'brand': 'Not(A:Brand',
+                  'version': [
+                    '99'
+                  ]
+                },
+                {
+                  'brand': 'Google Chrome',
+                  'version': [
+                    '133'
+                  ]
+                },
+                {
+                  'brand': 'Chromium',
+                  'version': [
+                    '133'
+                  ]
+                }
+              ],
+              'mobile': 0
             }
-          ]
+          }
         }
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       'bidderCode': 'luponmedia',
-      'auctionId': '7376c117-b7aa-49f5-a661-488543deeefd',
-      'bidderRequestId': '140411b5010a2a',
+      'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
+      'bidderRequestId': '2edea9c2757aff',
       'bids': [
         {
           'bidder': 'luponmedia',
           'params': {
-            'siteId': 303522,
-            'keyId': '4o2c4'
+            'keyId': 'uid_unicef_300x600',
+            'placement_id': 'test-div'
           },
-          'crumbs': {
-            'pubcid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'
+          'ortb2Imp': {
+            'ext': {
+              'tid': 'df103a09-d255-48cc-b372-faf80adedb6d'
+            }
           },
           'mediaTypes': {
             'banner': {
               'sizes': [
                 [
                   300,
-                  250
+                  600
                 ]
               ]
             }
           },
-          'adUnitCode': 'div-gpt-ad-1533155193780-2',
-          'transactionId': '585d96a5-bd93-4a89-b8ea-0f546f3aaa82',
+          'adUnitCode': 'test-div',
+          'transactionId': 'df103a09-d255-48cc-b372-faf80adedb6d',
+          'adUnitId': '13c08b91-a866-4308-b240-ea671d3b1902',
           'sizes': [
             [
               300,
-              250
+              600
             ]
           ],
-          'bidId': '268a30af10dd6f',
-          'bidderRequestId': '140411b5010a2a',
-          'auctionId': '7376c117-b7aa-49f5-a661-488543deeefd',
+          'bidId': '3913ea5825f4d6',
+          'bidderRequestId': '2edea9c2757aff',
+          'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
           'src': 'client',
+          'metrics': {
+            'requestBids.validate': 0.09999999403953552,
+            'requestBids.makeRequests': 0.5999999940395355,
+            'requestBids.total': 4224.600000023842,
+            'requestBids.callBids': 4214.5,
+            'adapter.client.net': [
+              4210.699999988079
+            ],
+            'adapters.client.luponmedia.net': [
+              4210.699999988079
+            ],
+            'adapter.client.interpretResponse': [
+              0.09999999403953552
+            ],
+            'adapters.client.luponmedia.interpretResponse': [
+              0.09999999403953552
+            ],
+            'adapter.client.validate': 0,
+            'adapters.client.luponmedia.validate': 0,
+            'adapter.client.buildRequests': 1.199999988079071,
+            'adapters.client.luponmedia.buildRequests': 1.199999988079071,
+            'adapter.client.total': 4212.5999999940395,
+            'adapters.client.luponmedia.total': 4212.5999999940395
+          },
+          'auctionsCount': 1,
           'bidRequestsCount': 1,
           'bidderRequestsCount': 1,
           'bidderWinsCount': 0,
-          'schain': {
-            'ver': '1.0',
-            'complete': 1,
-            'nodes': [
-              {
-                'asi': 'novi.ba',
-                'sid': '199424',
-                'hp': 1
+          'deferBilling': false,
+          'ortb2': {
+            'source': {
+              'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
+            },
+            'site': {
+              'publisher': {},
+              'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
+            },
+            'device': {
+              'w': 3008,
+              'h': 1692,
+              'dnt': 1,
+              'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+              'language': 'sr',
+              'ext': {
+                'vpw': 1522,
+                'vph': 714
+              },
+              'sua': {
+                'source': 1,
+                'platform': {
+                  'brand': 'macOS'
+                },
+                'browsers': [
+                  {
+                    'brand': 'Not(A:Brand',
+                    'version': [
+                      '99'
+                    ]
+                  },
+                  {
+                    'brand': 'Google Chrome',
+                    'version': [
+                      '133'
+                    ]
+                  },
+                  {
+                    'brand': 'Chromium',
+                    'version': [
+                      '133'
+                    ]
+                  }
+                ],
+                'mobile': 0
               }
-            ]
+            }
           }
         }
       ],
-      'auctionStart': 1587413920820,
-      'timeout': 1500,
+      'auctionStart': 1741002030343,
+      'timeout': 5000,
       'refererInfo': {
-        'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines',
         'reachedTop': true,
+        'isAmp': false,
         'numIframes': 0,
         'stack': [
-          'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'
-        ]
-      },
-      'start': 1587413920835,
-      ortb2: {
-        source: {
-          tid: 'mock-tid'
+          'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
+        ],
+        'topmostLocation': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
+        'location': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
+        'canonicalUrl': null,
+        'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
+        'domain': null,
+        'ref': null,
+        'legacy': {
+          'reachedTop': true,
+          'isAmp': false,
+          'numIframes': 0,
+          'stack': [
+            'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
+          ],
+          'referer': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
+          'canonicalUrl': null
         }
       },
-    };
+      'metrics': {
+        'requestBids.validate': 0.09999999403953552,
+        'requestBids.makeRequests': 0.5999999940395355,
+        'requestBids.total': 4224.600000023842,
+        'requestBids.callBids': 4214.5,
+        'adapter.client.net': [
+          4210.699999988079
+        ],
+        'adapters.client.luponmedia.net': [
+          4210.699999988079
+        ],
+        'adapter.client.interpretResponse': [
+          0.09999999403953552
+        ],
+        'adapters.client.luponmedia.interpretResponse': [
+          0.09999999403953552
+        ],
+        'adapter.client.validate': 0,
+        'adapters.client.luponmedia.validate': 0,
+        'adapter.client.buildRequests': 1.199999988079071,
+        'adapters.client.luponmedia.buildRequests': 1.199999988079071,
+        'adapter.client.total': 4212.5999999940395,
+        'adapters.client.luponmedia.total': 4212.5999999940395
+      },
+      'ortb2': {
+        'source': {
+          'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
+        },
+        'site': {
+          'publisher': {},
+          'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
+        },
+        'device': {
+          'w': 3008,
+          'h': 1692,
+          'dnt': 1,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+          'language': 'sr',
+          'ext': {
+            'vpw': 1522,
+            'vph': 714
+          },
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Not(A:Brand',
+                'version': [
+                  '99'
+                ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [
+                  '133'
+                ]
+              },
+              {
+                'brand': 'Chromium',
+                'version': [
+                  '133'
+                ]
+              }
+            ],
+            'mobile': 0
+          }
+        }
+      },
+      'start': 1741002030345
+    }
 
     it('sends bid request to ENDPOINT via POST', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      let dynRes = JSON.parse(requests.data);
+      const data = JSON.parse(requests.data);
+
       expect(requests.url).to.equal(ENDPOINT_URL);
       expect(requests.method).to.equal('POST');
-      expect(JSON.parse(requests.data)).to.deep.include({
-        'test': 0,
-        'source': {
-          tid: 'mock-tid',
-          'ext': {'schain': {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'novi.ba', 'sid': '199424', 'hp': 1}]}}
-        },
-        'tmax': 1500,
-        'imp': [{
-          'id': '268a30af10dd6f',
-          'secure': 1,
-          'ext': {'luponmedia': {'siteId': 303522, 'keyId': '4o2c4'}},
-          'banner': {'format': [{'w': 300, 'h': 250}]}
-        }],
-        'ext': {'prebid': {'targeting': {'includewinners': true, 'includebidderkeys': false}}},
-        'user': {'id': dynRes.user.id, 'buyeruid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'},
-        'site': {'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'}
-      });
+      expect(data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
+      expect(data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_4o2c4');
     });
   });
 
@@ -188,9 +384,6 @@ describe('luponmediaBidAdapter', function () {
                 'price': 0.43,
                 'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
                 'adid': '56380110',
-                'adomain': [
-                  'mi.betrivers.com'
-                ],
                 'cid': '44724710',
                 'crid': '443801010',
                 'w': 300,
@@ -235,15 +428,7 @@ describe('luponmediaBidAdapter', function () {
           'netRevenue': false,
           'ttl': 300,
           'referrer': '',
-          'ad': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
-          'adomain': [
-            'mi.betrivers.com'
-          ],
-          'meta': {
-            'advertiserDomains': [
-              'mi.betrivers.com'
-            ]
-          }
+          'ad': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>'
         }
       ];
 
@@ -338,7 +523,7 @@ describe('luponmediaBidAdapter', function () {
       expect(syncs).to.deep.equal([]);
     });
 
-    it('returns pixel syncs when pixel enabled and not iframe enabled', function() {
+    it('returns pixel syncs when pixel enabled and not iframe enabled', function () {
       resetUserSync();
 
       const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse1]);
@@ -350,7 +535,7 @@ describe('luponmediaBidAdapter', function () {
       ]);
     });
 
-    it('returns iframe syncs when not pixel enabled and iframe enabled', function() {
+    it('returns iframe syncs when not pixel enabled and iframe enabled', function () {
       resetUserSync();
 
       const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse1]);
@@ -394,6 +579,51 @@ describe('luponmediaBidAdapter', function () {
 
       const checkSchain = hasValidSupplyChainParams(schain);
       expect(checkSchain).to.equal(false);
+    });
+  });
+
+  describe('onBidWon', function () {
+    const bidWonEvent = {
+      'bidderCode': 'luponmedia',
+      'width': 300,
+      'height': 250,
+      'statusMessage': 'Bid available',
+      'adId': '105bbf8c54453ff',
+      'requestId': '934b8752185955',
+      'mediaType': 'banner',
+      'source': 'client',
+      'cpm': 0.364,
+      'creativeId': '443801010',
+      'currency': 'USD',
+      'netRevenue': false,
+      'ttl': 300,
+      'referrer': '',
+      'ad': '',
+      'auctionId': '926a8ea3-3dd4-4bf2-95ab-c85c2ce7e99b',
+      'responseTimestamp': 1598527728026,
+      'requestTimestamp': 1598527727629,
+      'bidder': 'luponmedia',
+      'adUnitCode': 'div-gpt-ad-1533155193780-5',
+      'timeToRespond': 397,
+      'size': '300x250',
+      'status': 'rendered'
+    };
+
+    let ajaxStub;
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(spec, 'sendWinningsToServer')
+    })
+
+    afterEach(() => {
+      ajaxStub.restore()
+    })
+
+    it('calls luponmedia\'s callback endpoint', () => {
+      const result = spec.onBidWon(bidWonEvent);
+      expect(result).to.equal(undefined);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.deep.equal(JSON.stringify(bidWonEvent));
     });
   });
 });
