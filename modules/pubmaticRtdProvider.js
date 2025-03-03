@@ -200,17 +200,19 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
       timer: null
     };
     continueAuction(hookConfig);
-    const ortb2 = {
-      user: {
-        ext: {
-          ctr: _country,
+    if (_country) {
+      const ortb2 = {
+        user: {
+          ext: {
+            ctr: _country,
+          }
         }
       }
-    }
 
-    mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-      [CONSTANTS.SUBMODULE_NAME]: ortb2
-    });
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+        [CONSTANTS.SUBMODULE_NAME]: ortb2
+      });
+    }
     callback();
   }).catch((error) => {
     logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
