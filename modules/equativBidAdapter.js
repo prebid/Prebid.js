@@ -5,7 +5,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -17,6 +18,8 @@ const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
 const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
 const LOG_PREFIX = 'Equativ:';
 const PID_COOKIE_NAME = 'eqt_pid';
+
+enablePreviousAuctionInfo({ bidderCode: BIDDER_CODE });
 
 /**
  * Evaluates impressions for validity.  The entry evaluated is considered valid if NEITHER of these conditions are met:
@@ -55,6 +58,12 @@ export const spec = {
         data,
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+        // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
+        // options: {
+        //   customHeaders: {
+        //     'X-Eqtv-Debug': no === 1 ? '67c190809d44a9f4fd5ddf64' : '6708e3aeca04848e919e9c8c'
+        //   }
+        // }
       })
     });
 
@@ -104,6 +113,10 @@ export const spec = {
     }
 
     return [];
+  },
+
+  onBidWon: (bid) => {
+    logInfo('onBidWon', bid);
   }
 };
 

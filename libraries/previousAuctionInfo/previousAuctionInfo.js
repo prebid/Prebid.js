@@ -1,6 +1,7 @@
 import {on as onEvent, off as offEvent} from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { config } from '../../src/config.js';
+import { logInfo } from '../../src/utils.js';
 
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
@@ -46,6 +47,7 @@ const deinitHandlers = () => {
 }
 
 export const onAuctionEndHandler = (auctionDetails) => {
+  logInfo('[PAI] Auction End', auctionDetails);
   try {
     const receivedBidsMap = {};
     const rejectedBidsMap = {};
@@ -105,6 +107,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
 }
 
 export const onBidWonHandler = (winningBid) => {
+  logInfo('[PAI] Bid Won', winningBid);
   const winningTid = winningBid.transactionId;
 
   Object.values(auctionState).flat().forEach(prevAuctPayload => {
@@ -115,6 +118,7 @@ export const onBidWonHandler = (winningBid) => {
 };
 
 export const onBidRequestedHandler = (bidRequest) => {
+  logInfo('[PAI] Bid Request', bidRequest);
   try {
     const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidRequest.bidderCode);
     if (enabledBidder && auctionState[bidRequest.bidderCode]) {
