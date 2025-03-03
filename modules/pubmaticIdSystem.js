@@ -77,6 +77,7 @@ function getSuccessAndErrorHandler(callback) {
         callback(responseObj);
       } else {
         deleteFromAllStorages(STORAGE_NAME);
+        callback();
       }
     },
     error: (error) => {
