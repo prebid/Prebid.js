@@ -6,7 +6,7 @@ import {getHook, hook, module} from '../src/hook.js';
 import {
   deepAccess,
   deepEqual,
-  deepSetValue,
+  deepSetValue, generateUUID,
   logError,
   logInfo,
   logWarn,
@@ -21,7 +21,7 @@ import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
 import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
-import {defer} from '../src/utils/promise.js';
+import {defer, PbPromise} from '../src/utils/promise.js';
 import {auctionManager} from '../src/auctionManager.js';
 
 const MODULE = 'PAAPI';
@@ -486,15 +486,83 @@ export function markForFledge(next, bidderRequests) {
       Object.assign(bidderReq, {
         paapi: {
           enabled,
-          componentSeller: !!moduleConfig.componentSeller?.auctionConfig
+          componentSeller: !!moduleConfig.componentSeller?.auctionConfig,
         }
       });
+      if (enabled) {
+        const nonceMgr = nonceManager();
+        NONCE_MANAGERS.set(bidderReq, nonceMgr);
+        bidderReq.paapi.createAuctionNonce = nonceMgr.nonce;
+      }
     });
   }
   next(bidderRequests);
 }
 
 export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals'];
+
+export const NONCE_MANAGERS = new WeakMap();
+
+export function nonceManager(createNonce = () => navigator.createAuctionNonce()) {
+  const mgrId = generateUUID();
+  let count = 0;
+  let fetched = 0;
+  let noncePool = [];
+  const nonces = {};
+
+  const pattern = new RegExp(`##PAAPI_NONCE_${mgrId}_(\\d+)##`, 'g');
+
+  function placeholder(nonceId) {
+    return `##PAAPI_NONCE_${mgrId}_${nonceId}##`;
+  }
+
+  class NoncePlaceholder {
+    constructor(nonceId) {
+      this.nonceId = nonceId;
+    }
+    toString() {
+      return placeholder(this.nonceId);
+    }
+    toJSON() {
+      return placeholder(this.nonceId);
+    }
+  }
+
+  function getNonce(nonceId) {
+    if (!nonces.hasOwnProperty(nonceId)) {
+      nonces[nonceId] = noncePool.pop();
+    }
+    return nonces[nonceId];
+  }
+
+  function resolve(payload) {
+    if (payload instanceof NoncePlaceholder) {
+      return getNonce(payload.nonceId);
+    } else if (typeof payload == 'string') {
+      return payload.replaceAll(pattern, (_, nonceId) => getNonce(parseInt(nonceId, 10)));
+    } else if (payload != null && typeof payload === 'object') {
+      return Array.isArray(payload) ? payload.map(resolve) : Object.fromEntries(Object.entries(payload).map(([k, v]) => [resolve(k), resolve(v)]))
+    } else {
+      return payload;
+    }
+  }
+
+  return {
+    placeholder,
+    nonce() {
+      return new NoncePlaceholder(count++);
+    },
+    async fetchNonces() {
+      if (count <= fetched) return PbPromise.resolve();
+      return PbPromise.all(Array.apply(null, Array(count - fetched)).map(() => createNonce()))
+        .then(result => {
+          fetched += result.length;
+          noncePool = noncePool.concat(result);
+        });
+    },
+    resolve
+  }
+}
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [
@@ -542,7 +610,7 @@ const validatePartialConfig = (() => {
  * If the `paapi.parallel` config flag is set, PAAPI submodules are also triggered at the same time
  * (instead of when the auction ends).
  */
-export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
+export async function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
   function makeDeferrals(defaults = {}) {
     let promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
@@ -574,6 +642,11 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
         logError(`Error invoking "buildPAAPIConfigs":`, e);
       }
     });
+    const nonceMgr = NONCE_MANAGERS.get(bidderRequest);
+    if (nonceMgr && partialConfigs) {
+      await nonceMgr.fetchNonces();
+      partialConfigs = nonceMgr.resolve(partialConfigs);
+    }
     const requestsById = Object.fromEntries(bids.map(bid => [bid.bidId, bid]));
     (partialConfigs ?? []).forEach(({bidId, config, igb}) => {
       const bidRequest = requestsById.hasOwnProperty(bidId) && requestsById[bidId];
@@ -653,7 +726,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
       }
     })
   }
-  return next.call(this, spec, bids, bidderRequest, ...args);
+  next.call(this, spec, bids, bidderRequest, ...args);
 }
 
 export function onAuctionInit({auctionId}) {
