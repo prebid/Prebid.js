@@ -20,6 +20,8 @@ const RX_FROM_SESSION_STORAGE = { ReceptivityState: 'Receptive', test_info: 'rx_
 const RX_FROM_API = { ReceptivityState: 'Receptive', test_info: 'rx_from_engine' };
 
 const RX_API_MOCK = { receptivity: sinon.stub(), receptivityBatched: sinon.stub() };
+const RX_API_MOCK_WITH_BUNDLE = { receptivity: sinon.stub(), receptivityBatched: sinon.stub(), getOrtb2Fragment: sinon.stub() }
+
 const RX_CONNECTOR_MOCK = {
   fetchConfig: sinon.stub(),
   rxApiBuilder: sinon.stub(),
@@ -75,6 +77,19 @@ describe('contxtfulRtdProvider', function () {
 
     RX_API_MOCK.receptivityBatched.reset();
     RX_API_MOCK.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
+
+    RX_API_MOCK_WITH_BUNDLE.receptivity.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivity.callsFake(() => RX_FROM_API);
+
+    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
+
+    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.reset();
+    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callsFake((bidders, reqBidsConfigObj) => {
+      let bidderObj = bidders.reduce((accumulator, bidder) => { accumulator[bidder] = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } }; return accumulator; }, {});
+      return { global: { user: { site: { id: 'globalsiteId' } } }, bidder: bidderObj }
+    }
+    );
 
     RX_CONNECTOR_MOCK.fetchConfig.reset();
     RX_CONNECTOR_MOCK.fetchConfig.callsFake((tagId) => new Promise((resolve, reject) => resolve({ tag_id: tagId })));
@@ -1001,5 +1016,37 @@ describe('contxtfulRtdProvider', function () {
         done();
       }, TIMEOUT);
     });
+  })
+
+  describe('when rxConnector contains getOrtb2Fragment function', () => {
+    it('should just take whatever it contains and merge to the fragment', function (done) {
+      RX_CONNECTOR_MOCK.rxApiBuilder.reset();
+      RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK_WITH_BUNDLE)));
+
+      let config = buildInitConfig(VERSION, CUSTOMER);
+      contxtfulSubmodule.init(config);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+
+      let reqBidsConfigObj = {
+        ortb2Fragments: {
+          global: {},
+          bidder: {},
+        },
+      };
+
+      setTimeout(() => {
+        const onDoneSpy = sinon.spy();
+        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+        let global = reqBidsConfigObj.ortb2Fragments.global;
+        let bidder = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
+
+        let globalExpected = { user: { site: { id: 'globalsiteId' } } };
+        let bidderExpected = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } };
+        expect(RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callCount).to.equal(1);
+        expect(global).to.deep.equal(globalExpected);
+        expect(bidder).to.deep.equal(bidderExpected);
+        done();
+      }, TIMEOUT);
+    })
   })
 });

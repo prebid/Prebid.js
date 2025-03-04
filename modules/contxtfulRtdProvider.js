@@ -354,7 +354,7 @@ function tryGetAdUnitPosition(adUnit) {
   let adUnitPosition = {};
   adUnit.ortb2Imp = adUnit.ortb2Imp || {};
 
-  // Try to get position with the divId
+  // try to get position with the divId
   const divIdPosition = tryMultipleDivIdPositions(adUnit);
   if (divIdPosition) {
     adUnitPosition.p = { x: divIdPosition.x, y: divIdPosition.y };
@@ -363,7 +363,7 @@ function tryGetAdUnitPosition(adUnit) {
     return adUnitPosition;
   }
 
-  // Try to get IAB position
+  // try to get IAB position
   const iabPos = adUnit?.mediaTypes?.banner?.pos;
   if (iabPos !== undefined) {
     adUnitPosition.p = iabPos;
@@ -398,50 +398,56 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   function onReturn() {
     onDone();
   }
-
   logInfo(MODULE, 'getBidRequestData');
-  const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);
   const bidders = config?.params?.bidders || [];
   if (isEmpty(bidders) || !isArray(bidders)) {
     onReturn();
     return;
   }
 
-  let fromApi = rxApi?.receptivityBatched?.(bidders) || {};
-  let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
+  let ortb2Fragment;
+  let getContxtfulOrtb2Fragment = rxApi?.getOrtb2Fragment;
+  if (typeof (getContxtfulOrtb2Fragment) == 'function') {
+    ortb2Fragment = getContxtfulOrtb2Fragment(bidders, reqBidsConfigObj);
+  } else {
+    const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);
 
-  let sources = [fromStorage, fromApi];
+    let fromApi = rxApi?.receptivityBatched?.(bidders) || {};
+    let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
 
-  let rxBatch = Object.assign(...sources);
+    let sources = [fromStorage, fromApi];
 
-  let singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
+    let rxBatch = Object.assign(...sources);
 
-  bidders
-    .forEach(bidderCode => {
-      const ortb2 = {
-        user: {
-          data: [
-            {
-              name: MODULE_NAME,
-              ext: {
-                rx: rxBatch[bidderCode],
-                events: singlePointEvents,
-                pos: btoa(JSON.stringify(adUnitsPositions)),
-                sm: sm(),
-                params: {
-                  ev: config.params?.version,
-                  ci: config.params?.customer,
+    let singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
+    ortb2Fragment = {};
+    ortb2Fragment.bidder = Object.fromEntries(
+      bidders
+        .map(bidderCode => {
+          return [bidderCode, {
+            user: {
+              data: [
+                {
+                  name: MODULE_NAME,
+                  ext: {
+                    rx: rxBatch[bidderCode],
+                    events: singlePointEvents,
+                    pos: btoa(JSON.stringify(adUnitsPositions)),
+                    sm: sm(),
+                    params: {
+                      ev: config.params?.version,
+                      ci: config.params?.customer,
+                    },
+                  },
                 },
-              },
+              ],
             },
-          ],
-        },
-      };
+          }
+          ]
+        }));
+  }
 
-      mergeDeep(reqBidsConfigObj.ortb2Fragments?.bidder, {
-        [bidderCode]: ortb2,
-      });
-    });
+  mergeDeep(reqBidsConfigObj.ortb2Fragments, ortb2Fragment);
 
   onReturn();
 }
