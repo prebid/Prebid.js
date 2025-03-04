@@ -8,7 +8,7 @@
 
 The Contxtful RTD module offers a unique feature—Receptivity. Receptivity is an efficiency metric, enabling the qualification of any instant in a session in real time based on attention. The core idea is straightforward: the likelihood of an ad’s success increases when it grabs attention and is presented in the right context at the right time.
 
-To utilize this module, you need to register for an account with [Contxtful](https://contxtful.com). For inquiries, please reach out to  [contact@contxtful.com](mailto:contact@contxtful.com).
+To utilize this module, you need to register for an account with [Contxtful](https://contxtful.com). For inquiries, please reach out to [contact@contxtful.com](mailto:contact@contxtful.com).
 
 ## Build Instructions
 
