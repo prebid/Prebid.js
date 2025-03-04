@@ -10,11 +10,13 @@ import {
   addPaapiConfigHook,
   addPaapiData,
   ASYNC_SIGNALS,
-  buyersToAuctionConfigs, createAuctionNonce,
+  buyersToAuctionConfigs,
   getPAAPIConfig,
   getPAAPISize,
   IGB_TO_CONFIG,
-  mergeBuyers, NONCE_MANAGERS, nonceManager,
+  mergeBuyers,
+  NONCE_MANAGERS,
+  nonceManager,
   onAuctionInit,
   parallelPaapiProcessing,
   parseExtIgi,
@@ -22,7 +24,8 @@ import {
   partitionBuyers,
   partitionBuyersByBidder,
   registerSubmodule,
-  reset, resolveAuctionNonces,
+  reset,
+  resolveRequestNoncesHook,
   setImpExtAe,
   setResponsePaapiConfigs
 } from 'modules/paapi.js';
@@ -60,6 +63,10 @@ describe('paapi module', () => {
       it('serializes to a placeholder', () => {
         const nonce = mgr.nonce();
         expect(JSON.parse(JSON.stringify([nonce, nonce]))).to.eql([mgr.placeholder(0), mgr.placeholder(0)]);
+      });
+      it('throws if manager is closed', () => {
+        mgr.close();
+        expect(() => mgr.nonce()).to.throw;
       })
     });
 
@@ -111,7 +118,7 @@ describe('paapi module', () => {
           expect(mgr.resolve(payload)).to.eql(payload);
         })
       });
-      it('can resolve within nested objects & arrays',async () => {
+      it('can resolve within nested objects & arrays', async () => {
         const nonce1 = mgr.nonce();
         const nonce0 = mgr.nonce();
         const payload = {
@@ -132,6 +139,26 @@ describe('paapi module', () => {
           }
         })
       });
+    })
+  })
+
+  describe('resolveRequestNoncesHook', () => {
+    let bidderRequest, mgr;
+    beforeEach(() => {
+      bidderRequest = {};
+      mgr = nonceManager(() => 'nonce');
+      NONCE_MANAGERS.set(bidderRequest, mgr)
+    })
+    it('resolves nonces', async () => {
+      const next = sinon.spy();
+      const req = {arg: mgr.nonce()};
+      resolveRequestNoncesHook(next, {}, [], bidderRequest, req);
+      const resolved = await (next.args[0][3]);
+      expect(resolved).to.eql({arg: 'nonce'});
+    });
+    it('closes manager', () => {
+      resolveRequestNoncesHook(sinon.spy(), {}, [], bidderRequest);
+      expect(() => mgr.nonce()).to.throw();
     })
   })
 

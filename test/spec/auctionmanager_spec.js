@@ -1229,7 +1229,6 @@ describe('auctionmanager.js', function () {
         assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
       });
 
-
       describe('bid for a regular unit and a video unit', () => {
         beforeEach(() => {
           const renderer = {

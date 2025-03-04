@@ -515,6 +515,7 @@ export function nonceManager(createNonce = () => navigator.createAuctionNonce())
   let fetched = 0;
   let noncePool = [];
   const nonces = {};
+  let closed = false;
 
   const pattern = new RegExp(`##PAAPI_NONCE_${mgrId}_(\\d+)##`, 'g');
 
@@ -556,7 +557,13 @@ export function nonceManager(createNonce = () => navigator.createAuctionNonce())
 
   return {
     placeholder,
+    close() {
+      closed = true;
+    },
     nonce() {
+      if (closed) {
+        throw new Error('Auction nonces must be generated during buildRequests at the latest');
+      }
       return new NoncePlaceholder(count++);
     },
     async fetchNonces() {
@@ -585,6 +592,7 @@ function resolveNonces(bidderRequest, payload) {
 }
 
 export function resolveRequestNoncesHook(next, spec, validBidRequests, bidderRequest, adapterRequests) {
+  NONCE_MANAGERS.get(bidderRequest)?.close();
   next.call(this, spec, validBidRequests, bidderRequest, resolveNonces(bidderRequest, adapterRequests));
 }
 
@@ -635,7 +643,6 @@ const validatePartialConfig = (() => {
  * (instead of when the auction ends).
  */
 export function parallelPaapiProcessing(next, spec, bids, bidderRequest) {
-
   function makeDeferrals(defaults = {}) {
     let promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
@@ -754,7 +761,9 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest) {
   }
   const args = Array.from(arguments).slice(1);
   return buildConfigs.then(function () {
-    next.apply(this, args);
+    setTimeout(() => {
+      next.apply(this, args);
+    })
   }).catch(err => {
     logError(`Error calling buildPAAPIConfigs on '${spec.code}'`, err);
   })
