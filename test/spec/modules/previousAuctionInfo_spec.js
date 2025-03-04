@@ -1,4 +1,4 @@
-import * as previousAuctionInfo from 'libraries/previousAuctionInfo/previousAuctionInfo.js';
+import * as previousAuctionInfo from '../../../modules/previousAuctionInfo';
 import sinon from 'sinon';
 import { expect } from 'chai';
 import { config } from 'src/config.js';
@@ -57,7 +57,8 @@ describe('previous auction info', () => {
   describe('config', () => {
     it('should initialize the module if publisher enabled', () => {
       previousAuctionInfo.initPreviousAuctionInfo(initHandlersStub);
-      config.setConfig({ previousAuctionInfo: true });
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder1', 'testBidder2'] } });
+      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.true;
       sandbox.assert.calledOnce(initHandlersStub);
     });
 
@@ -71,8 +72,8 @@ describe('previous auction info', () => {
 
   describe('onAuctionEndHandler', () => {
     it('should store auction data for enabled bidders in auctionState', () => {
-      const config = { bidderCode: 'testBidder2' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config);
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder2'] } });
+      previousAuctionInfo.initPreviousAuctionInfo();
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
 
       expect(previousAuctionInfo.auctionState).to.have.property('testBidder2');
@@ -97,10 +98,8 @@ describe('previous auction info', () => {
     });
 
     it('should store auction data for multiple bidders correctly', () => {
-      const config1 = { bidderCode: 'testBidder1' };
-      const config2 = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config1);
-      previousAuctionInfo.enablePreviousAuctionInfo(config2);
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder1', 'testBidder3'] } });
+      previousAuctionInfo.initPreviousAuctionInfo();
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
 
       expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
@@ -124,15 +123,19 @@ describe('previous auction info', () => {
     });
 
     it('should not store auction data for disabled bidders', () => {
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder1'] } });
+      previousAuctionInfo.initPreviousAuctionInfo();
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
+
+      expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
       expect(previousAuctionInfo.auctionState).to.not.have.property('testBidder2');
     });
   });
 
   describe('onBidWonHandler', () => {
     it('should update the rendered field in auctionState when a pbjs bid wins', () => {
-      const config = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config);
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } });
+      previousAuctionInfo.initPreviousAuctionInfo();
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'trans789', rendered: 0 }
@@ -148,8 +151,8 @@ describe('previous auction info', () => {
     });
 
     it('should not update the rendered field if no matching transactionId is found', () => {
-      const config = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config);
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } });
+      previousAuctionInfo.initPreviousAuctionInfo();
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'someOtherTid', rendered: 0 }

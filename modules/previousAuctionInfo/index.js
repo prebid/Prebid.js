@@ -2,8 +2,12 @@ import {on as onEvent, off as offEvent} from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { config } from '../../src/config.js';
 
+// eslint-disable-next-line no-console
+console.log('previousAuctionInfo module loaded');
+
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
+let maxQueueLength = 10;
 
 export let auctionState = {};
 
@@ -15,25 +19,27 @@ export const resetPreviousAuctionInfo = (cb = deinitHandlers) => {
 };
 
 export const initPreviousAuctionInfo = (cb = initHandlers) => {
+  // eslint-disable-next-line no-console
+  console.log('initPreviousAuctionInfo');
   config.getConfig('previousAuctionInfo', (conf) => {
-    if (!conf.previousAuctionInfo) {
+    if (!conf.previousAuctionInfo || !conf.previousAuctionInfo.enabled) {
       if (previousAuctionInfoEnabled) { resetPreviousAuctionInfo(); }
       return;
     }
 
+    if (conf.previousAuctionInfo.bidders) { enabledBidders = conf.previousAuctionInfo.bidders; }
+    if (conf.previousAuctionInfo.maxQueueLength) { maxQueueLength = conf.previousAuctionInfo.maxQueueLength; }
+
     previousAuctionInfoEnabled = true;
+    // eslint-disable-next-line no-console
+    console.log('initPreviousAuctionInfo: enabled');
     cb();
   });
 };
 
-export const enablePreviousAuctionInfo = (sspConfig) => {
-  const { bidderCode } = sspConfig;
-  const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderCode);
-
-  if (!enabledBidder) enabledBidders.push({ bidderCode, maxQueueLength: sspConfig.maxQueueLength || 10 });
-}
-
 export const initHandlers = () => {
+  // eslint-disable-next-line no-console
+  console.log('initHandlers');
   onEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
   onEvent(EVENTS.BID_WON, onBidWonHandler);
   onEvent(EVENTS.BID_REQUESTED, onBidRequestedHandler);
@@ -46,6 +52,8 @@ const deinitHandlers = () => {
 }
 
 export const onAuctionEndHandler = (auctionDetails) => {
+  // eslint-disable-next-line no-console
+  console.log('onAuctionEndHandler', auctionDetails);
   try {
     const receivedBidsMap = {};
     const rejectedBidsMap = {};
@@ -68,7 +76,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
 
     if (auctionDetails.bidderRequests?.length) {
       auctionDetails.bidderRequests.forEach(bidderRequest => {
-        const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderRequest.bidderCode);
+        const enabledBidder = enabledBidders.length === 0 || enabledBidders.find(bidderCode => bidderCode === bidderRequest.bidderCode);
 
         if (enabledBidder) {
           auctionState[bidderRequest.bidderCode] = auctionState[bidderRequest.bidderCode] || [];
@@ -80,19 +88,19 @@ export const onAuctionEndHandler = (auctionDetails) => {
               rendered: 0,
               source: 'pbjs',
               adUnitCode: bid.adUnitCode,
-              highestTargetedBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.adserverTargeting?.hb_pb || '',
-              targetedBidCpm: receivedBidsMap[bid.bidId]?.adserverTargeting?.hb_pb || '',
+              highestTargetedBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.adserverTargeting?.hb_pb || null,
+              targetedBidCpm: receivedBidsMap[bid.bidId]?.adserverTargeting?.hb_pb || null,
               highestBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.cpm || 0,
-              bidderCpm: receivedBidsMap[bid.bidId]?.cpm || 'nobid',
-              bidderOriginalCpm: receivedBidsMap[bid.bidId]?.originalCpm || 'nobid',
-              bidderCurrency: receivedBidsMap[bid.bidId]?.currency || 'nobid',
-              bidderOriginalCurrency: receivedBidsMap[bid.bidId]?.originalCurrency || 'nobid',
+              bidderCpm: receivedBidsMap[bid.bidId]?.cpm || null,
+              bidderOriginalCpm: receivedBidsMap[bid.bidId]?.originalCpm || null,
+              bidderCurrency: receivedBidsMap[bid.bidId]?.currency || null,
+              bidderOriginalCurrency: receivedBidsMap[bid.bidId]?.originalCurrency || null,
               bidderErrorCode: rejectedBidsMap[bid.bidId] ? rejectedBidsMap[bid.bidId].rejectionReason : -1,
               timestamp: auctionDetails.timestamp,
               transactionId: bid.transactionId, // this field gets removed before injecting previous auction info into the bid stream
             }
 
-            if (auctionState[bidderRequest.bidderCode].length > enabledBidder.maxQueueLength) {
+            if (auctionState[bidderRequest.bidderCode].length >= maxQueueLength) {
               auctionState[bidderRequest.bidderCode].shift();
             }
 
@@ -105,6 +113,8 @@ export const onAuctionEndHandler = (auctionDetails) => {
 }
 
 export const onBidWonHandler = (winningBid) => {
+  // eslint-disable-next-line no-console
+  console.log('onBidWonHandler', winningBid);
   const winningTid = winningBid.transactionId;
 
   Object.values(auctionState).flat().forEach(prevAuctPayload => {
@@ -115,8 +125,10 @@ export const onBidWonHandler = (winningBid) => {
 };
 
 export const onBidRequestedHandler = (bidRequest) => {
+  // eslint-disable-next-line no-console
+  console.log('onBidRequestedHandler', bidRequest);
   try {
-    const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidRequest.bidderCode);
+    const enabledBidder = enabledBidders.length === 0 || enabledBidders.find(bidderCode => bidderCode === bidRequest.bidderCode);
     if (enabledBidder && auctionState[bidRequest.bidderCode]) {
       auctionState[bidRequest.bidderCode].forEach(prevAuctPayload => {
         if (prevAuctPayload.transactionId) delete prevAuctPayload.transactionId;
@@ -127,6 +139,8 @@ export const onBidRequestedHandler = (bidRequest) => {
       bidRequest.ortb2.ext.prebid = Object.assign({}, bidRequest.ortb2.ext.prebid);
 
       bidRequest.ortb2.ext.prebid.previousauctioninfo = auctionState[bidRequest.bidderCode];
+      // eslint-disable-next-line no-console
+      console.log('previousAuctionInfo injected into bidRequest');
       delete auctionState[bidRequest.bidderCode];
     }
   } catch (error) {}
