@@ -2,9 +2,6 @@ import {on as onEvent, off as offEvent} from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { config } from '../../src/config.js';
 
-// eslint-disable-next-line no-console
-console.log('previousAuctionInfo module loaded');
-
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
 let maxQueueLength = 10;
@@ -19,8 +16,6 @@ export const resetPreviousAuctionInfo = (cb = deinitHandlers) => {
 };
 
 export const initPreviousAuctionInfo = (cb = initHandlers) => {
-  // eslint-disable-next-line no-console
-  console.log('initPreviousAuctionInfo');
   config.getConfig('previousAuctionInfo', (conf) => {
     if (!conf.previousAuctionInfo || !conf.previousAuctionInfo.enabled) {
       if (previousAuctionInfoEnabled) { resetPreviousAuctionInfo(); }
@@ -31,15 +26,11 @@ export const initPreviousAuctionInfo = (cb = initHandlers) => {
     if (conf.previousAuctionInfo.maxQueueLength) { maxQueueLength = conf.previousAuctionInfo.maxQueueLength; }
 
     previousAuctionInfoEnabled = true;
-    // eslint-disable-next-line no-console
-    console.log('initPreviousAuctionInfo: enabled');
     cb();
   });
 };
 
 export const initHandlers = () => {
-  // eslint-disable-next-line no-console
-  console.log('initHandlers');
   onEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
   onEvent(EVENTS.BID_WON, onBidWonHandler);
   onEvent(EVENTS.BID_REQUESTED, onBidRequestedHandler);
@@ -52,8 +43,6 @@ const deinitHandlers = () => {
 }
 
 export const onAuctionEndHandler = (auctionDetails) => {
-  // eslint-disable-next-line no-console
-  console.log('onAuctionEndHandler', auctionDetails);
   try {
     const receivedBidsMap = {};
     const rejectedBidsMap = {};
@@ -113,8 +102,6 @@ export const onAuctionEndHandler = (auctionDetails) => {
 }
 
 export const onBidWonHandler = (winningBid) => {
-  // eslint-disable-next-line no-console
-  console.log('onBidWonHandler', winningBid);
   const winningTid = winningBid.transactionId;
 
   Object.values(auctionState).flat().forEach(prevAuctPayload => {
@@ -125,8 +112,6 @@ export const onBidWonHandler = (winningBid) => {
 };
 
 export const onBidRequestedHandler = (bidRequest) => {
-  // eslint-disable-next-line no-console
-  console.log('onBidRequestedHandler', bidRequest);
   try {
     const enabledBidder = enabledBidders.length === 0 || enabledBidders.find(bidderCode => bidderCode === bidRequest.bidderCode);
     if (enabledBidder && auctionState[bidRequest.bidderCode]) {
@@ -139,8 +124,6 @@ export const onBidRequestedHandler = (bidRequest) => {
       bidRequest.ortb2.ext.prebid = Object.assign({}, bidRequest.ortb2.ext.prebid);
 
       bidRequest.ortb2.ext.prebid.previousauctioninfo = auctionState[bidRequest.bidderCode];
-      // eslint-disable-next-line no-console
-      console.log('previousAuctionInfo injected into bidRequest');
       delete auctionState[bidRequest.bidderCode];
     }
   } catch (error) {}
