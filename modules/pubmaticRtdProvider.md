@@ -6,7 +6,7 @@
 
 ## Description
 
-The PubMatic RTD module fetches pricing floor data and updates the Price Floors Module based on user's context in real-time as per Price Floors Modules Floor Data Provider Interface guidelines (https://docs.prebid.org/dev-docs/modules/floors.html#floor-data-provider-interface)
+The PubMatic RTD module fetches pricing floor data and updates the Price Floors Module based on user's context in real-time as per Price Floors Modules Floor Data Provider Interface guidelines [Dynamic Floor Data Provider](https://docs.prebid.org/dev-docs/modules/floors.html#floor-data-provider-interface).
 
 ## Usage
 
@@ -18,39 +18,41 @@ Step 3: Prepare the base Prebid file.
 
 For example:
 
-```shell
-gulp build --modules=priceFloors
-```
-
-To compile the PubMatic RTD module and PubMatic Analytics Adapter into your Prebid build:
+To compile the Price Floors, PubMatic RTD module and PubMatic Analytics Adapter into your Prebid build:
 
 ```shell
-gulp build --modules=rtdModule,pubmaticRtdProvider,pubmaticAnalyticsAdapter
+gulp build --modules=priceFloors,rtdModule,pubmaticRtdProvider,pubmaticAnalyticsAdapter
 ```
 
-> Note : Ensure that the following modules are listed when building Prebid: `priceFloors`.
+{: .alert.alert-info :}
+Note: The PubMatic RTD module is dependent on the global real-time data module : `rtdModule`, price floor module : `priceFloors` and PubMatic Analytics Adapter : `pubmaticAnalyticsAdapter`.
 
 Step 4: Set configuration and enable PubMatic RTD Module using pbjs.setConfig.
-To utilize the PubMatic RTD module, add `realTimeData` with the parameters mentioned below to the Prebid config.
+
+## Configuration
+
+This module is configured as part of the `realTimeData.dataProviders`.  We recommend setting `auctionDelay` to at least 250 ms and make sure `waitForIt` is set to `true` for the `pubmatic` RTD provider.
 
 ```js
-const AUCTION_DELAY = 500;
+const AUCTION_DELAY = 250;
 pbjs.setConfig({
-	// rest of the config
-	...,
-	realTimeData: {
-		auctionDelay: AUCTION_DELAY,
-		dataProviders: [{
-			name: "pubmatic",
-			waitForIt: true,
-			params: {
-				publisherId: `<publisher_id>`, // please contact PubMatic to get a publisherId for yourself
-				profileId: `<profile_id>`,     // please contact PubMatic to get a profileId for yourself
-			}
-		}]
-	}
-	// rest of the config
-	...,
+    // rest of the config
+    ...,
+    realTimeData: {
+        auctionDelay: AUCTION_DELAY,
+        dataProviders: [
+            {
+                name: "pubmatic",
+                waitForIt: true,
+                params: {
+                    publisherId: `<publisher_id>`, // please contact PubMatic to get a publisherId for yourself
+                    profileId: `<profile_id>`, // please contact PubMatic to get a profileId for yourself
+                },
+            },
+        ],
+    },
+    // rest of the config
+    ...,
 });
 ```
 
@@ -59,7 +61,7 @@ pbjs.setConfig({
 | Name               | Type    | Description                                                    | Default                    |
 | :----------------- | :------ | :------------------------------------------------------------- | :------------------------- |
 | name               | String  | Name of the real-time data module                              | Always `pubmatic`          |
-| waitForIt          | Boolean | Should be `true` if an `auctionDelay` is defined (optional)    | `true`                     |
+| waitForIt          | Boolean | Should be `true` if an `auctionDelay` is defined (mandatory)    | `false`                     |
 | params             | Object  |                                                                |                            |
 | params.publisherId | String  | Publisher ID                                                   |                            |
 | params.profileId   | String  | Profile ID                                                     |                            |
