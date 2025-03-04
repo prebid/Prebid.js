@@ -1,35 +1,37 @@
+import * as auctionModule from 'src/auction.js';
 import {
-  getKeyValueTargetingPairs,
-  auctionCallbacks,
-  AUCTION_COMPLETED,
+  addBidResponse,
   adjustBids,
+  AUCTION_COMPLETED,
+  auctionCallbacks,
+  getKeyValueTargetingPairs,
   getMediaTypeGranularity,
   getPriceByGranularity,
-  addBidResponse, resetAuctionState, responsesReady, newAuction
+  newAuction,
+  resetAuctionState,
+  responsesReady
 } from 'src/auction.js';
-import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
-import * as auctionModule from 'src/auction.js';
-import { registerBidder } from 'src/adapters/bidderFactory.js';
-import { createBid } from 'src/bidfactory.js';
-import { config } from 'src/config.js';
+import {EVENTS, S2S, TARGETING_KEYS} from 'src/constants.js';
+import {registerBidder} from 'src/adapters/bidderFactory.js';
+import {createBid} from 'src/bidfactory.js';
+import {config} from 'src/config.js';
 import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import {find} from 'src/polyfill.js';
-import { server } from 'test/mocks/xhr.js';
+import {server} from 'test/mocks/xhr.js';
 import {hook} from '../../src/hook.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import 'modules/debugging/index.js' // some tests look for debugging side effects
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import {expect} from 'chai';
 import {deepClone} from '../../src/utils.js';
-import { IMAGE as ortbNativeRequest } from 'src/native.js';
+import {IMAGE as ortbNativeRequest} from 'src/native.js';
 import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
 import '../../modules/currency.js'
-import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
-import { REJECTION_REASON } from '../../src/constants.js';
-import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
-import {sandbox} from 'sinon';
+import {REJECTION_REASON} from '../../src/constants.js';
+import {setDocumentHidden} from './unit/utils/focusTimeout_spec.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
+import {delay} from '../../src/utils/promise.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -1047,9 +1049,10 @@ describe('auctionmanager.js', function () {
       });
 
       function checkPbDg(cpm, expected, msg) {
-        return function() {
+        return async function () {
           bids[0].cpm = cpm;
           auction.callBids();
+          await auction.end;
 
           let registeredBid = auction.getBidsReceived().pop();
           assert.equal(registeredBid.pbDg, expected, msg);
@@ -1068,31 +1071,34 @@ describe('auctionmanager.js', function () {
       it('should return proper price bucket increments for dense mode when cpm is 20+',
         checkPbDg('73.07', '20.00', '20+ caps at 20.00'));
 
-      it('should place dealIds in adserver targeting', function () {
+      it('should place dealIds in adserver targeting', async function () {
         bids[0].dealId = 'test deal';
         auction.callBids();
+        await auction.end;
 
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.adserverTargeting[TARGETING_KEYS.DEAL], 'test deal', 'dealId placed in adserverTargeting');
       });
 
-      it('should pass through default adserverTargeting sent from adapter', function () {
+      it('should pass through default adserverTargeting sent from adapter', async function () {
         bids[0].adserverTargeting = {};
         bids[0].adserverTargeting.extra = 'stuff';
         auction.callBids();
+        await auction.end;
 
         let registeredBid = auction.getBidsReceived().pop();
         assert.equal(registeredBid.adserverTargeting[TARGETING_KEYS.BIDDER], BIDDER_CODE);
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
-      it('should add the bidResponse to the collection before calling BID_RESPONSE', function () {
+      it('should add the bidResponse to the collection before calling BID_RESPONSE', async function () {
         let hasBid = false;
-        const eventHandler = function(bid) {
+        const eventHandler = function (bid) {
           const storedBid = auction.getBidsReceived().pop();
           hasBid = storedBid === bid;
         }
         events.on(EVENTS.BID_RESPONSE, eventHandler);
         auction.callBids();
+        await auction.end;
         events.off(EVENTS.BID_RESPONSE, eventHandler);
         assert.ok(hasBid, 'Bid not available');
       });
@@ -1111,7 +1117,7 @@ describe('auctionmanager.js', function () {
             };
           })
 
-          function getBid() {
+          async function getBid() {
             let bid = Object.assign({},
               bids[0],
               {
@@ -1122,21 +1128,22 @@ describe('auctionmanager.js', function () {
             Object.assign(getObj(), {renderer});
             spec.interpretResponse.returns(bid);
             auction.callBids();
+            await auction.end;
             return auction.getBidsReceived().pop();
           }
 
-          it(t, () => {
-            expect(getBid().renderer.url).to.eql('renderer.js');
+          it(t, async () => {
+            expect((await getBid()).renderer.url).to.eql('renderer.js');
           });
 
-          it('allows renderers without URL', () => {
+          it('allows renderers without URL', async () => {
             delete renderer.url;
-            expect(getBid().renderer.renderNow).to.be.true;
+            expect((await getBid()).renderer.renderNow).to.be.true;
           });
         })
       })
 
-      it('installs publisher-defined backup renderers on bids', function () {
+      it('installs publisher-defined backup renderers on bids', async function () {
         let renderer = {
           url: 'renderer.js',
           backupOnly: true,
@@ -1153,11 +1160,12 @@ describe('auctionmanager.js', function () {
         );
         spec.interpretResponse.returns(bids1);
         auction.callBids();
+        await auction.end;
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
 
-      it('installs publisher-defined renderers for a media type', function () {
+      it('installs publisher-defined renderers for a media type', async function () {
         const renderer = {
           url: 'videoRenderer.js',
           render: (bid) => bid
@@ -1182,12 +1190,13 @@ describe('auctionmanager.js', function () {
         myBid.mediaType = 'video';
         spec.interpretResponse.returns(myBid);
         auction.callBids();
+        await auction.end;
 
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.renderer.url, renderer.url);
       });
 
-      it('installs bidder-defined renderer when onlyBackup is true in mediaTypes.video options ', function () {
+      it('installs bidder-defined renderer when onlyBackup is true in mediaTypes.video options ', async function () {
         const renderer = {
           url: 'videoRenderer.js',
           backupOnly: true,
@@ -1214,10 +1223,12 @@ describe('auctionmanager.js', function () {
         };
         spec.interpretResponse.returns(myBid);
         auction.callBids();
+        await auction.end;
 
         const addedBid = auction.getBidsReceived().pop();
         assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
       });
+
 
       describe('bid for a regular unit and a video unit', () => {
         beforeEach(() => {
@@ -1246,8 +1257,9 @@ describe('auctionmanager.js', function () {
           spec.interpretResponse.returns(bid);
         });
 
-        it('should use renderers on bid response', () => {
+        it('should use renderers on bid response', async () => {
           auction.callBids();
+          await auction.end;
 
           const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode === ADUNIT_CODE);
           assert.equal(addedBid.renderer.url, 'renderer.js');
@@ -1261,9 +1273,10 @@ describe('auctionmanager.js', function () {
         });
       })
 
-      it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', () => {
+      it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', async () => {
         adUnits[0].ttlBuffer = 0;
         auction.callBids();
+        await auction.end;
         expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
       });
     });
@@ -1310,7 +1323,7 @@ describe('auctionmanager.js', function () {
         events.emit.restore();
       });
 
-      it('resolves .end on timeout', () => {
+      it('resolves .end on timeout', async () => {
         let endResolved = false;
         auction.end.then(() => {
           endResolved = true;
@@ -1318,6 +1331,7 @@ describe('auctionmanager.js', function () {
         const pm = runAuction().then(() => {
           expect(endResolved).to.be.true;
         });
+        await delay(0);
         respondToRequest(0);
         return pm;
       });
@@ -1336,7 +1350,7 @@ describe('auctionmanager.js', function () {
           'is fired on timeout': [true, [0]],
           'is NOT fired otherwise': [false, [0, 1]],
         }).forEach(([t, [shouldFire, respond]]) => {
-          it(t, () => {
+          it(t, async () => {
             const pm = runAuction().then(() => {
               if (shouldFire) {
                 sinon.assert.calledWith(handler, sinon.match({auctionId: auction.getAuctionId()}))
@@ -1344,13 +1358,14 @@ describe('auctionmanager.js', function () {
                 sinon.assert.notCalled(handler);
               }
             });
+            await delay(0);
             respond.forEach(respondToRequest);
             return pm;
           })
         });
       });
 
-      it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', function () {
+      it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', async function () {
         const pm = runAuction().then(() => {
           const bidTimeoutCall = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).getCalls()[0];
           const timedOutBids = bidTimeoutCall.args[1];
@@ -1365,26 +1380,29 @@ describe('auctionmanager.js', function () {
           assert.equal(auctionProps.timeout, 20);
           assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED)
         });
+        await delay(0);
         respondToRequest(0);
         return pm;
       });
 
-      it('should NOT emit BID_TIMEOUT when all bidders responded in time', function () {
+      it('should NOT emit BID_TIMEOUT when all bidders responded in time', async function () {
         const pm = runAuction().then(() => {
           assert.ok(eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).notCalled, 'did not emit event BID_TIMEOUT');
         });
+        await delay(0);
         respondToRequest(0);
         respondToRequest(1);
         return pm;
       });
 
-      it('should NOT emit BID_TIMEOUT for bidders which responded in time but with an empty bid', function () {
+      it('should NOT emit BID_TIMEOUT for bidders which responded in time but with an empty bid', async function () {
         const pm = runAuction().then(() => {
           const bidTimeoutCall = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).getCalls()[0];
           const timedOutBids = bidTimeoutCall.args[1];
           assert.equal(timedOutBids.length, 1);
           assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
         });
+        await delay(0);
         respondToRequest(0);
         return pm;
       });
@@ -1498,8 +1516,9 @@ describe('auctionmanager.js', function () {
       adapterManager.makeBidRequests.restore();
     });
 
-    it('should not alter bid requestID', function () {
+    it('should not alter bid requestID', async function () {
       auction.callBids();
+      await auction.end;
       const bidsReceived = auction.getBidsReceived();
       const addedBid2 = bidsReceived.pop();
       assert.equal(addedBid2.requestId, bids1[0].requestId);
@@ -1507,11 +1526,12 @@ describe('auctionmanager.js', function () {
       assert.equal(addedBid1.requestId, bids[0].requestId);
     });
 
-    it('should not add banner bids that have no width or height', function () {
+    it('should not add banner bids that have no width or height', async function () {
       bids1[0].width = undefined;
       bids1[0].height = undefined;
 
       auction.callBids();
+      await auction.end;
 
       let length = auction.getBidsReceived().length;
       const addedBid2 = auction.getBidsReceived().pop();
@@ -1565,13 +1585,14 @@ describe('auctionmanager.js', function () {
       store.store.restore();
     });
 
-    it('should reject bid for price higher than limit for the same currency', () => {
+    it('should reject bid for price higher than limit for the same currency', async () => {
       sinon.stub(auction, 'addBidRejected');
       config.setConfig({
         maxBid: 1
       });
 
       auction.callBids();
+      await auction.end;
       sinon.assert.calledWith(auction.addBidRejected, sinon.match({rejectionReason: REJECTION_REASON.PRICE_TOO_HIGH}));
     })
   });
@@ -1709,32 +1730,33 @@ describe('auctionmanager.js', function () {
         adapterManager.makeBidRequests.restore();
       });
 
-      it('should add legacy fields to native response', function () {
+      it('should add legacy fields to native response', async function () {
         let nativeBid = mockBid();
         nativeBid.mediaType = 'native';
         nativeBid.native = {
           ortb: {
             ver: '1.2',
             assets: [
-              { id: 2, title: { text: 'Sample title' } },
-              { id: 4, data: { value: 'Sample body' } },
-              { id: 3, data: { value: 'Sample sponsoredBy' } },
-              { id: 1, img: { url: 'https://www.example.com/image.png', w: 200, h: 200 } },
-              { id: 5, img: { url: 'https://www.example.com/icon.png', w: 32, h: 32 } }
+              {id: 2, title: {text: 'Sample title'}},
+              {id: 4, data: {value: 'Sample body'}},
+              {id: 3, data: {value: 'Sample sponsoredBy'}},
+              {id: 1, img: {url: 'https://www.example.com/image.png', w: 200, h: 200}},
+              {id: 5, img: {url: 'https://www.example.com/icon.png', w: 32, h: 32}}
             ],
-            link: { url: 'http://www.click.com' },
+            link: {url: 'http://www.click.com'},
             eventtrackers: [
-              { event: 1, method: 1, url: 'http://www.imptracker.com' },
-              { event: 1, method: 2, url: 'http://www.jstracker.com/file.js' }
+              {event: 1, method: 1, url: 'http://www.imptracker.com'},
+              {event: 1, method: 2, url: 'http://www.jstracker.com/file.js'}
             ]
           }
         }
 
-        let bidRequest = mockBidRequest(nativeBid, { mediaType: { native: ortbNativeRequest } });
+        let bidRequest = mockBidRequest(nativeBid, {mediaType: {native: ortbNativeRequest}});
         makeRequestsStub.returns([bidRequest]);
 
         spec.interpretResponse.returns(nativeBid);
         auction.callBids();
+        await auction.end;
 
         const addedBid = auction.getBidsReceived().pop();
         assert.equal(addedBid.native.body, 'Sample body')
