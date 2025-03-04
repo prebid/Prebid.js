@@ -84,6 +84,7 @@ function attachHandlers() {
   getHook('makeBidRequests').before(addPaapiData);
   getHook('makeBidRequests').after(markForFledge);
   getHook('processBidderRequests').before(parallelPaapiProcessing);
+  getHook('postBuildRequests').before(resolveRequestNoncesHook);
   events.on(EVENTS.AUCTION_INIT, onAuctionInit);
   events.on(EVENTS.AUCTION_END, onAuctionEnd);
 }
@@ -93,6 +94,7 @@ function detachHandlers() {
   getHook('makeBidRequests').getHooks({hook: addPaapiData}).remove();
   getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
   getHook('processBidderRequests').getHooks({hook: parallelPaapiProcessing}).remove();
+  getHook('postBuildRequests').getHooks({hook: resolveRequestNoncesHook}).remove();
   events.off(EVENTS.AUCTION_INIT, onAuctionInit);
   events.off(EVENTS.AUCTION_END, onAuctionEnd);
 }
@@ -254,6 +256,10 @@ function getComponentSellerConfigId(bidderCode) {
 
 export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
+    const nonceMgr = NONCE_MANAGERS.get(auctionManager.index.getBidderRequest(request));
+    if (nonceMgr) {
+      paapiConfig = nonceMgr.resolve(paapiConfig);
+    }
     const {adUnitCode, auctionId, bidder} = request;
 
     // eslint-disable-next-line no-inner-declarations
@@ -541,10 +547,11 @@ export function nonceManager(createNonce = () => navigator.createAuctionNonce())
     } else if (typeof payload == 'string') {
       return payload.replaceAll(pattern, (_, nonceId) => getNonce(parseInt(nonceId, 10)));
     } else if (payload != null && typeof payload === 'object') {
-      return Array.isArray(payload) ? payload.map(resolve) : Object.fromEntries(Object.entries(payload).map(([k, v]) => [resolve(k), resolve(v)]))
-    } else {
-      return payload;
+      for (const [key, value] of Object.entries(payload)) {
+        payload[key] = resolve(value);
+      }
     }
+    return payload;
   }
 
   return {
@@ -558,10 +565,27 @@ export function nonceManager(createNonce = () => navigator.createAuctionNonce())
         .then(result => {
           fetched += result.length;
           noncePool = noncePool.concat(result);
+        })
+        .catch((err) => {
+          logError(`Error calling navigator.createAuctionNonce`, err);
+          return PbPromise.reject(err);
         });
     },
     resolve
   }
+}
+
+function resolveNonces(bidderRequest, payload) {
+  const nonceMgr = NONCE_MANAGERS.get(bidderRequest);
+  if (nonceMgr && payload) {
+    return nonceMgr.fetchNonces().then(() => nonceMgr.resolve(payload))
+  } else {
+    return PbPromise.resolve(payload);
+  }
+}
+
+export function resolveRequestNoncesHook(next, spec, validBidRequests, bidderRequest, adapterRequests) {
+  next.call(this, spec, validBidRequests, bidderRequest, resolveNonces(bidderRequest, adapterRequests));
 }
 
 const validatePartialConfig = (() => {
@@ -610,7 +634,8 @@ const validatePartialConfig = (() => {
  * If the `paapi.parallel` config flag is set, PAAPI submodules are also triggered at the same time
  * (instead of when the auction ends).
  */
-export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
+export function parallelPaapiProcessing(next, spec, bids, bidderRequest) {
+
   function makeDeferrals(defaults = {}) {
     let promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
@@ -644,13 +669,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
       } catch (e) {
         logError(`Error invoking "buildPAAPIConfigs":`, e);
       }
-
-      const nonceMgr = NONCE_MANAGERS.get(bidderRequest);
-      if (nonceMgr && partialConfigs) {
-        partialConfigs = ((configs) => nonceMgr.fetchNonces().then(() => nonceMgr.resolve(configs)))(partialConfigs);
-      } else {
-        partialConfigs = PbPromise.resolve(partialConfigs);
-      }
+      partialConfigs = resolveNonces(bidderRequest, partialConfigs);
       return partialConfigs.finally(stopTiming);
     }).then(partialConfigs => {
       const requestsById = Object.fromEntries(bids.map(bid => [bid.bidId, bid]));
@@ -733,8 +752,9 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
       });
     })
   }
+  const args = Array.from(arguments).slice(1);
   return buildConfigs.then(function () {
-    next.call(this, spec, bids, bidderRequest, ...args);
+    next.apply(this, args);
   }).catch(err => {
     logError(`Error calling buildPAAPIConfigs on '${spec.code}'`, err);
   })

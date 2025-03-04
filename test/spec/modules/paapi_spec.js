@@ -122,7 +122,9 @@ describe('paapi module', () => {
           }
         }
         await mgr.fetchNonces();
-        expect(mgr.resolve(payload)).to.eql({
+        const resolved = mgr.resolve(payload);
+        expect(resolved).to.equal(payload);
+        expect(payload).to.eql({
           arr: ['nonce-1', 2],
           obj: {
             nonce: 'nonce-0',
@@ -179,6 +181,17 @@ describe('paapi module', () => {
           addPaapiConfigHook(nextFnSpy, request, paapiConfig);
           sinon.assert.calledWith(nextFnSpy, request, paapiConfig);
         });
+
+        it('should resolve nonces', () => {
+          const bidderReq = {};
+          sandbox.stub(auctionManager.index, 'getBidderRequest').callsFake(() => bidderReq);
+          const mgr = {
+            resolve: sinon.stub().callsFake((arg) => arg)
+          }
+          NONCE_MANAGERS.set(bidderReq, mgr);
+          addPaapiConfigHook(nextFnSpy, bidderReq, paapiConfig);
+          sinon.assert.calledWith(mgr.resolve, sinon.match(paapiConfig));
+        })
 
         describe('igb', () => {
           let igb1, igb2, buyerAuctionConfig;

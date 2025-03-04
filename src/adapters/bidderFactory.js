@@ -368,9 +368,9 @@ export function newBidder(spec) {
 
 const RESPONSE_PROPS = ['bids', 'paapi']
 
-export const buildRequests = hook('sync', (spec, bidRequests, bidderRequest) => {
-  return PbPromise.resolve(spec.buildRequests(bidRequests, bidderRequest));
-}, 'buildRequests');
+export const postBuildRequests = hook('sync', (spec, validBidRequests, bidderRequests, adapterRequests) => {
+  return PbPromise.resolve(adapterRequests);
+}, 'postBuildRequests');
 
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
@@ -392,7 +392,8 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
   onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
   const tidGuard = guardTids(bidderRequest);
   const stopTiming = metrics.startTiming('buildRequests');
-  return buildRequests(spec, bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))
+  let requests = spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest));
+  return postBuildRequests(spec, bids, bidderRequest, requests)
     .then((requests) => {
       stopTiming();
 
