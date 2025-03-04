@@ -18,7 +18,13 @@ import {
   parseQueryStringParameters,
   parseSizesInput,
   pick,
-  uniques
+  uniques,
+  // eslint-disable-next-line no-unused-vars
+  isJsonObject,
+  // eslint-disable-next-line no-unused-vars
+  isGzipCompressionSupported,
+  // eslint-disable-next-line no-unused-vars
+  compressDataWithGZip
 } from '../utils.js';
 import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
@@ -493,19 +499,48 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
         );
         break;
       case 'POST':
-        ajax(
-          request.url,
-          {
-            success: onSuccess,
-            error: onFailure
-          },
-          typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-          getOptions({
-            method: 'POST',
-            contentType: 'text/plain',
-            withCredentials: true
-          })
-        );
+
+        const isCompatibleToCompress = typeof request.data === 'string' || isJsonObject(request.data);
+        // read a global setting to enable gzip compression
+        const enableGZipCompression = true; // bidderSettings.get(spec.code, 'enableGzipCompression');
+        if (enableGZipCompression && isCompatibleToCompress && isGzipCompressionSupported()) {
+          compressDataWithGZip(request.data).then(compressedPayload => {
+            ajax(
+              request.url,
+              {
+                success: onSuccess,
+                error: onFailure
+              },
+              compressedPayload,
+              getOptions({
+                method: 'POST',
+                contentType: 'text/plain',
+                contentEncoding: 'gzip',
+                // adding this header creates a CORS preflight request so we should not pass it
+                // instead of adding this header we should pass a query parmeter to let server know that the payload is compressed
+                // customHeaders: {
+                //  'Content-Encoding': 'gzip',
+                // },
+                withCredentials: true
+              })
+            );
+          });
+        } else {
+          // console.warn('Gzip compression is not supported for this data in this browser.');
+          ajax(
+            request.url,
+            {
+              success: onSuccess,
+              error: onFailure
+            },
+            typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
+            getOptions({
+              method: 'POST',
+              contentType: 'text/plain',
+              withCredentials: true
+            })
+          );
+        }
         break;
       default:
         logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
