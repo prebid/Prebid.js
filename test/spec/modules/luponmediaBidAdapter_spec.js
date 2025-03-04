@@ -71,30 +71,6 @@ describe('luponmediaBidAdapter', function () {
         'bidderRequestId': '2edea9c2757aff',
         'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
         'src': 'client',
-        'metrics': {
-          'requestBids.validate': 0.09999999403953552,
-          'requestBids.makeRequests': 0.5999999940395355,
-          'requestBids.total': 4224.600000023842,
-          'requestBids.callBids': 4214.5,
-          'adapter.client.net': [
-            4210.699999988079
-          ],
-          'adapters.client.luponmedia.net': [
-            4210.699999988079
-          ],
-          'adapter.client.interpretResponse': [
-            0.09999999403953552
-          ],
-          'adapters.client.luponmedia.interpretResponse': [
-            0.09999999403953552
-          ],
-          'adapter.client.validate': 0,
-          'adapters.client.luponmedia.validate': 0,
-          'adapter.client.buildRequests': 1.199999988079071,
-          'adapters.client.luponmedia.buildRequests': 1.199999988079071,
-          'adapter.client.total': 4212.5999999940395,
-          'adapters.client.luponmedia.total': 4212.5999999940395
-        },
         'auctionsCount': 1,
         'bidRequestsCount': 1,
         'bidderRequestsCount': 1,
@@ -103,10 +79,6 @@ describe('luponmediaBidAdapter', function () {
         'ortb2': {
           'source': {
             'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
-          },
-          'site': {
-            'publisher': {},
-            'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
           },
           'device': {
             'w': 3008,
@@ -120,29 +92,6 @@ describe('luponmediaBidAdapter', function () {
             },
             'sua': {
               'source': 1,
-              'platform': {
-                'brand': 'macOS'
-              },
-              'browsers': [
-                {
-                  'brand': 'Not(A:Brand',
-                  'version': [
-                    '99'
-                  ]
-                },
-                {
-                  'brand': 'Google Chrome',
-                  'version': [
-                    '133'
-                  ]
-                },
-                {
-                  'brand': 'Chromium',
-                  'version': [
-                    '133'
-                  ]
-                }
-              ],
               'mobile': 0
             }
           }
@@ -189,30 +138,6 @@ describe('luponmediaBidAdapter', function () {
           'bidderRequestId': '2edea9c2757aff',
           'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
           'src': 'client',
-          'metrics': {
-            'requestBids.validate': 0.09999999403953552,
-            'requestBids.makeRequests': 0.5999999940395355,
-            'requestBids.total': 4224.600000023842,
-            'requestBids.callBids': 4214.5,
-            'adapter.client.net': [
-              4210.699999988079
-            ],
-            'adapters.client.luponmedia.net': [
-              4210.699999988079
-            ],
-            'adapter.client.interpretResponse': [
-              0.09999999403953552
-            ],
-            'adapters.client.luponmedia.interpretResponse': [
-              0.09999999403953552
-            ],
-            'adapter.client.validate': 0,
-            'adapters.client.luponmedia.validate': 0,
-            'adapter.client.buildRequests': 1.199999988079071,
-            'adapters.client.luponmedia.buildRequests': 1.199999988079071,
-            'adapter.client.total': 4212.5999999940395,
-            'adapters.client.luponmedia.total': 4212.5999999940395
-          },
           'auctionsCount': 1,
           'bidRequestsCount': 1,
           'bidderRequestsCount': 1,
@@ -221,10 +146,6 @@ describe('luponmediaBidAdapter', function () {
           'ortb2': {
             'source': {
               'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
-            },
-            'site': {
-              'publisher': {},
-              'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
             },
             'device': {
               'w': 3008,
@@ -241,26 +162,6 @@ describe('luponmediaBidAdapter', function () {
                 'platform': {
                   'brand': 'macOS'
                 },
-                'browsers': [
-                  {
-                    'brand': 'Not(A:Brand',
-                    'version': [
-                      '99'
-                    ]
-                  },
-                  {
-                    'brand': 'Google Chrome',
-                    'version': [
-                      '133'
-                    ]
-                  },
-                  {
-                    'brand': 'Chromium',
-                    'version': [
-                      '133'
-                    ]
-                  }
-                ],
                 'mobile': 0
               }
             }
@@ -268,103 +169,7 @@ describe('luponmediaBidAdapter', function () {
         }
       ],
       'auctionStart': 1741002030343,
-      'timeout': 5000,
-      'refererInfo': {
-        'reachedTop': true,
-        'isAmp': false,
-        'numIframes': 0,
-        'stack': [
-          'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
-        ],
-        'topmostLocation': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
-        'location': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
-        'canonicalUrl': null,
-        'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
-        'domain': null,
-        'ref': null,
-        'legacy': {
-          'reachedTop': true,
-          'isAmp': false,
-          'numIframes': 0,
-          'stack': [
-            'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
-          ],
-          'referer': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html',
-          'canonicalUrl': null
-        }
-      },
-      'metrics': {
-        'requestBids.validate': 0.09999999403953552,
-        'requestBids.makeRequests': 0.5999999940395355,
-        'requestBids.total': 4224.600000023842,
-        'requestBids.callBids': 4214.5,
-        'adapter.client.net': [
-          4210.699999988079
-        ],
-        'adapters.client.luponmedia.net': [
-          4210.699999988079
-        ],
-        'adapter.client.interpretResponse': [
-          0.09999999403953552
-        ],
-        'adapters.client.luponmedia.interpretResponse': [
-          0.09999999403953552
-        ],
-        'adapter.client.validate': 0,
-        'adapters.client.luponmedia.validate': 0,
-        'adapter.client.buildRequests': 1.199999988079071,
-        'adapters.client.luponmedia.buildRequests': 1.199999988079071,
-        'adapter.client.total': 4212.5999999940395,
-        'adapters.client.luponmedia.total': 4212.5999999940395
-      },
-      'ortb2': {
-        'source': {
-          'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
-        },
-        'site': {
-          'publisher': {},
-          'page': 'file:///Users/milosandrejic/Documents/Lupon%20Media/Prebid/bidder.html'
-        },
-        'device': {
-          'w': 3008,
-          'h': 1692,
-          'dnt': 1,
-          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-          'language': 'sr',
-          'ext': {
-            'vpw': 1522,
-            'vph': 714
-          },
-          'sua': {
-            'source': 1,
-            'platform': {
-              'brand': 'macOS'
-            },
-            'browsers': [
-              {
-                'brand': 'Not(A:Brand',
-                'version': [
-                  '99'
-                ]
-              },
-              {
-                'brand': 'Google Chrome',
-                'version': [
-                  '133'
-                ]
-              },
-              {
-                'brand': 'Chromium',
-                'version': [
-                  '133'
-                ]
-              }
-            ],
-            'mobile': 0
-          }
-        }
-      },
-      'start': 1741002030345
+      'timeout': 1000,
     }
 
     it('sends bid request to default endpoint', function () {
