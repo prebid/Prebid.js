@@ -134,6 +134,22 @@ describe('IntentIQ tests all', function () {
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
 
+  it('should include adType in payload when present in BID_WON event', function () {
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+    const bidWonEvent = { ...wonRequest, mediaType: 'video' };
+
+    events.emit(EVENTS.BID_WON, bidWonEvent);
+
+    const request = server.requests[0];
+    const urlParams = new URL(request.url);
+    const payloadEncoded = urlParams.searchParams.get('payload');
+    const payloadDecoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
+
+    expect(server.requests.length).to.be.above(0);
+    expect(payloadDecoded).to.have.property('adType', bidWonEvent.mediaType);
+  });
+
   it('should send report to report-gdpr address if gdpr is detected', function () {
     const gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns({ gppString: '{"key1":"value1","key2":"value2"}' });
     const uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns('1NYN');

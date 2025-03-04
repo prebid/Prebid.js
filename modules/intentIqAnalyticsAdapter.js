@@ -235,6 +235,9 @@ function prepareData (data, result) {
   if (data.auctionId) {
     result.prebidAuctionId = data.auctionId;
   }
+  if (data.mediaType) {
+    result.adType = data.mediaType;
+  }
   if (data.placementId) {
     result.placementId = data.placementId;
   } else {
