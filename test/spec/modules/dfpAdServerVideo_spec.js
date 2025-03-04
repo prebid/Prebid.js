@@ -819,6 +819,37 @@ describe('The DFP video support module', function () {
     server.respond();
   });
 
+  it('should return unmodified gam vast wrapper if it contains more than 1 saved uuids', (done) => {
+    config.setConfig({cache: { useLocal: true }});
+    const uuid1 = '4536229c-eddb-45b3-a919-89d889e925aa';
+    const uuid2 = '64fcdc86-5325-4750-bc60-02f63b23175a';
+    const bidCacheUrl = `https://prebid-test-cache-server.org/cache?uuid=${uuid1}&uuid_alt=${uuid2}`
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+    const localCacheMap = new Map([
+      [uuid1, 'blob:http://localhost:9999/uri'],
+      [uuid2, 'blob:http://localhost:9999/uri'],
+    ]);
+    server.respondWith(gamWrapper);
+
+    getVastXml({}, localCacheMap)
+      .then((finalGamWrapper) => {
+        expect(finalGamWrapper).to.deep.eql(gamWrapper);
+        done();
+      })
+      .finally(config.resetConfig)
+
+    server.respond();
+  });
+
   it('should return returned unmodified gam vast wrapper if exception has been thrown', (done) => {
     config.setConfig({cache: { useLocal: true }});
     const gamWrapper = (

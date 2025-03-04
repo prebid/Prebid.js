@@ -18,6 +18,7 @@ import {
   isEmpty,
   isNumber,
   logError,
+  logWarn,
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
@@ -264,22 +265,26 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
       return gamVastWrapper;
     }
 
-    const uuidExp = new RegExp(`.*(?:([A-Fa-f0-9]{8}-(?:[A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}).*)+`, 'gi');
-    const matchResult = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp))[0];
-    const uuid = Array.from(localCacheMap.keys()).find((videoCacheKey) => matchResult.includes(videoCacheKey));
+    const uuidExp = new RegExp(`[A-Fa-f0-9]{8}-(?:[A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}`, 'gi');
+    const matchResult = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp));
+    const uuidCandidates = matchResult
+      .map(([uuid]) => uuid)
+      .filter(uuid => localCacheMap.has(uuid));
 
-    if (uuid) {
-      const blobUrl = localCacheMap.get(uuid);
-      const base64BlobContent = await getBase64BlobContent(blobUrl);
-      const cdata = xmlDoc.createCDATASection(base64BlobContent);
-      vastAdTagUriElement.textContent = '';
-      vastAdTagUriElement.appendChild(cdata);
-      return xmlUtil.serialize(xmlDoc);
-    } else {
-      throw new Error('Unable to find uuid in ad tag');
+    if (uuidCandidates.length != 1) {
+      logWarn(`Unable to determine unique uuid in ${VAST_TAG_URI_TAGNAME}`);
+      return gamVastWrapper;
     }
+    const uuid = uuidCandidates[0];
+
+    const blobUrl = localCacheMap.get(uuid);
+    const base64BlobContent = await getBase64BlobContent(blobUrl);
+    const cdata = xmlDoc.createCDATASection(base64BlobContent);
+    vastAdTagUriElement.textContent = '';
+    vastAdTagUriElement.appendChild(cdata);
+    return xmlUtil.serialize(xmlDoc);
   } catch (error) {
-    logError('Unable to process xml', error);
+    logWarn('Unable to process xml', error);
     return gamVastWrapper;
   }
 };
