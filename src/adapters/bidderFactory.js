@@ -19,11 +19,9 @@ import {
   parseSizesInput,
   pick,
   uniques,
-  // eslint-disable-next-line no-unused-vars
+  isStr,
   isJsonObject,
-  // eslint-disable-next-line no-unused-vars
   isGzipCompressionSupported,
-  // eslint-disable-next-line no-unused-vars
   compressDataWithGZip
 } from '../utils.js';
 import {hook} from '../hook.js';
@@ -500,9 +498,9 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
         break;
       case 'POST':
 
-        const isCompatibleToCompress = typeof request.data === 'string' || isJsonObject(request.data);
-        // read a global setting to enable gzip compression
-        const enableGZipCompression = true; // bidderSettings.get(spec.code, 'enableGzipCompression');
+        const isCompatibleToCompress = isStr(request.data) || isJsonObject(request.data);
+        // read a bidder setting to enable gzip compression
+        const enableGZipCompression = false; // bidderSettings.get(spec.code, 'enableGzipCompression');
         if (enableGZipCompression && isCompatibleToCompress && isGzipCompressionSupported()) {
           compressDataWithGZip(request.data).then(compressedPayload => {
             ajax(
@@ -515,9 +513,8 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
               getOptions({
                 method: 'POST',
                 contentType: 'text/plain',
-                contentEncoding: 'gzip',
-                // adding this header creates a CORS preflight request so we should not pass it
-                // instead of adding this header we should pass a query parmeter to let server know that the payload is compressed
+                // adding below header creates a CORS preflight request so we should not pass it
+                // instead of adding this header we can pass a query parmeter to let server know that the payload is compressed
                 // customHeaders: {
                 //  'Content-Encoding': 'gzip',
                 // },
