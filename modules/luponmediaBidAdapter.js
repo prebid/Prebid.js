@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'luponmedia';
 
@@ -115,6 +116,12 @@ const buildServerUrl = (keyId) => {
   return `https://${host}.adxpremium.services/openrtb2/auction`
 }
 
+function hasRtd() {
+  const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
+
+  return Boolean(rtdConfigs.find(provider => provider.name === 'dynamicAdBoostRtdProvider'));
+};
+
 export const converter = ortbConverter({
   processors: pbsExtensions,
   imp(buildImp, bidRequest, context) {
@@ -122,10 +129,17 @@ export const converter = ortbConverter({
 
     imp.ext = imp.ext || {};
 
+    const hasRtdEnabled = hasRtd();
+
+    if (!hasRtdEnabled) {
+      logWarn('Luponmedia: The DynamiAdBoost RTD Module is not enabled. Please activate it to maximize the revenue and performance of the LuponMedia Bid Adapter.')
+    }
+
     imp.ext.luponmedia = imp.ext.luponmedia || {};
     imp.ext.luponmedia.placement_id = bidRequest.adUnitCode;
     imp.ext.luponmedia.keyId = bidRequest.params.keyId;
     imp.ext.luponmedia.siteId = bidRequest.params.siteId;
+    imp.ext.luponmedia.rtd = hasRtdEnabled;
 
     return imp;
   }
