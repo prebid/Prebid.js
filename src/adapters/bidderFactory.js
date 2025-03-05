@@ -523,7 +523,6 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
             );
           });
         } else {
-          // console.warn('Gzip compression is not supported for this data in this browser.');
           ajax(
             request.url,
             {
