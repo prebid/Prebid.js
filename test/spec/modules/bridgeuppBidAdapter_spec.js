@@ -407,6 +407,27 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.tmax).to.equal(bidderRequest.timeout);
     });
 
+    it('should properly set auction data', async function () {
+      const bidRequests = [
+        {
+          bidder: 'sonarads',
+          adUnitCode: 'bid-1',
+          transactionId: 'trans-1',
+          mediaTypes: {
+            banner: {
+              sizes: [[320, 50]]
+            }
+          },
+          params: {
+            siteId: 'site-id-12'
+          }
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const ortbRequest = request.data;
+      expect(ortbRequest.auctionStart).to.equal(bidderRequest.auctionStart);
+    });
+
     it('should properly build a request with bcat field', async function () {
       const bcat = ['IAB1', 'IAB2'];
       const bidRequests = [
