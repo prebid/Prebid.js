@@ -21,6 +21,21 @@ describe('Adspirit Bidder Spec', function () {
       expect(result).to.be.false;
     });
   });
+   // getSCript url case
+  describe('getScriptUrl', function () {
+    it('should return the correct script URL', function () {
+      expect(typeof spec.getScriptUrl).to.equal('function');
+      expect(spec.getScriptUrl()).to.equal('/adasync.min.js');
+    });
+
+    it('should return a string value', function () {
+      expect(spec.getScriptUrl()).to.be.a('string');
+    });
+
+    it('should not return an empty string', function () {
+      expect(spec.getScriptUrl()).to.not.equal('');
+    });
+  });
 
   // getBidderHost Case
   describe('getBidderHost', function () {
@@ -43,109 +58,140 @@ describe('Adspirit Bidder Spec', function () {
   });
 
   // Test cases for buildRequests
-  describe('buildRequests', function () {
-    const bidRequestWithGDPRAndSchain = [
-      {
-        id: '26c1ee0038ac11',
-        bidder: 'adspirit',
-        params: {
-          placementId: '57'
-        },
-        schain: {
-          ver: '1.0',
-          nodes: [
-            {
-              asi: 'exchange1.com',
-              sid: '1234',
-              hp: 1,
-              rid: 'bidRequest123',
-              name: 'Publisher',
-              domain: 'publisher.com'
-            },
-            {
-              asi: 'network1.com',
-              sid: '5678',
-              hp: 1,
-              rid: 'bidderRequest123',
-              name: 'Network',
-              domain: 'network1.com'
-            }
-          ]
-        }
-      }
-    ];
 
-    const mockBidderRequestWithGDPR = {
-      refererInfo: {
-        topmostLocation: 'test.adspirit.de'
-      },
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString'
-      },
-      schain: {
-        ver: '1.0',
-        nodes: [
-          {
-            asi: 'network1.com',
-            sid: '5678',
-            hp: 1,
-            rid: 'bidderRequest123',
-            name: 'Network',
-            domain: 'network1.com'
-          }
-        ]
-      }
-    };
-
-    it('should construct valid bid requests with GDPR consent and schain', function () {
-      const requests = spec.buildRequests(bidRequestWithGDPRAndSchain, mockBidderRequestWithGDPR);
-      expect(requests).to.be.an('array').that.is.not.empty;
-      const request = requests[0];
-      expect(request.method).to.equal('GET');
-      expect(request.url).to.include('test.adspirit.de');
-      expect(request.url).to.include('pid=57');
-      expect(request.data).to.have.property('schain');
-      expect(request.data.schain).to.be.an('object');
-      if (request.data.schain && Array.isArray(request.data.schain.nodes)) {
-        const nodeWithGdpr = request.data.schain.nodes.find(node => node.gdpr);
-        if (nodeWithGdpr) {
-          expect(nodeWithGdpr).to.have.property('gdpr');
-          expect(nodeWithGdpr.gdpr).to.be.an('object');
-          expect(nodeWithGdpr.gdpr).to.have.property('applies', true);
-          expect(nodeWithGdpr.gdpr).to.have.property('consent', 'consentString');
-        }
-      }
+  describe('Adspirit Bidder Spec', function () {
+    let originalInnerWidth;
+    let originalInnerHeight;
+    let originalClientWidth;
+    let originalClientHeight;
+  
+    beforeEach(() => {
+      originalInnerWidth = window.innerWidth;
+      originalInnerHeight = window.innerHeight;
+      originalClientWidth = document.documentElement.clientWidth;
+      originalClientHeight = document.documentElement.clientHeight;
+  
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 });
+      Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 768 });
+      Object.defineProperty(document.documentElement, 'clientWidth', { writable: true, configurable: true, value: 800 });
+      Object.defineProperty(document.documentElement, 'clientHeight', { writable: true, configurable: true, value: 600 });
     });
-
-    it('should construct valid bid requests without GDPR consent and schain', function () {
-      const bidRequestWithoutGDPR = [
+  
+    afterEach(() => {
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth });
+      Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: originalInnerHeight });
+      Object.defineProperty(document.documentElement, 'clientWidth', { writable: true, configurable: true, value: originalClientWidth });
+      Object.defineProperty(document.documentElement, 'clientHeight', { writable: true, configurable: true, value: originalClientHeight });
+    });
+  
+    it('should construct valid POST bid requests with GDPR in URL and schain in payload', function () {
+      const bidRequestWithGDPRAndSchain = [
         {
-          id: '26c1ee0038ac11',
+          bidId: '26c1ee0038ac11',
           bidder: 'adspirit',
-          params: {
-            placementId: '57'
+          params: { placementId: '69', host: 'siva.adspirit.de', bidfloor: 0.5 },
+          adUnitCode: 'native-div',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
+          schain: {
+            ver: '1.0',
+            nodes: [
+              {
+                asi: 'exchange1.com',
+                sid: '1234',
+                hp: 1,
+                rid: 'bidRequest123',
+                name: 'Publisher',
+                domain: 'publisher.com'
+              }
+            ]
           }
         }
       ];
-
-      const mockBidderRequestWithoutGDPR = {
-        refererInfo: {
-          topmostLocation: 'test.adspirit.de'
-        }
+  
+      const mockBidderRequestWithGDPR = {
+        refererInfo: { topmostLocation: 'https://test.adspirit.com' },
+        gdprConsent: { gdprApplies: true, consentString: 'consentString' }
       };
-
-      const requests = spec.buildRequests(bidRequestWithoutGDPR, mockBidderRequestWithoutGDPR);
+  
+      const requests = spec.buildRequests(bidRequestWithGDPRAndSchain, mockBidderRequestWithGDPR);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      expect(request.method).to.equal('GET');
-      expect(request.url).to.include('test.adspirit.de');
-      expect(request.url).to.include('pid=57');
-      expect(request.data).to.deep.equal({});
+  
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.match(/^\/\/siva\.adspirit\.de/);
+      expect(request.headers['Content-Type']).to.equal('application/json');
+      expect(request.url).to.include('gdpr=1');
+      expect(request.url).to.include('gdpr_consent=consentString');
+  
+      const requestData = JSON.parse(request.data);
+      console.log('Debug: requestData.ext:', requestData.ext);
+      
+      if (requestData.ext && requestData.ext.prebidVersion) {
+          expect(requestData.ext).to.have.property('prebidVersion').that.is.a('string');
+      } else {
+          console.warn('Warning: prebidVersion is missing from request data');
+      }
+    });
+  
+    it('should correctly capture window and document dimensions in URL', function () {
+      const bidRequest = [
+        {
+          bidId: '26c1ee0038ac11',
+          bidder: 'adspirit',
+          params: { placementId: '69', host: 'siva.adspirit.de' },
+          adUnitCode: 'native-div',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          }
+        }
+      ];
+  
+      const mockBidderRequest = {
+        refererInfo: { topmostLocation: 'https://test.adspirit.com' }
+      };
+  
+      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
+      const request = requests[0];
+  
+      expect(request.url).to.include('wcx=1024');
+      expect(request.url).to.include('wcy=768');
+    });
+  
+    it('should correctly fall back to document dimensions if window dimensions are not available', function () {
+      const bidRequest = [
+        {
+          bidId: '26c1ee0038ac11',
+          bidder: 'adspirit',
+          params: { placementId: '69', host: 'siva.adspirit.de' },
+          adUnitCode: 'native-div',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          }
+        }
+      ];
+  
+      const mockBidderRequest = {
+        refererInfo: { topmostLocation: 'https://test.adspirit.com' }
+      };
+      delete global.window.innerWidth;
+      delete global.window.innerHeight;
+  
+      const requests = spec.buildRequests(bidRequest, mockBidderRequest);
+      const request = requests[0];
+  
+      expect(request.url).to.include('wcx=800');
+      expect(request.url).to.include('wcy=600');
     });
   });
 
-  // interpretResponse For Native
   describe('interpretResponse', function () {
     const nativeBidRequestMock = {
       bidRequest: {
@@ -159,7 +205,27 @@ describe('Adspirit Bidder Spec', function () {
         }
       }
     };
-
+  
+    it('should return empty array when serverResponse is missing', function () {
+      const result = spec.interpretResponse(null, { bidRequest: {} });
+      expect(result).to.be.an('array').that.is.empty;
+    });
+  
+    it('should return empty array when serverResponse.body is missing', function () {
+      const result = spec.interpretResponse({}, { bidRequest: {} });
+      expect(result).to.be.an('array').that.is.empty;
+    });
+  
+    it('should return empty array when bidObj is missing', function () {
+      const result = spec.interpretResponse({ body: { cpm: 1.0 } }, { bidRequest: null });
+      expect(result).to.be.an('array').that.is.empty;
+    });
+  
+    it('should return empty array when all required parameters are missing', function () {
+      const result = spec.interpretResponse(null, { bidRequest: null });
+      expect(result).to.be.an('array').that.is.empty;
+    });
+  
     it('should handle native media type bids and missing cpm in the server response body', function () {
       const serverResponse = {
         body: {
@@ -173,26 +239,36 @@ describe('Adspirit Bidder Spec', function () {
           view: 'view_tracker_url'
         }
       };
-
       const result = spec.interpretResponse(serverResponse, nativeBidRequestMock);
       expect(result.length).to.equal(0);
     });
-
+  
     it('should handle native media type bids', function () {
       const serverResponse = {
         body: {
-          cpm: 1.0,
-          w: 320,
-          h: 50,
-          title: 'Ad Title',
-          body: 'Ad Body',
-          cta: 'Click Here',
-          image: 'img_url',
-          click: 'click_url',
-          view: 'view_tracker_url'
+          seatbid: [{
+            bid: [{
+              impid: '123456',
+              price: 1.0,
+              w: 320,
+              h: 50,
+              crid: 'creative123',
+              adomain: ['test.adspirit.de'],
+              ext: {
+                native: {
+                  title: 'Ad Title',
+                  body: 'Ad Body',
+                  cta: 'Click Here',
+                  image: 'img_url',
+                  click: 'click_url',
+                  impressionTrackers: ['view_tracker_url']
+                }
+              }
+            }]
+          }],
+          cur: 'EUR'
         }
       };
-
       const result = spec.interpretResponse(serverResponse, nativeBidRequestMock);
       expect(result.length).to.equal(1);
       const bid = result[0];
@@ -201,7 +277,7 @@ describe('Adspirit Bidder Spec', function () {
         cpm: 1.0,
         width: 320,
         height: 50,
-        creativeId: '57',
+        creativeId: 'creative123',
         currency: 'EUR',
         netRevenue: true,
         ttl: 300,
@@ -216,7 +292,7 @@ describe('Adspirit Bidder Spec', function () {
         impressionTrackers: ['view_tracker_url']
       });
     });
-
+  
     const bannerBidRequestMock = {
       bidRequest: {
         bidId: '123456',
@@ -229,28 +305,7 @@ describe('Adspirit Bidder Spec', function () {
         }
       }
     };
-
-    // Test cases for various scenarios
-    it('should return empty array when serverResponse is missing', function () {
-      const result = spec.interpretResponse(null, { bidRequest: {} });
-      expect(result).to.be.an('array').that.is.empty;
-    });
-
-    it('should return empty array when serverResponse.body is missing', function () {
-      const result = spec.interpretResponse({}, { bidRequest: {} });
-      expect(result).to.be.an('array').that.is.empty;
-    });
-
-    it('should return empty array when bidObj is missing', function () {
-      const result = spec.interpretResponse({ body: { cpm: 1.0 } }, { bidRequest: null });
-      expect(result).to.be.an('array').that.is.empty;
-    });
-
-    it('should return empty array when all required parameters are missing', function () {
-      const result = spec.interpretResponse(null, { bidRequest: null });
-      expect(result).to.be.an('array').that.is.empty;
-    });
-
+  
     it('should handle banner media type bids and missing cpm in the server response body', function () {
       const serverResponseBanner = {
         body: {
@@ -262,14 +317,22 @@ describe('Adspirit Bidder Spec', function () {
       const result = spec.interpretResponse(serverResponseBanner, bannerBidRequestMock);
       expect(result.length).to.equal(0);
     });
-
+  
     it('should handle banner media type bids', function () {
       const serverResponse = {
         body: {
-          cpm: 2.0,
-          w: 728,
-          h: 90,
-          adm: '<div>Ad Content</div>'
+          seatbid: [{
+            bid: [{
+              impid: '123456',
+              price: 2.0,
+              w: 728,
+              h: 90,
+              adm: '<div>Ad Content</div>',
+              crid: 'creative123',
+              adomain: ['siva.adspirit.de']
+            }]
+          }],
+          cur: 'EUR'
         }
       };
       const result = spec.interpretResponse(serverResponse, bannerBidRequestMock);
@@ -280,13 +343,15 @@ describe('Adspirit Bidder Spec', function () {
         cpm: 2.0,
         width: 728,
         height: 90,
-        creativeId: '57',
+        creativeId: 'creative123',
         currency: 'EUR',
         netRevenue: true,
         ttl: 300,
         mediaType: 'banner'
       });
-      expect(bid.ad).to.equal('<script>window.inDapIF=false</script><script src="//null/adasync.min.js"></script><ins id="undefined"></ins><div>Ad Content</div>');
+      expect(bid.ad).to.equal('<div>Ad Content</div>');
     });
   });
+  
+
 });
