@@ -1,4 +1,4 @@
-import {addBidResponse} from '../../src/auction.js';
+import {callPrebidCache} from '../../src/auction.js';
 import {VIDEO} from '../../src/mediaTypes.js';
 import {logError} from '../../src/utils.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
@@ -15,20 +15,20 @@ export function reset() {
 
 export function enable() {
   if (!enabled) {
-    addBidResponse.before(addTrackersToResponse);
+    callPrebidCache.before(addTrackersToResponse);
     enabled = true;
   }
 }
 
 export function disable() {
   if (enabled) {
-    addBidResponse.getHooks({hook: addTrackersToResponse}).remove();
+    callPrebidCache.getHooks({hook: addTrackersToResponse}).remove();
     enabled = false;
   }
 }
 
-export function responseHook({index = auctionManager.index} = {}) {
-  return function addTrackersToResponse(next, adUnitcode, bidResponse, reject) {
+export function cacheVideoBidHook({index = auctionManager.index} = {}) {
+  return function addTrackersToResponse(next, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
     if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
       const vastTrackers = getVastTrackers(bidResponse, {index});
       if (vastTrackers) {
@@ -39,11 +39,11 @@ export function responseHook({index = auctionManager.index} = {}) {
         }
       }
     }
-    next(adUnitcode, bidResponse, reject);
+    next(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
   }
 }
 
-const addTrackersToResponse = responseHook();
+const addTrackersToResponse = cacheVideoBidHook();
 enable();
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {
