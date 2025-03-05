@@ -1440,14 +1440,3 @@ export async function compressDataWithGZip(data) {
   //   compressedBlob
   // };
 }
-
-export function isJsonObject(value) {
-  return typeof value === 'object' &&
-         value !== null &&
-         !Array.isArray(value) &&
-         !(value instanceof Date) &&
-         !(value instanceof Blob) &&
-         !(value instanceof FormData) &&
-         !(value instanceof Map) &&
-         !(value instanceof Set);
-}
