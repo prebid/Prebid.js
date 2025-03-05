@@ -119,7 +119,7 @@ const buildServerUrl = (keyId) => {
 function hasRtd() {
   const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
 
-  return Boolean(rtdConfigs.find(provider => provider.name === 'dynamicAdBoostRtdProvider'));
+  return Boolean(rtdConfigs.find(provider => provider.name === 'dynamicAdBoost'));
 };
 
 export const converter = ortbConverter({
