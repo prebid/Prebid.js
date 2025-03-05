@@ -186,7 +186,7 @@ function getUserSyncs(syncOptions, response, gdprConsent, uspConsent) {
     return [];
   }
 
-  if (response[0]?.body?.ext?.cookies && response[0].body.ext.cookies === 'object') {
+  if (response[0]?.body?.ext?.cookies && typeof response[0].body.ext.cookies === 'object') {
     return response[0].body.ext.cookies.slice(0, 5);
   } else {
     return [];
