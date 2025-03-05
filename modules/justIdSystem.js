@@ -80,7 +80,7 @@ export const justIdSubmodule = {
           utils.logInfo(LOG_PREFIX, 'fetching uid...');
 
           var uidProvider = configWrapper.isCombinedMode()
-            ? new CombinedUidProvider(configWrapper, consentData, cacheIdObj)
+            ? new CombinedUidProvider(configWrapper, consentData?.gdpr, cacheIdObj)
             : new BasicUidProvider(configWrapper);
 
           uidProvider.getUid(justId => {

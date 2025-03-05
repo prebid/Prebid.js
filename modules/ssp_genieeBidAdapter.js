@@ -129,6 +129,8 @@ function hasParamsNotBlankString(params, key) {
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
+  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid') || utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+
   const data = {
     zoneid: bid.params.zoneId,
     cb: Math.floor(Math.random() * 99999999999),
@@ -145,6 +147,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     tpaf: 1,
     cks: 1,
     ib: 0,
+    ...(gpid ? { gpid } : {}),
   };
 
   try {

@@ -159,7 +159,7 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      let submoduleCallback = merkleIdSubmodule.getId(config, { gdprApplies: true });
+      let submoduleCallback = merkleIdSubmodule.getId(config, {gdpr: {gdprApplies: true}});
       expect(submoduleCallback).to.be.undefined;
       expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule does not currently handle consent strings');
     });

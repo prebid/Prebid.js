@@ -64,7 +64,7 @@ export function detectBrowserFromUserAgent(userAgent) {
 
 /**
  * Detects the browser from the NavigatorUAData object
- * @param {NavigatorUAData} userAgentData - The user agent data object from the browser
+ * @param {Object} userAgentData - The user agent data object from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
 export function detectBrowserFromUserAgentData(userAgentData) {

@@ -191,7 +191,6 @@ describe('dailymotionBidAdapterTests', () => {
     });
     expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
     expect(reqData.config.ts).to.eql(bidRequestData[0].params.dmTs);
-    expect(reqData.coppa).to.be.true;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
@@ -1403,6 +1402,7 @@ describe('dailymotionBidAdapterTests', () => {
 
   it('validates buildRequests with content values from App', () => {
     const bidRequestData = [{
+      getFloor: () => ({ currency: 'USD', floor: 3 }),
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidId: 123456,
       adUnitCode: 'preroll',
@@ -1448,6 +1448,7 @@ describe('dailymotionBidAdapterTests', () => {
     }];
 
     const bidderRequestData = {
+      timeout: 4242,
       refererInfo: {
         page: 'https://publisher.com',
       },
@@ -1462,14 +1463,30 @@ describe('dailymotionBidAdapterTests', () => {
         applicableSections: [5],
       },
       ortb2: {
+        bcat: ['IAB-1'],
+        badv: ['bcav-1'],
         regs: {
           coppa: 1,
         },
         device: {
           lmt: 1,
           ifa: 'xxx',
+          devicetype: 2,
+          make: 'make',
+          model: 'model',
+          os: 'os',
+          osv: 'osv',
+          language: 'language',
+          geo: {
+            country: 'country',
+            region: 'region',
+            city: 'city',
+            zip: 'zip',
+            metro: 'metro'
+          },
           ext: {
             atts: 2,
+            ifa_type: 'ifa_type'
           },
         },
         app: {
@@ -1477,6 +1494,7 @@ describe('dailymotionBidAdapterTests', () => {
           storeurl: 'https://play.google.com/store/apps/details?id=app-bundle',
           content: {
             len: 556,
+            cattax: 3,
             data: [
               {
                 name: 'dataprovider.com',
@@ -1516,6 +1534,117 @@ describe('dailymotionBidAdapterTests', () => {
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
     expect(reqData.pbv).to.eql('$prebid.version$');
+
+    const expectedOrtb = {
+      'app': {
+        'bundle': 'app-bundle',
+        'content': {
+          'cattax': 3,
+          'data': [
+            {
+              'ext': {
+                'segtax': 4
+              },
+              'name': 'dataprovider.com',
+              'segment': [
+                {
+                  'id': 'IAB-1'
+                }
+              ]
+            },
+            {
+              'ext': {
+                'segtax': 5
+              },
+              'name': 'dataprovider.com',
+              'segment': [
+                {
+                  'id': '200'
+                }
+              ],
+            }
+          ],
+          'len': 556,
+        },
+        'storeurl': 'https://play.google.com/store/apps/details?id=app-bundle',
+      },
+      'badv': [
+        'bcav-1'
+      ],
+      'bcat': [
+        'IAB-1'
+      ],
+      'device': {
+        'devicetype': 2,
+        'ext': {
+          'atts': 2,
+          'ifa_type': 'ifa_type'
+        },
+        'geo': {
+          'city': 'city',
+          'country': 'country',
+          'metro': 'metro',
+          'region': 'region',
+          'zip': 'zip',
+        },
+        'ifa': 'xxx',
+        'language': 'language',
+        'lmt': 1,
+        'make': 'make',
+        'model': 'model',
+        'os': 'os',
+        'osv': 'osv',
+      },
+      'imp': [{
+        'bidfloor': 3,
+        'bidfloorcur': 'USD',
+        'id': 123456,
+        'secure': 1,
+        ...(FEATURES.VIDEO ? {
+          'video': {
+            'api': [
+              2,
+              7
+            ],
+            'h': 720,
+            'maxduration': 30,
+            'mimes': [
+              'video/mp4'
+            ],
+            'minduration': 5,
+            'playbackmethod': [
+              3
+            ],
+            'plcmt': 1,
+            'protocols': [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            'skip': 1,
+            'skipafter': 5,
+            'skipmin': 10,
+            'startdelay': 0,
+            'w': 1280,
+          }
+        } : {}),
+      }
+      ],
+      'regs': {
+        'coppa': 1,
+      },
+      'test': 0,
+      'tmax': 4242,
+    }
+
+    expect(reqData.ortb.id).to.be.not.empty;
+    delete reqData.ortb.id; // ortb id is generated randomly
+    expect(reqData.ortb).to.eql(expectedOrtb);
     expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
@@ -1524,12 +1653,6 @@ describe('dailymotionBidAdapterTests', () => {
       gppConsent: bidderRequestData.gppConsent,
     });
     expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
-    expect(reqData.coppa).to.be.true;
-    expect(reqData.appBundle).to.eql(bidderRequestData.ortb2.app.bundle);
-    expect(reqData.appStoreUrl).to.eql(bidderRequestData.ortb2.app.storeurl);
-    expect(reqData.device.lmt).to.eql(bidderRequestData.ortb2.device.lmt);
-    expect(reqData.device.ifa).to.eql(bidderRequestData.ortb2.device.ifa);
-    expect(reqData.device.atts).to.eql(bidderRequestData.ortb2.device.ext.atts);
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
 
@@ -1601,6 +1724,7 @@ describe('dailymotionBidAdapterTests', () => {
         gdprApplies: true,
       },
       ortb2: {
+        tmax: 31416,
         regs: {
           gpp: 'xxx',
           gpp_sid: [5],
@@ -1616,6 +1740,7 @@ describe('dailymotionBidAdapterTests', () => {
             url: 'https://test.com/test',
             livestream: 1,
             cat: ['IAB-2'],
+            cattax: 1,
             data: [
               undefined, // Undefined to check proper handling of edge cases
               {}, // Empty object to check proper handling of edge cases
@@ -1686,7 +1811,133 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
+    const expectedOrtb = {
+      'imp': [{
+        'id': 123456,
+        'secure': 1,
+        ...(FEATURES.VIDEO ? {
+          'video': {
+            'api': [
+              2,
+              7
+            ],
+            'startdelay': 0,
+          }
+        } : {})
+      }
+      ],
+      'regs': {
+        'coppa': 0,
+        'gpp': 'xxx',
+        'gpp_sid': [
+          5
+        ],
+      },
+      'site': {
+        'cat': [
+          'IAB-1',
+        ],
+        'content': {
+          'cat': [
+            'IAB-2',
+          ],
+          'cattax': 1,
+          'data': [
+            undefined,
+            {},
+            {
+              'ext': {}
+            },
+            {
+              'ext': {
+                'segtax': 22
+              },
+              'name': 'dataprovider.com',
+              'segment': [
+                {
+                  'id': '400'
+                }
+              ]
+            },
+            {
+              'ext': {
+                'segtax': 5
+              },
+              'name': 'dataprovider.com',
+              'segment': undefined
+            },
+            {
+              'ext': {
+                'segtax': 4
+              },
+              'name': 'dataprovider.com',
+              'segment': undefined
+            },
+            {
+              'ext': {
+                'segtax': 5
+              },
+              'name': 'dataprovider.com',
+              'segment': [
+                {
+                  'id': 2222
+                }
+              ]
+            },
+            {
+              'ext': {
+                'segtax': 5
+              },
+              'name': 'dataprovider.com',
+              'segment': [
+                {
+                  'id': '6'
+                }
+              ]
+            },
+            {
+              'ext': {
+                'segtax': 5
+              },
+              'name': 'dataprovider.com',
+              'segment': [
+                {
+                  'id': '6'
+                }
+              ]
+            },
+            {
+              'ext': {
+                'segtax': 5
+              },
+              'name': 'dataprovider.com',
+              'segment': [
+                {
+                  'id': '17'
+                },
+                {
+                  'id': '20'
+                }
+              ]
+            }
+          ],
+          'id': '54321',
+          'keywords': 'tag_1,tag_2,tag_3',
+          'language': 'FR',
+          'livestream': 1,
+          'title': 'test video',
+          'url': 'https://test.com/test',
+        }
+      },
+      'test': 0,
+      'tmax': 31416
+    }
+
     expect(reqData.pbv).to.eql('$prebid.version$');
+    expect(reqData.ortb.id).to.be.not.empty;
+    delete reqData.ortb.id; // ortb id is generated randomly
+    expect(reqData.ortb).to.eql(expectedOrtb);
+
     expect(reqData.userSyncEnabled).to.be.true;
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
@@ -1698,7 +1949,6 @@ describe('dailymotionBidAdapterTests', () => {
       },
     });
     expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
-    expect(reqData.coppa).to.be.false;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
 
@@ -1763,11 +2013,20 @@ describe('dailymotionBidAdapterTests', () => {
     const { data: reqData } = request;
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
-
     expect(reqData.config.api_key).to.eql(bidRequestDataWithApi[0].params.apiKey);
-    expect(reqData.coppa).to.be.false;
-
     expect(reqData.pbv).to.eql('$prebid.version$');
+
+    expect(reqData.ortb.id).to.be.not.empty;
+    delete reqData.ortb.id; // ortb id is generated randomly
+    expect(reqData.ortb).to.eql({
+      'imp': [
+        {
+          'id': undefined,
+          'secure': 1
+        },
+      ],
+      'test': 0
+    });
     expect(reqData.userSyncEnabled).to.be.false;
     expect(reqData.bidder_request).to.eql({
       gdprConsent: {
@@ -1834,6 +2093,187 @@ describe('dailymotionBidAdapterTests', () => {
     });
   });
 
+  describe('validates buildRequests for video metadata iabcat1 and iabcat2', () => {
+    let bidRequestData;
+    let bidderRequestData;
+    let request;
+
+    beforeEach(() => {
+      bidRequestData = [{
+        auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+        bidId: 123456,
+        adUnitCode: 'preroll',
+        mediaTypes: {
+          video: {
+            api: [2, 7],
+            startdelay: 0,
+          },
+        },
+        sizes: [[1920, 1080]],
+        params: {
+          apiKey: 'test_api_key',
+          video: {
+            iabcat1: ['video-params-iabcat1'],
+            iabcat2: ['video-params-iabcat2'],
+          },
+        },
+      }];
+
+      bidderRequestData = {
+        timeout: 4242,
+        refererInfo: {
+          page: 'https://publisher.com',
+        },
+        ortb2: {
+          site: {
+            content: {
+              data: [
+                {
+                  name: 'dataprovider.com',
+                  ext: { segtax: 4 },
+                  segment: [{ id: '1' }],
+                },
+                {
+                  name: 'dataprovider.com',
+                  ext: { segtax: 5 },
+                  segment: [{ id: '6' }],
+                },
+                {
+                  name: 'dataprovider.com',
+                  ext: { segtax: 5 },
+                  segment: [{ id: '17' }, { id: '20' }],
+                },
+              ]
+            },
+          }
+        }
+      };
+
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+          filterSettings: {
+            image: {
+              bidders: ['dailymotion'],
+              filter: 'include'
+            },
+            iframe: {
+              bidders: ['dailymotion'],
+              filter: 'exclude',
+            },
+          },
+        },
+      });
+
+      [request] = config.runWithBidder(
+        'dailymotion',
+        () => spec.buildRequests(bidRequestData, bidderRequestData),
+      );
+    });
+
+    it('get iabcat1 and iabcat 2 from params video', () => {
+      expect(request.data.video_metadata.iabcat1).to.eql(bidRequestData[0].params.video.iabcat1);
+      expect(request.data.video_metadata.iabcat2).to.eql(bidRequestData[0].params.video.iabcat2);
+    })
+
+    it('get iabcat1 from content.cat and iabcat2 from data.segment', () => {
+      const iabCatTestsCases = [[], null, {}];
+
+      iabCatTestsCases.forEach((iabCat) => {
+        bidRequestData[0].params.video.iabcat1 = iabCat;
+        bidRequestData[0].params.video.iabcat2 = iabCat;
+        bidderRequestData.ortb2.site.content.cat = ['video-content-cat'];
+        bidderRequestData.ortb2.site.content.cattax = 1;
+
+        [request] = config.runWithBidder(
+          'dailymotion',
+          () => spec.buildRequests(bidRequestData, bidderRequestData),
+        );
+
+        expect(request.data.video_metadata.iabcat1).to.eql(bidderRequestData.ortb2.site.content.cat);
+        expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20']);
+      })
+    })
+
+    it('get iabcat2 from content.cat and iabcat1 from data.segment', () => {
+      const iabCatTestsCases = [[], null, {}];
+      const cattaxV2 = [2, 5, 6];
+
+      cattaxV2.forEach((cattax) => {
+        iabCatTestsCases.forEach((iabCat) => {
+          bidRequestData[0].params.video.iabcat1 = iabCat;
+          bidRequestData[0].params.video.iabcat2 = iabCat;
+          bidderRequestData.ortb2.site.content.cat = ['video-content-cat'];
+          bidderRequestData.ortb2.site.content.cattax = cattax;
+
+          [request] = config.runWithBidder(
+            'dailymotion',
+            () => spec.buildRequests(bidRequestData, bidderRequestData),
+          );
+
+          expect(request.data.video_metadata.iabcat1).to.eql(['1']);
+          expect(request.data.video_metadata.iabcat2).to.eql(bidderRequestData.ortb2.site.content.cat);
+        })
+      })
+    })
+
+    it('get iabcat1 and iabcat2 from data.segmnet', () => {
+      const contentCatTestCases = [[], null, {}];
+      const cattaxTestCases = [1, 2, 5, 6];
+
+      cattaxTestCases.forEach((cattax) => {
+        contentCatTestCases.forEach((contentCat) => {
+          bidRequestData[0].params.video.iabcat1 = [];
+          bidRequestData[0].params.video.iabcat2 = [];
+          bidderRequestData.ortb2.site.content.cat = contentCat;
+          bidderRequestData.ortb2.site.content.cattax = cattax;
+
+          [request] = config.runWithBidder(
+            'dailymotion',
+            () => spec.buildRequests(bidRequestData, bidderRequestData),
+          );
+
+          expect(request.data.video_metadata.iabcat1).to.eql(['1']);
+          expect(request.data.video_metadata.iabcat2).to.eql(['6', '17', '20']);
+        })
+      })
+    })
+  });
+
+  it('validates buildRequests - with null floor as object for getFloor function', () => {
+    const bidRequest = [{
+      params: {
+        apiKey: 'test_api_key',
+      },
+      getFloor: () => null
+    }];
+
+    config.setConfig({
+      userSync: {
+        syncEnabled: false,
+      }
+    });
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequest, {}),
+    );
+
+    const { data: reqData } = request;
+
+    expect(reqData.ortb.id).to.be.not.empty;
+    delete reqData.ortb.id; // ortb id is generated randomly
+    expect(reqData.ortb).to.eql({
+      'imp': [
+        {
+          'id': undefined,
+          'secure': 1
+        },
+      ],
+      'test': 0
+    });
+  })
+
   it('validates buildRequests - with empty/undefined validBidRequests', () => {
     expect(spec.buildRequests([], {})).to.have.lengthOf(0);
 
@@ -1860,6 +2300,17 @@ describe('dailymotionBidAdapterTests', () => {
 
     const [bid] = bids;
     expect(bid).to.eql(serverResponse.body);
+  });
+
+  it('validates interpretResponse - without bid (no cpm)', () => {
+    const serverResponse = {
+      body: {
+        requestId: 'test_requestid',
+      },
+    };
+
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(0);
   });
 
   it('validates interpretResponse - with empty/undefined serverResponse', () => {

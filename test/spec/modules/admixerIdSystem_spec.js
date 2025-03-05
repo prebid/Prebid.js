@@ -30,7 +30,7 @@ describe('admixerId tests', function () {
   });
 
   it('should NOT call the admixer id endpoint if gdpr applies but consent string is missing', function () {
-    let submoduleCallback = admixerIdSubmodule.getId(getIdParams, { gdprApplies: true });
+    let submoduleCallback = admixerIdSubmodule.getId(getIdParams, {gdpr: { gdprApplies: true }});
     expect(submoduleCallback).to.be.undefined;
   });
 

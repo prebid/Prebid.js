@@ -357,6 +357,59 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([{...BANNER_BID, userId: {imuid}}]);
         expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
       });
+
+      it('should include gpid when ortb2Imp.ext.gpid exists', function () {
+        const gpid = '/123/abc';
+        const bidWithGpid = {
+          ...BANNER_BID,
+          ortb2Imp: {
+            ext: {
+              gpid: gpid
+            }
+          }
+        };
+        const request = spec.buildRequests([bidWithGpid]);
+        expect(String(request[0].data.gpid)).to.have.string(gpid);
+      });
+
+      it('should include gpid when ortb2Imp.ext.data.pbadslot exists', function () {
+        const pbadslot = '/123/abc';
+        const bidWithPbadslot = {
+          ...BANNER_BID,
+          ortb2Imp: {
+            ext: {
+              data: {
+                pbadslot: pbadslot
+              }
+            }
+          }
+        };
+        const request = spec.buildRequests([bidWithPbadslot]);
+        expect(String(request[0].data.gpid)).to.have.string(pbadslot);
+      });
+
+      it('should prioritize ortb2Imp.ext.gpid over ortb2Imp.ext.data.pbadslot', function () {
+        const gpid = '/123/abc';
+        const pbadslot = '/456/def';
+        const bidWithBoth = {
+          ...BANNER_BID,
+          ortb2Imp: {
+            ext: {
+              gpid: gpid,
+              data: {
+                pbadslot: pbadslot
+              }
+            }
+          }
+        };
+        const request = spec.buildRequests([bidWithBoth]);
+        expect(String(request[0].data.gpid)).to.have.string(gpid);
+      });
+
+      it('should not include gpid when neither ortb2Imp.ext.gpid nor ortb2Imp.ext.data.pbadslot exists', function () {
+        const request = spec.buildRequests([BANNER_BID]);
+        expect(request[0].data).to.not.have.property('gpid');
+      });
     });
   });
 

@@ -8,7 +8,6 @@
 import { logError, logInfo } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
-import {coppaDataHandler, uspDataHandler} from '../src/adapterManager.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -183,14 +182,14 @@ function encodeId(value) {
  * @return {string}
  */
 function kinessoSyncUrl(accountId, consentData) {
-  const usPrivacyString = uspDataHandler.getConsentData();
+  const {gdpr, usp: usPrivacyString} = consentData ?? {};
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
     kinessoSyncUrl = `${kinessoSyncUrl}&us_privacy=${usPrivacyString}`;
   }
-  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return kinessoSyncUrl;
+  if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl;
 
-  kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${consentData.consentString}`;
+  kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`;
   return kinessoSyncUrl
 }
 
@@ -226,8 +225,7 @@ export const kinessoIdSubmodule = {
       logError('User ID - KinessoId submodule requires a valid accountid to be defined');
       return;
     }
-    const coppa = coppaDataHandler.getCoppa();
-    if (coppa) {
+    if (consentData?.coppa) {
       logInfo('KinessoId: IDs not provided for coppa requests, exiting KinessoId');
       return;
     }

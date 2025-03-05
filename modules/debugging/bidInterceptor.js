@@ -1,10 +1,6 @@
-import {
-  deepAccess,
-  deepClone,
-  delayExecution,
-  mergeDeep,
-  hasNonSerializableProperty
-} from '../../src/utils.js';
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import {deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep} from '../../src/utils.js';
+import responseResolvers from './responses.js';
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
@@ -143,9 +139,8 @@ Object.assign(BidInterceptor.prototype, {
     return (bid, ...args) => {
       const response = this.responseDefaults(bid);
       mergeDeep(response, replFn({args: [bid, ...args]}));
-      if (!response.hasOwnProperty('ad') && !response.hasOwnProperty('adUrl')) {
-        response.ad = this.defaultAd(bid, response);
-      }
+      const resolver = responseResolvers[response.mediaType];
+      resolver && resolver(bid, response);
       response.isDebug = true;
       return response;
     }
@@ -169,20 +164,29 @@ Object.assign(BidInterceptor.prototype, {
   },
 
   responseDefaults(bid) {
-    return {
+    const response = {
       requestId: bid.bidId,
       cpm: 3.5764,
       currency: 'EUR',
-      width: 300,
-      height: 250,
       ttl: 360,
       creativeId: 'mock-creative-id',
       netRevenue: false,
       meta: {}
     };
-  },
-  defaultAd(bid, bidResponse) {
-    return `<html><head><style>#ad {width: ${bidResponse.width}px;height: ${bidResponse.height}px;background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width}x${bidResponse.height}</div></div></body></html>`;
+
+    if (!bid.mediaType) {
+      response.mediaType = Object.keys(bid.mediaTypes ?? {})[0] ?? BANNER;
+    }
+    let size;
+    if (response.mediaType === BANNER) {
+      size = bid.mediaTypes?.banner?.sizes?.[0] ?? [300, 250];
+    } else if (response.mediaType === VIDEO) {
+      size = bid.mediaTypes?.video?.playerSize?.[0] ?? [600, 500];
+    }
+    if (Array.isArray(size)) {
+      ([response.width, response.height] = size);
+    }
+    return response;
   },
   /**
    * Match a candidate bid against all registered rules.

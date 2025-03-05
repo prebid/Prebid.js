@@ -11,7 +11,6 @@ import {includes} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {formatQS, isNumber, isPlainObject, logError, parseUrl} from '../src/utils.js';
-import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 /**
@@ -219,16 +218,16 @@ export const connectIdSubmodule = {
       }
     }
 
-    const uspString = uspDataHandler.getConsentData() || '';
+    const uspString = consentData.usp || '';
     const data = {
       v: '1',
       '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
-      gdpr: connectIdSubmodule.isEUConsentRequired(consentData) ? '1' : '0',
-      gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.consentString : '',
+      gdpr: connectIdSubmodule.isEUConsentRequired(consentData?.gdpr) ? '1' : '0',
+      gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData?.gdpr) ? consentData.gdpr.consentString : '',
       us_privacy: uspString
     };
 
-    const gppConsent = gppDataHandler.getConsentData();
+    const gppConsent = consentData.gpp;
     if (gppConsent) {
       data.gpp = `${gppConsent.gppString ? gppConsent.gppString : ''}`;
       if (Array.isArray(gppConsent.applicableSections)) {

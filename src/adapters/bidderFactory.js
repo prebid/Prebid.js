@@ -310,7 +310,7 @@ export function newBidder(spec) {
           }
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
-          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
+          logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, {bidRequests: validBidRequests});
         },
         onBid: (bid) => {
           const bidRequest = bidRequestMap[bid.requestId];

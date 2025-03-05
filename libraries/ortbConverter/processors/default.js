@@ -113,6 +113,9 @@ export const DEFAULT_PROCESSORS = {
         if (bid.attr) {
           bidResponse.meta.attr = bid.attr;
         }
+        if (bid.ext?.eventtrackers) {
+          bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(bid.ext.eventtrackers);
+        }
       }
     }
   }

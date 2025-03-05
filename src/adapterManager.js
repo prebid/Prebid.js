@@ -49,6 +49,7 @@ import {isActivityAllowed} from './activities/rules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
 import {redactor} from './activities/redactor.js';
+import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -689,9 +690,8 @@ adapterManager.triggerBilling = (() => {
   return (bid) => {
     if (!BILLED.has(bid)) {
       BILLED.add(bid);
-      if (bid.source === S2S.SRC && bid.burl) {
-        internal.triggerPixel(bid.burl);
-      }
+      (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_IMPRESSION]?.[TRACKER_METHOD_IMG] || [])
+        .forEach((url) => internal.triggerPixel(url));
       tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
     }
   }

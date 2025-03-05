@@ -402,6 +402,36 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.regs.coppa).to.eql(1);
     });
+
+    it('includes data.regs.gpp.string and data.regs.gpp.sid if bidderRequest.gppConsent exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          gppConsent: {
+            gppString: 'gpp-consent-string',
+            applicableSections: [1, 2, 3],
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
+      expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
+    });
+
+    it('includes data.regs.gpp.string and data.regs.gpp.sid if bidderRequest.ortb2.regs.gpp exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          ortb2: {
+            regs: {
+              gpp: 'gpp-consent-string',
+              gpp_sid: [1, 2, 3],
+            },
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
+      expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
+    });
   });
 
   describe('should interpretResponse', function() {

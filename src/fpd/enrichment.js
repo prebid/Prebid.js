@@ -4,7 +4,7 @@ import {findRootDomain} from './rootDomain.js';
 import {deepSetValue, getDefinedParams, getDNT, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
-import {GreedyPromise} from '../utils/promise.js';
+import {PbPromise} from '../utils/promise.js';
 import {CLIENT_SECTIONS, clientSectionChecker, hasSection} from './oneClient.js';
 import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
@@ -30,7 +30,7 @@ const oneClient = clientSectionChecker('FPD')
 export const enrichFPD = hook('sync', (fpd) => {
   const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];
 
-  return GreedyPromise.all(promArr)
+  return PbPromise.all(promArr)
     .then(([ortb2, sua, cdep]) => {
       const ri = dep.getRefererInfo();
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
@@ -74,7 +74,7 @@ function winFallback(fn) {
 function getSUA() {
   const hints = config.getConfig('firstPartyData.uaHints');
   return !Array.isArray(hints) || hints.length === 0
-    ? GreedyPromise.resolve(dep.getLowEntropySUA())
+    ? PbPromise.resolve(dep.getLowEntropySUA())
     : dep.getHighEntropySUA(hints);
 }
 
@@ -83,7 +83,7 @@ function removeUndef(obj) {
 }
 
 function tryToGetCdepLabel() {
-  return GreedyPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && navigator.cookieDeprecationLabel.getValue());
+  return PbPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && navigator.cookieDeprecationLabel.getValue());
 }
 
 const ENRICHMENTS = {

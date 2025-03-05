@@ -117,8 +117,8 @@ export const spec = {
       const queryParams = [];
 
       queryParams.push(`bidders=${bidders}`);
-      queryParams.push('gdpr=' + +gdprConsent.gdprApplies);
-      queryParams.push('gdpr_consent=' + gdprConsent.consentString);
+      queryParams.push('gdpr=' + +gdprConsent?.gdprApplies);
+      queryParams.push('gdpr_consent=' + gdprConsent?.consentString);
       queryParams.push('usp_consent=' + (uspConsent || ''));
 
       const strQueryParams = queryParams.join('&');

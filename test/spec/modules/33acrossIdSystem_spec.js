@@ -642,7 +642,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdprApplies: true
+          gdpr: {gdprApplies: true}
         });
 
         expect(logWarnSpy.calledOnceWithExactly('33acrossId: Submodule cannot be used where GDPR applies')).to.be.true;
@@ -660,7 +660,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdprApplies: false
+          gdpr: {gdprApplies: false}
         });
 
         callback(completeCallback);
@@ -678,8 +678,10 @@ describe('33acrossIdSystem', () => {
               pid: '12345'
             }
           }, {
-            gdprApplies: false,
-            consentString: 'foo'
+            gdpr: {
+              gdprApplies: false,
+              consentString: 'foo'
+            }
           });
 
           callback(completeCallback);

@@ -16,6 +16,7 @@ import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB,
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
+import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -88,20 +89,6 @@ const SUPPORTED_TYPES = {
 // inverse native maps useful for converting to legacy
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const NATIVE_ASSET_TYPES_INVERSE = inverse(NATIVE_ASSET_TYPES);
-
-const TRACKER_METHODS = {
-  img: 1,
-  js: 2,
-  1: 'img',
-  2: 'js'
-}
-
-const TRACKER_EVENTS = {
-  impression: 1,
-  'viewable-mrc50': 2,
-  'viewable-mrc100': 3,
-  'viewable-video50': 4,
-}
 
 export function isNativeResponse(bidResponse) {
   // check for native data and not mediaType; it's possible
@@ -289,15 +276,9 @@ export function fireNativeTrackers(message, bidResponse) {
 }
 
 export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => insertHtmlIntoIframe(mkup), fetchURL = triggerPixel} = {}) {
-  const impTrackers = (nativeResponse.eventtrackers || [])
-    .filter(tracker => tracker.event === TRACKER_EVENTS.impression);
-
-  let {img, js} = impTrackers.reduce((tally, tracker) => {
-    if (TRACKER_METHODS.hasOwnProperty(tracker.method)) {
-      tally[TRACKER_METHODS[tracker.method]].push(tracker.url)
-    }
-    return tally;
-  }, {img: [], js: []});
+  let {[TRACKER_METHOD_IMG]: img = [], [TRACKER_METHOD_JS]: js = []} = parseEventTrackers(
+    nativeResponse.eventtrackers || []
+  )[EVENT_TYPE_IMPRESSION] || {};
 
   if (nativeResponse.imptrackers) {
     img = img.concat(nativeResponse.imptrackers);
@@ -726,8 +707,8 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
       case 'impressionTrackers':
         (Array.isArray(value) ? value : [value]).forEach(url => {
           response.eventtrackers.push({
-            event: TRACKER_EVENTS.impression,
-            method: TRACKER_METHODS.img,
+            event: EVENT_TYPE_IMPRESSION,
+            method: TRACKER_METHOD_IMG,
             url
           });
         });
@@ -830,10 +811,10 @@ export function toLegacyResponse(ortbResponse, ortbRequest) {
     legacyResponse.impressionTrackers.push(...ortbResponse.imptrackers);
   }
   for (const eventTracker of ortbResponse?.eventtrackers || []) {
-    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.img) {
+    if (eventTracker.event === EVENT_TYPE_IMPRESSION && eventTracker.method === TRACKER_METHOD_IMG) {
       legacyResponse.impressionTrackers.push(eventTracker.url);
     }
-    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.js) {
+    if (eventTracker.event === EVENT_TYPE_IMPRESSION && eventTracker.method === TRACKER_METHOD_JS) {
       jsTrackers.push(eventTracker.url);
     }
   }

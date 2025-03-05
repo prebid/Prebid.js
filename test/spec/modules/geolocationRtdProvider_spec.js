@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {geolocationSubmodule} from 'modules/geolocationRtdProvider.js';
 import * as activityRules from 'src/activities/rules.js';
 import 'src/prebid.js';
-import {GreedyPromise} from '../../../src/utils/promise.js';
+import {PbPromise} from '../../../src/utils/promise.js';
 import {ACTIVITY_TRANSMIT_PRECISE_GEO} from '../../../src/activities/activities.js';
 
 describe('Geolocation RTD Provider', function () {
@@ -43,7 +43,7 @@ describe('Geolocation RTD Provider', function () {
   });
 
   describe('Geolocation supported', function() {
-    let clock, rtdConfig, permState, onDone;
+    let clock, rtdConfig, permState, permGiven, onDone;
 
     beforeEach(() => {
       onDone = sinon.stub();
@@ -54,9 +54,14 @@ describe('Geolocation RTD Provider', function () {
         // eslint-disable-next-line standard/no-callback-literal
         cb({coords: {latitude: 1, longitude: 2}, timestamp: 1000});
       });
-      sandbox.stub(navigator.permissions, 'query').value(() => GreedyPromise.resolve({
-        state: permState,
-      }));
+      permGiven = new Promise((resolve) => {
+        sandbox.stub(navigator.permissions, 'query').value(() => {
+          permGiven = Promise.resolve({
+            state: permState,
+          })
+          return permGiven;
+        });
+      })
       geolocationSubmodule.init(rtdConfig);
     });
 
@@ -75,9 +80,10 @@ describe('Geolocation RTD Provider', function () {
           rtdConfig.params.requestPermission = requestPermission;
         });
 
-        it(`should set geolocation`, () => {
+        it(`should set geolocation`, async () => {
           const requestBidObject = {ortb2Fragments: {global: {}}};
           geolocationSubmodule.getBidRequestData(requestBidObject, onDone, rtdConfig);
+          await permGiven;
           clock.tick(300);
           expect(onDone.called).to.be.true;
           expect(requestBidObject.ortb2Fragments.global.device.geo).to.eql({

@@ -1,5 +1,4 @@
 import {sharedIdSystemSubmodule, storage} from 'modules/sharedIdSystem.js';
-import {coppaDataHandler} from 'src/adapterManager';
 import {config} from 'src/config.js';
 
 import sinon from 'sinon';
@@ -25,14 +24,11 @@ describe('SharedId System', function () {
   describe('SharedId System getId()', function () {
     const callbackSpy = sinon.spy();
 
-    let coppaDataHandlerDataStub
     let sandbox;
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
-      coppaDataHandlerDataStub = sandbox.stub(coppaDataHandler, 'getCoppa');
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
-      coppaDataHandlerDataStub.returns('');
       callbackSpy.resetHistory();
     });
 
@@ -55,22 +51,18 @@ describe('SharedId System', function () {
       expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
     it('should abort if coppa is set', function () {
-      coppaDataHandlerDataStub.returns('true');
-      const result = sharedIdSystemSubmodule.getId({});
+      const result = sharedIdSystemSubmodule.getId({}, {coppa: true});
       expect(result).to.be.undefined;
     });
   });
   describe('SharedId System extendId()', function () {
     const callbackSpy = sinon.spy();
-    let coppaDataHandlerDataStub;
     let sandbox;
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
-      coppaDataHandlerDataStub = sandbox.stub(coppaDataHandler, 'getCoppa');
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
-      coppaDataHandlerDataStub.returns('');
     });
     afterEach(function () {
       sandbox.restore();
@@ -90,8 +82,7 @@ describe('SharedId System', function () {
       expect(pubcommId).to.equal('TestId');
     });
     it('should abort if coppa is set', function () {
-      coppaDataHandlerDataStub.returns('true');
-      const result = sharedIdSystemSubmodule.extendId({params: {extend: true}}, undefined, 'TestId');
+      const result = sharedIdSystemSubmodule.extendId({params: {extend: true}}, {coppa: true}, 'TestId');
       expect(result).to.be.undefined;
     });
   });
@@ -126,6 +117,7 @@ describe('SharedId System', function () {
           }]
         }
       });
+      await getGlobal().getUserIdsAsync();
       const eids = getGlobal().getUserIdsAsEids();
       sinon.assert.match(eids[0], {
         source: 'pubcid.org',

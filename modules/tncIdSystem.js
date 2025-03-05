@@ -128,8 +128,8 @@ export const tncidSubModule = {
    * @returns {IdResponse}
    */
   getId(config, consentData) {
-    const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    const consentString = gdpr ? consentData.consentString : '';
+    const gdpr = (consentData?.gdpr?.gdprApplies === true) ? 1 : 0;
+    const consentString = gdpr ? consentData.gdpr.consentString : '';
 
     if (gdpr && !consentString) {
       logInfo('Consent string is required for TNCID module');

@@ -28,8 +28,8 @@ Please reach out to support@rediads.com for more information.
                     bidder: "rediads",
                     params: {
                         account_id: '123',
-                        site: 'rediads.com',
-                        slot: '321'
+                        slot: '321', // optional
+                        endpoint: 'https://bidding.rediads.com/openrtb2/auction' // optional, only to be used if rediads team provides one
                     }
                 }
             ]

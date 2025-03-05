@@ -1,5 +1,4 @@
 import { logMessage } from '../src/utils.js';
-import { uspDataHandler } from '../src/adapterManager.js';
 import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js'
 
@@ -22,8 +21,8 @@ export const tapadIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse }}
    */
-  getId(config) {
-    const uspData = uspDataHandler.getConsentData();
+  getId(config, consentData) {
+    const uspData = consentData?.usp;
     if (uspData && uspData !== '1---') {
       return { id: undefined };
     }

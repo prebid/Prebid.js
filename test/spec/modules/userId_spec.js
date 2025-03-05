@@ -18,7 +18,7 @@ import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getPrebidInternal} from 'src/utils.js';
+import {deepAccess, getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
@@ -139,7 +139,7 @@ describe('User ID', function () {
   function runBidsHook(...args) {
     startDelay = delay();
 
-    const result = startAuctionHook(...args, {delay: startDelay});
+    const result = startAuctionHook(...args, {mkDelay: startDelay});
     return new Promise((resolve) => setTimeout(() => resolve(result)));
   }
 
@@ -152,7 +152,7 @@ describe('User ID', function () {
 
   function initModule(config) {
     callbackDelay = delay();
-    return init(config, {delay: callbackDelay});
+    return init(config, {mkDelay: callbackDelay});
   }
 
   before(function () {
@@ -1681,6 +1681,7 @@ describe('User ID', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
         config.resetConfig();
         sandbox.restore();
+        coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       });
 
       it('delays auction if auctionDelay is set, timing out at auction delay', function () {
@@ -2150,7 +2151,7 @@ describe('User ID', function () {
               'mid': value['MOCKID']
             };
           },
-          getId: function (config, storedId) {
+          getId: function (config, consentData, storedId) {
             if (storedId) return {};
             return {id: {'MOCKID': '1234'}};
           }
@@ -2569,15 +2570,19 @@ describe('User ID', function () {
         });
       });
 
-      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', () => {
+      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', async () => {
         init(config);
-        config.setConfig({
-          ortb2: {user: {ext: {eids: [eid]}}}
-        })
         expect(startAuction.getHooks({hook: startAuctionHook}).length).equal(0);
         expect(startAuction.getHooks({hook: addUserIdsHook}).length).equal(1);
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledWith(startAuctionStub, sinon.match.hasNested('adUnits[0].bids[0].userIdAsEids[0]', eid));
+        addUserIdsHook(sinon.stub(), {
+          adUnits,
+          ortb2Fragments: {
+            global: {
+              user: {ext: {eids: [eid]}}
+            }
+          }
+        });
+        expect(adUnits[0].bids[0].userIdAsEids[0]).to.eql(eid);
       });
     });
   });

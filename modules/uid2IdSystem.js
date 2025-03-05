@@ -73,7 +73,7 @@ export const uid2IdSubmodule = {
    * @returns {uid2Id}
    */
   getId(config, consentData) {
-    if (consentData?.gdprApplies === true) {
+    if (consentData?.gdpr?.gdprApplies === true) {
       _logWarn('UID2 is not intended for use where GDPR applies. The UID2 module will not run.');
       return;
     }

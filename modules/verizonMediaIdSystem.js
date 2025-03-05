@@ -67,7 +67,7 @@ export const verizonMediaIdSubmodule = {
       he: params.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
       gdpr_consent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
-      us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
+      us_privacy: consentData && consentData.usp ? consentData.usp : ''
     };
 
     if (params.pixelId) {

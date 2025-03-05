@@ -49,7 +49,7 @@ export const admixerIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId(config, {gdpr: consentData} = {}) {
     const {e, p, pid} = (config && config.params) || {};
     if (!pid || typeof pid !== 'string') {
       logError('admixerId submodule requires partner id to be defined');

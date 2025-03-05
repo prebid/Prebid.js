@@ -8,7 +8,6 @@
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {uspDataHandler} from '../src/adapterManager.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
@@ -192,18 +191,18 @@ export const ftrackIdSubmodule = {
 
   isThereConsent: function(consentData) {
     let consentValue = true;
-
+    const {gdpr, usp} = consentData ?? {};
     /*
      * Scenario 1: GDPR
      *   if GDPR Applies is true|1, we do not have consent
      *   if GDPR Applies does not exist or is false|0, we do not NOT have consent
      */
-    if (consentData && consentData.gdprApplies && (consentData.gdprApplies === true || consentData.gdprApplies === 1)) {
+    if (gdpr?.gdprApplies === true || gdpr?.gdprApplies === 1) {
       consentInfo.gdpr.applies = 1;
       consentValue = false;
     }
     // If consentString exists, then we store it even though we are not using it
-    if (consentData && consentData.consentString !== 'undefined' && !utils.isEmpty(consentData.consentString) && !utils.isEmptyStr(consentData.consentString)) {
+    if (typeof gdpr?.consentString !== 'undefined' && !utils.isEmpty(gdpr.consentString) && !utils.isEmptyStr(gdpr.consentString)) {
       consentInfo.gdpr.consentString = consentData.consentString;
     }
 
@@ -213,7 +212,6 @@ export const ftrackIdSubmodule = {
      *     parse the us_privacy string to see if we have consent
      *     for version 1 of us_privacy strings, if 'Opt-Out Sale' is 'Y' we do not track
      */
-    const usp = uspDataHandler.getConsentData();
     let usPrivacyVersion;
     // let usPrivacyOptOut;
     let usPrivacyOptOutSale;

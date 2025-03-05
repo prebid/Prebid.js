@@ -72,7 +72,7 @@ export const adtelligentIdModule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse}
    */
-  getId(config, consentData) {
+  getId(config, {gdpr: consentData} = {}) {
     const gdpr = consentData && consentData.gdprApplies ? 1 : 0;
     const gdprConsent = gdpr ? consentData.consentString : '';
     const url = buildUrl({
