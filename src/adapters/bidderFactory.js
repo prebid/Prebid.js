@@ -497,11 +497,9 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
         );
         break;
       case 'POST':
-
-        const isCompatibleToCompress = isStr(request.data) || isJsonObject(request.data);
         // read a bidder setting to enable gzip compression
-        const enableGZipCompression = false; // bidderSettings.get(spec.code, 'enableGzipCompression');
-        if (enableGZipCompression && isCompatibleToCompress && isGzipCompressionSupported()) {
+        const enableGZipCompression = false; // bidderSettings.get(spec.code, 'endpointCompression'); // or we can maintain a list of bidders who support gzip compression
+        if (enableGZipCompression && isGzipCompressionSupported()) {
           compressDataWithGZip(request.data).then(compressedPayload => {
             ajax(
               request.url,
@@ -514,7 +512,8 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
                 method: 'POST',
                 contentType: 'text/plain',
                 // adding below header creates a CORS preflight request so we should not pass it
-                // instead of adding this header we can pass a query parmeter to let server know that the payload is compressed
+                // instead of adding this header we can pass a query parmeter (gzip=1) to let server know that the payload is compressed
+                // TODO: update URL to include query parameter gzip=1
                 // customHeaders: {
                 //  'Content-Encoding': 'gzip',
                 // },
