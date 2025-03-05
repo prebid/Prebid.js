@@ -1,12 +1,12 @@
 
 import { getBidFloor } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepAccess, deepSetValue, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
-import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
+import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -52,18 +52,20 @@ export const spec = {
 
     const requests = [];
 
+    let no = 1;
+
     bidRequests.forEach(bid => {
       const data = converter.toORTB({bidRequests: [bid], bidderRequest});
       requests.push({
         data,
         method: 'POST',
-        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-        // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
-        // options: {
-        //   customHeaders: {
-        //     'X-Eqtv-Debug': no === 1 ? '67c190809d44a9f4fd5ddf64' : '6708e3aeca04848e919e9c8c'
-        //   }
-        // }
+        // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+        url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
+        options: {
+          customHeaders: {
+            'X-Eqtv-Debug': no++ === 1 ? '67c190809d44a9f4fd5ddf64' : '6708e3aeca04848e919e9c8c'
+          }
+        }
       })
     });
 
@@ -113,10 +115,6 @@ export const spec = {
     }
 
     return [];
-  },
-
-  onBidWon: (bid) => {
-    logInfo('onBidWon', bid);
   }
 };
 
@@ -164,7 +162,7 @@ export const converter = ortbConverter({
       if (deepAccess(bid, path)) {
         props.forEach(prop => {
           if (!deepAccess(bid, `${path}.${prop}`)) {
-            logWarn(`${LOG_PREFIX} Property "${path}.${prop}" is missing from request.  Request will proceed, but the use of "${prop}" is strongly encouraged.`, bid);
+            logWarn(`${LOG_PREFIX} Property "${path}.${prop}" is missing from request. Request will proceed, but the use of "${prop}" is strongly encouraged.`, bid);
           }
         });
       }
