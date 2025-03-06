@@ -1381,6 +1381,7 @@ describe('OpenxRtbAdapter', function () {
           crid: 'test-creative-id',
           dealid: 'test-deal-id',
           adm: 'test-ad-markup',
+          mtype: 1,
           adomain: ['brand.com'],
           ext: {
             dsp_id: '123',
@@ -1485,7 +1486,8 @@ describe('OpenxRtbAdapter', function () {
               h: 250,
               crid: 'test-creative-id',
               dealid: 'test-deal-id',
-              adm: 'test-ad-markup'
+              adm: 'test-ad-markup',
+              mtype: 1,
             }]
           }],
           cur: 'AUS'
@@ -1495,6 +1497,7 @@ describe('OpenxRtbAdapter', function () {
       });
 
       it('should return the proper mediaType', function () {
+        expect(bid).not.to.equal(undefined);
         expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
       });
     });
@@ -1581,6 +1584,7 @@ describe('OpenxRtbAdapter', function () {
                 impid: 'test-bid-id',
                 price: 5,
                 adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                mtype: 2
               }]
             }],
             cur: 'USD'
@@ -1636,6 +1640,7 @@ describe('OpenxRtbAdapter', function () {
                 impid: 'test-bid-id-2',
                 price: 2,
                 adm: '<iframe src="https://test.url"></iframe>',
+                mtype: 1
               }]
             }],
             cur: 'USD'
@@ -1688,6 +1693,7 @@ describe('OpenxRtbAdapter', function () {
                 impid: 'test-bid-id',
                 price: 2,
                 adm: '{"ver": "1.2", "assets": [{"id": 1, "required": 1,"title": {"text": "OpenX (Title)"}}], "link": {"url": "https://www.openx.com/"}, "eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
+                mtype: 4
               }]
             }],
             cur: 'AUS'
@@ -1760,6 +1766,7 @@ describe('OpenxRtbAdapter', function () {
                 impid: 'test-bid-id',
                 price: 2,
                 adm: '<iframe src="https://test.url"></iframe>',
+                mtype: 1
               }]
             }],
             cur: 'AUS'
@@ -1826,6 +1833,7 @@ describe('OpenxRtbAdapter', function () {
                 impid: 'test-bid-id-1',
                 price: 2,
                 adm: '{"ver": "1.2", "assets": [{"id": 1, "required": 1,"title": {"text": "OpenX (Title)"}}], "link": {"url": "https://www.openx.com/"}, "eventtrackers":[{"event":1,"method":1,"url":"http://example.com/impression"}]}',
+                mtype: 4
               }]
             }],
             cur: 'USD'
