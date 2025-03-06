@@ -592,7 +592,8 @@ function resolveNonces(bidderRequest, payload) {
 }
 
 export function resolveRequestNoncesHook(next, spec, validBidRequests, bidderRequest, adapterRequests) {
-  NONCE_MANAGERS.get(bidderRequest)?.close();
+  const nonceMgr = NONCE_MANAGERS.get(bidderRequest);
+  nonceMgr && nonceMgr.close();
   next.call(this, spec, validBidRequests, bidderRequest, resolveNonces(bidderRequest, adapterRequests));
 }
 
