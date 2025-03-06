@@ -1497,7 +1497,6 @@ describe('OpenxRtbAdapter', function () {
       });
 
       it('should return the proper mediaType', function () {
-        expect(bid).not.to.equal(undefined);
         expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
       });
     });
