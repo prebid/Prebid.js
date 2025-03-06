@@ -3,7 +3,6 @@ import { logError, isStr, logMessage, isPlainObject, isEmpty, isFn, mergeDeep, l
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getLowEntropySUA } from '../src/fpd/sua.js';
-
 import { continueAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
 const CONSTANTS = Object.freeze({
@@ -22,7 +21,7 @@ const CONSTANTS = Object.freeze({
     NIGHT: 'night',
   },
   ENDPOINTS: {
-    BASEURL: 'https://ads.pubmatic.com/AdServer/js/ym/',
+    BASEURL: 'http://localhost:8080/',  // TODO: Update with actual endpoint
     FLOORS_ENDPOINT: 'floors.json',
     CONFIGS_ENDPOINT: 'configs.json'
   }
@@ -43,8 +42,32 @@ const BROWSER_REGEX_MAP = [
   { regex: /(firefox)\/([\w\.]+)/i, id: 12 } // Firefox
 ];
 
-let _fetchFloorRulesPromise = null, _fetchConfigPromise = null, _mergedConfigPromise = null;
+export const defaultValueTemplate = {
+    currency: 'USD',
+    skipRate: 0,
+    modelVersion: 'modelVersion', // TODO
+    schema: {
+        fields: ['mediaType', 'size'] // TODO
+    }
+};
+
+let initTime;
+let _fetchFloorRulesPromise = null, _fetchConfigPromise = null;
+export let configMerged; // Remove export if not needed in test file
+let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
+// configMerged is a reference to the function that can resolve configMergedPromise whenever we want
+
 export let _country;
+
+// Waits for a given promise to resolve within a timeout
+export function withTimeout(promise, ms) {
+    let timeout;
+    const timeoutPromise = new Promise((resolve) => { // Do we need this promise
+      timeout = setTimeout(() => resolve(undefined), ms);
+    });
+  
+    return Promise.race([promise.finally(() => clearTimeout(timeout)), timeoutPromise]);
+}
 
 export const getCurrentTimeOfDay = () => {
   const currentHour = new Date().getHours();
@@ -72,7 +95,6 @@ export const getBrowserType = () => {
     }
     return browserIndex.toString();
 }
-  
 
 export const getOs = () => getOS().toString();
 
@@ -107,52 +129,45 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
     // default values provided by publisher on profile
     const defaultValues = config.defaultValues ?? {};
     // If floorsData is not present, use default values
-    const finalFloorsData = floorsData ?? { ...defaultValues }; // TODO: Need to be confirmed from product
-  
-    // If traffic allocation is overridden, overwrite the skiprate from floorsData
-    // with the one provided by publisher in profile
-    if (config.trafficAllocation === 1) {   // TODO: confirm from api team for data type
-      finalFloorsData.skipRate = config.skipRate; // TODO: confirm with api team for calculation
-    }
+    const finalFloorsData = floorsData ?? { ...defaultValueTemplate, values: { ...defaultValues } };
 
-    // Delete unnecessary fields
-    delete config.trafficAllocation; // TODO: confirm with api team
-    delete config.floorMinEnabled; // Confirm if this deletion is necessary
+    delete config.defaultValues;
+    // If skiprate is provided in configs, overwrite the value in finalFloorsData
+    (config.skipRate !== undefined) && (finalFloorsData.skipRate = config.skipRate);
 
-    // merge configs
+    // merge default configs from page, configs 
     return {
-      floors: {
-        ...defaultFloorConfig,
-        ...config,
-        data: finalFloorsData,
-        additionalSchemaFields: {
-          deviceType: getDeviceType,
-          timeOfDay: getCurrentTimeOfDay,
-          browser: getBrowserType,
-          os: getOs,
-          utm: getUtm,
-          country: getCountry,
+        floors: {
+            ...defaultFloorConfig,
+            ...config,
+            data: finalFloorsData,
+            additionalSchemaFields: {
+                deviceType: getDeviceType,
+                timeOfDay: getCurrentTimeOfDay,
+                browser: getBrowserType,
+                os: getOs,
+                utm: getUtm,
+                country: getCountry,
+            },
         },
-      },
     };
 };
 
 export const fetchFloorsData = async (publisherId, profileId) => {
-  try {
-    const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.FLOORS_ENDPOINT}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching floors: No response`);
-      return;
+    try {
+      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.FLOORS_ENDPOINT}`;
+      const response = await fetch(url);
+  
+      if (!response.ok) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching floors: Not ok`);
+        return;
+      }
+  
+      _country = response.headers?.get('country_code')?.split(',')[0]?.trim() ?? undefined;
+      return await response.json();
+    } catch (error) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching floors:`, error);
     }
-
-    _country = response.headers?.get('country_code')?.split(',')[0]?.trim() ?? undefined;
-    const floorsData = await response.json();
-    return floorsData;
-  } catch (error) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching floors:`, error);
-  }
 };
 
 export const fetchProfileConfigs = async (publisherId, profileId) => {
@@ -162,10 +177,10 @@ export const fetchProfileConfigs = async (publisherId, profileId) => {
     const response = await fetch(url);
     if (!response?.ok) {
       logError(CONSTANTS.LOG_PRE_FIX + 'Error while fetching profile configs: Not ok');
+      return;
     }
 
-    const conf = await response.json();
-    return conf;
+    return await response.json();
   } catch (error) {
     logError(CONSTANTS.LOG_PRE_FIX + 'Error while fetching profile configs:', error);
   }
@@ -178,35 +193,43 @@ export const fetchProfileConfigs = async (publisherId, profileId) => {
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
-  const publisherId = config?.params?.publisherId;
-  const profileId = config?.params?.profileId;
+    const initTime = Date.now(); // Capture the initialization time
+    const { publisherId, profileId } = config?.params || {};
 
-  if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
-    logError(
-      `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
-        : !isStr(publisherId) ? 'Publisher Id should be a string.'
-          : !profileId ? 'Missing profile Id.'
-            : 'Profile Id should be a string.'
-      }`
-    );
-    return false;
-  }
+    if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
+      logError(
+        `${CONSTANTS.LOG_PRE_FIX} ${!publisherId ? 'Missing publisher Id.'
+          : !isStr(publisherId) ? 'Publisher Id should be a string.'
+            : !profileId ? 'Missing profile Id.'
+              : 'Profile Id should be a string.'
+        }`
+      );
+      return false;
+    }
 
-  if (!isFn(continueAuction)) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
-    return false;
-  }
+    if (!isFn(continueAuction)) {
+      logError(`${CONSTANTS.LOG_PRE_FIX} continueAuction is not a function. Please ensure to add priceFloors module.`);
+      return false;
+    }
 
-  _fetchFloorRulesPromise = fetchFloorsData(publisherId, profileId);
-  _fetchConfigPromise = fetchProfileConfigs(publisherId, profileId);
-  // TODO: Need to confirm if we need to wait for both promises to resolve or we can have some timeout or a single call
-  _mergedConfigPromise = Promise.all([_fetchFloorRulesPromise, _fetchConfigPromise]).then(
-    ([floorsData, profileConfigs]) => {
-        const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
-        floorsConfig && conf.setConfig(floorsConfig);
-  });
-  return true;
-}
+    _fetchFloorRulesPromise = fetchFloorsData(publisherId, profileId);
+    _fetchConfigPromise = fetchProfileConfigs(publisherId, profileId);
+
+    _fetchConfigPromise.then(async (profileConfigs) => {
+      const auctionDelay = pbjs.getConfig('realTimeData').auctionDelay; // use conf
+      const maxWaitTime = 0.8 * auctionDelay;
+
+      const elapsedTime = Date.now() - initTime;
+      const remainingTime = Math.max(maxWaitTime - elapsedTime, 0);
+      const floorsData = await withTimeout(_fetchFloorRulesPromise, remainingTime);
+
+      const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
+      floorsConfig && conf.setConfig(floorsConfig);
+      configMerged();
+    });
+  
+    return true;
+};
 
 /**
  * @param {Object} reqBidsConfigObj
@@ -215,31 +238,31 @@ const init = (config, _userConsent) => {
  * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
-    _mergedConfigPromise && _mergedConfigPromise.then(() => {
-    const hookConfig = {
-      reqBidsConfigObj,
-      context: this,
-      nextFn: () => true,
-      haveExited: false,
-      timer: null
-    };
-    continueAuction(hookConfig);
-    const ortb2 = {
-      user: {
-        ext: {
-          ctr: _country,
+    configMergedPromise.then(() => {
+        const hookConfig = {
+            reqBidsConfigObj,
+            context: this,
+            nextFn: () => true,
+            haveExited: false,
+            timer: null
+        };
+        continueAuction(hookConfig);
+        const ortb2 = {
+            user: {
+                ext: {
+                    ctr: _country,
+                }
+            }
         }
-      }
-    }
 
-    mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-      [CONSTANTS.SUBMODULE_NAME]: ortb2
+        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+            [CONSTANTS.SUBMODULE_NAME]: ortb2
+        });
+        callback();
+    }).catch((error) => {
+        logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
+        callback();
     });
-    callback();
-  }).catch((error) => {
-    logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);
-    callback();
-  });
 }
 
 /** @type {RtdSubmodule} */

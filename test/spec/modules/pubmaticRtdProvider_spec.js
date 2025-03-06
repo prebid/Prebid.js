@@ -5,9 +5,9 @@ import * as suaModule from '../../../src/fpd/sua.js';
 import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
 import {
-    registerSubModule, pubmaticSubmodule, getFloorsConfig, setFloorsConfig, setPriceFloors, fetchFloorsData, fetchProfileConfigs,
+    registerSubModule, pubmaticSubmodule, getFloorsConfig, fetchFloorsData, fetchProfileConfigs,
     getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, _country,
-    _profileConfigs, _floorsData
+    _profileConfigs, _floorsData, defaultValueTemplate, withTimeout, getBidRequestData, configMerged
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
 
@@ -53,6 +53,9 @@ describe('Pubmatic RTD Provider', () => {
         beforeEach(() => {
             logErrorStub = sandbox.stub(utils, 'logError');
             continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
+            // global.pbjs = {
+            //     getConfig: sinon.stub().returns({ floors: { enabled: true } }),
+            // };
         });
 
         it('should return false if publisherId is missing', () => {
@@ -226,9 +229,11 @@ describe('Pubmatic RTD Provider', () => {
     describe('getFloorsConfig', () => {
         let floorsData, profileConfigs;
         let sandbox;
+        let logErrorStub;
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
+            logErrorStub = sandbox.stub(utils, 'logError');
             floorsData = {
                 "currency": "USD",
                 "floorProvider": "PM",
@@ -258,14 +263,32 @@ describe('Pubmatic RTD Provider', () => {
                                 'floorDeals': false,
                                 'enforceJS': false
                             },
-                            'auctionDelay': 1111,
                             'floorMin': 0.1111,
-                            'trafficAllocation': 0,
-                            'skipRate': 11
+                            'skipRate': 11,
+                            'defaultValues': {
+                                "*|*": 0.2
+                            }
                         }
                     }
                 }
             }
+            sandbox.stub(conf, 'getConfig').callsFake(() => {
+                return {
+                    floors: {
+                        'enforcement': {
+                            'floorDeals': true,
+                            'enforceJS': true
+                        }
+                    },
+                    realTimeData: {
+                        auctionDelay: 100
+                    }
+                };
+            });
+        });
+
+        afterEach(() => {
+            sandbox.restore();
         });
 
         it('should return correct config structure', () => {
@@ -276,7 +299,6 @@ describe('Pubmatic RTD Provider', () => {
             expect(result.floors).to.have.property('enforcement');
             expect(result.floors.enforcement).to.have.property('floorDeals', false);
             expect(result.floors.enforcement).to.have.property('enforceJS', false);
-            expect(result.floors).to.have.property('auctionDelay', 1111);
             expect(result.floors).to.have.property('floorMin', 0.1111);
 
             // Verify the additionalSchemaFields structure
@@ -295,28 +317,35 @@ describe('Pubmatic RTD Provider', () => {
         });
 
         it('should not merge floors and config data when plugin is disabled', () => {
-            sandbox.stub(conf, 'getConfig').callsFake(() => {
-                return {
-                    floors: {
-                        'enforcement': {
-                            'floorDeals': true,
-                            'enforceJS': true
-                        }
-                    }
-                };
-            });
-
             profileConfigs.plugins.dynamicFloors.enabled = false;
             const result = getFloorsConfig(floorsData, profileConfigs);
 
             expect(result.floors).to.deep.equal({ 'enforcement': { 'floorDeals': true, 'enforceJS': true } });
         });
 
-        it('should not replace skipRate fron config when trafficAllocation is 1', () => {
-            profileConfigs.plugins.dynamicFloors.config.trafficAllocation = 1;
+        it('should initialise default values to empty object when not available', () => {
+            profileConfigs.plugins.dynamicFloors.config.defaultValues = undefined;
+            floorsData = undefined;
+            const result = getFloorsConfig(floorsData, profileConfigs);
+
+            expect(result.floors.data).to.have.property('currency', 'USD');
+            expect(result.floors.data).to.have.property('skipRate', 11);
+            expect(result.floors.data).to.have.property('modelVersion', 'PubmaticRTD_Default');
+            expect(result.floors.data.schema).to.deep.equal(defaultValueTemplate.schema);
+            expect(result.floors.data.value).to.deep.equal(defaultValueTemplate.value);
+        });
+
+        it('should replace skipRate from config to data when avaialble', () => {
             const result = getFloorsConfig(floorsData, profileConfigs);
 
             expect(result.floors.data).to.have.property('skipRate', 11);
+        });
+
+        it('should not replace skipRate from config to data when not avaialble', () => {
+            delete profileConfigs.plugins.dynamicFloors.config.skipRate;
+            const result = getFloorsConfig(floorsData, profileConfigs);
+
+            expect(result.floors.data).to.have.property('skipRate', 0);
         });
 
         it('should maintain correct function references', () => {
@@ -328,6 +357,13 @@ describe('Pubmatic RTD Provider', () => {
             expect(result.floors.additionalSchemaFields.os).to.equal(getOs);
             expect(result.floors.additionalSchemaFields.country).to.equal(getCountry);
             expect(result.floors.additionalSchemaFields.utm).to.equal(getUtm);
+        });
+
+        it('should log error when profileConfigs is not an object', () => {
+            profileConfigs = 'invalid';
+            const result = getFloorsConfig(floorsData, profileConfigs);
+            expect(result).to.be.undefined;
+            expect(logErrorStub.calledWith(sinon.match(/profileConfigs is not an object or is empty/))).to.be.true;
         });
     });
 
@@ -397,6 +433,19 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub = sandbox.stub(window, 'fetch');
             confStub = sandbox.stub(conf, 'setConfig');
             global._country = undefined;
+            sandbox.stub(conf, 'getConfig').callsFake(() => {
+                return {
+                    floors: {
+                        'enforcement': {
+                            'floorDeals': true,
+                            'enforceJS': true
+                        }
+                    },
+                    realTimeData: {
+                        auctionDelay: 100
+                    }
+                };
+            });
         });
 
         afterEach(() => {
@@ -450,7 +499,7 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub.resolves(new Response(null, { status: 500 }));
 
             await fetchFloorsData('publisherId', 'profileId');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching floors: No response/))).to.be.true;
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
         });
 
         it('should log error on network failure', async () => {
@@ -501,7 +550,7 @@ describe('Pubmatic RTD Provider', () => {
             continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
         });
 
-        it('should call continueAuction once after _pubmaticFloorRulesPromise. Also getBidRequestData executed only once', async () => {
+        it('should call continueAuction once after _mergedConfigPromise. Also getBidRequestData executed only once', async () => {
             _mergedConfigPromise = Promise.resolve();
             pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
             await _mergedConfigPromise;
@@ -514,4 +563,108 @@ describe('Pubmatic RTD Provider', () => {
             expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.include(ortb2);
         });
     });
+    
+
+    describe('getBidRequestData', function () {
+        let reqBidsConfigObj, callback, continueAuctionStub, mergeDeepStub, logErrorStub;
+        
+        beforeEach(() => {
+            reqBidsConfigObj = {
+                ortb2Fragments: {
+                    bidder: {}
+                }
+            };
+            callback = sinon.spy();
+            continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
+            mergeDeepStub = sandbox.stub(utils, 'mergeDeep');
+            logErrorStub = sandbox.stub(utils, 'logError');
+    
+            global._country = 'US';
+            global.configMergedPromise = Promise.resolve();
+        });
+    
+        afterEach(() => {
+            sandbox.restore(); // Restore all stubs/spies
+        });
+    
+        // it('should call continueAuction with correct hookConfig', async function () {
+        //     configMerged();
+        //     await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+    
+        //     expect(continueAuctionStub.calledOnce).to.be.true;
+        //     expect(continueAuctionStub.firstCall.args[0]).to.have.property('reqBidsConfigObj', reqBidsConfigObj);
+        //     expect(continueAuctionStub.firstCall.args[0]).to.have.property('haveExited', false);
+        // });
+    
+        // it('should merge country data into ortb2Fragments.bidder', async function () {
+        //     configMerged();
+        //     await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+    
+        //     expect(reqBidsConfigObj.ortb2Fragments.bidder).to.have.property('pubmatic');
+        //     expect(reqBidsConfigObj.ortb2Fragments.bidder.pubmatic.user.ext.ctr).to.equal('US');
+        // });
+    
+        it('should call callback once after execution', async function () {
+            configMerged();
+            await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+    
+            expect(callback.calledOnce).to.be.true;
+        });
+    
+        // it('should handle errors and call logError', async function () {
+        //     configMerged();
+        //     global.configMergedPromise = Promise.reject(new Error('Test Error'));
+        //     await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+    
+        //     expect(logErrorStub.calledOnce).to.be.true;
+        //     expect(logErrorStub.firstCall.args[0]).to.include('Error in updating floors');
+        //     expect(callback.calledOnce).to.be.true;
+        // });
+    });        
+    
+    describe('withTimeout', function () {
+        it('should resolve with the original promise value if it resolves before the timeout', async function () {
+            const promise = new Promise((resolve) => setTimeout(() => resolve('success'), 50));
+            const result = await withTimeout(promise, 100);
+            expect(result).to.equal('success');
+        });
+
+        it('should resolve with undefined if the promise takes longer than the timeout', async function () {
+            const promise = new Promise((resolve) => setTimeout(() => resolve('success'), 200));
+            const result = await withTimeout(promise, 100);
+            expect(result).to.be.undefined;
+        });
+
+        it('should properly handle rejected promises', async function () {
+            const promise = new Promise((_, reject) => setTimeout(() => reject(new Error('Failure')), 50));
+            try {
+                await withTimeout(promise, 100);
+            } catch (error) {
+                expect(error.message).to.equal('Failure');
+            }
+        });
+
+        it('should resolve with undefined if the original promise is rejected but times out first', async function () {
+            const promise = new Promise((_, reject) => setTimeout(() => reject(new Error('Failure')), 200));
+            const result = await withTimeout(promise, 100);
+            expect(result).to.be.undefined;
+        });
+
+        it('should clear the timeout when the promise resolves before the timeout', async function () {
+            const clock = sinon.useFakeTimers();
+            const clearTimeoutSpy = sinon.spy(global, 'clearTimeout');
+
+            const promise = new Promise((resolve) => setTimeout(() => resolve('success'), 50));
+            const resultPromise = withTimeout(promise, 100);
+            
+            clock.tick(50);
+            await resultPromise;
+            
+            expect(clearTimeoutSpy.called).to.be.true;
+            
+            clearTimeoutSpy.restore();
+            clock.restore();
+        });
+    });
+
 });
