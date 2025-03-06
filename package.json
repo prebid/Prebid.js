@@ -15,7 +15,8 @@
   "scripts": {
     "serve": "gulp serve",
     "test": "gulp test",
-    "lint": "gulp lint"
+    "lint": "gulp lint",
+    "build:connatix:fandom": "gulp build-bundle-prod --disable NATIVE --modules=fandom-modules.json"
   },
   "repository": {
     "type": "git",
