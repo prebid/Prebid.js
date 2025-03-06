@@ -69,12 +69,14 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
       if (!isArray(ravelRequests) && ravelRequests) {
         ravelRequests = [ ravelRequests ];
       }
-      ravelRequests?.forEach(request => {
-        // Proxyfy request
-        request.url = RAVEL_ENDPOINT;
-        request.method = 'POST';
-        addRavelDataToRequest(request, adapterName);
-      })
+      if (ravelRequests) {
+        ravelRequests.forEach(request => {
+          // Proxyfy request
+          request.url = RAVEL_ENDPOINT;
+          request.method = 'POST';
+          addRavelDataToRequest(request, adapterName);
+        })
+      }
 
       return [ ...requests ?? [], ...ravelRequests ?? [] ];
     } catch (e) {
