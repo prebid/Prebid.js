@@ -762,9 +762,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest) {
   }
   const args = Array.from(arguments).slice(1);
   return buildConfigs.then(function () {
-    setTimeout(() => {
-      next.apply(this, args);
-    })
+    next.apply(this, args);
   }).catch(err => {
     logError(`Error calling buildPAAPIConfigs on '${spec.code}'`, err);
   })
