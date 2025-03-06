@@ -70,3 +70,8 @@ export function getTargetingValues(v) {
 export function isObjectDefined(obj) {
   return !!(obj && typeof obj === 'object' && Object.keys(obj).length);
 }
+
+export function generateRandomString() {
+  const getRandomLetter = () => String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
+  return `_${getRandomLetter()}${getRandomLetter()}b${getRandomLetter()}${getRandomLetter()}`;
+}

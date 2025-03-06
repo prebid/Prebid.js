@@ -16,8 +16,8 @@
  * @property {?string} splitKey
  */
 
-import { deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID, timestamp, deepAccess } from '../src/utils.js';
-import { getUUID, getDaysDifference, isEngagingUser, toUrlParams, getTargetingKeys, getTargetingValues, isObjectDefined } from '../libraries/browsiUtils/browsiUtils.js';
+import { deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID, timestamp } from '../src/utils.js';
+import { getUUID, getDaysDifference, isEngagingUser, toUrlParams, getTargetingKeys, getTargetingValues, isObjectDefined, generateRandomString } from '../libraries/browsiUtils/browsiUtils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { loadExternalScript } from '../src/adloader.js';
@@ -37,6 +37,7 @@ const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 const RANDOM = Math.floor(Math.random() * 10) + 1;
+const API_KEY = generateRandomString();
 let PVID = getUUID();
 
 /** @type {ModuleParams} */
@@ -64,7 +65,7 @@ export function addBrowsiTag(data) {
   script.setAttribute('src', data.u);
   script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
   script.brwRandom = RANDOM;
-  Object.assign(script.prebidData, { pvid: PVID || data.pvid, t: TIMESTAMP });
+  Object.assign(script.prebidData, { pvid: PVID || data.pvid, t: TIMESTAMP, apik: API_KEY });
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
@@ -291,7 +292,7 @@ function getOnPageData(auc) {
   try {
     const dataMap = {};
     auc.forEach(uc => {
-      dataMap[uc] = window.browsitag.data.get(uc)
+      dataMap[uc] = window[API_KEY].get(uc);
     });
     return dataMap;
   } catch (e) {

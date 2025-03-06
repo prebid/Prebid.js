@@ -29,7 +29,7 @@ describe('browsi analytics adapter', function () {
         },
         'bids': [
           {
-            'bidder': 'livewrapped',
+            'bidder': 'bidderA',
             'auctionId': 'abe18da6-cee1-438b-9013-dc5a62c9d4a8',
             'ortb2Imp': {
               'ext': {
@@ -54,7 +54,7 @@ describe('browsi analytics adapter', function () {
             'auctionId': 'abe18da6-cee1-438b-9013-dc5a62c9d4a8',
           },
           {
-            'bidder': 'leeads',
+            'bidder': 'bidderB',
             'auctionId': 'abe18da6-cee1-438b-9013-dc5a62c9d4a8',
             'ortb2Imp': {
               'ext': {
@@ -100,7 +100,7 @@ describe('browsi analytics adapter', function () {
         },
         'bids': [
           {
-            'bidder': 'livewrapped',
+            'bidder': 'bidderA',
             'auctionId': 'abe18da6-cee1-438b-9013-dc5a62c9d4a8',
             'ortb2Imp': {
               'ext': {
@@ -232,7 +232,7 @@ describe('browsi analytics adapter', function () {
 
     expect(event.ad_units[0].plid).to.equal('realtid_mobile-mobil-1_:r1:');
     expect(event.ad_units[0].au).to.be.null;
-    expect(event.ad_units[0].pbd).to.deep.equal(['livewrapped', 'leeads']);
+    expect(event.ad_units[0].pbd).to.deep.equal(['bidderA', 'bidderB']);
     expect(event.ad_units[0].rtm).to.deep.equal({
       'scrollDepth': 0.4,
       'density': 0.6,
@@ -246,7 +246,7 @@ describe('browsi analytics adapter', function () {
     });
     expect(event.ad_units[1].plid).to.equal('realtid_mobile-mobil-2_:r2:');
     expect(event.ad_units[1].au).to.be.null;
-    expect(event.ad_units[1].pbd).to.deep.equal(['livewrapped']);
+    expect(event.ad_units[1].pbd).to.deep.equal(['bidderA']);
     expect(event.ad_units[1].rtm).to.deep.equal({
       'scrollDepth': 0.4,
       'density': 0.6,
