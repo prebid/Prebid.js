@@ -12,24 +12,27 @@ const EVENT_SERVER_URL = `https://events.browsiprod.com/events/v2`;
 
 /** @type {null|Object} */
 let _staticData = null;
+/** @type {string} */
+let VERSION = getGlobal().version;
+/** @type {string} */
+let URL = encodeURIComponent(window.location.href);
 
-const { AUCTION_END, BROWSI_INIT } = EVENTS;
+const { AUCTION_END, BROWSI_INIT, BROWSI_DATA } = EVENTS;
 
-function setStaticData() {
-  const brwd = window.browsitag?.rtd;
+export function getStaticData() {
+  return _staticData;
+}
+
+export function setStaticData(data) {
   _staticData = {
-    url: encodeURIComponent(window.location.href),
-    version: getGlobal().version,
-    ...(brwd ? {
-      pvid: brwd.pvid,
-      device: brwd.d,
-      geo: brwd.g,
-      aid: brwd.aid,
-      es: brwd.es,
-      pk: brwd.pk,
-      sk: brwd.sk,
-      t: brwd.t,
-    } : {})
+    pvid: data.pvid,
+    device: data.d,
+    geo: data.g,
+    aid: data.aid,
+    es: data.es,
+    pk: data.pk,
+    sk: data.sk,
+    t: data.t,
   };
 }
 
@@ -59,7 +62,7 @@ function getAdUnitsData(args) {
       plid: adUnit.code,
       au: getAdUnitPathByCode(adUnit.code),
       pbd,
-      ...(shouldSampleRtm ? { rtm } : {})
+      ...(shouldSampleRtm && rtm ? { rtm } : {})
     }
   });
 }
@@ -74,32 +77,43 @@ function handleAuctionEnd(args) {
     geo: _staticData.geo,
     dp: _staticData.device,
     aid: _staticData.aid,
-    pbv: _staticData.version,
-    url: _staticData.url,
+    pbv: VERSION,
+    url: URL,
     aucid: args.auctionId,
     ad_units: getAdUnitsData(args)
   }
   sendEvent(event, 'rtd_demand');
 }
 
+function handleBrowsiData(args) {
+  if (args.moduleName !== 'browsi') return;
+  setStaticData(args);
+}
+
 function handleModuleInit(args) {
   if (args.moduleName !== 'browsi') return;
-
-  const { geo, device } = _staticData;
-
   const event = {
     et: 'rtd_init',
-    to: getTimeOffset(_staticData.t || args.t),
-    pvid: _staticData.pvid || args.pvid,
-    pk: _staticData.pk || args.pk,
-    sk: _staticData.sk || args.sk,
-    pbv: _staticData.version,
-    url: _staticData.url,
-    ...(geo ? { geo } : {}),
-    ...(device ? { dp: device } : {}),
-    ...(args.s ? { s: args.s } : {}),
+    to: getTimeOffset(args.t),
+    pvid: args.pvid,
+    pk: args.pk,
+    sk: args.sk,
+    pbv: VERSION,
+    url: URL,
+    ...(args.rsn ? { rsn: args.rsn } : {}),
   }
   sendEvent(event, 'rtd_supply');
+}
+
+function sendEvent(event, topic) {
+  try {
+    const pvid = event.pvid || _staticData?.pvid || '';
+    const body = JSON.stringify([event]);
+    ajax(`${EVENT_SERVER_URL}/${topic}?p=${pvid}`, () => { }, body, {
+      contentType: 'application/json',
+      method: 'POST'
+    });
+  } catch (err) { logMessage('Browsi Analytics error') }
 }
 
 let browsiAnalytics = Object.assign(adapter({ url: EVENT_SERVER_URL, analyticsType }), {
@@ -107,6 +121,9 @@ let browsiAnalytics = Object.assign(adapter({ url: EVENT_SERVER_URL, analyticsTy
     switch (eventType) {
       case BROWSI_INIT:
         handleModuleInit(args);
+        break;
+      case BROWSI_DATA:
+        handleBrowsiData(args);
         break;
       case AUCTION_END:
         handleAuctionEnd(args);
@@ -117,22 +134,9 @@ let browsiAnalytics = Object.assign(adapter({ url: EVENT_SERVER_URL, analyticsTy
   }
 });
 
-function sendEvent(event, topic) {
-  const { pvid } = _staticData;
-
-  try {
-    const body = JSON.stringify([event]);
-    ajax(`${EVENT_SERVER_URL}/${topic}?p=${pvid}`, () => { }, body, {
-      contentType: 'application/json',
-      method: 'POST'
-    });
-  } catch (err) { logMessage('Browsi Analytics error') }
-}
-
 browsiAnalytics.originEnableAnalytics = browsiAnalytics.enableAnalytics;
 
 browsiAnalytics.enableAnalytics = function (config) {
-  setStaticData();
   browsiAnalytics.originEnableAnalytics(config);
 };
 

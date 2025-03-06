@@ -16,7 +16,8 @@
  * @property {?string} splitKey
  */
 
-import { deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID, timestamp } from '../src/utils.js';
+import { deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID, timestamp, deepAccess } from '../src/utils.js';
+import { getUUID, getDaysDifference, isEngagingUser, toUrlParams, getTargetingKeys, getTargetingValues, isObjectDefined } from '../libraries/browsiUtils/browsiUtils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { loadExternalScript } from '../src/adloader.js';
@@ -27,7 +28,6 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { setKeyValue as setGptKeyValue } from '../libraries/gptUtils/gptUtils.js';
-import { getUUID, getDaysDifference, isEngagingUser, toUrlParams } from '../libraries/browsiUtils/browsiUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -49,12 +49,6 @@ let _dataReadyCallback = null;
 let _ic = {};
 /** @type {null|number} */
 let TIMESTAMP = null;
-/** @type {string} */
-const VIEWABILITY_KEYNAME = 'browsiViewability';
-/** @type {string} */
-const SCROLL_KEYNAME = 'browsiScroll';
-/** @type {string} */
-const REVENUE_KEYNAME = 'browsiRevenue';
 
 /**
  * add browsi script to page
@@ -91,14 +85,28 @@ export function sendPageviewEvent(eventType) {
   }
 }
 
-function sendModuleInitEvent(status) {
+function sendModuleInitEvent(rsn) {
   events.emit(EVENTS.BROWSI_INIT, {
     moduleName: MODULE_NAME,
     sk: _moduleParams.siteKey,
     pk: _moduleParams.pubKey,
     t: TIMESTAMP,
     pvid: PVID,
-    ...(status ? { s: status } : {})
+    ...(rsn || {})
+  });
+}
+
+function sendBrowsiDataEvent(data) {
+  events.emit(EVENTS.BROWSI_DATA, {
+    moduleName: MODULE_NAME,
+    pvid: PVID || data.pvid,
+    d: data.d,
+    g: data.g,
+    aid: data.aid,
+    es: data.es,
+    sk: _moduleParams.siteKey,
+    pk: _moduleParams.pubKey,
+    t: TIMESTAMP
   });
 }
 
@@ -134,7 +142,7 @@ export function collectData() {
   const { brtd, bus } = getLocalStorageData();
 
   const convertedBus = convertBusData(bus);
-  const hbm = convertedBus ? getHbm(convertedBus) : undefined;
+  const { uahb, rahb, lahb, lbsa } = getHbm(convertedBus) || {};
 
   let predictorData = {
     ...{
@@ -150,18 +158,20 @@ export function collectData() {
     ...(brtd ? { us: brtd } : { us: '{}' }),
     ...(document.referrer ? { r: document.referrer } : {}),
     ...(document.title ? { at: document.title } : {}),
-    ...(hbm?.rahb ? { rahb: hbm.rahb.avg.toFixed(3) } : {}),
-    ...(hbm?.uahb ? { uahb: hbm.uahb.avg.toFixed(3) } : {}),
-    ...(hbm?.lahb ? { lahb: hbm.lahb.avg.toFixed(3), lbsa: hbm.lahb.age.toFixed(3) } : {}),
+    ...(uahb ? { uahb } : {}),
+    ...(rahb ? { rahb } : {}),
+    ...(lahb ? { lahb } : {}),
+    ...(lbsa ? { lbsa } : {})
   };
-  getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`); // TODO change route
+  // getPredictionsFromServer(`//${_moduleParams.url}/prebid/v2?${toUrlParams(predictorData)}`); // todo change route
+  getPredictionsFromServer(`//yield-manager-qa.browsitests.com/prebid/v2?${toUrlParams(predictorData)}`)
 }
 
 function convertBusData(bus) {
   try {
     if (!bus) return undefined;
     const busObj = JSON.parse(bus);
-    return busObj && Object.keys(busObj).length ? busObj : undefined;
+    return busObj || undefined;
   } catch (e) {
     return undefined;
   }
@@ -169,11 +179,17 @@ function convertBusData(bus) {
 
 export function getHbm(bus) {
   try {
-    const rahbByTs = getRahbByTs(bus.rahb);
+    if (!isObjectDefined(bus)) {
+      return undefined;
+    }
+    const uahb = isObjectDefined(bus.uahb) ? bus.uahb : undefined;
+    const rahb = getRahb(bus.rahb);
+    const lahb = getLahb(bus.lahb);
     return {
-      uahb: (bus.uahb && Object.keys(bus.uahb).length) ? bus.uahb : undefined,
-      lahb: (bus.lahb && Object.keys(bus.lahb).length) ? getLahb(bus.lahb) : undefined,
-      rahb: (rahbByTs && Object.keys(rahbByTs).length) ? getRahb(rahbByTs) : undefined,
+      uahb: uahb?.avg?.toFixed(3),
+      rahb: rahb?.avg?.toFixed(3),
+      lahb: lahb?.avg?.toFixed(3),
+      lbsa: lahb?.age?.toFixed(3)
     }
   } catch (e) {
     return undefined;
@@ -182,21 +198,29 @@ export function getHbm(bus) {
 
 export function getLahb(lahb) {
   try {
+    if (!isObjectDefined(lahb)) {
+      return undefined;
+    }
     return {
       avg: lahb.avg,
       age: getDaysDifference(TIMESTAMP, lahb.time)
     }
-  } catch (error) {
+  } catch (e) {
     return undefined;
   }
 }
 
 export function getRahb(rahb) {
   try {
+    const rahbByTs = getRahbByTs(rahb);
+    if (!isObjectDefined(rahbByTs)) {
+      return undefined;
+    }
+
     let rs = { sum: 0, smp: 0 };
-    rs = Object.keys(rahb).reduce((sum, curTimestamp) => {
-      sum.sum += rahb[curTimestamp].sum;
-      sum.smp += rahb[curTimestamp].smp;
+    rs = Object.keys(rahbByTs).reduce((sum, curTimestamp) => {
+      sum.sum += rahbByTs[curTimestamp].sum;
+      sum.smp += rahbByTs[curTimestamp].smp;
       return sum;
     }, rs);
 
@@ -210,8 +234,11 @@ export function getRahb(rahb) {
 
 export function getRahbByTs(rahb) {
   try {
+    if (!isObjectDefined(rahb)) {
+      return undefined
+    };
     const weekAgoTimestamp = TIMESTAMP - (7 * 24 * 60 * 60 * 1000);
-    rahb && Object.keys(rahb)?.forEach((timestamp) => {
+    Object.keys(rahb).forEach((timestamp) => {
       if (parseInt(timestamp) < weekAgoTimestamp) {
         delete rahb[timestamp];
       }
@@ -237,21 +264,11 @@ function waitForData(callback) {
 }
 
 function setBrowsiTag(data) {
-  window.browsitag = window.browsitag || {};
-  window.browsitag.rtd = {
-    pvid: PVID || data.pvid,
-    d: data.d,
-    g: data.g,
-    aid: data.aid,
-    es: data.es,
-    sk: _moduleParams.siteKey,
-    pk: _moduleParams.pubKey,
-    t: TIMESTAMP
-  };
   if (data.eap) {
+    window.browsitag = window.browsitag || {};
     window.browsitag.data = window.browsitag.data || {};
     window.browsitag.data.get = getBrowsiTagRTD;
-    window.browsitag.apiReady = true;
+    window.browsitag.apiReady = true; // todo
   }
 }
 
@@ -301,12 +318,10 @@ function getRTD(auc) {
       if (!_pd) {
         return rp
       }
-      if (Object.keys(_pd).length) {
-        Object.entries(_pd).forEach(([key, value]) => {
-          const kv = getKVObject(key, getCurrentData(value, _c));
-          Object.assign(rp[uc], kv);
-        });
-      }
+      Object.entries(_pd).forEach(([key, value]) => {
+        const kv = getKVObject(key, getCurrentData(value, _c));
+        Object.assign(rp[uc], kv);
+      });
       return rp;
     }, {});
   } catch (e) {
@@ -357,7 +372,7 @@ function getAllSlots() {
  */
 function getKVObject(k, p) {
   if (p < 0) return {};
-  return {[k]: p};
+  return { [k]: p };
 }
 
 /**
@@ -425,6 +440,7 @@ function getPredictionsFromServer(url) {
             if (data) {
               setData(data);
               setBrowsiTag(data);
+              sendBrowsiDataEvent(data);
             } else {
               setData({});
             }
@@ -472,17 +488,15 @@ function setBidRequestsData(bidObj, callback) {
     if (!Object.keys(rtdData).length && !Object.keys(onPageData).length) { return; }
 
     const data = mergeAdUnitData(rtdData, onPageData);
-    if (Object.keys(data).length) {
-      adUnits.forEach(adUnit => {
-        const adUnitCode = adUnit.code;
-        if (data[adUnitCode]) {
-          const validBidders = adUnit.bids.filter(bid => pr.includes(bid.bidder));
-          validBidders.forEach(bid => {
-            deepSetValue(bid, 'ortb2Imp.ext.data.browsi', data[adUnitCode]);
-          });
-        }
-      });
-    }
+    adUnits.forEach(adUnit => {
+      const adUnitData = data[adUnit.code];
+      if (adUnitData && Object.keys(adUnitData).length) {
+        const validBidders = adUnit.bids.filter(bid => pr.includes(bid.bidder));
+        validBidders.forEach(bid => {
+          deepSetValue(bid, 'ortb2Imp.ext.data.browsi', adUnitData);
+        });
+      }
+    });
     callback();
   })
 }
@@ -504,46 +518,13 @@ export const browsiSubmodule = {
   getBidRequestData: setBidRequestsData
 };
 
-function getRevenueTargetingValue(p) {
-  if (!p) {
-    return undefined;
-  } else if (p <= 0) {
-    return 'no fill';
-  } else if (p <= 0.3) {
-    return 'low';
-  } else if (p <= 0.7) {
-    return 'medium';
-  }
-  return 'high';
-}
-
-function getTargetingValue(p) {
-  return (!p || p < 0) ? undefined : (Math.floor(p * 10) / 10).toFixed(2);
-}
-
-function getTargetingKeys() {
-  return {
-    viewabilityKey: (_moduleParams['keyName'] || VIEWABILITY_KEYNAME).toString(),
-    scrollKey: SCROLL_KEYNAME,
-    revenueKey: REVENUE_KEYNAME,
-  }
-}
-
-function getTargetingValues(v) {
-  return {
-    viewabilityValue: getTargetingValue(v['viewability']),
-    scrollValue: getTargetingValue(v['scrollDepth']),
-    revenueValue: getRevenueTargetingValue(v['revenue'])
-  }
-}
-
-function getTargeting(uc) {
+function getGoogletagTargeting(uc) {
   try {
     const sg = !!(_browsiData && _browsiData.sg);
     if (!sg) return {};
 
     const rtd = getRTD(uc);
-    const { viewabilityKey, scrollKey, revenueKey } = getTargetingKeys();
+    const { viewabilityKey, scrollKey, revenueKey } = getTargetingKeys(_moduleParams['keyName']);
 
     return Object.fromEntries(
       Object.entries(rtd).map(([key, value]) => {
@@ -562,7 +543,7 @@ function getTargeting(uc) {
 }
 
 function getTargetingData(uc, c, us, a) {
-  const targetingData = getTargeting(uc);
+  const targetingData = getGoogletagTargeting(uc);
   const auctionId = a.auctionId;
   const sendAdRequestEvent = (_browsiData && _browsiData['bet'] === 'AD_REQUEST');
   uc.forEach(auc => {
@@ -584,10 +565,18 @@ function getTargetingData(uc, c, us, a) {
   return targetingData;
 }
 
+export function initAnalytics() {
+  getGlobal()?.enableAnalytics({
+    provider: 'browsi',
+    options: {}
+  })
+}
+
 function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   _moduleParams.siteKey = moduleConfig.params.siteKey || moduleConfig.params.sitekey;
   _moduleParams.pubKey = moduleConfig.params.pubKey || moduleConfig.params.pubkey;
+  initAnalytics();
   setTimestamp();
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     sendModuleInitEvent();

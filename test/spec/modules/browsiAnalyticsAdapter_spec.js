@@ -5,11 +5,14 @@ import { EVENTS } from 'src/constants.js';
 import { server } from 'test/mocks/xhr.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import * as utils from 'src/utils.js';
+import { setStaticData, getStaticData } from 'modules/browsiAnalyticsAdapter';
 
 let events = require('src/events');
 
 describe('browsi analytics adapter', function () {
+  const timestamp = 1740559971388;
   const auctionId = 'abe18da6-cee1-438b-9013-dc5a62c9d4a8';
+
   const auctionEnd = {
     'auctionId': auctionId,
     'timestamp': 1740559969178,
@@ -149,6 +152,7 @@ describe('browsi analytics adapter', function () {
     'sk': 'site_key',
   }
   const dataSet1 = {
+    moduleName: 'browsi',
     pvid: '123456',
     d: 'MOBILE',
     g: 'IL',
@@ -159,16 +163,16 @@ describe('browsi analytics adapter', function () {
     t: 1740559969178
   }
   const dataSet2 = {
-    pvid: '654321',
+    moduleName: 'browsi',
+    pvid: '123456',
     d: 'DESKTOP',
-    g: 'US',
+    g: 'IL',
     aid: 'article_321',
     es: false,
-    sk: ' site_key',
+    sk: 'site_key',
     pk: 'pub_key',
     t: 1740559969178
   }
-  const timestamp = 1740559971388;
 
   let sandbox;
 
@@ -184,19 +188,20 @@ describe('browsi analytics adapter', function () {
   after(() => {
     sandbox.restore();
   });
-  afterEach(() => {
-    browsiAnalytics.disableAnalytics();
-    window.browsitag = undefined;
-  });
 
-  it('should send auction data', function () {
-    window.browsitag = window.browsitag || {};
-    window.browsitag.rtd = dataSet1;
-
+  beforeEach(() => {
     browsiAnalytics.enableAnalytics({
       provider: 'browsi',
       options: { }
     });
+    browsiAnalytics._staticData = undefined;
+  });
+  afterEach(() => {
+    browsiAnalytics.disableAnalytics();
+  });
+
+  it('should send auction data', function () {
+    setStaticData(dataSet1);
 
     events.emit(EVENTS.AUCTION_END, auctionEnd);
     expect(server.requests.length).to.equal(1);
@@ -252,13 +257,7 @@ describe('browsi analytics adapter', function () {
     });
   });
   it('should send auction data without rtm data', function () {
-    window.browsitag = window.browsitag || {};
-    window.browsitag.rtd = dataSet2;
-
-    browsiAnalytics.enableAnalytics({
-      provider: 'browsi',
-      options: { }
-    });
+    setStaticData(dataSet2);
 
     events.emit(EVENTS.AUCTION_END, auctionEnd);
     expect(server.requests.length).to.equal(2);
@@ -268,18 +267,10 @@ describe('browsi analytics adapter', function () {
     expect(body.length).to.equal(1);
 
     const event = body[0];
-    expect(event.ad_units[0].rtm).to.be.undefined;
-    expect(event.ad_units[1].rtm).to.be.undefined;
+    expect(event.ad_units[0].rtm).to.not.exist;
+    expect(event.ad_units[1].rtm).to.not.exist;
   });
   it('should send rtd init event', function () {
-    window.browsitag = window.browsitag || {};
-    window.browsitag.rtd = dataSet1;
-
-    browsiAnalytics.enableAnalytics({
-      provider: 'browsi',
-      options: { }
-    });
-
     events.emit(EVENTS.BROWSI_INIT, browsiInit);
     expect(server.requests.length).to.equal(3);
 
@@ -299,42 +290,28 @@ describe('browsi analytics adapter', function () {
     expect(event.pvid).to.equal(dataSet1.pvid);
     expect(event.pk).to.equal(dataSet1.pk);
     expect(event.sk).to.equal(dataSet1.sk);
-    expect(event.geo).to.equal(dataSet1.g);
-    expect(event.dp).to.equal(dataSet1.d);
     expect(event.pbv).to.equal(getGlobal().version);
     expect(event.url).to.equal(encodeURIComponent(window.location.href));
   });
-  it('should send rtd init event without browsitag.rtd', function () {
-    browsiAnalytics.enableAnalytics({
-      provider: 'browsi',
-      options: { }
-    });
-
-    events.emit(EVENTS.BROWSI_INIT, browsiInit);
-    expect(server.requests.length).to.equal(4);
-
-    const request = server.requests[3];
-    const body = JSON.parse(request.requestBody);
-    expect(body.length).to.equal(1);
-
-    const event = body[0];
-    expect(event.et).to.equal('rtd_init');
-    expect(event.to).to.equal(timestamp - browsiInit.t);
-    expect(event.pvid).to.equal(browsiInit.pvid);
-    expect(event.pk).to.equal(browsiInit.pk);
-    expect(event.sk).to.equal(browsiInit.sk);
-    expect(event.geo).to.be.undefined;
-    expect(event.dp).to.be.undefined;
-    expect(event.pbv).to.equal(getGlobal().version);
-    expect(event.url).to.equal(encodeURIComponent(window.location.href));
-  });
-  it('should not send rtd init event if event module name is not browsi', function () {
-    browsiAnalytics.enableAnalytics({
-      provider: 'browsi',
-      options: { }
-    });
-
+  it('should not send rtd init event if module name is not browsi', function () {
     events.emit(EVENTS.BROWSI_INIT, { moduleName: 'not_browsi' });
-    expect(server.requests.length).to.equal(4);
+    expect(server.requests.length).to.equal(3);
+  });
+  it('should not set static data if module name is not browsi', function () {
+    events.emit(EVENTS.BROWSI_DATA, { moduleName: 'not_browsi' });
+    expect(browsiAnalytics._staticData).to.equal(undefined);
+  });
+  it('should set static data', function () {
+    events.emit(EVENTS.BROWSI_DATA, dataSet2);
+    expect(getStaticData()).to.deep.equal({
+      pvid: '123456',
+      device: 'DESKTOP',
+      geo: 'IL',
+      aid: 'article_321',
+      es: false,
+      sk: 'site_key',
+      pk: 'pub_key',
+      t: 1740559969178
+    });
   });
 });

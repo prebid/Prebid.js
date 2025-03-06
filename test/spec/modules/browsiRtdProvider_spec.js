@@ -4,6 +4,7 @@ import * as events from '../../../src/events';
 import * as sinon from 'sinon';
 import { sendPageviewEvent } from '../../../modules/browsiRtdProvider.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
+import * as Global from '../../../src/prebidGlobal.js';
 
 describe('browsi Real time data sub module', function () {
   const conf = {
@@ -39,6 +40,11 @@ describe('browsi Real time data sub module', function () {
     sandbox = sinon.sandbox.create();
     eventsEmitSpy = sandbox.spy(events, ['emit']);
     timestampStub = sandbox.stub(utils, 'timestamp');
+    sandbox.stub(Global, 'getGlobal').callsFake(() => {
+      return {
+        enableAnalytics: () => { },
+      }
+    });
   });
 
   after(() => {
@@ -455,6 +461,15 @@ describe('browsi Real time data sub module', function () {
     const lahb = { avg: 0.02, smp: 3, time: oneDayAgoTimestemp };
     const rahb = { [currentTimestemp]: { sum: 20, smp: 8 }, [oneDayAgoTimestemp]: { sum: 25, smp: 10 }, };
 
+    const getExpected = function (bus) {
+      return {
+        uahb: bus.uahb?.avg.toFixed(3),
+        rahb: (2.5).toFixed(3),
+        lahb: bus.lahb?.avg.toFixed(3),
+        lbsa: (1).toFixed(3),
+      }
+    }
+
     before(() => {
       timestampStub.returns(currentTimestemp);
       browsiRTD.setTimestamp();
@@ -464,47 +479,47 @@ describe('browsi Real time data sub module', function () {
     });
     it('should return metrics if bus is defined', function () {
       const bus = { uahb, lahb, rahb };
-
       expect(browsiRTD.getHbm(bus)).to.deep.equal({
-        uahb: bus.uahb,
-        rahb: { avg: 2.5 },
-        lahb: { avg: bus.lahb.avg, age: 1 }
+        uahb: getExpected(bus).uahb,
+        rahb: getExpected(bus).rahb,
+        lahb: getExpected(bus).lahb,
+        lbsa: getExpected(bus).lbsa
       });
     });
     it('should return metrics without lahb if its not defined', function () {
       const bus = { uahb, rahb };
-
       expect(browsiRTD.getHbm(bus)).to.deep.equal({
-        uahb: bus.uahb,
-        rahb: { avg: 2.5 },
-        lahb: undefined
+        uahb: getExpected(bus).uahb,
+        rahb: getExpected(bus).rahb,
+        lahb: undefined,
+        lbsa: undefined
       });
     });
     it('should return metrics without rahb if its not defined', function () {
       const bus = { uahb, lahb };
-
       expect(browsiRTD.getHbm(bus)).to.deep.equal({
-        uahb: bus.uahb,
+        uahb: getExpected(bus).uahb,
         rahb: undefined,
-        lahb: { avg: bus.lahb.avg, age: 1 }
+        lahb: getExpected(bus).lahb,
+        lbsa: getExpected(bus).lbsa
       });
     });
     it('should return metrics without uahb if its not defined', function () {
       const bus = { lahb, rahb };
-
       expect(browsiRTD.getHbm(bus)).to.deep.equal({
         uahb: undefined,
-        rahb: { avg: 2.5 },
-        lahb: { avg: bus.lahb.avg, age: 1 }
+        rahb: getExpected(bus).rahb,
+        lahb: getExpected(bus).lahb,
+        lbsa: getExpected(bus).lbsa
       });
     });
     it('should return metrics without rahb if timestamps are older than a week', function () {
       const bus = { uahb, lahb, rahb: { [twoWeekAgoTimestemp]: { sum: 25, smp: 10 } } };
-
       expect(browsiRTD.getHbm(bus)).to.deep.equal({
-        uahb: bus.uahb,
+        uahb: getExpected(bus).uahb,
         rahb: undefined,
-        lahb: { avg: bus.lahb.avg, age: 1 }
+        lahb: getExpected(bus).lahb,
+        lbsa: getExpected(bus).lbsa
       });
     });
   })
