@@ -145,7 +145,7 @@ import {
   logWarn
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
-import {defer, GreedyPromise} from '../../src/utils/promise.js';
+import {defer, PbPromise, delay} from '../../src/utils/promise.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
 import {allConsent, GDPR_GVLIDS} from '../../src/consentHandler.js';
@@ -547,7 +547,7 @@ function addIdData({adUnits, ortb2Fragments}) {
     if (adUnit.bids && isArray(adUnit.bids)) {
       adUnit.bids.forEach(bid => {
         const bidderIds = Object.assign({}, globalIds, getIds(initializedSubmodules.bidder[bid.bidder] ?? {}));
-        const bidderEids = globalEids.concat(ortb2Fragments.bidder[bid.bidder]?.user?.ext?.eids || []);
+        const bidderEids = globalEids.concat(ortb2Fragments.bidder?.[bid.bidder]?.user?.ext?.eids || []);
         if (Object.keys(bidderIds).length > 0) {
           bid.userId = bidderIds;
         }
@@ -561,7 +561,7 @@ function addIdData({adUnits, ortb2Fragments}) {
 
 const INIT_CANCELED = {};
 
-function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
+function idSystemInitializer({mkDelay = delay} = {}) {
   const startInit = defer();
   const startCallbacks = defer();
   let cancel;
@@ -574,7 +574,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       cancel.reject(INIT_CANCELED);
     }
     cancel = defer();
-    return GreedyPromise.race([promise, cancel.promise])
+    return PbPromise.race([promise, cancel.promise])
       .finally(initMetrics.startTiming('userId.total'))
   }
 
@@ -598,7 +598,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
   }
 
   let done = cancelAndTry(
-    GreedyPromise.all([hooksReady, startInit.promise])
+    PbPromise.all([hooksReady, startInit.promise])
       .then(timeConsent)
       .then(checkRefs(() => {
         initSubmodules(initModules, allModules);
@@ -607,7 +607,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       .then(checkRefs(() => {
         const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
+          return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
         }
       }))
   );
@@ -627,7 +627,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       } else {
         events.on(EVENTS.AUCTION_END, function auctionEndHandler() {
           events.off(EVENTS.AUCTION_END, auctionEndHandler);
-          delay(syncDelay).then(startCallbacks.resolve);
+          mkDelay(syncDelay).then(startCallbacks.resolve);
         });
       }
     }
@@ -645,7 +645,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return new GreedyPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
+              return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
             }
           }))
       );
@@ -678,10 +678,10 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {delay = GreedyPromise.timeout, getIds = getUserIdsAsync} = {}) {
-  GreedyPromise.race([
+export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
+  PbPromise.race([
     getIds().catch(() => null),
-    delay(auctionDelay)
+    mkDelay(auctionDelay)
   ]).then(() => {
     addIdData(reqBidsConfigObj);
     uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
@@ -809,7 +809,7 @@ function retryOnCancel(initParams) {
         return Promise.resolve().then(getUserIdsAsync)
       } else {
         logError('Error initializing userId', e)
-        return GreedyPromise.reject(e)
+        return PbPromise.reject(e)
       }
     }
   );
@@ -1199,12 +1199,12 @@ function normalizePromise(fn) {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config, {delay = GreedyPromise.timeout} = {}) {
+export function init(config, {mkDelay = delay} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
   initializedSubmodules = mkPriorityMaps();
-  initIdSystem = idSystemInitializer({delay});
+  initIdSystem = idSystemInitializer({mkDelay});
   if (configListener != null) {
     configListener();
   }
@@ -1239,6 +1239,11 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
     // Add ortb2.user.ext.eids even if 0 submodules are added
     startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd
   }
+}
+
+export function resetUserIds() {
+  config.setConfig({userSync: {}})
+  init(config);
 }
 
 // init config update listener to start the application
