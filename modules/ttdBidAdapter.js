@@ -14,7 +14,7 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2024.07.26';
+const BIDADAPTERVERSION = 'TTD-PREBID-2024.07.28';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -390,12 +390,13 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} an array of validBidRequests
-   * @param {*} bidderRequest
-   * @return {ServerRequest} Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - An array of valid bid requests
+   * @param {*} bidderRequest - The current bidder request object
+   * @returns {ServerRequest} - Info describing the request to the server
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const firstPartyData = bidderRequest.ortb2 || {};
+    const firstPartyImpData = bidderRequest.ortb2Imp || {};
     let topLevel = {
       id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
@@ -418,11 +419,18 @@ export const spec = {
     }
 
     if (firstPartyData && firstPartyData.app) {
-      topLevel.app = firstPartyData.app
+      topLevel.app = firstPartyData.app;
     }
 
-    if (firstPartyData && firstPartyData.pmp) {
-      topLevel.pmp = firstPartyData.pmp
+    if ((firstPartyData && firstPartyData.pmp) || (firstPartyImpData && firstPartyImpData.pmp)) {
+      topLevel.imp.forEach(imp => {
+        imp.pmp = utils.mergeDeep(
+          {},
+          imp.pmp || {},
+          firstPartyData?.pmp || {},
+          firstPartyImpData?.pmp || {}
+        );
+      });
     }
 
     let url = selectEndpoint(bidderRequest.bids[0].params) + bidderRequest.bids[0].params.supplySourceId;
@@ -432,7 +440,10 @@ export const spec = {
       url: url,
       data: topLevel,
       options: {
-        withCredentials: true
+        withCredentials: true,
+        customHeaders: {
+          'x-integration-type': 1,
+        },
       }
     };
 
@@ -457,7 +468,7 @@ export const spec = {
    * - vastXml
    * - dealId
    *
-   * @param {ttdResponseObj} bidResponse A successful response from ttd.
+   * @param {Object} response A successful response from ttd.
    * @param {ServerRequest} serverRequest The result of buildRequests() that lead to this response.
    * @return {Bid[]} An array of formatted bids.
    */
