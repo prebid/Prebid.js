@@ -209,6 +209,7 @@ describe('symitriDapRtdProvider', function() {
         membershipRequest.respond(200, responseHeader, JSON.stringify(membership));
         let tokenWithExpiry = 'Sample-token-with-exp'
         let tokenizeRequest = server.requests[1];
+        tokenizeRequest.requestHeaders['Content-Type'].should.equal('application/json');
         responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
         tokenizeRequest.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
         let data = dapUtils.dapGetRtdObj(membership, cmoduleConfig.params.segtax);
@@ -230,6 +231,7 @@ describe('symitriDapRtdProvider', function() {
         membershipRequest.respond(200, responseHeader, JSON.stringify(encMembership));
         let tokenWithExpiry = 'Sample-token-with-exp'
         let tokenizeRequest = server.requests[1];
+        tokenizeRequest.requestHeaders['Content-Type'].should.equal('application/json');
         responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
         tokenizeRequest.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
         let data = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, emoduleConfig.params.segtax);
@@ -263,6 +265,7 @@ describe('symitriDapRtdProvider', function() {
         }
       );
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       request.respond(200, responseHeader, JSON.stringify('success'));
       expect(submoduleCallback).to.equal(undefined);
     });
@@ -278,6 +281,7 @@ describe('symitriDapRtdProvider', function() {
         }
       );
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       request.respond(400, responseHeader, JSON.stringify('error'));
       expect(submoduleCallback).to.equal(undefined);
     });
@@ -291,6 +295,7 @@ describe('symitriDapRtdProvider', function() {
         }
       );
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       request.respond(200, responseHeader, JSON.stringify('success'));
       expect(submoduleCallback).to.equal(undefined);
     });
@@ -470,6 +475,7 @@ describe('symitriDapRtdProvider', function() {
     it('test dapRefreshToken success response', function () {
       dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone)
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
       request.respond(200, responseHeader, JSON.stringify(sampleCachedToken.token));
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).token).to.be.equal(sampleCachedToken.token);
@@ -478,6 +484,7 @@ describe('symitriDapRtdProvider', function() {
     it('test dapRefreshToken success response with deviceid 100', function () {
       dapUtils.dapRefreshToken(ortb2, esampleConfig, true, onDone)
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       responseHeader['Symitri-DAP-100'] = sampleCachedToken.token;
       request.respond(200, responseHeader, '');
       expect(storage.getDataFromLocalStorage('dap_deviceId100')).to.be.equal(sampleCachedToken.token);
@@ -488,6 +495,7 @@ describe('symitriDapRtdProvider', function() {
       let request = server.requests[0];
       let tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw'
       responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       request.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).expires_at).to.be.equal(1643830359);
     });
@@ -496,6 +504,7 @@ describe('symitriDapRtdProvider', function() {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       request.respond(400, responseHeader, 'error');
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).expires_at).to.be.equal(cacheExpiry);// Since the expiry is same, the token is not updated in the cache
     });
@@ -599,6 +608,7 @@ describe('symitriDapRtdProvider', function() {
       let expiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
       dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       let sampleSSID = 'Test_SSID_Spec';
       responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
       responseHeader['Symitri-DAP-SS-ID'] = sampleSSID;
@@ -611,6 +621,7 @@ describe('symitriDapRtdProvider', function() {
       storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'))
       dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
+      request.requestHeaders['Content-Type'].should.equal('application/json');
       let ssidHeader = request.requestHeaders['Symitri-DAP-SS-ID'];
       responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
       request.respond(200, responseHeader, '');

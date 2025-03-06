@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
+import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -60,8 +61,10 @@ export const spec = {
       pageTitle: getPageTitle().slice(0, 300),
       pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
+      networkQuality: getNetworkQuality(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
+      domComplexity: getDomComplexity(document),
       device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
@@ -244,33 +247,14 @@ function getConnectionDownLink(nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
-function getTimeToFirstByte(win) {
-  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
+function getNetworkQuality(navigator) {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
-  const ttfbWithTimingV2 = performance &&
-    typeof performance.getEntriesByType === 'function' &&
-    Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
-    performance.getEntriesByType('navigation')[0] &&
-    performance.getEntriesByType('navigation')[0].responseStart &&
-    performance.getEntriesByType('navigation')[0].requestStart &&
-    performance.getEntriesByType('navigation')[0].responseStart > 0 &&
-    performance.getEntriesByType('navigation')[0].requestStart > 0 &&
-    Math.round(
-      performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
-    );
+  return connection?.effectiveType ?? '';
+}
 
-  if (ttfbWithTimingV2) {
-    return ttfbWithTimingV2.toString();
-  }
-
-  const ttfbWithTimingV1 = performance &&
-    performance.timing.responseStart &&
-    performance.timing.requestStart &&
-    performance.timing.responseStart > 0 &&
-    performance.timing.requestStart > 0 &&
-    performance.timing.responseStart - performance.timing.requestStart;
-
-  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+function getDomComplexity(document) {
+  return document?.querySelectorAll('*')?.length ?? -1;
 }
 
 function findGdprStatus(gdprApplies, gdprData) {

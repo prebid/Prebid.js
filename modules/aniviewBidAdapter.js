@@ -48,6 +48,7 @@ const converter = ortbConverter({
 
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
+    const replacements = context.bidRequests[0]?.params?.replacements;
 
     mergeDeep(request, {
       ext: {
@@ -56,7 +57,11 @@ const converter = ortbConverter({
           pbv: '$prebid.version$',
         }
       }
-    })
+    });
+
+    if (isPlainObject(replacements)) {
+      mergeDeep(request, { ext: { [BIDDER_CODE]: { replacements } } });
+    }
 
     return request;
   },
@@ -81,6 +86,18 @@ const converter = ortbConverter({
     }
 
     mergeDeep(prebidBid, { meta: { advertiserDomains: bid.adomain || [] } });
+
+    if (bid.ext?.aniview) {
+      prebidBid.meta.aniview = bid.ext.aniview
+
+      if (prebidBid.meta.aniview.tag) {
+        try {
+          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag)
+        } catch {
+          // Ignore the error
+        }
+      }
+    }
 
     if (isVideoType(mediaType)) {
       if (bidRequest.mediaTypes.video.context === 'outstream') {

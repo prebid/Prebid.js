@@ -1,4 +1,4 @@
-import {GreedyPromise} from './utils/promise.js';
+import {PbPromise} from './utils/promise.js';
 import {createInvisibleIframe} from './utils.js';
 import {RENDERER} from '../libraries/creative-renderer-display/renderer.js';
 import {hook} from './hook.js';
@@ -12,7 +12,7 @@ export const getCreativeRenderer = (function() {
   return function (bidResponse) {
     const src = getCreativeRendererSource(bidResponse);
     if (!renderers.hasOwnProperty(src)) {
-      renderers[src] = new GreedyPromise((resolve) => {
+      renderers[src] = new PbPromise((resolve) => {
         const iframe = createInvisibleIframe();
         iframe.srcdoc = `<script>${src}</script>`;
         iframe.onload = () => resolve(iframe.contentWindow.render);
