@@ -131,6 +131,12 @@ module.exports = {
             '**/src/adloader.js'
           ]
         }
+      ],
+      'no-restricted-properties': [
+        'error', {
+          property: "getBoundingClientRect",
+          message: "Please use libraries/percentInView getBoundingBox fn instead"
+        }
       ]
     }
   }])
