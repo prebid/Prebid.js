@@ -50,6 +50,26 @@ describe('pbjs -> ortb banner conversion', () => {
       }
     },
     {
+      t: 'banner with format',
+      request: {
+        mediaTypes: {
+          banner: {
+            sizes: ['should be ignored']
+          }
+        },
+        ortb2Imp: {
+          banner: {
+            format: [{w: 123, h: 321}, {wratio: 2, hratio: 1}]
+          }
+        },
+      },
+      imp: {
+        banner: {
+          topframe: 0
+        }
+      }
+    },
+    {
       t: 'multi size banner',
       request: {
         mediaTypes: {
