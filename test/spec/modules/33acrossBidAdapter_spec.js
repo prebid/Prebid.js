@@ -35,13 +35,10 @@ describe('33acrossBidAdapter:', function () {
           ttx: {
             w: 1024,
             h: 728,
-            pxr: 2,
             vp: {
               w: 800,
               h: 600
-            },
-            ah: 500,
-            mtp: 0
+            }
           }
         },
         sua: {
@@ -53,12 +50,12 @@ describe('33acrossBidAdapter:', function () {
             brand: 'macOS',
             version: ['11', '6', '8']
           },
-          model: '',
           mobile: 0
         }
       },
       id: 'r1',
       regs: {
+        coppa: 0,
         ext: {
           gdpr: 0
         }
@@ -176,9 +173,10 @@ describe('33acrossBidAdapter:', function () {
       });
       Object.assign(ttxRequest, {
         regs: {
+          coppa: 0,
           ext: Object.assign(
             {},
-            ttxRequest.regs.ext,
+            ttxRequest.regs?.ext,
             { gdpr }
           )
         }
@@ -189,9 +187,10 @@ describe('33acrossBidAdapter:', function () {
     this.withUspConsent = (consent) => {
       Object.assign(ttxRequest, {
         regs: {
+          coppa: 0,
           ext: Object.assign(
             {},
-            ttxRequest.regs.ext,
+            ttxRequest.regs?.ext,
             { us_privacy: consent }
           )
         }
@@ -211,12 +210,10 @@ describe('33acrossBidAdapter:', function () {
     this.withGppConsent = (consentString, applicableSections) => {
       Object.assign(ttxRequest, {
         regs: {
+          coppa: 0,
           gpp: consentString,
           gpp_sid: applicableSections,
-          ext: Object.assign(
-            {},
-            ttxRequest.regs.ext
-          )
+          ...(ttxRequest.regs?.ext ? { ext: ttxRequest.regs.ext } : {})
         }
       });
 
@@ -569,47 +566,26 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('banner validation', function() {
-      it('returns true when banner mediaType does not exist', function() {
-        const bid = {
-          bidder: '33across',
-          params: {
-            siteId: 'cxBE0qjUir6iopaKkGJozW'
-          }
-        };
-
-        expect(spec.isBidRequestValid(bid)).to.be.true;
-      });
-
-      it('returns true when banner sizes are defined', function() {
-        const bid = {
-          bidder: '33across',
-          mediaTypes: {
-            banner: {
-              sizes: [[250, 300]]
+      context('when banner mediaType does not exist', function() {
+        it('returns true', function() {
+          const bid = {
+            bidder: '33across',
+            params: {
+              siteId: 'cxBE0qjUir6iopaKkGJozW'
             }
-          },
-          params: {
-            siteId: 'cxBE0qjUir6iopaKkGJozW'
-          }
-        };
+          };
 
-        expect(spec.isBidRequestValid(bid)).to.be.true;
+          expect(spec.isBidRequestValid(bid)).to.be.true;
+        });
       });
 
-      it('returns false when banner sizes are invalid', function() {
-        const invalidSizes = [
-          undefined,
-          '16:9',
-          300,
-          'foo'
-        ];
-
-        invalidSizes.forEach((sizes) => {
+      context('when banner sizes are defined', function() {
+        it('returns true', function() {
           const bid = {
             bidder: '33across',
             mediaTypes: {
               banner: {
-                sizes
+                sizes: [[250, 300]]
               }
             },
             params: {
@@ -617,7 +593,34 @@ describe('33acrossBidAdapter:', function () {
             }
           };
 
-          expect(spec.isBidRequestValid(bid)).to.be.false;
+          expect(spec.isBidRequestValid(bid)).to.be.true;
+        });
+      });
+
+      context('when banner sizes are invalid', function() {
+        it('returns false', function() {
+          const invalidSizes = [
+            undefined,
+            '16:9',
+            300,
+            'foo'
+          ];
+
+          invalidSizes.forEach((sizes) => {
+            const bid = {
+              bidder: '33across',
+              mediaTypes: {
+                banner: {
+                  sizes
+                }
+              },
+              params: {
+                siteId: 'cxBE0qjUir6iopaKkGJozW'
+              }
+            };
+
+            expect(spec.isBidRequestValid(bid)).to.be.false;
+          });
         });
       });
     });
@@ -641,125 +644,143 @@ describe('33acrossBidAdapter:', function () {
         };
       });
 
-      it('returns true when video mediaType does not exist', function() {
-        const bid = {
-          bidder: '33across',
-          params: {
-            siteId: `${SITE_ID}`
-          }
-        };
+      context('when video mediaType does not exist', function() {
+        it('returns true', function() {
+          const bid = {
+            bidder: '33across',
+            params: {
+              siteId: `${SITE_ID}`
+            }
+          };
 
-        expect(spec.isBidRequestValid(bid)).to.be.true;
+          expect(spec.isBidRequestValid(bid)).to.be.true;
+        });
       });
 
-      it('returns true when valid video mediaType is defined', function() {
-        expect(spec.isBidRequestValid(this.bid)).to.be.true;
+      context('when valid video mediaType is defined', function() {
+        it('returns true', function() {
+          expect(spec.isBidRequestValid(this.bid)).to.be.true;
+        });
       });
 
-      it('returns false when video context is not defined', function() {
-        delete this.bid.mediaTypes.video.context;
+      context('when video context is not defined', function() {
+        it('returns false', function() {
+          delete this.bid.mediaTypes.video.context;
 
-        expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      });
-
-      it('returns false when video playserSize is invalid', function() {
-        const invalidSizes = [
-          undefined,
-          '16:9',
-          300,
-          'foo'
-        ];
-
-        invalidSizes.forEach((playerSize) => {
-          this.bid.mediaTypes.video.playerSize = playerSize;
           expect(spec.isBidRequestValid(this.bid)).to.be.false;
         });
       });
 
-      it('returns false when video mimes is invalid', function() {
-        const invalidMimes = [
-          undefined,
-          'foo',
-          1,
-          []
-        ]
+      context('when video player size is invalid', function() {
+        it('returns false', function() {
+          const invalidSizes = [
+            undefined,
+            '16:9',
+            300,
+            'foo'
+          ];
 
-        invalidMimes.forEach((mimes) => {
-          this.bid.mediaTypes.video.mimes = mimes;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        })
-      });
-
-      it('returns false when video protocols is invalid', function() {
-        const invalidMimes = [
-          undefined,
-          'foo',
-          1,
-          []
-        ]
-
-        invalidMimes.forEach((protocols) => {
-          this.bid.mediaTypes.video.protocols = protocols;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        })
-      });
-
-      it('returns false when video placement is invalid', function() {
-        const invalidPlacement = [
-          [],
-          '1',
-          {},
-          'foo'
-        ];
-
-        invalidPlacement.forEach((placement) => {
-          this.bid.mediaTypes.video.plcmt = placement;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        });
-
-        invalidPlacement.forEach((placement) => {
-          this.bid.mediaTypes.video.placement = placement;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
+          invalidSizes.forEach((playerSize) => {
+            this.bid.mediaTypes.video.playerSize = playerSize;
+            expect(spec.isBidRequestValid(this.bid)).to.be.false;
+          });
         });
       });
 
-      it('returns false when video startdelay is invalid for instream context', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar']})
-            .build()
-        );
+      context('when video mimes is invalid', function() {
+        it('returns false', function() {
+          const invalidMimes = [
+            undefined,
+            'foo',
+            1,
+            []
+          ]
 
-        const invalidStartdelay = [
-          [],
-          '1',
-          {},
-          'foo'
-        ];
-
-        invalidStartdelay.forEach((startdelay) => {
-          bidRequests[0].mediaTypes.video.startdelay = startdelay;
-          expect(spec.isBidRequestValid(bidRequests[0])).to.be.false;
+          invalidMimes.forEach((mimes) => {
+            this.bid.mediaTypes.video.mimes = mimes;
+            expect(spec.isBidRequestValid(this.bid)).to.be.false;
+          })
         });
       });
 
-      it('returns true when video startdelay is invalid for outstream context', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar']})
-            .build()
-        );
+      context('when video protocols is invalid', function() {
+        it('returns false', function() {
+          const invalidMimes = [
+            undefined,
+            'foo',
+            1,
+            []
+          ]
 
-        const invalidStartdelay = [
-          [],
-          '1',
-          {},
-          'foo'
-        ];
+          invalidMimes.forEach((protocols) => {
+            this.bid.mediaTypes.video.protocols = protocols;
+            expect(spec.isBidRequestValid(this.bid)).to.be.false;
+          })
+        });
+      });
 
-        invalidStartdelay.forEach((startdelay) => {
-          bidRequests[0].mediaTypes.video.startdelay = startdelay;
-          expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
+      context('when video placement is invalid', function() {
+        it('returns false', function() {
+          const invalidPlacement = [
+            [],
+            '1',
+            {},
+            'foo'
+          ];
+
+          invalidPlacement.forEach((placement) => {
+            this.bid.mediaTypes.video.plcmt = placement;
+            expect(spec.isBidRequestValid(this.bid)).to.be.false;
+          });
+
+          invalidPlacement.forEach((placement) => {
+            this.bid.mediaTypes.video.placement = placement;
+            expect(spec.isBidRequestValid(this.bid)).to.be.false;
+          });
+        });
+      });
+
+      context('when video start delay is invalid for instream context', function() {
+        it('returns false', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar']})
+              .build()
+          );
+
+          const invalidStartdelay = [
+            [],
+            '1',
+            {},
+            'foo'
+          ];
+
+          invalidStartdelay.forEach((startdelay) => {
+            bidRequests[0].mediaTypes.video.startdelay = startdelay;
+            expect(spec.isBidRequestValid(bidRequests[0])).to.be.false;
+          });
+        });
+      });
+
+      context('when video start delay is invalid for outstream context', function() {
+        it('returns true', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar']})
+              .build()
+          );
+
+          const invalidStartdelay = [
+            [],
+            '1',
+            {},
+            'foo'
+          ];
+
+          invalidStartdelay.forEach((startdelay) => {
+            bidRequests[0].mediaTypes.video.startdelay = startdelay;
+            expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
+          });
         });
       });
     })
@@ -1252,6 +1273,7 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
+
         const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
@@ -1395,11 +1417,6 @@ describe('33acrossBidAdapter:', function () {
           },
           {
             'ver': '1.0',
-            'complete': 1,
-            'nodes': []
-          },
-          {
-            'ver': '1.0',
             'complete': '1',
             'nodes': [
               {
@@ -1534,12 +1551,10 @@ describe('33acrossBidAdapter:', function () {
               .withVideo({context: 'instream', startdelay: -2})
               .build()
           );
-
           const ttxRequest = new TtxRequestBuilder()
             .withVideo({startdelay: -2})
             .withProduct('instream')
             .build();
-
           const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
           expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
@@ -1663,25 +1678,27 @@ describe('33acrossBidAdapter:', function () {
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('builds default inview request when product is set as such', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
+      context('when product is set as such', function() {
+        it('builds default inview request', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withBanner()
+              .withProduct('inview')
+              .build()
+          );
+
+          const ttxRequest = new TtxRequestBuilder()
             .withBanner()
             .withProduct('inview')
-            .build()
-        );
+            .build();
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withBanner()
-          .withProduct('inview')
-          .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
-
-        validateBuiltServerRequest(builtServerRequest, serverRequest);
+          validateBuiltServerRequest(builtServerRequest, serverRequest);
+        });
       });
     });
 
@@ -1708,77 +1725,83 @@ describe('33acrossBidAdapter:', function () {
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('builds siab request with banner and outstream video even when context is instream', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
+      context('when context is instream', function() {
+        it('builds siab request with banner and outstream video even', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withBanner()
+              .withVideo({context: 'instream'})
+              .build()
+          );
+
+          const ttxRequest = new TtxRequestBuilder()
             .withBanner()
-            .withVideo({context: 'instream'})
-            .build()
-        );
+            .withVideo()
+            .withProduct('siab')
+            .build();
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withBanner()
-          .withVideo()
-          .withProduct('siab')
-          .build();
+          ttxRequest.imp[0].video.plcmt = 2;
 
-        ttxRequest.imp[0].video.plcmt = 2;
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
-
-        validateBuiltServerRequest(builtServerRequest, serverRequest);
+          validateBuiltServerRequest(builtServerRequest, serverRequest);
+        });
       });
     });
 
     context('when price floor module is enabled for video in bidRequest', function() {
-      it('does not set any bidfloors in video if there is no floor', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'outstream'})
-            .build()
-        );
+      context('and there is no floor', function() {
+        it('does not set any bidfloors in video', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'outstream'})
+              .build()
+          );
 
-        bidRequests[0].getFloor = () => ({});
+          bidRequests[0].getFloor = () => ({});
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withVideo()
-          .withProduct()
-          .build();
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo()
+            .withProduct()
+            .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-        expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
+          expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
+        });
       });
 
-      it('sets bidfloors in video if there is a floor', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'outstream'})
-            .build()
-        );
-
-        bidRequests[0].getFloor = ({size, currency, mediaType}) => {
-          const floor = (mediaType === 'video') ? 1.0 : 0.10
-          return (
-            {
-              floor,
-              currency: 'USD'
-            }
+      context('when there is a floor', function() {
+        it('sets bidfloors in video', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'outstream'})
+              .build()
           );
-        };
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withVideo()
-          .withProduct()
-          .withFloors('video', [ 1.0 ])
-          .build();
+          bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+            const floor = (mediaType === 'video') ? 1.0 : 0.10
+            return (
+              {
+                floor,
+                currency: 'USD'
+              }
+            );
+          };
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo()
+            .withProduct()
+            .withFloors('video', [ 1.0 ])
+            .build();
 
-        expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
+        });
       });
     });
 
@@ -1843,51 +1866,43 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when user IDs do not exist under the userIdAsEids field in bidRequest as a non-empty Array', function() {
+    context('when user IDs are an empty array', function() {
       it('does not pass user IDs in the bidRequest ORTB', function() {
-        const eidsScenarios = [
-          'foo',
-          [],
-          {foo: 1}
-        ];
-
-        eidsScenarios.forEach((eids) => {
-          const bidRequests = (
-            new BidRequestsBuilder()
-              .withUserIds(eids)
-              .build()
-          );
-          bidRequests.userId = {
-            'vendorx': {
-              'source': 'x-device-vendor-x.com',
-              'uids': [
-                {
-                  'id': 'yyy',
-                  'atype': 1
-                },
-                {
-                  'id': 'zzz',
-                  'atype': 1
-                },
-                {
-                  'id': 'DB700403-9A24-4A4B-A8D5-8A0B4BE777D2',
-                  'atype': 2
-                }
-              ],
-              'ext': {
-                'foo': 'bar'
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withUserIds([])
+            .build()
+        );
+        bidRequests.userId = {
+          'vendorx': {
+            'source': 'x-device-vendor-x.com',
+            'uids': [
+              {
+                'id': 'yyy',
+                'atype': 1
+              },
+              {
+                'id': 'zzz',
+                'atype': 1
+              },
+              {
+                'id': 'DB700403-9A24-4A4B-A8D5-8A0B4BE777D2',
+                'atype': 2
               }
+            ],
+            'ext': {
+              'foo': 'bar'
             }
-          };
+          }
+        };
 
-          const ttxRequest = new TtxRequestBuilder()
-            .withProduct()
-            .build();
+        const ttxRequest = new TtxRequestBuilder()
+          .withProduct()
+          .build();
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-          expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
-        });
+        expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
       });
     });
 
