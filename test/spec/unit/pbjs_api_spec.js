@@ -2526,56 +2526,56 @@ describe('Unit: Prebid Module', function () {
             });
             const EXPDIR = ['ortb2Imp.banner.expdir', 'mediaTypes.banner.expdir'];
             EXPDIR.forEach(prop => {
-              it(`should make ${prop} avaliable under both ${EXPDIR.join(' and ')}`, () => {
+              it(`should make ${prop} avaliable under both ${EXPDIR.join(' and ')}`, async () => {
                 au.mediaTypes.banner.sizes = [1, 2];
                 deepSetValue(au, prop, [1, 2]);
-                $$PREBID_GLOBAL$$.requestBids({
+                await runAuction({
                   adUnits: [au]
-                });
+                })
                 EXPDIR.forEach(dest => {
                   expect(deepAccess(auctionArgs.adUnits[0], dest)).to.eql([1, 2]);
                 });
               })
             });
             ['ortb2Imp.banner.format', 'mediaTypes.banner.format'].forEach(prop => {
-              it(`should accept ${prop} instead of sizes`, () => {
+              it(`should accept ${prop} instead of sizes`, async () => {
                 deepSetValue(au, prop, [{w: 123, h: 321}, {w: 444, h: 555}]);
-                $$PREBID_GLOBAL$$.requestBids({
+                await runAuction({
                   adUnits: [au]
-                });
+                })
                 expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[123, 321], [444, 555]]);
               });
 
-              it(`should make ${prop} available under both mediaTypes.banner and ortb2Imp.format`, () => {
+              it(`should make ${prop} available under both mediaTypes.banner and ortb2Imp.format`, async () => {
                 const format = [{w: 123, h: 321}];
                 deepSetValue(au, prop, format);
-                $$PREBID_GLOBAL$$.requestBids({
+                await runAuction({
                   adUnits: [au]
-                });
+                })
                 expect(auctionArgs.adUnits[0].mediaTypes.banner.format).to.deep.equal(format);
                 expect(auctionArgs.adUnits[0].ortb2Imp.banner.format).to.deep.equal(format);
               })
 
-              it(`should transform wratio/hratio from ${prop} into placeholder sizes`, () => {
+              it(`should transform wratio/hratio from ${prop} into placeholder sizes`, async () => {
                 deepSetValue(au, prop, [{w: 123, h: 321}, {wratio: 2, hratio: 1}]);
-                $$PREBID_GLOBAL$$.requestBids({
+                await runAuction({
                   adUnits: [au]
-                });
+                })
                 expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[123, 321], [2, 1]]);
               });
-              it(`should ignore ${prop} elements that specify both w/h and wratio/hratio`, () => {
+              it(`should ignore ${prop} elements that specify both w/h and wratio/hratio`, async () => {
                 deepSetValue(au, prop, [{w: 333, hratio: 2}, {w: 123, h: 321}]);
-                $$PREBID_GLOBAL$$.requestBids({
+                await runAuction({
                   adUnits: [au]
-                });
+                })
                 expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[123, 321]]);
               });
 
-              it('should ignore incomplete formats', () => {
+              it('should ignore incomplete formats', async () => {
                 deepSetValue(au, prop, [{w: 123, h: 321}, {w: 123}, {wratio: 2}]);
-                $$PREBID_GLOBAL$$.requestBids({
+                await runAuction({
                   adUnits: [au]
-                });
+                })
                 expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[123, 321]]);
               })
             });
