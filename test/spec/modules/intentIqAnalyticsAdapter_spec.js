@@ -21,12 +21,13 @@ const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
-const USERID_CONFIG = [
+const getUserConfig = () => [
   {
     'name': 'intentIqId',
     'params': {
       'partner': partner,
       'unpack': null,
+      'manualWinReportEnabled': false
     },
     'storage': {
       'type': 'html5',
@@ -79,7 +80,7 @@ describe('IntentIQ tests all', function () {
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
-    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(getUserConfig());
     sinon.stub(events, 'getEvents').returns([]);
     iiqAnalyticsAnalyticsAdapter.enableAnalytics({
       provider: 'iiqAnalytics',
@@ -153,23 +154,24 @@ describe('IntentIQ tests all', function () {
   it('should include adType in payload when present in reportExternalWin event', function () {
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
     const externalWinEvent = { cpm: 1, currency: 'USD', adType: 'banner' };
-    const partnerId = USERID_CONFIG[0].params.partner;
-    USERID_CONFIG[0].params.manualWinReportEnabled = true;
+    const [userConfig] = getUserConfig();
+    userConfig.params.manualWinReportEnabled = true;
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+    const partnerId = userConfig.params.partner;
 
     events.emit(EVENTS.BID_REQUESTED);
 
     window[`intentIqAnalyticsAdapter_${partnerId}`].reportExternalWin(externalWinEvent);
-
-    expect(server.requests.length).to.be.above(0);
 
     const request = server.requests[0];
     const urlParams = new URL(request.url);
     const payloadEncoded = urlParams.searchParams.get('payload');
     const payloadDecoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
 
+    expect(server.requests.length).to.be.above(0);
     expect(payloadDecoded).to.have.property('adType', externalWinEvent.adType);
-    // reset iiqConfig.params.manualWinReportEnabled
-    USERID_CONFIG[0].params.manualWinReportEnabled = false;
   });
 
   it('should send report to report-gdpr address if gdpr is detected', function () {
@@ -313,7 +315,7 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should not send request if the browser is in blacklist (chrome)', function () {
-    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    const USERID_CONFIG_BROWSER = [...getUserConfig()];
     USERID_CONFIG_BROWSER[0].params.browserBlackList = 'ChrOmE';
 
     config.getConfig.restore();
@@ -327,7 +329,7 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should send request if the browser is not in blacklist (safari)', function () {
-    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    const USERID_CONFIG_BROWSER = [...getUserConfig()];
     USERID_CONFIG_BROWSER[0].params.browserBlackList = 'chrome,firefox';
 
     config.getConfig.restore();
