@@ -111,9 +111,10 @@ const getRendererForBid = (bidRequest, bidResponse) => {
             autoplay: isAutoplay,
             muted: isMuted,
             controls: true,
+            resizeMode: 'auto',
             styling: { progressbarColor: '#000' },
-            videoHeight: Math.min(doc.defaultView?.innerWidth / 16 * 9, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_HEIGHT),
-            videoVerticalHeight: Math.min(doc.defaultView?.innerWidth / 9 * 16, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_WIDTH),
+            videoHeight: Math.max(doc.defaultView?.innerWidth / 16 * 9, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_HEIGHT),
+            videoVerticalHeight: Math.max(doc.defaultView?.innerWidth / 9 * 16, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_WIDTH),
           };
           const GP = doc.defaultView.GoldPlayer;
           const player = new GP(options);
