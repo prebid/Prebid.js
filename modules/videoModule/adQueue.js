@@ -9,7 +9,7 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
     videoCore.onEvents([SETUP_COMPLETE], onSetupComplete, divId);
   }
 
-  function queueAd(adTagUrl, divId, options) {
+  function queueAd(adTagUrl, divId, options = {}) {
     const queue = storage[divId];
     if (queue) {
       queue.push({adTagUrl, options});
@@ -53,7 +53,11 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
 
   function loadAd(divId, adTagUrl, options) {
     triggerEvent(AUCTION_AD_LOAD_ATTEMPT, adTagUrl, options);
-    videoCore.setAdTagUrl(adTagUrl, divId, options);
+    if (options.prefetchedVastXml) {
+      videoCore.setAdXml(options.prefetchedVastXml, divId, options);
+    } else {
+      videoCore.setAdTagUrl(adTagUrl, divId, options);
+    }
   }
 
   function triggerEvent(eventName, adTagUrl, options) {
