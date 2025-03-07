@@ -16,7 +16,7 @@ Analytics exchange for UNIQUEST
 {
   provider: 'uniquest',
   options: {
-    sid: 'sid_0001',
+    sid: 'ONhFoaQn',
   }
 }
 ```

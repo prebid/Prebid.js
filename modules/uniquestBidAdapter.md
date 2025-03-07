@@ -27,7 +27,7 @@ var adUnits = [
     bids: [{
       bidder: 'uniquest',
       params: {
-        sid: 'sid_0001',
+        sid: 'ONhFoaQn', // device is smartphone only
       }
     }]
   }
