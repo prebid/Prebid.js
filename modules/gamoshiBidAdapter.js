@@ -83,8 +83,8 @@ export const spec = {
     return validBidRequests.map(bidRequest => {
       const {adUnitCode, mediaTypes, params, sizes, bidId} = bidRequest;
 
-      const bidder_code = bidderRequest.bidderCode || 'gamoshi';
-      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidder_code];
+      const bidderCode = bidderRequest.bidderCode || 'gamoshi';
+      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidderCode];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
         id: bidderRequest.bidderRequestId,
