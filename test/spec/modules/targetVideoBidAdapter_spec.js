@@ -1,9 +1,15 @@
 import { spec } from '../../../modules/targetVideoBidAdapter.js'
+import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
+import { deepClone } from '../../../src/utils.js';
 
 describe('TargetVideo Bid Adapter', function() {
   const bidder = 'targetVideo';
   const params = {
     placementId: 12345,
+  };
+
+  const defaultBidderRequest = {
+    bidderRequestId: 'mock-uuid',
   };
 
   const bannerRequest = [{
@@ -37,7 +43,7 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test the BANNER request processing function', function() {
-    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const request = spec.buildRequests(bannerRequest, defaultBidderRequest);
     expect(request).to.not.be.empty;
 
     const payload = JSON.parse(request.data);
@@ -52,7 +58,7 @@ describe('TargetVideo Bid Adapter', function() {
   });
 
   it('Test the VIDEO request processing function', function() {
-    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    const request = spec.buildRequests(videoRequest, defaultBidderRequest);
     expect(request).to.not.be.empty;
 
     const payload = JSON.parse(request[0].data);
@@ -63,6 +69,29 @@ describe('TargetVideo Bid Adapter', function() {
     });
     expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal(12345);
   })
+
+  it('Test the VIDEO request schain sending', function() {
+    const globalSchain = {
+      ver: '1.0',
+      complete: 1,
+      nodes: [{
+        asi: 'examplewebsite.com',
+        sid: '00001',
+        hp: 1
+      }]
+    };
+
+    let videoRequestCloned = deepClone(videoRequest);
+    videoRequestCloned[0].schain = globalSchain;
+
+    const request = spec.buildRequests(videoRequestCloned, defaultBidderRequest);
+    expect(request).to.not.be.empty;
+
+    const payload = JSON.parse(request[0].data);
+    expect(payload).to.not.be.empty;
+    expect(payload.source.ext.schain).to.exist;
+    expect(payload.source.ext.schain).to.deep.equal(globalSchain);
+  });
 
   it('Handle BANNER nobid responses', function() {
     const responseBody = {
@@ -169,7 +198,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(bid.width).to.equal(640);
     expect(bid.height).to.equal(480);
     expect(bid.currency).to.equal('USD');
-  })
+  });
 
   it('Test BANNER GDPR consent information is present in the request', function() {
     let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
@@ -236,5 +265,24 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.user.ext.consent).to.equal(gdprConsentString);
     expect(payload.regs.ext.us_privacy).to.equal(uspConsentString);
     expect(payload.regs.ext.gdpr).to.equal(1);
+  });
+
+  it('Test userSync have only one object and it should have a property type=iframe', function () {
+    let userSync = spec.getUserSyncs({ iframeEnabled: true });
+    expect(userSync).to.be.an('array');
+    expect(userSync.length).to.be.equal(1);
+    expect(userSync[0]).to.have.property('type');
+    expect(userSync[0].type).to.be.equal('iframe');
+  });
+
+  it('Test userSync valid sync url for iframe', function () {
+    let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, {}, {consentString: 'anyString'});
+    expect(userSync.url).to.contain(SYNC_URL + 'load-cookie.html?endpoint=targetvideo&gdpr=0&gdpr_consent=anyString');
+    expect(userSync.type).to.be.equal('iframe');
+  });
+
+  it('Test userSyncs iframeEnabled=false', function () {
+    let userSyncs = spec.getUserSyncs({iframeEnabled: false});
+    expect(userSyncs).to.have.lengthOf(0);
   });
 });

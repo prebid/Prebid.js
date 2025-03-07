@@ -1,19 +1,23 @@
 import { expect } from 'chai';
 import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
-import * as detectBrowserUtils from '../../../libraries/detectBrowserUtils/detectBrowserUtils';
 import { server } from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
 import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
-import { REPORTER_ID, getReferrer, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
+import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
 import {FIRST_PARTY_KEY, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
+import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/getRefferer.js';
+import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
 
 const partner = 10;
 const defaultData = '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344", "group": "A"}';
 const version = VERSION;
+const REPORT_ENDPOINT = 'https://reports.intentiq.com/report';
+const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
@@ -89,7 +93,8 @@ describe('IntentIQ tests all', function () {
       dataInLs: null,
       eidl: null,
       lsIdsInitialized: false,
-      manualWinReportEnabled: false
+      manualWinReportEnabled: false,
+      domainName: null
     };
     if (iiqAnalyticsAnalyticsAdapter.track.restore) {
       iiqAnalyticsAnalyticsAdapter.track.restore();
@@ -115,15 +120,34 @@ describe('IntentIQ tests all', function () {
 
   it('IIQ Analytical Adapter bid win report', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876/'});
+    const expectedVrref = encodeURIComponent(getWindowLocationStub().href);
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
-    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
+    expect(request.url).to.contain(REPORT_ENDPOINT + '?pid=' + partner + '&mct=1');
+    expect(request.url).to.contain(`&jsver=${version}`);
+    expect(request.url).to.contain(`&vrref=${expectedVrref}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+  });
+
+  it('should send report to report-gdpr address if gdpr is detected', function () {
+    const gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns({ gppString: '{"key1":"value1","key2":"value2"}' });
+    const uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns('1NYN');
+    const gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns({ consentString: 'gdprConsent' });
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+
+    expect(request.url).to.contain(REPORT_ENDPOINT_GDPR);
+    gppStub.restore();
+    uspStub.restore();
+    gdprStub.restore();
   });
 
   it('should initialize with default configurations', function () {
@@ -132,13 +156,15 @@ describe('IntentIQ tests all', function () {
 
   it('should handle BID_WON event with group configuration from local storage', function () {
     localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid", "group": "B"}');
+    const expectedVrref = encodeURIComponent('http://localhost:9876/');
 
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1');
-    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
+    expect(request.url).to.contain(`&jsver=${version}`);
+    expect(request.url).to.contain(`&vrref=${expectedVrref}`);
     expect(request.url).to.contain('iiqid=testpcid');
   });
 
@@ -153,10 +179,36 @@ describe('IntentIQ tests all', function () {
     const dataToSend = preparePayload(wonRequest);
     const base64String = btoa(JSON.stringify(dataToSend));
     const payload = `[%22${base64String}%22]`;
-    expect(request.url).to.equal(
-      `https://reports.intentiq.com/report?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&vrref=${getReferrer()}&source=pbjs&payload=${payload}&uh=`
+    const expectedUrl = appendVrrefAndFui(REPORT_ENDPOINT +
+      `?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&payload=${payload}&uh=&gdpr=0`, iiqAnalyticsAnalyticsAdapter.initOptions.domainName
     );
+    expect(request.url).to.equal(expectedUrl);
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
+  });
+
+  it('should send CMP data in report if available', function () {
+    const uspData = '1NYN';
+    const gppData = { gppString: '{"key1":"value1","key2":"value2"}' };
+    const gdprData = { consentString: 'gdprConsent' };
+
+    const gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns(gppData);
+    const uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns(uspData);
+    const gdprStub = sinon.stub(gdprDataHandler, 'getConsentData').returns(gdprData);
+
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+
+    expect(request.url).to.contain(`&us_privacy=${encodeURIComponent(uspData)}`);
+    expect(request.url).to.contain(`&gpp=${encodeURIComponent(gppData.gppString)}`);
+    expect(request.url).to.contain(`&gdpr_consent=${encodeURIComponent(gdprData.consentString)}`);
+    expect(request.url).to.contain(`&gdpr=1`);
+    gppStub.restore();
+    uspStub.restore();
+    gdprStub.restore();
   });
 
   it('should not send request if manualWinReportEnabled is true', function () {
@@ -250,8 +302,69 @@ describe('IntentIQ tests all', function () {
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
     expect(request.url).to.contain(`https://reports.intentiq.com/report?pid=${partner}&mct=1`);
-    expect(request.url).to.contain(`&jsver=${version}&vrref=${encodeURIComponent('http://localhost:9876/')}`);
+    expect(request.url).to.contain(`&jsver=${version}`);
+    expect(request.url).to.contain(`&vrref=${encodeURIComponent('http://localhost:9876/')}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+  });
+
+  const testCasesVrref = [
+    {
+      description: 'domainName matches window.top.location.href',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: 'http://example.com/page' } },
+      getWindowLocation: { href: 'http://example.com/page' },
+      domainName: 'example.com',
+      expectedVrref: encodeURIComponent('http://example.com/page'),
+      shouldContainFui: false
+    },
+    {
+      description: 'domainName does not match window.top.location.href',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: 'http://anotherdomain.com/page' } },
+      getWindowLocation: { href: 'http://anotherdomain.com/page' },
+      domainName: 'example.com',
+      expectedVrref: encodeURIComponent('example.com'),
+      shouldContainFui: false
+    },
+    {
+      description: 'domainName is missing, only fui=1 is returned',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: '' } },
+      getWindowLocation: { href: '' },
+      domainName: null,
+      expectedVrref: '',
+      shouldContainFui: true
+    },
+    {
+      description: 'domainName is missing',
+      getWindowSelf: {},
+      getWindowTop: { location: { href: 'http://example.com/page' } },
+      getWindowLocation: { href: 'http://example.com/page' },
+      domainName: null,
+      expectedVrref: encodeURIComponent('http://example.com/page'),
+      shouldContainFui: false
+    },
+  ];
+
+  testCasesVrref.forEach(({ description, getWindowSelf, getWindowTop, getWindowLocation, domainName, expectedVrref, shouldContainFui }) => {
+    it(`should append correct vrref when ${description}`, function () {
+      getWindowSelfStub = sinon.stub(utils, 'getWindowSelf').returns(getWindowSelf);
+      getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns(getWindowTop);
+      getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns(getWindowLocation);
+
+      const url = 'https://reports.intentiq.com/report?pid=10';
+      const modifiedUrl = appendVrrefAndFui(url, domainName);
+      const urlObj = new URL(modifiedUrl);
+
+      const vrref = encodeURIComponent(urlObj.searchParams.get('vrref') || '');
+      const fui = urlObj.searchParams.get('fui');
+
+      expect(vrref).to.equal(expectedVrref);
+      expect(urlObj.searchParams.has('fui')).to.equal(shouldContainFui);
+      if (shouldContainFui) {
+        expect(fui).to.equal('1');
+      }
+    });
   });
 });

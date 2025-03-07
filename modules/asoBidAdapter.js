@@ -17,7 +17,9 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   aliases: [
     {code: 'bcmint'},
-    {code: 'bidgency'}
+    {code: 'bidgency'},
+    {code: 'kuantyx'},
+    {code: 'cordless'}
   ],
 
   isBidRequestValid: bid => {

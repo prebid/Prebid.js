@@ -1,8 +1,8 @@
-import {_each, deepAccess, formatQS, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getAd, getSiteObj} from '../libraries/targetVideoUtils/bidderUtils.js'
-import {GVLID, SOURCE, SYNC_URL, TIME_TO_LIVE, VIDEO_ENDPOINT_URL, VIDEO_PARAMS} from '../libraries/targetVideoUtils/constants.js';
+import {getAd, getSiteObj, getSyncResponse} from '../libraries/targetVideoUtils/bidderUtils.js'
+import {GVLID, SOURCE, TIME_TO_LIVE, VIDEO_ENDPOINT_URL, VIDEO_PARAMS} from '../libraries/targetVideoUtils/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -100,7 +100,9 @@ export const spec = {
       };
 
       if (bidRequests[0].schain) {
-        postBody.schain = bidRequests[0].schain;
+        postBody.source = {
+          ext: { schain: bidRequests[0].schain }
+        };
       }
 
       const params = bid.params;
@@ -178,37 +180,7 @@ export const spec = {
    * Return an array containing an object with the sync type and the constructed URL.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    const params = {
-      endpoint: 'brid'
-    };
-
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      params.gdpr = (gdprConsent.gdprApplies ? 1 : 0);
-      params.gdpr_consent = encodeURIComponent(gdprConsent.consentString || '');
-    }
-
-    // CCPA
-    if (uspConsent && typeof uspConsent === 'string') {
-      params.us_privacy = encodeURIComponent(uspConsent);
-    }
-
-    // GPP Consent
-    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-      params.gpp = encodeURIComponent(gppConsent.gppString);
-      params.gpp_sid = encodeURIComponent(gppConsent?.applicableSections?.join(','));
-    }
-
-    const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
-    let response = [];
-    if (syncOptions.iframeEnabled) {
-      response = [{
-        type: 'iframe',
-        url: SYNC_URL + 'load-cookie.html?' + queryParams
-      }];
-    }
-
-    return response;
+    return getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, 'brid');
   }
 
 }

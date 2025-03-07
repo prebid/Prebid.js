@@ -356,13 +356,20 @@ describe('PubMatic adapter', function () {
     bannerAndVideoBidRequests = [
       {
         code: 'div-banner-video',
+        ortb2Imp: {
+          banner: {
+            pos: 1
+          }
+        },
         mediaTypes: {
           video: {
             playerSize: [640, 480],
-            context: 'instream'
+            context: 'instream',
+            pos: 2
           },
           banner: {
-            sizes: [[300, 250], [300, 600]]
+            sizes: [[300, 250], [300, 600]],
+            pos: 1
           }
         },
         bidder: 'pubmatic',
@@ -2556,9 +2563,9 @@ describe('PubMatic adapter', function () {
           expect(data.user.yob).to.equal(parseInt(multipleMediaRequests[0].params.yob)); // YOB
           expect(data.user.gender).to.equal(multipleMediaRequests[0].params.gender); // Gender
           expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
-  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
-  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
-  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
+  		    expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		    expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		    expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
           expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
           expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
           expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -2621,6 +2628,7 @@ describe('PubMatic adapter', function () {
           expect(data.banner.h).to.equal(250);
           expect(data.banner.format).to.exist;
           expect(data.banner.format.length).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes.length);
+          expect(data.banner.pos).to.equal(1);
 
           // Case: when size is not present in adslo
           bannerAndVideoBidRequests[0].params.adSlot = '/15671365/DMDemo';
@@ -2638,6 +2646,7 @@ describe('PubMatic adapter', function () {
           expect(data.video).to.exist;
           expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);
           expect(data.video.h).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[1]);
+          expect(data.video.pos).to.equal(2);
         });
 
         it('Request params - should handle banner, video and native format in single adunit', function() {
@@ -2652,6 +2661,7 @@ describe('PubMatic adapter', function () {
           expect(data.banner.h).to.equal(250);
           expect(data.banner.format).to.exist;
           expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length);
+          expect(data.banner.pos).to.equal(0);
 
           expect(data.video).to.exist;
           expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);

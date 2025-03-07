@@ -7,6 +7,7 @@ import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
 const COOKIE_DEPRECATION_LABEL = 'test';
+const API_KEY = 'PA-XXXXXX';
 
 describe('Missena Adapter', function () {
   $$PREBID_GLOBAL$$.bidderSettings = {
@@ -17,12 +18,12 @@ describe('Missena Adapter', function () {
   let sandbox = sinon.sandbox.create();
   sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
   sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
+  const viewport = { width: window.top.innerWidth, height: window.top.innerHeight };
 
   const bidId = 'abc';
   const bid = {
     bidder: 'missena',
     bidId: bidId,
-    sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
     ortb2: {
       device: {
@@ -30,7 +31,7 @@ describe('Missena Adapter', function () {
       },
     },
     params: {
-      apiKey: 'PA-34745704',
+      apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
@@ -54,14 +55,14 @@ describe('Missena Adapter', function () {
   const bidWithoutFloor = {
     bidder: 'missena',
     bidId: bidId,
-    sizes: [[1, 1]],
-    mediaTypes: { banner: { sizes: [[1, 1]] } },
+    mediaTypes: { banner: { sizes: [1, 1] } },
     params: {
-      apiKey: 'PA-34745704',
+      apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
     },
   };
+
   const consentString = 'AAAAAAAAA==';
 
   const bidderRequest = {
@@ -155,6 +156,11 @@ describe('Missena Adapter', function () {
       expect(payload.referer_canonical).to.equal('https://canonical');
     });
 
+    it('should send viewport', function () {
+      expect(payload.viewport.width).to.equal(viewport.width);
+      expect(payload.viewport.height).to.equal(viewport.height);
+    });
+
     it('should send gdpr consent information to the request', function () {
       expect(payload.consent_string).to.equal(consentString);
       expect(payload.consent_required).to.equal(true);
@@ -170,6 +176,21 @@ describe('Missena Adapter', function () {
     it('should send the idempotency key', function () {
       expect(window.msna_ik).to.not.equal(undefined);
       expect(payload.ik).to.equal(window.msna_ik);
+    });
+
+    it('should send screen', function () {
+      expect(payload.screen.width).to.equal(screen.width);
+      expect(payload.screen.height).to.equal(screen.height);
+    });
+
+    it('should send size', function () {
+      expect(payload.sizes[0].width).to.equal(1);
+      expect(payload.sizes[0].height).to.equal(1);
+    });
+
+    it('should send single size', function () {
+      expect(payloadNoFloor.sizes[0].width).to.equal(1);
+      expect(payloadNoFloor.sizes[0].height).to.equal(1);
     });
 
     getDataFromLocalStorageStub.restore();
@@ -299,7 +320,7 @@ describe('Missena Adapter', function () {
 
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
-      expect(userSync[0].url).to.be.equal(syncFrameUrl);
+      expect(userSync[0].url).to.be.equal(`${syncFrameUrl}?t=${API_KEY}`);
     });
 
     it('should return empty array when iframeEnabled is false', function () {
@@ -312,7 +333,7 @@ describe('Missena Adapter', function () {
         gdprApplies: true,
         consentString,
       });
-      const expectedUrl = `${syncFrameUrl}?gdpr=1&gdpr_consent=${consentString}`;
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=1&gdpr_consent=${consentString}`;
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
       expect(userSync[0].url).to.be.equal(expectedUrl);
@@ -322,7 +343,7 @@ describe('Missena Adapter', function () {
         gdprApplies: false,
         consentString,
       });
-      const expectedUrl = `${syncFrameUrl}?gdpr=0&gdpr_consent=${consentString}`;
+      const expectedUrl = `${syncFrameUrl}?t=${API_KEY}&gdpr=0&gdpr_consent=${consentString}`;
       expect(userSync.length).to.be.equal(1);
       expect(userSync[0].type).to.be.equal('iframe');
       expect(userSync[0].url).to.be.equal(expectedUrl);

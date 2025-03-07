@@ -116,7 +116,8 @@ export const spec = {
           creativeId: '',
           meta: {
             advertiserDomains: bidResponse.adomain,
-            dsa: bidResponse.dsa
+            dsa: bidResponse.dsa,
+            campaignType: bidResponse.campaignType,
           },
           mediaType,
         };
@@ -252,14 +253,14 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
     currency: 'EUR',
     mediaType: mediaType,
     size: '*'
-  });
+  }) || {};
 
   const sizeFloors = sizes.map(size => {
     const floor = bidRequest.getFloor({
       currency: 'EUR',
       mediaType: mediaType,
       size: [size[0], size[1]]
-    });
+    }) || {};
     return {...floor, size};
   });
 

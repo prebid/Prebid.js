@@ -32,6 +32,16 @@ export function detectBrowserFromUserAgent(userAgent) {
     ie: /MSIE|Trident/,
   };
 
+  // Check for Edge first
+  if (browserRegexPatterns.edge.test(userAgent)) {
+    return 'edge';
+  }
+
+  // Check for Opera next
+  if (browserRegexPatterns.opera.test(userAgent)) {
+    return 'opera';
+  }
+
   // Check for Chrome first to avoid confusion with Safari
   if (browserRegexPatterns.chrome.test(userAgent)) {
     return 'chrome';
@@ -54,7 +64,7 @@ export function detectBrowserFromUserAgent(userAgent) {
 
 /**
  * Detects the browser from the NavigatorUAData object
- * @param {NavigatorUAData} userAgentData - The user agent data object from the browser
+ * @param {Object} userAgentData - The user agent data object from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
 export function detectBrowserFromUserAgentData(userAgentData) {
