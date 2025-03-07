@@ -1,10 +1,10 @@
-import { startAuction } from "../../src/prebid";
+import { startAuction } from "../../src/prebid.js";
 
 const cache = new Map();
 
-startAuction.before((next, config) => {
+startAuction.before((next, auctionConfig) => {
   clearCache();
-  next(config);
+  next(auctionConfig);
 });
 
 export function clearCache() {
