@@ -150,6 +150,28 @@ describe('IntentIQ tests all', function () {
     expect(payloadDecoded).to.have.property('adType', bidWonEvent.mediaType);
   });
 
+  it('should include adType in payload when present in reportExternalWin event', function () {
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+    const externalWinEvent = { cpm: 1, currency: 'USD', adType: 'banner' };
+    const partnerId = USERID_CONFIG[0].params.partner;
+    USERID_CONFIG[0].params.manualWinReportEnabled = true;
+
+    events.emit(EVENTS.BID_REQUESTED);
+
+    window[`intentIqAnalyticsAdapter_${partnerId}`].reportExternalWin(externalWinEvent);
+
+    expect(server.requests.length).to.be.above(0);
+
+    const request = server.requests[0];
+    const urlParams = new URL(request.url);
+    const payloadEncoded = urlParams.searchParams.get('payload');
+    const payloadDecoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
+
+    expect(payloadDecoded).to.have.property('adType', externalWinEvent.adType);
+    // reset iiqConfig.params.manualWinReportEnabled
+    USERID_CONFIG[0].params.manualWinReportEnabled = false;
+  });
+
   it('should send report to report-gdpr address if gdpr is detected', function () {
     const gppStub = sinon.stub(gppDataHandler, 'getConsentData').returns({ gppString: '{"key1":"value1","key2":"value2"}' });
     const uspStub = sinon.stub(uspDataHandler, 'getConsentData').returns('1NYN');
