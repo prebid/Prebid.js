@@ -330,7 +330,7 @@ describe('Pubmatic RTD Provider', () => {
 
             expect(result.floors.data).to.have.property('currency', 'USD');
             expect(result.floors.data).to.have.property('skipRate', 11);
-            expect(result.floors.data).to.have.property('modelVersion', 'PubmaticRTD_Default');
+            expect(result.floors.data).to.have.property('modelVersion', 'modelVersion');
             expect(result.floors.data.schema).to.deep.equal(defaultValueTemplate.schema);
             expect(result.floors.data.value).to.deep.equal(defaultValueTemplate.value);
         });
