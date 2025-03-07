@@ -1,14 +1,16 @@
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess } from '../src/utils.js';
+import { deepAccess, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /* General config */
 const IS_LOCAL_MODE = false;
 const BIDDER_CODE = 'goldbach';
+const BIDDER_UID_KEY = 'goldbach_uid';
 const GVLID = 580;
 const URL = 'https://goldlayer-api.prod.gbads.net/openrtb/2.5/auction';
 const URL_LOCAL = 'http://localhost:3000/openrtb/2.5/auction';
@@ -18,6 +20,7 @@ const METHOD = 'POST';
 const DEFAULT_CURRENCY = 'USD';
 const LOGGING_PERCENTAGE_REGULAR = 0.0001;
 const LOGGING_PERCENTAGE_ERROR = 0.001;
+const COOKIE_EXP = 1000 * 60 * 60 * 24 * 365;
 
 /* Renderer settings */
 const RENDERER_OPTIONS = {
@@ -53,6 +56,35 @@ export const OPENRTB = {
       SPONSORED: 6,
     }
   }
+};
+
+/* Goldbach storage */
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+const setUid = (uid) => {
+  if (storage.localStorageIsEnabled()) {
+    storage.setDataInLocalStorage(BIDDER_UID_KEY, uid);
+  } else if (storage.cookiesAreEnabled()) {
+    const cookieExpiration = new Date(Date.now() + COOKIE_EXP).toISOString();
+    storage.setCookie(BIDDER_UID_KEY, uid, cookieExpiration, 'None');
+  }
+};
+
+const getUid = () => {
+  if (storage.localStorageIsEnabled()) {
+    return storage.getDataFromLocalStorage(BIDDER_UID_KEY);
+  } else if (storage.cookiesAreEnabled()) {
+    return storage.getCookie(BIDDER_UID_KEY);
+  }
+  return null;
+};
+
+const ensureUid = () => {
+  const existingUid = getUid() || null;
+  if (existingUid) return existingUid;
+  const newUid = generateUUID();
+  setUid(newUid);
+  return newUid;
 };
 
 /* Custom extensions */
@@ -115,6 +147,7 @@ const converter = ortbConverter({
     if (bidRequests.length > 0) {
       ortbRequest.ext = ortbRequest.ext || {};
       ortbRequest.ext[BIDDER_CODE] = ortbRequest.ext[BIDDER_CODE] || {};
+      ortbRequest.ext[BIDDER_CODE].uid = ensureUid();
       ortbRequest.ext[BIDDER_CODE].targetings = firstBidRequest?.params?.customTargeting || {};
       ortbRequest.ext[BIDDER_CODE].publisherId = firstBidRequest?.params?.publisherId;
       ortbRequest.ext[BIDDER_CODE].mockResponse = firstBidRequest?.params?.mockResponse || false;
@@ -196,12 +229,13 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
+    const uid = ensureUid();
     if (hasPurpose1Consent(gdprConsent)) {
       let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
       if (type) {
         syncs.push({
           type: type,
-          url: `https://ib.adnxs.com/getuid?${URL_COOKIESYNC}?xandrId=$UID`
+          url: `https://ib.adnxs.com/getuid?${URL_COOKIESYNC}?uid=${uid}&xandrId=$UID`
         })
       }
     }

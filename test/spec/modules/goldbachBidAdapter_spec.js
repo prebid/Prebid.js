@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec } from 'modules/goldbachBidAdapter.js';
+import { spec, storage } from 'modules/goldbachBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
@@ -495,7 +495,8 @@ describe('GoldbachBidAdapter', function () {
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('image');
-      expect(userSyncs[0].url).to.equal(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}?xandrId=$UID`);
+      expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
+      expect(userSyncs[0].url).to.contain('xandrId=$UID');
     })
 
     it('user-syncs with enabled iframe option', function () {
@@ -509,8 +510,38 @@ describe('GoldbachBidAdapter', function () {
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('iframe');
-      expect(userSyncs[0].url).to.equal(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}?xandrId=$UID`);
+      expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
+      expect(userSyncs[0].url).to.contain('xandrId=$UID');
     })
+  });
+
+  describe('getUserSyncs storage', function () {
+    beforeEach(function () {
+      sinon.sandbox.stub(storage, 'setDataInLocalStorage');
+      sinon.sandbox.stub(storage, 'setCookie');
+    });
+
+    afterEach(function () {
+      sinon.sandbox.restore();
+    });
+
+    it('should retrieve a uid in userSync call from localStorage', function () {
+      sinon.sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sinon.sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => 'goldbach_uid');
+      const gdprConsent = { vendorData: { purpose: { consents: 1 } } };
+      const syncOptions = { iframeEnabled: true };
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
+      expect(userSyncs[0].url).to.contain('goldbach_uid');
+    });
+
+    it('should retrieve a uid in userSync call from cookie', function () {
+      sinon.sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+      sinon.sandbox.stub(storage, 'getCookie').callsFake((key) => 'goldbach_uid');
+      const gdprConsent = { vendorData: { purpose: { consents: 1 } } };
+      const syncOptions = { iframeEnabled: true };
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
+      expect(userSyncs[0].url).to.contain('goldbach_uid');
+    });
   });
 
   describe('sendLogs', function () {
