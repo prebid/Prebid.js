@@ -55,7 +55,8 @@ const PARAMS_NAMES = {
   prebidVersion: 'pbjsver',
   partnerId: 'partnerId',
   firstPartyId: 'pcid',
-  placementId: 'placementId'
+  placementId: 'placementId',
+  adType: 'adType'
 };
 
 let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl: REPORT_ENDPOINT, analyticsType}), {
@@ -214,6 +215,8 @@ function fillEidsData(result) {
 }
 
 function prepareData (data, result) {
+  const adTypeValue = data.adType || data.mediaType;
+
   if (data.bidderCode) {
     result.bidderCode = data.bidderCode;
   }
@@ -234,6 +237,9 @@ function prepareData (data, result) {
   }
   if (data.auctionId) {
     result.prebidAuctionId = data.auctionId;
+  }
+  if (adTypeValue) {
+    result[PARAMS_NAMES.adType] = adTypeValue;
   }
   if (data.placementId) {
     result.placementId = data.placementId;
