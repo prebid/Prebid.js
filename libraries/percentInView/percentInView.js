@@ -1,6 +1,26 @@
+import { startAuction } from "../../src/prebid";
 
-function getBoundingBox(element, {w, h} = {}) {
-  let {width, height, left, top, right, bottom} = element.getBoundingClientRect();
+const cache = new Map();
+
+startAuction.before((next, config) => {
+  clearCache();
+  next(config);
+});
+
+export function clearCache() {
+  cache.clear();
+}
+
+export function getBoundingBox(element, {w, h} = {}) {
+  let clientRect;
+  if (cache.has(element)) {
+    clientRect = cache.get(element);
+  } else {
+    clientRect = element.getBoundingClientRect();
+    cache.set(element, clientRect);
+  }
+
+  let {width, height, left, top, right, bottom, x, y} = clientRect;
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;
@@ -9,7 +29,7 @@ function getBoundingBox(element, {w, h} = {}) {
     bottom = top + h;
   }
 
-  return {width, height, left, top, right, bottom};
+  return {width, height, left, top, right, bottom, x, y};
 }
 
 function getIntersectionOfRects(rects) {

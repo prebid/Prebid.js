@@ -2,6 +2,7 @@ import { buildUrl, deepAccess, deepSetValue, generateUUID, getWindowSelf, getWin
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
+import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -163,7 +164,7 @@ const elementInView = (elementId) => {
   };
 
   const visibleInWindow = (el, win) => {
-    const rect = el.getBoundingClientRect();
+    const rect = getBoundingBox(el);
     const inView = (rect.top + rect.height >= 0) && (rect.top <= win.innerHeight);
 
     if (win !== win.parent) {

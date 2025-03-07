@@ -22,6 +22,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {ajax} from '../src/ajax.js';
 import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
+import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -155,8 +156,8 @@ function getCoordinates(adUnitCode) {
       element = document.getElementById(divId);
     }
   }
-  if (element && element.getBoundingClientRect) {
-    const rect = element.getBoundingClientRect();
+  if (element) {
+    const rect = getBoundingBox(element);
     let coordinates = {};
     coordinates.top_left = {
       y: rect.top,

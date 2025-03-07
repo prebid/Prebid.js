@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
+import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
 
 export const storage = getStorageManager({bidderCode: 'mantis'});
 
@@ -75,7 +76,7 @@ export function onVisible(win, element, doOnVisible, time, pct) {
   interval = setInterval(function () {
     var winHeight = (win.innerHeight || document.documentElement.clientHeight);
     var winWidth = (win.innerWidth || document.documentElement.clientWidth);
-    doCheck(winWidth, winHeight, element.getBoundingClientRect());
+    doCheck(winWidth, winHeight, getBoundingBox(element));
   }, 100);
 }
 function storeUuid(uuid) {
