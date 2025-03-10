@@ -4,6 +4,7 @@ import {
 } from '../src/adapters/bidderFactory.js';
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { enablePreviousAuctionInfo } from '../libraries/previousAuctionInfo/previousAuctionInfo.js';
 
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
@@ -106,7 +107,7 @@ export function _isViewabilityMeasurable(element) {
 }
 
 export function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible'
+  return topWin.document.visibilityState === 'visible' && element.style.display !== 'none'
     ? percentInView(element, topWin, { w, h })
     : 0;
 }
@@ -427,4 +428,5 @@ export const spec = {
   },
 };
 
+enablePreviousAuctionInfo({ bidderCode: BIDDER_CODE });
 registerBidder(spec);
