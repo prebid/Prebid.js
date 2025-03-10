@@ -1,48 +1,54 @@
 import {on as onEvent, off as offEvent} from '../../src/events.js';
 import { EVENTS } from '../../src/constants.js';
 import { config } from '../../src/config.js';
-
+import {deepSetValue} from '../../src/utils.js';
+import {startAuction} from '../../src/prebid.js';
+export const CONFIG_NS = 'previousAuctionInfo';
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
+let maxQueueLength = 10;
+let handlersAttached = false;
 
 export let auctionState = {};
 
-export const resetPreviousAuctionInfo = (cb = deinitHandlers) => {
+export function resetPreviousAuctionInfo() {
   previousAuctionInfoEnabled = false;
   enabledBidders = [];
   auctionState = {};
-  cb();
-};
+  deinitHandlers();
+}
 
-export const initPreviousAuctionInfo = (cb = initHandlers) => {
-  config.getConfig('previousAuctionInfo', (conf) => {
-    if (!conf.previousAuctionInfo) {
-      if (previousAuctionInfoEnabled) { resetPreviousAuctionInfo(); }
+function initPreviousAuctionInfo() {
+  config.getConfig('previousAuctionInfo', ({[CONFIG_NS]: config = {}}) => {
+    if (!config?.enabled) {
+      resetPreviousAuctionInfo();
       return;
     }
 
+    if (config?.bidders) { enabledBidders = config.bidders; }
+    if (config?.maxQueueLength) { maxQueueLength = config.maxQueueLength; }
+
     previousAuctionInfoEnabled = true;
-    cb();
+    initHandlers();
   });
-};
-
-export const enablePreviousAuctionInfo = (sspConfig) => {
-  const { bidderCode } = sspConfig;
-  const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderCode);
-
-  if (!enabledBidder) enabledBidders.push({ bidderCode, maxQueueLength: sspConfig.maxQueueLength || 10 });
 }
 
 export const initHandlers = () => {
-  onEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
-  onEvent(EVENTS.BID_WON, onBidWonHandler);
-  onEvent(EVENTS.BID_REQUESTED, onBidRequestedHandler);
+  if (!handlersAttached) {
+    onEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
+    onEvent(EVENTS.BID_WON, onBidWonHandler);
+    startAuction.before(startAuctionHook);
+    handlersAttached = true;
+  }
 };
 
 const deinitHandlers = () => {
-  offEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
-  offEvent(EVENTS.BID_WON, onBidWonHandler);
-  offEvent(EVENTS.BID_REQUESTED, onBidRequestedHandler);
+  if (handlersAttached) {
+    offEvent(EVENTS.AUCTION_END, onAuctionEndHandler);
+    offEvent(EVENTS.BID_WON, onBidWonHandler);
+    startAuction.getHooks({hook: startAuctionHook}).remove();
+    handlersAttached = false;
+  }
 }
 
 export const onAuctionEndHandler = (auctionDetails) => {
@@ -68,7 +74,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
 
     if (auctionDetails.bidderRequests?.length) {
       auctionDetails.bidderRequests.forEach(bidderRequest => {
-        const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidderRequest.bidderCode);
+        const enabledBidder = enabledBidders.length === 0 || enabledBidders.find(bidderCode => bidderCode === bidderRequest.bidderCode);
 
         if (enabledBidder) {
           auctionState[bidderRequest.bidderCode] = auctionState[bidderRequest.bidderCode] || [];
@@ -80,19 +86,19 @@ export const onAuctionEndHandler = (auctionDetails) => {
               rendered: 0,
               source: 'pbjs',
               adUnitCode: bid.adUnitCode,
-              highestTargetedBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.adserverTargeting?.hb_pb || '',
-              targetedBidCpm: receivedBidsMap[bid.bidId]?.adserverTargeting?.hb_pb || '',
+              highestTargetedBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.adserverTargeting?.hb_pb || null,
+              targetedBidCpm: receivedBidsMap[bid.bidId]?.adserverTargeting?.hb_pb || null,
               highestBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.cpm || 0,
-              bidderCpm: receivedBidsMap[bid.bidId]?.cpm || 'nobid',
-              bidderOriginalCpm: receivedBidsMap[bid.bidId]?.originalCpm || 'nobid',
-              bidderCurrency: receivedBidsMap[bid.bidId]?.currency || 'nobid',
-              bidderOriginalCurrency: receivedBidsMap[bid.bidId]?.originalCurrency || 'nobid',
+              bidderCpm: receivedBidsMap[bid.bidId]?.cpm || null,
+              bidderOriginalCpm: receivedBidsMap[bid.bidId]?.originalCpm || null,
+              bidderCurrency: receivedBidsMap[bid.bidId]?.currency || null,
+              bidderOriginalCurrency: receivedBidsMap[bid.bidId]?.originalCurrency || null,
               bidderErrorCode: rejectedBidsMap[bid.bidId] ? rejectedBidsMap[bid.bidId].rejectionReason : -1,
               timestamp: auctionDetails.timestamp,
               transactionId: bid.transactionId, // this field gets removed before injecting previous auction info into the bid stream
             }
 
-            if (auctionState[bidderRequest.bidderCode].length > enabledBidder.maxQueueLength) {
+            if (auctionState[bidderRequest.bidderCode].length >= maxQueueLength) {
               auctionState[bidderRequest.bidderCode].shift();
             }
 
@@ -114,22 +120,16 @@ export const onBidWonHandler = (winningBid) => {
   });
 };
 
-export const onBidRequestedHandler = (bidRequest) => {
-  try {
-    const enabledBidder = enabledBidders.find(bidder => bidder.bidderCode === bidRequest.bidderCode);
-    if (enabledBidder && auctionState[bidRequest.bidderCode]) {
-      auctionState[bidRequest.bidderCode].forEach(prevAuctPayload => {
-        if (prevAuctPayload.transactionId) delete prevAuctPayload.transactionId;
-      });
-
-      bidRequest.ortb2 = Object.assign({}, bidRequest.ortb2);
-      bidRequest.ortb2.ext = Object.assign({}, bidRequest.ortb2.ext);
-      bidRequest.ortb2.ext.prebid = Object.assign({}, bidRequest.ortb2.ext.prebid);
-
-      bidRequest.ortb2.ext.prebid.previousauctioninfo = auctionState[bidRequest.bidderCode];
-      delete auctionState[bidRequest.bidderCode];
-    }
-  } catch (error) {}
+export function startAuctionHook(next, req) {
+  const bidders = enabledBidders.length ? enabledBidders : Object.keys(auctionState);
+  bidders
+    .filter(bidder => auctionState[bidder]?.length)
+    .forEach(bidder => {
+      auctionState[bidder].forEach(payload => { delete payload.transactionId });
+      deepSetValue(req.ortb2Fragments, `bidder.${bidder}.ext.prebid.previousauctioninfo`, auctionState[bidder]);
+      delete auctionState[bidder];
+    })
+  next.call(this, req);
 }
 
 initPreviousAuctionInfo();
