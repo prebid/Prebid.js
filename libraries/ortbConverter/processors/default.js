@@ -89,6 +89,8 @@ export const DEFAULT_PROCESSORS = {
           currency: context.ortbResponse.cur || context.currency,
           width: bid.w,
           height: bid.h,
+          wratio: bid.wratio,
+          hratio: bid.hratio,
           dealId: bid.dealid,
           creative_id: bid.crid,
           creativeId: bid.crid,
@@ -112,6 +114,9 @@ export const DEFAULT_PROCESSORS = {
         }
         if (bid.attr) {
           bidResponse.meta.attr = bid.attr;
+        }
+        if (bid.ext?.eventtrackers) {
+          bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).concat(bid.ext.eventtrackers);
         }
       }
     }

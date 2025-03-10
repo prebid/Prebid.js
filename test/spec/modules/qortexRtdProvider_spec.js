@@ -88,13 +88,15 @@ describe('qortexRtdProvider', () => {
     'access-control-allow-origin': '*'
   };
   const contextResponseObj = {
-    content: {
-      id: '123456',
-      episode: 15,
-      title: 'test episode',
-      series: 'test show',
-      season: '1',
-      url: 'https://example.com/file.mp4'
+    site: {
+      content: {
+        id: '123456',
+        episode: 15,
+        title: 'test episode',
+        series: 'test show',
+        season: '1',
+        url: 'https://example.com/file.mp4'
+      }
     }
   }
   const contextResponse = JSON.stringify(contextResponseObj);
@@ -340,34 +342,34 @@ describe('qortexRtdProvider', () => {
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
     })
 
-    it('adds site.content only to global ortb2 when bidders array is omitted', () => {
+    it('adds context only to global ortb2 when bidders array is omitted', () => {
       const omittedBidderArrayConfig = cloneDeep(validModuleConfig);
       delete omittedBidderArrayConfig.params.bidders;
       initializeModuleData(omittedBidderArrayConfig);
-      setContextData(contextResponseObj.content);
+      setContextData(contextResponseObj);
       addContextToRequests(reqBidsConfig);
       expect(reqBidsConfig.ortb2Fragments.global).to.have.property('site');
       expect(reqBidsConfig.ortb2Fragments.global.site).to.have.property('content');
-      expect(reqBidsConfig.ortb2Fragments.global.site.content).to.be.eql(contextResponseObj.content);
+      expect(reqBidsConfig.ortb2Fragments.global.site.content).to.be.eql(contextResponseObj.site.content);
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
     })
 
-    it('adds site.content only to bidder ortb2 when bidders array is included', () => {
+    it('adds only to bidder ortb2 when bidders array is included', () => {
       initializeModuleData(validModuleConfig);
-      setContextData(contextResponseObj.content);
+      setContextData(contextResponseObj);
       addContextToRequests(reqBidsConfig);
 
       const qortexOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['qortex']
       expect(qortexOrtb2Fragment).to.not.be.null;
       expect(qortexOrtb2Fragment).to.have.property('site');
       expect(qortexOrtb2Fragment.site).to.have.property('content');
-      expect(qortexOrtb2Fragment.site.content).to.be.eql(contextResponseObj.content);
+      expect(qortexOrtb2Fragment.site.content).to.be.eql(contextResponseObj.site.content);
 
       const testOrtb2Fragment = reqBidsConfig.ortb2Fragments.bidder['test']
       expect(testOrtb2Fragment).to.not.be.null;
       expect(testOrtb2Fragment).to.have.property('site');
       expect(testOrtb2Fragment.site).to.have.property('content');
-      expect(testOrtb2Fragment.site.content).to.be.eql(contextResponseObj.content);
+      expect(testOrtb2Fragment.site.content).to.be.eql(contextResponseObj.site.content);
 
       expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
     })
@@ -376,7 +378,7 @@ describe('qortexRtdProvider', () => {
       const invalidBidderArrayConfig = cloneDeep(validModuleConfig);
       invalidBidderArrayConfig.params.bidders = [];
       initializeModuleData(invalidBidderArrayConfig);
-      setContextData(contextResponseObj.content)
+      setContextData(contextResponseObj)
       addContextToRequests(reqBidsConfig);
 
       expect(logWarnSpy.calledWith('Config contains an empty bidders array, unable to determine which bids to enrich')).to.be.ok;

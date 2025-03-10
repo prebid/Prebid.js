@@ -190,7 +190,12 @@ function _getVidParams(attributes) {
     placement: pt,
     plcmt,
     protocols = [],
-    playerSize = []
+    playerSize = [],
+    skip,
+    api,
+    mimes,
+    playbackmethod,
+    playbackend: pbe
   } = attributes;
   const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
@@ -208,12 +213,24 @@ function _getVidParams(attributes) {
     pt,
     pr,
     viw,
-    vih
+    vih,
+    skip,
+    pbe
   };
-    // Add vplcmt property to the result object if plcmt is available
+
   if (plcmt !== undefined && plcmt !== null) {
     result.vplcmt = plcmt;
   }
+  if (api && api.length) {
+    result.api = api.join(',');
+  }
+  if (mimes && mimes.length) {
+    result.mimes = mimes.join(',');
+  }
+  if (playbackmethod && playbackmethod.length) {
+    result.pbm = playbackmethod.join(',');
+  }
+
   return result;
 }
 
@@ -416,6 +433,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
       setIrisId(data, bidderRequest.ortb2.site, params);
+      const curl = bidderRequest.ortb2.site.content?.url;
+      if (curl) data.curl = curl;
     }
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
@@ -472,6 +491,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
+    const tId = deepAccess(ortb2Imp, 'ext.tid') || deepAccess(bidderRequest, 'ortb2.source.tid') || '';
+    data.tId = tId
     Object.assign(
       data,
       _getBrowserParams(topWindowUrl, mosttopLocation),
@@ -481,7 +502,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     bids.push({
       id: bidId,
       tmax: timeout,
-      tId: ortb2Imp?.ext?.tid,
+      tId: tId,
       pi: data.pi,
       selector: params.selector,
       sizes,
@@ -495,8 +516,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 export function getCids(site) {
   if (site.content && Array.isArray(site.content.data)) {
     for (const dataItem of site.content.data) {
-      if (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv')) {
-        return dataItem.ext.cids.join(',');
+      if (typeof dataItem?.name === 'string' && (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv'))) {
+        return Array.isArray(dataItem.ext?.cids) ? dataItem.ext.cids.join(',') : '';
       }
     }
   }
