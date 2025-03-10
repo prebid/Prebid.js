@@ -39,13 +39,21 @@ const VIDEO_ORTB_PARAMS = [
   'protocols',
   'startdelay',
   'skip',
+  'skipmin',
   'skipafter',
   'minbitrate',
   'maxbitrate',
   'delivery',
   'playbackmethod',
   'api',
-  'linearity'
+  'linearity',
+  'rqddurs',
+  'maxseq',
+  'poddur',
+  'podid',
+  'podseq',
+  'mincpmpersec',
+  'slotinpod'
 ];
 
 const adapterState = {

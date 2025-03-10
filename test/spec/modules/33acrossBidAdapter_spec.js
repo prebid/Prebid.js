@@ -1546,13 +1546,38 @@ describe('33acrossBidAdapter:', function () {
         });
 
         it('builds instream request with params passed', function() {
+          const allowedParams = {
+            mimes: ['video/mp4'],
+            minduration: 15,
+            maxduration: 45,
+            placement: 1,
+            plcmt: 1,
+            protocols: [2,3],
+            startdelay: -2,
+            skip: true,
+            skipmin: 5,
+            skipafter: 15,
+            minbitrate: 300,
+            maxbitrate: 1500,
+            delivery: [2],
+            playbackmethod: [1, 3],
+            api: [3],
+            linearity: 1,
+            rqddurs: 123,
+            maxseq: 5,
+            poddur: 3,
+            podid: 'pod_1',
+            podseq: 1,
+            mincpmpersec: 'foo',
+            slotinpod: 0
+          };
           const bidRequests = (
             new BidRequestsBuilder()
-              .withVideo({context: 'instream', startdelay: -2})
+              .withVideo({context: 'instream', ...allowedParams})
               .build()
           );
           const ttxRequest = new TtxRequestBuilder()
-            .withVideo({startdelay: -2})
+            .withVideo(allowedParams)
             .withProduct('instream')
             .build();
           const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
