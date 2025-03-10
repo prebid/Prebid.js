@@ -21,7 +21,7 @@ import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {getRenderingData} from '../../src/adRendering.js';
-import {getCreativeRendererSource} from '../../src/creativeRenderers.js';
+import {getCreativeRendererSource, PUC_MIN_VERSION} from '../../src/creativeRenderers.js';
 import {deepSetValue} from '../../src/utils.js';
 const utils = require('src/utils');
 
@@ -434,7 +434,7 @@ describe('native.js', function () {
         function checkRenderer(message) {
           if (withRenderer) {
             expect(message.renderer).to.eql('mock-native-renderer')
-            expect(message.rendererVersion).to.eql('native-render-version');
+            expect(message.rendererVersion).to.eql(PUC_MIN_VERSION);
             Object.entries(message).forEach(([key, val]) => {
               if (!['native', 'adId', 'message', 'assets', 'renderer', 'rendererVersion'].includes(key)) {
                 expect(message.native[key]).to.eql(val);
