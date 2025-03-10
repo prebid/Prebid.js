@@ -18,15 +18,13 @@ const URL_LOGGING = 'https://l.da-services.ch/pb';
 const URL_COOKIESYNC = 'https://goldlayer-api.prod.gbads.net/cookiesync';
 const METHOD = 'POST';
 const DEFAULT_CURRENCY = 'USD';
-const LOGGING_PERCENTAGE_REGULAR = 0.0001;
+const LOGGING_PERCENTAGE_REGULAR = 0.001;
 const LOGGING_PERCENTAGE_ERROR = 0.001;
 const COOKIE_EXP = 1000 * 60 * 60 * 24 * 365;
 
 /* Renderer settings */
 const RENDERER_OPTIONS = {
   OUTSTREAM_GP: {
-    MIN_HEIGHT: 300,
-    MIN_WIDTH: 300,
     URL: 'https://goldplayer.prod.gbads.net/scripts/goldplayer.js'
   }
 };
@@ -99,7 +97,9 @@ const getRendererForBid = (bidRequest, bidResponse) => {
     });
 
     renderer.setRender((bid, doc) => {
-      const { playbackmethod } = bidRequest?.params?.video || {}
+      const videoParams = bidRequest?.mediaTypes?.video || {};
+      const playerSize = videoParams.playerSize;
+      const playbackmethod = videoParams.playbackmethod;
       const isMuted = typeof playbackmethod === 'number' ? [2, 6].includes(playbackmethod) : false;
       const isAutoplay = typeof playbackmethod === 'number' ? [1, 2].includes(playbackmethod) : false;
 
@@ -113,8 +113,8 @@ const getRendererForBid = (bidRequest, bidResponse) => {
             controls: true,
             resizeMode: 'auto',
             styling: { progressbarColor: '#000' },
-            videoHeight: Math.max(doc.defaultView?.innerWidth / 16 * 9, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_HEIGHT),
-            videoVerticalHeight: Math.max(doc.defaultView?.innerWidth / 9 * 16, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_WIDTH),
+            publisherProvidedWidth: playerSize?.[0],
+            publisherProvidedHeight: playerSize?.[1],
           };
           const GP = doc.defaultView.GoldPlayer;
           const player = new GP(options);
@@ -252,8 +252,9 @@ export const spec = {
   onBidWon: function(bid) {
     const payload = {
       event: EVENTS.BID_WON,
+      publisherId: bid.params?.[0]?.publisherId,
+      creativeId: bid.creativeId,
       adUnitCode: bid.adUnitCode,
-      adId: bid.adId,
       mediaType: bid.mediaType,
       size: bid.size,
     };
@@ -261,9 +262,10 @@ export const spec = {
   },
   onSetTargeting: function(bid) {
     const payload = {
-      event: EVENTS.TARGETING,
+      event: EVENTS.BID_WON,
+      publisherId: bid.params?.[0]?.publisherId,
+      creativeId: bid.creativeId,
       adUnitCode: bid.adUnitCode,
-      adId: bid.adId,
       mediaType: bid.mediaType,
       size: bid.size,
     };
@@ -278,9 +280,10 @@ export const spec = {
   },
   onAdRenderSucceeded: function(bid) {
     const payload = {
-      event: EVENTS.RENDER,
+      event: EVENTS.BID_WON,
+      publisherId: bid.params?.[0]?.publisherId,
+      creativeId: bid.creativeId,
       adUnitCode: bid.adUnitCode,
-      adId: bid.adId,
       mediaType: bid.mediaType,
       size: bid.size,
     };

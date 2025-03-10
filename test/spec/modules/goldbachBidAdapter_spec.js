@@ -368,7 +368,7 @@ describe('GoldbachBidAdapter', function () {
       expect(requests[0].url).to.equal(ENDPOINT);
     })
 
-    it('should parse all bids to a valid openRRB request', function () {
+    it('should parse all bids to a valid openRTB request', function () {
       let bidRequests = deepClone(validBidRequests);
       let bidderRequest = deepClone(validBidderRequest);
       const requests = spec.buildRequests(bidRequests, bidderRequest);
@@ -397,7 +397,6 @@ describe('GoldbachBidAdapter', function () {
         }
       }], bidderRequest);
       const payload = requests[0].data;
-
       expect(payload.imp.length).to.equal(1);
       expect(payload.imp[0][VIDEO].w).to.equal(640);
       expect(payload.imp[0][VIDEO].h).to.equal(480);
