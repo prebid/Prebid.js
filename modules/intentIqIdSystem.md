@@ -59,7 +59,7 @@ pbjs.setConfig({
                 browserBlackList: "chrome",
                 callback: (data, group) => window.pbjs.requestBids(),
                 manualWinReportEnabled: true,
-                domainName: "currentDomain.com"
+                domainName: "currentDomain.com",
             },
             storage: {
                 type: "html5",
