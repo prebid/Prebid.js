@@ -46,9 +46,11 @@ let wrappedCallback = config.callbackWithBidder(CODE);
 
 describe('bidderFactory', () => {
   let onTimelyResponseStub;
+
   beforeEach(() => {
     onTimelyResponseStub = sinon.stub();
-  })
+  });
+
   describe('bidders created by newBidder', function () {
     let spec;
     let bidder;
@@ -1720,5 +1722,239 @@ describe('bidderFactory', () => {
         });
       });
     })
+  });
+
+  describe('gzip compression', () => {
+    let gzipStub;
+    let isGzipSupportedStub;
+    let spec;
+    let ajaxStub;
+    let addBidResponseStub;
+    let doneStub;
+    let origBS;
+
+    before(() => {
+      origBS = window.$$PREBID_GLOBAL$$.bidderSettings;
+    });
+
+    beforeEach(() => {
+      isGzipSupportedStub = sinon.stub(utils, 'isGzipCompressionSupported');
+      gzipStub = sinon.stub(utils, 'compressDataWithGZip');
+      spec = {
+        code: CODE,
+        isBidRequestValid: sinon.stub(),
+        buildRequests: sinon.stub(),
+        interpretResponse: sinon.stub(),
+        getUserSyncs: sinon.stub()
+      };
+
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
+        const fakeResponse = sinon.stub();
+        fakeResponse.returns('headerContent');
+        callbacks.success('response body', { getResponseHeader: fakeResponse });
+      });
+
+      addBidResponseStub = sinon.stub();
+      addBidResponseStub.reject = sinon.stub();
+      doneStub = sinon.stub();
+    });
+
+    afterEach(() => {
+      isGzipSupportedStub.restore();
+      gzipStub.restore();
+      ajaxStub.restore();
+      if (addBidResponseStub.restore) addBidResponseStub.restore();
+      if (doneStub.restore) doneStub.restore();
+      window.$$PREBID_GLOBAL$$.bidderSettings = origBS;
+    });
+
+    it('should send a gzip compressed payload when gzip is supported and enabled', function (done) {
+      const bidder = newBidder(spec);
+      const url = 'https://test.url.com';
+      const data = { arg: 'value' };
+      const compressedPayload = 'compressedData'; // Simulated compressed payload
+      isGzipSupportedStub.returns(true);
+      gzipStub.resolves(compressedPayload);
+
+      window.$$PREBID_GLOBAL$$.bidderSettings = {
+        [CODE]: {
+          endpointCompression: true
+        }
+      };
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: url,
+        data: data
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      setTimeout(() => {
+        expect(gzipStub.calledOnce).to.be.true;
+        expect(gzipStub.calledWith(data)).to.be.true;
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(ajaxStub.firstCall.args[0]).to.include('gzip=1'); // Ensure the URL has gzip=1
+        expect(ajaxStub.firstCall.args[2]).to.equal(compressedPayload); // Ensure compressed data is sent
+        done();
+      });
+    });
+
+    it('should send the request normally if gzip is not supported', function (done) {
+      const bidder = newBidder(spec);
+      const url = 'https://test.url.com';
+      const data = { arg: 'value' };
+      isGzipSupportedStub.returns(false);
+
+      window.$$PREBID_GLOBAL$$.bidderSettings = {
+        [CODE]: {
+          endpointCompression: true
+        }
+      };
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: url,
+        data: data
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      setTimeout(() => {
+        expect(gzipStub.called).to.be.false; // Should not call compression
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1'); // Ensure URL does not have gzip=1
+        expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data)); // Ensure original data is sent
+        done();
+      });
+    });
+
+    it('should send uncompressed data if gzip is supported but disabled in settings', function (done) {
+      const bidder = newBidder(spec);
+      const url = 'https://test.url.com';
+      const data = { arg: 'value' };
+      isGzipSupportedStub.returns(true);
+
+      window.$$PREBID_GLOBAL$$.bidderSettings = {
+        [CODE]: {
+          endpointCompression: false
+        }
+      };
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({
+        method: 'POST',
+        url: url,
+        data: data
+      });
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      setTimeout(() => {
+        expect(gzipStub.called).to.be.false;
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1'); // Ensure URL does not have gzip=1
+        expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+        done();
+      });
+    });
+  });
+
+  describe('isGzipCompressionSupported', () => {
+    let originalIsGzipCompressionSupported;
+
+    beforeEach(() => {
+      // Store original function reference
+      originalIsGzipCompressionSupported = utils.isGzipCompressionSupported;
+
+      // Reset cachedResult manually
+      utils.isGzipCompressionSupported = (function () {
+        let cachedResult; // Reset cached value
+
+        return function () {
+          if (cachedResult !== undefined) {
+            return cachedResult;
+          }
+
+          try {
+            if (typeof window.CompressionStream === 'undefined') {
+              cachedResult = false;
+            } else {
+              let newCompressionStream = new window.CompressionStream('gzip'); // Will throw an error if unsupported
+              cachedResult = true;
+            }
+          } catch (error) {
+            cachedResult = false;
+          }
+
+          return cachedResult;
+        };
+      })();
+    });
+
+    afterEach(() => {
+      // Restore original function after each test
+      utils.isGzipCompressionSupported = originalIsGzipCompressionSupported;
+    });
+
+    it('should return true if CompressionStream is available', () => {
+      window.CompressionStream = class {}; // Mock valid CompressionStream
+      expect(utils.isGzipCompressionSupported()).to.be.true;
+    });
+
+    it('should return false if CompressionStream is undefined', () => {
+      delete window.CompressionStream; // Simulate an unsupported environment
+      expect(utils.isGzipCompressionSupported()).to.be.false;
+    });
+
+    it('should cache the result after first execution', () => {
+      window.CompressionStream = class {}; // Mock valid CompressionStream
+
+      const firstCall = utils.isGzipCompressionSupported();
+      const secondCall = utils.isGzipCompressionSupported();
+
+      expect(firstCall).to.equal(secondCall); // Ensure memoization is working
+    });
+  });
+
+  describe('compressDataWithGZip', () => {
+    let originalCompressionStream;
+
+    beforeEach(() => {
+      originalCompressionStream = global.CompressionStream;
+      global.CompressionStream = class {
+        constructor(type) {
+          if (type !== 'gzip') {
+            throw new Error('Unsupported compression type');
+          }
+          this.readable = new ReadableStream({
+            start(controller) {
+              controller.enqueue(new Uint8Array([1, 2, 3, 4]));
+              controller.close();
+            }
+          });
+          this.writable = new WritableStream();
+        }
+      };
+    });
+
+    afterEach(() => {
+      if (originalCompressionStream) {
+        global.CompressionStream = originalCompressionStream;
+      } else {
+        delete global.CompressionStream;
+      }
+    });
+
+    it('should compress data correctly when CompressionStream is available', async () => {
+      const data = 'Test data';
+      const compressedData = await utils.compressDataWithGZip(data);
+
+      expect(compressedData).to.be.instanceOf(Uint8Array);
+      expect(compressedData.length).to.be.greaterThan(0);
+      expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
+    });
   });
 })

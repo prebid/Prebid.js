@@ -19,7 +19,9 @@ import {
   parseSizesInput,
   pick,
   uniques,
+  // eslint-disable-next-line no-unused-vars
   isStr,
+  // eslint-disable-next-line no-unused-vars
   isJsonObject,
   isGzipCompressionSupported,
   compressDataWithGZip
@@ -497,12 +499,16 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
         );
         break;
       case 'POST':
-        // read a bidder setting to enable gzip compression
-        const enableGZipCompression = false; // bidderSettings.get(spec.code, 'endpointCompression'); // or we can maintain a list of bidders who support gzip compression
+        const enableGZipCompression = bidderSettings.get(spec.code, 'endpointCompression');
         if (enableGZipCompression && isGzipCompressionSupported()) {
           compressDataWithGZip(request.data).then(compressedPayload => {
+            const url = new URL(request.url, window.location.origin);
+            if (!url.searchParams.has('gzip')) {
+              url.searchParams.set('gzip', '1');
+            }
+
             ajax(
-              request.url,
+              url.href,
               {
                 success: onSuccess,
                 error: onFailure
