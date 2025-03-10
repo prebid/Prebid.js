@@ -1,7 +1,7 @@
 import { logError } from '../../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
 import { submodule } from '../../src/hook.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeResult, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend, setUpTreatment } from './shared.js'
 
 // Reference to the client for the liQHub.
 let cachedClientRef
@@ -149,11 +149,12 @@ export const liveIntentExternalIdSubmodule = {
    */
   decode(value, config) {
     const configParams = config?.params ?? {};
+    setUpTreatment(configParams);
 
     // Ensure client is initialized and we fired at least one collect request.
     initializeClient(configParams)
 
-    return composeIdObject(value);
+    return composeResult(value, configParams)
   },
 
   /**
@@ -162,6 +163,7 @@ export const liveIntentExternalIdSubmodule = {
    */
   getId(config) {
     const configParams = config?.params ?? {};
+    setUpTreatment(configParams);
 
     const clientRef = initializeClient(configParams)
 
