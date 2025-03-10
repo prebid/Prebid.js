@@ -28,6 +28,7 @@ import {
 } from '../src/utils.js';
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -469,8 +470,8 @@ function getElementFromTopWindow(element, currentWindow) {
       return element;
     } else {
       const frame = currentWindow.frameElement;
-      const frameClientRect = frame.getBoundingClientRect();
-      const elementClientRect = element.getBoundingClientRect();
+      const frameClientRect = getBoundingBox(frame);
+      const elementClientRect = getBoundingBox(element);
 
       if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
         return false;
@@ -520,7 +521,7 @@ function getSlotPosition(divId) {
         return '';
       }
 
-      let box = domElement.getBoundingClientRect();
+      let box = getBoundingBox(domElement);
 
       const docEl = d.documentElement;
       const body = d.body;

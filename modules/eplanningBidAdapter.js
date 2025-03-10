@@ -5,6 +5,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
+import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
 
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -364,7 +365,7 @@ function waitForElementsPresent(elements) {
             if (index < 0) {
               elements.forEach(code => {
                 let div = _getAdSlotHTMLElement(code);
-                if (div && div.contains(ad) && div.getBoundingClientRect().width > 0) {
+                if (div && div.contains(ad) && getBoundingBox(div).width > 0) {
                   index = elements.indexOf(div.id);
                   adView = div;
                 }
