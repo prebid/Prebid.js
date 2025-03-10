@@ -16,7 +16,7 @@ const URL = 'https://rtb.dochaseadx.com/hb';
 export const spec = {
   code: 'dochase',
   supportedMediaTypes: [BANNER, NATIVE],
-  // Determines whether or not the given bid request is valid
+  // Determines whether given bid request is valid or not
   isBidRequestValid: (bidRParam) => {
     return !!(bidRParam.params.placement_id);
   },
