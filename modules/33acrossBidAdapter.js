@@ -285,10 +285,8 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppCo
     },
     id: bidderRequest.bidderRequestId,
     user: {
-      ext: {
-        eids: firstBidRequest.userIdAsEids,
-        consent: gdprConsent.consentString
-      }
+      eids: firstBidRequest.userIdAsEids,
+      consent: gdprConsent.consentString
     },
     regs: {
       coppa: Number(!!config.getConfig('coppa')),
@@ -307,9 +305,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppCo
       }
     },
     source: {
-      ext: {
-        schain: firstBidRequest.schain
-      }
+      schain: firstBidRequest.schain
     },
     test: test === 1 ? 1 : null
   });

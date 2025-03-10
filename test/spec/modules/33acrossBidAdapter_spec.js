@@ -166,7 +166,7 @@ describe('33acrossBidAdapter:', function () {
     this.withGdprConsent = (consent, gdpr) => {
       Object.assign(ttxRequest, {
         user: {
-          ext: { consent }
+          consent
         }
       });
       Object.assign(ttxRequest, {
@@ -241,9 +241,7 @@ describe('33acrossBidAdapter:', function () {
     this.withSchain = schain => {
       Object.assign(ttxRequest, {
         source: {
-          ext: {
-            schain
-          }
+          schain
         }
       });
 
@@ -282,9 +280,7 @@ describe('33acrossBidAdapter:', function () {
     this.withUserIds = (eids) => {
       Object.assign(ttxRequest, {
         user: {
-          ext: {
-            eids
-          }
+          eids
         }
       });
 
