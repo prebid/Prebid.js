@@ -294,10 +294,8 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppCo
       coppa: Number(!!config.getConfig('coppa')),
       gpp: gppConsent.gppString,
       gpp_sid: gppConsent.applicableSections,
-      ext: {
-        gdpr: Number(gdprConsent.gdprApplies),
-        us_privacy: uspConsent
-      }
+      gdpr: Number(gdprConsent.gdprApplies),
+      us_privacy: uspConsent
     },
     ext: {
       ttx: {
