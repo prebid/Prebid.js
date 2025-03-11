@@ -84,7 +84,7 @@ export const spec = {
       const {adUnitCode, mediaTypes, params, sizes, bidId} = bidRequest;
 
       const bidderCode = bidderRequest.bidderCode || 'gamoshi';
-      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidderCode];
+      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidderCode] || 'https://rtb.gamoshi.io';
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
         id: bidderRequest.bidderRequestId,
