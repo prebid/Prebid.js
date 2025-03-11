@@ -91,7 +91,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
               bidderOriginalCpm: receivedBidsMap[bid.bidId]?.originalCpm || null,
               bidderCurrency: receivedBidsMap[bid.bidId]?.currency || null,
               bidderOriginalCurrency: receivedBidsMap[bid.bidId]?.originalCurrency || null,
-              bidderErrorCode: rejectedBidsMap[bid.bidId] ? rejectedBidsMap[bid.bidId].rejectionReason : -1,
+              bidderErrorCode: rejectedBidsMap[bid.bidId]?.rejectionReason || null,
               timestamp: auctionDetails.timestamp,
               transactionId: bid.transactionId, // this field gets removed before injecting previous auction info into the bid stream
             }
