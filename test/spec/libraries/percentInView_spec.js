@@ -28,8 +28,17 @@ describe('getBoundingBox', () => {
     const mockAuctionData = {
       bidsBackHandler: () => {},
       timeout: 3000,
-      adUnits: [],
-      adUnitCodes: [],
+      adUnitCodes: ['adunit-1'],
+      adUnits: [
+        {
+          code: 'adunit-1',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          }
+        }
+      ],
       ttlBuffer: 1000,
       auctionId: '12345',
       defer: {resolve: () => {}}
