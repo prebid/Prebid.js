@@ -32,7 +32,17 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll', 'iionads', 'apester', 'adsyield', 'tgm', 'adtg_org', 'velonium', 'orangeclickmedia', 'streamvision'],
+  aliases: [
+    { code: 'pll' },
+    { code: 'iionads', gvlid: 1358 },
+    { code: 'apester' },
+    { code: 'adsyield' },
+    { code: 'tgm' },
+    { code: 'adtg_org' },
+    { code: 'velonium' },
+    { code: 'orangeclickmedia' },
+    { code: 'streamvision' }
+  ],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
