@@ -3,7 +3,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 
-// ***** ECLICK ADAPTER *****
+// **** ECLICK ADAPTER ****
 export const BIDDER_CODE = 'eclick';
 const DEFAULT_CURRENCY = ['USD'];
 const DEFAULT_TTL = 1000;
