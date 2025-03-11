@@ -5,7 +5,7 @@ import {createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
-import {EVENTS, REJECTION_REASON, STATUS} from '../constants.js';
+import {EVENTS, REJECTION_REASON, STATUS, DEBUG_MODE} from '../constants.js';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import {
@@ -24,7 +24,9 @@ import {
   // eslint-disable-next-line no-unused-vars
   isJsonObject,
   isGzipCompressionSupported,
-  compressDataWithGZip
+  compressDataWithGZip,
+  getParameterByName,
+  debugTurnedOn
 } from '../utils.js';
 import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
@@ -500,7 +502,13 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
         break;
       case 'POST':
         const enableGZipCompression = bidderSettings.get(spec.code, 'endpointCompression');
-        if (enableGZipCompression && isGzipCompressionSupported()) {
+        const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
+
+        if (enableGZipCompression && debugMode) {
+          logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
+        }
+
+        if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
           compressDataWithGZip(request.data).then(compressedPayload => {
             const url = new URL(request.url, window.location.origin);
             if (!url.searchParams.has('gzip')) {
