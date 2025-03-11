@@ -24,7 +24,6 @@ import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../l
 import {VIDEO} from '../../src/mediaTypes.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
-import { fetch } from '../../src/ajax.js';
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
