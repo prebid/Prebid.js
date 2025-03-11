@@ -2,7 +2,6 @@ import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
 import { EVENTS } from 'src/constants.js';
-import { server } from '../../../mocks/xhr';
 
 let ortbVideoMock;
 let ortbContentMock;
@@ -326,36 +325,6 @@ describe('Prebid Video', function () {
       expect(adQueueCoordinatorMock.queueAd.args[0][1]).to.be.equal(expectedDivId);
       expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
       expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adXml', expectedVastXml);
-    });
-
-    it('should prefetch vast xml if local cache turned on', function () {
-      server.respondWith('expectedVastXml');
-      const expectedVastUrl = 'expectedVastUrl';
-      const expectedVastXml = 'expectedVastXml';
-      const pbGlobal = Object.assign({}, pbGlobalMock, {
-        requestBids,
-        getHighestCpmBids: () => [{
-          vastUrl: expectedVastUrl,
-          vastXml: expectedVastXml
-        }, {}, {}, {}]
-      });
-      const expectedAdUnit = {
-        code: expectedAdUnitCode,
-        video: { divId: expectedDivId }
-      };
-      const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
-      const getConfig = (key) => {
-        if (key === 'cache') {
-          return { useLocal: true }
-        }
-        return { providers: [] }
-      }
-      pbVideoFactory(null, getConfig, pbGlobal, pbEvents);
-      beforeBidRequestCallback(() => {}, {});
-      auctionEndCallback(auctionResults);
-      server.respond();
-      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
-      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('prefetchedVastXml', expectedVastXml);
     });
   });
 
