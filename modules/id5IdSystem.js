@@ -19,9 +19,8 @@ import {fetch} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {loadExternalScript} from '../src/adloader.js';
 
 /**
@@ -105,6 +104,49 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
  */
 
+const DEFAULT_EIDS = {
+  'id5id': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    source: ID5_DOMAIN,
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'euid': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function (data) {
+      return data.source;
+    },
+    atype: 3,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+  'trueLinkId': {
+    getValue: function (data) {
+      return data.uid;
+    },
+    getSource: function (data) {
+      return TRUE_LINK_SOURCE;
+    },
+    atype: 1,
+    getUidExt: function (data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  }
+};
+
 /** @type {Submodule} */
 export const id5IdSubmodule = {
   /**
@@ -127,6 +169,24 @@ export const id5IdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
+    if (value && value.ids !== undefined) {
+      const responseObj = {};
+      const eids = {};
+      Object.entries(value.ids).forEach(([key, value]) => {
+        let eid = value.eid;
+        let uid = eid?.uids?.[0]
+        responseObj[key] = {
+          uid: uid?.id,
+          ext: uid?.ext
+        };
+        eids[key] = function () {
+          return eid;
+        }; // register function to get eid for each id (key) decoded
+      });
+      this.eids = eids; // overwrite global eids
+      return responseObj;
+    }
+
     let universalUid, publisherTrueLinkId;
     let ext = {};
 
@@ -137,7 +197,7 @@ export const id5IdSubmodule = {
     } else {
       return undefined;
     }
-
+    this.eids = DEFAULT_EIDS;
     let responseObj = {
       id5id: {
         uid: universalUid,
@@ -155,7 +215,7 @@ export const id5IdSubmodule = {
 
     if (publisherTrueLinkId) {
       responseObj.trueLinkId = {
-        uid: publisherTrueLinkId,
+        uid: publisherTrueLinkId
       };
     }
 
@@ -195,13 +255,13 @@ export const id5IdSubmodule = {
       return undefined;
     }
 
-    if (!hasWriteConsentToLocalStorage(consentData)) {
+    if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.');
       return undefined;
     }
 
     const resp = function (cbFunction) {
-      const fetchFlow = new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData(), gppDataHandler.getConsentData());
+      const fetchFlow = new IdFetchFlow(submoduleConfig, consentData?.gdpr, cacheIdObj, consentData?.usp, consentData?.gpp);
       fetchFlow.execute()
         .then(response => {
           cbFunction(response);
@@ -226,60 +286,21 @@ export const id5IdSubmodule = {
    * @return {IdResponse} A response object that contains id.
    */
   extendId(config, consentData, cacheIdObj) {
-    if (!hasWriteConsentToLocalStorage(consentData)) {
+    if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.');
       return cacheIdObj;
     }
 
     logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
     if (cacheIdObj) {
-      cacheIdObj.nbPage = incrementNb(cacheIdObj)
+      cacheIdObj.nbPage = incrementNb(cacheIdObj);
     }
     return cacheIdObj;
   },
   primaryIds: ['id5id', 'trueLinkId'],
-  eids: {
-    'id5id': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      source: ID5_DOMAIN,
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'euid': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return data.source;
-      },
-      atype: 3,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'trueLinkId': {
-      getValue: function (data) {
-        return data.uid;
-      },
-      getSource: function (data) {
-        return TRUE_LINK_SOURCE;
-      },
-      atype: 1,
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    }
-
+  eids: DEFAULT_EIDS,
+  _reset() {
+    this.eids = DEFAULT_EIDS;
   }
 };
 
@@ -461,7 +482,7 @@ export class IdFetchFlow {
 }
 
 async function loadExternalModule(url) {
-  return new GreedyPromise((resolve, reject) => {
+  return new PbPromise((resolve, reject) => {
     if (window.id5Prebid) {
       // Already loaded
       resolve();

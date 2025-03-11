@@ -285,7 +285,7 @@ describe('LiveIntent Analytics Adapter ', () => {
     liAnalytics.enableAnalytics(configWithSamplingAll);
     sandbox.stub(utils, 'generateUUID').returns(instanceId);
     sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
-    sandbox.stub(auctionManager.index, 'getAuction').withArgs(auctionId).returns({ getWinningBids: () => winningBids });
+    sandbox.stub(auctionManager.index, 'getAuction').withArgs({auctionId}).returns({ getWinningBids: () => winningBids });
     events.emit(EVENTS.AUCTION_END, args);
     clock.tick(2000);
     expect(server.requests.length).to.equal(1);
@@ -304,7 +304,7 @@ describe('LiveIntent Analytics Adapter ', () => {
     liAnalytics.enableAnalytics(configWithSamplingNone);
     sandbox.stub(utils, 'generateUUID').returns(instanceId);
     sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
-    sandbox.stub(auctionManager.index, 'getAuction').withArgs(auctionId).returns({ getWinningBids: () => winningBids });
+    sandbox.stub(auctionManager.index, 'getAuction').withArgs({auctionId}).returns({ getWinningBids: () => winningBids });
     events.emit(EVENTS.AUCTION_END, args);
     clock.tick(2000);
     expect(server.requests.length).to.equal(0);

@@ -72,7 +72,17 @@ export const spec = {
       if (config.getConfig('coppa') === true) {
         deepSetValue(data, 'regs.coppa', 1);
       }
-
+      if (bidderRequest.gppConsent) {
+        deepSetValue(data, 'regs.gpp', {
+          string: bidderRequest.gppConsent.gppString,
+          sid: bidderRequest.gppConsent.applicableSections
+        });
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        deepSetValue(data, 'regs.gpp', {
+          string: bidderRequest.ortb2.regs.gpp,
+          sid: bidderRequest.ortb2.regs.gpp_sid
+        });
+      }
       data.sizes = [];
       _each(request.sizes, (size) => {
         data.sizes.push({
