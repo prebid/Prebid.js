@@ -772,7 +772,6 @@ describe('The DFP video support module', function () {
         expect(vastXml).to.deep.eql(expectedOutput);
         done();
       })
-      .catch(done)
       .finally(config.resetConfig);
 
     server.respond();
@@ -868,7 +867,6 @@ describe('The DFP video support module', function () {
         expect(finalGamWrapper).to.deep.eql(gamWrapper);
         done();
       })
-      .catch(done)
       .finally(config.resetConfig);
     server.respond();
   });

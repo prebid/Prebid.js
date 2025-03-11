@@ -90,18 +90,6 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     options.adXml = bid.vastXml;
     options.winner = bid.bidder;
 
-    const { useLocal } = getConfig('cache') || {};
-
-    // in case of using local cache, VAST should be prefetched
-    // needed for make blob always reachable, regardless of player context
-    if (useLocal && !options.prefetchedVastXml) {
-      fetch(adUrl)
-        .then(response => response.text())
-        .then(prefetchedVastXml => loadAd(adUrl, divId, {...options, prefetchedVastXml}))
-        .catch((err) => logError(`Unable to fetch vast for bid ${bid.bidder}`, err))
-      return;
-    }
-
     loadAd(adUrl, divId, options);
   }
 
