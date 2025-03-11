@@ -62,6 +62,7 @@ function getAdUnitsData(args) {
       plid: adUnit.code,
       au: getAdUnitPathByCode(adUnit.code),
       pbd,
+      dpc: rtm?.length,
       ...(shouldSampleRtm && rtm ? { rtm } : {})
     }
   });
