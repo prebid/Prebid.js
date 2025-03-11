@@ -452,6 +452,20 @@ describe('targeting tests', function () {
       expect(logErrorStub.calledOnce).to.be.true;
     });
 
+    it('does not include adunit targeting for ad units that are not requested', () => {
+      sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => ([
+        {
+          code: 'au1',
+          [JSON_MAPPING.ADSERVER_TARGETING]: {'aut': 'v1'}
+        },
+        {
+          code: 'au2',
+          [JSON_MAPPING.ADSERVER_TARGETING]: {'aut': 'v2'}
+        }
+      ]));
+      expect(targetingInstance.getAllTargeting('au1').au2).to.not.exist;
+    })
+
     describe('when bidLimit is present in setConfig', function () {
       let bid4;
 
