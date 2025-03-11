@@ -5,7 +5,7 @@ import {expect} from 'chai';
 import {userSync} from 'src/userSync.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import { EVENTS } from 'src/constants.js';
+import { EVENTS, DEBUG_MODE } from 'src/constants.js';
 import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
@@ -1732,6 +1732,8 @@ describe('bidderFactory', () => {
     let addBidResponseStub;
     let doneStub;
     let origBS;
+    let getParameterByNameStub;
+    let debugTurnedOnStub;
 
     before(() => {
       origBS = window.$$PREBID_GLOBAL$$.bidderSettings;
@@ -1757,6 +1759,8 @@ describe('bidderFactory', () => {
       addBidResponseStub = sinon.stub();
       addBidResponseStub.reject = sinon.stub();
       doneStub = sinon.stub();
+      getParameterByNameStub = sinon.stub(utils, 'getParameterByName');
+      debugTurnedOnStub = sinon.stub(utils, 'debugTurnedOn');
     });
 
     afterEach(() => {
@@ -1765,6 +1769,8 @@ describe('bidderFactory', () => {
       ajaxStub.restore();
       if (addBidResponseStub.restore) addBidResponseStub.restore();
       if (doneStub.restore) doneStub.restore();
+      getParameterByNameStub.restore();
+      debugTurnedOnStub.restore();
       window.$$PREBID_GLOBAL$$.bidderSettings = origBS;
     });
 
@@ -1775,6 +1781,8 @@ describe('bidderFactory', () => {
       const compressedPayload = 'compressedData'; // Simulated compressed payload
       isGzipSupportedStub.returns(true);
       gzipStub.resolves(compressedPayload);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
 
       window.$$PREBID_GLOBAL$$.bidderSettings = {
         [CODE]: {
@@ -1806,6 +1814,8 @@ describe('bidderFactory', () => {
       const url = 'https://test.url.com';
       const data = { arg: 'value' };
       isGzipSupportedStub.returns(false);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
 
       window.$$PREBID_GLOBAL$$.bidderSettings = {
         [CODE]: {
@@ -1836,6 +1846,8 @@ describe('bidderFactory', () => {
       const url = 'https://test.url.com';
       const data = { arg: 'value' };
       isGzipSupportedStub.returns(true);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
 
       window.$$PREBID_GLOBAL$$.bidderSettings = {
         [CODE]: {
@@ -1856,6 +1868,29 @@ describe('bidderFactory', () => {
         expect(gzipStub.called).to.be.false;
         expect(ajaxStub.calledOnce).to.be.true;
         expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1'); // Ensure URL does not have gzip=1
+        expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+        done();
+      });
+    });
+
+    it('should NOT gzip when debugMode is enabled', function (done) {
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('true');
+      debugTurnedOnStub.returns(true);
+      isGzipSupportedStub.returns(true);
+
+      const bidder = newBidder(spec);
+      const url = 'https://test.url.com';
+      const data = { arg: 'value' };
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns({ method: 'POST', url, data });
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      setTimeout(() => {
+        expect(gzipStub.called).to.be.false;
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
         expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
         done();
       });
