@@ -28,6 +28,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+const run = require('gulp-run-command').default;
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -518,7 +519,7 @@ gulp.task(lint);
 gulp.task(watch);
 
 gulp.task(clean);
-
+gulp.task('ts', run('tsc'));
 gulp.task(escapePostbidConfig);
 
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
@@ -540,7 +541,7 @@ gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+gulp.task('build', gulp.series(clean, 'ts', 'build-bundle-prod', updateCreativeExample));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));

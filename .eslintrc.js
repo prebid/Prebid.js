@@ -42,7 +42,10 @@ module.exports = {
     sourceType: 'module',
     ecmaVersion: 2018,
   },
-  ignorePatterns: ['libraries/creative-renderer*', '**/*.ts'],
+  ignorePatterns: [
+    'libraries/creative-renderer*',
+    '**/*.ts' // TODO: ts support requires newer eslint
+  ],
 
   rules: {
     'comma-dangle': 'off',
