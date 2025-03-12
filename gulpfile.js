@@ -165,7 +165,7 @@ function prebidSource(webpackCfg) {
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
-  return gulp.src([].concat(moduleSources, analyticsSources, 'build/precompiled/src/prebid.js'))
+  return gulp.src([].concat(moduleSources, analyticsSources, helpers.getPrecompiledPath('src/prebid.js')))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(webpackCfg, webpack));
 }
@@ -194,7 +194,10 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
 }
 
 function copyJson() {
-  return gulp.src('**/*.json', {base: '.'})
+  return gulp.src([
+    '**/*.json',
+    '!node_modules/**/*'
+  ], {base: '.'})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 

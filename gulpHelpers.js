@@ -9,7 +9,7 @@ const gutil = require('gulp-util');
 const submodules = require('./modules/.submodules.json').parentModules;
 
 const PRECOMPILED_PATH = './build/precompiled'
-const MODULE_PATH = path.join(PRECOMPILED_PATH, 'modules');
+const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
@@ -72,10 +72,16 @@ module.exports = {
         .reduce((memo, file) => {
           let moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);
+          let candidates;
           if (fs.lstatSync(modulePath).isDirectory()) {
-            modulePath = path.join(modulePath, 'index.js');
+            candidates = [
+              path.join(modulePath, 'index.js'),
+              path.join(modulePath, 'index.ts')
+            ]
+          } else {
+            candidates = [modulePath]
           }
-          if (fs.existsSync(modulePath)) {
+          if (candidates.some(name => fs.existsSync(name))) {
             memo[modulePath] = moduleName;
           }
           return memo;
