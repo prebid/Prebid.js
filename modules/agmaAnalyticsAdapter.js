@@ -5,6 +5,7 @@ import {
   logError,
   getWindowSelf,
   getWindowTop,
+  canAccessWindowTop,
   getPerformanceNow,
   isEmpty,
   isEmptyStr,
@@ -26,7 +27,7 @@ const pageViewId = generateUUID();
 
 // Helper functions
 const getScreen = () => {
-  const win = getWindowTop();
+  const win = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
   const d = document;
   const e = d.documentElement;
   const g = d.getElementsByTagName('body')[0];
