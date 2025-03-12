@@ -1,26 +1,7 @@
-import { startAuction } from '../../src/prebid.js';
-
-const cache = new Map();
-
-startAuction.before((next, auctionConfig) => {
-  clearCache();
-  next(auctionConfig);
-});
-
-export function clearCache() {
-  cache.clear();
-}
+import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
 
 export function getBoundingBox(element, {w, h} = {}) {
-  let clientRect;
-  if (cache.has(element)) {
-    clientRect = cache.get(element);
-  } else {
-    clientRect = element.getBoundingClientRect();
-    cache.set(element, clientRect);
-  }
-
-  let {width, height, left, top, right, bottom, x, y} = clientRect;
+  let {width, height, left, top, right, bottom, x, y} = getBoundingClientRect(element);
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;

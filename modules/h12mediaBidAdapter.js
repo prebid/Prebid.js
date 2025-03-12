@@ -1,6 +1,6 @@
 import { inIframe, logError, logMessage, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';
@@ -36,8 +36,8 @@ export const spec = {
         x: framePos[0],
         y: framePos[1],
       } : {
-        x: adUnitElement && getBoundingBox(adUnitElement).x,
-        y: adUnitElement && getBoundingBox(adUnitElement).y,
+        x: adUnitElement && getBoundingClientRect(adUnitElement).x,
+        y: adUnitElement && getBoundingClientRect(adUnitElement).y,
       };
 
       const bidrequest = {
@@ -243,8 +243,8 @@ function getFramePos() {
       if (m > 1) {
         t = t.parent
       }
-      frmLeft = frmLeft + getBoundingBox(t.frameElement).left;
-      frmTop = frmTop + getBoundingBox(t.frameElement).top;
+      frmLeft = frmLeft + getBoundingClientRect(t.frameElement).left;
+      frmTop = frmTop + getBoundingClientRect(t.frameElement).top;
     } catch (o) { /* keep looping */
     }
   } while ((m < 100) && (t.parent !== t.self))

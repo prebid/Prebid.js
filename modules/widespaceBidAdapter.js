@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -196,7 +196,7 @@ function pixelSyncPossibility() {
 
 function visibleOnLoad(element) {
   if (element) {
-    const topPos = getBoundingBox(element).top;
+    const topPos = getBoundingClientRect(element).top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
   }
   return '';

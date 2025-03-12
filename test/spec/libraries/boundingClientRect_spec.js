@@ -1,7 +1,7 @@
-import { getBoundingBox } from '../../../libraries/percentInView/percentInView';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
 import { startAuction } from '../../../src/prebid';
 
-describe('getBoundingBox', () => {
+describe('getBoundingClientRect', () => {
   let element, getBoundingClientRectSpy;
 
   beforeEach(() => {
@@ -14,41 +14,36 @@ describe('getBoundingBox', () => {
   });
 
   it('should fire getBoundingClientRect on element initially', () => {
-    getBoundingBox(element);
+    getBoundingClientRect(element);
     expect(getBoundingClientRectSpy.calledOnce).to.equal(true);
   });
 
   it('should not fire getBoundingClientRect twice for the same element', () => {
-    getBoundingBox(element);
-    getBoundingBox(element);
+    getBoundingClientRect(element);
+    getBoundingClientRect(element);
     expect(getBoundingClientRectSpy.callCount).to.equal(1);
   });
 
-  it('should fire getBoundingClientRect on element again if new auction was started', () => {
+  it('should fire getBoundingClientRect on element again if new auction was started', (done) => {
+    const onAuctionDone = function() {
+      getBoundingClientRect(element);
+      expect(getBoundingClientRectSpy.callCount).to.equal(2);
+      done();
+    }
+
     const mockAuctionData = {
-      bidsBackHandler: () => {},
+      bidsBackHandler: onAuctionDone,
+      ortb2Fragments: {},
       timeout: 3000,
-      adUnitCodes: ['adunit-1'],
-      adUnits: [
-        {
-          code: 'adunit-1',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], [300, 600]]
-            }
-          }
-        }
-      ],
+      adUnitCodes: [],
+      adUnits: [],
       ttlBuffer: 1000,
-      auctionId: '12345',
+      auctionId: '909090',
       defer: {resolve: () => {}}
     };
 
-    getBoundingBox(element);
+    getBoundingClientRect(element);
     startAuction(mockAuctionData);
-    getBoundingBox(element);
-
-    expect(getBoundingClientRectSpy.callCount).to.equal(2);
   });
 
   it('should return same value for multiple calls', () => {
@@ -58,12 +53,12 @@ describe('getBoundingBox', () => {
     element.style.height = expectedHeight + 'px';
     document.body.append(element);
 
-    const result1 = getBoundingBox(element);
+    const result1 = getBoundingClientRect(element);
 
     expect(result1.width).to.deep.eql(expectedWidth);
     expect(result1.height).to.deep.eql(expectedHeight);
 
-    const result2 = getBoundingBox(element);
+    const result2 = getBoundingClientRect(element);
 
     expect(result2).to.deep.eql(result1);
 

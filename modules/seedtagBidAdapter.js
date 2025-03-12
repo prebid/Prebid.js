@@ -1,4 +1,4 @@
-import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -221,7 +221,7 @@ function geom(adunitCode) {
   const slot = document.getElementById(adunitCode);
   if (slot) {
     const scrollY = window.scrollY;
-    const { top, left, width, height } = getBoundingBox(slot);
+    const { top, left, width, height } = getBoundingClientRect(slot);
     const viewport = {
       width: window.innerWidth,
       height: window.innerHeight,

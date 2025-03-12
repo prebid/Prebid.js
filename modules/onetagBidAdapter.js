@@ -7,7 +7,7 @@ import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
-import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -308,12 +308,12 @@ function setGeneralInfo(bidRequest) {
 function getSpaceCoords(id) {
   const space = document.getElementById(id);
   try {
-    const { top, left, width, height } = getBoundingBox(space);
+    const { top, left, width, height } = getBoundingClientRect(space);
     let window = space.ownerDocument.defaultView;
     const coords = { top: top + window.pageYOffset, left: left + window.pageXOffset, width, height };
     let frame = window.frameElement;
     while (frame != null) {
-      const { top, left } = getBoundingBox(frame);
+      const { top, left } = getBoundingClientRect(frame);
       coords.top += top + window.pageYOffset;
       coords.left += left + window.pageXOffset;
       window = window.parent;

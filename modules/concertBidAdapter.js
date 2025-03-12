@@ -2,7 +2,7 @@ import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '..
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import { getBoundingBox } from '../libraries/percentInView/percentInView.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -266,7 +266,7 @@ function getUserId(id, source, uidExt, atype) {
 
 function getOffset(el) {
   if (el) {
-    const rect = getBoundingBox(el);
+    const rect = getBoundingClientRect(el);
     return {
       left: rect.left + window.scrollX,
       top: rect.top + window.scrollY

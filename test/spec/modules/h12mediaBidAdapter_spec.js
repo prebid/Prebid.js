@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/h12mediaBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import { clearCache } from '../../../libraries/percentInView/percentInView';
+import {clearCache} from '../../../libraries/boundingClientRect/boundingClientRect';
 
 describe('H12 Media Adapter', function () {
   const DEFAULT_CURRENCY = 'USD';
