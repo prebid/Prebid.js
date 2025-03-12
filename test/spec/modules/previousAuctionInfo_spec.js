@@ -94,7 +94,7 @@ describe('previous auction info', () => {
         bidderOriginalCpm: 2.1,
         bidderCurrency: 'EUR',
         bidderOriginalCurrency: 'EUR',
-        bidderErrorCode: -1,
+        bidderErrorCode: null,
         timestamp: auctionDetails.timestamp
       });
     });
