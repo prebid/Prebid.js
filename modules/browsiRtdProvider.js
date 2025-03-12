@@ -65,7 +65,7 @@ export function setTimestamp() {
 }
 
 export function initAnalytics() {
-  getGlobal()?.enableAnalytics({
+  getGlobal().enableAnalytics({
     provider: 'browsi',
     options: {}
   })
