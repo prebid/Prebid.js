@@ -73,7 +73,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|ts)$/,
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
         use: [
           {
@@ -91,7 +91,21 @@ module.exports = {
             options: babelConfig
           }
         ],
+      },
+      /*
+      {
+        test: /\.tsx?$/,
+        use: [
+          {
+            loader: 'ts-loader'
+          },
+          {
+            loader: 'babel-loader',
+            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
+          },
+        ]
       }
+       */
     ]
   },
   optimization: {

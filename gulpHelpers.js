@@ -76,14 +76,20 @@ module.exports = {
     try {
       var absoluteModulePath = path.join(__dirname, MODULE_PATH);
       internalModules = fs.readdirSync(absoluteModulePath)
-        .filter(file => (/^[^\.]+(\.js)?$/).test(file))
+        .filter(file => (/^[^\.]+(\.js|\.tsx?)?$/).test(file))
         .reduce((memo, file) => {
-          var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
+          let moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);
+          let candidates;
           if (fs.lstatSync(modulePath).isDirectory()) {
-            modulePath = path.join(modulePath, 'index.js')
+            candidates = [
+              path.join(modulePath, 'index.ts'),
+              path.join(modulePath, 'index.js'),
+            ]
+          } else {
+            candidates = [modulePath];
           }
-          if (fs.existsSync(modulePath)) {
+          if (candidates.some((file) => fs.existsSync(file))) {
             memo[modulePath] = moduleName;
           }
           return memo;

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "allowJs": true,
+    "checkJs": false,
+    "sourceMap": true,
+    "target": "es2018",
+    "rootDir": "./",
+  },
+  "include": [
+    "./**/*.ts",
+  ]
+}

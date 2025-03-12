@@ -12,6 +12,7 @@ function useLocal(module) {
 module.exports = function (options = {}) {
   return {
     'presets': [
+      useLocal('@babel/preset-typescript'),
       [
         useLocal('@babel/preset-env'),
         {
