@@ -27,13 +27,17 @@ const pageViewId = generateUUID();
 
 // Helper functions
 const getScreen = () => {
-  const win = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
-  const d = document;
-  const e = d.documentElement;
-  const g = d.getElementsByTagName('body')[0];
-  const x = win.innerWidth || e.clientWidth || g.clientWidth;
-  const y = win.innerHeight || e.clientHeight || g.clientHeight;
-  return { x, y };
+  try {
+    const win = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
+    const d = document;
+    const e = d.documentElement;
+    const g = d.getElementsByTagName('body')[0];
+    const x = win.innerWidth || e.clientWidth || g.clientWidth;
+    const y = win.innerHeight || e.clientHeight || g.clientHeight;
+    return { x, y };
+  } catch (e) {
+    return {x: 0, y: 0};
+  }
 };
 
 const getUserIDs = () => {
@@ -44,11 +48,15 @@ const getUserIDs = () => {
 };
 
 export const getOrtb2Data = (options = {}) => {
-  const configData = config.getConfig();
-  const win = getWindowSelf();
-  return {
-    site: win.agma?.ortb2?.site ?? options.ortb2?.site ?? configData.ortb2?.site,
-    user: win.agma?.ortb2?.user ?? options.ortb2?.user ?? configData.ortb2?.user,
+  try {
+    const configData = config.getConfig();
+    const win = getWindowSelf();
+    return {
+      site: win.agma?.ortb2?.site ?? options.ortb2?.site ?? configData.ortb2?.site,
+      user: win.agma?.ortb2?.user ?? options.ortb2?.user ?? configData.ortb2?.user,
+    }
+  } catch (e) {
+    return {};
   }
 };
 
