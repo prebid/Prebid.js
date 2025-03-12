@@ -27,7 +27,7 @@ Anonymised’s Real-time Data Provider automatically obtains segment IDs from th
            bidders: ["appnexus", "onetag", "pubmatic", "smartadserver", ...],
            segtax: 1000,
            tagConfig: {
-            idw_client_id: 'testId'
+            clientId: 'testId'
             //The rest of the Anonymised Marketing Tag parameters goes here
            }
          }

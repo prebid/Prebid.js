@@ -55,11 +55,12 @@ export function createRtdProvider(moduleName) {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`);
       return;
     }
-    const tagConfig = config.params?.tagConfig || {};
+    const tagConfig = config.params?.tagConfig ? {...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId} : {};
+    delete tagConfig.clientId;
 
     loadExternalScript(`${MARKETING_TAG_URL}?ref=prebid`, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag loaded successfully`);
-    }, document, {...tagConfig});
+    }, document, tagConfig);
   }
 
   /**
@@ -123,7 +124,7 @@ export function createRtdProvider(moduleName) {
    * @return {boolean}
    */
   function init(config, userConsent) {
-    if (config && config.params && config.params.tagConfig && config.params.tagConfig.idw_client_id) {
+    if (config && config.params && config.params.tagConfig && config.params.tagConfig.clientId) {
       loadMarketingTag(config);
     }
     return true;

@@ -35,18 +35,18 @@ describe('anonymisedRtdProvider', function() {
     it('successfully instantiates', function () {
 		  expect(anonymisedRtdSubmodule.init()).to.equal(true);
     });
-    it('should load external script when params.tagConfig.idw_client_id is set', function () {
+    it('should load external script when params.tagConfig.clientId is set', function () {
       const rtdConfig = {
         params: {
           tagConfig: {
-            idw_client_id: 'testId'
+            clientId: 'testId'
           }
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScript.called).to.be.true;
     });
-    it('should not load external script when params.tagConfig.idw_client_id is not set', function () {
+    it('should not load external script when params.tagConfig.clientId is not set', function () {
       const rtdConfig = {
         params: {
           tagConfig: {}
@@ -59,21 +59,24 @@ describe('anonymisedRtdProvider', function() {
       const rtdConfig = {
         params: {
           tagConfig: {
-            idw_client_id: 'testId'
+            clientId: 'testId'
           }
         }
       };
       anonymisedRtdSubmodule.init(rtdConfig, {});
       const expected = 'https://static.anonymised.io/light/loader.js?ref=prebid';
+      const expectedTagConfig = {
+        idw_client_id: 'testId'
+      };
 
       expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
-      expect(loadExternalScript.args[0][5]).to.deep.equal(rtdConfig.params.tagConfig);
+      expect(loadExternalScript.args[0][5]).to.deep.equal(expectedTagConfig);
     });
     it('should not load external script when it is already loaded', function () {
       const rtdConfig = {
         params: {
           tagConfig: {
-            idw_client_id: 'testId'
+            clientId: 'testId'
           }
         }
       };
