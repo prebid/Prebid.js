@@ -1,5 +1,6 @@
 import {config} from 'src/config.js';
 import {getRealTimeData, anonymisedRtdSubmodule, storage} from 'modules/anonymisedRtdProvider.js';
+import { loadExternalScript } from '../../../src/adloader.js';
 
 describe('anonymisedRtdProvider', function() {
   let getDataFromLocalStorageStub;
@@ -33,6 +34,54 @@ describe('anonymisedRtdProvider', function() {
   describe('anonymisedRtdSubmodule', function() {
     it('successfully instantiates', function () {
 		  expect(anonymisedRtdSubmodule.init()).to.equal(true);
+    });
+    it('should load external script when params.tagConfig.idw_client_id is set', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            idw_client_id: 'testId'
+          }
+        }
+      };
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScript.called).to.be.true;
+    });
+    it('should not load external script when params.tagConfig.idw_client_id is not set', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {}
+        }
+      };
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScript.called).to.be.false;
+    });
+    it('should load external script with correct attributes', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            idw_client_id: 'testId'
+          }
+        }
+      };
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      const expected = 'https://static.anonymised.io/light/loader.js?ref=prebid';
+
+      expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
+      expect(loadExternalScript.args[0][5]).to.deep.equal(rtdConfig.params.tagConfig);
+    });
+    it('should not load external script when it is already loaded', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            idw_client_id: 'testId'
+          }
+        }
+      };
+      const script = document.createElement('script');
+      script.src = 'https://static.anonymised.io/light/loader.js?random=quary';
+      document.body.appendChild(script);
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScript.called).to.be.false;
     });
   });
 
