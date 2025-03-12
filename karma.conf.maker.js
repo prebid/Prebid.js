@@ -2,10 +2,11 @@
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
-const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
+const path = require('path');
+const helpers = require('./gulpHelpers.js');
 
 function newWebpackConfig(codeCoverage, disableFeatures) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
@@ -16,14 +17,17 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     devtool: 'inline-source-map',
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
-
-  webpackConfig.module.rules
-    .flatMap((r) => r.use)
-    .filter((use) => use.loader === 'babel-loader')
-    .forEach((use) => {
-      use.options = babelConfig({test: true, codeCoverage, disableFeatures});
-    });
-
+  webpackConfig.module = webpackConfig.module || {};
+  webpackConfig.module.rules = webpackConfig.module.rules || [];
+  webpackConfig.module.rules.push({
+    test: /\.js$/,
+    exclude: path.resolve('./node_modules'),
+    loader: 'babel-loader',
+    options: {
+      presets: [['@babel/preset-env', {modules: 'commonjs'}]],
+      plugins: codeCoverage ? ['babel-plugin-istanbul'] : []
+    }
+  })
   return webpackConfig;
 }
 
@@ -113,6 +117,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
   }
 
   var files = file ? ['test/test_deps.js', ...file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
+  files = files.map(helpers.getPrecompiledPath);
 
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)

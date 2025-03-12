@@ -6,7 +6,6 @@ var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 const fs = require('fs');
-const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
 const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
 var plugins = [
@@ -40,9 +39,10 @@ if (argv.analyze) {
 module.exports = {
   mode: 'production',
   devtool: 'source-map',
+  context: helpers.getPrecompiledPath(),
   resolve: {
     modules: [
-      path.resolve('.'),
+      helpers.getPrecompiledPath(),
       'node_modules'
     ],
   },
@@ -69,44 +69,6 @@ module.exports = {
   output: {
     chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
     chunkLoading: 'jsonp',
-  },
-  module: {
-    rules: [
-      {
-        test: /\.(js|ts)$/,
-        exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
-        use: [
-          {
-            loader: 'babel-loader',
-            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
-          }
-        ]
-      },
-      { // This makes sure babel-loader is ran on our intended Prebid.js modules that happen to be in node_modules
-        test: /\.js$/,
-        include: helpers.getArgModules().map(module => new RegExp('node_modules/' + module + '/')),
-        use: [
-          {
-            loader: 'babel-loader',
-            options: babelConfig
-          }
-        ],
-      },
-      /*
-      {
-        test: /\.tsx?$/,
-        use: [
-          {
-            loader: 'ts-loader'
-          },
-          {
-            loader: 'babel-loader',
-            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
-          },
-        ]
-      }
-       */
-    ]
   },
   optimization: {
     usedExports: true,

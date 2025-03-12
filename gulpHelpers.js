@@ -8,7 +8,8 @@ const _ = require('lodash');
 const gutil = require('gulp-util');
 const submodules = require('./modules/.submodules.json').parentModules;
 
-const MODULE_PATH = './modules';
+const PRECOMPILED_PATH = './build/precompiled'
+const MODULE_PATH = path.join(PRECOMPILED_PATH, 'modules');
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
@@ -29,15 +30,6 @@ module.exports = {
     return (argv.browsers) ? argv.browsers.split(',') : [];
   },
 
-  toCapitalCase: function (str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  },
-
-  jsonifyHTML: function (str) {
-    return str.replace(/\n/g, '')
-      .replace(/<\//g, '<\\/')
-      .replace(/\/>/g, '\\/>');
-  },
   getArgModules() {
     var modules = (argv.modules || '')
       .split(',')
@@ -80,16 +72,10 @@ module.exports = {
         .reduce((memo, file) => {
           let moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);
-          let candidates;
           if (fs.lstatSync(modulePath).isDirectory()) {
-            candidates = [
-              path.join(modulePath, 'index.ts'),
-              path.join(modulePath, 'index.js'),
-            ]
-          } else {
-            candidates = [modulePath];
+            modulePath = path.join(modulePath, 'index.js');
           }
-          if (candidates.some((file) => fs.existsSync(file))) {
+          if (fs.existsSync(modulePath)) {
             memo[modulePath] = moduleName;
           }
           return memo;
@@ -113,6 +99,10 @@ module.exports = {
 
   getBuiltPath(dev, assetPath) {
     return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
+  },
+
+  getPrecompiledPath(filePath) {
+    return path.resolve(filePath ? path.join(PRECOMPILED_PATH, filePath) : PRECOMPILED_PATH)
   },
 
   getBuiltModules: function(dev, externalModules) {
