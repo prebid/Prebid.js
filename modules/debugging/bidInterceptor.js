@@ -1,13 +1,5 @@
-import { Renderer } from '../../src/Renderer.js';
-import { auctionManager } from '../../src/auctionManager.js';
-import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
-import {
-  deepAccess,
-  deepClone,
-  delayExecution,
-  mergeDeep,
-  hasNonSerializableProperty
-} from '../../src/utils.js';
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import {deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep} from '../../src/utils.js';
 import responseResolvers from './responses.js';
 
 /**
@@ -147,7 +139,8 @@ Object.assign(BidInterceptor.prototype, {
     return (bid, ...args) => {
       const response = this.responseDefaults(bid);
       mergeDeep(response, replFn({args: [bid, ...args]}));
-      this.setDefaultAd(bid, response);
+      const resolver = responseResolvers[response.mediaType];
+      resolver && resolver(bid, response);
       response.isDebug = true;
       return response;
     }
@@ -175,8 +168,6 @@ Object.assign(BidInterceptor.prototype, {
       requestId: bid.bidId,
       cpm: 3.5764,
       currency: 'EUR',
-      width: 600,
-      height: 500,
       ttl: 360,
       creativeId: 'mock-creative-id',
       netRevenue: false,
@@ -184,47 +175,18 @@ Object.assign(BidInterceptor.prototype, {
     };
 
     if (!bid.mediaType) {
-      const adUnit = auctionManager.index.getAdUnit({adUnitId: bid.adUnitId}) || {mediaTypes: {}};
-      response.mediaType = Object.keys(adUnit.mediaTypes)[0] || 'banner';
+      response.mediaType = Object.keys(bid.mediaTypes ?? {})[0] ?? BANNER;
     }
-
+    let size;
+    if (response.mediaType === BANNER) {
+      size = bid.mediaTypes?.banner?.sizes?.[0] ?? [300, 250];
+    } else if (response.mediaType === VIDEO) {
+      size = bid.mediaTypes?.video?.playerSize?.[0] ?? [600, 500];
+    }
+    if (Array.isArray(size)) {
+      ([response.width, response.height] = size);
+    }
     return response;
-  },
-  setDefaultAd(bid, bidResponse) {
-    switch (bidResponse.mediaType) {
-      case VIDEO:
-        if (!bidResponse.hasOwnProperty('vastXml') && !bidResponse.hasOwnProperty('vastUrl')) {
-          bidResponse.vastXml = responseResolvers[VIDEO]();
-          bidResponse.renderer = Renderer.install({
-            url: 'https://cdn.jwplayer.com/libraries/l5MchIxB.js',
-          });
-          bidResponse.renderer.setRender(function (bid) {
-            const player = window.jwplayer('player').setup({
-              width: 640,
-              height: 360,
-              advertising: {
-                client: 'vast',
-                outstream: true,
-                endstate: 'close'
-              },
-            });
-            player.on('ready', function() {
-              player.loadAdXml(bid.vastXml);
-            });
-          })
-        }
-        break;
-      case NATIVE:
-        if (!bidResponse.hasOwnProperty('native')) {
-          bidResponse.native = responseResolvers[NATIVE](bid);
-        }
-        break;
-      case BANNER:
-      default:
-        if (!bidResponse.hasOwnProperty('ad') && !bidResponse.hasOwnProperty('adUrl')) {
-          bidResponse.ad = responseResolvers[BANNER]();
-        }
-    }
   },
   /**
    * Match a candidate bid against all registered rules.
