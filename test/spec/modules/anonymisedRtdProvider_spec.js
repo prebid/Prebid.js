@@ -86,6 +86,35 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScript.called).to.be.false;
     });
+    it('should load external script from tagUrl when it is set', function () {
+      const rtdConfig = {
+        params: {
+          tagUrl: 'https://example.io/loader.js',
+          tagConfig: {
+            clientId: 'testId'
+          }
+        }
+      };
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      const expected = 'https://example.io/loader.js';
+
+      expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
+    });
+    it('should not load external script from tagUrl when it is already loaded', function () {
+      const rtdConfig = {
+        params: {
+          tagUrl: 'https://example.io/loader.js',
+          tagConfig: {
+            clientId: 'testId'
+          }
+        }
+      };
+      const script = document.createElement('script');
+      script.src = 'https://example.io/loader.js';
+      document.body.appendChild(script);
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScript.called).to.be.false;
+    });
   });
 
   describe('Get Real-Time Data', function() {

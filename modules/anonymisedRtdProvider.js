@@ -46,19 +46,21 @@ export function createRtdProvider(moduleName) {
   }
   /**
    * Load the Anonymised Marketing Tag script
-   * @param {String} config - The client ID for the script
+   * @param {Object} config
    */
   function loadMarketingTag(config) {
     logMessage(`${SUBMODULE_NAME}RtdProvider: Loading Marketing Tag`);
     // Check if the script is already loaded
-    if (document.querySelector(`script[src*="${MARKETING_TAG_URL}"]`)) {
+    if (document.querySelector(`script[src*="${config.params.tagUrl ?? MARKETING_TAG_URL}"]`)) {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag already loaded`);
       return;
     }
     const tagConfig = config.params?.tagConfig ? {...config.params.tagConfig, idw_client_id: config.params.tagConfig.clientId} : {};
     delete tagConfig.clientId;
 
-    loadExternalScript(`${MARKETING_TAG_URL}?ref=prebid`, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
+    const tagUrl = config.params.tagUrl ? config.params.tagUrl : `${MARKETING_TAG_URL}?ref=prebid`;
+
+    loadExternalScript(tagUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
       logMessage(`${SUBMODULE_NAME}RtdProvider: Marketing Tag loaded successfully`);
     }, document, tagConfig);
   }
