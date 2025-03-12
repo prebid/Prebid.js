@@ -135,7 +135,7 @@ module.exports = {
       'no-restricted-properties': [
         'error', {
           property: "getBoundingClientRect",
-          message: "Please use libraries/percentInView getBoundingBox fn instead"
+          message: "Please use libraries/boundingClientRect getBoundingClientRect fn instead"
         }
       ]
     }
