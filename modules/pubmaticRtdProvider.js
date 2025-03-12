@@ -97,6 +97,10 @@ export const getUtm = () => {
 
 export const getFloorsConfig = (apiResponse) => {
   let defaultFloorConfig = conf.getConfig()?.floors ?? {};
+
+  if (defaultFloorConfig?.endpoint) {
+    delete defaultFloorConfig.endpoint
+  }
   defaultFloorConfig.data = { ...apiResponse };
 
   const floorsConfig = {

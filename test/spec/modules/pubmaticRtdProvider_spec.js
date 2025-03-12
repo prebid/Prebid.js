@@ -253,6 +253,20 @@ describe('Pubmatic RTD Provider', () => {
       expect(result.floors.data).to.deep.equal(apiResponse);
     });
 
+    it('should delete endpoint field in floors', () => {
+      const apiResponse = {
+        currency: 'USD',
+        schema: { fields: ['mediaType'] },
+        endpoint: {
+          url: './floors.json'
+        },
+        values: { 'banner': 1.0 }
+      };
+
+      const result = getFloorsConfig(apiResponse);
+      expect(result.floors).to.not.have.property('endpoint');
+    });
+
     it('should maintain correct function references', () => {
       const result = getFloorsConfig({});
 
