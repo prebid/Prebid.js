@@ -1,13 +1,23 @@
 {
   "compilerOptions": {
+    // Ensure that .d.ts files are created by tsc, but not .js files
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    // Ensure that Babel can safely transpile files in the TypeScript project
+    "isolatedModules": true,
+    "rootDir": "./",
+    "outDir": "./build/types",
     "noImplicitAny": false,
     "allowJs": true,
     "checkJs": false,
-    "sourceMap": true,
     "target": "es2018",
-    "rootDir": "./",
+    "types": [],
   },
   "include": [
     "./**/*.ts",
+  ],
+  "exclude": [
+    "./build/**/*",
+    "./node_modules/**/*"
   ]
 }
