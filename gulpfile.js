@@ -45,6 +45,8 @@ const SOURCE_FOLDERS = [
   'modules',
   'test'
 ]
+const SOURCE_PAT = SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.ts`]);
+const AUTOGEN_RENDERERS = 'libraries/creative-renderer-*/**/*'
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -168,19 +170,27 @@ function prebidSource(webpackCfg) {
     .pipe(webpackStream(webpackCfg, webpack));
 }
 
-function babelPrecomp({distUrlBase = null, disableFeatures = null} = {}) {
-  return function () {
+const PRECOMP_TASKS = new Map();
+function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
+  if (dev && distUrlBase == null) {
+    distUrlBase = argv.distUrlBase || '/build/dev/'
+  }
+  const key = `${distUrlBase}::${disableFeatures}`;
+  if (!PRECOMP_TASKS.has(key)) {
     const babelConfig = require('./babelConfig.js')({
       disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
       prebidDistUrlBase: distUrlBase ?? argv.distUrlBase
     });
-
-    return gulp.src(SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.ts`]), {base: '.'})
-      .pipe(sourcemaps.init())
-      .pipe(babel(babelConfig))
-      .pipe(sourcemaps.write('.'))
-      .pipe(gulp.dest(helpers.getPrecompiledPath()));
+    const precompile = function() {
+      return gulp.src(SOURCE_PAT, {base: '.', since: gulp.lastRun(precompile)})
+        .pipe(sourcemaps.init())
+        .pipe(babel(babelConfig))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest(helpers.getPrecompiledPath()));
+    }
+    PRECOMP_TASKS.set(key, precompile)
   }
+  return PRECOMP_TASKS.get(key);
 }
 
 function copyJson() {
@@ -188,11 +198,8 @@ function copyJson() {
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 
-function precompile({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
-  if (dev && distUrlBase == null) {
-    distUrlBase = argv.distUrlBase || '/build/dev/'
-  }
-  return gulp.series(['ts', gulp.parallel([copyJson, babelPrecomp({distUrlBase, disableFeatures})])])
+function precompile(options) {
+  return gulp.series(['ts', gulp.parallel([copyJson, babelPrecomp(options)])])
 }
 
 function makeDevpackPkg(config = webpackConfig) {
@@ -522,23 +529,23 @@ function watchTaskMaker(options = {}) {
   options.alsoWatch = options.alsoWatch || [];
 
   return function watch(done) {
-    var mainWatcher = gulp.watch([
-      'src/**/*.js',
-      'libraries/**/*.js',
-      '!libraries/creative-renderer-*/**/*.js',
-      'creative/**/*.js',
-      'modules/**/*.js',
-    ].concat(options.alsoWatch));
+    gulp.watch(SOURCE_PAT.concat([
+      `!${AUTOGEN_RENDERERS}`
+    ]), babelPrecomp(options));
+    gulp.watch([
+      helpers.getPrecompiledPath('**/*.js'),
+      `!${helpers.getPrecompiledPath(AUTOGEN_RENDERERS)}`,
+      `!${helpers.getPrecompiledPath('test/**/*')}`,
+    ], options.task());
 
     startLocalServer(options);
 
-    mainWatcher.on('all', options.task());
     done();
   }
 }
 
-const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
+const watch = watchTaskMaker({task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
+const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp.series('build-bundle-dev')});
 
 // support tasks
 gulp.task(lint);
