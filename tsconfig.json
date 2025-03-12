@@ -6,11 +6,10 @@
     // Ensure that Babel can safely transpile files in the TypeScript project
     "isolatedModules": true,
     "rootDir": "./",
-    "outDir": "./build/types",
+    "outDir": "./build/types", // TODO: these should be bundled together with babel transpilation output as "npm version" of prebid
     "noImplicitAny": false,
     "allowJs": true,
     "checkJs": false,
-    "target": "es2018",
     "types": [],
   },
   "include": [
