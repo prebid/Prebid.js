@@ -190,6 +190,7 @@ describe('browsi analytics adapter', function () {
   });
 
   beforeEach(() => {
+    sandbox.stub(events, 'getEvents').returns([]);
     browsiAnalytics.enableAnalytics({
       provider: 'browsi',
       options: {}
@@ -197,6 +198,7 @@ describe('browsi analytics adapter', function () {
     browsiAnalytics._staticData = undefined;
   });
   afterEach(() => {
+    events.getEvents.restore();
     browsiAnalytics.disableAnalytics();
   });
 
@@ -262,9 +264,9 @@ describe('browsi analytics adapter', function () {
     setStaticData(dataSet2);
 
     events.emit(EVENTS.AUCTION_END, auctionEnd);
-    expect(server.requests.length).to.equal(2);
+    expect(server.requests.length).to.equal(1);
 
-    const request = server.requests[1];
+    const request = server.requests[0];
     const body = JSON.parse(request.requestBody);
     expect(body.length).to.equal(1);
 
@@ -274,9 +276,9 @@ describe('browsi analytics adapter', function () {
   });
   it('should send rtd init event', function () {
     events.emit(EVENTS.BROWSI_INIT, browsiInit);
-    expect(server.requests.length).to.equal(3);
+    expect(server.requests.length).to.equal(1);
 
-    const request = server.requests[2];
+    const request = server.requests[0];
     const { protocol, hostname, pathname, search } = utils.parseUrl(request.url);
     expect(protocol).to.equal('https');
     expect(hostname).to.equal('events.browsiprod.com');
@@ -297,7 +299,7 @@ describe('browsi analytics adapter', function () {
   });
   it('should not send rtd init event if module name is not browsi', function () {
     events.emit(EVENTS.BROWSI_INIT, { moduleName: 'not_browsi' });
-    expect(server.requests.length).to.equal(3);
+    expect(server.requests.length).to.equal(0);
   });
   it('should not set static data if module name is not browsi', function () {
     events.emit(EVENTS.BROWSI_DATA, { moduleName: 'not_browsi' });
