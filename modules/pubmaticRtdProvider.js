@@ -22,8 +22,8 @@ const CONSTANTS = Object.freeze({
   },
   ENDPOINTS: {
     BASEURL: 'http://localhost:8080/',  // TODO: Update with actual endpoint
-    FLOORS_ENDPOINT: 'floors.json',
-    CONFIGS_ENDPOINT: 'configs.json'
+    floors: 'floors.json',
+    configs: 'configs.json'
   }
 });
 
@@ -53,10 +53,9 @@ export const defaultValueTemplate = {
 
 let initTime;
 let _fetchFloorRulesPromise = null, _fetchConfigPromise = null;
-export let configMerged; // Remove export if not needed in test file
-let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
+export let configMerged;
 // configMerged is a reference to the function that can resolve configMergedPromise whenever we want
-
+let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
 export let _country;
 
 // Waits for a given promise to resolve within a timeout
@@ -113,19 +112,19 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
       logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
       return undefined;
     }
-  
+
     // Floor configs from adunit / setconfig
-    const defaultFloorConfig = conf.getConfig()?.floors ?? {};
+    const defaultFloorConfig = conf.getConfig('floors') ?? {};
     // Plugin data from profile
     const dynamicFloors = profileConfigs?.plugins?.dynamicFloors;
   
-    if (!dynamicFloors?.enabled || !dynamicFloors.config) {
-      // If plugin disabled or config not present, return default floor config
-      return { floors: { ...defaultFloorConfig } };
+    // If plugin disabled or config not present, return undefined
+    if (!dynamicFloors?.enabled || !dynamicFloors?.config) {
+      return undefined;
     }
 
     let config = { ...dynamicFloors.config };
-    
+
     // default values provided by publisher on profile
     const defaultValues = config.defaultValues ?? {};
     // If floorsData is not present, use default values
@@ -153,38 +152,26 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
     };
 };
 
-export const fetchFloorsData = async (publisherId, profileId) => {
+export const fetchData = async (publisherId, profileId, type) => {
     try {
-      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.FLOORS_ENDPOINT}`;
+      const endpoint = CONSTANTS.ENDPOINTS[type];
+      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${endpoint}`;
       const response = await fetch(url);
   
       if (!response.ok) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching floors: Not ok`);
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: Not ok`);
         return;
       }
   
-      _country = response.headers?.get('country_code')?.split(',')[0]?.trim() ?? undefined;
+      if (type === "floors") {
+        _country = response.headers?.get("country_code")?.split(",")[0]?.trim() ?? undefined;
+      }
+  
       return await response.json();
     } catch (error) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching floors:`, error);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}:`, error);
     }
 };
-
-export const fetchProfileConfigs = async (publisherId, profileId) => {
-  try {
-    const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS_ENDPOINT}`;
-
-    const response = await fetch(url);
-    if (!response?.ok) {
-      logError(CONSTANTS.LOG_PRE_FIX + 'Error while fetching profile configs: Not ok');
-      return;
-    }
-
-    return await response.json();
-  } catch (error) {
-    logError(CONSTANTS.LOG_PRE_FIX + 'Error while fetching profile configs:', error);
-  }
-}
 
 /**
  * Initialize the Pubmatic RTD Module.
@@ -212,11 +199,11 @@ const init = (config, _userConsent) => {
       return false;
     }
 
-    _fetchFloorRulesPromise = fetchFloorsData(publisherId, profileId);
-    _fetchConfigPromise = fetchProfileConfigs(publisherId, profileId);
+    _fetchFloorRulesPromise = fetchData(publisherId, profileId, "floors");
+    _fetchConfigPromise = fetchData(publisherId, profileId, "configs");
 
     _fetchConfigPromise.then(async (profileConfigs) => {
-      const auctionDelay = pbjs.getConfig('realTimeData').auctionDelay; // use conf
+      const auctionDelay = conf.getConfig('realTimeData').auctionDelay;
       const maxWaitTime = 0.8 * auctionDelay;
 
       const elapsedTime = Date.now() - initTime;
