@@ -1,11 +1,11 @@
-import browsiAnalytics from 'modules/browsiAnalyticsAdapter';
-import adapterManager from 'src/adapterManager';
+import browsiAnalytics from '../../../modules/browsiAnalyticsAdapter.js';
+import { setStaticData, getStaticData } from '../../../modules/browsiAnalyticsAdapter.js';
+import adapterManager from '../../../src/adapterManager';
 import { expect } from 'chai';
-import { EVENTS } from 'src/constants.js';
-import { server } from 'test/mocks/xhr.js';
-import { getGlobal } from 'src/prebidGlobal.js';
-import * as utils from 'src/utils.js';
-import { setStaticData, getStaticData } from 'modules/browsiAnalyticsAdapter';
+import { EVENTS } from '../../../src/constants.js';
+import { server } from '../../../test/mocks/xhr.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import * as utils from '../../../src/utils.js';
 
 let events = require('src/events');
 

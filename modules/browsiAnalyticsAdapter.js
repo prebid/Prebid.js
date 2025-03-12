@@ -37,6 +37,7 @@ export function setStaticData(data) {
 }
 
 function getTimeOffset(ts) {
+  if (!ts) return undefined;
   return timestamp() - ts;
 }
 
@@ -49,7 +50,7 @@ function getAdUnitPathByCode(code) {
 
 function getAdUnitsData(args) {
   const shouldSampleRtm = !!_staticData?.es;
-  return args.adUnits.map(adUnit => {
+  return args.adUnits?.map(adUnit => {
     let rtm;
     const pbd = adUnit.bids
       .filter(({ ortb2Imp }) => {
@@ -71,13 +72,13 @@ function getAdUnitsData(args) {
 function handleAuctionEnd(args) {
   const event = {
     et: 'auction_data_sent',
-    to: getTimeOffset(_staticData.t),
-    pvid: _staticData.pvid,
-    pk: _staticData.pk,
-    sk: _staticData.sk,
-    geo: _staticData.geo,
-    dp: _staticData.device,
-    aid: _staticData.aid,
+    to: getTimeOffset(_staticData?.t),
+    pvid: _staticData?.pvid,
+    pk: _staticData?.pk,
+    sk: _staticData?.sk,
+    geo: _staticData?.geo,
+    dp: _staticData?.device,
+    aid: _staticData?.aid,
     pbv: VERSION,
     url: URL,
     aucid: args.auctionId,
