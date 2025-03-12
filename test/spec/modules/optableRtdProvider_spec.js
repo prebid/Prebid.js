@@ -34,6 +34,12 @@ describe('Optable RTD Submodule', function () {
       expect(() => parseConfig({params: {bundleUrl: 'www.invalid.com'}})).to.throw();
     });
 
+    it('throws an error for non-HTTPS bundleUrl', function () {
+      expect(() => parseConfig({params: {bundleUrl: 'http://cdn.optable.co/bundle.js'}})).to.throw();
+      expect(() => parseConfig({params: {bundleUrl: '//cdn.optable.co/bundle.js'}})).to.throw();
+      expect(() => parseConfig({params: {bundleUrl: '/bundle.js'}})).to.throw();
+    });
+
     it('defaults adserverTargeting to true if missing', function () {
       expect(parseConfig(
         {params: {bundleUrl: 'https://cdn.optable.co/bundle.js'}}

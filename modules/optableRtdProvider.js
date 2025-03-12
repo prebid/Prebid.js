@@ -22,14 +22,11 @@ export const parseConfig = (moduleConfig) => {
     bundleUrl = bundleUrl.trim();
   }
 
-  // Verify that bundleUrl is a valid URL: either a full URL, relative
-  // path (/path/to/file.js), or a protocol-relative URL (//example.com/path/to/file.js)
-  if (typeof bundleUrl === 'string' && bundleUrl.length && !(
-    bundleUrl.startsWith('http://') ||
-    bundleUrl.startsWith('https://') ||
-    bundleUrl.startsWith('/'))
-  ) {
-    throw new Error(LOG_PREFIX + ' Invalid URL format for bundleUrl in moduleConfig');
+  // Verify that bundleUrl is a valid URL: only secure (HTTPS) URLs are allowed
+  if (typeof bundleUrl === 'string' && bundleUrl.length && !bundleUrl.startsWith('https://')) {
+    throw new Error(
+      LOG_PREFIX + ' Invalid URL format for bundleUrl in moduleConfig. Only HTTPS URLs are allowed.'
+    );
   }
 
   if (handleRtd && typeof handleRtd !== 'function') {
@@ -87,7 +84,6 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
   try {
     // Extract the bundle URL from the module configuration
     const {bundleUrl, handleRtd} = parseConfig(moduleConfig);
-    logMessage('Optable JS bundle URL ', bundleUrl);
 
     const handleRtdFn = handleRtd || defaultHandleRtd;
 
