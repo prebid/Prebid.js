@@ -21,10 +21,10 @@ describe('browsi analytics adapter', function () {
     'adUnits': [
       {
         'code': 'realtid_mobile-mobil-1_:r1:',
-        'sizes': [ [ 300, 250 ], [ 320, 100 ], [ 320, 160 ], [ 320, 320 ] ],
+        'sizes': [[300, 250], [320, 100], [320, 160], [320, 320]],
         'mediaTypes': {
           'banner': {
-            'sizes': [ [ 300, 250 ], [ 320, 100 ], [ 320, 160 ], [ 320, 320 ] ]
+            'sizes': [[300, 250], [320, 100], [320, 160], [320, 320]]
           }
         },
         'bids': [
@@ -92,10 +92,10 @@ describe('browsi analytics adapter', function () {
       },
       {
         'code': 'realtid_mobile-mobil-2_:r2:',
-        'sizes': [ [ 300, 250 ], [ 320, 100 ], [ 320, 160 ], [ 320, 320 ], [ 320, 400 ], [ 320, 480 ] ],
+        'sizes': [[300, 250], [320, 100], [320, 160], [320, 320], [320, 400], [320, 480]],
         'mediaTypes': {
           'banner': {
-            'sizes': [ [ 300, 250 ], [ 320, 100 ], [ 320, 160 ], [ 320, 320 ], [ 320, 400 ], [ 320, 480 ] ]
+            'sizes': [[300, 250], [320, 100], [320, 160], [320, 320], [320, 400], [320, 480]]
           }
         },
         'bids': [
@@ -192,7 +192,7 @@ describe('browsi analytics adapter', function () {
   beforeEach(() => {
     browsiAnalytics.enableAnalytics({
       provider: 'browsi',
-      options: { }
+      options: {}
     });
     browsiAnalytics._staticData = undefined;
   });
@@ -211,7 +211,7 @@ describe('browsi analytics adapter', function () {
     expect(protocol).to.equal('https');
     expect(hostname).to.equal('events.browsiprod.com');
     expect(pathname).to.equal('/events/v2/rtd_demand');
-    expect(search).to.deep.equal({'p': '123456'});
+    expect(search).to.deep.equal({ 'p': '123456' });
 
     const body = JSON.parse(request.requestBody);
     expect(body.length).to.equal(1);
@@ -233,6 +233,7 @@ describe('browsi analytics adapter', function () {
     expect(event.ad_units[0].plid).to.equal('realtid_mobile-mobil-1_:r1:');
     expect(event.ad_units[0].au).to.be.null;
     expect(event.ad_units[0].pbd).to.deep.equal(['bidderA', 'bidderB']);
+    expect(event.ad_units[0].dpc).to.equal(9);
     expect(event.ad_units[0].rtm).to.deep.equal({
       'scrollDepth': 0.4,
       'density': 0.6,
@@ -247,6 +248,7 @@ describe('browsi analytics adapter', function () {
     expect(event.ad_units[1].plid).to.equal('realtid_mobile-mobil-2_:r2:');
     expect(event.ad_units[1].au).to.be.null;
     expect(event.ad_units[1].pbd).to.deep.equal(['bidderA']);
+    expect(event.ad_units[1].dpc).to.equal(6);
     expect(event.ad_units[1].rtm).to.deep.equal({
       'scrollDepth': 0.4,
       'density': 0.6,
@@ -279,7 +281,7 @@ describe('browsi analytics adapter', function () {
     expect(protocol).to.equal('https');
     expect(hostname).to.equal('events.browsiprod.com');
     expect(pathname).to.equal('/events/v2/rtd_supply');
-    expect(search).to.deep.equal({'p': '123456'});
+    expect(search).to.deep.equal({ 'p': '123456' });
 
     const body = JSON.parse(request.requestBody);
     expect(body.length).to.equal(1);

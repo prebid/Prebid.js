@@ -115,7 +115,6 @@ function sendBrowsiDataEvent(data) {
 export function collectData() {
   const predictorData = getPredictorData(storage, _moduleParams, TIMESTAMP, PVID);
   getPredictionsFromServer(`//${_moduleParams.url}/prebid/v2?${toUrlParams(predictorData)}`);
-
 }
 
 export function setBrowsiData(data) {

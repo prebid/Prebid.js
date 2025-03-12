@@ -62,7 +62,7 @@ function getAdUnitsData(args) {
       plid: adUnit.code,
       au: getAdUnitPathByCode(adUnit.code),
       pbd,
-      dpc: rtm?.length,
+      dpc: rtm ? Object.keys(rtm).length : 0,
       ...(shouldSampleRtm && rtm ? { rtm } : {})
     }
   });
