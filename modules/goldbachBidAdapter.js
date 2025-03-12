@@ -38,24 +38,6 @@ const EVENTS = {
   ERROR: 'error'
 };
 
-/* Native mapping */
-export const OPENRTB = {
-  NATIVE: {
-    IMAGE_TYPE: {
-      ICON: 1,
-      MAIN: 3,
-    },
-    ASSET_ID: {
-      TITLE: 1,
-      IMAGE: 2,
-      ICON: 3,
-      BODY: 4,
-      CTA: 5,
-      SPONSORED: 6,
-    }
-  }
-};
-
 /* Goldbach storage */
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -130,19 +112,21 @@ const getRendererForBid = (bidRequest, bidResponse) => {
 /* Converter config, applying custom extensions */
 const converter = ortbConverter({
   context: { netRevenue: true, ttl: 3600 },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    // Apply custom extensions to the imp
+    imp.ext = imp.ext || {};
+    imp.ext[BIDDER_CODE] = imp.ext[BIDDER_CODE] || {};
+    imp.ext[BIDDER_CODE].targetings = bidRequest?.params?.customTargeting || {};
+    imp.ext[BIDDER_CODE].slotId = bidRequest?.params?.slotId || bidRequest?.adUnitCode;
+
+    return imp;
+  },
   request(buildRequest, imps, bidderRequest, context) {
     const ortbRequest = buildRequest(imps, bidderRequest, context);
     const { bidRequests = [] } = context;
     const firstBidRequest = bidRequests?.[0];
-
-    // Apply custom extensions to each impression
-    bidRequests.forEach((bidRequest, index) => {
-      const ortbImp = ortbRequest.imp[index];
-      ortbImp.ext = ortbImp.ext || {};
-      ortbImp.ext[BIDDER_CODE] = ortbImp.ext[BIDDER_CODE] || {};
-      ortbImp.ext[BIDDER_CODE].targetings = bidRequest?.params?.customTargeting || {};
-      ortbImp.ext[BIDDER_CODE].slotId = bidRequest?.params?.slotId || bidRequest?.adUnitCode;
-    });
 
     // Apply custom extensions to the request
     if (bidRequests.length > 0) {
@@ -170,7 +154,7 @@ const converter = ortbConverter({
     // Setting context: media type
     context.mediaType = deepAccess(bid, 'ext.prebid.type');
     const bidResponse = buildBidResponse(bid, context);
-    const {bidRequest} = context;
+    const { bidRequest } = context;
 
     // Setting required properties: cpm, currency
     bidResponse.currency = bidResponse.currency || deepAccess(bid, 'ext.origbidcur') || DEFAULT_CURRENCY;
@@ -208,21 +192,20 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function (bid) {
-    return typeof bid.params.publisherId === 'string' && Array.isArray(bid.sizes);
+    return typeof bid.params?.publisherId === 'string' && bid.params?.publisherId.length > 0;
   },
   buildRequests: function (bidRequests, bidderRequest) {
     const url = IS_LOCAL_MODE ? URL_LOCAL : URL;
-    const data = converter.toORTB({ bidRequests, bidderRequest })
-    return [{
+    const data = converter.toORTB({ bidRequests, bidderRequest });
+    return {
       method: METHOD,
       url: url,
       data: data,
-      bidderRequest: bidderRequest,
       options: {
         withCredentials: false,
         contentType: 'application/json',
       }
-    }];
+    };
   },
   interpretResponse: function (ortbResponse, request) {
     const bids = converter.fromORTB({response: ortbResponse.body, request: request.data}).bids;

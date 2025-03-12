@@ -2,9 +2,10 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/goldbachBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
+import { OUTSTREAM } from 'src/video.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import * as ajaxLib from 'src/ajax.js';
 
 const BIDDER_NAME = 'goldbach'
@@ -57,7 +58,7 @@ const validNativeObject = {
     {
       id: 1,
       title: {
-        text: 'Amazing Product - Don’t Miss Out!',
+        text: 'Amazing Product - Do not Miss Out!',
       },
     },
     {
@@ -97,49 +98,6 @@ const validNativeObject = {
   ],
 };
 
-/* Ortb2 bid information */
-let ortb2 = {
-  source: {
-    tid: 'tid000'
-  },
-  device: {
-    ip: '133.713.371.337',
-    connectiontype: 6,
-    w: 1512,
-    h: 982,
-    ifa: '23575619-ef35-4908-b468-ffc4000cdf07',
-    ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-    geo: {lat: 47.318054, lon: 8.582883, zip: '8700'},
-    dnt: 0,
-  },
-  site: {
-    mobile: 0,
-    domain: 'publisher-page.ch',
-    page: 'https://publisher-page.ch/home',
-    publisher: { domain: 'publisher-page.ch' },
-    ref: 'https://publisher-page.ch/home'
-  },
-  user: {
-    ext: {
-      eids: eids
-    }
-  },
-};
-
-/* Minimal bidderRequest */
-let validBidderRequest = {
-  auctionId: '7570fb24-810d-4c26-9f9c-acd0b6977f60',
-  start: 1731680672810,
-  auctionStart: 1731680672808,
-  ortb2: ortb2,
-  bidderCode: BIDDER_NAME,
-  gdprConsent: {
-    gdprApplies: true,
-    consentString: 'trust-me-i-consent'
-  },
-  timeout: 300
-};
-
 /* Minimal validBidRequests */
 let validBidRequests = [
   {
@@ -150,9 +108,8 @@ let validBidRequests = [
     bidId: '3d52a1909b972a',
     bidderRequestId: '2b63a1826ab946',
     userIdAsEids: eids,
-    ortb2: ortb2,
     mediaTypes: {
-      banner: {
+      [BANNER]: {
         sizes: [[300, 50], [300, 250], [300, 600], [320, 50], [320, 480], [320, 64], [320, 160], [320, 416], [336, 280]]
       }
     },
@@ -171,14 +128,14 @@ let validBidRequests = [
     bidId: '3d52a1909b972b',
     bidderRequestId: '2b63a1826ab946',
     userIdAsEids: eids,
-    ortb2: ortb2,
     mediaTypes: {
-      video: {
-        sizes: [[640, 480]],
-        context: 'outstream'
+      [VIDEO]: {
+        playerSize: [[640, 480]],
+        context: OUTSTREAM,
+        protocols: [1, 2],
+        mimes: ['video/mp4']
       }
     },
-    sizes: [[640, 480]],
     params: {
       publisherId: 'de-publisher.ch-ios',
       slotId: '/46753895/publisher.ch/inside-full-content-pos1/pbjs-test/video',
@@ -195,9 +152,8 @@ let validBidRequests = [
     bidId: '3d52a1909b972c',
     bidderRequestId: '2b63a1826ab946',
     userIdAsEids: eids,
-    ortb2: ortb2,
     mediaTypes: {
-      native: {
+      [NATIVE]: {
         title: {
           required: true,
           len: 50
@@ -233,6 +189,19 @@ let validBidRequests = [
     }
   }
 ];
+
+/* Minimal bidderRequest */
+let validBidderRequest = {
+  bidderCode: BIDDER_NAME,
+  auctionId: '7570fb24-810d-4c26-9f9c-acd0b6977f60',
+  bidderRequestId: '7570fb24-811d-4c26-9f9c-acd0b6977f61',
+  bids: validBidRequests,
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'CONSENT'
+  },
+  timeout: 3000
+};
 
 /* OpenRTB response from auction endpoint */
 let validOrtbBidResponse = {
@@ -347,32 +316,19 @@ describe('GoldbachBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let getAdUnitsStub;
-
-    beforeEach(function() {
-      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
-        return [];
-      });
-    });
-
-    afterEach(function() {
-      getAdUnitsStub.restore();
-    });
-
     it('should use defined endpoint', function () {
       let bidRequests = deepClone(validBidRequests);
       let bidderRequest = deepClone(validBidderRequest);
 
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal(ENDPOINT);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.equal(ENDPOINT);
     })
 
     it('should parse all bids to a valid openRTB request', function () {
       let bidRequests = deepClone(validBidRequests);
       let bidderRequest = deepClone(validBidderRequest);
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = requests[0].data;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
 
       expect(payload.imp).to.exist;
       expect(Array.isArray(payload.imp)).to.be.true;
@@ -383,30 +339,25 @@ describe('GoldbachBidAdapter', function () {
       expect(payload.imp[1].ext.goldbach.slotId).to.equal(bidRequests[1].params.slotId);
     });
 
-    it('should parse all video bids to valid video imps (use video player size)', function () {
-      let bidRequests = validBidRequests.map(request => Object.assign({}, []));
-      let bidderRequest = deepClone(validBidderRequest);
-      const requests = spec.buildRequests([{
-        ...bidRequests[1],
-        sizes: [[642, 482]],
-        mediaTypes: {
-          [VIDEO]: {
-            sizes: [[641, 481]],
-            playerSize: [640, 480]
-          }
-        }
-      }], bidderRequest);
-      const payload = requests[0].data;
-      expect(payload.imp.length).to.equal(1);
-      expect(payload.imp[0][VIDEO].w).to.equal(640);
-      expect(payload.imp[0][VIDEO].h).to.equal(480);
-    });
+    if (FEATURES.VIDEO) {
+      it('should parse all video bids to valid video imps (use video player size)', async function () {
+        let bidRequests = deepClone(validBidRequests);
+        let bidderRequest = deepClone(validBidderRequest);
+        const request = spec.buildRequests([bidRequests[1]], await addFPDToBidderRequest(bidderRequest));
+        const payload = request.data;
+
+        expect(payload.imp.length).to.equal(1);
+        expect(payload.imp[0][VIDEO]).to.exist;
+        expect(payload.imp[0][VIDEO].w).to.equal(640);
+        expect(payload.imp[0][VIDEO].h).to.equal(480);
+      });
+    }
 
     it('should set custom config on request', function () {
       let bidRequests = deepClone(validBidRequests);
       let bidderRequest = deepClone(validBidderRequest);
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = requests[0].data;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
 
       expect(payload.ext.goldbach.publisherId).to.equal(bidRequests[0].params.publisherId);
     });
@@ -414,8 +365,8 @@ describe('GoldbachBidAdapter', function () {
     it('should set gdpr on request', function () {
       let bidRequests = deepClone(validBidRequests);
       let bidderRequest = deepClone(validBidderRequest);
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = requests[0].data;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
 
       expect(!!payload.regs.ext.gdpr).to.equal(bidderRequest.gdprConsent.gdprApplies);
       expect(payload.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
@@ -424,8 +375,8 @@ describe('GoldbachBidAdapter', function () {
     it('should set custom targeting on request', function () {
       let bidRequests = deepClone(validBidRequests);
       let bidderRequest = deepClone(validBidderRequest);
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = requests[0].data;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
 
       expect(payload.imp[0].ext.goldbach.targetings).to.exist;
       expect(payload.imp[0].ext.goldbach.targetings).to.deep.equal(bidRequests[0].params.customTargeting);
@@ -434,7 +385,7 @@ describe('GoldbachBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should map response to valid bids (amount)', function () {
-      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest)[0];
+      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
       let bidResponse = deepClone({body: validOrtbBidResponse});
       const response = spec.interpretResponse(bidResponse, bidRequest);
 
@@ -444,19 +395,36 @@ describe('GoldbachBidAdapter', function () {
       expect(response.filter(bid => bid.requestId === validBidRequests[1].bidId).length).to.equal(1)
     });
 
-    it('should attach a custom video renderer ', function () {
-      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest)[0];
-      let bidResponse = deepClone({body: validOrtbBidResponse});
-      bidResponse.body.seatbid[0].bid[1].adm = '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"4.0\"></VAST>';
-      bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
-      const response = spec.interpretResponse(bidResponse, bidRequest);
+    if (FEATURES.VIDEO) {
+      it('should attach a custom video renderer ', function () {
+        let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+        let bidResponse = deepClone({body: validOrtbBidResponse});
+        bidResponse.body.seatbid[0].bid[1].adm = '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"4.0\"></VAST>';
+        bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
+        const response = spec.interpretResponse(bidResponse, bidRequest);
 
-      expect(response).to.exist;
-      expect(response.filter(bid => !!bid.renderer).length).to.equal(1);
-    });
+        expect(response).to.exist;
+        expect(response.filter(bid => !!bid.renderer).length).to.equal(1);
+      });
+
+      it('should set the player accordingly to config', function () {
+        let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
+        let bidResponse = deepClone({body: validOrtbBidResponse});
+        bidResponse.body.seatbid[0].bid[1].adm = '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"4.0\"></VAST>';
+        bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
+        validBidRequests[1].mediaTypes.video.playbackmethod = 1;
+        const response = spec.interpretResponse(bidResponse, bidRequest);
+        const renderer = response.find(bid => !!bid.renderer);
+        renderer?.renderer?.render();
+
+        expect(response).to.exist;
+        expect(response.filter(bid => !!bid.renderer).length).to.equal(1);
+        expect(renderer.renderer.config.documentResolver).to.exist;
+      });
+    }
 
     it('should not attach a custom video renderer when VAST url/xml is missing', function () {
-      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest)[0];
+      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
       let bidResponse = deepClone({body: validOrtbBidResponse});
       bidResponse.body.seatbid[0].bid[1].adm = undefined;
       bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
@@ -464,21 +432,6 @@ describe('GoldbachBidAdapter', function () {
 
       expect(response).to.exist;
       expect(response.filter(bid => !!bid.renderer).length).to.equal(0);
-    });
-
-    it('should set the player accordingly to config', function () {
-      let bidRequest = spec.buildRequests(validBidRequests, validBidderRequest)[0];
-      let bidResponse = deepClone({body: validOrtbBidResponse});
-      bidResponse.body.seatbid[0].bid[1].adm = '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><VAST version=\"4.0\"></VAST>';
-      bidResponse.body.seatbid[0].bid[1].ext = { prebid: { type: 'video', meta: { type: 'video_outstream' } } };
-      validBidRequests[1].mediaTypes.video.playbackmethod = 1;
-      const response = spec.interpretResponse(bidResponse, bidRequest);
-      const renderer = response.find(bid => !!bid.renderer);
-      renderer?.renderer?.render();
-
-      expect(response).to.exist;
-      expect(response.filter(bid => !!bid.renderer).length).to.equal(1);
-      expect(renderer.renderer.config.documentResolver).to.exist;
     });
   });
 
