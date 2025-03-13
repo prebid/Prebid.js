@@ -64,7 +64,7 @@ export function fillVideoDefaults(adUnit) {
  * Other properties are ignored and kept as is.
  *
  * @param {Object} adUnit - The adUnit object.
- * @param {Function} onInvalidParam - The callback function to be called with key, value, and adUnit.
+ * @param {Function=} onInvalidParam - The callback function to be called with key, value, and adUnit.
  * @returns {void}
  */
 export function validateOrtbVideoFields(adUnit, onInvalidParam) {

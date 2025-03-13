@@ -11,6 +11,8 @@
     "allowJs": true,
     "checkJs": false,
     "types": [],
+    "lib": ["es2019"],
+    "target": "es2019"
   },
   "include": [
     "./**/*.ts",

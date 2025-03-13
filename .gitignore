@@ -80,3 +80,7 @@ typings/
 
 # MacOS system files
 .DS_Store
+
+# TypeScript migration
+# Add all js files that are transpiled via tsc
+src/prebid.js
