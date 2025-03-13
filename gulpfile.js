@@ -86,7 +86,11 @@ function lint(done) {
   if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
     args.push('--quiet')
   }
-  return run(args.join(' '))().then(() => done(), done);
+  return run(args.join(' '))().then(() => {
+    done();
+  }, (err) => {
+    done(err);
+  });
 };
 
 // View the code coverage report in the browser.
