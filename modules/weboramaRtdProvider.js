@@ -190,7 +190,7 @@ class WeboramaRtdProvider {
   }
   /**
    * Initialize module
-   * @method
+   * @function
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
    * @param {Object} userConsent
@@ -245,7 +245,7 @@ class WeboramaRtdProvider {
 
   /**
    * function that will allow RTD sub-modules to modify the AdUnit object for each auction
-   * @method
+   * @function
    * @param {Object} reqBidsConfigObj
    * @param {doneCallback} onDone
    * @param {Object} moduleConfig
@@ -286,7 +286,7 @@ class WeboramaRtdProvider {
 
   /**
    * function that provides ad server targeting data to RTD-core
-   * @method
+   * @function
    * @param {string[]} adUnitsCodes
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
@@ -328,7 +328,7 @@ class WeboramaRtdProvider {
 
   /**
    * Initialize subsection module
-   * @method
+   * @function
    * @private
    * @param {ModuleParams} moduleParams
    * @param {string} subSection subsection name to initialize
@@ -380,7 +380,7 @@ class WeboramaRtdProvider {
 
   /**
    * check gdpr consent data
-   * @method
+   * @function
    * @private
    * @param {Object} gdpr
    * @param {?boolean} gdpr.gdprApplies
@@ -415,7 +415,7 @@ class WeboramaRtdProvider {
   }
   /**
    * normalize submodule configuration
-   * @method
+   * @function
    * @private
    * @param {ModuleParams} moduleParams
    * @param {CommonConf} submoduleParams
@@ -449,7 +449,7 @@ class WeboramaRtdProvider {
 
   /**
    * coerce setPrebidTargeting to a callback
-   * @method
+   * @function
    * @private
    * @param {CommonConf} submoduleParams
    * @return {void}
@@ -468,7 +468,7 @@ class WeboramaRtdProvider {
 
   /**
    * coerce sendToBidders to a callback
-   * @method
+   * @function
    * @private
    * @param {CommonConf} submoduleParams
    * @return {void}
@@ -521,7 +521,7 @@ class WeboramaRtdProvider {
    */
   /**
    * function that handles bid request data
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {AdUnit[]} reqBidsConfigObj.adUnits
@@ -588,7 +588,7 @@ class WeboramaRtdProvider {
 
   /**
    * Fetch Bigsea Contextual Profile
-   * @method
+   * @function
    * @private
    * @param {WeboCtxConf} weboCtxConf
    * @param {successCallback} onSuccess callback
@@ -672,7 +672,7 @@ class WeboramaRtdProvider {
 
   /**
    * set bigsea contextual profile on module state
-   * @method
+   * @function
    * @private
    * @param {?Object} data
    * @returns {void}
@@ -686,7 +686,7 @@ class WeboramaRtdProvider {
 
   /**
    * function that provides data handlers based on the configuration
-   * @method
+   * @function
    * @private
    * @param {ModuleParams} moduleParams
    * @returns {ProfileHandler[]}
@@ -755,7 +755,7 @@ class WeboramaRtdProvider {
 
   /**
    * return specific profile handler
-   * @method
+   * @function
    * @private
    * @param {CommonConf} dataConf
    * @param {buildProfileHandlerCallback} callback
@@ -788,7 +788,7 @@ class WeboramaRtdProvider {
   }
   /**
    * handle individual bid
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
@@ -813,7 +813,7 @@ class WeboramaRtdProvider {
 
   /**
    * return adapter name based on alias, if any
-   * @method
+   * @function
    * @private
    * @param {string} aliasName
    * @returns {string}
@@ -825,7 +825,7 @@ class WeboramaRtdProvider {
 
   /**
    * function that handles bid request data
-   * @method
+   * @function
    * @private
    * @param {ProfileHandler} ph profile handler
    * @returns {[Profile,dataCallbackMetadata]} deeply copy data + metadata
@@ -837,7 +837,7 @@ class WeboramaRtdProvider {
 
   /**
    * handle appnexus/xandr bid
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
@@ -856,7 +856,7 @@ class WeboramaRtdProvider {
 
   /**
    * handle generic bid via ortb2 arbitrary data
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
@@ -889,7 +889,7 @@ class WeboramaRtdProvider {
   }
   /**
    * set bidder ortb2 data
-   * @method
+   * @function
    * @private
    * @param {Object} bidderOrtb2Fragments
    * @param {string} bidder
@@ -904,7 +904,7 @@ class WeboramaRtdProvider {
   }
   /**
    * assign profile to object
-   * @method
+   * @function
    * @private
    * @param {Object} destination
    * @param {string} base
@@ -933,7 +933,7 @@ class WeboramaRtdProvider {
 
   /**
    * wrap value into validator
-   * @method
+   * @function
    * @private
    * @param {*} value
    * @param {coerceCallback} coerce

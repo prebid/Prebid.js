@@ -33,7 +33,7 @@ import {submodule} from '../src/hook.js';
 const setupFailMessage = 'Failed to instantiate the player';
 
 /**
- * @constructor
+ * @class
  * @param {Object} config - videoProviderConfig
  * @param {function} adPlayerPro_
  * @param {CallbackStorage} callbackStorage_
