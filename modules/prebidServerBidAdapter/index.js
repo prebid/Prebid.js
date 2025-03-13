@@ -28,7 +28,7 @@ import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
-import {getGlobal} from '../prebidGlobal.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
 
 const getConfig = config.getConfig;
 
