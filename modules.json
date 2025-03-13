@@ -1,6 +1,7 @@
 [
     "33acrossIdSystem",
     "33acrossBidAdapter",
+    "admaticBidAdapter",
     "airgridRtdProvider",
     "appnexusBidAdapter",
     "atsAnalyticsAdapter",
