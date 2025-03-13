@@ -1,4 +1,4 @@
-import { logMessage, logWarn, logError, _each } from '../src/utils.js';
+import { logMessage, logWarn, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -75,41 +75,44 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses) {
     let allUserSyncs = [];
 
-    if (!hasSynced && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-      responses.forEach(csResp => {
-        if (csResp.body && csResp.body.ext && csResp.body.ext.usersyncs) {
-          try {
-            let response = csResp.body.ext.usersyncs;
-            let bidders = response.bidder_status;
-            for (let synci in bidders) {
-              let thisSync = bidders[synci];
-              if (thisSync.no_cookie) {
-                let url = thisSync.usersync.url;
-                let type = thisSync.usersync.type;
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+      if (!hasSynced) {
+        responses.forEach(csResp => {
+          if (csResp.body && csResp.body.ext && csResp.body.ext.usersyncs) {
+            try {
+              let response = csResp.body.ext.usersyncs;
+              let bidders = response.bidder_status;
+              for (let synci in bidders) {
+                let thisSync = bidders[synci];
+                if (thisSync.no_cookie) {
+                  let url = thisSync.usersync.url;
+                  let type = thisSync.usersync.type;
 
-                if (!url) {
-                  logError(`No sync url for bidder luponmedia.`);
-                } else if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
-                  logMessage(`Invoking image pixel user sync for luponmedia`);
-                  allUserSyncs.push({ type: 'image', url: url });
-                } else if (type == 'iframe' && syncOptions.iframeEnabled) {
-                  logMessage(`Invoking iframe user sync for luponmedia`);
-                  allUserSyncs.push({ type: 'iframe', url: url });
-                } else {
-                  logError(`User sync type "${type}" not supported for luponmedia`);
+                  if (!url) {
+                    logError(`No sync url for bidder luponmedia.`);
+                  } else if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
+                    logMessage(`Invoking image pixel user sync for luponmedia`);
+                    allUserSyncs.push({ type: 'image', url: url });
+                  } else if (type == 'iframe' && syncOptions.iframeEnabled) {
+                    logMessage(`Invoking iframe user sync for luponmedia`);
+                    allUserSyncs.push({ type: 'iframe', url: url });
+                  } else {
+                    logError(`User sync type "${type}" not supported for luponmedia`);
+                  }
                 }
               }
+            } catch (e) {
+              logError(e);
             }
-          } catch (e) {
-            logError(e);
           }
-        }
-      });
+        });
+      }
     } else {
       logWarn('Luponmedia: Please enable iframe/pixel based user sync.');
     }
 
     hasSynced = true;
+
     return allUserSyncs;
   },
 };
