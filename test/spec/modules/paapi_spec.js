@@ -7,6 +7,7 @@ import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
 import {
+  adAuctionHeadersHook,
   addPaapiConfigHook,
   addPaapiData,
   ASYNC_SIGNALS,
@@ -62,6 +63,44 @@ describe('paapi module', () => {
     beforeEach(() => {
       getPAAPISizeStub = sinon.stub();
     });
+
+    describe('adAuctionHeadersHook', () => {
+      let bidderRequest, ajax;
+      beforeEach(() => {
+        ajax = sinon.stub();
+        bidderRequest = {paapi: {}}
+      })
+      function getWrappedAjax() {
+        let wrappedAjax;
+        let next = sinon.stub().callsFake((spec, bids, br, ajax) => {
+          wrappedAjax = ajax;
+        });
+        adAuctionHeadersHook(next, {}, [], bidderRequest, ajax);
+        return wrappedAjax;
+      }
+      describe('when PAAPI is enabled', () => {
+        beforeEach(() => {
+          bidderRequest.paapi.enabled = true;
+        });
+        [
+          undefined,
+          {},
+          {adAuctionHeaders: true}
+        ].forEach(options =>
+          it(`should set adAuctionHeaders = true (when options are ${JSON.stringify(options)})`, () => {
+            getWrappedAjax()('url', {}, 'data', options);
+            sinon.assert.calledWith(ajax, 'url', {}, 'data', sinon.match({adAuctionHeaders: true}));
+          }));
+
+        it('should respect adAuctionHeaders: false', () => {
+          getWrappedAjax()('url', {}, 'data', {adAuctionHeaders: false});
+          sinon.assert.calledWith(ajax, 'url', {}, 'data', sinon.match({adAuctionHeaders: false}));
+        })
+      });
+      it('should not alter ajax when paapi is not enabled', () => {
+        expect(getWrappedAjax()).to.equal(ajax);
+      })
+    })
 
     describe('getPAAPIConfig', function () {
       let nextFnSpy, auctionConfig, paapiConfig;
