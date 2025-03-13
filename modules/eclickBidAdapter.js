@@ -3,8 +3,8 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 
-// ***** ECLICKADS ADAPTER *****
-export const BIDDER_CODE = 'eclickads';
+// **** ECLICK ADAPTER ****
+export const BIDDER_CODE = 'eclick';
 const DEFAULT_CURRENCY = ['USD'];
 const DEFAULT_TTL = 1000;
 export const ENDPOINT = 'https://g.eclick.vn/rtb_hb_request?fosp_uid=';
@@ -70,7 +70,7 @@ export const spec = {
           netRevenue: bid.netRevenue,
           currency: bid.currency || DEFAULT_CURRENCY,
           adserverTargeting: {
-            hb_ad_eclickads: bid.ad,
+            hb_ad_eclick: bid.ad,
           },
         },
       ];

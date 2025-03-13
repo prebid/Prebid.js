@@ -473,7 +473,7 @@ function loadOrCreateFirstPartyData() {
   var readData = function (key) {
     if (hasLocalStorage()) {
       // TODO FIX RULES VIOLATION
-      // eslint-disable-next-line prebid/no-global
+      // eslint-disable-next-line no-restricted-properties
       return window.localStorage.getItem(key);
     }
     return null;
@@ -494,7 +494,7 @@ function loadOrCreateFirstPartyData() {
     try {
       if (hasLocalStorage()) {
         // TODO FIX RULES VIOLATION
-        // eslint-disable-next-line prebid/no-global
+        // eslint-disable-next-line no-restricted-properties
         window.localStorage.setItem(key, value);
       }
     } catch (error) {
