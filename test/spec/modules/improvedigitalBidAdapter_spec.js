@@ -5,7 +5,7 @@ import {deepClone} from 'src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
 import {deepSetValue} from '../../../src/utils';
 // load modules that register ORTB processors
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';

@@ -9,7 +9,7 @@ import {
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import adapterManager, {gdprDataHandler, uspDataHandler} from 'src/adapterManager.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import {defer} from '../../../src/utils/promise.js';
 
 let expect = require('chai').expect;

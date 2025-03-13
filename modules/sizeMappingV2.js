@@ -16,7 +16,7 @@ import {
 } from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 import {getHook} from '../src/hook.js';
-import {adUnitSetupChecks} from '../src/prebid.js';
+import {adUnitSetupChecks} from '../src/prebid.ts';
 
 // Allows for stubbing of these functions while writing unit tests.
 export const internal = {

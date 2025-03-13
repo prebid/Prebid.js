@@ -5,7 +5,7 @@ import {deepSetValue} from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {deepAccess} from 'src/utils';
 // load modules that register ORTB processors
-import 'src/prebid.js'
+import 'src/prebid.ts'
 import 'modules/currency.js';
 import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';

@@ -558,6 +558,7 @@ gulp.task(clean);
 gulp.task('ts', run('tsc'));
 
 gulp.task(escapePostbidConfig);
+gulp.task('transpile', babelPrecomp());
 
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));

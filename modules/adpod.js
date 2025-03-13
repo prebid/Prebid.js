@@ -30,7 +30,7 @@ import {
   getPriceByGranularity,
   getPriceGranularity
 } from '../src/auction.js';
-import {checkAdUnitSetup} from '../src/prebid.js';
+import {checkAdUnitSetup} from '../src/prebid.ts';
 import {checkVideoBidSetup} from '../src/video.js';
 import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
 import {store} from '../src/videoCache.js';

@@ -4,7 +4,7 @@ import { EVENTS, REJECTION_REASON } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { setConfig } from 'modules/currency.js';
 import { server } from '../../mocks/xhr.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import { getGlobal } from 'src/prebidGlobal';
 
 let events = require('src/events');

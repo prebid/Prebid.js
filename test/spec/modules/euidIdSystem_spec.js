@@ -2,7 +2,7 @@ import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/u
 import {config} from 'src/config.js';
 import {euidIdSubmodule} from 'modules/euidIdSystem.js';
 import 'modules/consentManagementTcf.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';

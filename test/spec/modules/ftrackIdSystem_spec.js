@@ -6,7 +6,7 @@ import { getGlobal } from 'src/prebidGlobal.js';
 import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 
 let server;
 

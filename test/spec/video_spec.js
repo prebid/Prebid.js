@@ -2,7 +2,7 @@ import {fillVideoDefaults, isValidVideoBid, validateOrtbVideoFields} from 'src/v
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
 import * as utils from '../../src/utils.js';
-import { syncOrtb2 } from '../../src/prebid.js';
+import { syncOrtb2 } from '../../src/prebid.ts';
 
 describe('video.js', function () {
   let sandbox;

@@ -27,8 +27,8 @@ import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from '../../..
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import 'src/prebid.js';
-import {startAuction} from 'src/prebid';
+import 'src/prebid.ts';
+import {startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';

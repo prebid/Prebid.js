@@ -16,7 +16,7 @@ import { EVENTS } from 'src/constants.js';
 import {server} from 'test/mocks/xhr.js';
 import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
-import 'src/prebid.js'; // $$PREBID_GLOBAL$$.aliasBidder test
+import 'src/prebid.ts'; // $$PREBID_GLOBAL$$.aliasBidder test
 import 'modules/currency.js'; // adServerCurrency test
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';

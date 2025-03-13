@@ -7,7 +7,7 @@ import {
 import {gppDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 
 let expect = require('chai').expect;
 

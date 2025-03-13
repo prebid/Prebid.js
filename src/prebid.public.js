@@ -1,1 +1,1 @@
-export {default} from './prebid.js';
+export {default} from './prebid.ts';

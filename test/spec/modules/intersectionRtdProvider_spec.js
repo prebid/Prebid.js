@@ -5,7 +5,7 @@ import * as prebidGlobal from 'src/prebidGlobal.js';
 import { intersectionSubmodule } from 'modules/intersectionRtdProvider.js';
 import * as utils from 'src/utils.js';
 import {getGlobal} from 'src/prebidGlobal.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 
 describe('Intersection RTD Provider', function () {
   let sandbox;
