@@ -86,12 +86,12 @@ module.exports = {
       minChunks: 1,
       minSize: 0,
       cacheGroups: (() => {
-        const libRoot = helpers.getPrecompiledPath('libraries');
+        const libRoot = path.resolve(__dirname, 'libraries');
         const libraries = Object.fromEntries(
           fs.readdirSync(libRoot)
             .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
             .map(lib => {
-              const dir = path.resolve(libRoot, lib)
+              const dir = helpers.getPrecompiledPath(lib)
               const def = {
                 name: lib,
                 test: (module) => {
@@ -109,12 +109,13 @@ module.exports = {
           core: {
             name: 'chunk-core',
             test: (module) => {
-              if (module.resource) {
-                if (module.resource.startsWith(__dirname) &&
-                  !(module.resource.startsWith(precompiled) || module.resource.startsWith(nodeMods))) {
-                  throw new Error(`Un-precompiled module: ${module.resource}`)
+              let resource = module.resource;
+              if (resource) {
+                if (resource.startsWith(__dirname) &&
+                  !(resource.startsWith(precompiled) || resource.startsWith(nodeMods))) {
+                  throw new Error(`Un-precompiled module: ${resource}`)
                 }
-                return module.resource.startsWith(core);
+                return resource.startsWith(core);
               }
             }
           },
