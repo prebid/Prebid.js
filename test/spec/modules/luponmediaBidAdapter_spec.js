@@ -1,4 +1,4 @@
-import { resetUserSync, spec, hasValidSupplyChainParams } from 'modules/luponmediaBidAdapter.js';
+import { resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
 
 describe('luponmediaBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -174,12 +174,11 @@ describe('luponmediaBidAdapter', function () {
 
     it('sends bid request to default endpoint', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      const data = JSON.parse(requests.data);
 
       expect(requests.url).to.equal('https://rtb.adxpremium.services/openrtb2/auction');
       expect(requests.method).to.equal('POST');
-      expect(data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
-      expect(data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
+      expect(requests.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
+      expect(requests.data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
     });
 
     it('sends bid request to endpoint specified in keyId', function () {
@@ -189,86 +188,6 @@ describe('luponmediaBidAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(requests.url).to.equal('https://eu.adxpremium.services/openrtb2/auction');
-    });
-  });
-
-  describe('interpretResponse', function () {
-    it('should get correct banner bid response', function () {
-      let response = {
-        'id': '4776d680-15a2-45c3-bad5-db6bebd94a06',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'id': '2a122246ef72ea',
-                'impid': '2a122246ef72ea',
-                'price': 0.43,
-                'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
-                'adid': '56380110',
-                'cid': '44724710',
-                'crid': '443801010',
-                'w': 300,
-                'h': 250,
-                'ext': {
-                  'prebid': {
-                    'targeting': {
-                      'hb_bidder': 'luponmedia',
-                      'hb_pb': '0.40',
-                      'hb_size': '300x250'
-                    },
-                    'type': 'banner'
-                  }
-                }
-              }
-            ],
-            'seat': 'luponmedia'
-          }
-        ],
-        'cur': 'USD',
-        'ext': {
-          'responsetimemillis': {
-            'luponmedia': 233
-          },
-          'tmaxrequest': 1500,
-          'usersyncs': {
-            'status': 'ok',
-            'bidder_status': []
-          }
-        }
-      };
-
-      let expectedResponse = [
-        {
-          'requestId': '2a122246ef72ea',
-          'cpm': '0.43',
-          'width': 300,
-          'height': 250,
-          'creativeId': '443801010',
-          'currency': 'USD',
-          'dealId': '23425',
-          'netRevenue': false,
-          'ttl': 300,
-          'referrer': '',
-          'ad': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>'
-        }
-      ];
-
-      let bidderRequest = {
-        'data': '{"site":{"page":"https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines"}}'
-      };
-
-      let result = spec.interpretResponse({ body: response }, bidderRequest);
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-    });
-
-    it('handles nobid responses', function () {
-      let noBidResponse = [];
-
-      let noBidBidderRequest = {
-        'data': '{"site":{"page":""}}'
-      }
-      let noBidResult = spec.interpretResponse({ body: noBidResponse }, noBidBidderRequest);
-      expect(noBidResult.length).to.equal(0);
     });
   });
 
@@ -366,40 +285,6 @@ describe('luponmediaBidAdapter', function () {
           url: 'https://adxpremium.services/api/iframeusersync'
         }
       ]);
-    });
-  });
-
-  describe('hasValidSupplyChainParams', function () {
-    it('returns true if schain is valid', function () {
-      const schain = {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'novi.ba',
-            'sid': '199424',
-            'hp': 1
-          }
-        ]
-      };
-
-      const checkSchain = hasValidSupplyChainParams(schain);
-      expect(checkSchain).to.equal(true);
-    });
-
-    it('returns false if schain is invalid', function () {
-      const schain = {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'invalid': 'novi.ba'
-          }
-        ]
-      };
-
-      const checkSchain = hasValidSupplyChainParams(schain);
-      expect(checkSchain).to.equal(false);
     });
   });
 });

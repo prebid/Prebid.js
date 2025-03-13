@@ -1,4 +1,4 @@
-import { isArray, logMessage, logWarn, logError, _each } from '../src/utils.js';
+import { logMessage, logWarn, logError, _each } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -132,7 +132,7 @@ export const converter = ortbConverter({
     const hasRtdEnabled = hasRtd();
 
     if (!hasRtdEnabled) {
-      logWarn('Luponmedia: The DynamiAdBoost RTD Module is not enabled. Please activate it to maximize the revenue and performance of the LuponMedia Bid Adapter.')
+      logWarn('LuponMedia: Enable the DynamicAdBoost RTD Module to optimize revenue and performance.')
     }
 
     imp.ext.luponmedia = imp.ext.luponmedia || {};
@@ -149,70 +149,27 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    if (!bid?.params?.keyId) {
-      return false;
-    }
-
-    if (!keyIdRegex.test(bid.params.keyId)) {
-      return false;
-    }
-
-    return true;
+    return keyIdRegex.test(bid.params.keyId);
   },
   buildRequests: function (bidRequests, bidderRequest) {
-    const filteredRequests = bidRequests.filter(bidRequest => Boolean(bidRequest?.adUnitCode))
-
-    const data = converter.toORTB({ bidderRequest, bidRequests: filteredRequests })
+    const data = converter.toORTB({ bidderRequest, bidRequests })
 
     const serverUrl = buildServerUrl(bidRequests[0].params.keyId);
 
     return {
       method: 'POST',
       url: serverUrl,
-      data: JSON.stringify(data),
-      options: {},
-      bidderRequest
+      data: data,
     };
   },
   interpretResponse: (response, request) => {
-    const bidResponses = [];
-    var respCur = 'USD';
-    let parsedRequest = JSON.parse(request.data);
-    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
+    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
 
-    try {
-      if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
-        // Supporting multiple bid responses for same adSize
-        respCur = response.body.cur || respCur;
-        response.body.seatbid.forEach(seatbidder => {
-          seatbidder.bid &&
-                        isArray(seatbidder.bid) &&
-                        seatbidder.bid.forEach(bid => {
-                          let newBid = {
-                            requestId: bid.impid,
-                            cpm: (parseFloat(bid.price) || 0).toFixed(2),
-                            width: bid.w,
-                            height: bid.h,
-                            creativeId: bid.crid || bid.id,
-                            dealId: bid.dealid,
-                            currency: respCur,
-                            netRevenue: false,
-                            ttl: 300,
-                            referrer: parsedReferrer,
-                            ad: bid.adm
-                          };
-
-                          bidResponses.push(newBid);
-                        });
-        });
-      }
-    } catch (error) {
-      logError(error);
-    }
-    return bidResponses;
+    return bids;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses) {
     let allUserSyncs = [];
+
     if (!hasSynced && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
       responses.forEach(csResp => {
         if (csResp.body && csResp.body.ext && csResp.body.ext.usersyncs) {
@@ -252,45 +209,11 @@ export const spec = {
   },
 };
 
-export function hasValidSupplyChainParams(schain) {
-  let isValid = false;
-  const requiredFields = ['asi', 'sid', 'hp'];
-  if (!schain.nodes) return isValid;
-  isValid = schain.nodes.reduce((status, node) => {
-    if (!status) return status;
-    return requiredFields.every(field => node[field]);
-  }, true);
-  if (!isValid) logError('LuponMedia: required schain params missing');
-  return isValid;
-}
-
 var hasSynced = false;
 
+// we need this for tests
 export function resetUserSync() {
   hasSynced = false;
-}
-
-export function masSizeOrdering(sizes) {
-  const MAS_SIZE_PRIORITY = [15, 2, 9];
-
-  return sizes.sort((first, second) => {
-    // sort by MAS_SIZE_PRIORITY priority order
-    const firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-    const secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
-
-    if (firstPriority > -1 || secondPriority > -1) {
-      if (firstPriority === -1) {
-        return 1;
-      }
-      if (secondPriority === -1) {
-        return -1;
-      }
-      return firstPriority - secondPriority;
-    }
-
-    // and finally ascending order
-    return first - second;
-  });
 }
 
 registerBidder(spec);

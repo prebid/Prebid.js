@@ -24,7 +24,7 @@ Module that connects to LuponMedia's demand sources
                 {
                     bidder: "luponmedia",
                     params: {
-                        keyId: 'uid_test_12345'
+                        keyId: 'uid@test_12345'
                     }
                 }
             ]
