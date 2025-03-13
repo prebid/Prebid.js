@@ -19,6 +19,10 @@ The module operates in two modes:
 ## Configuration
 
 To enable the Raveltech RTD module, you need to configure it with a list of bidders and specify whether to preserve the original bid request.
+For the anonymization feature to work, you also need to load a javascript in the header of your HTML page:
+```html
+<script src="https://cdn.rvlproxy.net/latest/zkad.js" async></script>
+```
 
 ### Build
 ```
