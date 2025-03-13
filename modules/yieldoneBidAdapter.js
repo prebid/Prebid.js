@@ -113,6 +113,12 @@ export const spec = {
         payload.id5Id = id5id;
       }
 
+      // UID2.0
+      const uid2 = deepAccess(bidRequest, 'userId.uid2.id');
+      if (isStr(uid2) && !isEmpty(uid2)) {
+        payload.uid2id = uid2;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,

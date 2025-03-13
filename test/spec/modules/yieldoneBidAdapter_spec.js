@@ -475,6 +475,39 @@ describe('yieldoneBidAdapter', function () {
         expect(request[0].data.id5Id).to.equal('id5id_sample');
       });
     });
+
+    describe('UID2.0', function () {
+      it('dont send UID2.0 if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('uid2id');
+        expect(request[1].data).to.not.have.property('uid2id');
+        expect(request[2].data).to.not.have.property('uid2id');
+      });
+
+      it('should send UID2.0 if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {uid2: {id: 'uid2_sample'}},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.uid2id).to.equal('uid2_sample');
+      });
+    });
   });
 
   describe('interpretResponse', function () {

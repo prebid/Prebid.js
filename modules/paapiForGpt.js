@@ -54,6 +54,7 @@ export function slotConfigurator() {
         gptSlots.forEach(gptSlot => {
           gptSlot.setConfig({componentAuction});
           logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
+          // reference https://developers.google.com/publisher-tag/reference#googletag.config.ComponentAuctionConfig
         });
       }
     } else if (auctionConfigs.length > 0) {

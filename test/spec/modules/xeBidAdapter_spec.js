@@ -7,6 +7,7 @@ import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
 const ENDPOINT = 'https://pbjs.xe.works/bid';
 
 const defaultRequest = {
+  tmax: 0,
   adUnitCode: 'test',
   bidId: '1',
   requestId: 'qwerty',
@@ -102,6 +103,7 @@ describe('xeBidAdapter', () => {
 
     it('should build basic request structure', function () {
       const request = JSON.parse(spec.buildRequests([defaultRequest], {}).data)[0];
+      expect(request).to.have.property('tmax').and.to.equal(defaultRequest.tmax);
       expect(request).to.have.property('bidId').and.to.equal(defaultRequest.bidId);
       expect(request).to.have.property('auctionId').and.to.equal(defaultRequest.ortb2.source.tid);
       expect(request).to.have.property('transactionId').and.to.equal(defaultRequest.ortb2Imp.ext.tid);
@@ -109,8 +111,7 @@ describe('xeBidAdapter', () => {
       expect(request).to.have.property('bc').and.to.equal(1);
       expect(request).to.have.property('floor').and.to.equal(null);
       expect(request).to.have.property('banner').and.to.deep.equal({sizes: [[300, 250], [300, 200]]});
-      expect(request).to.have.property('gdprApplies').and.to.equal(0);
-      expect(request).to.have.property('consentString').and.to.equal('');
+      expect(request).to.have.property('gdprConsent').and.to.deep.equal({});
       expect(request).to.have.property('userEids').and.to.deep.equal([]);
       expect(request).to.have.property('usPrivacy').and.to.equal('');
       expect(request).to.have.property('sizes').and.to.deep.equal(['300x250', '300x200']);
@@ -203,18 +204,6 @@ describe('xeBidAdapter', () => {
       bfRequest.getFloor = () => ({floor: 5, currency: 'USD'});
       const request = JSON.parse(spec.buildRequests([bfRequest], {}).data)[0];
       expect(request).to.have.property('floor').and.to.equal(5);
-    });
-
-    it('should build request with gdpr consent data if applies', function () {
-      const bidderRequest = {
-        gdprConsent: {
-          gdprApplies: true,
-          consentString: 'qwerty'
-        }
-      };
-      const request = JSON.parse(spec.buildRequests([defaultRequest], bidderRequest).data)[0];
-      expect(request).to.have.property('gdprApplies').and.equals(1);
-      expect(request).to.have.property('consentString').and.equals('qwerty');
     });
 
     it('should build request with usp consent data if applies', function () {
@@ -455,4 +444,4 @@ describe('xeBidAdapter', () => {
       expect(result).to.equal(5);
     });
   });
-})
+});

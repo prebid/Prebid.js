@@ -114,7 +114,7 @@
  */
 
 /**
- * @typedef {{[idKey: string]: SubmoduleContainer[]}} SubmodulePriorityMap
+ * @typedef {{[idKey: string]: () => SubmoduleContainer[]}} SubmodulePriorityMap
  */
 
 import {find} from '../../src/polyfill.js';
@@ -409,7 +409,7 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
 function getIds(priorityMap) {
   return Object.fromEntries(
     Object.entries(priorityMap)
-      .map(([key, submodules]) => [key, submodules.find(mod => mod.idObj?.[key] != null)?.idObj?.[key]])
+      .map(([key, getActiveModule]) => [key, getActiveModule()?.idObj?.[key]])
       .filter(([_, value]) => value != null)
   )
 }
@@ -484,30 +484,61 @@ function mkPriorityMaps() {
     )
     const global = {};
     const bidder = {};
+
+    function activeModuleGetter(key, useGlobals, modules) {
+      return function () {
+        for (const {allowed, bidders, module} of modules) {
+          const value = module.idObj?.[key];
+          if (value != null) {
+            if (allowed) {
+              return module;
+            } else if (useGlobals) {
+              // value != null, allowed = false, useGlobals = true:
+              // this module has the preferred ID but it cannot be used (because it's restricted to only some bidders
+              // and we are calculating global IDs).
+              // since we don't (yet) have a way to express "global except for these bidders" in FPD,
+              // do not keep looking for alternative IDs in other (lower priority) modules; the ID will be provided only
+              // to the bidders this module is configured for.
+              const listModules = (modules) => modules.map(mod => mod.module.submodule.name).join(', ');
+              logWarn(`userID modules ${listModules(modules)} provide the same ID ('${key}'); ${module.submodule.name} is the preferred source, but it's configured only for some bidders, unlike ${listModules(modules.filter(mod => mod.bidders == null))}. Other bidders will not see the "${key}" ID.`)
+              return null;
+            } else if (bidders == null) {
+              // value != null, allowed = false, useGlobals = false, bidders == null:
+              // this module has the preferred ID but it should not be used because it's not bidder-restricted and
+              // we are calculating bidder-specific ids. Do not keep looking in other lower priority modules, as the ID
+              // will be set globally.
+              return null;
+            }
+          }
+        }
+        return null;
+      }
+    }
+
     Object.entries(modulesById)
       .forEach(([key, modules]) => {
         let allNonGlobal = true;
         const bidderFilters = new Set();
-        modules.map(mod => mod.config.bidders)
-          .forEach(bidders => {
-            if (Array.isArray(bidders) && bidders.length > 0) {
-              bidders.forEach(bidder => bidderFilters.add(bidder));
-            } else {
-              allNonGlobal = false;
-            }
-          })
-        if (bidderFilters.size > 0 && !allNonGlobal) {
-          logWarn(`userID modules ${modules.map(mod => mod.submodule.name).join(', ')} provide the same ID ('${key}'), but are configured for different bidders. ID will be skipped.`)
-        } else {
-          if (bidderFilters.size === 0) {
-            global[key] = modules;
+        modules = modules.map(module => {
+          let bidders = null;
+          if (Array.isArray(module.config.bidders) && module.config.bidders.length > 0) {
+            bidders = module.config.bidders;
+            bidders.forEach(bidder => bidderFilters.add(bidder));
           } else {
-            bidderFilters.forEach(bidderCode => {
-              bidder[bidderCode] = bidder[bidderCode] ?? {};
-              bidder[bidderCode][key] = modules;
-            })
+            allNonGlobal = false;
           }
+          return {
+            module,
+            bidders
+          }
+        })
+        if (!allNonGlobal) {
+          global[key] = activeModuleGetter(key, true, modules.map(({bidders, module}) => ({allowed: bidders == null, bidders, module})));
         }
+        bidderFilters.forEach(bidderCode => {
+          bidder[bidderCode] = bidder[bidderCode] ?? {};
+          bidder[bidderCode][key] = activeModuleGetter(key, false, modules.map(({bidders, module}) => ({allowed: bidders?.includes(bidderCode), bidders, module})));
+        })
       });
     const combined = Object.values(bidder).concat([global]).reduce((combo, map) => Object.assign(combo, map), {});
     Object.assign(map, {global, bidder, combined});

@@ -683,7 +683,7 @@ function registerEventsForAdServers(config) {
   register('apntag', 'anq', ws, 'ast', () => {
     ws.apntag.anq.push(() => {
       AST_EVENTS.forEach(eventName => {
-        ws.apntag.onEvent(eventName, () => {
+        ws.apntag.onEvent(eventName, function () {
           _internal.getAdagioNs().queue.push({
             action: 'ast-event',
             data: { eventName, args: arguments, _window: ws },

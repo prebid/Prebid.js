@@ -82,8 +82,8 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
 export function getEids(priorityMap) {
   const eidConfigs = new Map();
   const idValues = {};
-  Object.entries(priorityMap).forEach(([key, submodules]) => {
-    const submodule = submodules.find(mod => mod.idObj?.[key] != null);
+  Object.entries(priorityMap).forEach(([key, getActiveModule]) => {
+    const submodule = getActiveModule();
     if (submodule) {
       idValues[key] = submodule.idObj[key];
       let eidConf = submodule.submodule.eids?.[key];
