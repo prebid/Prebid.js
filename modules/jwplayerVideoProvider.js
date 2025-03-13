@@ -20,7 +20,7 @@ import { submodule } from '../src/hook.js';
  */
 
 /**
- * @constructor
+ * @class
  * @param {videoProviderConfig} config
  * @param {Object} jwplayer_ - JW Player global factory
  * @param {State} adState_

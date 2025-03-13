@@ -162,7 +162,6 @@ class Configure {
 
   _errorFetch() {
     this.ajaxState = CONFIG_ERROR;
-    /* eslint no-new: "error" */
     new ErrorLogger(ERROR_CONFIG_FETCH).send();
   }
 

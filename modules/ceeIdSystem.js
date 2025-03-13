@@ -27,11 +27,11 @@ export const storage = getStorageManager({ moduleName: MODULE_NAME, moduleType: 
 export const readId = tokenName => storage.getDataFromLocalStorage(tokenName) || storage.getCookie(tokenName);
 
 /**
-  * performs fetch to obtain id and return a value
-  * @function fetchCeeIdToken
-  * @param {Object} requestData The data to be sent in the request body.
-  * @returns {Promise<string>} A promise that resolves to the fetched token.
-  */
+ * performs fetch to obtain id and return a value
+ * @function fetchCeeIdToken
+ * @param {Object} requestData The data to be sent in the request body.
+ * @returns {Promise<string>} A promise that resolves to the fetched token.
+ */
 export function fetchCeeIdToken(requestData) {
   return new Promise((resolve, reject) => {
     ajax(

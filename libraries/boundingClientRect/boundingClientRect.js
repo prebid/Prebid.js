@@ -16,6 +16,7 @@ export function getBoundingClientRect(element) {
   if (cache.has(element)) {
     clientRect = cache.get(element);
   } else {
+    // eslint-disable-next-line no-restricted-properties
     clientRect = element.getBoundingClientRect();
     cache.set(element, clientRect);
   }

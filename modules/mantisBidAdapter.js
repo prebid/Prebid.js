@@ -272,9 +272,8 @@ export const spec = {
 
 export function sfPostMessage ($sf, width, height, callback) {
   var viewed = false;
-  // eslint-disable-next-line no-undef
+
   $sf.ext.register(width, height, function () {
-    // eslint-disable-next-line no-undef
     if ($sf.ext.inViewPercentage() < 50 || viewed) {
       return;
     }
