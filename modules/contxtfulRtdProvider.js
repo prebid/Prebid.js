@@ -28,6 +28,7 @@ import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
@@ -248,8 +249,8 @@ function getElementFromTopWindowRecurs(element, currentWindow) {
       return element;
     } else {
       const frame = currentWindow.frameElement;
-      const frameClientRect = frame.getBoundingClientRect();
-      const elementClientRect = element.getBoundingClientRect();
+      const frameClientRect = getBoundingClientRect(frame);
+      const elementClientRect = getBoundingClientRect(element);
       if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
         return undefined;
       }
@@ -297,7 +298,7 @@ function getDivIdPosition(divId) {
         return {};
       }
 
-      let box = domElement.getBoundingClientRect();
+      let box = getBoundingClientRect(domElement);
       const docEl = d.documentElement;
       const body = d.body;
       const clientTop = (d.clientTop ?? body.clientTop) ?? 0;
