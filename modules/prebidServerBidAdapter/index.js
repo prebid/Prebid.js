@@ -28,6 +28,7 @@ import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
+import {getGlobal} from '../prebidGlobal.js';
 
 const getConfig = config.getConfig;
 
@@ -305,6 +306,7 @@ function doAllSyncs(bidders, s2sConfig) {
 
 /**
  * Modify the cookie sync url from prebid server to add new params.
+ * Replace [SHAREDID] macro with sharedid in any syncs
  *
  * @param {string} type the type of sync, "image", "redirect", "iframe"
  * @param {string} url the url to sync
@@ -313,12 +315,21 @@ function doAllSyncs(bidders, s2sConfig) {
  * @param {S2SConfig} s2sConfig
  */
 function doPreBidderSync(type, url, bidder, done, s2sConfig) {
+  try {
+    const userIds = typeof getGlobal().getUserIds === 'function' ? getGlobal().getUserIds() : {};
+    const sharedId = userIds && userIds.pubcid;
+    if (sharedId && typeof url === 'string' && url.indexOf('[SHAREDID]') !== -1) {
+      url = url.replace('[SHAREDID]', sharedId);
+    }
+  } catch (error) {
+    logWarn('Error replacing [SHAREDID] in sync URL:', error);
+  }
+
   if (s2sConfig.syncUrlModifier && typeof s2sConfig.syncUrlModifier[bidder] === 'function') {
     url = s2sConfig.syncUrlModifier[bidder](type, url, bidder);
   }
-  doBidderSync(type, url, bidder, done, s2sConfig.syncTimeout)
+  doBidderSync(type, url, bidder, done, s2sConfig.syncTimeout);
 }
-
 /**
  * Run a cookie sync for the given type, url, and bidder
  *
