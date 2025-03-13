@@ -1,7 +1,7 @@
 /* global $$PREBID_GLOBAL$$ */
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
@@ -10,7 +10,7 @@ export const spec = {
 
   code: 'adspirit',
   aliases: ['twiago'],
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: function (bid) {
     let host = spec.getBidderHost(bid);
@@ -50,51 +50,66 @@ export const spec = {
       }
 
       let openRTBRequest = {
-        id: bidRequest.bidId,
+        id: bidderRequest.auctionId,
+        at: 1,
+        cur: ['EUR'],
         imp: [{
           id: bidRequest.bidId,
-          banner: bidRequest.mediaTypes.banner ? {
+          bidfloor: bidRequest.params.bidfloor !== undefined ? parseFloat(bidRequest.params.bidfloor) : 0,
+          bidfloorcur: 'EUR',
+          secure: 1,
+          banner: (bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes?.length > 0) ? {
             format: bidRequest.mediaTypes.banner.sizes.map(size => ({
               w: size[0],
               h: size[1]
             }))
           } : undefined,
-          native: {
+          native: (bidRequest.mediaTypes.native) ? {
             request: JSON.stringify({
-                ver: "1.2",
-                assets: [
-                    { id: 1, required: 1, title: {  } },  
-                    { id: 2, required: 1, img: { type: 3 } }, 
-                    { id: 4, required: 1, data: { type: 2} }, 
-                    { id: 3, required: 1, data: { type: 12 } }, 
-                    { id: 6, required: 1, data: { type: 1 } }, 
-                    { id: 5, required: 1, img: { type: 3} } 
-                ],
-                link: { required: 1 } 
+              ver: '1.2',
+              assets: bidRequest.mediaTypes?.native?.ortb?.request?.assets || []
             })
-        },
-          bidfloor: bidRequest.params.bidfloor !== undefined ? parseFloat(bidRequest.params.bidfloor) : 0,
+          } : undefined,
           ext: {
             placementId: bidRequest.params.placementId
           }
         }],
+
         site: {
-          page: bidderRequest.refererInfo.topmostLocation
+          id: bidRequest.params.siteId || '',
+          domain: new URL(bidderRequest.refererInfo.topmostLocation).hostname,
+          page: bidderRequest.refererInfo.topmostLocation,
+          publisher: {
+            id: bidRequest.params.publisherId || '',
+            name: bidRequest.params.publisherName || ''
+          }
+        },
+        user: {
+          id: bidRequest.userId || '',
+          data: bidRequest.userData || [],
+          ext: {
+            consent: gdprConsentString || ''
+          }
         },
         device: {
           ua: navigator.userAgent,
-          ip: bidderRequest?.geo?.ip || '',
           language: (navigator.language || '').split('-')[0],
           w: window.innerWidth || document.documentElement.clientWidth,
-          h: window.innerHeight || document.documentElement.clientHeight
+          h: window.innerHeight || document.documentElement.clientHeight,
+          geo: {
+            lat: bidderRequest?.geo?.lat || 0,
+            lon: bidderRequest?.geo?.lon || 0,
+            country: bidderRequest?.geo?.country || ''
+          }
         },
         regs: {
           ext: {
-            gdpr: gdprApplies,
-            gdpr_consent: gdprConsentString
+            gdpr: gdprApplies ? 1 : 0,
+            gdpr_consent: gdprConsentString || ''
           }
         },
         ext: {
+          oat: 1,
           prebidVersion: prebidVersion,
           adUnitCode: {
             prebidVersion: prebidVersion,
@@ -111,7 +126,6 @@ export const spec = {
           }
         };
       }
-
       requests.push({
         method: 'POST',
         url: reqUrl,
@@ -123,54 +137,122 @@ export const spec = {
 
     return requests;
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    let bidObj = bidRequest.bidRequest;
+    const bidObj = bidRequest.bidRequest;
+    let host = spec.getBidderHost(bidObj);
 
-    if (!serverResponse || !serverResponse.body || !bidObj) {
-      utils.logWarn(`No valid bids from ${spec.code} bidder!`);
+    if (!serverResponse || !serverResponse.body) {
+      utils.logWarn(`adspirit: Empty response from bidder`);
       return [];
     }
 
-    let adData = serverResponse.body;
-    let isOpenRTB = adData.seatbid && Array.isArray(adData.seatbid) && adData.seatbid.length > 0;
-
-    if (isOpenRTB) {
-      adData.seatbid.forEach(seat => {
+    if (serverResponse.body.seatbid) {
+      serverResponse.body.seatbid.forEach(seat => {
         seat.bid.forEach(bid => {
-          let bidResponse = {
-            requestId: bid.impid,
+          const bidResponse = {
+            requestId: bidObj.bidId,
             cpm: bid.price,
-            width: bid.w,
-            height: bid.h,
-            creativeId: bid.crid || bidObj.params.placementId,
-            currency: adData.cur || 'EUR',
+            width: bid.w || 1,
+            height: bid.h || 1,
+            creativeId: bid.crid || bid.impid,
+            currency: serverResponse.body.cur || 'EUR',
             netRevenue: true,
-            ttl: 300,
+            ttl: bid.exp || 300,
             meta: {
               advertiserDomains: bid.adomain || []
             }
           };
 
-          if (bid.ext && bid.ext.native) {
-            bidResponse.native = {
-              title: bid.ext.native.title,
-              body: bid.ext.native.body,
-              cta: bid.ext.native.cta,
-              image: { url: bid.ext.native.image },
-              clickUrl: bid.ext.native.click,
-              impressionTrackers: bid.ext.native.impressionTrackers || []
+          let adm = bid.adm;
+
+          if (typeof adm === 'string' && adm.trim().startsWith('{')) {
+            adm = JSON.parse(adm || '{}');
+            if (typeof adm !== 'object') adm = null;
+          }
+
+          if (adm?.native?.assets) {
+            const getAssetValue = (id, type) => {
+              const assetList = adm.native.assets.filter(a => a.id === id);
+              if (assetList.length === 0) return '';
+              return assetList[0][type]?.text || assetList[0][type]?.value || assetList[0][type]?.url || '';
             };
+
+            const duplicateTracker = {};
+
+            bidResponse.native = {
+              title: getAssetValue(1, 'title'),
+              body: getAssetValue(4, 'data'),
+              cta: getAssetValue(3, 'data'),
+              image: { url: getAssetValue(2, 'img') || '' },
+              icon: { url: getAssetValue(5, 'img') || '' },
+              sponsoredBy: getAssetValue(6, 'data'),
+              clickUrl: adm.native.link?.url || '',
+              impressionTrackers: Array.isArray(adm.native.imptrackers) ? adm.native.imptrackers : []
+            };
+
+            const predefinedAssetIds = Object.entries(bidResponse.native)
+              .filter(([key, value]) => key !== 'clickUrl' && key !== 'impressionTrackers')
+              .map(([key, value]) => adm.native.assets.find(asset =>
+                typeof value === 'object' ? value.url === asset?.img?.url : value === asset?.data?.value
+              )?.id)
+              .filter(id => id !== undefined);
+
+            adm.native.assets.forEach(asset => {
+              const type = Object.keys(asset).find(k => k !== 'id');
+
+              if (!duplicateTracker[asset.id]) {
+                duplicateTracker[asset.id] = 1;
+              } else {
+                duplicateTracker[asset.id]++;
+              }
+
+              if (predefinedAssetIds.includes(asset.id) && duplicateTracker[asset.id] === 1) return;
+
+              if (type && asset[type]) {
+                const value = asset[type].text || asset[type].value || asset[type].url || '';
+
+                if (type === 'img') {
+                  bidResponse.native[`image_${asset.id}_extra${duplicateTracker[asset.id] - 1}`] = {
+                    url: value, width: asset.img.w || null, height: asset.img.h || null
+                  };
+                } else {
+                  bidResponse.native[`data_${asset.id}_extra${duplicateTracker[asset.id] - 1}`] = value;
+                }
+              }
+            });
+
             bidResponse.mediaType = NATIVE;
-          } else {
-            bidResponse.ad = bid.adm;
-            bidResponse.mediaType = BANNER;
           }
 
           bidResponses.push(bidResponse);
         });
       });
+    } else {
+      let adData = serverResponse.body;
+      let cpm = adData.cpm;
+
+      if (!cpm) return [];
+      const bidResponse = {
+        requestId: bidObj.bidId,
+        cpm: cpm,
+        width: adData.w,
+        height: adData.h,
+        creativeId: bidObj.params.placementId,
+        currency: 'EUR',
+        netRevenue: true,
+        ttl: 300,
+        meta: {
+          advertiserDomains: adData.adomain || []
+        }
+      };
+      let adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
+      bidResponse.ad = adm;
+      bidResponse.mediaType = BANNER;
+
+      bidResponses.push(bidResponse);
     }
+
     return bidResponses;
   },
   getBidderHost: function (bid) {
