@@ -252,7 +252,8 @@ module.exports = [
     files: sourceFolders.flatMap(tsPattern),
     rules: {
       // turn off no-undef for TS files - type checker does better
-      'no-undef': 'off'
+      'no-undef': 'off',
+      '@typescript-eslint/no-explicit-any': 'off'
     }
   },
   {
