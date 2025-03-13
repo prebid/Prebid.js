@@ -597,6 +597,7 @@ describe('consentManagement', function () {
           function mockTcfEvent(tcdata) {
             tcfStub.callsFake((api, version, cb) => {
               if (api === 'addEventListener' && version === 2) {
+                // eslint-disable-next-line standard/no-callback-literal
                 cb(tcdata, true)
               }
             });

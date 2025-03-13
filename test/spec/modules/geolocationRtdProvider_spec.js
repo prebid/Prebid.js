@@ -51,6 +51,7 @@ describe('Geolocation RTD Provider', function () {
       rtdConfig = {params: {}};
       clock = sandbox.useFakeTimers(11000);
       sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
+        // eslint-disable-next-line standard/no-callback-literal
         cb({coords: {latitude: 1, longitude: 2}, timestamp: 1000});
       });
       permGiven = new Promise((resolve) => {
