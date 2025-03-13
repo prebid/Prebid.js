@@ -37,15 +37,7 @@ const INTEG_SERVER_PORT = 4444;
 const { spawn, fork } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
-const SOURCE_FOLDERS = [
-  'src',
-  'creative',
-  'libraries',
-  'modules',
-  'test'
-]
-const SOURCE_PAT = SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.ts`]);
-const AUTOGEN_RENDERERS = 'libraries/creative-renderer-*/**/*'
+const SOURCE_PAT = helpers.getSourceFolders().flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.ts`]);
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -526,12 +518,12 @@ function watchTaskMaker(options = {}) {
   options.alsoWatch = options.alsoWatch || [];
 
   return function watch(done) {
-    gulp.watch(SOURCE_PAT.concat([
-      `!${AUTOGEN_RENDERERS}`
-    ]), babelPrecomp(options));
+    gulp.watch(SOURCE_PAT.concat(
+      helpers.getIgnoreSources().map(src => `!${src}`)
+    ), babelPrecomp(options));
     gulp.watch([
       helpers.getPrecompiledPath('**/*.js'),
-      `!${helpers.getPrecompiledPath(AUTOGEN_RENDERERS)}`,
+        ...helpers.getIgnoreSources().map(src => `!${helpers.getPrecompiledPath(src)}`),
       `!${helpers.getPrecompiledPath('test/**/*')}`,
     ], options.task());
 

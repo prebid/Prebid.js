@@ -360,7 +360,7 @@ function fillAdUnitDefaults(adUnits) {
 function logInvocation(name, fn) {
     return function (...args) {
         logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
-        return fn.appy(this, args);
+        return fn.apply(this, args);
     }
 }
 

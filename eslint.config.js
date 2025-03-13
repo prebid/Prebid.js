@@ -8,6 +8,7 @@ const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
+const {getSourceFolders, getIgnoreSources} = require('./gulpHelpers.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -20,9 +21,6 @@ function tsPattern(name) {
 function sourcePattern(name) {
   return jsPattern(name).concat(tsPattern(name));
 }
-
-const sourceFolders = ['src', 'modules', 'libraries', 'creative', 'test'];
-const autogen = 'libraries/creative-renderer-*/**/*'
 
 const allowedImports = {
   modules: [
@@ -58,7 +56,7 @@ module.exports = [
   includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
   {
     ignores: [
-      autogen,
+      ...getIgnoreSources(),
       'integrationExamples/**/*',
       // do not lint build-related stuff
       '*.js',
@@ -69,12 +67,12 @@ module.exports = [
   jsdoc.configs['flat/recommended'],
   ...tseslint.configs.recommended,
   ...neostandard({
-    files: sourceFolders.flatMap(jsPattern),
+    files: getSourceFolders().flatMap(jsPattern),
     ts: true,
-    filesTs: sourceFolders.flatMap(tsPattern)
+    filesTs: getSourceFolders().flatMap(tsPattern)
   }),
   {
-    files: sourceFolders.flatMap(sourcePattern),
+    files: getSourceFolders().flatMap(sourcePattern),
     plugins: {
       jsdoc,
       import: lintImports,
@@ -249,7 +247,7 @@ module.exports = [
     }
   },
   {
-    files: sourceFolders.flatMap(tsPattern),
+    files: getSourceFolders().flatMap(tsPattern),
     rules: {
       // turn off no-undef for TS files - type checker does better
       'no-undef': 'off',
@@ -257,7 +255,7 @@ module.exports = [
     }
   },
   {
-    files: sourceFolders.flatMap(jsPattern),
+    files: getSourceFolders().flatMap(jsPattern),
     rules: {
       // turn off typescript rules on js files - just too many violations
       '@typescript-eslint/no-unused-vars': 'off',

@@ -13,6 +13,16 @@ const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
+const SOURCE_FOLDERS = [
+  'src',
+  'creative',
+  'libraries',
+  'modules',
+  'test'
+]
+const IGNORE_SOURCES = [
+  'libraries/creative-renderer-*/**/*'
+]
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -26,6 +36,12 @@ function isModuleDirectory(filePath) {
 }
 
 module.exports = {
+  getSourceFolders() {
+    return SOURCE_FOLDERS
+  },
+  getIgnoreSources() {
+    return IGNORE_SOURCES
+  },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
   },
