@@ -86,7 +86,7 @@ export const onAuctionEndHandler = (auctionDetails) => {
               rendered: 0,
               source: 'pbjs',
               adUnitCode: bid.adUnitCode,
-              highestBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.cpm || 0,
+              highestBidCpm: highestBidsByAdUnitCode[bid.adUnitCode]?.cpm || null,
               bidderCpm: receivedBidsMap[bid.bidId]?.cpm || null,
               bidderOriginalCpm: receivedBidsMap[bid.bidId]?.originalCpm || null,
               bidderCurrency: receivedBidsMap[bid.bidId]?.currency || null,
