@@ -256,7 +256,7 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
     const {adUnitCode, auctionId, bidder} = request;
 
-    // eslint-disable-next-line no-inner-declarations
+
     function storePendingData(store, data) {
       const target = store(auctionId);
       if (target != null) {

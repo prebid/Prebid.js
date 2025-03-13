@@ -110,7 +110,6 @@ export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest
     done
   }));
   if (bids.length === 0) {
-    // eslint-disable-next-line no-unused-expressions
     cbs.onResponse?.({}); // trigger onResponse so that the bidder may be marked as "timely" if necessary
     done();
   } else {

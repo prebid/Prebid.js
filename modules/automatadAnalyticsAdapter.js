@@ -303,7 +303,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
 
   logMessage(`Automatad Analytics Adapter enabled with sdk config`, window.__atmtdSDKConfig)
 
-  // eslint-disable-next-line
+
   atmtdAdapter.originEnableAnalytics(configuration)
 };
 

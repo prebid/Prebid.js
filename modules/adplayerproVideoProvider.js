@@ -160,7 +160,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         return;
     }
 
-    // eslint-disable-next-line no-unreachable
+
     const playerEventName = utils.getPlayerEvent(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
     player && player.on(playerEventName, eventHandler);

@@ -462,7 +462,7 @@ function _buildBannerORTB(bidRequest) {
 }
 
 // BUILD REQUESTS: VIDEO
-// eslint-disable-next-line no-unused-vars
+
 function _buildVideoORTB(bidRequest) {
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
