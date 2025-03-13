@@ -10,7 +10,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { subscribeToGamSlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
+import { subscribeToGamSlotRenderEndedEvent, SlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
