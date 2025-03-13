@@ -51,6 +51,13 @@ function commonConfig(overrides) {
       import: lintImports,
       prebid
     },
+    settings: {
+      jsdoc: {
+        tagNamePreference: {
+          return: 'return'
+        }
+      }
+    },
     languageOptions: {
       parser: babelParser,
       sourceType: 'module',
@@ -99,7 +106,6 @@ function commonConfig(overrides) {
       'jsdoc/require-yields': 'off',
       'jsdoc/require-yields-check': 'off',
       'jsdoc/tag-lines': 'off',
-
       'no-var': 'off',
       'no-empty': 'off',
       'no-void': 'off',
@@ -142,6 +148,7 @@ module.exports = [
       ...sourcePattern('.github'),
     ],
   },
+  jsdoc.configs['flat/recommended'],
   ...neostandard({
     files: sources,
   }),
