@@ -188,7 +188,11 @@ module.exports = [
           ...['outerText', 'innerText'].map(property => ({
             property,
             message: 'use .textContent instead'
-          }))
+          })),
+          {
+            property: 'getBoundingClientRect',
+            message: 'use libraries/boundingClientRect instead'
+          }
         ]
       }
     })
