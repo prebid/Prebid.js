@@ -7,12 +7,21 @@ const prebid = require('./plugins/eslint/index.js');
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
+const tseslint = require('typescript-eslint');
 
-function sourcePattern(name) {
+function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
 }
 
-const sources = ['src', 'modules', 'libraries', 'creative'].flatMap(sourcePattern)
+function tsPattern(name) {
+  return [`${name}/**/*.ts`]
+}
+
+function sourcePattern(name) {
+  return jsPattern(name).concat(tsPattern(name));
+}
+
+const sourceFolders = ['src', 'modules', 'libraries', 'creative', 'test'];
 const autogen = 'libraries/creative-renderer-*/**/*'
 
 const allowedImports = {
@@ -44,8 +53,28 @@ function noGlobals(names) {
   }
 }
 
-function commonConfig(overrides) {
-  return _.merge({
+
+module.exports = [
+  includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
+  {
+    ignores: [
+      autogen,
+      'integrationExamples/**/*',
+      // do not lint build-related stuff
+      '*.js',
+      ...jsPattern('plugins'),
+      ...jsPattern('.github'),
+    ],
+  },
+  jsdoc.configs['flat/recommended'],
+  ...tseslint.configs.recommended,
+  ...neostandard({
+    files: sourceFolders.flatMap(jsPattern),
+    ts: true,
+    filesTs: sourceFolders.flatMap(tsPattern)
+  }),
+  {
+    files: sourceFolders.flatMap(sourcePattern),
     plugins: {
       jsdoc,
       import: lintImports,
@@ -133,35 +162,14 @@ function commonConfig(overrides) {
       '@stylistic/no-multiple-empty-lines': 'off',
 
     }
-  }, overrides);
-}
-
-module.exports = [
-  includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
-  {
-    ignores: [
-      autogen,
-      'integrationExamples/**/*',
-      // do not lint build-related stuff
-      '*.js',
-      ...sourcePattern('plugins'),
-      ...sourcePattern('.github'),
-    ],
   },
-  jsdoc.configs['flat/recommended'],
-  ...neostandard({
-    files: sources,
-  }),
-  commonConfig({
-    files: sources,
-  }),
   ...Object.entries(allowedImports).map(([path, allowed]) => {
     const {globals, props} = noGlobals({
       require: 'use import instead',
       ...Object.fromEntries(['localStorage', 'sessionStorage'].map(k => [k, 'use storageManager instead'])),
       XMLHttpRequest: 'use ajax.js instead'
     })
-    return commonConfig({
+    return {
       files: sourcePattern(path),
       plugins: {
         prebid,
@@ -195,7 +203,7 @@ module.exports = [
           }
         ]
       }
-    })
+    }
   }),
   {
     files: ['**/*BidAdapter.js'],
@@ -210,7 +218,7 @@ module.exports = [
       ]
     }
   },
-  commonConfig({
+  {
     files: sourcePattern('test'),
     languageOptions: {
       globals: {
@@ -237,7 +245,24 @@ module.exports = [
       'default-case-last': 'off',
       '@stylistic/no-mixed-spaces-and-tabs': 'off',
       '@stylistic/no-tabs': 'off',
-      '@stylistic/no-trailing-spaces': 'off'
+      '@stylistic/no-trailing-spaces': 'off',
     }
-  })
+  },
+  {
+    files: sourceFolders.flatMap(tsPattern),
+    rules: {
+      // turn off no-undef for TS files - type checker does better
+      'no-undef': 'off'
+    }
+  },
+  {
+    files: sourceFolders.flatMap(jsPattern),
+    rules: {
+      // turn off typescript rules on js files - just too many violations
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-this-alias': 'off',
+      '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
 ]
