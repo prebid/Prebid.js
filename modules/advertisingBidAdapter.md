@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: iMedia Digital Services Bidder Adapter
+Module Name: Advertising.com Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: eng-demand@imds.tv
 ```
 
 # Description
 
-The iMedia Digital Services adapter requires setup and approval from iMedia Digital Services.
+The Advertising.com adapter requires setup and approval from Advertising.com.
 Please reach out to your account manager for more information.
 
 ### Google Ad Manager Video Creative
@@ -30,7 +30,7 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_uuid_imds%%&AUCTI
           }
       },
       bids: [{
-          bidder: "imds",
+          bidder: "advertising",
           params: {
               seatId: "prebid",
               tagId: "demo1",
@@ -49,7 +49,7 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_uuid_imds%%&AUCTI
         }
       },
       bids: [{
-          bidder: "imds",
+          bidder: "advertising",
           params: {
               seatId: "prebid",
               tagId: "demo1",

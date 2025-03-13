@@ -18,9 +18,10 @@ const BLOCKED_AD_SIZES = [
 ];
 const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
-  code: 'imds',
+  code: 'advertising',
   aliases: [
-    { code: 'synacormedia' }
+    { code: 'synacormedia' },
+    { code: 'imds' }
   ],
   supportedMediaTypes: [ BANNER, VIDEO ],
   sizeMap: {},
@@ -68,7 +69,7 @@ export const spec = {
 
     validBidReqs.forEach((bid, i) => {
       if (seatId && seatId !== bid.params.seatId) {
-        logWarn(`IMDS: there is an inconsistent seatId: ${bid.params.seatId} but only sending bid requests for ${seatId}, you should double check your configuration`);
+        logWarn(`Advertising.com: there is an inconsistent seatId: ${bid.params.seatId} but only sending bid requests for ${seatId}, you should double check your configuration`);
         return;
       } else {
         seatId = bid.params.seatId;
@@ -76,7 +77,7 @@ export const spec = {
       const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
       let pos = parseInt(bid.params.pos || deepAccess(bid.mediaTypes, 'video.pos'), 10);
       if (isNaN(pos)) {
-        logWarn(`IMDS: there is an invalid POS: ${bid.params.pos}`);
+        logWarn(`Advertising.com: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
       }
       const videoOrBannerKey = this.isVideoBid(bid) ? 'video' : 'banner';
@@ -162,7 +163,7 @@ export const spec = {
       };
       const bidFloor = getBidFloor(bid, 'banner', '*');
       if (isNaN(bidFloor)) {
-        logWarn(`IMDS: there is an invalid bid floor: ${bid.params.bidfloor}`);
+        logWarn(`Advertising.com: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
@@ -186,7 +187,7 @@ export const spec = {
       };
       const bidFloor = getBidFloor(bid, 'video', size);
       if (isNaN(bidFloor)) {
-        logWarn(`IMDS: there is an invalid bid floor: ${bid.params.bidfloor}`);
+        logWarn(`Advertising.com: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
 
       if (bidFloor !== null && !isNaN(bidFloor)) {
