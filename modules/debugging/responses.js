@@ -7,8 +7,9 @@ const ORTB_NATIVE_ASSET_TYPES = ['img', 'video', 'link', 'data', 'title'];
 export default {
   [BANNER]: (bid, bidResponse) => {
     if (!bidResponse.hasOwnProperty('ad') && !bidResponse.hasOwnProperty('adUrl')) {
-      const [size, repeat] = bidResponse.width < bidResponse.height ? [bidResponse.width, 'repeat-y'] : [bidResponse.height, 'repeat-x'];
-      bidResponse.ad = `<html><body><div style="display: inline-block; height: ${bidResponse.height}px; width: ${bidResponse.width}px; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: ${size}px; background-repeat: ${repeat}"></div></body></html>`;
+      let [size, repeat] = (bidResponse.width ?? bidResponse.wratio) < (bidResponse.height ?? bidResponse.hratio) ? [bidResponse.width, 'repeat-y'] : [bidResponse.height, 'repeat-x'];
+      size = size == null ? '100%' : `${size}px`;
+      bidResponse.ad = `<html><body><div style="display: inline-block; height: ${bidResponse.height == null ? '100%' : bidResponse.height + 'px'}; width: ${bidResponse.width == null ? '100%' : bidResponse.width + 'px'}; background-image: url(https://vcdn.adnxs.com/p/creative-image/27/c0/52/67/27c05267-5a6d-4874-834e-18e218493c32.png); background-size: ${size}; background-repeat: ${repeat}"></div></body></html>`;
     }
   },
   [VIDEO]: (bid, bidResponse) => {
