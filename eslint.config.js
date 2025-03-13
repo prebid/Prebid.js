@@ -4,12 +4,14 @@ const neostandard = require('neostandard')
 const babelParser = require('@babel/eslint-parser');
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
+const {includeIgnoreFile} = require('@eslint/compat');
+const path = require('path');
 
 function sourcePattern(name) {
   return [`${name}/**/*.js`]
 }
 
-const sources = ['src', 'modules', 'libraries', 'creative', 'test'].flatMap(sourcePattern)
+const sources = ['src', 'modules', 'libraries', 'creative'].flatMap(sourcePattern)
 const autogen = 'libraries/creative-renderer-*/**/*'
 
 const allowedImports = {
@@ -42,8 +44,14 @@ function noGlobals(names) {
 }
 
 module.exports = [
+  includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
   {
-    ignores: [autogen],
+    ignores: [
+      autogen,
+      'integrationExamples/**/*',
+      '*.js',
+      ...sourcePattern('test')
+    ],
   },
   ...neostandard({
     files: sources,
