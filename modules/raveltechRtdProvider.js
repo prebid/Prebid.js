@@ -19,7 +19,7 @@ const getAnonymizedEids = (eids) => {
     eid.uids = eid.uids.flatMap(uid => {
       if (!uid || !uid.id) { return []; }
       const id = ZKAD.anonymizeID(uid.id, eid.source);
-      if (!id) { 
+      if (!id) {
         logError('Error while anonymizing uid :', eid, uid);
         return [];
       }
