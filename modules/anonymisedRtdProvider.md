@@ -48,9 +48,9 @@ Anonymised’s Real-time Data Provider automatically obtains segment IDs from th
 | params.tagConfig | `Object` | Configuration for the Anonymised Marketing Tag | Optional. Defaults to `{}`. |
 | params.tagUrl | `String` | The URL of the Anonymised Marketing Tag script | Optional. Defaults to `https://static.anonymised.io/light/loader.js`. |
 
-The `anonymisedRtdProvider` must be integrated into the publisher's website along with the [Anonymised Marketing Tag](https://support.anonymised.io/integrate/marketing-tag). One way to install the Marketing Tag is through `anonymisedRtdProvider` by specifying the required [parameters](https://support.anonymised.io/integrate/optional-anonymised-tag-parameters) in the `tagConfig` object.  
+The `anonymisedRtdProvider` must be integrated into the publisher's website along with the [Anonymised Marketing Tag](https://support.anonymised.io/integrate/marketing-tag?t=LPukVCXzSIcRoal5jggyeg). One way to install the Marketing Tag is through `anonymisedRtdProvider` by specifying the required [parameters](https://support.anonymised.io/integrate/optional-anonymised-tag-parameters?t=LPukVCXzSIcRoal5jggyeg) in the `tagConfig` object.  
 
-The `tagConfig.clientId` parameter is mandatory for the Marketing Tag to initialize. If `tagConfig` is empty or `tagConfig.clientId` is undefined, the `anonymisedRtdProvider` will not initialize the Marketing Tag. The publisher's `clientId` is [provided by Anonymised](https://support.anonymised.io/integrate/install-the-anonymised-tag-natively#InstalltheAnonymisedtagnatively-Instructions).  
+The `tagConfig.clientId` parameter is mandatory for the Marketing Tag to initialize. If `tagConfig` is empty or `tagConfig.clientId` is undefined, the `anonymisedRtdProvider` will not initialize the Marketing Tag. The publisher's `clientId` is [provided by Anonymised](https://support.anonymised.io/integrate/install-the-anonymised-tag-natively#InstalltheAnonymisedtagnatively-Instructions?t=LPukVCXzSIcRoal5jggyeg).  
 
 For any questions or assistance with integrating Prebid, `anonymisedRtdProvider`, or the Anonymised Marketing Tag, please contact an [Anonymised representative](mailto:support@anonymised.io).
 
