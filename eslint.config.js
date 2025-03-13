@@ -8,7 +8,7 @@ const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 
 function sourcePattern(name) {
-  return [`${name}/**/*.js`]
+  return [`${name}/**/*.js`, `${name}/**/*.mjs`]
 }
 
 const sources = ['src', 'modules', 'libraries', 'creative'].flatMap(sourcePattern)
@@ -49,7 +49,11 @@ module.exports = [
     ignores: [
       autogen,
       'integrationExamples/**/*',
+      // do not lint build-related stuff
       '*.js',
+      ...sourcePattern('plugins'),
+      ...sourcePattern('.github'),
+      // tests somehow escaped most linter checks and are now a nightmare
       ...sourcePattern('test')
     ],
   },
