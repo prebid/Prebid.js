@@ -92,7 +92,7 @@ async function sha256(input) {
 }
 ```
 
-To handle PPIDs and the above input - a custom `handleRtd` function may need to be provided.
+To handle PPIDs and the above input - a custom `handleRtd` function may need to be provided. In the custom `handleRtd` implementation make sure to erase any `user.ext.optable` fields not meant to be propagated to the bidders.
 
 ### Parameters
 
