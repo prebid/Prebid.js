@@ -49,6 +49,9 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
   const adapterName = getAdapterNameForAlias(aliasName)
 
   return (validBidRequests, ...rest) => {
+    if (!window.ZKAD || !window.ZKAD.ready) {
+      return buildRequests(validBidRequests, ...rest);
+    }
     let requests = preserveOriginalBid ? buildRequests(validBidRequests, ...rest) : [];
     if (!isArray(requests)) {
       requests = [ requests ];
