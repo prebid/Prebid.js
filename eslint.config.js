@@ -6,6 +6,7 @@ const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
+const _ = require('lodash');
 
 function sourcePattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
@@ -43,25 +44,8 @@ function noGlobals(names) {
   }
 }
 
-module.exports = [
-  includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
-  {
-    ignores: [
-      autogen,
-      'integrationExamples/**/*',
-      // do not lint build-related stuff
-      '*.js',
-      ...sourcePattern('plugins'),
-      ...sourcePattern('.github'),
-      // tests somehow escaped most linter checks and are now a nightmare
-      ...sourcePattern('test')
-    ],
-  },
-  ...neostandard({
-    files: sources,
-  }),
-  {
-    files: sources,
+function commonConfig(overrides) {
+  return _.merge({
     plugins: {
       jsdoc,
       import: lintImports,
@@ -143,14 +127,34 @@ module.exports = [
       '@stylistic/no-multiple-empty-lines': 'off',
 
     }
+  }, overrides);
+}
+
+module.exports = [
+  includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
+  {
+    ignores: [
+      autogen,
+      'integrationExamples/**/*',
+      // do not lint build-related stuff
+      '*.js',
+      ...sourcePattern('plugins'),
+      ...sourcePattern('.github'),
+    ],
   },
+  ...neostandard({
+    files: sources,
+  }),
+  commonConfig({
+    files: sources,
+  }),
   ...Object.entries(allowedImports).map(([path, allowed]) => {
     const {globals, props} = noGlobals({
       require: 'use import instead',
       ...Object.fromEntries(['localStorage', 'sessionStorage'].map(k => [k, 'use storageManager instead'])),
       XMLHttpRequest: 'use ajax.js instead'
     })
-    return {
+    return commonConfig({
       files: sourcePattern(path),
       plugins: {
         prebid,
@@ -180,7 +184,7 @@ module.exports = [
           }))
         ]
       }
-    }
+    })
   }),
   {
     files: ['**/*BidAdapter.js'],
@@ -194,5 +198,35 @@ module.exports = [
         }
       ]
     }
-  }
+  },
+  commonConfig({
+    files: sourcePattern('test'),
+    languageOptions: {
+      globals: {
+        ...globals.mocha,
+        ...globals.chai,
+        'sinon': false
+      }
+    },
+    rules: {
+      // tests were not subject to many rules and they are now a nightmare
+      'no-template-curly-in-string': 'off',
+      'no-unused-expressions': 'off',
+      'one-var': 'off',
+      'no-undef': 'off',
+      'no-unused-vars': 'off',
+      'import/extensions': 'off',
+      'camelcase': 'off',
+      'no-array-constructor': 'off',
+      'import-x/no-duplicates': 'off',
+      'import-x/no-absolute-path': 'off',
+      'no-loss-of-precision': 'off',
+      'no-redeclare': 'off',
+      'no-global-assign': 'off',
+      'default-case-last': 'off',
+      '@stylistic/no-mixed-spaces-and-tabs': 'off',
+      '@stylistic/no-tabs': 'off',
+      '@stylistic/no-trailing-spaces': 'off'
+    }
+  })
 ]
