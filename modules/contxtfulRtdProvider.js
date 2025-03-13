@@ -30,12 +30,14 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
+// Constants
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
 const CONTXTFUL_HOSTNAME_DEFAULT = 'api.receptivity.io';
 const CONTXTFUL_DEFER_DEFAULT = 0;
 
+// Functions
 let _sm;
 function sm() {
   return _sm ??= generateUUID();
