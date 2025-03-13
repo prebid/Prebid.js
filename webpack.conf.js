@@ -86,7 +86,7 @@ module.exports = {
       minChunks: 1,
       minSize: 0,
       cacheGroups: (() => {
-        const libRoot = path.resolve(__dirname, 'libraries');
+        const libRoot = helpers.getPrecompiledPath('libraries');
         const libraries = Object.fromEntries(
           fs.readdirSync(libRoot)
             .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
@@ -101,13 +101,21 @@ module.exports = {
               return [lib, def];
             })
         );
-        const core = path.resolve('./src');
+        const core = helpers.getPrecompiledPath('./src');
+        const nodeMods = path.resolve(__dirname, 'node_modules')
+        const precompiled = helpers.getPrecompiledPath();
 
         return Object.assign(libraries, {
           core: {
             name: 'chunk-core',
             test: (module) => {
-              return module.resource && module.resource.startsWith(core);
+              if (module.resource) {
+                if (module.resource.startsWith(__dirname) &&
+                  !(module.resource.startsWith(precompiled) || module.resource.startsWith(nodeMods))) {
+                  throw new Error(`Un-precompiled module: ${module.resource}`)
+                }
+                return module.resource.startsWith(core);
+              }
             }
           },
         }, {

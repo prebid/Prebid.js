@@ -82,6 +82,7 @@ module.exports = {
             candidates = [modulePath]
           }
           if (candidates.some(name => fs.existsSync(name))) {
+            modulePath = this.getPrecompiledPath(path.relative(__dirname, modulePath));
             memo[modulePath] = moduleName;
           }
           return memo;
