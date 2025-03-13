@@ -1,10 +1,42 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { userSync } from '../src/userSync.js';
 
 const DAILYMOTION_VENDOR_ID = 573;
+
+const dailymotionOrtbConverter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 600,
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    if (typeof bidRequest.getFloor === 'function') {
+      const size = imp.w > 0 && imp.h > 0 ? [imp.w, imp.h] : '*';
+
+      const floorInfo = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: 'video', // or '*' for all the mediaType
+        size
+      }) || {};
+
+      if (floorInfo.floor && floorInfo.currency) {
+        imp.bidfloor = floorInfo.floor;
+        imp.bidfloorcur = floorInfo.currency;
+      }
+    }
+
+    return imp;
+  },
+});
+
+function isArrayFilled (_array) {
+  return _array && Array.isArray(_array) && _array.length > 0;
+}
 
 /**
  * Get video metadata from bid request
@@ -22,6 +54,10 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     : deepAccess(bidderRequest, 'ortb2.app');
   // Content object is either from Object: Site or Object: App
   const contentObj = deepAccess(siteOrAppObj, 'content')
+
+  const contentCattax = deepAccess(contentObj, 'cattax', 0);
+  const isContentCattaxV1 = contentCattax === 1;
+  const isContentCattaxV2 = [2, 5, 6].includes(contentCattax);
 
   const parsedContentData = {
     // Store as object keys to ensure uniqueness
@@ -49,14 +85,16 @@ function getVideoMetadata(bidRequest, bidderRequest) {
   const videoMetadata = {
     description: videoParams.description || '',
     duration: videoParams.duration || deepAccess(contentObj, 'len', 0),
-    iabcat1: Array.isArray(videoParams.iabcat1)
+    iabcat1: isArrayFilled(videoParams.iabcat1)
       ? videoParams.iabcat1
-      : Array.isArray(deepAccess(contentObj, 'cat'))
+      : (isArrayFilled(deepAccess(contentObj, 'cat')) && isContentCattaxV1)
         ? contentObj.cat
         : Object.keys(parsedContentData.iabcat1),
-    iabcat2: Array.isArray(videoParams.iabcat2)
+    iabcat2: isArrayFilled(videoParams.iabcat2)
       ? videoParams.iabcat2
-      : Object.keys(parsedContentData.iabcat2),
+      : (isArrayFilled(deepAccess(contentObj, 'cat')) && isContentCattaxV2)
+        ? contentObj.cat
+        : Object.keys(parsedContentData.iabcat2),
     id: videoParams.id || deepAccess(contentObj, 'id', ''),
     lang: videoParams.lang || deepAccess(contentObj, 'language', ''),
     livestream: typeof videoParams.livestream === 'number'
@@ -153,6 +191,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests = [], bidderRequest) {
+    const ortbData = dailymotionOrtbConverter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     // check consent to be able to read user cookie
     const allowCookieReading =
       // No GDPR applies
@@ -184,6 +223,7 @@ export const spec = {
       url: 'https://pb.dmxleo.com',
       data: {
         pbv: '$prebid.version$',
+        ortb: ortbData,
         bidder_request: {
           gdprConsent: {
             apiVersion: deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1),
@@ -206,20 +246,6 @@ export const spec = {
           api_key: bid.params.apiKey,
           ts: bid.params.dmTs,
         },
-        // Cast boolean in any case (value should be 0 or 1) to ensure type
-        coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),
-        // In app context, we need to retrieve additional informations
-        ...(!deepAccess(bidderRequest, 'ortb2.site') && !!deepAccess(bidderRequest, 'ortb2.app') ? {
-          appBundle: deepAccess(bidderRequest, 'ortb2.app.bundle', ''),
-          appStoreUrl: deepAccess(bidderRequest, 'ortb2.app.storeurl', ''),
-        } : {}),
-        ...(deepAccess(bidderRequest, 'ortb2.device') ? {
-          device: {
-            lmt: deepAccess(bidderRequest, 'ortb2.device.lmt', null),
-            ifa: deepAccess(bidderRequest, 'ortb2.device.ifa', ''),
-            atts: deepAccess(bidderRequest, 'ortb2.device.ext.atts', 0),
-          },
-        } : {}),
         userSyncEnabled: isUserSyncEnabled(),
         request: {
           adUnitCode: deepAccess(bid, 'adUnitCode', ''),
@@ -261,7 +287,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: serverResponse => serverResponse?.body ? [serverResponse.body] : [],
+  interpretResponse: serverResponse => serverResponse?.body?.cpm ? [serverResponse.body] : [],
 
   /**
    * Retrieves user synchronization URLs based on provided options and consents.
