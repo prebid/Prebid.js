@@ -27,7 +27,6 @@ function isBidRequestValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['adipolo'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) => buildRequests(validBidRequests, bidderRequest, ENDPOINT),
