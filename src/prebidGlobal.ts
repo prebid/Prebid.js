@@ -1,7 +1,9 @@
-// if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
+interface Command {
+    (): any;
+}
 
-interface CommandQueue extends Omit<Array<VoidFunction>, 'push'> {
-    push(cmd: VoidFunction): void;
+interface CommandQueue extends Omit<Command[], 'push'> {
+    push(cmd: Command): void;
 }
 
 export interface PrebidJS {
@@ -12,13 +14,14 @@ export interface PrebidJS {
     /**
      * Alias of `cmd`
      */
-    que: typeof this.cmd
+    que: CommandQueue
     /**
      * Names of all installed modules.
      */
     installedModules: string[]
 }
 
+// if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
 declare const $$DEFINE_PREBID_GLOBAL$$: boolean;
 const scope: any = !$$DEFINE_PREBID_GLOBAL$$ ? {} : window;
 const global: PrebidJS = scope.$$PREBID_GLOBAL$$ = scope.$$PREBID_GLOBAL$$ || {};
