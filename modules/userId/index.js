@@ -120,7 +120,7 @@
 import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import {getGlobal} from '../../src/prebidGlobal.ts';
 import adapterManager from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
@@ -154,7 +154,7 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
-import {startAuction} from '../../src/prebid.js';
+import {startAuction} from '../../src/prebid.ts';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;

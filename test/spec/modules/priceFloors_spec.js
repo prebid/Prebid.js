@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
-import { getGlobal } from 'src/prebidGlobal.js';
+import { getGlobal } from 'src/prebidGlobal.ts';
 import { EVENTS, STATUS } from 'src/constants.js';
 import {
   FLOOR_SKIPPED_REASON,
@@ -17,7 +17,7 @@ import {
 } from 'modules/priceFloors.js';
 import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import {createBid} from '../../../src/bidfactory.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';

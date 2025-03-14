@@ -1,4 +1,4 @@
-import 'src/prebid.js';
+import 'src/prebid.ts';
 
 describe('Publisher API _ AdUnits', function () {
   var assert = require('chai').assert;

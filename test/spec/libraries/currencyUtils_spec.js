@@ -1,4 +1,4 @@
-import {getGlobal} from 'src/prebidGlobal.js';
+import {getGlobal} from 'src/prebidGlobal.ts';
 import {convertCurrency, currencyCompare, currencyNormalizer} from 'libraries/currencyUtils/currency.js';
 
 describe('currency utils', () => {

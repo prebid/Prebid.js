@@ -6,7 +6,7 @@ import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {isFn, logWarn, triggerPixel} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import adapterManager, {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
 import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';

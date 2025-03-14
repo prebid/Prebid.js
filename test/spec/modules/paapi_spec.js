@@ -29,7 +29,7 @@ import {
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import {getGlobal} from '../../../src/prebidGlobal.ts';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';

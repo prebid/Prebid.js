@@ -5,7 +5,7 @@ import {deepClone} from 'src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
 import {deepSetValue} from '../../../src/utils';
 // load modules that register ORTB processors
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -16,7 +16,7 @@ import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {hook} from '../../../src/hook.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
+import * as prebidGlobal from 'src/prebidGlobal.ts';
 
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';

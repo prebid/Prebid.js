@@ -2,7 +2,7 @@
 import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider'
 import { expect } from 'chai';
 import * as ajax from 'src/ajax.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
+import * as prebidGlobal from 'src/prebidGlobal.ts';
 
 const DEFAULT_USER_AGENT = window.navigator.userAgent;
 const DEFAULT_CONNECTION = window.navigator.connection;

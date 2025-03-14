@@ -45,9 +45,9 @@ function flagErrors(context, node, importPath) {
     // don't allow extension-less local imports
     if (
       !importPath.match(/^\w+/) &&
-      !['.js', '.json'].includes(path.extname(absImportPath))
+      !['.js', '.json', '.ts'].includes(path.extname(absImportPath))
     ) {
-      context.report(node, `import "${importPath}" should include extension as .js or .json`);
+      context.report(node, `import "${importPath}" should include extension as .js, .json or .ts`);
     }
   }
 }

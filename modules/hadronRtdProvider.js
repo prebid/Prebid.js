@@ -6,7 +6,7 @@
  * @requires module:modules/realTimeData
  */
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isFn, isStr, isArray, deepEqual, isPlainObject, logInfo} from '../src/utils.js';

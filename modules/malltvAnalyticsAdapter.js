@@ -2,7 +2,7 @@ import {ajax} from '../src/ajax.js'
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
 import { EVENTS } from '../src/constants.js'
 import adapterManager from '../src/adapterManager.js'
-import {getGlobal} from '../src/prebidGlobal.js'
+import {getGlobal} from '../src/prebidGlobal.ts'
 import {logInfo, logError, deepClone} from '../src/utils.js'
 
 const analyticsType = 'endpoint'

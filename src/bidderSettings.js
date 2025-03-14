@@ -1,5 +1,5 @@
 import {deepAccess, mergeDeep} from './utils.js';
-import {getGlobal} from './prebidGlobal.js';
+import {getGlobal} from './prebidGlobal.ts';
 import { JSON_MAPPING } from './constants.js';
 
 export class ScopedSettings {

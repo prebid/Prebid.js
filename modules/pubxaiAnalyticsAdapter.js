@@ -7,7 +7,7 @@ import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
 import { sendBeacon } from '../src/ajax.js'
 import { EVENTS } from '../src/constants.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess, parseSizesInput, getWindowLocation, buildUrl, cyrb53Hash

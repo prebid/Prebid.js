@@ -2,15 +2,16 @@
   "name": "prebid.js",
   "version": "9.36.0-pre",
   "description": "Header Bidding Management Library",
-  "main": "src/prebid.public.js",
+  "//": "TODO: these main/exports only work locally for now; needs prebidjs-releaser updates",
+  "main": "build/precompiled/src/prebid.public.ts",
   "exports": {
-    ".": "./src/prebid.public.js",
-    "./prebid.js": "./src/prebid.public.js",
-    "./prebid": "./src/prebid.public.js",
+    ".": "./build/precompiled/src/prebid.public.js",
+    "./prebid.js": "./build/precompiled/src/prebid.public.js",
+    "./prebid": "./build/precompiled/src/prebid.public.js",
     "./.babelrc.js": "./.babelrc.js",
     "./babelConfig.js": "./babelConfig.js",
-    "./modules/*": "./modules/*",
-    "./modules/*.js": "./modules/*.js"
+    "./modules/*": "./build/precompiled/modules/*",
+    "./modules/*.js": "./build/precompiled/modules/*.js"
   },
   "scripts": {
     "serve": "gulp serve",
@@ -114,6 +115,8 @@
     "resolve-from": "^5.0.0",
     "sinon": "^4.5.0",
     "through2": "^4.0.2",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.1",
     "url": "^0.11.0",
     "url-parse": "^1.0.5",
     "video.js": "^7.17.0",
@@ -131,6 +134,7 @@
     "@babel/core": "^7.25.2",
     "@babel/plugin-transform-runtime": "^7.18.9",
     "@babel/preset-env": "^7.16.8",
+    "@babel/preset-typescript": "^7.26.0",
     "@babel/runtime": "^7.18.9",
     "core-js": "^3.13.0",
     "core-js-pure": "^3.13.0",
@@ -139,6 +143,7 @@
     "dset": "3.1.4",
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
+    "gulp-babel": "^8.0.0",
     "gulp-wrap": "^0.15.0",
     "klona": "^2.0.6",
     "live-connect-js": "^7.2.0"

@@ -6,7 +6,7 @@ import { storage, getStorage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlus
 import * as storageManager from 'src/storageManager.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';

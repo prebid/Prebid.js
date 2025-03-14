@@ -10,7 +10,7 @@ import {
   isEmpty,
   isEmptyStr,
 } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';

@@ -2,11 +2,11 @@ import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import { loadExternalScript } from 'src/adloader.js';
-import { getGlobal } from 'src/prebidGlobal.js';
+import { getGlobal } from 'src/prebidGlobal.ts';
 import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 
 let server;
 

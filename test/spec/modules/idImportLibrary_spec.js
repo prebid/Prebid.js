@@ -1,7 +1,7 @@
 import {init} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
 import * as idImportlibrary from 'modules/idImportLibrary.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import {getGlobal} from '../../../src/prebidGlobal.ts';
 import {config} from 'src/config.js';
 import {hook} from '../../../src/hook.js';
 import * as activities from '../../../src/activities/rules.js';

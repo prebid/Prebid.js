@@ -1,5 +1,5 @@
 import {ready, loadSession, getConfig, reset, debuggingModuleLoader, debuggingControls} from '../../src/debugging.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import {getGlobal} from '../../src/prebidGlobal.ts';
 import {defer} from '../../src/utils/promise.js';
 import funHooks from 'fun-hooks/no-eval/index.js';
 

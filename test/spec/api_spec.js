@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var prebid = require('../../src/prebid');
+var prebid = require('../../src/prebid.js');
 
 describe('Publisher API', function () {
   // var assert = chai.assert;

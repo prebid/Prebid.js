@@ -5,7 +5,7 @@
 import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {deepAccess, deepSetValue, prefixLog} from '../../src/utils.js';
-import {startAuction} from '../../src/prebid.js';
+import {startAuction} from '../../src/prebid.ts';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';

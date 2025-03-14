@@ -81,6 +81,11 @@ module.exports = function(api, options) {
           path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
       },
+      ImportDeclaration(path, state) {
+        if (path.node.source.value.endsWith('.ts')) {
+          path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
+        }
+      },
       StringLiteral(path) {
         Object.keys(replace).forEach(name => {
           if (path.node.value.includes(name)) {

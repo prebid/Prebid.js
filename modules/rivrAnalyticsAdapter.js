@@ -2,7 +2,7 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 
 const analyticsType = 'endpoint';
 

@@ -15,7 +15,7 @@ import {
   getWindowSelf,
 } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 import { loadExternalScript } from '../src/adloader.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 

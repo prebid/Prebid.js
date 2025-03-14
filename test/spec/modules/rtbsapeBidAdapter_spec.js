@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/rtbsapeBidAdapter.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import * as utils from 'src/utils.js';
 import {executeRenderer, Renderer} from 'src/Renderer.js';
 

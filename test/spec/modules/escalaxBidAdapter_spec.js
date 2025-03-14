@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from '../../../src/config.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';

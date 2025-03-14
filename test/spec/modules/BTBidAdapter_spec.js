@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/BTBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 // load modules that register ORTB processors
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';

@@ -3,7 +3,7 @@ import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
 
-import {getGlobal} from 'src/prebidGlobal.js';
+import {getGlobal} from 'src/prebidGlobal.ts';
 
 import {
   setConfig,

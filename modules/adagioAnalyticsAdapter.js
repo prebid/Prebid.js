@@ -9,7 +9,7 @@ import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 import { subscribeToGamSlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';

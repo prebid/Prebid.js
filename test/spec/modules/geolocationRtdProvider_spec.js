@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {geolocationSubmodule} from 'modules/geolocationRtdProvider.js';
 import * as activityRules from 'src/activities/rules.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import {PbPromise} from '../../../src/utils/promise.js';
 import {ACTIVITY_TRANSMIT_PRECISE_GEO} from '../../../src/activities/activities.js';
 

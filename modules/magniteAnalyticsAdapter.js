@@ -22,7 +22,7 @@ import adapterManager from '../src/adapterManager.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import { getHook } from '../src/hook.js';

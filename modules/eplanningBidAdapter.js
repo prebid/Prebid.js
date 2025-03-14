@@ -1,5 +1,5 @@
 import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';

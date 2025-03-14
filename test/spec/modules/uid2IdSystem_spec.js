@@ -2,9 +2,9 @@ import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/u
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
-import 'src/prebid.js';
+import 'src/prebid.ts';
 import 'modules/consentManagementTcf.js';
-import { getGlobal } from 'src/prebidGlobal.js';
+import { getGlobal } from 'src/prebidGlobal.ts';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
