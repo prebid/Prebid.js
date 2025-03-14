@@ -13,6 +13,7 @@ import {
 } from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -23,6 +24,8 @@ const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 const CURRENCY = 'USD';
 const GVLID = 58;
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
+const DEFAULT_TTL = 60;
+const DEFAULT_NET_REVENUE = true;
 
 const PRODUCT = {
   SIAB: 'siab',
@@ -53,6 +56,18 @@ const adapterState = {
 };
 
 const NON_MEASURABLE = 'nm';
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: DEFAULT_NET_REVENUE,
+    ttl: DEFAULT_TTL,
+    currency: CURRENCY
+  },
+  // imp,
+  // request,
+  // bidResponse,
+  // response
+});
 
 function getTTXConfig() {
   return Object.assign({}, config.getConfig('ttxSettings'));
@@ -174,12 +189,10 @@ function _validateVideo(bid) {
 
 // **************************** BUILD REQUESTS *************************** //
 function buildRequests(bidRequests, bidderRequest = {}) {
+  const convertedORTB = converter.toORTB({bidRequests, bidderRequest});
   const {
     ttxSettings,
     gdprConsent,
-    uspConsent,
-    gppConsent,
-    pageUrl,
     referer
   } = _buildRequestParams(bidRequests, bidderRequest);
 
@@ -192,14 +205,12 @@ function buildRequests(bidRequests, bidderRequest = {}) {
       _createServerRequest({
         bidRequests: groupedRequests[key],
         gdprConsent,
-        uspConsent,
-        gppConsent,
-        pageUrl,
         referer,
         ttxSettings,
         bidderRequest,
+        convertedORTB
       })
-    )
+    );
   }
 
   return serverRequests;
@@ -218,9 +229,6 @@ function _buildRequestParams(bidRequests, bidderRequest) {
   return {
     ttxSettings,
     gdprConsent,
-    uspConsent: bidderRequest.uspConsent,
-    gppConsent: bidderRequest.gppConsent,
-    pageUrl: bidderRequest.refererInfo?.page,
     referer: bidderRequest.refererInfo?.ref
   }
 }
@@ -255,15 +263,13 @@ function _getMRAKey(bidRequest) {
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppConsent = {}, pageUrl, referer, ttxSettings, bidderRequest }) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSettings, bidderRequest, convertedORTB }) {
   const firstBidRequest = bidRequests[0];
-  const { siteId, test } = firstBidRequest.params;
-
+  const { siteId } = firstBidRequest.params;
   const ttxRequest = collapseFalsy({
     imp: bidRequests.map(req => _buildImpORTB(req)),
     site: {
       id: siteId,
-      page: pageUrl,
       ref: referer
     },
     device: {
@@ -273,22 +279,22 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppCo
           vp: getViewportDimensions(),
         }
       },
-      sua: firstBidRequest.ortb2?.device?.sua
+      // sua: firstBidRequest.ortb2?.device?.sua
     },
-    id: bidderRequest.bidderRequestId,
-    user: {
-      ext: {
-        eids: firstBidRequest.userIdAsEids,
-        consent: gdprConsent.consentString
-      }
-    },
+    // id: bidderRequest.bidderRequestId,
+    // user: {
+    //   ext: {
+    //     eids: firstBidRequest.userIdAsEids,
+    //     consent: gdprConsent.consentString
+    //   }
+    // },
     regs: {
-      coppa: Number(!!config.getConfig('coppa')),
-      gpp: gppConsent.gppString,
-      gpp_sid: gppConsent.applicableSections,
+      // coppa: Number(!!config.getConfig('coppa')),
+      // gpp: gppConsent.gppString,
+      // gpp_sid: gppConsent.applicableSections,
       ext: {
         gdpr: Number(gdprConsent.gdprApplies),
-        us_privacy: uspConsent
+        // us_privacy: uspConsent
       }
     },
     ext: {
@@ -300,19 +306,22 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppCo
         } ]
       }
     },
-    source: {
-      ext: {
-        schain: firstBidRequest.schain
-      }
-    },
-    test: test === 1 ? 1 : null
+    // source: {
+    //   ext: {
+    //     schain: firstBidRequest.schain
+    //   }
+    // },
+    // test: test === 1 ? 1 : null
   });
+
+  delete convertedORTB.imp;
+  const data = JSON.stringify(mergeDeep(ttxRequest, convertedORTB));
 
   // Return the server request
   return {
     'method': 'POST',
     'url': ttxSettings.url || `${END_POINT}?guid=${siteId}`, // Allow the ability to configure the HB endpoint for testing purposes.
-    'data': JSON.stringify(ttxRequest),
+    'data': data,
     'options': {
       contentType: 'text/plain',
       withCredentials: true
@@ -624,7 +633,7 @@ function _isIframe() {
 
 // **************************** INTERPRET RESPONSE ******************************** //
 function interpretResponse(serverResponse, bidRequest) {
-  const { seatbid, cur = 'USD' } = serverResponse.body;
+  const { seatbid, cur = CURRENCY } = serverResponse.body;
 
   if (!isArray(seatbid)) {
     return [];
@@ -652,7 +661,7 @@ function _createBidResponse(bid, cur) {
     width: bid.w,
     height: bid.h,
     ad: bid.adm,
-    ttl: bid.ttl || 60,
+    ttl: bid.ttl || DEFAULT_TTL,
     creativeId: bid.crid,
     mediaType: deepAccess(bid, 'ext.ttx.mediaType', BANNER),
     currency: cur,
