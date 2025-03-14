@@ -209,6 +209,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     player.playAd(adTagUrl || options.adXml, options);
   }
 
+  function setAdXml(vastXml, options) {
+    if (!player || !vastXml) {
+      return;
+    }
+
+    player.loadAdXml(vastXml, options);
+  }
+
   function onEvent(externalEventName, callback, basePayload) {
     if (externalEventName === SETUP_COMPLETE) {
       setupCompleteCallbacks.push(callback);
@@ -496,6 +504,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy
