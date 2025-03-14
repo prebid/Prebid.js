@@ -1,7 +1,7 @@
 import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
-import { getGlobal } from '../src/prebidGlobal.js'
+import { getGlobal } from '../src/prebidGlobal.ts'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 const converter = ortbConverter({

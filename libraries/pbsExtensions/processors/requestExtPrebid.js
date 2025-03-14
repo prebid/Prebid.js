@@ -1,6 +1,6 @@
 import {deepSetValue, mergeDeep} from '../../../src/utils.js';
 import {config} from '../../../src/config.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import {getGlobal} from '../../../src/prebidGlobal.ts';
 
 export function setRequestExtPrebid(ortbRequest, bidderRequest) {
   deepSetValue(

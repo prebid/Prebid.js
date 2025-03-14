@@ -3,7 +3,7 @@ import {Renderer} from '../src/Renderer.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';

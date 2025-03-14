@@ -5,7 +5,7 @@ import { config } from 'src/config.js';
 import { setConfig } from 'modules/currency.js';
 import { server } from '../../mocks/xhr.js';
 import 'src/prebid.ts';
-import { getGlobal } from 'src/prebidGlobal';
+import { getGlobal } from 'src/prebidGlobal.js';
 
 let events = require('src/events');
 let ajax = require('src/ajax');

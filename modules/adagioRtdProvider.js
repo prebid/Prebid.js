@@ -8,7 +8,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { submodule } from '../src/hook.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   canAccessWindowTop,

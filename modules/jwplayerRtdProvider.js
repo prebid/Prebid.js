@@ -14,7 +14,7 @@ import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import { deepAccess, logError, logWarn } from '../src/utils.js'
 import {find} from '../src/polyfill.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule

@@ -18,7 +18,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {ajax} from '../src/ajax.js';
 import {getViewportCoordinates} from '../libraries/viewport/viewport.js';

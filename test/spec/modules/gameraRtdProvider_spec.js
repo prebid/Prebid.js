@@ -1,5 +1,5 @@
 import { submodule } from 'src/hook.js';
-import { getGlobal } from 'src/prebidGlobal.js';
+import { getGlobal } from 'src/prebidGlobal.ts';
 import * as utils from 'src/utils.js';
 import { subModuleObj } from 'modules/gameraRtdProvider.js';
 

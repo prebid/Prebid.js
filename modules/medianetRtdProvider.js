@@ -1,7 +1,7 @@
 import {isEmptyStr, isFn, isStr, logError, mergeDeep} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {includes} from '../src/polyfill.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 

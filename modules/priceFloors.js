@@ -15,7 +15,7 @@ import {
   deepEqual,
   generateUUID
 } from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';

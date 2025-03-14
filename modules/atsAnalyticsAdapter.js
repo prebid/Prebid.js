@@ -4,7 +4,7 @@ import { EVENTS } from '../src/constants.js';
 import adaptermanager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 const MODULE_CODE = 'atsAnalytics';

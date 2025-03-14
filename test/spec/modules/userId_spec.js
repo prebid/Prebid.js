@@ -21,7 +21,7 @@ import * as utils from 'src/utils.js';
 import {deepAccess, getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
-import {getGlobal} from 'src/prebidGlobal.js';
+import {getGlobal} from 'src/prebidGlobal.ts';
 import {resetConsentData, } from 'modules/consentManagementTcf.js';
 import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from '../../../libraries/liveIntentId/idSystem.js';
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';

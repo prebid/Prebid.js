@@ -6,7 +6,7 @@
  */
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js'
+import {getGlobal} from '../src/prebidGlobal.ts'
 import {getStorageManager} from '../src/storageManager.js';
 import {
   deepSetValue,

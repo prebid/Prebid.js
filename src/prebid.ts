@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {getGlobal} from './prebidGlobal.js';
+import {getGlobal} from './prebidGlobal.ts';
 import {
   deepAccess,
   deepClone,
@@ -54,9 +54,52 @@ import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import { newBidder } from './adapters/bidderFactory.js';
 
+declare module './prebidGlobal' {
+    interface PrebidJS {
+        adUnits;
+        triggerUserSyncs;
+        getAdserverTargetingForAdUnitCodeStr;
+        getAdserverTargetingForAdUnitCode;
+        getHighestUnusedBidResponseForAdUnitCode;
+        getAdserverTargeting;
+        getConsentMetadata;
+        getNoBids;
+        getNoBidsForAdUnitCode;
+        getBidResponses;
+        getBidResponsesForAdUnitCode;
+        setTargetingForGPTAsync;
+        setTargetingForAst;
+        renderAd;
+        removeAdUnit;
+        requestBids;
+        addAdUnits;
+        onEvent;
+        offEvent;
+        getEvents;
+        registerBidAdapter;
+        registerAnalyticsAdapter;
+        createBid;
+        enableAnalytics;
+        aliasBidder;
+        aliasRegistry;
+        getAllWinningBids;
+        getAllPrebidWinningBids;
+        getHighestCpmBids;
+        clearAllAuctions;
+        markWinningBidAsUsed;
+        getConfig;
+        readConfig;
+        mergeConfig;
+        mergeBidderConfig;
+        setConfig;
+        setBidderConfig;
+        processQueue;
+        triggerBilling;
+    }
+}
 declare const FEATURES: any;
 
-const pbjsInstance: any = getGlobal();
+const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -70,11 +113,23 @@ const eventValidators = {
 loadSession();
 
 /* Public vars */
+
+declare module './prebidGlobal' {
+    interface PrebidJS {
+        bidderSettings; // WIP-TYPE;
+        /**
+         * True once Prebid is loaded.
+         */
+        libLoaded?: true;
+        /**
+         * Prebid version.
+         */
+        version: string
+    }
+}
+
 pbjsInstance.bidderSettings = pbjsInstance.bidderSettings || {};
-
-// let the world know we are loaded
 pbjsInstance.libLoaded = true;
-
 // version auto generated from build
 pbjsInstance.version = 'v$prebid.version$';
 logInfo('Prebid.js v$prebid.version$ loaded');
@@ -577,7 +632,6 @@ type AuctionOptions = {
 type _PrivRequestBidsOptions = AuctionOptions & {
     ortb2?;
 }
-type RequestBidOptions = Omit<_PrivRequestBidsOptions, 'defer' | 'metrics'>;
 
 type StartAuctionOptions = AuctionOptions & {
     ortb2Fragments?;

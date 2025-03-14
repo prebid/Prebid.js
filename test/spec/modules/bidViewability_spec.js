@@ -4,7 +4,7 @@ import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import {expect, spy} from 'chai';
-import * as prebidGlobal from 'src/prebidGlobal.js';
+import * as prebidGlobal from 'src/prebidGlobal.ts';
 import { EVENTS } from 'src/constants.js';
 import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import parse from 'url-parse';

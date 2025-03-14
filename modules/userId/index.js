@@ -120,7 +120,7 @@
 import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import {getGlobal} from '../../src/prebidGlobal.ts';
 import adapterManager from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';

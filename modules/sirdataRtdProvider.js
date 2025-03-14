@@ -14,7 +14,7 @@ import {
   logError, logInfo, mergeDeep
 } from '../src/utils.js';
 import { findIndex } from '../src/polyfill.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

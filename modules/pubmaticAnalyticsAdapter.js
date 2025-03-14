@@ -4,7 +4,7 @@ import adapterManager from '../src/adapterManager.js';
 import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const FLOOR_VALUES = {

@@ -18,7 +18,7 @@ import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../src/auction.js';
 import {includes} from '../src/polyfill.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {ADPOD} from '../src/mediaTypes.js';

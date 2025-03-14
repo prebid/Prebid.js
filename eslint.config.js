@@ -1,7 +1,6 @@
 const jsdoc = require('eslint-plugin-jsdoc')
 const lintImports = require('eslint-plugin-import')
 const neostandard = require('neostandard')
-const babelParser = require('@babel/eslint-parser');
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
 const {includeIgnoreFile} = require('@eslint/compat');
@@ -86,7 +85,6 @@ module.exports = [
       }
     },
     languageOptions: {
-      parser: babelParser,
       sourceType: 'module',
       ecmaVersion: 2018,
       globals: {

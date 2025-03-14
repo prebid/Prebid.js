@@ -5,7 +5,7 @@ import { MODULE_TYPE_PREBID } from '../src/activities/modules.js';
 import { isActivityAllowed } from '../src/activities/rules.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 import { logError, logInfo } from '../src/utils.js';
 
 let email;

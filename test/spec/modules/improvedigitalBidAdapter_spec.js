@@ -16,7 +16,7 @@ import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {hook} from '../../../src/hook.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
+import * as prebidGlobal from 'src/prebidGlobal.ts';
 
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';

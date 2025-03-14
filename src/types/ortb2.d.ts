@@ -35,7 +35,7 @@ export namespace Ortb2 {
     coppa?: unknown;
     ext?: {
       gdpr?: unknown;
-        // eslint-disable-next-line camelcase
+
       us_privacy?: unknown;
       [key: string]: unknown;
     };

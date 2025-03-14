@@ -1,7 +1,7 @@
 
 import { submodule } from '../src/hook.js';
 import { mergeDeep, logError, logMessage, deepSetValue, generateUUID } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.ts';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule

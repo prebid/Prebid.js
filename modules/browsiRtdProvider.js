@@ -22,7 +22,7 @@ import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find, includes} from '../src/polyfill.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';

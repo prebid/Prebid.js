@@ -1,6 +1,6 @@
 import {config} from './config.js';
 import {getHook, hook} from './hook.js';
-import {getGlobal} from './prebidGlobal.js';
+import {getGlobal} from './prebidGlobal.ts';
 import {logMessage, prefixLog} from './utils.js';
 import {createBid} from './bidfactory.js';
 import {loadExternalScript} from './adloader.js';

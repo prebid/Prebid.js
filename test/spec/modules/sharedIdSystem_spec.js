@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import * as utils from 'src/utils.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 import {attachIdSystem, init} from '../../../modules/userId/index.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import {getGlobal} from '../../../src/prebidGlobal.ts';
 
 let expect = require('chai').expect;
 

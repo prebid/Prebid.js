@@ -1,4 +1,4 @@
- 
+
 import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
@@ -33,7 +33,7 @@ import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.js';
-import {getGlobal} from '../../../src/prebidGlobal.js';
+import {getGlobal} from '../../../src/prebidGlobal.ts';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';

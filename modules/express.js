@@ -1,5 +1,5 @@
 import { logMessage, logWarn, logError, logInfo } from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.ts';
 
 const MODULE_NAME = 'express';
 const pbjsInstance = getGlobal();

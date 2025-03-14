@@ -3,7 +3,7 @@ import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
-import {getGlobal} from './prebidGlobal.js';
+import {getGlobal} from './prebidGlobal.ts';
 import { default as deepAccess } from 'dlv/index.js';
 
 export { deepAccess };

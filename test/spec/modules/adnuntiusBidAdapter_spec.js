@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import {config, newConfig} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
-import { getGlobal } from '../../../src/prebidGlobal';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
 
 describe('adnuntiusBidAdapter', function () {
