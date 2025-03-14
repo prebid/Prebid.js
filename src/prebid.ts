@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {getGlobal} from './prebidGlobal.ts';
+import {getGlobal, PrebidJS} from './prebidGlobal.ts';
 import {
   deepAccess,
   deepClone,
@@ -53,50 +53,7 @@ import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import { newBidder } from './adapters/bidderFactory.js';
-
-declare module './prebidGlobal' {
-    interface PrebidJS {
-        adUnits;
-        triggerUserSyncs;
-        getAdserverTargetingForAdUnitCodeStr;
-        getAdserverTargetingForAdUnitCode;
-        getHighestUnusedBidResponseForAdUnitCode;
-        getAdserverTargeting;
-        getConsentMetadata;
-        getNoBids;
-        getNoBidsForAdUnitCode;
-        getBidResponses;
-        getBidResponsesForAdUnitCode;
-        setTargetingForGPTAsync;
-        setTargetingForAst;
-        renderAd;
-        removeAdUnit;
-        requestBids;
-        addAdUnits;
-        onEvent;
-        offEvent;
-        getEvents;
-        registerBidAdapter;
-        registerAnalyticsAdapter;
-        createBid;
-        enableAnalytics;
-        aliasBidder;
-        aliasRegistry;
-        getAllWinningBids;
-        getAllPrebidWinningBids;
-        getHighestCpmBids;
-        clearAllAuctions;
-        markWinningBidAsUsed;
-        getConfig;
-        readConfig;
-        mergeConfig;
-        mergeBidderConfig;
-        setConfig;
-        setBidderConfig;
-        processQueue;
-        triggerBilling;
-    }
-}
+import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -123,7 +80,8 @@ declare module './prebidGlobal' {
         /**
          * Prebid version.
          */
-        version: string
+        version: string;
+        adUnits;
     }
 }
 
@@ -136,8 +94,6 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 
-// Allow publishers who enable user sync override to trigger their sync
-pbjsInstance.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
   const adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
@@ -409,13 +365,16 @@ function fillAdUnitDefaults(adUnits) {
   }
 }
 
-function logInvocation(name, fn) {
+function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
     return function (...args) {
         logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
         return fn.apply(this, args);
     }
 }
 
+function addApiMethod(name: keyof PrebidJS, method: PrebidJS[typeof name], log = true) {
+    pbjsInstance[name as string] = log ? logInvocation(name, method) : method;
+}
 
 /// ///////////////////////////////
 //                              //
@@ -423,38 +382,87 @@ function logInvocation(name, fn) {
 //                              //
 /// ///////////////////////////////
 
-/**
- * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
- * @param  {string} [adunitCode] adUnitCode to get the bid responses for
- * @alias module:pbjs.getAdserverTargetingForAdUnitCodeStr
- * @return {Array}  returnObj return bids array
- */
-pbjsInstance.getAdserverTargetingForAdUnitCodeStr = logInvocation('getAdserverTargetingForAdUnitCodeStr', function (adunitCode) {
-  // call to retrieve bids array
-  if (adunitCode) {
-    const res = pbjsInstance.getAdserverTargetingForAdUnitCode(adunitCode);
-    return transformAdServerTargetingObj(res);
-  } else {
-    logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
-  }
-});
+declare module './prebidGlobal' {
+    interface PrebidJS {
+        /**
+         * Re-trigger user syncs. Requires the `userSync.enableOverride` config to be set.
+         */
+        triggerUserSyncs: typeof triggerUserSyncs;
+        getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
+        getHighestUnusedBidResponseForAdUnitCode;
+        getAdserverTargetingForAdUnitCode;
+        getAdserverTargeting;
+        getConsentMetadata;
+        getNoBids;
+        getNoBidsForAdUnitCode;
+        getBidResponses;
+        getBidResponsesForAdUnitCode;
+        setTargetingForGPTAsync;
+        setTargetingForAst;
+        renderAd;
+        removeAdUnit;
+        requestBids;
+        addAdUnits;
+        onEvent;
+        offEvent;
+        getEvents;
+        registerBidAdapter;
+        registerAnalyticsAdapter;
+        createBid;
+        enableAnalytics;
+        aliasBidder;
+        aliasRegistry;
+        getAllWinningBids;
+        getAllPrebidWinningBids;
+        getHighestCpmBids;
+        clearAllAuctions;
+        markWinningBidAsUsed;
+        getConfig;
+        readConfig;
+        mergeConfig;
+        mergeBidderConfig;
+        setConfig;
+        setBidderConfig;
+        processQueue;
+        triggerBilling;
+    }
+}
+
+// Allow publishers who enable user sync override to trigger their sync
+addApiMethod('triggerUserSyncs', triggerUserSyncs);
+
 
 /**
- * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
- * @param adunitCode {string} adUnitCode to get the bid responses for
- * @alias module:pbjs.getHighestUnusedBidResponseForAdUnitCode
- * @returns {Object}  returnObj return bid
+ * Return a query string with all available targeting parameters for the given ad unit.
+ *
+ * @param adUnitCode ad unit code to target
  */
-pbjsInstance.getHighestUnusedBidResponseForAdUnitCode = function (adunitCode) {
-  if (adunitCode) {
-    const bid = auctionManager.getAllBidsForAdUnitCode(adunitCode)
-      .filter(isBidUsable)
+function getAdserverTargetingForAdUnitCodeStr(adUnitCode: string): string {
+    if (adUnitCode) {
+        const res = pbjsInstance.getAdserverTargetingForAdUnitCode(adUnitCode);
+        return transformAdServerTargetingObj(res);
+    } else {
+        logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
+    }
+}
+addApiMethod('getAdserverTargetingForAdUnitCodeStr', getAdserverTargetingForAdUnitCodeStr);
 
-    return bid.length ? bid.reduce(getHighestCpm) : {}
-  } else {
-    logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
-  }
-};
+/**
+ * Return the highest cpm, unused bid for the given ad unit.
+ *
+ * @param adUnitCode
+ */
+function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string) {
+    if (adUnitCode) {
+        const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
+            .filter(isBidUsable)
+
+        return bid.length ? bid.reduce(getHighestCpm) : {}
+    } else {
+        logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
+    }
+}
+addApiMethod('getHighestUnusedBidResponseForAdUnitCode', getHighestUnusedBidResponseForAdUnitCode);
 
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
