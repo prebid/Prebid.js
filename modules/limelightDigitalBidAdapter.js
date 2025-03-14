@@ -40,7 +40,7 @@ export const spec = {
     { code: 'tgm' },
     { code: 'adtg_org' },
     { code: 'velonium' },
-    { code: 'orangeclickmedia', gvlid: 1148 },
+    { code: 'orangeclickmedia', gvlid: 1308 },
     { code: 'streamvision' }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
