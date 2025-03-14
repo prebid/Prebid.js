@@ -55,6 +55,13 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScript.called).to.be.false;
     });
+    it('should not load external script when params.tagConfig is not defined', function () {
+      const rtdConfig = {
+        params: {}
+      };
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScript.called).to.be.false;
+    });
     it('should not load external script when params.tagConfig.clientId is empty string', function () {
       const rtdConfig = {
         params: {
