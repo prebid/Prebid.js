@@ -97,7 +97,6 @@ declare module './prebidGlobal' {
         triggerBilling;
     }
 }
-declare const FEATURES: any;
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -133,8 +132,6 @@ pbjsInstance.libLoaded = true;
 // version auto generated from build
 pbjsInstance.version = 'v$prebid.version$';
 logInfo('Prebid.js v$prebid.version$ loaded');
-
-pbjsInstance.installedModules = pbjsInstance.installedModules || [];
 
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
