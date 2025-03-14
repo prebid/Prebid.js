@@ -7,7 +7,7 @@
  */
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
+import {isPlainObject, mergeDeep, logMessage, logWarn, logError} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 import {loadExternalScript} from '../src/adloader.js';
 /**
@@ -48,7 +48,12 @@ export function createRtdProvider(moduleName) {
    * Load the Anonymised Marketing Tag script
    * @param {Object} config
    */
-  function loadMarketingTag(config) {
+  function tryLoadMarketingTag(config) {
+    const clientId = config?.params?.tagConfig?.clientId;
+    if (typeof clientId !== 'string' || !clientId.trim()) {
+      logWarn(`${SUBMODULE_NAME}RtdProvider: clientId missing or invalid; Marketing Tag not loaded.`);
+      return;
+    }
     logMessage(`${SUBMODULE_NAME}RtdProvider: Loading Marketing Tag`);
     // Check if the script is already loaded
     if (document.querySelector(`script[src*="${config.params.tagUrl ?? MARKETING_TAG_URL}"]`)) {
@@ -126,9 +131,7 @@ export function createRtdProvider(moduleName) {
    * @return {boolean}
    */
   function init(config, userConsent) {
-    if (config && config.params && config.params.tagConfig && config.params.tagConfig.clientId) {
-      loadMarketingTag(config);
-    }
+    tryLoadMarketingTag(config);
     return true;
   }
   /** @type {RtdSubmodule} */

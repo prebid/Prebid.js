@@ -55,6 +55,28 @@ describe('anonymisedRtdProvider', function() {
       anonymisedRtdSubmodule.init(rtdConfig, {});
       expect(loadExternalScript.called).to.be.false;
     });
+    it('should not load external script when params.tagConfig.clientId is empty string', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            clientId: '  '
+          }
+        }
+      };
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScript.called).to.be.false;
+    });
+    it('should not load external script when params.tagConfig.clientId is not a string', function () {
+      const rtdConfig = {
+        params: {
+          tagConfig: {
+            clientId: 123
+          }
+        }
+      };
+      anonymisedRtdSubmodule.init(rtdConfig, {});
+      expect(loadExternalScript.called).to.be.false;
+    });
     it('should load external script with correct attributes', function () {
       const rtdConfig = {
         params: {
