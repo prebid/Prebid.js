@@ -2,15 +2,16 @@
   "name": "prebid.js",
   "version": "9.36.0-pre",
   "description": "Header Bidding Management Library",
-  "main": "src/prebid.public.js",
+  "//": "TODO: these main/exports only work locally for now; needs prebidjs-releaser updates",
+  "main": "build/precompiled/src/prebid.public.ts",
   "exports": {
-    ".": "./src/prebid.public.js",
-    "./prebid.js": "./src/prebid.public.js",
-    "./prebid": "./src/prebid.public.js",
+    ".": "./build/precompiled/src/prebid.public.js",
+    "./prebid.js": "./build/precompiled/src/prebid.public.js",
+    "./prebid": "./build/precompiled/src/prebid.public.js",
     "./.babelrc.js": "./.babelrc.js",
     "./babelConfig.js": "./babelConfig.js",
-    "./modules/*": "./modules/*",
-    "./modules/*.js": "./modules/*.js"
+    "./modules/*": "./build/precompiled/modules/*",
+    "./modules/*.js": "./build/precompiled/modules/*.js"
   },
   "scripts": {
     "serve": "gulp serve",
