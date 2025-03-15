@@ -1,6 +1,6 @@
 import {deepClone, isNumber, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'interactiveOffers';
 const ENDPOINT = 'https://prebid.ioadx.com/bidRequest/?partnerId=';

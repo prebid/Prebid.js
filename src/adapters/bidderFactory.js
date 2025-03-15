@@ -1,7 +1,7 @@
 import Adapter from '../adapter.js';
 import adapterManager from '../adapterManager.js';
 import {config} from '../config.js';
-import {createBid} from '../bidfactory.js';
+import {createBid} from '../bidfactory.ts';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
@@ -30,7 +30,7 @@ import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 
 /**
- * @typedef {import('../mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../mediaTypes.ts').MediaType} MediaType
  * @typedef {import('../Renderer.js').Renderer} Renderer
  */
 

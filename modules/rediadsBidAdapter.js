@@ -1,7 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, logWarn, logError } from '../src/utils.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'rediads';
 const ENDPOINT_URL = 'https://bidding.rediads.com/openrtb2/auction';

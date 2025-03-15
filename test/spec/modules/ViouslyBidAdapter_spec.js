@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 
 import { deepClone, mergeDeep } from 'src/utils';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 import {spec as adapter} from 'modules/viouslyBidAdapter';

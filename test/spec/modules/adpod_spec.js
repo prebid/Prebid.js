@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import * as videoCache from 'src/videoCache.js';
 import * as auction from 'src/auction.js';
-import { ADPOD } from 'src/mediaTypes.js';
+import { ADPOD } from 'src/mediaTypes.ts';
 
 import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod.js';
 

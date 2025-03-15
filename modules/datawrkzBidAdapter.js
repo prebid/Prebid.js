@@ -10,8 +10,8 @@ import {
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { createBid } from '../src/bidfactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { createBid } from '../src/bidfactory.ts';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { STATUS } from '../src/constants.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 

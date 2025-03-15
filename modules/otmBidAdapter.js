@@ -10,7 +10,7 @@ import {
   isStr,
   isNumber, getBidIdParameter,
 } from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'otm';
 const OTM_BID_URL = 'https://ssp.otm-r.com/adjson';

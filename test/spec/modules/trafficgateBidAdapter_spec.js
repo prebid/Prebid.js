@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/trafficgateBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from 'src/mediaTypes.js';
+import {BANNER, VIDEO} from 'src/mediaTypes.ts';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import 'src/prebid.ts'

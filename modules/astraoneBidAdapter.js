@@ -1,6 +1,6 @@
 import { _map } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER } from '../src/mediaTypes.ts'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

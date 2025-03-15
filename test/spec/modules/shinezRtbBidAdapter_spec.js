@@ -17,7 +17,7 @@ import {
 import {parseUrl, deepClone} from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {config} from '../../../src/config';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];

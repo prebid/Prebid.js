@@ -8,7 +8,7 @@ import {
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import { VIDEO } from '../src/mediaTypes.ts';
 
 const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction/';
 const BIDDER_CODE = 'showheroes-bs';

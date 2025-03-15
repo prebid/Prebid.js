@@ -7,7 +7,7 @@ import {
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {config} from '../../../src/config';
 import {
   hashCode,

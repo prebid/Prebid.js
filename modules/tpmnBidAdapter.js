@@ -2,7 +2,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';

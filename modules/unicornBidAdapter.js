@@ -1,5 +1,5 @@
 import { logInfo, deepAccess, generateUUID } from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 

@@ -1,6 +1,6 @@
 import {deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
 

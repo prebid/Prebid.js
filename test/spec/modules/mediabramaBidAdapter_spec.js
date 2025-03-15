@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/mediabramaBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { BANNER } from '../../../src/mediaTypes.ts';
 import * as utils from '../../../src/utils.js';
 
 describe('MediaBramaBidAdapter', function () {

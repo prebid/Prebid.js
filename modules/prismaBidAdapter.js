@@ -1,7 +1,7 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 

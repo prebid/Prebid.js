@@ -2,7 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepAccess, deepClone, getDNT, generateUUID, replaceAuctionPrice} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {VIDEO, BANNER} from '../src/mediaTypes.js';
+import {VIDEO, BANNER} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';

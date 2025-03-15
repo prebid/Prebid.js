@@ -10,7 +10,7 @@ import {
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';

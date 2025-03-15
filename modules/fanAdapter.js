@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.ts';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**

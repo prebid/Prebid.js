@@ -1,5 +1,5 @@
 import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {VIDEO} from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getAd, getSiteObj, getSyncResponse} from '../libraries/targetVideoUtils/bidderUtils.js'
 import {GVLID, SOURCE, TIME_TO_LIVE, VIDEO_ENDPOINT_URL, VIDEO_PARAMS} from '../libraries/targetVideoUtils/constants.js';

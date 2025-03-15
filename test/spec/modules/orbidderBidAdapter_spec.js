@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/orbidderBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as _ from 'lodash';
-import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes.ts';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);

@@ -9,7 +9,7 @@ import {
   replaceAuctionPrice,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
 

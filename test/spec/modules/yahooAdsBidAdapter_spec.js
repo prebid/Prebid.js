@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.ts';
 import { spec } from 'modules/yahooAdsBidAdapter.js';
 import {createEidsArray} from '../../../modules/userId/eids';
 import {deepAccess} from '../../../src/utils';

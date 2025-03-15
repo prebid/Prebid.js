@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/amxBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.ts';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';

@@ -1,7 +1,7 @@
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { _map, isArray, triggerPixel } from '../src/utils.js';
 
 /**

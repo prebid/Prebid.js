@@ -1,5 +1,5 @@
 import { logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 

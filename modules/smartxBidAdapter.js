@@ -20,7 +20,7 @@ import {
 } from '../src/adapters/bidderFactory.js';
 import {
   VIDEO
-} from '../src/mediaTypes.js';
+} from '../src/mediaTypes.ts';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

@@ -1,4 +1,4 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js'
+import {BANNER, VIDEO} from '../src/mediaTypes.ts'
 import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {generateUUID, isPlainObject, isArray, logWarn, deepClone} from '../src/utils.js'
 import {Renderer} from '../src/Renderer.js'

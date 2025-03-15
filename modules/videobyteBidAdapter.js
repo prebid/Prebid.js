@@ -1,6 +1,6 @@
 import { logMessage, logError, deepAccess, isFn, isPlainObject, isStr, isNumber, isArray, deepSetValue } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {VIDEO} from '../src/mediaTypes.ts';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

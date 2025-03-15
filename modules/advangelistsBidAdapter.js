@@ -1,6 +1,6 @@
 import { isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { createRequestData, getBannerBidFloor, getBannerBidParam, getBannerSizes, getVideoBidFloor, getVideoBidParam, getVideoSizes, isBannerBidValid, isVideoBid, isVideoBidValid } from '../libraries/advangUtils/index.js';
 
 const ADAPTER_VERSION = '1.0';

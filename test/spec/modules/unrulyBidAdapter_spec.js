@@ -1,7 +1,7 @@
 /* globals describe, it, beforeEach, afterEach, sinon */
 import {expect} from 'chai'
 import * as utils from 'src/utils.js'
-import {VIDEO, BANNER} from 'src/mediaTypes.js'
+import {VIDEO, BANNER} from 'src/mediaTypes.ts'
 import {Renderer} from 'src/Renderer.js'
 import {adapter} from 'modules/unrulyBidAdapter.js'
 

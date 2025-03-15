@@ -1,5 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, logError, replaceAuctionPrice } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';

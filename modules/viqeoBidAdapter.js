@@ -8,7 +8,7 @@ import {
   isNumber,
   isPlainObject,
 } from '../src/utils.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import { VIDEO } from '../src/mediaTypes.ts';
 import { Renderer } from '../src/Renderer.js';
 
 /**

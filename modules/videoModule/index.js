@@ -21,7 +21,7 @@ import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 import { AdQueueCoordinator } from './adQueue.js';
 import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
-import {VIDEO} from '../../src/mediaTypes.js';
+import {VIDEO} from '../../src/mediaTypes.ts';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
 

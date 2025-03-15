@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.ts';
 import {ortbConverter as OrtbConverter} from '../libraries/ortbConverter/converter.js';
 import {Renderer} from '../src/Renderer.js';
 import {deepAccess, deepSetValue} from '../src/utils.js';

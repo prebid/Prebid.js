@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.ts';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 import { getBidFloor } from 'libraries/equativUtils/equativUtils.js'

@@ -7,7 +7,7 @@ import * as utils from 'src/utils.js';
 import {hook} from '../../../src/hook.ts';
 import {getGlobal} from '../../../src/prebidGlobal.ts';
 import { makeSlot } from '../integration/faker/googletag.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.ts';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');

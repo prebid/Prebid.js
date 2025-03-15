@@ -1,4 +1,4 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {buildRequests, getUserSyncs, interpretResponse, isBidRequestValid} from '../libraries/xeUtils/bidderUtils.js';
 

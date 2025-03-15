@@ -1,5 +1,5 @@
 import {ORTB_MTYPES, setResponseMediaType} from '../../../libraries/ortbConverter/processors/mediaType.js';
-import {BANNER} from '../../../src/mediaTypes.js';
+import {BANNER} from '../../../src/mediaTypes.ts';
 import {extPrebidMediaType} from '../../../libraries/pbsExtensions/processors/mediaType.js';
 
 function testMtype(processor) {

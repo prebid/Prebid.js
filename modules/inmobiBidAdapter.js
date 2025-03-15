@@ -1,6 +1,6 @@
 import { deepAccess, deepSetValue, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';

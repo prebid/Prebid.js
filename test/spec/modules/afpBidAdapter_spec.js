@@ -2,7 +2,7 @@ import {includes} from 'src/polyfill.js'
 import cloneDeep from 'lodash/cloneDeep'
 import unset from 'lodash/unset'
 import { expect } from 'chai'
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js'
+import { BANNER, VIDEO } from '../../../src/mediaTypes.ts'
 import {
   spec,
   IN_IMAGE_BANNER_TYPE,

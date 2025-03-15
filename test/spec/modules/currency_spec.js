@@ -12,7 +12,7 @@ import {
   currencyRates,
   responseReady
 } from 'modules/currency.js';
-import {createBid} from '../../../src/bidfactory.js';
+import {createBid} from '../../../src/bidfactory.ts';
 import * as utils from 'src/utils.js';
 import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';

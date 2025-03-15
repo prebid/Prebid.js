@@ -1,6 +1,6 @@
 import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER } from '../src/mediaTypes.ts'
 import { config } from '../src/config.js'
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 

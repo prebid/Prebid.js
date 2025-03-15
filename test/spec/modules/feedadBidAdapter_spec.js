@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/feedadBidAdapter.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.ts';
 import {server} from 'test/mocks/xhr.js';
 
 const CODE = 'feedad';

@@ -1,7 +1,7 @@
 
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.ts';
 import { isArray } from '../src/utils.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';

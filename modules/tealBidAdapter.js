@@ -1,7 +1,7 @@
 import {deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
 const BIDDER_CODE = 'teal';
 const GVLID = 1378;

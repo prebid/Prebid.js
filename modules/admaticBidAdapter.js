@@ -1,7 +1,7 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { deepAccess, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';

@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.ts';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 // load modules that register ORTB processors

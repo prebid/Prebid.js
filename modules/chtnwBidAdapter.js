@@ -8,7 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.ts';
 const ENDPOINT_URL = 'https://prebid.cht.hinet.net/api/v1';
 const BIDDER_CODE = 'chtnw';
 const COOKIE_NAME = '__htid';

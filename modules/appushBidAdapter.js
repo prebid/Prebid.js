@@ -2,7 +2,7 @@ import { isFn, deepAccess, logMessage, logError } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'appush';

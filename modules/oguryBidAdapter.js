@@ -1,6 +1,6 @@
 'use strict';
 
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';

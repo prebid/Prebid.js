@@ -1,5 +1,5 @@
 import {buildUrl, deepAccess} from '../src/utils.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'smartytech';

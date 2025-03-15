@@ -1,7 +1,7 @@
 import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
 import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 

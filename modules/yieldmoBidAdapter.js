@@ -13,7 +13,7 @@ import {
   parseQueryStringParameters,
   parseUrl
 } from '../src/utils.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';

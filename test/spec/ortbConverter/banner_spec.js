@@ -1,5 +1,5 @@
 import {fillBannerImp, bannerResponseProcessor} from '../../../libraries/ortbConverter/processors/banner.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.ts';
 import {inIframe} from '../../../src/utils.js';
 
 const topframe = inIframe() ? 0 : 1;

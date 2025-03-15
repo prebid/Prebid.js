@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/bedigitechBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER } from 'src/mediaTypes.js';
+import { BANNER } from 'src/mediaTypes.ts';
 
 describe('BedigitechAdapter', function () {
   const adapter = newBidder(spec);

@@ -19,4 +19,5 @@ export const BANNER = 'banner';
 /** @type {VideoContext} */
 export const ADPOD = 'adpod';
 
-export const ALL_MEDIATYPES = [NATIVE, VIDEO, BANNER];
+export const ALL_MEDIATYPES: MediaType[] = [NATIVE, VIDEO, BANNER];
+export type MediaType = typeof NATIVE | typeof VIDEO | typeof BANNER;

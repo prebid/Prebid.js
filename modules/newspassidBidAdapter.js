@@ -11,7 +11,7 @@ import {
   generateUUID
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';

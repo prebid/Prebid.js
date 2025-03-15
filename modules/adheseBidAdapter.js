@@ -1,7 +1,7 @@
 'use strict';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adhese';

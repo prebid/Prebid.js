@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 
-import { BANNER } from '../../../../src/mediaTypes.js';
+import { BANNER } from '../../../../src/mediaTypes.ts';
 import * as utils from '../../../../src/utils.js';
 import { interpretResponse, isBidRequestValid, buildUserSyncs, buildBidRequests, bidWinReport } from '../../../../libraries/precisoUtils/bidUtilsCommon.js';
 

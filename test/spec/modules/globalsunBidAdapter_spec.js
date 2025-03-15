@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/globalsunBidAdapter.js';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.ts';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'globalsun';

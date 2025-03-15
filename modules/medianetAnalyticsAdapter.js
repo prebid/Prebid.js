@@ -21,7 +21,7 @@ import {includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.ts';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {ADPOD} from '../src/mediaTypes.js';
+import {ADPOD} from '../src/mediaTypes.ts';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';

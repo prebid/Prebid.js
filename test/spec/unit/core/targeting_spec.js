@@ -12,7 +12,7 @@ import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, STATUS, TARGETING_KE
 import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
-import {createBid} from '../../../../src/bidfactory.js';
+import {createBid} from '../../../../src/bidfactory.ts';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.ts';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
 

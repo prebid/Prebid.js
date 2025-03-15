@@ -7,7 +7,7 @@ import {
   safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';

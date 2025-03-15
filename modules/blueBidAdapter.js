@@ -1,6 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 

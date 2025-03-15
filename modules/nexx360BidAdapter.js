@@ -2,7 +2,7 @@ import { deepAccess, deepSetValue, generateUUID, logError, logInfo } from '../sr
 import {Renderer} from '../src/Renderer.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {getGlobal} from '../src/prebidGlobal.ts';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';

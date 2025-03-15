@@ -2,7 +2,7 @@ import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
 import { spec } from 'modules/fanAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from 'src/mediaTypes.js';
+import { BANNER, NATIVE } from 'src/mediaTypes.ts';
 
 describe('Freedom Ad Network Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {

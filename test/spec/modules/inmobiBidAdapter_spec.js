@@ -4,7 +4,7 @@ import {
 } from 'modules/inmobiBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
-import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.ts';
 import { hook } from '../../../src/hook.js';
 import { config } from '../../../src/config.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd';

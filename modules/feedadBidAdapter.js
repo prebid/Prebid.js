@@ -1,6 +1,6 @@
 import {deepAccess, isArray, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {ajax} from '../src/ajax.js';
 
 /**

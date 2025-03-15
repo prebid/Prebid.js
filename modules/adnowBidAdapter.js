@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {deepAccess, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

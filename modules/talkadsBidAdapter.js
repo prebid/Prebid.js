@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
+import { NATIVE, BANNER } from '../src/mediaTypes.ts';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

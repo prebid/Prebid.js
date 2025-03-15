@@ -1,6 +1,6 @@
 import {ENDPOINT, spec} from 'modules/browsiBidAdapter.js';
 import {config} from 'src/config.js';
-import {VIDEO, BANNER} from 'src/mediaTypes.js';
+import {VIDEO, BANNER} from 'src/mediaTypes.ts';
 
 const {expect} = require('chai');
 const DATA = 'brwvidtag';

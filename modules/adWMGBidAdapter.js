@@ -2,7 +2,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'adWMG';

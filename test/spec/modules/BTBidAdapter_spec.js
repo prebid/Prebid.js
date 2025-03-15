@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/BTBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { BANNER } from '../../../src/mediaTypes.ts';
 // load modules that register ORTB processors
 import 'src/prebid.ts';
 import 'modules/currency.js';

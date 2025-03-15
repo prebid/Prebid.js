@@ -1,6 +1,6 @@
 import {deepAccess, deepClone, isArray, logError, logInfo, mergeDeep, isEmpty, isPlainObject, isNumber, isStr} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';

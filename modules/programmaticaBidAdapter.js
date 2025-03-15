@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { deepAccess, parseSizesInput, isArray } from '../src/utils.js';
 

@@ -16,7 +16,7 @@ import {
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';

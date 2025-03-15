@@ -2,7 +2,7 @@ import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject } f
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 
 const PREBID_VERSION = '$prebid.version$'
 

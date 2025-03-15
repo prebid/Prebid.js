@@ -1,6 +1,6 @@
 import {_each, deepSetValue, inIframe} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {find} from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 

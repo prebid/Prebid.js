@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/vibrantmediaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.ts';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
 
 const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com/prebid';

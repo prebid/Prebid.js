@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/consumableBidAdapter.js';
-import {createBid} from 'src/bidfactory.js';
+import {createBid} from 'src/bidfactory.ts';
 import {config} from 'src/config.js';
 import {deepClone} from 'src/utils.js';
 import { createEidsArray } from 'modules/userId/eids.js';

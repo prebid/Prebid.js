@@ -13,7 +13,7 @@ import {
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
-import {VIDEO} from '../../../src/mediaTypes.js';
+import {VIDEO} from '../../../src/mediaTypes.ts';
 import {auctionManager} from '../../../src/auctionManager.js';
 import adapterManager from '../../../src/adapterManager.js';
 import {filters} from 'src/targeting.js';

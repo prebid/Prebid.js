@@ -2,7 +2,7 @@ import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.ts';
 import { getBidIdParameter, deepSetValue, prefixLog } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 const adgLogger = prefixLog('Adgeneration: ');

@@ -24,7 +24,7 @@ import {
   ADPOD,
   BANNER,
   VIDEO,
-} from '../src/mediaTypes.js';
+} from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'connatix';
 

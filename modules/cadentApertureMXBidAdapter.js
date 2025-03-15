@@ -9,7 +9,7 @@ import {
   logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';

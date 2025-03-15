@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ucfunnelBidAdapter.js';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes.js';
+import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes.ts';
 import {deepClone} from '../../../src/utils.js';
 const URL = 'https://hb.aralego.com/header';
 const BIDDER_CODE = 'ucfunnel';

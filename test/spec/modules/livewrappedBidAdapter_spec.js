@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec, storage} from 'modules/livewrappedBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { NATIVE, VIDEO } from 'src/mediaTypes.ts';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { addFPDToBidderRequest } from '../../helpers/fpd';
 

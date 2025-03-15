@@ -9,7 +9,7 @@ import {
   logInfo,
   triggerPixel
 } from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'bitmedia';

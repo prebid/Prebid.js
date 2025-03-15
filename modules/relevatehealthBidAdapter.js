@@ -4,7 +4,7 @@ import {
 } from '../src/adapters/bidderFactory.js';
 import {
   BANNER
-} from '../src/mediaTypes.js';
+} from '../src/mediaTypes.ts';
 import {
   deepAccess,
   generateUUID,

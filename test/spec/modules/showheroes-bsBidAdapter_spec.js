@@ -5,7 +5,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
-import { VIDEO } from 'src/mediaTypes.js'
+import { VIDEO } from 'src/mediaTypes.ts'
 
 const bidderRequest = {
   refererInfo: {

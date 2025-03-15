@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 import {find, includes} from '../src/polyfill.js';
 import {deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';

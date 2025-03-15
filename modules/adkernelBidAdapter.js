@@ -15,7 +15,7 @@ import {
   mergeDeep,
   parseGPTSingleSizeArrayToRtbSize
 } from '../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';

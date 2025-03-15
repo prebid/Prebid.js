@@ -1,6 +1,6 @@
 import {
   BANNER
-} from '../src/mediaTypes.js';
+} from '../src/mediaTypes.ts';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';

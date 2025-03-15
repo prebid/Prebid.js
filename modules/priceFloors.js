@@ -31,7 +31,7 @@ import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
-import {ALL_MEDIATYPES, BANNER} from '../src/mediaTypes.js';
+import {ALL_MEDIATYPES, BANNER} from '../src/mediaTypes.ts';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',

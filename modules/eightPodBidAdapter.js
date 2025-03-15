@@ -1,6 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER } from '../src/mediaTypes.ts'
 import * as utils from '../src/utils.js'
 
 export const BIDDER_CODE = 'eightPod'

@@ -1,6 +1,6 @@
 import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { ajax } from '../src/ajax.js';
 
 /**

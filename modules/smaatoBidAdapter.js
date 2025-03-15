@@ -2,7 +2,7 @@ import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} 
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {NATIVE_IMAGE_TYPES} from '../src/constants.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {fill} from '../libraries/appnexusUtils/anUtils.js';

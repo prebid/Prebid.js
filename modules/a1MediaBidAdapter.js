@@ -1,6 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.ts';
 import { replaceAuctionPrice } from '../src/utils.js';
 
 const BIDDER_CODE = 'a1media';

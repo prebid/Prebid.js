@@ -2,7 +2,7 @@ import { Renderer } from '../src/Renderer.js';
 import {ajax} from '../src/ajax.js';
 import {createTrackPixelHtml, getBidIdParameter, logError, logWarn} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.ts';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'open8';

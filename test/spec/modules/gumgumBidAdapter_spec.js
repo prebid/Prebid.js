@@ -1,4 +1,4 @@
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.ts';
 
 import { config } from 'src/config.js';
 import { expect } from 'chai';

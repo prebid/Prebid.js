@@ -2,7 +2,7 @@ import {logWarn, logError, triggerPixel, deepSetValue, getParameterByName} from 
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.ts';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 

@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'adstir';
 const ENDPOINT = 'https://ad.ad-stir.com/prebid'

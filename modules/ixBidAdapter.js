@@ -16,7 +16,7 @@ import {
   mergeDeep,
   safeJSONParse
 } from '../src/utils.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.ts';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { find } from '../src/polyfill.js';

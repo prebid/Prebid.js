@@ -7,7 +7,7 @@ import {
   paramsToQueryString, setCurrentURL
 } from 'modules/ampliffyBidAdapter.js';
 import {expect} from 'chai';
-import {BANNER, VIDEO} from 'src/mediaTypes';
+import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('Ampliffy bid adapter Test', function () {

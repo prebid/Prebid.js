@@ -19,7 +19,7 @@ import {
 
 import {addBidderRequests, addBidResponse} from '../../../src/auction.js';
 import {prefixLog} from '../../../src/utils.js';
-import {createBid} from '../../../src/bidfactory.js';
+import {createBid} from '../../../src/bidfactory.ts';
 
 describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;

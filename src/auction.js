@@ -12,7 +12,7 @@
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/config.js').MediaTypePriceGranularity} MediaTypePriceGranularity
- * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ * @typedef {import('./mediaTypes.ts').MediaType} MediaType
  */
 
 /**
@@ -86,7 +86,7 @@ import {userSync} from './userSync.js';
 import {hook} from './hook.ts';
 import {find, includes} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
-import {VIDEO} from './mediaTypes.js';
+import {VIDEO} from './mediaTypes.ts';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';

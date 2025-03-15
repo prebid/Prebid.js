@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {deepAccess, isPlainObject, parseSizesInput} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 

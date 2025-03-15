@@ -2,7 +2,7 @@ import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObjec
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 

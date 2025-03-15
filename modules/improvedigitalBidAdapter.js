@@ -1,7 +1,7 @@
 import {deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {Renderer} from '../src/Renderer.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';

@@ -7,7 +7,7 @@ import {
   setExtraParam,
   spec
 } from '../../../modules/adagioBidAdapter.js';
-import { NATIVE } from '../../../src/mediaTypes.js';
+import { NATIVE } from '../../../src/mediaTypes.ts';
 import { config } from '../../../src/config.js';
 import { executeRenderer } from '../../../src/Renderer.js';
 import { expect } from 'chai';

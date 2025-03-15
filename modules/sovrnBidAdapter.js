@@ -16,7 +16,7 @@ import {
   ADPOD,
   BANNER,
   VIDEO
-} from '../src/mediaTypes.js'
+} from '../src/mediaTypes.ts'
 import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
 
 /**

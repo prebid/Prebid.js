@@ -4,7 +4,7 @@ import { spec } from 'modules/goldbachBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
-import { VIDEO } from 'src/mediaTypes.js';
+import { VIDEO } from 'src/mediaTypes.ts';
 import * as ajaxLib from 'src/ajax.js';
 
 const BIDDER_NAME = 'goldbach'

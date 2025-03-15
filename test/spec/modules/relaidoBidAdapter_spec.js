@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {VIDEO} from 'src/mediaTypes.js';
+import {VIDEO} from 'src/mediaTypes.ts';
 import {getCoreStorageManager} from '../../../src/storageManager.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 

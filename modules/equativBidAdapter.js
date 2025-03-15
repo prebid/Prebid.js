@@ -3,7 +3,7 @@ import { getBidFloor } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
 

@@ -1,6 +1,6 @@
 import {deepAccess, deepSetValue, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 
 const ENDPOINT_URL = 'https://x.yieldlift.com/pbjs';
 

@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { isBidRequestValid, buildRequestsBase, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
 

@@ -2,7 +2,7 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {_map, deepAccess, isFn, parseGPTSingleSizeArrayToRtbSize, triggerPixel} from '../src/utils.js';
 import {parseDomain} from '../src/refererDetection.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';

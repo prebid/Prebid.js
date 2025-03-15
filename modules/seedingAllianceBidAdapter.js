@@ -2,7 +2,7 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {generateUUID, deepSetValue, isEmpty, replaceAuctionPrice} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';

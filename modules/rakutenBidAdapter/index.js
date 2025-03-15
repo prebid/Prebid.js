@@ -1,5 +1,5 @@
 import { registerBidder } from '../../src/adapters/bidderFactory.js';
-import { BANNER } from '../../src/mediaTypes.js';
+import { BANNER } from '../../src/mediaTypes.ts';
 import { config } from '../../src/config.js';
 const BIDDER_CODE = 'rakuten';
 const ENDPOINT = 'https://s-bid.rmp.rakuten.com/h';

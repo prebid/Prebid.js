@@ -1,5 +1,5 @@
 import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {deepClone} from '../../../src/utils';
 
 describe('Zeta Ssp Bid Adapter', function () {

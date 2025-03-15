@@ -21,7 +21,7 @@ import {
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';

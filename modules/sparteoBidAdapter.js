@@ -1,6 +1,6 @@
 import { deepAccess, deepSetValue, logError, parseSizesInput, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
 /**

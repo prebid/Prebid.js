@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/undertoneBidAdapter.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {deepClone} from '../../../src/utils';
 
 const URL = 'https://hb.undertone.com/hb';

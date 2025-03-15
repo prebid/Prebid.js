@@ -10,7 +10,7 @@ import {
 import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
-import { createBid } from 'src/bidfactory.js';
+import { createBid } from 'src/bidfactory.ts';
 import { config } from 'src/config.js';
 import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';

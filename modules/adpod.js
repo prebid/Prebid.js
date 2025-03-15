@@ -35,7 +35,7 @@ import {checkVideoBidSetup} from '../src/video.js';
 import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.ts';
 import {store} from '../src/videoCache.js';
 import {config} from '../src/config.js';
-import {ADPOD} from '../src/mediaTypes.js';
+import {ADPOD} from '../src/mediaTypes.ts';
 import {find, arrayFrom as from} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
 import { TARGETING_KEYS } from '../src/constants.js';

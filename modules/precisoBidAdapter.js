@@ -1,6 +1,6 @@
 import { logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { buildBidResponse, buildRequests, onBidWon } from '../libraries/precisoUtils/bidUtils.js';

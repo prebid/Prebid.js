@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {_each, getBidIdParameter, getValue, logError, logInfo} from '../src/utils.js';
 
 /**

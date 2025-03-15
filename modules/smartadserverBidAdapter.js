@@ -7,7 +7,7 @@ import {
   isInteger,
   logError
 } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { config } from '../src/config.js';
 import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';

@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 
 const ENDPOINT_URL = 'https://s2s.yieldlove-ad-serving.net/openrtb2/auction';
 

@@ -4,7 +4,7 @@ import {
   ENDPOINT,
   BIDDER_CODE,
 } from '../../../modules/eclickBidAdapter.js';
-import { NATIVE, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { NATIVE, BANNER, VIDEO } from '../../../src/mediaTypes.ts';
 import { deepClone } from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 

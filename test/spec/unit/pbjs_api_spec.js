@@ -21,7 +21,7 @@ import $$PREBID_GLOBAL$$, {startAuction} from 'src/prebid.ts';
 import {hook} from '../../../src/hook.ts';
 import {reset as resetDebugging} from '../../../src/debugging.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {createBid} from '../../../src/bidfactory.js';
+import {createBid} from '../../../src/bidfactory.ts';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {deepAccess, deepSetValue, generateUUID} from '../../../src/utils.js';

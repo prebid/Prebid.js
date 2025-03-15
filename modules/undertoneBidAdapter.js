@@ -4,7 +4,7 @@
 
 import {deepAccess, parseUrl, extractDomainFromHost} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';

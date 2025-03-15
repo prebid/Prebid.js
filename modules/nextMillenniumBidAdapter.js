@@ -15,7 +15,7 @@ import {
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';

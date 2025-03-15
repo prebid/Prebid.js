@@ -2,7 +2,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { find } from '../src/polyfill.js';
 import { isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice } from '../src/utils.js';

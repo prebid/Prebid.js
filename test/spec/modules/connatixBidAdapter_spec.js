@@ -16,7 +16,7 @@ import {
 } from '../../../modules/connatixBidAdapter.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as ajax from '../../../src/ajax.js';
-import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'connatix';
 

@@ -2,7 +2,7 @@
 'use strict';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
+import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.ts';
 import {
   mergeDeep,
   _map,

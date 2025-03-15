@@ -11,7 +11,7 @@ import * as events from './events.js';
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
 import {config} from './config.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
-import {VIDEO} from './mediaTypes.js';
+import {VIDEO} from './mediaTypes.ts';
 import {auctionManager} from './auctionManager.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.ts';

@@ -4,7 +4,7 @@ import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
 import * as ajax from 'src/ajax.js';
 import {config} from '../../../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.ts';
 import {addFPDToBidderRequest} from '../../helpers/fpd';
 import 'modules/userId/index.js';
 import 'modules/consentManagementTcf.js';

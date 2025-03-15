@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 // import { logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 
 const BIDDER_CODE = 'conceptx';

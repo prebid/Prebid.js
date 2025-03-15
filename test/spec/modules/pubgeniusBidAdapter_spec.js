@@ -2,7 +2,7 @@ import { expect } from 'chai';
 
 import { spec } from 'modules/pubgeniusBidAdapter.js';
 import { config } from 'src/config.js';
-import { VIDEO } from 'src/mediaTypes.js';
+import { VIDEO } from 'src/mediaTypes.ts';
 import { deepClone, parseQueryStringParameters } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';

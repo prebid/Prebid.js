@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER } from '../src/mediaTypes.js'
+import { BANNER } from '../src/mediaTypes.ts'
 import { isArray, isNumber } from '../src/utils.js'
 import { interpretResponse } from '../libraries/precisoUtils/bidUtils.js';
 

@@ -1,6 +1,6 @@
 import {_map, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';

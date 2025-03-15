@@ -18,7 +18,7 @@ import {
 import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.ts';
-import {createBid} from '../../../src/bidfactory.js';
+import {createBid} from '../../../src/bidfactory.ts';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {guardTids} from '../../../src/adapters/bidderFactory.js';

@@ -1,6 +1,6 @@
 import { generateUUID, _each, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

@@ -1,5 +1,5 @@
 import {fillNativeImp, fillNativeResponse} from '../../../libraries/ortbConverter/processors/native.js';
-import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../../../src/mediaTypes.ts';
 
 describe('pbjs -> ortb native requests', () => {
   function toNative(bidRequest, context) {

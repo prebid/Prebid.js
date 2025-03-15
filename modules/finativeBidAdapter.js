@@ -2,7 +2,7 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {NATIVE} from '../src/mediaTypes.js';
+import {NATIVE} from '../src/mediaTypes.ts';
 import {_map, deepSetValue, isEmpty, setOnAny} from '../src/utils.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';

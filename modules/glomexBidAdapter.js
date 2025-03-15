@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 
 const ENDPOINT = 'https://prebid.mes.glomex.cloud/request-bid'
 const BIDDER_CODE = 'glomex'

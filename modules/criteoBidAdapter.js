@@ -1,6 +1,6 @@
 import {deepSetValue, isArray, logError, logWarn, parseUrl, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';

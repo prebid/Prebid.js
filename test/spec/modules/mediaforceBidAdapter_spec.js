@@ -1,7 +1,7 @@
 import {assert} from 'chai';
 import {spec} from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE} from '../../../src/mediaTypes.ts';
 
 describe('mediaforce bid adapter', function () {
   let sandbox;

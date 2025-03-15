@@ -1,4 +1,4 @@
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getBidIdParameter} from '../src/utils.js';
 

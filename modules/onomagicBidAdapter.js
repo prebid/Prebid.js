@@ -11,7 +11,7 @@ import {
   logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.ts';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
 const BIDDER_CODE = 'onomagic';

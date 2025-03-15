@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/madsenseBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.ts';
 import { generateUUID } from '../../../src/utils.js';
 
 const getCommonParams = () => ({

@@ -1,6 +1,6 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 
@@ -13,7 +13,7 @@ import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo 
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/auction.js').BidderRequest} BidderRequest
- * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../src/mediaTypes.ts').MediaType} MediaType
  * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
  * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
  */

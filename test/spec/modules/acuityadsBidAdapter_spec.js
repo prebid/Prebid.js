@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/acuityadsBidAdapter.js';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.ts';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'acuityads';

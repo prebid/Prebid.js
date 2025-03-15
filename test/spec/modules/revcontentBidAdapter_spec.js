@@ -1,7 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
 import {spec} from 'modules/revcontentBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
+import { NATIVE } from 'src/mediaTypes.ts';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 

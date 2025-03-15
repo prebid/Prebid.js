@@ -1,4 +1,4 @@
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import {
   canAccessWindowTop,
   cleanObj,

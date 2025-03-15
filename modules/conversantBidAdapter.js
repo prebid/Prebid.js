@@ -13,7 +13,7 @@ import {
   parseUrl,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';

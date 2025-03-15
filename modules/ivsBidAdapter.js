@@ -1,7 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {deepAccess, deepSetValue, getBidIdParameter, logError} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import { VIDEO } from '../src/mediaTypes.ts';
 import { INSTREAM } from '../src/video.js';
 
 /**

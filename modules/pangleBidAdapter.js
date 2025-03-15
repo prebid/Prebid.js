@@ -1,4 +1,4 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, generateUUID, timestamp, deepAccess } from '../src/utils.js';

@@ -2,7 +2,7 @@ import { timestamp, deepAccess, isStr, deepClone, isPlainObject } from '../src/u
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 
 const BIDDER_CODE = 'resetdigital';
 const CURRENCY = 'USD';

@@ -2,7 +2,7 @@
 import * as utils from '../src/utils.js';
 import { isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { highEntropySUAAccessor } from '../src/fpd/sua.js';

@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {VIDEO} from '../src/mediaTypes.ts';
 import {logError, logInfo, isArray, isStr} from '../src/utils.js';
 
 /**

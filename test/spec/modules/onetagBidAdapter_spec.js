@@ -1,7 +1,7 @@
 import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { find } from 'src/polyfill.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.ts';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 
 describe('onetag', function () {

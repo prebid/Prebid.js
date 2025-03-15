@@ -12,7 +12,7 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.ts'
-import {BANNER} from '../../../src/mediaTypes';
+import {BANNER} from '../../../src/mediaTypes.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';

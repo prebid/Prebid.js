@@ -1,6 +1,6 @@
 import {createTrackPixelHtml, logError, getBidIdParameter} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.ts';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /**
