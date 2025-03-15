@@ -372,8 +372,8 @@ function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
     }
 }
 
-function addApiMethod(name: keyof PrebidJS, method: PrebidJS[typeof name], log = true) {
-    pbjsInstance[name as string] = log ? logInvocation(name, method) : method;
+function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS[N], log = true) {
+    pbjsInstance[name] = log ? logInvocation(name, method) as PrebidJS[N] : method;
 }
 
 /// ///////////////////////////////

@@ -19,7 +19,7 @@ export interface Hook<T extends AnyFunction> extends Wraps<T> {
     removeAll(): void;
 }
 
-interface NamedHooks {
+export interface NamedHooks {
     [name: string]: AnyFunction;
 }
 
@@ -53,7 +53,7 @@ export const ready: Promise<void> = readyCtl.promise;
 
 export const getHook = hook.get;
 
-export function setupBeforeHookFnOnce(baseFn, hookFn, priority = 15) {
+export function setupBeforeHookFnOnce<T extends AnyFunction>(baseFn: Hook<T>, hookFn: BeforeHook<T>, priority = 15) {
   let result = baseFn.getHooks({hook: hookFn});
   if (result.length === 0) {
     baseFn.before(hookFn, priority);
