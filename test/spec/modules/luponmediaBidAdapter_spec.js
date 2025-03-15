@@ -1,4 +1,4 @@
-import { resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
+import { resetUserSync, spec, converter } from 'modules/luponmediaBidAdapter.js';
 
 describe('luponmediaBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -191,6 +191,220 @@ describe('luponmediaBidAdapter', function () {
     });
   });
 
+  describe('interpretResponse', function () {
+    it('should get correct banner bid response', function () {
+      const response = {
+        'id': '4776d680-15a2-45c3-bad5-db6bebd94a06',
+        'seatbid': [
+          {
+            'bid': [
+              {
+                'id': '2a122246ef72ea',
+                'impid': '2a122246ef72ea',
+                'price': 0.43,
+                'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
+                'adid': '56380110',
+                'cid': '44724710',
+                'crid': '443801010',
+                'w': 300,
+                'h': 250,
+                'ext': {
+                  'prebid': {
+                    'targeting': {
+                      'hb_bidder': 'luponmedia',
+                      'hb_pb': '0.40',
+                      'hb_size': '300x250'
+                    },
+                    'type': 'banner'
+                  }
+                }
+              }
+            ],
+            'seat': 'luponmedia'
+          }
+        ],
+        'cur': 'USD',
+        'ext': {
+          'responsetimemillis': {
+            'luponmedia': 233
+          },
+          'tmaxrequest': 1500,
+          'usersyncs': {
+            'status': 'ok',
+            'bidder_status': []
+          }
+        }
+      };
+
+      const bidRequests = [
+        {
+          'bidder': 'luponmedia',
+          'params': {
+            'keyId': 'uid_test_300_600',
+            'placement_id': 'test-div'
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250]]
+            }
+          },
+          'adUnitCode': 'test-div',
+          'bidId': '2a122246ef72ea'
+        }
+      ];
+
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://example.com'
+        }
+      };
+
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+
+      const result = spec.interpretResponse({ body: response }, { data: ortbRequest });
+
+      // Partially match the expected object
+      expect(result).to.be.an('array').with.lengthOf(1);
+      expect(result[0]).to.include({
+        requestId: '2a122246ef72ea',
+        cpm: 0.43,
+        width: 300,
+        height: 250,
+        creativeId: '443801010',
+        creative_id: '443801010',
+        currency: 'USD',
+        netRevenue: false,
+        ttl: 300,
+        ad: '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>'
+      });
+    });
+
+    it('should get correct banner bid response', function () {
+      const response = {
+        'id': '4776d680-15a2-45c3-bad5-db6bebd94a06',
+        'seatbid': [
+          {
+            'bid': [
+              {
+                'id': '2a122246ef72ea',
+                'impid': '2a122246ef72ea',
+                'price': 0.43,
+                'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
+                'adid': '56380110',
+                'cid': '44724710',
+                'crid': '443801010',
+                'w': 300,
+                'h': 250,
+                'ext': {
+                  'prebid': {
+                    'targeting': {
+                      'hb_bidder': 'luponmedia',
+                      'hb_pb': '0.40',
+                      'hb_size': '300x250'
+                    },
+                    'type': 'banner'
+                  }
+                }
+              }
+            ],
+            'seat': 'luponmedia'
+          }
+        ],
+        'cur': 'USD',
+        'ext': {
+          'responsetimemillis': {
+            'luponmedia': 233
+          },
+          'tmaxrequest': 1500,
+          'usersyncs': {
+            'status': 'ok',
+            'bidder_status': []
+          }
+        }
+      };
+
+      const bidRequests = [
+        {
+          'bidder': 'luponmedia',
+          'params': {
+            'keyId': 'uid_test_300_600',
+            'placement_id': 'test-div'
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250]]
+            }
+          },
+          'adUnitCode': 'test-div',
+          'bidId': '2a122246ef72ea'
+        }
+      ];
+
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://example.com'
+        }
+      };
+
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+
+      const result = spec.interpretResponse({ body: response }, { data: ortbRequest });
+
+      // Partially match the expected object
+      expect(result).to.be.an('array').with.lengthOf(1);
+      expect(result[0]).to.include({
+        requestId: '2a122246ef72ea',
+        cpm: 0.43,
+        width: 300,
+        height: 250,
+        creativeId: '443801010',
+        creative_id: '443801010',
+        currency: 'USD',
+        netRevenue: false,
+        ttl: 300,
+        ad: '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>'
+      });
+    });
+
+    it('handles nobid responses', function () {
+      const noBidResponse = {
+        body: {
+          id: 'test-request-id',
+          seatbid: []
+        }
+      };
+
+      // Generate the ortbRequest object dynamically
+      const bidRequests = [
+        {
+          'bidder': 'luponmedia',
+          'params': {
+            'keyId': 'uid_test_300_600',
+            'placement_id': 'test-div'
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250]]
+            }
+          },
+          'adUnitCode': 'test-div',
+          'bidId': '2a122246ef72ea'
+        }
+      ];
+
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://example.com'
+        }
+      };
+
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+
+      const result = spec.interpretResponse(noBidResponse, { data: ortbRequest });
+      expect(result).to.deep.equal([]);
+    });
+  });
+
   describe('getUserSyncs', function () {
     const bidResponse1 = {
       'body': {
@@ -233,7 +447,12 @@ describe('luponmediaBidAdapter', function () {
           'tmaxrequest': 1500,
           'usersyncs': {
             'status': 'no_cookie',
-            'bidder_status': []
+            'bidder_status': [
+              {
+                'bidder': 'luponmedia',
+                'no_cookie': false,
+              }
+            ]
           }
         }
       }
@@ -285,6 +504,13 @@ describe('luponmediaBidAdapter', function () {
           url: 'https://adxpremium.services/api/iframeusersync'
         }
       ]);
+    });
+
+    it('returns empty array when sync is off', function () {
+      resetUserSync();
+
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse1]);
+      expect(syncs.length).equal(0);
     });
   });
 });
