@@ -1,32 +1,44 @@
 import funHooks from 'fun-hooks/no-eval/index.js';
 import {defer} from './utils/promise.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
+import type {AllExceptLast, Last} from "./types/tuples.d.ts";
 
 interface Next<T extends AnyFunction> {
     bail(result: ReturnType<T>): void;
 }
-type BeforeNext<T extends AnyFunction> = Next<T> & Wraps<T>;
+type BeforeNext<T extends AnyFunction> = Next<T> & ((...args: Parameters<T>) => unknown);
 type AfterNext<T extends AnyFunction> = Next<T> & {
-    (result: ReturnType<T>): void;
+    (result: ReturnType<T>): unknown;
 }
-type BeforeHook<T extends AnyFunction> = (next: BeforeNext<T>, ...args: Parameters<T>) => ReturnType<T>;
-type AfterHook<T extends AnyFunction> = (next: AfterNext<T>, result: ReturnType<T>) => ReturnType<T>;
+type RemoveLastParam<T extends AnyFunction> = (...args: AllExceptLast<Parameters<T>>) => ReturnType<T>;
+type AllParamsHook<T extends AnyFunction> = (next: BeforeNext<T>, ...args: Parameters<T>) => unknown;
+type AllExceptLastHook<T extends AnyFunction> = (next: BeforeNext<RemoveLastParam<T>>, ...args: AllExceptLast<Parameters<T>>) => unknown;
 
-export interface Hook<T extends AnyFunction> extends Wraps<T> {
-    before(beforeHook: BeforeHook<T>, priority?: number): void;
-    after(afterHook: AfterHook<T>, priority?: number): void;
-    getHooks(options?: { hook?: BeforeHook<T> | AfterHook<T> }): { length: number, remove(): void }
+type HookType = 'sync' | 'async';
+
+type SyncBeforeHook<T extends AnyFunction> = AllParamsHook<T>;
+type AsyncBeforeHook<T extends AnyFunction> = Last<Parameters<T>> extends AnyFunction ? AllExceptLastHook<T> : AllParamsHook<T>;
+type BeforeHook<TYP extends HookType, FN extends AnyFunction> = TYP extends 'async' ? AsyncBeforeHook<FN> : SyncBeforeHook<FN>;
+type AfterHook<T extends AnyFunction> = (next: AfterNext<T>, result: ReturnType<T>) => unknown;
+
+export type Hook<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> & {
+    before(beforeHook: BeforeHook<TYP, FN>, priority?: number): void;
+    after(afterHook: AfterHook<FN>, priority?: number): void;
+    getHooks(options?: { hook?: BeforeHook<TYP, FN> | AfterHook<FN> }): { length: number, remove(): void }
     removeAll(): void;
 }
 
 export interface NamedHooks {
-    [name: string]: AnyFunction;
+    [name: string]: {
+        type: HookType,
+        fn: AnyFunction
+    }
 }
 
 interface FunHooks {
-    <T extends AnyFunction>(type: 'sync' | 'async', fn: T, name?: string): Hook<T>;
+    <TYP extends HookType, FN extends AnyFunction>(type: TYP, fn: FN, name?: string): Hook<TYP, FN>;
     ready(): void;
-    get<T extends keyof NamedHooks>(name: T): Hook<NamedHooks[T]>
+    get<T extends keyof NamedHooks>(name: T): Hook<NamedHooks[T]['type'], NamedHooks[T]['fn']>
 }
 
 export let hook: FunHooks = funHooks({
@@ -53,7 +65,7 @@ export const ready: Promise<void> = readyCtl.promise;
 
 export const getHook = hook.get;
 
-export function setupBeforeHookFnOnce<T extends AnyFunction>(baseFn: Hook<T>, hookFn: BeforeHook<T>, priority = 15) {
+export function setupBeforeHookFnOnce<TYP extends HookType, FN extends AnyFunction>(baseFn: Hook<TYP, FN>, hookFn: BeforeHook<TYP, FN>, priority = 15) {
   let result = baseFn.getHooks({hook: hookFn});
   if (result.length === 0) {
     baseFn.before(hookFn, priority);
@@ -80,10 +92,10 @@ export function submodule(name, ...args) {
 /**
  * Copy hook methods (.before, .after, etc) from a given hook to a given wrapper object.
  */
-export function wrapHook<T extends AnyFunction>(hook: Hook<T>, wrapper: T): Hook<T> {
+export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hook<TYP, FN>, wrapper: FN): Hook<TYP, FN> {
   Object.defineProperties(
     wrapper,
     Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
   );
-  return (wrapper as unknown) as Hook<T>;
+  return (wrapper as unknown) as Hook<TYP, FN>;
 }
