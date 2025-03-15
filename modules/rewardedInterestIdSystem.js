@@ -28,7 +28,7 @@
  * @return {Promise<string>}
  */
 
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {logError} from '../src/utils.js';
 
 export const MODULE_NAME = 'rewardedInterestId';

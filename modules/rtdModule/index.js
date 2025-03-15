@@ -160,7 +160,7 @@
  */
 
 import {config} from '../../src/config.js';
-import {getHook, module} from '../../src/hook.js';
+import {getHook, module} from '../../src/hook.ts';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
@@ -285,7 +285,7 @@ function initSubModules() {
  * call it, providing reqBidsConfigObj, consent data and module params
  * this allows submodules to modify bidders
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
- * @param {function} fn required; The next function in the chain, used by hook.js
+ * @param {function} fn required; The next function in the chain, used by hook.ts
  */
 export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj) {
   _userConsent = getConsentData();

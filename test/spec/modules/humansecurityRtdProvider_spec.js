@@ -1,7 +1,7 @@
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 import * as utils from '../../../src/utils.js';
-import * as hook from '../../../src/hook.js';
+import * as hook from '../../../src/hook.ts';
 import * as refererDetection from '../../../src/refererDetection.js';
 
 import { __TEST__ } from '../../../modules/humansecurityRtdProvider.js';

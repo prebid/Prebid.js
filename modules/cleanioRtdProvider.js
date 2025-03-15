@@ -6,7 +6,7 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { loadExternalScript } from '../src/adloader.js';
 import { logError, generateUUID, insertElement } from '../src/utils.js';
 import * as events from '../src/events.js';

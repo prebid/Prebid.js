@@ -1,6 +1,6 @@
 import { auctionManager } from '../../src/auctionManager.js';
 import { config } from '../../src/config.js';
-import { getHook } from '../../src/hook.js';
+import { getHook } from '../../src/hook.ts';
 
 export const MODULE_NAME = 'bidResponseFilter';
 export const BID_CATEGORY_REJECTION_REASON = 'Category is not allowed';

@@ -5,7 +5,7 @@
  * @module modules/azerionedgeRtdProvider
  * @requires module:modules/realTimeData
  */
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { mergeDeep } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { loadExternalScript } from '../src/adloader.js';

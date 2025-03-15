@@ -1,4 +1,4 @@
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getGlobal} from '../src/prebidGlobal.ts';

@@ -9,7 +9,7 @@ import { logError } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 
 /**

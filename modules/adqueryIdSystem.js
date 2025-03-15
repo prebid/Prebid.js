@@ -7,7 +7,7 @@
 
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {isFn, isPlainObject, isStr, logError, logInfo, logMessage} from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 

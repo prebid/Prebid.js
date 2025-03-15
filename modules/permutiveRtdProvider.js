@@ -6,7 +6,7 @@
  * @requires module:modules/realTimeData
  */
 import {getGlobal} from '../src/prebidGlobal.ts';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';

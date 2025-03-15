@@ -20,7 +20,7 @@ import {
   pick,
   uniques
 } from '../utils.js';
-import {hook} from '../hook.js';
+import {hook} from '../hook.ts';
 import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
 import {useMetrics} from '../utils/perfMetrics.js';

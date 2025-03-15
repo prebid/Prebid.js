@@ -5,7 +5,7 @@
  * @module modules/brandmetricsRtdProvider
  * @requires module:modules/realTimeData
  */
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { deepAccess, deepSetValue, logError, mergeDeep, generateUUID } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';

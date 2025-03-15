@@ -13,7 +13,7 @@
 
 import {auctionManager} from '../src/auctionManager.js';
 import {command as analyticsCommand, COMMAND} from './adlooxAnalyticsAdapter.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {ajax} from '../src/ajax.js';
 import {getGlobal} from '../src/prebidGlobal.ts';
 import {getRefererInfo} from '../src/refererDetection.js';

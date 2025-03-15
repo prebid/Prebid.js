@@ -11,7 +11,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js'; // handles schain
-import {hook} from '../../../src/hook.js'
+import {hook} from '../../../src/hook.ts'
 import {BANNER} from '../../../src/mediaTypes';
 
 describe('Conversant adapter tests', function() {

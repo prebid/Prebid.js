@@ -1,5 +1,5 @@
 
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.ts'
 import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 

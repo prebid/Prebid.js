@@ -1,7 +1,7 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { prefixLog } from '../src/utils.js';

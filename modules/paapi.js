@@ -2,7 +2,7 @@
  * Collect PAAPI component auction configs from bid adapters and make them available through `pbjs.getPAAPIConfig()`
  */
 import {config} from '../src/config.js';
-import {getHook, hook, module} from '../src/hook.js';
+import {getHook, hook, module} from '../src/hook.ts';
 import {
   deepAccess,
   deepEqual,

@@ -3,7 +3,7 @@ import {getGlobal} from '../src/prebidGlobal.ts';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import {getHook} from '../src/hook.js';
+import {getHook} from '../src/hook.ts';
 import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';

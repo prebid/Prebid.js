@@ -1,4 +1,4 @@
-import { module } from '../../src/hook.js';
+import { module } from '../../src/hook.ts';
 import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/parentModule.js';
 
 // define, ortb object,  events

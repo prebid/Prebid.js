@@ -22,7 +22,7 @@ import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
-import {hook} from '../../src/hook.js';
+import {hook} from '../../src/hook.ts';
 import {hasPurpose1Consent} from '../../src/utils/gdpr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';

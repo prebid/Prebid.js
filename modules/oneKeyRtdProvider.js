@@ -1,5 +1,5 @@
 
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { mergeDeep, logError, logMessage, deepSetValue, generateUUID } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.ts';
 

@@ -16,7 +16,7 @@ import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
-import {hook} from '../../src/hook.js';
+import {hook} from '../../src/hook.ts';
 import {auctionManager} from '../../src/auctionManager.js';
 import 'modules/debugging/index.js' // some tests look for debugging side effects
 import {AuctionIndex} from '../../src/auctionIndex.js';

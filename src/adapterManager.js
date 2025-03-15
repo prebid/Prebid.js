@@ -26,7 +26,7 @@ import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
 import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
-import {hook} from './hook.js';
+import {hook} from './hook.ts';
 import {find, includes} from './polyfill.js';
 import {
   getAuctionsCounter,

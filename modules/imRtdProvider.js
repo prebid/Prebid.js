@@ -17,7 +17,7 @@ import {
   logInfo,
   isFn
 } from '../src/utils.js'
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 /**

@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import { logError, logMessage } from '../src/utils.js';
 
 /**

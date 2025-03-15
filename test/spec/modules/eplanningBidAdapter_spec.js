@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import {init, getIds} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import {getGlobal} from '../../../src/prebidGlobal.ts';
 import { makeSlot } from '../integration/faker/googletag.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';

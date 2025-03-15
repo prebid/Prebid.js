@@ -11,7 +11,7 @@ import {auctionManager} from 'src/auctionManager.js';
 import {gdprDataHandler} from 'src/adapterManager.js';
 
 import * as adServer from 'src/adserver.js';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
 

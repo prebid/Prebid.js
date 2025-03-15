@@ -1,4 +1,4 @@
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {buildUrl, deepAccess, formatQS, logError, parseSizesInput} from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';

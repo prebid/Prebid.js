@@ -29,7 +29,7 @@ import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.ts';
 import {startAuction} from 'src/prebid.js';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';

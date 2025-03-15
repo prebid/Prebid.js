@@ -2,7 +2,7 @@
  * This module adds the Mobian RTD provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
  */
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { ajaxBuilder } from '../src/ajax.js';
 import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
 import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';

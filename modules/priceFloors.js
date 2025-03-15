@@ -20,7 +20,7 @@ import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
-import {getHook} from '../src/hook.js';
+import {getHook} from '../src/hook.ts';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
@@ -572,7 +572,7 @@ export function parseFloorData(floorsData, location) {
 /**
  *
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
- * @param {function} fn required; The next function in the chain, used by hook.js
+ * @param {function} fn required; The next function in the chain, used by hook.ts
  */
 export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook(fn, reqBidsConfigObj) {
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)

@@ -2,7 +2,7 @@ import {config} from '../src/config.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import { REJECTION_REASON } from '../src/constants.js';
-import {getHook} from '../src/hook.js';
+import {getHook} from '../src/hook.ts';
 import {logInfo, logWarn} from '../src/utils.js';
 
 let expiryHandle;

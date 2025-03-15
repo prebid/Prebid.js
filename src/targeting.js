@@ -12,7 +12,7 @@ import {
   TARGETING_KEYS
 } from './constants.js';
 import * as events from './events.js';
-import { hook } from './hook.js';
+import { hook } from './hook.ts';
 import { ADPOD } from './mediaTypes.js';
 import { NATIVE_TARGETING_KEYS } from './native.js';
 import { find, includes } from './polyfill.js';

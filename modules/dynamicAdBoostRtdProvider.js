@@ -4,7 +4,7 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.ts'
 import { loadExternalScript } from '../src/adloader.js';
 import { getGlobal } from '../src/prebidGlobal.ts';
 import { deepAccess, deepSetValue, isEmptyStr } from '../src/utils.js';

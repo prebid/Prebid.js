@@ -1,6 +1,6 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import {loadExternalScript} from '../src/adloader.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {
   deepAccess,
   deepSetValue,

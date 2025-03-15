@@ -16,7 +16,7 @@
  * @property {?boolean} allowAccess
  */
 
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {ajaxBuilder} from '../src/ajax.js';
 import {generateUUID, isGptPubadsDefined, logError, timestamp} from '../src/utils.js';
 import {find} from '../src/polyfill.js';

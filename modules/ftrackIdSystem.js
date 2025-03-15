@@ -6,7 +6,7 @@
  */
 
 import * as utils from '../src/utils.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';

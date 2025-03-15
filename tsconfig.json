@@ -13,7 +13,9 @@
     "types": [],
     "lib": ["es2019", "DOM"],
     "target": "es2019",
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "./**/*.ts",

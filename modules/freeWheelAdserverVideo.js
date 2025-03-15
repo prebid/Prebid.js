@@ -3,7 +3,7 @@
  */
 
 import { registerVideoSupport } from '../src/adServerManager.js';
-import { getHook, submodule } from '../src/hook.js';
+import { getHook, submodule } from '../src/hook.ts';
 
 export const adpodUtils = {};
 export function notifyTranslationModule(fn) {

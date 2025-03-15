@@ -1,5 +1,5 @@
 
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.ts';

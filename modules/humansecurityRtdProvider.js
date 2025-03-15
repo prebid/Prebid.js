@@ -7,7 +7,7 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import {
   prefixLog,
   mergeDeep,

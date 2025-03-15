@@ -3,7 +3,7 @@ import {config} from '../../../src/config.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as utils from '../../../src/utils.js';
 import {deepAccess, deepClone} from '../../../src/utils.js';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
 import {

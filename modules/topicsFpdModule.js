@@ -1,6 +1,6 @@
 import {isEmpty, logError, logWarn, mergeDeep, safeJSONParse} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {PbPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
 import {getCoreStorageManager} from '../src/storageManager.js';

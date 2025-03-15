@@ -13,7 +13,7 @@ import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
 import {createBid} from '../../../../src/bidfactory.js';
-import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
+import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.ts';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
 
 function mkBid(bid, status = STATUS.GOOD) {

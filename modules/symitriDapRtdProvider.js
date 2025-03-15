@@ -7,7 +7,7 @@
  */
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';

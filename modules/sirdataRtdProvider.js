@@ -18,7 +18,7 @@ import { getGlobal } from '../src/prebidGlobal.ts';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

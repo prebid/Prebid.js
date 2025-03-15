@@ -7,7 +7,7 @@
  */
 
 import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {mergeDeep, isPlainObject, logMessage, logError} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 

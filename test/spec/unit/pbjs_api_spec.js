@@ -18,7 +18,7 @@ import {registerBidder} from 'src/adapters/bidderFactory.js';
 import {find} from 'src/polyfill.js';
 import * as pbjsModule from 'src/prebid.ts';
 import $$PREBID_GLOBAL$$, {startAuction} from 'src/prebid.ts';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import {reset as resetDebugging} from '../../../src/debugging.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';

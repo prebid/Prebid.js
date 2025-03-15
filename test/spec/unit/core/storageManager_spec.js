@@ -11,7 +11,7 @@ import {
 import adapterManager from 'src/adapterManager.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {hook} from '../../../../src/hook.js';
+import {hook} from '../../../../src/hook.ts';
 import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities/modules.js';
 import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
 import {

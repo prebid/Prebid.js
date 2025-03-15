@@ -9,7 +9,7 @@ import {
 import '../../../modules/debugging/index.js';
 import {makePbsInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
 import {config} from '../../../src/config.js';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import {
   addBidderRequestsBound,
   addBidderRequestsHook,

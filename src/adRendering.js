@@ -14,7 +14,7 @@ import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
-import {hook} from './hook.js';
+import {hook} from './hook.ts';
 import {fireNativeTrackers} from './native.js';
 import {PbPromise} from './utils/promise.js';
 import adapterManager from './adapterManager.js';

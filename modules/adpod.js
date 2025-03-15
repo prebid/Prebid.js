@@ -32,7 +32,7 @@ import {
 } from '../src/auction.js';
 import {checkAdUnitSetup} from '../src/prebid.ts';
 import {checkVideoBidSetup} from '../src/video.js';
-import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
+import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.ts';
 import {store} from '../src/videoCache.js';
 import {config} from '../src/config.js';
 import {ADPOD} from '../src/mediaTypes.js';

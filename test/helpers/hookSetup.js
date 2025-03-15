@@ -1,4 +1,4 @@
-import {hook} from '../../src/hook.js';
+import {hook} from '../../src/hook.ts';
 
 before(() => {
   hook.ready();

@@ -20,7 +20,7 @@ import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { setSizeConfig } from 'modules/sizeMapping.js';
 import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
-import {hook} from '../../../../src/hook.js';
+import {hook} from '../../../../src/hook.ts';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';

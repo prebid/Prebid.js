@@ -4,7 +4,7 @@ import {euidIdSubmodule} from 'modules/euidIdSystem.js';
 import 'modules/consentManagementTcf.js';
 import 'src/prebid.ts';
 import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
-import {hook} from 'src/hook.js';
+import {hook} from 'src/hook.ts';
 import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';

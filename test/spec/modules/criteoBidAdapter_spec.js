@@ -11,7 +11,7 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 import 'modules/schain.js';
-import {hook} from '../../../src/hook';
+import {hook} from '../../../src/hook.js';
 
 describe('The Criteo bidding adapter', function () {
   let utilsMock, sandbox, ajaxStub;

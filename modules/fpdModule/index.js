@@ -3,7 +3,7 @@
  * @module modules/firstPartyData
  */
 import { config } from '../../src/config.js';
-import { module, getHook } from '../../src/hook.js';
+import { module, getHook } from '../../src/hook.ts';
 import {logError} from '../../src/utils.js';
 import {PbPromise} from '../../src/utils/promise.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';

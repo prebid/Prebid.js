@@ -1,6 +1,6 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { getWindowLocation, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
 

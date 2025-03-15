@@ -7,7 +7,7 @@
 
 import { logInfo, logError, logWarn } from '../src/utils.js';
 import * as ajaxLib from '../src/ajax.js';
-import {submodule} from '../src/hook.js'
+import {submodule} from '../src/hook.ts'
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 

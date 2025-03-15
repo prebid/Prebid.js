@@ -1,4 +1,4 @@
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { mergeDeep } from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

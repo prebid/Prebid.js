@@ -7,7 +7,7 @@
  */
 
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, deepSetValue, logError, logMessage, mergeDeep } from '../src/utils.js';
 

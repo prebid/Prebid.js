@@ -26,7 +26,7 @@ import {
 import * as events from 'src/events.js';
 import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
 import 'src/prebid.ts';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
 import {activityParams} from '../../../src/activities/activityParams.js';
 

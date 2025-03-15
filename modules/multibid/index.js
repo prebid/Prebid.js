@@ -4,7 +4,7 @@
  */
 
 import {config} from '../../src/config.js';
-import {setupBeforeHookFnOnce, getHook} from '../../src/hook.js';
+import {setupBeforeHookFnOnce, getHook} from '../../src/hook.ts';
 import {
   logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
 } from '../../src/utils.js';

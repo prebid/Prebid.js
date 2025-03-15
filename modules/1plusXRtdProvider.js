@@ -1,4 +1,4 @@
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';

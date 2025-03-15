@@ -115,7 +115,7 @@ import {
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

@@ -17,7 +17,7 @@
  */
 
 import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {getStorageManager} from '../src/storageManager.js';

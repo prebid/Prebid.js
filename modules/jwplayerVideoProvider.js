@@ -11,7 +11,7 @@ import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 /**
  * @typedef {import('../libraries/video/constants/ortb.js').OrtbVideoParams} OrtbVideoParams
  * @typedef {import('../libraries/video/shared/state.js').State} State

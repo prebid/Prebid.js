@@ -1,4 +1,4 @@
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {isFn, logError, deepAccess, deepSetValue, logInfo, logWarn, timestamp} from '../src/utils.js';
 import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../src/activities/activities.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

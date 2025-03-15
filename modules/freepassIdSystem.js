@@ -1,4 +1,4 @@
-import { submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.ts';
 import { logMessage } from '../src/utils.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
 

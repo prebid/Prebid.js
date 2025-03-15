@@ -1,5 +1,5 @@
 import {config} from './config.js';
-import {getHook, hook} from './hook.js';
+import {getHook, hook} from './hook.ts';
 import {getGlobal} from './prebidGlobal.ts';
 import {logMessage, prefixLog} from './utils.js';
 import {createBid} from './bidfactory.js';

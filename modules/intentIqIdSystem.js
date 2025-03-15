@@ -7,7 +7,7 @@
 
 import {logError, isPlainObject} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js'
+import {submodule} from '../src/hook.ts'
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';

@@ -18,7 +18,7 @@ import 'modules/paapi.js';
 import {deepClone} from 'src/utils.js';
 import {version} from 'package.json';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
 
 const BidRequestBuilder = function BidRequestBuilder(options) {

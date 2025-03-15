@@ -12,7 +12,7 @@
  */
 
 import {config} from '../src/config.js';
-import {hook, setupBeforeHookFnOnce, ready} from '../src/hook.js';
+import {hook, setupBeforeHookFnOnce, ready} from '../src/hook.ts';
 import {ajax} from '../src/ajax.js';
 import {logError, timestamp} from '../src/utils.js';
 import {addBidResponse} from '../src/auction.js';

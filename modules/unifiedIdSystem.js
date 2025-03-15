@@ -7,7 +7,7 @@
 
 import { logError } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js'
+import {submodule} from '../src/hook.ts'
 import {UID1_EIDS} from '../libraries/uid1Eids/uid1Eids.js';
 
 /**

@@ -25,7 +25,7 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
-import { getHook } from '../src/hook.js';
+import { getHook } from '../src/hook.ts';
 
 const RUBICON_GVL_ID = 52;
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });

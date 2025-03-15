@@ -9,7 +9,7 @@
  * @requires module:modules/realTimeData
  */
 
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import { deepAccess, logError, logWarn } from '../src/utils.js'

@@ -14,7 +14,7 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
-import {hook} from '../../../src/hook.js';
+import {hook} from '../../../src/hook.ts';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import * as prebidGlobal from 'src/prebidGlobal.ts';
 

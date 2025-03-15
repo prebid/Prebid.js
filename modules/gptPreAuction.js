@@ -2,7 +2,7 @@ import { getSignals as getSignalsFn, getSegments as getSegmentsFn, taxonomies } 
 import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { TARGETING_KEYS } from '../src/constants.js';
-import { getHook } from '../src/hook.js';
+import { getHook } from '../src/hook.ts';
 import { find } from '../src/polyfill.js';
 import {
   deepAccess,

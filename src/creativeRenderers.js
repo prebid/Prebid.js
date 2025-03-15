@@ -1,7 +1,7 @@
 import {PbPromise} from './utils/promise.js';
 import {createInvisibleIframe} from './utils.js';
 import {RENDERER} from '../libraries/creative-renderer-display/renderer.js';
-import {hook} from './hook.js';
+import {hook} from './hook.ts';
 
 // the minimum rendererVersion that will be used by PUC
 export const PUC_MIN_VERSION = 3;

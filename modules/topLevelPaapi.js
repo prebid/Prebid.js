@@ -1,4 +1,4 @@
-import {submodule} from '../src/hook.js';
+import {submodule} from '../src/hook.ts';
 import {config} from '../src/config.js';
 import {logError, logInfo, logWarn, mergeDeep} from '../src/utils.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';

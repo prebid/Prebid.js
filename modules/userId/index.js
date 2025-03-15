@@ -123,7 +123,7 @@ import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.ts';
 import adapterManager from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
-import {module, ready as hooksReady} from '../../src/hook.js';
+import {module, ready as hooksReady} from '../../src/hook.ts';
 import {EID_CONFIG, getEids} from './eids.js';
 import {
   getCoreStorageManager,
@@ -707,7 +707,7 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * 1. check gdpr consentData and handle submodule initialization.
  * 2. append user id data (loaded from cookied/html or from the getId method) to bids to be accessed in adapters.
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
- * @param {function} fn required; The next function in the chain, used by hook.js
+ * @param {function} fn required; The next function in the chain, used by hook.ts
  */
 export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
   PbPromise.race([
@@ -723,7 +723,7 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
 
 /**
  * Append user id data from config to bids to be accessed in adapters when there are no submodules.
- * @param {function} fn required; The next function in the chain, used by hook.js
+ * @param {function} fn required; The next function in the chain, used by hook.ts
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  */
 export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
