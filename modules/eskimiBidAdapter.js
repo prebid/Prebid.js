@@ -1,13 +1,13 @@
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import * as utils from '../src/utils.js';
 import {getBidIdParameter, logInfo, mergeDeep} from '../src/utils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').validBidRequests} validBidRequests
  */
 
 const BIDDER_CODE = 'eskimi';

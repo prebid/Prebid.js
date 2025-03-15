@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/flippBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 const ENDPOINT = 'https://gateflipp.flippback.com/flyer-locator-service/client_bidding';
 describe('flippAdapter', function () {
   const adapter = newBidder(spec);

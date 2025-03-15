@@ -1,5 +1,5 @@
 import { _each, parseSizesInput, isStr, isArray } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 
 const BIDDER_CODE = 'adocean';
 const URL_SAFE_FIELDS = {

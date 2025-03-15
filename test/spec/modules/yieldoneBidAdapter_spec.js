@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { getBrowser, getOS } from '../../../libraries/userAgentUtils/index.js';
 import { browserTypes, osTypes } from '../../../libraries/userAgentUtils/userAgentTypes.enums.js';
 

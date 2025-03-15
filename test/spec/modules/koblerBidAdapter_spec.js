@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {pageViewId, spec} from 'modules/koblerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getRefererInfo} from 'src/refererDetection.js';

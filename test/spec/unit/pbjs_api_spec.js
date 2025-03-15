@@ -14,7 +14,7 @@ import {config as configObj} from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import {resetAuctionState} from 'src/auction.js';
-import {registerBidder} from 'src/adapters/bidderFactory.js';
+import {registerBidder} from 'src/adapters/bidderFactory.ts';
 import {find} from 'src/polyfill.js';
 import * as pbjsModule from 'src/prebid.ts';
 import $$PREBID_GLOBAL$$, {startAuction} from 'src/prebid.ts';

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adgenerationBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 import {NATIVE} from 'src/mediaTypes.ts';
 import prebid from '../../../package.json';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency';

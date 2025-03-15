@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/big-richmediaBidAdapter.js';
 import { auctionManager } from 'src/auctionManager.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 

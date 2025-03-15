@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import {init, getIds} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';

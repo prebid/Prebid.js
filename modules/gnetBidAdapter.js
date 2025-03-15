@@ -1,14 +1,14 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { _each, isEmpty, parseSizesInput } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').validBidRequests} validBidRequests
  */
 
 const BIDDER_CODE = 'gnet';

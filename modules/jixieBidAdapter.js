@@ -1,6 +1,6 @@
 import {deepAccess, getDNT, isArray, logWarn, isFn, isPlainObject, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {ajax} from '../src/ajax.js';

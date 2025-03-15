@@ -1,5 +1,5 @@
 import {deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {BANNER} from '../src/mediaTypes.ts';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'

@@ -1,12 +1,12 @@
 import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { getTimeToFirstByte } from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 import { getReferrerInfo, getPageTitle, getPageDescription, getConnectionDownLink } from '../libraries/pageInfosUtils/pageInfosUtils.js';
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
  */
 
 const BIDDER_CODE = 'greenbids';

@@ -8,7 +8,7 @@ import {
   parseUrl,
   replaceAuctionPrice,
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
@@ -16,10 +16,10 @@ import { getOsVersion } from '../libraries/advangUtils/index.js';
 import {find} from '../src/polyfill.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').validBidRequests} validBidRequests
  */
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';

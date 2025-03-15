@@ -28,6 +28,7 @@ import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
+import type {AnyFunction} from "../types/functions.d.ts";
 
 /**
  * @typedef {import('../mediaTypes.ts').MediaType} MediaType
@@ -192,7 +193,7 @@ export function registerBidder(spec) {
   }
 }
 
-export const guardTids = memoize(({bidderCode}) => {
+export const guardTids: any = memoize(({bidderCode}) => {
   if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
     return {
       bidRequest: (br) => br,
@@ -210,7 +211,7 @@ export const guardTids = memoize(({bidderCode}) => {
     // always allow methods (such as getFloor) private access to TIDs
     Object.entries(target)
       .filter(([_, v]) => typeof v === 'function')
-      .forEach(([prop, fn]) => proxy[prop] = fn.bind(target));
+      .forEach(([prop, fn]: [string, AnyFunction]) => proxy[prop] = fn.bind(target));
     return proxy;
   }
   const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);
@@ -239,7 +240,7 @@ export const guardTids = memoize(({bidderCode}) => {
  * @param {BidderSpec} spec
  */
 export function newBidder(spec) {
-  return Object.assign(new Adapter(spec.code), {
+  return Object.assign(Adapter(spec.code), {
     getSpec: function() {
       return Object.freeze(Object.assign({}, spec));
     },

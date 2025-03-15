@@ -1,14 +1,14 @@
 import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER } from '../src/mediaTypes.ts'
 import { config } from '../src/config.js'
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderSpec} BidderSpec
  */
 
 const BIDDER_CODE = 'cointraffic';

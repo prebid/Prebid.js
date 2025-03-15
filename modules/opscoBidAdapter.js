@@ -1,5 +1,5 @@
 import {deepAccess, deepSetValue, isArray, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER} from '../src/mediaTypes.ts';
 
 const ENDPOINT = 'https://exchange.ops.co/openrtb2/auction';

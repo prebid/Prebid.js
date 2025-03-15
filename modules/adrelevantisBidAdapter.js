@@ -13,7 +13,7 @@ import {
   logWarn
 } from '../src/utils.js';
 import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
@@ -22,8 +22,8 @@ import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
  */
 
 const BIDDER_CODE = 'adrelevantis';

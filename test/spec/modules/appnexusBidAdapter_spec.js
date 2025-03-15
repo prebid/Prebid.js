@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import * as utils from 'src/utils.js';

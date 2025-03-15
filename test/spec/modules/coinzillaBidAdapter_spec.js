@@ -1,6 +1,6 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/coinzillaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 
 const ENDPOINT_URL = 'https://request.czilladx.com/serve/request.php';
 

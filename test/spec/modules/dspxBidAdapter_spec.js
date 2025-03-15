@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { spec } from 'modules/dspxBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { deepClone } from '../../../src/utils';
 import {BANNER} from '../../../src/mediaTypes.js';
 

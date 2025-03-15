@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { registerBidder } from '../src/adapters/bidderFactory.ts'
 import { config } from '../src/config.js'
 import { _each, canAccessWindowTop, deepAccess, deepSetValue, getDomLoadingDuration, getWindowSelf, getWindowTop } from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'

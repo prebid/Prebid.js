@@ -1,6 +1,6 @@
 import {deepAccess, deepClone, isArray, isFn, isPlainObject, logError, logWarn} from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js'
@@ -10,12 +10,12 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 const BIDDER_CODE = 'smilewanted';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
  */
 
 const GVL_ID = 639;

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/buzzoolaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 import '../../../src/prebid.ts';
 import {executeRenderer, Renderer} from '../../../src/Renderer.js';
 import {deepClone} from '../../../src/utils.js';

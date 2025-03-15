@@ -3,7 +3,7 @@ import {
 } from '../src/mediaTypes.ts';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.js';
+} from '../src/adapters/bidderFactory.ts';
 import {
   getBannerRequest,
   getBannerResponse,

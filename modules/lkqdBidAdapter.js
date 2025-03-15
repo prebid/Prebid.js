@@ -1,5 +1,5 @@
 import { logError, _each, generateUUID, buildUrl } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { config } from '../src/config.js';
 import { VIDEO } from '../src/mediaTypes.ts';
 

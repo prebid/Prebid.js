@@ -1,5 +1,5 @@
 import { getUniqueIdentifierStr } from './utils.js';
-import type {BidderCode, BidSource, Identifier} from "./types/common.d.ts";
+import type {BidderCode, BidSource, Currency, Identifier} from "./types/common.d.ts";
 import {MediaType} from "./mediaTypes.ts";
 
 type ContextIdentifiers = {
@@ -35,9 +35,15 @@ function statusMessage(statusCode: BidStatus) {
     }
 }
 
+/**
+ * Bid responses as provided by adapters; core then transforms these into `Bid`s
+ */
+export type BidResponse<T extends MediaType> = {
+    mediaType: T;
+    cpm: number | string;
+};
 
-
-export type Bid<T extends MediaType> = ContextIdentifiers & {
+export type Bid<T extends MediaType> = ContextIdentifiers & BidResponse<T> & {
     source: BidSource;
     requestId: Identifier;
     mediaType: T;
@@ -48,6 +54,9 @@ export type Bid<T extends MediaType> = ContextIdentifiers & {
     adId: Identifier;
     getSize(): string;
     getStatusCode(): BidStatus;
+    originalCpm?: number | string;
+    originalCurrency?: Currency;
+    cpm: string;
 }
 
 
@@ -95,6 +104,6 @@ function Bid(statusCode: BidStatus, {src = 'client', bidder = '', bidId, transac
   };
 }
 
-export function createBid(statusCode: number, identifiers?: Partial<BidIdentifiers>): Bid<MediaType> {
+export function createBid(statusCode: number, identifiers?: Partial<BidIdentifiers>): Partial<Bid<MediaType>> {
   return new Bid(statusCode, identifiers);
 }

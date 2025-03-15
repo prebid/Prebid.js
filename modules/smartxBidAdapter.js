@@ -17,14 +17,14 @@ import {
 } from '../src/Renderer.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.js';
+} from '../src/adapters/bidderFactory.ts';
 import {
   VIDEO
 } from '../src/mediaTypes.ts';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
  */
 
 const BIDDER_CODE = 'smartx';

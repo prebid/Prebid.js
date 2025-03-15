@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.ts';
 import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone} from '../src/utils.js';
 import { config } from '../src/config.js';

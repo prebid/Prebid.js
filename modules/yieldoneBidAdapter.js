@@ -1,18 +1,18 @@
 import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
 import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory').BidderSpec} BidderSpec
- * @typedef {import('../src/adapters/bidderFactory').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/auction').BidderRequest} BidderRequest
  */
 

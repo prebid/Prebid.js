@@ -1,16 +1,16 @@
 
 import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').validBidRequests} validBidRequests
  */
 
 const VERSION = '0.3.0';

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/h12mediaBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import {clearCache} from '../../../libraries/boundingClientRect/boundingClientRect';
 
 describe('H12 Media Adapter', function () {

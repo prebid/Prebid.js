@@ -16,7 +16,7 @@ import {
 import { EVENTS, S2S } from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { registerBidder } from 'src/adapters/bidderFactory.ts';
 import { setSizeConfig } from 'modules/sizeMapping.js';
 import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';

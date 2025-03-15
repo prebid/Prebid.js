@@ -1,11 +1,11 @@
 import { logInfo, deepAccess, generateUUID } from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {getStorageManager} from '../src/storageManager.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'unicorn';

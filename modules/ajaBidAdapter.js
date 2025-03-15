@@ -1,11 +1,11 @@
 import {createTrackPixelHtml, logError, getBidIdParameter} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER } from '../src/mediaTypes.ts';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
  */
 
 const BidderCode = 'aja';

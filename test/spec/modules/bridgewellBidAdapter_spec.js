@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/bridgewellBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 
 const userId = {
   'criteoId': 'vYlICF9oREZlTHBGRVdrJTJCUUJnc3U2ckNVaXhrV1JWVUZVSUxzZmJlcnJZR0ZxbVhFRnU5bDAlMkJaUWwxWTlNcmdEeHFrJTJGajBWVlV4T3lFQ0FyRVcxNyUyQlIxa0lLSlFhcWJpTm9PSkdPVkx0JTJCbzlQRTQlM0Q',

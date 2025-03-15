@@ -14,16 +14,16 @@ import {
   parseUrl
 } from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'yieldmo';

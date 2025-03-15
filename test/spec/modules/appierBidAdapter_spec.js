@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, API_SERVERS_MAP, ADAPTER_VERSION } from 'modules/appierBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 
 describe('AppierAdapter', function () {

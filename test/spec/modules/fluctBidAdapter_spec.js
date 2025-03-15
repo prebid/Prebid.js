@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/fluctBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config';
 
 describe('fluctAdapter', function () {

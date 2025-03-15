@@ -1,15 +1,15 @@
 
 import { getBidFloor } from '../libraries/equativUtils/equativUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'equativ';

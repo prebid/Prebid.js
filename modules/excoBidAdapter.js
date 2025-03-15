@@ -1,6 +1,6 @@
 
 import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { VIDEO, BANNER } from '../src/mediaTypes.ts';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
@@ -284,9 +284,9 @@ export const spec = {
   /**
    * Register the user sync pixels which should be dropped after the auction.
    *
-   * @param {import('../src/adapters/bidderFactory.js').SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {import('../src/adapters/bidderFactory.ts').SyncOptions} syncOptions Which user syncs are allowed?
    * @param {object[]} serverResponses List of server's responses.
-   * @return {import('../src/adapters/bidderFactory.js').UserSync[]} The user syncs which should be dropped.
+   * @return {import('../src/adapters/bidderFactory.ts').UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (
     syncOptions,

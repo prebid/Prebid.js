@@ -1,5 +1,5 @@
 import { logError } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 
 const BIDDER_CODE = 'iprom';
 const ENDPOINT_URL = 'https://core.iprom.net/programmatic';

@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER} from '../src/mediaTypes.ts';
 
 const ADMARU_ENDPOINT = 'https://p1.admaru.net/AdCall';

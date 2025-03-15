@@ -1,5 +1,5 @@
 import {deepAccess, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {getStorageManager} from '../src/storageManager.js';

@@ -1,18 +1,18 @@
 import { escapeUnsafeChars } from '../libraries/htmlEscape/htmlEscape.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, NATIVE } from '../src/mediaTypes.ts';
 import { getBidIdParameter, deepSetValue, prefixLog } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 const adgLogger = prefixLog('Adgeneration: ');
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';

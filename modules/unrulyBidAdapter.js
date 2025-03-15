@@ -1,6 +1,6 @@
 import { deepAccess, logError } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
+import {registerBidder} from '../src/adapters/bidderFactory.ts'
 import {VIDEO, BANNER} from '../src/mediaTypes.ts'
 
 function configureUniversalTag(exchangeRenderer, requestId) {

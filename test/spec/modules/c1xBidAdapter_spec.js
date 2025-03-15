@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { c1xAdapter } from '../../../modules/c1xBidAdapter.js';
 
 const ENDPOINT = 'https://hb-stg.c1exchange.com/ht';

@@ -1,6 +1,6 @@
 import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
 import { find } from '../src/polyfill.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER } from '../src/mediaTypes.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 

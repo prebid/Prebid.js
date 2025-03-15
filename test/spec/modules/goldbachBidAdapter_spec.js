@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec } from 'modules/goldbachBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import { VIDEO } from 'src/mediaTypes.ts';

@@ -10,14 +10,14 @@ import {
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { config } from '../src/config.js';
 import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'smartadserver';

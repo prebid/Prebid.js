@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, internal as jixieaux, storage } from 'modules/jixieBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 

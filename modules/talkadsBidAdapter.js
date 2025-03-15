@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { NATIVE, BANNER } from '../src/mediaTypes.ts';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';

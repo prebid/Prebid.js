@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/connectadBidAdapter.js';
 import { config } from 'src/config.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 import assert from 'assert';
 
 describe('ConnectAd Adapter', function () {

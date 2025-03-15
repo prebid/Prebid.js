@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER } from '../src/mediaTypes.ts';
 import { config } from '../src/config.js';
 import { generateUUID, getWindowTop, getWindowSelf } from '../src/utils.js';

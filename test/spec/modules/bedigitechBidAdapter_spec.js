@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/bedigitechBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { BANNER } from 'src/mediaTypes.ts';
 
 describe('BedigitechAdapter', function () {

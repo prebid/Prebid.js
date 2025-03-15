@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/onomagicBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 
 const URL = 'https://bidder.onomagic.com/hb';
 

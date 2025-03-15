@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/smarticoBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 
 describe('smarticoBidAdapter', function () {
   const adapter = newBidder(spec);

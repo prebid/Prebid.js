@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/mediaimpactBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 import * as miUtils from 'libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'mediaimpact';

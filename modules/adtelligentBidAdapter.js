@@ -1,5 +1,5 @@
 import {_map, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
@@ -12,8 +12,8 @@ import {
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
  */
 
 const subdomainSuffixes = ['', 1, 2];

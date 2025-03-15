@@ -1,5 +1,5 @@
 import { spec } from 'modules/contxtfulBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import * as ajax from 'src/ajax.js';
 const VERSION = 'v1';

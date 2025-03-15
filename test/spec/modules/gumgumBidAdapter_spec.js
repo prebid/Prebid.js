@@ -2,7 +2,7 @@ import { BANNER, VIDEO } from 'src/mediaTypes.ts';
 
 import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { spec } from 'modules/gumgumBidAdapter.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';

@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {deepAccess, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
@@ -9,10 +9,10 @@ const ENDPOINT = 'https://n.nnowa.com/a';
 
 /**
  * @typedef {object} CommonBidData
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderSpec} BidderSpec
  *
  * @property {string} requestId The specific BidRequest which this bid is aimed at.
  *   This should match the BidRequest.bidId which this Bid targets.

@@ -21,7 +21,7 @@ import 'src/prebid.ts';
 import {createBid} from '../../../src/bidfactory.ts';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {guardTids} from '../../../src/adapters/bidderFactory.js';
+import {guardTids} from '../../../src/adapters/bidderFactory.ts';
 import * as activities from '../../../src/activities/rules.js';
 import {server} from '../../mocks/xhr.js';
 

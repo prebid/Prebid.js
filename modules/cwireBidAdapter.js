@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.ts';
 import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
@@ -6,9 +6,9 @@ import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import { sendBeacon } from '../src/ajax.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
  */
 
 // ------------------------------------

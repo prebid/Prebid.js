@@ -7,7 +7,7 @@ import {
   WEB_SESSION_ID_KEY,
 } from 'modules/asealBidAdapter.js';
 import { getRefererInfo } from 'src/refererDetection.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { storage } from 'modules/asealBidAdapter.js';

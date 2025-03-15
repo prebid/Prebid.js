@@ -1,5 +1,5 @@
 import { VIDEO, BANNER } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {

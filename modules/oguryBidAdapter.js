@@ -2,7 +2,7 @@
 
 import { BANNER } from '../src/mediaTypes.ts';
 import { getWindowSelf, getWindowTop, isFn, deepAccess, isPlainObject, deepSetValue, mergeDeep } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { ajax } from '../src/ajax.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';

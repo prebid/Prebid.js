@@ -2,7 +2,7 @@
 'use strict'
 
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import {

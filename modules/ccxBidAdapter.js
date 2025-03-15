@@ -1,5 +1,5 @@
 import {_each, deepAccess, isArray, isEmpty, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'ccx'

@@ -1,7 +1,7 @@
 import { Renderer } from '../src/Renderer.js';
 import {ajax} from '../src/ajax.js';
 import {createTrackPixelHtml, getBidIdParameter, logError, logWarn} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { VIDEO, BANNER } from '../src/mediaTypes.ts';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 

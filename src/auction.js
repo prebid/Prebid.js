@@ -9,8 +9,8 @@
  */
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('./adapters/bidderFactory.ts').Bid} Bid
  * @typedef {import('../src/config.js').MediaTypePriceGranularity} MediaTypePriceGranularity
  * @typedef {import('./mediaTypes.ts').MediaType} MediaType
  */

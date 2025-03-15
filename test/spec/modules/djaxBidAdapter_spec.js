@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { spec } from '../../../modules/djaxBidAdapter.js';
 
 const DOMAIN = 'https://revphpe.djaxbidder.com/header_bidding_vast/';

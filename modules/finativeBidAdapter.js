@@ -1,7 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {NATIVE} from '../src/mediaTypes.ts';
 import {_map, deepSetValue, isEmpty, setOnAny} from '../src/utils.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';

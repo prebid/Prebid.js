@@ -1,5 +1,5 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'my6sense';

@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.ts';
 import {ortbConverter as OrtbConverter} from '../libraries/ortbConverter/converter.js';
 import {Renderer} from '../src/Renderer.js';
@@ -7,13 +7,13 @@ import {deepAccess, deepSetValue} from '../src/utils.js';
 import {config} from '../src/config.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
  * @typedef {import('../src/auction.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.ts').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'adverxo';

@@ -1,5 +1,5 @@
 import {BANNER, VIDEO} from '../src/mediaTypes.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {buildRequests, getUserSyncs, interpretResponse, isBidRequestValid} from '../libraries/xeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'driftpixel';

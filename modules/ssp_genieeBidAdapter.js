@@ -1,7 +1,7 @@
 
 import * as utils from '../src/utils.js';
 import { isPlainObject } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
@@ -9,8 +9,8 @@ import { highEntropySUAAccessor } from '../src/fpd/sua.js';
 import { config } from '../src/config.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
  */
 
 const BIDDER_CODE = 'ssp_geniee';

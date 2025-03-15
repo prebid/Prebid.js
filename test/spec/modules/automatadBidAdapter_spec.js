@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/automatadBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { newBidder } from 'src/adapters/bidderFactory.ts'
 
 describe('automatadBidAdapter', function () {
   const adapter = newBidder(spec)

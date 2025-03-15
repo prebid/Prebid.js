@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/mantisBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
 
 describe('MantisAdapter', function () {

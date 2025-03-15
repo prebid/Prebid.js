@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import { spec } from 'modules/adyoulikeBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 
 describe('Adyoulike Adapter', function () {

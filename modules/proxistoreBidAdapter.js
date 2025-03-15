@@ -1,5 +1,5 @@
 import { isFn, isPlainObject } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;

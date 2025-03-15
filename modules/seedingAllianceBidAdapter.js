@@ -1,7 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, NATIVE} from '../src/mediaTypes.ts';
 import {generateUUID, deepSetValue, isEmpty, replaceAuctionPrice} from '../src/utils.js';
 import {config} from '../src/config.js';

@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {deepAccess, mergeDeep} from '../src/utils.js';

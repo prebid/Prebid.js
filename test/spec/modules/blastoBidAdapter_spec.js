@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/blastoBidAdapter';
 import 'modules/priceFloors.js';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from '../../../src/config.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 

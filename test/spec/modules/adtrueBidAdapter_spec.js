@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 import {spec} from 'modules/adtrueBidAdapter.js'
-import {newBidder} from 'src/adapters/bidderFactory.js'
+import {newBidder} from 'src/adapters/bidderFactory.ts'
 import * as utils from '../../../src/utils.js';
 import {config} from 'src/config.js';
 

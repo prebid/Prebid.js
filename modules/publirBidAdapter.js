@@ -6,7 +6,7 @@ import {
   timestamp,
   triggerPixel,
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';

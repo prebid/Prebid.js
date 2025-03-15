@@ -1,4 +1,4 @@
-import { registerBidder } from '../../src/adapters/bidderFactory.js';
+import { registerBidder } from '../../src/adapters/bidderFactory.ts';
 import { BANNER } from '../../src/mediaTypes.ts';
 import { config } from '../../src/config.js';
 const BIDDER_CODE = 'rakuten';

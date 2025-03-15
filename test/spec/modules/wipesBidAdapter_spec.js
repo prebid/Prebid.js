@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/wipesBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 
 const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 

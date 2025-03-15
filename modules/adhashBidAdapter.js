@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { includes } from '../src/polyfill.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';

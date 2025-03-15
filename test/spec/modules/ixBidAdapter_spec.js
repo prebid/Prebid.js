@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 import * as ajaxLib from 'src/ajax.js';

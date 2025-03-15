@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, BIDDER_CODE, ADPLUS_ENDPOINT, } from 'modules/adplusBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 
 describe('AplusBidAdapter', function () {
   const adapter = newBidder(spec);

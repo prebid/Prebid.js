@@ -1,5 +1,5 @@
 import {getBidIdParameter, getValue} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 const GVLID = 547;

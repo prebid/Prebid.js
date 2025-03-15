@@ -9,7 +9,7 @@ import {
 } from 'src/auction.js';
 import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
-import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { registerBidder } from 'src/adapters/bidderFactory.ts';
 import { createBid } from 'src/bidfactory.ts';
 import { config } from 'src/config.js';
 import {_internal as store} from 'src/videoCache.js';
@@ -32,8 +32,8 @@ import {sandbox} from 'sinon';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
  */
 
 var assert = require('assert');

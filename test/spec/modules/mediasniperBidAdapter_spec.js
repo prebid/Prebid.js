@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/mediasniperBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import * as utils from 'src/utils.js';
 import { BANNER } from '../../../src/mediaTypes.ts';
 

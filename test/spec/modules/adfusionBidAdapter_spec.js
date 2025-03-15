@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/adfusionBidAdapter';
 import 'modules/priceFloors.js';
 import 'modules/currency.js';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('adfusionBidAdapter', function () {
   const adapter = newBidder(spec);

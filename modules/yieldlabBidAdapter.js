@@ -1,17 +1,17 @@
 import { _each, deepAccess, isArray, isEmptyStr, isFn, isPlainObject, timestamp } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { find } from '../src/polyfill.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
  */
 
 const ENDPOINT = 'https://ad.yieldlab.net';

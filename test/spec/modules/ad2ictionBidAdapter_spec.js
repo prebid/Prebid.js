@@ -4,7 +4,7 @@ import {
   API_ENDPOINT,
   API_VERSION_NUMBER,
 } from 'modules/ad2ictionBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 
 describe('ad2ictionBidAdapter', function () {
   const adapter = newBidder(spec);

@@ -1,5 +1,5 @@
 import {BANNER, VIDEO} from '../src/mediaTypes.ts'
-import {registerBidder} from '../src/adapters/bidderFactory.js'
+import {registerBidder} from '../src/adapters/bidderFactory.ts'
 import {generateUUID, isPlainObject, isArray, logWarn, deepClone} from '../src/utils.js'
 import {Renderer} from '../src/Renderer.js'
 import {OUTSTREAM} from '../src/video.js'

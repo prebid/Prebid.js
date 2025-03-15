@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import * as utils from '../src/utils.js';
 import { mergeDeep } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';

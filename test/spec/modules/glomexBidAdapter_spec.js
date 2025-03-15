@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/glomexBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { newBidder } from 'src/adapters/bidderFactory.ts'
 
 const REQUEST = {
   bidder: 'glomex',

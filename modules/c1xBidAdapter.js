@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { logInfo, logError } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.ts';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
  */
 
 const BIDDER_CODE = 'c1x';

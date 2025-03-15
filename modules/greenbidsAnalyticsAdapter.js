@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName} from '../src/utils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
  */
 
 /**

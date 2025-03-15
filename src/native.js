@@ -19,8 +19,8 @@ import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js
 import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('./adapters/bidderFactory.ts').Bid} Bid
  */
 
 export const nativeAdapters = [];
@@ -210,7 +210,7 @@ export const hasNonNativeBidder = adUnit =>
  * Validate that the native assets on this bid contain all assets that were
  * marked as required in the adUnit configuration.
  * @param {Bid} bid Native bid to validate
- * @param {BidRequest[]} bidRequests All bid requests for an auction
+ * @param index All bid requests for an auction
  * @return {Boolean} If object is valid
  */
 export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {

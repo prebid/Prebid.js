@@ -10,7 +10,7 @@ import {
   getBidIdParameter,
   isGptPubadsDefined
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';

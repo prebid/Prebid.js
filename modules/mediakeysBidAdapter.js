@@ -18,7 +18,7 @@ import {
   mergeDeep,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';

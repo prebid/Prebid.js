@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/rakutenBidAdapter/index.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { newBidder } from 'src/adapters/bidderFactory.ts'
 import {config} from '../../../src/config.js';
 
 describe('rakutenBidAdapter', function() {

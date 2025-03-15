@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/vibrantmediaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import {newBidder} from 'src/adapters/bidderFactory.ts';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.ts';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
 

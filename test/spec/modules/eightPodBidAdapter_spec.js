@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { spec, getPageKeywords, parseUserAgent } from 'modules/eightPodBidAdapter'
 import 'modules/priceFloors.js'
 import { config } from 'src/config.js'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 import * as utils from '../../../src/utils';
 import sinon from 'sinon';
 

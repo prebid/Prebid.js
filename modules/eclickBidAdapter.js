@@ -1,6 +1,6 @@
 import { NATIVE } from '../src/mediaTypes.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { getDevice } from '../libraries/fpdUtils/deviceInfo.js';
 
 // **** ECLICK ADAPTER ****

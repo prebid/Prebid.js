@@ -8,7 +8,7 @@ import {
 import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.ts'
-import { newBidder } from '../../../src/adapters/bidderFactory.js';
+import { newBidder } from '../../../src/adapters/bidderFactory.ts';
 
 describe('AduptechBidAdapter', () => {
   describe('internal', () => {

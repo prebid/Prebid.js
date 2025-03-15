@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { deepClone } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.ts';

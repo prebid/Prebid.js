@@ -1,4 +1,4 @@
-import {addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
+import {addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.ts';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import {expect} from 'chai';

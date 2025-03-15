@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/resetdigitalBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { newBidder } from 'src/adapters/bidderFactory.ts'
 
 const br = {
   body: {

@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.ts';

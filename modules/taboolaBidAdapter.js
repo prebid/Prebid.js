@@ -1,6 +1,6 @@
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {BANNER} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject} from '../src/utils.js';

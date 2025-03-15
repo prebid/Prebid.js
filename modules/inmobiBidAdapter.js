@@ -1,16 +1,16 @@
 import { deepAccess, deepSetValue, isFn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
- * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.ts').TimedOutBid} TimedOutBid
  */
 
 const GVLID = 333;

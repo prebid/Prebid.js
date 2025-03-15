@@ -4,7 +4,7 @@ import {
   _each,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';

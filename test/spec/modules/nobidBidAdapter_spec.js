@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.ts';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);

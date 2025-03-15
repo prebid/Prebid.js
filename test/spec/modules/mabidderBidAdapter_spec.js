@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { baseUrl, spec } from 'modules/mabidderBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { newBidder } from 'src/adapters/bidderFactory.ts'
 import { BANNER } from '../../../src/mediaTypes.ts';
 
 describe('mabidderBidAdapter', () => {

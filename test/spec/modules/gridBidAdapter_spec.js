@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl, storage } from 'modules/gridBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import {ENDPOINT_DOMAIN, ENDPOINT_PROTOCOL} from '../../../modules/adpartnerBidAdapter';
 

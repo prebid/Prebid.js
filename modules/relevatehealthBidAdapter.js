@@ -1,7 +1,7 @@
 import { formatResponse } from '../libraries/deepintentUtils/index.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.js';
+} from '../src/adapters/bidderFactory.ts';
 import {
   BANNER
 } from '../src/mediaTypes.ts';

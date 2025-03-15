@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/orbidderBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import * as _ from 'lodash';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.ts';
 

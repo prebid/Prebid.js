@@ -6,9 +6,9 @@ import * as events from '../src/events.js';
 import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js'
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').AdUnit} AdUnit
  */
 
 const { CACHE_ID, UUID } = TARGETING_KEYS;

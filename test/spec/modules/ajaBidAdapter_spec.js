@@ -1,5 +1,5 @@
 import { spec } from 'modules/ajaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 
 const ENDPOINT = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 

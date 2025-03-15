@@ -20,7 +20,7 @@ import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
 import {getGlobal} from '../src/prebidGlobal.ts';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
-import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
+import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.ts';
 import {defer} from '../src/utils/promise.js';
 import {auctionManager} from '../src/auctionManager.js';
 

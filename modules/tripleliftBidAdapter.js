@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { logMessage, logError, isEmpty, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';

@@ -1,7 +1,7 @@
 import adapterManager from '../src/adapterManager.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.js';
+} from '../src/adapters/bidderFactory.ts';
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 

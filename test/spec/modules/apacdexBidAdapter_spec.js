@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec, validateGeoObject, getDomain } from '../../../modules/apacdexBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { newBidder } from 'src/adapters/bidderFactory.ts'
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';

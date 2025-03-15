@@ -1,5 +1,5 @@
 import { deepAccess, getUniqueIdentifierStr } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER } from '../src/mediaTypes.ts';
 
 const SUPPORTED_AD_TYPES = [BANNER];

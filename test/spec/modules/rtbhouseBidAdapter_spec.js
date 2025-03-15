@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/rtbhouseBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import { mergeDeep } from '../../../src/utils';
 import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils';

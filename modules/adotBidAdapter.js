@@ -1,6 +1,6 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { Renderer } from '../src/Renderer.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -10,20 +10,20 @@ import { OUTSTREAM } from '../src/video.js';
 import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEMENTS } from '../libraries/braveUtils/nativeAssets.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
- * @typedef {import('../src/adapters/bidderFactory.js').MediaType} MediaType
- * @typedef {import('../src/adapters/bidderFactory.js').Site} Site
- * @typedef {import('../src/adapters/bidderFactory.js').Device} Device
- * @typedef {import('../src/adapters/bidderFactory.js').User} User
- * @typedef {import('../src/adapters/bidderFactory.js').Banner} Banner
- * @typedef {import('../src/adapters/bidderFactory.js').Video} Video
- * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
- * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.ts').MediaType} MediaType
+ * @typedef {import('../src/adapters/bidderFactory.ts').Site} Site
+ * @typedef {import('../src/adapters/bidderFactory.ts').Device} Device
+ * @typedef {import('../src/adapters/bidderFactory.ts').User} User
+ * @typedef {import('../src/adapters/bidderFactory.ts').Banner} Banner
+ * @typedef {import('../src/adapters/bidderFactory.ts').Video} Video
+ * @typedef {import('../src/adapters/bidderFactory.ts').AdUnit} AdUnit
+ * @typedef {import('../src/adapters/bidderFactory.ts').Imp} Imp
  */
 
 /**

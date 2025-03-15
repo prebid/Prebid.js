@@ -8,7 +8,7 @@ import {
 } from 'modules/ampliffyBidAdapter.js';
 import {expect} from 'chai';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 describe('Ampliffy bid adapter Test', function () {
   const adapter = newBidder(spec);

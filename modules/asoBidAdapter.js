@@ -1,5 +1,5 @@
 import {deepAccess, deepSetValue} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';

@@ -1,5 +1,5 @@
 import { inIframe, logError, logMessage, deepAccess } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';

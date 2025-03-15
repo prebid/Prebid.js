@@ -18,7 +18,7 @@ import { EVENTS } from '../src/constants.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.ts';
 import {config} from '../src/config.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {getRefererInfo} from '../src/refererDetection.js';
 
 const NM_VERSION = '4.3.0';

@@ -1,6 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { getGlobal } from '../src/prebidGlobal.ts';
@@ -25,7 +25,7 @@ import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
  */
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';

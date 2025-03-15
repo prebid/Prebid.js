@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { spec } from 'modules/greenbidsBidAdapter.js';
 const ENDPOINT = 'https://d.greenbids.ai/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="greenbids" async="true" src="https://greenbids.ai/settings"></script>"';

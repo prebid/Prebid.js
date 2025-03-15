@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import * as sinon from 'sinon';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
 import { deepSetValue } from '../../../src/utils';

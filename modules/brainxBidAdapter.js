@@ -1,5 +1,5 @@
 import { deepAccess, generateUUID, isArray, logWarn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 // import { config } from 'src/config.js';
 import { BANNER } from '../src/mediaTypes.ts';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'

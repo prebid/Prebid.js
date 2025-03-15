@@ -1,6 +1,6 @@
 import { _map } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 
 const BIDDER_CODE = 'mytarget';
 const BIDDER_URL = '//ad.mail.ru/hbid_prebid/';

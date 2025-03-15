@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/publirBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { config } from 'src/config.js';
 import { BANNER } from '../../../src/mediaTypes.ts';
 import * as utils from 'src/utils.js';

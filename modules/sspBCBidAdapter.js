@@ -1,6 +1,6 @@
 import { deepAccess, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
 import { includes as strIncludes } from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

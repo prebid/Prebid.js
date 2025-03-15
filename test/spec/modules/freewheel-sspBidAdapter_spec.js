@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { config } from 'src/config.js';
 

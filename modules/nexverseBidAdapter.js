@@ -1,6 +1,6 @@
 
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.ts';
 import { isArray } from '../src/utils.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'

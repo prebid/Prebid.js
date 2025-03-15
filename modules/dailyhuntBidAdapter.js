@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import * as mediaTypes from '../src/mediaTypes.ts';
 import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';

@@ -1,10 +1,10 @@
 import { deepAccess, deepSetValue, logError, parseSizesInput, triggerPixel } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
  */
 
 const BIDDER_CODE = 'sparteo';

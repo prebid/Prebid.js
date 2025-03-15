@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import {getBidIdParameter} from '../src/utils.js';
 
 const BIDDER_CODE = 'orbitsoft';

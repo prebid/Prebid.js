@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 
 const BIDDER = 'exads';
 

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adoceanBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { deepClone } from 'src/utils.js';
 
 describe('AdoceanAdapter', function () {

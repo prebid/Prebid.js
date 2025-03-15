@@ -32,7 +32,7 @@ import {hook} from '../../../src/hook.ts';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.js';
+import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.ts';
 import {getGlobal} from '../../../src/prebidGlobal.ts';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';

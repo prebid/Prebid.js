@@ -1,5 +1,5 @@
 import { isEmpty } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { BANNER, VIDEO } from '../src/mediaTypes.ts';
 import { createRequestData, getBannerBidFloor, getBannerBidParam, getBannerSizes, getVideoBidFloor, getVideoBidParam, getVideoSizes, isBannerBidValid, isVideoBid, isVideoBidValid } from '../libraries/advangUtils/index.js';
 

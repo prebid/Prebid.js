@@ -1,6 +1,6 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { getRefererInfo } from '../src/refererDetection.js';
 import {
   buildUrl,
@@ -15,9 +15,9 @@ import {
 import { getStorageManager } from '../src/storageManager.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
  */
 
 const BIDDER_CODE = 'beop';

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adrelevantisBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
+import * as bidderFactory from 'src/adapters/bidderFactory.ts';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
 

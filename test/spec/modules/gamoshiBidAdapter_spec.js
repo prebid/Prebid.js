@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec, helper} from 'modules/gamoshiBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {newBidder} from '../../../src/adapters/bidderFactory.js';
+import {newBidder} from '../../../src/adapters/bidderFactory.ts';
 import {deepClone} from 'src/utils';
 
 const supplyPartnerId = '123';

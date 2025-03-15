@@ -11,7 +11,7 @@ import {
   isEmptyStr,
   mergeDeep
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { registerBidder } from '../src/adapters/bidderFactory.ts'
 import {
   ADPOD,
   BANNER,
@@ -20,7 +20,7 @@ import {
 import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
  */
 
 const ORTB_VIDEO_PARAMS = {

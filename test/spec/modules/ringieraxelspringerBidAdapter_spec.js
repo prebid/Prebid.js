@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ringieraxelspringerBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 
 const CSR_ENDPOINT = 'https://csr.onet.pl/4178463/csr-006/csr.json?nid=4178463&';
 

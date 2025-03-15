@@ -8,7 +8,7 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
@@ -16,12 +16,12 @@ import { normalizeBannerSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
- * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.ts').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.ts').TimedOutBid} TimedOutBid
  */
 
 const BIDDER_CODE = 'missena';

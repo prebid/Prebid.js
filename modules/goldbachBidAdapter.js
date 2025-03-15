@@ -1,6 +1,6 @@
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.ts';
 import { Renderer } from '../src/Renderer.js';
 
 /* General config */

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { _getPlatform, spec } from 'modules/sonobiBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory.ts';
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';

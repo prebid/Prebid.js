@@ -6,7 +6,7 @@ import {
 } from 'modules/gnetBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory.js';
+} from 'src/adapters/bidderFactory.ts';
 
 const ENDPOINT = 'https://service.gnetrtb.com/api/adrequest';
 

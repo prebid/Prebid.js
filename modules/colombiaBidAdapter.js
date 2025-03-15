@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.ts';
 import { BANNER } from '../src/mediaTypes.ts';
 const BIDDER_CODE = 'colombia';
 const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
