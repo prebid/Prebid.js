@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER, NATIVE } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink, getReferrer } from '../libraries/fpdUtils/pageInfo.js';
 import { getDevice, getScreenSize } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
@@ -10,9 +10,9 @@ import { getHLen } from '../libraries/navigatorData/navigatorData.js';
 import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
 const BIDDER_CODE = 'discovery';

@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';

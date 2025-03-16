@@ -1,7 +1,7 @@
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {isFn, logError} from '../src/utils.js';
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {includes} from '../src/polyfill.js';
 import '../src/adapterManager.js';
 

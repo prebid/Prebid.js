@@ -12,8 +12,8 @@ import {
   getUniqueIdentifierStr,
   formatQS,
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';

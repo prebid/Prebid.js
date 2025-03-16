@@ -1,4 +1,4 @@
-import { getGlobal } from '../../../src/prebidGlobal.ts';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
   let wrapperBody = getAdSystemNode('Prebid org', getGlobal().version);

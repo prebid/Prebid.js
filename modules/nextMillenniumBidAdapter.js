@@ -15,10 +15,10 @@ import {
 import {getAd} from '../libraries/targetVideoUtils/bidderUtils.js';
 
 import { EVENTS } from '../src/constants.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.ts';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
 const NM_VERSION = '4.3.0';

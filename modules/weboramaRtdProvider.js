@@ -100,7 +100,7 @@
  * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
  */
 
-import { getGlobal } from '../src/prebidGlobal.ts';
+import { getGlobal } from '../src/prebidGlobal.js';
 import {
   deepAccess,
   deepClone,
@@ -115,7 +115,7 @@ import {
   mergeDeep,
   prefixLog,
 } from '../src/utils.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';

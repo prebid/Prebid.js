@@ -11,7 +11,7 @@
 
 // import { CONSTANTS } from '../src/cons tants.js';
 import {isArray, isPlainObject, isStr} from '../src/utils.js';
-import {getHook} from '../src/hook.ts';
+import {getHook} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {convertCamelToUnderscore, appnexusAliases} from '../libraries/appnexusUtils/anUtils.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';

@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/mediasniperBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
-import { BANNER } from '../../../src/mediaTypes.ts';
+import { BANNER } from '../../../src/mediaTypes.js';
 
 const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_BID_TTL = 360;

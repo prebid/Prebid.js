@@ -1,4 +1,4 @@
-import { BANNER, VIDEO } from '../../src/mediaTypes.ts';
+import { BANNER, VIDEO } from '../../src/mediaTypes.js';
 import {deepAccess, isArray, isEmptyStr, isFn, logError} from '../../src/utils.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest

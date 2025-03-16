@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/concertBidAdapter.js';
-import { hook } from 'src/hook.ts';
+import { hook } from 'src/hook.js';
 
 describe('ConcertAdapter', function () {
   let bidRequests;

@@ -1,5 +1,5 @@
 import { parseSizesInput, timestamp } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'innity';
 const ENDPOINT = 'https://as.innity.com/synd/';

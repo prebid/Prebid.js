@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {
   generateUUID,
@@ -9,7 +9,7 @@ import {
   logInfo,
   triggerPixel
 } from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.ts';
+import {BANNER} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'bitmedia';

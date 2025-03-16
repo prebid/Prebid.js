@@ -9,8 +9,8 @@ import {
   logError
 } from '../src/utils.js';
 import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {BANNER} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
@@ -19,8 +19,8 @@ import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
 const BIDDER_CODE = 'winr';

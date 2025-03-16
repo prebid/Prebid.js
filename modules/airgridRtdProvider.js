@@ -5,7 +5,7 @@
  * @module modules/airgridRtdProvider
  * @requires module:modules/realTimeData
  */
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {deepAccess, deepSetValue, mergeDeep} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {loadExternalScript} from '../src/adloader.js';

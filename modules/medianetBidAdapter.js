@@ -12,22 +12,22 @@ import {
   deepClone,
   deepSetValue
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {ajax} from '../src/ajax.js';
 import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.ts').TimedOutBid} TimedOutBid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
  */
 
 const BIDDER_CODE = 'medianet';

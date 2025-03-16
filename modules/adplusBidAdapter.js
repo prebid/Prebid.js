@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.ts';
+import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 // #region Constants

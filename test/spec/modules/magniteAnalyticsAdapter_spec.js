@@ -10,7 +10,7 @@ import { EVENTS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import { getGlobal } from '../../../src/prebidGlobal.ts';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import { deepAccess } from '../../../src/utils.js';
 
 let events = require('src/events.js');

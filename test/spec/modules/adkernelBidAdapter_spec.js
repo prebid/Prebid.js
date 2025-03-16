@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
-import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes.js';
+import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
 import {config} from 'src/config';
 import {parseDomain} from '../../../src/refererDetection.js';
 

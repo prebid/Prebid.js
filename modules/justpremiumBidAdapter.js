@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'justpremium'

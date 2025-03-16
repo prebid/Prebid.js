@@ -16,7 +16,7 @@ import {
   internal, setupAdUnitMediaTypes
 } from '../../../modules/sizeMappingV2.js';
 
-import { adUnitSetupChecks } from '../../../src/prebid.ts';
+import { adUnitSetupChecks } from '../../../src/prebid.js';
 import {deepClone} from '../../../src/utils.js';
 
 const AD_UNITS = [{

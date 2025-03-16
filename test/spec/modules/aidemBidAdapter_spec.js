@@ -4,7 +4,7 @@ import * as utils from '../../../src/utils';
 import {deepSetValue} from '../../../src/utils';
 import {server} from '../../mocks/xhr';
 import {config} from '../../../src/config';
-import {NATIVE} from '../../../src/mediaTypes.ts';
+import {NATIVE} from '../../../src/mediaTypes.js';
 
 // Full banner + Full Video + Basic Banner + Basic Video
 const VALID_BIDS = [

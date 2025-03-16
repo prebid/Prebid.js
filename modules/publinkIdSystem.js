@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import { parseUrl, buildUrl, logError } from '../src/utils.js';

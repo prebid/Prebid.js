@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logError, logInfo, triggerPixel} from '../src/utils.js';
 
 const BIDDER_CODE = 'ampliffy';

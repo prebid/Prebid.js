@@ -7,7 +7,7 @@ import {
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
 } from 'modules/symitriDapRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 import { EVENTS } from 'src/constants.js';
 const responseHeader = {'Content-Type': 'application/json'};
 

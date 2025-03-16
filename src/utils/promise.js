@@ -1,5 +1,5 @@
 import {GreedyPromise, greedySetTimeout} from '../../libraries/greedy/greedyPromise.js';
-import {getGlobal} from '../prebidGlobal.ts';
+import {getGlobal} from '../prebidGlobal.js';
 
 export const pbSetTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout)
 export const PbPromise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise);

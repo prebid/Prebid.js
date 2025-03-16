@@ -4,7 +4,7 @@ import { config } from 'src/config.js';
 import { init, startAuctionHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, idxIdSubmodule } from 'modules/idxIdSystem.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
-import 'src/prebid.ts';
+import 'src/prebid.js';
 
 const IDX_COOKIE_NAME = '_idx';
 const IDX_DUMMY_VALUE = 'idx value for testing';

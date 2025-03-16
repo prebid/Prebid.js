@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/smarthubBidAdapter';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.ts';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'smarthub'

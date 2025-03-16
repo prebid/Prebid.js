@@ -1,4 +1,4 @@
-import { VIDEO } from '../../src/mediaTypes.ts';
+import { VIDEO } from '../../src/mediaTypes.js';
 import { deepAccess, isFn } from '../../src/utils.js';
 
 const DEFAULT_FLOOR = 0.0;

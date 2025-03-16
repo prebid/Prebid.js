@@ -11,17 +11,17 @@ import {
   isPlainObject
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.ts';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'grid';

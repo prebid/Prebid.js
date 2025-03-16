@@ -1,7 +1,7 @@
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { spec } from 'modules/yieldlabBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const DEFAULT_REQUEST = () => ({
   bidder: 'yieldlab',

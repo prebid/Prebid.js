@@ -1,4 +1,4 @@
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   canAccessWindowTop,
   cleanObj,
@@ -23,7 +23,7 @@ import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { find } from '../src/polyfill.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
 
 const BIDDER_CODE = 'adagio';

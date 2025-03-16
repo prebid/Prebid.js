@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adponeBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 const EMPTY_ARRAY = [];

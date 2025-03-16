@@ -1,7 +1,7 @@
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import { spec } from 'modules/pixfutureBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
-import * as bidderFactory from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';

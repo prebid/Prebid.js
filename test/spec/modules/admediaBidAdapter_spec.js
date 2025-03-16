@@ -1,6 +1,6 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/admediaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';

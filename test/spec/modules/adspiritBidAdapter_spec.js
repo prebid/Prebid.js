@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adspiritBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { registerBidder } from 'src/adapters/bidderFactory.ts';
-import { BANNER, NATIVE } from 'src/mediaTypes.ts';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from 'src/mediaTypes.js';
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
 

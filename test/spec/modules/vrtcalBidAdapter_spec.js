@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/vrtcalBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { newBidder } from 'src/adapters/bidderFactory'
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 

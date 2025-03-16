@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from '../../../src/config';
 
 const URL = 'https://rt.marphezis.com/hb';

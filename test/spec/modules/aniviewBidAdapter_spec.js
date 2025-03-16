@@ -1,5 +1,5 @@
 import { spec } from 'modules/aniviewBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 const { expect } = require('chai');
 
 const PUBLISHER_ID_1 = 'publisher_id_1';

@@ -1,8 +1,8 @@
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {logError, logInfo, logWarn, mergeDeep} from '../src/utils.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {emit} from '../src/events.js';
 import {BID_STATUS, EVENTS} from '../src/constants.js';
 import {PbPromise} from '../src/utils/promise.js';

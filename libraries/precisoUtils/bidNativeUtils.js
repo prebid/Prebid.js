@@ -1,5 +1,5 @@
 import { deepAccess, logInfo } from '../../src/utils.js';
-import { NATIVE } from '../../src/mediaTypes.ts';
+import { NATIVE } from '../../src/mediaTypes.js';
 import { macroReplace } from './bidUtils.js';
 
 const TTL = 55;

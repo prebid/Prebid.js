@@ -1,5 +1,5 @@
 import { assert, expect } from 'chai';
-import { BANNER } from 'src/mediaTypes.ts';
+import { BANNER } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { spec } from 'modules/advertisingBidAdapter.js';
 import * as utils from 'src/utils.js';

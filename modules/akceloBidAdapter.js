@@ -1,16 +1,16 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { deepSetValue, getParameterByName, logError } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.ts').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.ts').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'akcelo';

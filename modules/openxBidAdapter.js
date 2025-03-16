@@ -1,8 +1,8 @@
 import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const bidderConfig = 'hb_pb_ortb';

@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   _each,
   deepAccess,
@@ -15,7 +15,7 @@ import {
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.ts';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });

@@ -3,7 +3,7 @@
  */
 
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getUniqueIdentifierStr, deepSetValue, logInfo} from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 

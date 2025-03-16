@@ -1,6 +1,6 @@
 import { logError, logInfo, logWarn, logMessage, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 

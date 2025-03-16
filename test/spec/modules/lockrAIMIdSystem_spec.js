@@ -1,7 +1,7 @@
 
 
 import * as lockrAIMSystem from "../../../modules/lockrAIMIdSystem.js";
-import { hook } from "../../../src/hook.ts";
+import { hook } from "../../../src/hook.js";
 import { expect } from "chai";
 import { coreStorage } from "../../../modules/userId/index.js";
 

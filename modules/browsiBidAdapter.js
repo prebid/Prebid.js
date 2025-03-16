@@ -1,11 +1,11 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {VIDEO} from '../src/mediaTypes.ts';
+import {VIDEO} from '../src/mediaTypes.js';
 import {logError, logInfo, isArray, isStr} from '../src/utils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'browsi';

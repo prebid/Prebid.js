@@ -9,10 +9,10 @@
  */
 
 /**
- * @typedef {import('./adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('./adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('./adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/config.js').MediaTypePriceGranularity} MediaTypePriceGranularity
- * @typedef {import('./mediaTypes.ts').MediaType} MediaType
+ * @typedef {import('./mediaTypes.js').MediaType} MediaType
  */
 
 /**
@@ -83,19 +83,19 @@ import {batchAndStore} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
-import {hook} from './hook.ts';
+import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
-import {VIDEO} from './mediaTypes.ts';
+import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
 import adapterManager from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
 import {defer, PbPromise} from './utils/promise.js';
-import {useMetrics} from './utils/perfMetrics.ts';
+import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
-import {getGlobal} from './prebidGlobal.ts';
+import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 

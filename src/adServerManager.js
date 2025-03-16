@@ -1,4 +1,4 @@
-import { getGlobal } from './prebidGlobal.ts';
+import { getGlobal } from './prebidGlobal.js';
 import { logWarn } from './utils.js';
 
 const prebid = getGlobal();

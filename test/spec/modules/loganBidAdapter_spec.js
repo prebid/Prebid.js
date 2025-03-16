@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/loganBidAdapter.js';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.ts';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 
 describe('LoganBidAdapter', function () {
   const bid = {

@@ -1,6 +1,6 @@
 import { deepClone, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'etarget';
 const GVL_ID = 29;

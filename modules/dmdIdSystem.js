@@ -6,7 +6,7 @@
  */
 
 import { logError, getWindowLocation } from '../src/utils.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 
 /**

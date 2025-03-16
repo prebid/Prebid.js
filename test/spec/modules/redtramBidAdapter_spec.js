@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/redtramBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.ts';
+import { BANNER } from '../../../src/mediaTypes.js';
 import * as utils from '../../../src/utils.js';
 
 describe('RedtramBidAdapter', function () {

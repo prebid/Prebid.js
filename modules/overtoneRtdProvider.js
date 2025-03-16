@@ -1,4 +1,4 @@
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
 

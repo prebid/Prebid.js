@@ -1,11 +1,11 @@
 // import or require modules necessary for the test, e.g.:
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
 import { misc, spec } from 'modules/adnuntiusBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import {config, newConfig} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
+import { getGlobal } from '../../../src/prebidGlobal';
 import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
 
 describe('adnuntiusBidAdapter', function () {

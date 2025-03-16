@@ -1,4 +1,4 @@
-import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 
 const OW_GVLID = 280
 export const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];

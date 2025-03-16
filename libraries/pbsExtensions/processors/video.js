@@ -1,4 +1,4 @@
-import {VIDEO} from '../../../src/mediaTypes.ts';
+import {VIDEO} from '../../../src/mediaTypes.js';
 import {deepAccess} from '../../../src/utils.js';
 
 export function setBidResponseVideoCache(bidResponse, bid) {

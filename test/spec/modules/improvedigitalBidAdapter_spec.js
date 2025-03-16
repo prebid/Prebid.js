@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import {CONVERTER, spec} from 'modules/improvedigitalBidAdapter.js';
 import {config} from 'src/config.js';
 import {deepClone} from 'src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
 import {deepSetValue} from '../../../src/utils';
 // load modules that register ORTB processors
-import 'src/prebid.ts';
+import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -14,9 +14,9 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import * as prebidGlobal from 'src/prebidGlobal.ts';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';

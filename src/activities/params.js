@@ -1,5 +1,5 @@
 import {MODULE_TYPE_BIDDER} from './modules.js';
-import {hook} from '../hook.ts';
+import {hook} from '../hook.js';
 
 /**
  * Component ID - who is trying to perform the activity?

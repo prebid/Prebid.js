@@ -3,10 +3,10 @@
  * @module modules/firstPartyData
  */
 import { config } from '../../src/config.js';
-import { module, getHook } from '../../src/hook.ts';
+import { module, getHook } from '../../src/hook.js';
 import {logError} from '../../src/utils.js';
 import {PbPromise} from '../../src/utils/promise.js';
-import {timedAuctionHook} from '../../src/utils/perfMetrics.ts';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 let submodules = [];
 

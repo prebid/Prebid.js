@@ -1,8 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, logInfo } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 

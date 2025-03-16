@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, SYNC_URL} from 'modules/dxkultureBidAdapter.js';
-import {BANNER, VIDEO} from 'src/mediaTypes.ts';
+import {BANNER, VIDEO} from 'src/mediaTypes.js';
 
 const getBannerRequest = () => {
   return {

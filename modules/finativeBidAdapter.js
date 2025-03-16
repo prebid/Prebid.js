@@ -1,8 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {NATIVE} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {NATIVE} from '../src/mediaTypes.js';
 import {_map, deepSetValue, isEmpty, setOnAny} from '../src/utils.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';

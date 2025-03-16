@@ -1,5 +1,5 @@
 import { deepSetValue, deepAccess } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'pubx';
 const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid';

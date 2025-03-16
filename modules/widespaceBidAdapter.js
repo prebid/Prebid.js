@@ -1,5 +1,5 @@
 import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';

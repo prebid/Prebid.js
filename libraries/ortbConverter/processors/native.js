@@ -1,5 +1,5 @@
 import {isPlainObject, logWarn, mergeDeep} from '../../../src/utils.js';
-import {NATIVE} from '../../../src/mediaTypes.ts';
+import {NATIVE} from '../../../src/mediaTypes.js';
 
 export function fillNativeImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== NATIVE) return;

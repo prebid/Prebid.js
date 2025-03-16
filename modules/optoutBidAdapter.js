@@ -1,6 +1,6 @@
 import { deepAccess } from '../src/utils.js';
 import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'optout';

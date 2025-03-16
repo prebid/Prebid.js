@@ -5,8 +5,8 @@ import {
   deepSetValue,
   mergeDeep,
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 

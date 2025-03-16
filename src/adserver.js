@@ -1,4 +1,4 @@
-import {hook} from './hook.ts';
+import {hook} from './hook.js';
 
 /**
  * return the GAM PPID, if available (eid for the userID configured with `userSync.ppidSource`)

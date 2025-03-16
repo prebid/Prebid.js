@@ -3,7 +3,7 @@ import adapterManager from '../src/adapterManager.js';
 import { logError, logInfo } from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
-import { getGlobal } from '../src/prebidGlobal.ts';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const timeoutIds = {};
 const tryUntil = (operationId, conditionCb, cb) => {

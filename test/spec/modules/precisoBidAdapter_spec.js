@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/precisoBidAdapter.js';
-import { NATIVE } from '../../../src/mediaTypes.ts';
+import { NATIVE } from '../../../src/mediaTypes.js';
 import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js';
 
 // simport { config } from '../../../src/config.js';

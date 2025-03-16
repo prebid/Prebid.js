@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/missenaBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.ts';
+import { BANNER } from '../../../src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 

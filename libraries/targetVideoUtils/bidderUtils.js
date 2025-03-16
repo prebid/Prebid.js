@@ -1,5 +1,5 @@
 import {SYNC_URL} from './constants.js';
-import {VIDEO} from '../../src/mediaTypes.ts';
+import {VIDEO} from '../../src/mediaTypes.js';
 import {getRefererInfo} from '../../src/refererDetection.js';
 import {createTrackPixelHtml, deepAccess, getBidRequest, formatQS} from '../../src/utils.js';
 

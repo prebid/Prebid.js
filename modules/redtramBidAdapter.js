@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { bidWinReport, buildBidRequests, buildUserSyncs, interpretResponse, isBidRequestValid } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'redtram';

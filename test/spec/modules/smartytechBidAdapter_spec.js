@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/smartytechBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'smartytech';
 

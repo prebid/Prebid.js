@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adtelligentBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
 

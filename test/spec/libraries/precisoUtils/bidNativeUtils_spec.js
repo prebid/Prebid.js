@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import { NATIVE } from '../../../../src/mediaTypes.js';
+import { NATIVE } from '../../../../src/mediaTypes';
 import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils';
 
 const DEFAULT_PRICE = 1

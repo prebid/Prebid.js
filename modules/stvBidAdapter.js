@@ -1,6 +1,6 @@
 import {deepAccess, logMessage} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {BANNER, VIDEO} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
 import {
   handleSyncUrls,
@@ -13,7 +13,7 @@ import {
 } from '../libraries/dspxUtils/bidderUtils.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  */
 
 const BIDDER_CODE = 'stv';

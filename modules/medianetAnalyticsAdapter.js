@@ -18,10 +18,10 @@ import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../src/auction.js';
 import {includes} from '../src/polyfill.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {ADPOD} from '../src/mediaTypes.ts';
+import {ADPOD} from '../src/mediaTypes.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';

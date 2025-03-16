@@ -1,7 +1,7 @@
 import adapterManager from '../src/adapterManager.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.ts';
+} from '../src/adapters/bidderFactory.js';
 
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
@@ -24,7 +24,7 @@ import {
   ADPOD,
   BANNER,
   VIDEO,
-} from '../src/mediaTypes.ts';
+} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'connatix';
 

@@ -1,6 +1,6 @@
-import {timedAuctionHook} from '../../src/utils/perfMetrics.ts';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../../src/utils.js';
-import {getGlobal} from '../../src/prebidGlobal.ts';
+import {getGlobal} from '../../src/prebidGlobal.js';
 import {PbPromise} from '../../src/utils/promise.js';
 import {buildActivityParams} from '../../src/activities/params.js';
 

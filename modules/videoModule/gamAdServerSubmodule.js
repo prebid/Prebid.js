@@ -1,5 +1,5 @@
 import { GAM_VENDOR } from '../../libraries/video/constants/vendorCodes.js';
-import { getGlobal } from '../../src/prebidGlobal.ts';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
  * @class

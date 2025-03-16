@@ -1,6 +1,6 @@
 import { parseSizesInput, deepAccess } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'vuukle';

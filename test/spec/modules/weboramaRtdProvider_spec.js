@@ -10,7 +10,7 @@ import {
   DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY
 } from '../../../modules/weboramaRtdProvider.js';
 
-import 'src/prebid.ts';
+import 'src/prebid.js';
 
 const responseHeader = {
   'Content-Type': 'application/json'

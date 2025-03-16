@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/asoBidAdapter.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {OUTSTREAM} from 'src/video.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd';
 import {parseUrl} from '../../../src/utils';

@@ -20,7 +20,7 @@
  */
 
 import { logInfo, logError } from '../src/utils.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
 /**

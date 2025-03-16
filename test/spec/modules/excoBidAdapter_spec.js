@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec as adapter, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { BANNER } from '../../../src/mediaTypes';
 import { config } from '../../../src/config';
 import sinon from 'sinon';
 

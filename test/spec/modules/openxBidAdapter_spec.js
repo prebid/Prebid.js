@@ -1,11 +1,11 @@
 import {expect} from 'chai';
 import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 // load modules that register ORTB processors
-import 'src/prebid.ts'
+import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -18,7 +18,7 @@ import 'modules/paapi.js';
 import {deepClone} from 'src/utils.js';
 import {version} from 'package.json';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
 
 const BidRequestBuilder = function BidRequestBuilder(options) {

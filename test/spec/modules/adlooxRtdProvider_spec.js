@@ -3,7 +3,7 @@ import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
 import {auctionManager} from 'src/auctionManager.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
-import * as prebidGlobal from 'src/prebidGlobal.ts';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 import { subModuleObj as rtdProvider } from 'modules/adlooxRtdProvider.js';
 import * as utils from 'src/utils.js';
 import {server} from '../../mocks/xhr.js';

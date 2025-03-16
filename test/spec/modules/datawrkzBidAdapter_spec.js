@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { spec } from 'modules/datawrkzBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'datawrkz';
 const ENDPOINT_URL = 'https://at.datawrkz.com/exchange/openrtb23/';

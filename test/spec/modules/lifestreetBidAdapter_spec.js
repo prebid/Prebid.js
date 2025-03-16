@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BANNER, VIDEO } from 'src/mediaTypes.ts';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { spec } from 'modules/lifestreetBidAdapter.js';
 
 describe('lifestreetBidAdapter', function() {

@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import * as mediaTypes from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as mediaTypes from '../src/mediaTypes.js';
 import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {find} from '../src/polyfill.js';

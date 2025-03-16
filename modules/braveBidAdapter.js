@@ -1,12 +1,12 @@
 import { isStr, triggerPixel } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { parseNative } from '../libraries/braveUtils/index.js';
 import { buildRequests, interpretResponse } from '../libraries/braveUtils/buildAndInterpret.js'
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
 const BIDDER_CODE = 'brave';

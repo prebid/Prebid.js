@@ -2,7 +2,7 @@
  * Collect PAAPI component auction configs from bid adapters and make them available through `pbjs.getPAAPIConfig()`
  */
 import {config} from '../src/config.js';
-import {getHook, hook, module} from '../src/hook.ts';
+import {getHook, hook, module} from '../src/hook.js';
 import {
   deepAccess,
   deepEqual,
@@ -18,9 +18,9 @@ import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
-import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.ts';
+import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
 import {defer} from '../src/utils/promise.js';
 import {auctionManager} from '../src/auctionManager.js';
 

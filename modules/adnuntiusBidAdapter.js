@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';

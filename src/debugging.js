@@ -1,8 +1,8 @@
 import {config} from './config.js';
-import {getHook, hook} from './hook.ts';
-import {getGlobal} from './prebidGlobal.ts';
+import {getHook, hook} from './hook.js';
+import {getGlobal} from './prebidGlobal.js';
 import {logMessage, prefixLog} from './utils.js';
-import {createBid} from './bidfactory.ts';
+import {createBid} from './bidfactory.js';
 import {loadExternalScript} from './adloader.js';
 import {PbPromise} from './utils/promise.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';

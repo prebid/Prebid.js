@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/vlybyBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.ts'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
   bidder: 'vlyby',

@@ -6,7 +6,7 @@
  */
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.ts'
+import {getGlobal} from '../src/prebidGlobal.js'
 import {getStorageManager} from '../src/storageManager.js';
 import {
   deepSetValue,
@@ -17,7 +17,7 @@ import {
   logInfo,
   isFn
 } from '../src/utils.js'
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 /**

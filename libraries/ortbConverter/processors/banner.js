@@ -6,7 +6,7 @@ import {
   sizeTupleToRtbSize,
   encodeMacroURI
 } from '../../../src/utils.js';
-import {BANNER} from '../../../src/mediaTypes.ts';
+import {BANNER} from '../../../src/mediaTypes.js';
 
 /**
  * fill in a request `imp` with banner parameters from `bidRequest`.

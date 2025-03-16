@@ -1,7 +1,7 @@
 import { deepAccess, logError, parseUrl, parseSizesInput, triggerPixel } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'viously';

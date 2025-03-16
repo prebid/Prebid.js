@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { REQUEST_URL, SP_OUTSTREAM_PLAYER_URL, CONVERTER, spec } from '../../../modules/silverpushBidAdapter.js';
 
 const bannerBid = {

@@ -13,7 +13,7 @@ import {chunk} from '../chunk/chunk.js';
 import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
 import {bidderSettings} from '../../src/bidderSettings.js';
 import {config} from '../../src/config.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.ts';
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
 
 export function createSessionId() {
   return 'wsid_' + parseInt(Date.now() * Math.random());

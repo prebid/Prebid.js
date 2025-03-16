@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/operaadsBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {

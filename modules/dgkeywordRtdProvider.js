@@ -8,8 +8,8 @@
  */
 import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.ts';
-import { getGlobal } from '../src/prebidGlobal.ts';
+import { submodule } from '../src/hook.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule

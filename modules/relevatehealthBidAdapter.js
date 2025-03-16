@@ -1,10 +1,10 @@
 import { formatResponse } from '../libraries/deepintentUtils/index.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.ts';
+} from '../src/adapters/bidderFactory.js';
 import {
   BANNER
-} from '../src/mediaTypes.ts';
+} from '../src/mediaTypes.js';
 import {
   deepAccess,
   generateUUID,

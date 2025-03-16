@@ -15,8 +15,8 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {BANNER} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'mediasniper';
 const DEFAULT_BID_TTL = 360;

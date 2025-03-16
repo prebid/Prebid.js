@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/teadsBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js'
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';

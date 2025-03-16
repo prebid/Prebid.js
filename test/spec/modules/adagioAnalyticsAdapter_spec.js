@@ -1,4 +1,4 @@
-import * as prebidGlobal from 'src/prebidGlobal.ts';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 import * as utils from 'src/utils.js';
 import adagioAnalyticsAdapter, { _internal } from 'modules/adagioAnalyticsAdapter.js';
 import { EVENTS } from 'src/constants.js';

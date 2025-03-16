@@ -1,5 +1,5 @@
 import {logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {makeBaseSpec} from '../libraries/riseUtils/index.js';
 
 const BIDDER_CODE = 'minutemedia';

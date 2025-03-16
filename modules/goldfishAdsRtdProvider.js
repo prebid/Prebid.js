@@ -1,5 +1,5 @@
 import { ajax } from '../src/ajax.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess } from '../src/utils.js';
 

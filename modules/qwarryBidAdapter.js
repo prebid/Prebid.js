@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { VIDEO } from '../src/mediaTypes.ts';
+import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
 export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true'

@@ -10,8 +10,8 @@ import {
   parseUrl,
   generateUUID
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER, NATIVE } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';

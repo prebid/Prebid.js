@@ -15,7 +15,7 @@ import {
 } from '../src/ajax.js'
 import {
   submodule
-} from '../src/hook.ts';
+} from '../src/hook.js';
 import {
   getStorageManager
 } from '../src/storageManager.js';

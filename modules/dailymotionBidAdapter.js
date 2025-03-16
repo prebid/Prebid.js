@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { VIDEO } from '../src/mediaTypes.ts';
+import { VIDEO } from '../src/mediaTypes.js';
 import { deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { userSync } from '../src/userSync.js';

@@ -1,11 +1,11 @@
 import {config as _config, config} from 'src/config.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
-import * as prebidGlobal from 'src/prebidGlobal.ts';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 import { intersectionSubmodule } from 'modules/intersectionRtdProvider.js';
 import * as utils from 'src/utils.js';
-import {getGlobal} from 'src/prebidGlobal.ts';
-import 'src/prebid.ts';
+import {getGlobal} from 'src/prebidGlobal.js';
+import 'src/prebid.js';
 
 describe('Intersection RTD Provider', function () {
   let sandbox;

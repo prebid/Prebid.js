@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/playdigoBidAdapter.js';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.ts';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'playdigo'

@@ -1,7 +1,7 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
 import {spec} from 'modules/finativeBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.ts';
+import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 
 describe('Finative adapter', function () {

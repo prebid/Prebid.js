@@ -23,10 +23,10 @@ import {
   uniques,
 } from './utils.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
-import {newBidder} from './adapters/bidderFactory.ts';
+import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
-import {hook} from './hook.ts';
+import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {
   getAuctionsCounter,
@@ -42,7 +42,7 @@ import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
 import {EVENTS, S2S} from './constants.js';
-import {useMetrics} from './utils/perfMetrics.ts';
+import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
 import {isActivityAllowed} from './activities/rules.js';

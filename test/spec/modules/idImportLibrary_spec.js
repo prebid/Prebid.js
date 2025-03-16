@@ -1,9 +1,9 @@
 import {init} from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
 import * as idImportlibrary from 'modules/idImportLibrary.js';
-import {getGlobal} from '../../../src/prebidGlobal.ts';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 import {config} from 'src/config.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 import * as activities from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 import { CONF_DEFAULT_FULL_BODY_SCAN, CONF_DEFAULT_INPUT_SCAN } from '../../../modules/idImportLibrary.js';

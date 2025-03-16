@@ -1,6 +1,6 @@
 import { spec, ENDPOINT_URL, expandAuctionMacros } from 'modules/kimberliteBidAdapter.js';
 import { assert } from 'chai';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.ts';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 const BIDDER_CODE = 'kimberlite';
 

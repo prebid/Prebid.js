@@ -1,6 +1,6 @@
-import {CONFIG_TOGGLE, metricsFactory, newMetrics, useMetrics} from '../../../../src/utils/perfMetrics.ts';
+import {CONFIG_TOGGLE, metricsFactory, newMetrics, useMetrics} from '../../../../src/utils/perfMetrics.js';
 import {defer} from '../../../../src/utils/promise.js';
-import {hook} from '../../../../src/hook.ts';
+import {hook} from '../../../../src/hook.js';
 import {config} from 'src/config.js';
 
 describe('metricsFactory', () => {

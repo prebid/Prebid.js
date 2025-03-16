@@ -1,9 +1,9 @@
 import {
   BANNER
-} from '../src/mediaTypes.ts';
+} from '../src/mediaTypes.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory.ts';
+} from '../src/adapters/bidderFactory.js';
 import {
   getBannerRequest,
   getBannerResponse,

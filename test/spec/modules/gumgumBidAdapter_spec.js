@@ -1,8 +1,8 @@
-import { BANNER, VIDEO } from 'src/mediaTypes.ts';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';

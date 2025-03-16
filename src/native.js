@@ -13,14 +13,14 @@ import {
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS} from './constants.js';
-import {NATIVE} from './mediaTypes.ts';
+import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
 
 /**
- * @typedef {import('./adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('./adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('./adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./adapters/bidderFactory.js').Bid} Bid
  */
 
 export const nativeAdapters = [];

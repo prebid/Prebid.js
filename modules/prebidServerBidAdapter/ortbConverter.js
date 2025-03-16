@@ -2,7 +2,7 @@ import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
 import {deepClone, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
 import {config} from '../../src/config.js';
 import {S2S, STATUS} from '../../src/constants.js';
-import {createBid} from '../../src/bidfactory.ts';
+import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
 import {SUPPORTED_MEDIA_TYPES} from '../../libraries/pbsExtensions/processors/mediaType.js';
@@ -17,7 +17,7 @@ import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
 import {s2sDefaultConfig} from './index.js';
 import {premergeFpd} from './bidderConfig.js';
-import {ALL_MEDIATYPES, BANNER} from '../../src/mediaTypes.ts';
+import {ALL_MEDIATYPES, BANNER} from '../../src/mediaTypes.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';

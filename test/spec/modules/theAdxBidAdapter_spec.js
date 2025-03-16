@@ -7,7 +7,7 @@ import {
 } from 'modules/theAdxBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory.ts';
+} from 'src/adapters/bidderFactory.js';
 
 describe('TheAdxAdapter', function () {
   const adapter = newBidder(spec);

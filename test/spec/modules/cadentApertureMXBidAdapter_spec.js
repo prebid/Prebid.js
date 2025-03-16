@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/cadentApertureMXBidAdapter.js';
 
 describe('cadent_aperture_mx Adapter', function () {

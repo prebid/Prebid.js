@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/incrxBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.ts';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 
 describe('incrementx', function () {

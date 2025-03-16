@@ -30,12 +30,12 @@ import {
   getPriceByGranularity,
   getPriceGranularity
 } from '../src/auction.js';
-import {checkAdUnitSetup} from '../src/prebid.ts';
+import {checkAdUnitSetup} from '../src/prebid.js';
 import {checkVideoBidSetup} from '../src/video.js';
-import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.ts';
+import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
 import {store} from '../src/videoCache.js';
 import {config} from '../src/config.js';
-import {ADPOD} from '../src/mediaTypes.ts';
+import {ADPOD} from '../src/mediaTypes.js';
 import {find, arrayFrom as from} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
 import { TARGETING_KEYS } from '../src/constants.js';

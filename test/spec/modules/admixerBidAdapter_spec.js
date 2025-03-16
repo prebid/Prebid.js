@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/admixerBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';

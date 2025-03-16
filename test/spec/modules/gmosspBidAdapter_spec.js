@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gmosspBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';

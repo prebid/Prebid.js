@@ -1,10 +1,10 @@
 import {expect} from 'chai';
 import {spec} from 'modules/trafficgateBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
-import {BANNER, VIDEO} from 'src/mediaTypes.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import 'src/prebid.ts'
+import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -16,7 +16,7 @@ import 'modules/paapi.js';
 
 import {deepClone} from 'src/utils.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {

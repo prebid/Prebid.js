@@ -1,7 +1,7 @@
 import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
 import { find } from '../src/polyfill.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'microad';

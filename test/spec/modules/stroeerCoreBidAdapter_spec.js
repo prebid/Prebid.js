@@ -1,7 +1,7 @@
 import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes.ts';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {find} from 'src/polyfill.js';
 import sinon from 'sinon';
 

@@ -1,5 +1,5 @@
 import * as utils from '../../src/utils.js';
-import { syncOrtb2 } from '../../src/prebid.ts';
+import { syncOrtb2 } from '../../src/prebid.js';
 
 describe('banner', () => {
   describe('syncOrtb2', () => {

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';

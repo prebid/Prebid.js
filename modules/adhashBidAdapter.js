@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { includes } from '../src/polyfill.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const VERSION = '3.6';
 const BAD_WORD_STEP = 0.1;

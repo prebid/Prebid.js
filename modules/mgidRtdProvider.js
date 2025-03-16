@@ -1,4 +1,4 @@
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {deepAccess, logError, logInfo, mergeDeep} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';

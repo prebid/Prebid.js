@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/beopBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { addFPDToBidderRequest } from '../../helpers/fpd';

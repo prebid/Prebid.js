@@ -4,7 +4,7 @@
  */
 
 import {config} from '../../src/config.js';
-import {setupBeforeHookFnOnce, getHook} from '../../src/hook.ts';
+import {setupBeforeHookFnOnce, getHook} from '../../src/hook.js';
 import {
   logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
 } from '../../src/utils.js';
@@ -13,7 +13,7 @@ import { EVENTS } from '../../src/constants.js';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
 import {PBS, registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
-import {timedBidResponseHook} from '../../src/utils/perfMetrics.ts';
+import {timedBidResponseHook} from '../../src/utils/perfMetrics.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;

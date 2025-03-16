@@ -1,6 +1,6 @@
 import {deepAccess, isArray} from '../../src/utils.js';
 import { config } from '../../src/config.js';
-import {BANNER, VIDEO} from '../../src/mediaTypes.ts';
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
 
 export const supportedMediaTypes = [VIDEO, BANNER]
 

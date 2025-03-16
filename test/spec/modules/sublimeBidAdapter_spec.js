@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sublimeBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 const sinon = require('sinon');
 
 const utils = require('src/utils');

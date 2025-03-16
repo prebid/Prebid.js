@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {newBidder} from '../../../src/adapters/bidderFactory.js';
+import {newBidder} from '../../../src/adapters/bidderFactory';
 import {BID_ENDPOINT, spec, storage} from '../../../modules/cwireBidAdapter';
 import {deepClone, logInfo} from '../../../src/utils';
 import * as utils from 'src/utils.js';

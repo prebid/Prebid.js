@@ -1,4 +1,4 @@
-import 'src/prebid.ts';
+import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
 import { EVENTS } from 'src/constants.js';

@@ -2,7 +2,7 @@
  * This module adds GrowthCode HEM and other Data to Bid Requests
  * @module modules/growthCodeRtdProvider
  */
-import { submodule } from '../src/hook.ts'
+import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 import {
   logMessage, logError, mergeDeep

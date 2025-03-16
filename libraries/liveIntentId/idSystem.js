@@ -7,7 +7,7 @@
 import { triggerPixel, logError } from '../../src/utils.js';
 import { ajaxBuilder } from '../../src/ajax.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
-import { submodule } from '../../src/hook.ts';
+import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';

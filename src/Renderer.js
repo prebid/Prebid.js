@@ -3,7 +3,7 @@ import {
   logError, logWarn, logMessage
 } from './utils.js';
 import {find} from './polyfill.js';
-import {getGlobal} from './prebidGlobal.ts';
+import {getGlobal} from './prebidGlobal.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
 const pbjsInstance = getGlobal();

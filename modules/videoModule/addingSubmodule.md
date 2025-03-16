@@ -65,12 +65,12 @@ Now create a javascript file under `modules` with the name of the module suffixe
 
 The Video Module will need a submodule instance for every player instance registered with Prebid. You will therefore need to implement a submodule factory which is called with a `videoProviderConfig` argument and returns a Video Provider instance.
 Your submodule should import your vendor code constant and set it to a `vendorCode` property on your submodule factory.
-Your submodule should also import the `submodule` function from `src/hook.ts` and should use it to register as a submodule of `'video'`.
+Your submodule should also import the `submodule` function from `src/hook.js` and should use it to register as a submodule of `'video'`.
 
 **Code Example**
 
 ```javascript
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 
 function exampleSubmoduleFactory(videoProviderConfig) {
     const videoProvider = {

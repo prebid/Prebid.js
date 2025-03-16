@@ -6,8 +6,8 @@ import {
   logMessage,
   triggerPixel,
 } from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'holid';
 const GVLID = 1177;

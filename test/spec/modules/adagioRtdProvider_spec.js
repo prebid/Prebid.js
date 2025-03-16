@@ -7,7 +7,7 @@ import {
 import * as utils from 'src/utils.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 import { expect } from 'chai';
-import { getGlobal } from '../../../src/prebidGlobal.ts';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Adagio Rtd Provider', function () {
   const SUBMODULE_NAME = 'adagio';

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/colombiaBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory';
 
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';

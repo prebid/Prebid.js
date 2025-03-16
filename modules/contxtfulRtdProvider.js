@@ -5,7 +5,7 @@
  * and bid requests.
  */
 
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import {
   logInfo,
   logError,

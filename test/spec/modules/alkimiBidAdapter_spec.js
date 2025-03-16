@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { ENDPOINT, spec } from 'modules/alkimiBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.ts'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
   'bidId': '456',

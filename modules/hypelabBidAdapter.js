@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { BANNER } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { generateUUID, isFn, isPlainObject } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 

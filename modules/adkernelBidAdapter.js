@@ -15,8 +15,8 @@ import {
   mergeDeep,
   parseGPTSingleSizeArrayToRtbSize
 } from '../src/utils.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
@@ -27,9 +27,9 @@ import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
  * work with Adkernel platform - DO NOT COPY THIS ADAPTER UNDER NEW NAME
  *
  * Please contact prebid@adkernel.com and we'll add your adapter as an alias
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.ts').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',

@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {BANNER, VIDEO} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {logWarn} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';

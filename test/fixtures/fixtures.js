@@ -1,6 +1,6 @@
 // jscs:disable
 import { TARGETING_KEYS, STATUS } from 'src/constants.js';
-import {createBid} from '../../src/bidfactory.ts';
+import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
 function convertTargetingsFromOldToNew(targetings) {

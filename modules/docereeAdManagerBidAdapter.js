@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.ts';
+import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'docereeadmanager';
 const END_POINT = 'https://dai.doceree.com/drs/quest';
 const GVLID = 1063;

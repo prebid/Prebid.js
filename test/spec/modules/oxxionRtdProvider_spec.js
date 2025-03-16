@@ -1,5 +1,5 @@
 import {oxxionSubmodule} from 'modules/oxxionRtdProvider.js';
-import 'src/prebid.ts';
+import 'src/prebid.js';
 
 const utils = require('src/utils.js');
 

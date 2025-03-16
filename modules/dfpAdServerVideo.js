@@ -9,7 +9,7 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
-import { getHook } from '../src/hook.ts';
+import { getHook } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
 import {

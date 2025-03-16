@@ -7,7 +7,7 @@
 
 import { logError, logInfo } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule

@@ -15,8 +15,8 @@ import {
   logWarn
 } from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
-import {getHook} from '../src/hook.ts';
-import {adUnitSetupChecks} from '../src/prebid.ts';
+import {getHook} from '../src/hook.js';
+import {adUnitSetupChecks} from '../src/prebid.js';
 
 // Allows for stubbing of these functions while writing unit tests.
 export const internal = {

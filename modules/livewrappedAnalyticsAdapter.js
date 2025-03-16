@@ -3,7 +3,7 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import { getGlobal } from '../src/prebidGlobal.ts';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';

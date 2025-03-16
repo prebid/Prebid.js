@@ -12,7 +12,7 @@
  */
 
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { getStorageManager, STORAGE_TYPE_COOKIES } from '../src/storageManager.js';
 import { logError, logInfo } from '../src/utils.js';
 

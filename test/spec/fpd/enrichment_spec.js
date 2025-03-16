@@ -1,5 +1,5 @@
 import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';

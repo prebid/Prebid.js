@@ -1,11 +1,11 @@
 import { logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
 const BIDDER_CODE = 'freewheel-ssp';

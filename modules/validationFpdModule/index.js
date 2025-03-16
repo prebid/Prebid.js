@@ -4,7 +4,7 @@
  */
 import {deepAccess, isEmpty, isNumber, logWarn} from '../../src/utils.js';
 import {ORTB_MAP} from './config.js';
-import {submodule} from '../../src/hook.ts';
+import {submodule} from '../../src/hook.js';
 import {getCoreStorageManager} from '../../src/storageManager.js';
 
 // TODO: do FPD modules need their own namespace?

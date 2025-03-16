@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/orakiBidAdapter';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes';
 import { getUniqueIdentifierStr } from '../../../src/utils';
 
 const bidder = 'oraki';

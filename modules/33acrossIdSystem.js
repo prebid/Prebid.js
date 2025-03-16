@@ -7,7 +7,7 @@
 
 import { logMessage, logError, logWarn } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';

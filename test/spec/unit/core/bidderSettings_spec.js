@@ -1,6 +1,6 @@
 import {bidderSettings, ScopedSettings} from '../../../../src/bidderSettings.js';
 import {expect} from 'chai';
-import * as prebidGlobal from '../../../../src/prebidGlobal.js';
+import * as prebidGlobal from '../../../../src/prebidGlobal';
 import sinon from 'sinon';
 
 describe('ScopedSettings', () => {

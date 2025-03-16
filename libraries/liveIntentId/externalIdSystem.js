@@ -1,6 +1,6 @@
 import { logError } from '../../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
-import { submodule } from '../../src/hook.ts';
+import { submodule } from '../../src/hook.js';
 import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, parseRequestedAttributes, composeIdObject, eids, GVLID, PRIMARY_IDS, makeSourceEventToSend } from './shared.js'
 
 // Reference to the client for the liQHub.

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../../../../libraries/teqblazeUtils/bidderUtils.js';
-import { BANNER, VIDEO, NATIVE } from '../../../../src/mediaTypes.ts';
+import { BANNER, VIDEO, NATIVE } from '../../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../../src/utils.js';
 
 const bidder = 'bidder';

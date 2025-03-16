@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 import * as ajax from '../src/ajax.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { logMessage, logError } from '../src/utils.js';
 
 /**

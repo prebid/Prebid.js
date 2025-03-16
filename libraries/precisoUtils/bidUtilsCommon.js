@@ -6,7 +6,7 @@ import {
   getWindowTop,
   triggerPixel
 } from '../../src/utils.js';
-import { BANNER, VIDEO, NATIVE } from '../../src/mediaTypes.ts';
+import { BANNER, VIDEO, NATIVE } from '../../src/mediaTypes.js';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||

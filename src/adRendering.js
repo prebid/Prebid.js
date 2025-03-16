@@ -11,14 +11,14 @@ import * as events from './events.js';
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
 import {config} from './config.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
-import {VIDEO} from './mediaTypes.ts';
+import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
-import {hook} from './hook.ts';
+import {hook} from './hook.js';
 import {fireNativeTrackers} from './native.js';
 import {PbPromise} from './utils/promise.js';
 import adapterManager from './adapterManager.js';
-import {useMetrics} from './utils/perfMetrics.ts';
+import {useMetrics} from './utils/perfMetrics.js';
 import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 

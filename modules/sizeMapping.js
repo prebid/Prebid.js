@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.ts';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
 
 let sizeConfig = [];

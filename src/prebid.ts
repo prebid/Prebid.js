@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {getGlobal, PrebidJS} from './prebidGlobal.ts';
+import {getGlobal, PrebidJS} from './prebidGlobal.js';
 import {
   deepAccess,
   deepClone,
@@ -28,15 +28,15 @@ import {userSync} from './userSync.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
 import {isBidUsable, targeting} from './targeting.js';
-import {hook, wrapHook} from './hook.ts';
+import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import {Bid, createBid} from './bidfactory.ts';
+import {Bid, createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
 import * as events from './events.js';
-import {newMetrics, useMetrics} from './utils/perfMetrics.ts';
+import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
@@ -50,9 +50,9 @@ import {
 import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
-import { BANNER, VIDEO } from './mediaTypes.ts';
+import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
-import { newBidder } from './adapters/bidderFactory.ts';
+import { newBidder } from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 
 const pbjsInstance = getGlobal();

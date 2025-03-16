@@ -10,7 +10,7 @@ import {
   spec as qcSpec,
   storage
 } from '../../../modules/quantcastBidAdapter.js';
-import { newBidder } from '../../../src/adapters/bidderFactory.ts';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
 import { parseUrl } from 'src/utils.js';
 import { config } from 'src/config.js';
 

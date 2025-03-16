@@ -14,11 +14,11 @@ import {
   logError, logInfo, mergeDeep
 } from '../src/utils.js';
 import { findIndex } from '../src/polyfill.js';
-import { getGlobal } from '../src/prebidGlobal.ts';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

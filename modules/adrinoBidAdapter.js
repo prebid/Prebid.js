@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {triggerPixel} from '../src/utils.js';
-import {NATIVE, BANNER} from '../src/mediaTypes.ts';
+import {NATIVE, BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 

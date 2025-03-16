@@ -6,7 +6,7 @@
  * @requires module:modules/realTimeData
  */
 import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 /**

@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/snigelBidAdapter.js';
 import {config} from 'src/config.js';
-import {isValid} from 'src/adapters/bidderFactory.ts';
+import {isValid} from 'src/adapters/bidderFactory.js';
 import {registerActivityControl} from 'src/activities/rules.js';
 import {ACTIVITY_ACCESS_DEVICE} from 'src/activities/activities.js';
 

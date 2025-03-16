@@ -1,8 +1,8 @@
 import {deepAccess, deepSetValue} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';

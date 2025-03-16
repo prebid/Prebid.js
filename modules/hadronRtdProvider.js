@@ -6,9 +6,9 @@
  * @requires module:modules/realTimeData
  */
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {isFn, isStr, isArray, deepEqual, isPlainObject, logInfo} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';

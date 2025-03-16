@@ -2,7 +2,7 @@ import sinon from 'sinon';
 import { expect } from 'chai';
 import { default as conversantAnalytics, CNVR_CONSTANTS, cnvrHelper } from 'modules/conversantAnalyticsAdapter';
 import * as utils from 'src/utils.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
+import * as prebidGlobal from 'src/prebidGlobal';
 import { server } from '../../mocks/xhr.js';
 
 import {EVENTS} from 'src/constants.js'

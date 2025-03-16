@@ -1,4 +1,4 @@
-import {addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.ts';
+import {addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import {expect} from 'chai';
@@ -7,7 +7,7 @@ import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
-import {hook} from '../../../../src/hook.ts';
+import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
 import {bidderSettings} from '../../../../src/bidderSettings.js';

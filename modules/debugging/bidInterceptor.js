@@ -1,4 +1,4 @@
-import {BANNER, VIDEO} from '../../src/mediaTypes.ts';
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
 import {deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep} from '../../src/utils.js';
 import responseResolvers from './responses.js';
 

@@ -1,6 +1,6 @@
 import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
 import {config} from '../src/config.js';
-import {hook} from './hook.ts';
+import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 
 export const OUTSTREAM = 'outstream';

@@ -7,7 +7,7 @@
  */
 import {uspDataHandler} from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {deepAccess, logError} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';

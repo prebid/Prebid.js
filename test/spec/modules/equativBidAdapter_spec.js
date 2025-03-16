@@ -1,6 +1,6 @@
 import { getBidFloor } from 'libraries/equativUtils/equativUtils.js';
 import { converter, spec, storage } from 'modules/equativBidAdapter.js';
-import { BANNER } from 'src/mediaTypes.ts';
+import { BANNER } from 'src/mediaTypes.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Equativ bid adapter tests', () => {

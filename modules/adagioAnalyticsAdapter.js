@@ -4,12 +4,12 @@
 
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { deepAccess, logError, logInfo, logWarn, isPlainObject } from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.ts';
+import { BANNER } from '../src/mediaTypes.js';
 import { EVENTS } from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.ts';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { subscribeToGamSlotRenderEndedEvent } from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adriverBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
-import * as bidderFactory from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 
 const ENDPOINT = 'https://pb.adriver.ru/cgi-bin/bid.cgi';

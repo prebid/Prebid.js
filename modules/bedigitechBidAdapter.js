@@ -1,5 +1,5 @@
-import {BANNER, NATIVE} from '../src/mediaTypes.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {_each, isArray} from '../src/utils.js';
 
 const BEDIGITECH_CODE = 'bedigitech';

@@ -1,5 +1,5 @@
-import { BANNER } from '../src/mediaTypes.ts';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { triggerPixel, deepSetValue } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {config} from '../src/config.js';

@@ -6,7 +6,7 @@ import {
 } from 'modules/slimcutBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory.ts';
+} from 'src/adapters/bidderFactory.js';
 const ENDPOINT = 'https://sb.freeskreen.com/pbr';
 const AD_SCRIPT = '<script type="text/javascript" class="slimcut" async="true" src="https://static.freeskreen.com/publisher/83/freeskreen.min.js"></script>"';
 describe('slimcutBidAdapter', function() {

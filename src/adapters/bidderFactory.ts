@@ -1,7 +1,7 @@
 import Adapter from '../adapter.js';
 import adapterManager from '../adapterManager.js';
 import {config} from '../config.js';
-import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.ts';
+import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
@@ -20,10 +20,10 @@ import {
   pick,
   uniques
 } from '../utils.js';
-import {hook} from '../hook.ts';
+import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
-import {useMetrics} from '../utils/perfMetrics.ts';
+import {useMetrics} from '../utils/perfMetrics.js';
 import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';

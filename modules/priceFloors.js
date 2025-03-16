@@ -15,23 +15,23 @@ import {
   deepEqual,
   generateUUID
 } from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
-import {getHook} from '../src/hook.ts';
+import {getHook} from '../src/hook.js';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
-import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.ts';
+import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
-import {ALL_MEDIATYPES, BANNER} from '../src/mediaTypes.ts';
+import {ALL_MEDIATYPES, BANNER} from '../src/mediaTypes.js';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',

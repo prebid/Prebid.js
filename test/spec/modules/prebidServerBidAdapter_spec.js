@@ -16,7 +16,7 @@ import { EVENTS } from 'src/constants.js';
 import {server} from 'test/mocks/xhr.js';
 import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
-import 'src/prebid.ts'; // $$PREBID_GLOBAL$$.aliasBidder test
+import 'src/prebid.js'; // $$PREBID_GLOBAL$$.aliasBidder test
 import 'modules/currency.js'; // adServerCurrency test
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -28,12 +28,12 @@ import 'modules/schain.js';
 import 'modules/paapi.js';
 import * as redactor from 'src/activities/redactor.js';
 import * as activityRules from 'src/activities/rules.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.ts';
-import {getGlobal} from '../../../src/prebidGlobal.ts';
+import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';

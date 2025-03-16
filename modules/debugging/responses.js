@@ -1,4 +1,4 @@
-import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from '../../src/mediaTypes.js';
 import {Renderer} from '../../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../../libraries/gptUtils/gptUtils.js';
 

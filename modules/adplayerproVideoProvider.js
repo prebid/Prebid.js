@@ -28,7 +28,7 @@ import {
 } from '../libraries/video/constants/events.js';
 import {AD_PLAYER_PRO_VENDOR} from '../libraries/video/constants/vendorCodes.js';
 import {getEventHandler} from '../libraries/video/shared/eventHandler.js';
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 
 const setupFailMessage = 'Failed to instantiate the player';
 

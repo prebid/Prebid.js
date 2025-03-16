@@ -1,5 +1,5 @@
-import {BANNER} from '../src/mediaTypes.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {BANNER} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getBidIdParameter} from '../src/utils.js';
 
 export const spec = {

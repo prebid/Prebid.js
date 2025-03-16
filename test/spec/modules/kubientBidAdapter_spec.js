@@ -1,6 +1,6 @@
 import { expect, assert } from 'chai';
 import { spec } from 'modules/kubientBidAdapter.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.ts';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import {config} from '../../../src/config';
 
 function encodeQueryData(data) {

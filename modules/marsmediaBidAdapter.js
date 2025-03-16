@@ -1,8 +1,8 @@
 
 'use strict';
 import { deepAccess, getDNT, parseSizesInput, isArray, getWindowTop, deepSetValue, triggerPixel, getWindowSelf, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import { BANNER, VIDEO } from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 

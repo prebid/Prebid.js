@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, SSMAS_CODE, SSMAS_ENDPOINT, SSMAS_REQUEST_METHOD } from 'modules/ssmasBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 describe('ssmasBidAdapter', function () {

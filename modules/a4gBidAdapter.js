@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { _each } from '../src/utils.js';
 
 const A4G_BIDDER_CODE = 'a4g';

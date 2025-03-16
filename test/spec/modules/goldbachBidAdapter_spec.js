@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { spec } from 'modules/goldbachBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
-import { VIDEO } from 'src/mediaTypes.ts';
+import { VIDEO } from 'src/mediaTypes.js';
 import * as ajaxLib from 'src/ajax.js';
 
 const BIDDER_NAME = 'goldbach'

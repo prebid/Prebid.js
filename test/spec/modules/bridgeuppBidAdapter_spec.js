@@ -4,7 +4,7 @@ import {
 } from '../../../modules/bridgeuppBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
-import { hook } from '../../../src/hook.js';
+import { hook } from '../../../src/hook';
 import { config } from '../../../src/config.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd';
 import 'modules/consentManagementTcf.js';

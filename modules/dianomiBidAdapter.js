@@ -1,8 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   mergeDeep,
   _map,

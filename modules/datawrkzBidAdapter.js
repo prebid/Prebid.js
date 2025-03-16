@@ -9,15 +9,15 @@ import {
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
-import { createBid } from '../src/bidfactory.ts';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { createBid } from '../src/bidfactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { STATUS } from '../src/constants.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 /**
- * @typedef {import('../src/adapters/bidderFactory.ts').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.ts').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
 const BIDDER_CODE = 'datawrkz';

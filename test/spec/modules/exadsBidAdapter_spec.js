@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, imps } from 'modules/exadsBidAdapter.js';
-import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.ts';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('exadsBidAdapterTest', function () {
   const bidder = 'exads';

@@ -1,6 +1,6 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { loadExternalScript } from '../src/adloader.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { isEmptyStr, mergeDeep } from '../src/utils.js';
 

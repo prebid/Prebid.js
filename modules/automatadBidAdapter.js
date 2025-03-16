@@ -1,6 +1,6 @@
 import {logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {BANNER} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 
 const BIDDER = 'automatad'

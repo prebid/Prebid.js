@@ -1,7 +1,7 @@
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 

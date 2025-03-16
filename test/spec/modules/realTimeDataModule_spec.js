@@ -3,7 +3,7 @@ import {config} from 'src/config.js';
 import * as sinon from 'sinon';
 import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
-import 'src/prebid.ts';
+import 'src/prebid.js';
 import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';
 import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';

@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/luceadBidAdapter.js';
 import sinon from 'sinon';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import {deepClone} from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
 

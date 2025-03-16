@@ -4,7 +4,7 @@ describe('Publisher API _ Alias Bidder', function () {
   var assert = require('chai').assert;
   var expect = require('chai').expect;
   var should = require('chai').should();
-  var prebid = require('../../src/prebid.js');
+  var prebid = require('../../src/prebid');
 
   before(function () {
     var topSlotCode = '/19968336/header-bid-tag1';

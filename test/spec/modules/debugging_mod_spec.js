@@ -9,7 +9,7 @@ import {
 import '../../../modules/debugging/index.js';
 import {makePbsInterceptor} from '../../../modules/debugging/pbsInterceptor.js';
 import {config} from '../../../src/config.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 import {
   addBidderRequestsBound,
   addBidderRequestsHook,
@@ -19,7 +19,7 @@ import {
 
 import {addBidderRequests, addBidResponse} from '../../../src/auction.js';
 import {prefixLog} from '../../../src/utils.js';
-import {createBid} from '../../../src/bidfactory.ts';
+import {createBid} from '../../../src/bidfactory.js';
 
 describe('bid interceptor', () => {
   let interceptor, mockSetTimeout;

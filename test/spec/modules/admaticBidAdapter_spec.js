@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/admaticBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb';

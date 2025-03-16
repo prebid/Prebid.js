@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/axonixBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
 describe('AxonixBidAdapter', function () {

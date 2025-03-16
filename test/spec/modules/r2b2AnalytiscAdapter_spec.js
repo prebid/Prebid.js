@@ -5,8 +5,8 @@ import {EVENTS, AD_RENDER_FAILED_REASON, REJECTION_REASON} from 'src/constants.j
 import * as pbEvents from 'src/events.js';
 import * as ajax from 'src/ajax.js';
 import * as utils from 'src/utils';
-import {getGlobal} from 'src/prebidGlobal.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
+import {getGlobal} from 'src/prebidGlobal';
+import * as prebidGlobal from 'src/prebidGlobal';
 let adapterManager = require('src/adapterManager').default;
 
 const { NO_BID, AUCTION_INIT, BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_REJECTED, BIDDER_DONE,

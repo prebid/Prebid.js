@@ -160,13 +160,13 @@
  */
 
 import {config} from '../../src/config.js';
-import {getHook, module} from '../../src/hook.ts';
+import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
-import {timedAuctionHook} from '../../src/utils/perfMetrics.ts';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
 import {guardOrtb2Fragments} from '../../libraries/objectGuard/ortbGuard.js';

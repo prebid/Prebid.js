@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 
 // load modules that register ORTB processors
-import 'src/prebid.ts'
+import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';

@@ -1,10 +1,10 @@
 /**
  * GPT-specific slot configuration logic for PAAPI.
  */
-import {getHook, submodule} from '../src/hook.ts';
+import {getHook, submodule} from '../src/hook.js';
 import {deepAccess, logInfo, logWarn, sizeTupleToSizeString} from '../src/utils.js';
 import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 import {keyCompare} from '../src/utils/reducers.js';
 import {getGPTSlotsForAdUnits, targeting} from '../src/targeting.js';

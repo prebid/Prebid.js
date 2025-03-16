@@ -2,7 +2,7 @@ import { assert, expect } from 'chai';
 import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency';
-import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../../../src/mediaTypes';
 import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Yandex adapter', function () {

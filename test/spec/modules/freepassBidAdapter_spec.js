@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/freepassBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.ts';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 describe('FreePass adapter', function () {
   const adapter = newBidder(spec);

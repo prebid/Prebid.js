@@ -1,7 +1,7 @@
 import { logError, _each, generateUUID, buildUrl } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.ts';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { VIDEO } from '../src/mediaTypes.ts';
+import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'lkqd';
 const BID_TTL_DEFAULT = 300;

@@ -3,7 +3,7 @@ import {config} from '../../../src/config.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as utils from '../../../src/utils.js';
 import {deepAccess, deepClone} from '../../../src/utils.js';
-import {hook} from '../../../src/hook.ts';
+import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
 import {
@@ -29,7 +29,7 @@ import {
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
-import {getGlobal} from '../../../src/prebidGlobal.ts';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';

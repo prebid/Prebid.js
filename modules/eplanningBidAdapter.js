@@ -1,8 +1,8 @@
 import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined} from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.ts';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.ts';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';

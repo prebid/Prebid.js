@@ -1,6 +1,6 @@
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { deepAccess } from '../src/utils.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';

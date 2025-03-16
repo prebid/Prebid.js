@@ -4,15 +4,15 @@ import * as utils from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {deepAccess} from 'src/utils';
 // load modules that register ORTB processors
-import 'src/prebid.ts'
+import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js'; // handles schain
-import {hook} from '../../../src/hook.ts'
-import {BANNER} from '../../../src/mediaTypes.js';
+import {hook} from '../../../src/hook.js'
+import {BANNER} from '../../../src/mediaTypes';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';

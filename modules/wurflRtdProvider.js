@@ -1,4 +1,4 @@
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { fetch, sendBeacon } from '../src/ajax.js';
 import { loadExternalScript } from '../src/adloader.js';
 import {

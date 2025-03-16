@@ -1,5 +1,5 @@
 import {addBidResponse} from '../../src/auction.js';
-import {VIDEO} from '../../src/mediaTypes.ts';
+import {VIDEO} from '../../src/mediaTypes.js';
 import {logError} from '../../src/utils.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_REPORT_ANALYTICS} from '../../src/activities/activities.js';

@@ -1,4 +1,4 @@
-import { startAuction } from '../../src/prebid.ts';
+import { startAuction } from '../../src/prebid.js';
 
 const cache = new Map();
 

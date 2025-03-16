@@ -1,8 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {BANNER, NATIVE} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {_map, deepAccess, isFn, parseGPTSingleSizeArrayToRtbSize, triggerPixel} from '../src/utils.js';
 import {parseDomain} from '../src/refererDetection.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';

@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import {spec} from '../../../modules/silvermobBidAdapter.js';
 import 'modules/priceFloors.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from '../../../src/config.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 
 // load modules that register ORTB processors
-import 'src/prebid.ts';
+import 'src/prebid.js';
 import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';

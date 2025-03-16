@@ -15,7 +15,7 @@ import {
   setPriceFloors,
 } from '../../../modules/pubxaiRtdProvider';
 import { config } from '../../../src/config';
-import * as hook from '../../../src/hook.ts';
+import * as hook from '../../../src/hook.js';
 import { server } from '../../mocks/xhr.js';
 
 const getConfig = () => ({

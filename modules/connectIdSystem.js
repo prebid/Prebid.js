@@ -6,7 +6,7 @@
  */
 
 import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.ts';
+import {submodule} from '../src/hook.js';
 import {includes} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';

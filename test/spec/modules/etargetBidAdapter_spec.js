@@ -1,6 +1,6 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/etargetBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.ts';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { deepClone } from 'src/utils.js';
 
 describe('etarget adapter', function () {

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/visxBidAdapter.js';
 import { config } from 'src/config.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { mergeDeep } from '../../../src/utils.js';

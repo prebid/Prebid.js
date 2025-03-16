@@ -15,7 +15,7 @@
  * @property {?string} keyName
  */
 
-import { submodule } from '../src/hook.ts';
+import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { generateUUID, createInvisibleIframe, insertElement, isEmpty, logError } from '../src/utils.js';
 import * as events from '../src/events.js';

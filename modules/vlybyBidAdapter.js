@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.ts'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-import { BANNER, VIDEO } from '../src/mediaTypes.ts'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
 
 const ENDPOINT = '//prebid.vlyby.com/';
 const BIDDER_CODE = 'vlyby';

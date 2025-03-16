@@ -1,6 +1,6 @@
 import {deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.ts';
-import {VIDEO} from '../src/mediaTypes.ts';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {findIndex} from '../src/polyfill.js';
 import {

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from '../../../modules/admaruBidAdapter.js';
 
 const ENDPOINT = 'https://p1.admaru.net/AdCall';

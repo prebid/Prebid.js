@@ -1,4 +1,4 @@
-import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.ts';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import {ORTB_MTYPES} from '../../ortbConverter/processors/mediaType.js';
 
 export const SUPPORTED_MEDIA_TYPES = {

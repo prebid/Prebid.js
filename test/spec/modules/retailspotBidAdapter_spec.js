@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import { spec } from 'modules/retailspotBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.ts';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('RetailSpot Adapter', function () {
   const canonicalUrl = 'https://canonical.url/?t=%26';

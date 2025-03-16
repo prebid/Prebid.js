@@ -10,7 +10,7 @@ import {
   REQUEST_ROUTE,
 } from 'modules/hypelabBidAdapter.js';
 
-import { BANNER } from 'src/mediaTypes.ts';
+import { BANNER } from 'src/mediaTypes.js';
 
 const mockValidBidRequest = {
   bidder: 'hypelab',
