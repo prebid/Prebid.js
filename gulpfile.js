@@ -179,16 +179,16 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
   return PRECOMP_TASKS.get(key);
 }
 
-function copyJson() {
-  return gulp.src([
+function copyVerbatim() {
+  return gulp.src(helpers.getSourceFolders().flatMap(name => [
     '**/*.json',
-    '!node_modules/**/*'
-  ], {base: '.'})
+    '**/*.d.ts',
+  ]), {base: '.'})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 
 function precompile(options) {
-  return gulp.series(['ts', gulp.parallel([copyJson, babelPrecomp(options)])])
+  return gulp.series(['ts', gulp.parallel([copyVerbatim, babelPrecomp(options)])])
 }
 
 function makeDevpackPkg(config = webpackConfig) {
@@ -545,6 +545,8 @@ gulp.task('ts', run('tsc'));
 
 gulp.task(escapePostbidConfig);
 gulp.task('transpile', babelPrecomp());
+gulp.task('precompile-dev', precompile({dev: true}));
+gulp.task('precompile', precompile());
 
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
