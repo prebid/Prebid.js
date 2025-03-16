@@ -28,15 +28,15 @@ import {userSync} from './userSync.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
 import {isBidUsable, targeting} from './targeting.js';
-import {hook, wrapHook} from './hook.js';
+import {hook, wrapHook} from './hook.ts';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import {createBid} from './bidfactory.js';
+import {Bid, createBid} from './bidfactory.ts';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
 import * as events from './events.js';
-import {newMetrics, useMetrics} from './utils/perfMetrics.js';
+import {newMetrics, useMetrics} from './utils/perfMetrics.ts';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
@@ -50,9 +50,9 @@ import {
 import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
-import { BANNER, VIDEO } from './mediaTypes.js';
+import { BANNER, VIDEO } from './mediaTypes.ts';
 import {delayIfPrerendering} from './utils/prerendering.js';
-import { newBidder } from './adapters/bidderFactory.js';
+import { newBidder } from './adapters/bidderFactory.ts';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 
 const pbjsInstance = getGlobal();
@@ -389,7 +389,7 @@ declare module './prebidGlobal' {
          */
         triggerUserSyncs: typeof triggerUserSyncs;
         getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
-        getHighestUnusedBidResponseForAdUnitCode;
+        getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
         getAdserverTargetingForAdUnitCode;
         getAdserverTargeting;
         getConsentMetadata;
@@ -452,11 +452,12 @@ addApiMethod('getAdserverTargetingForAdUnitCodeStr', getAdserverTargetingForAdUn
  *
  * @param adUnitCode
  */
-function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string) {
+function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string): Bid | Record<any, never> {
     if (adUnitCode) {
         const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
             .filter(isBidUsable)
 
+        // TODO: {} is a terrible null value here
         return bid.length ? bid.reduce(getHighestCpm) : {}
     } else {
         logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
