@@ -543,6 +543,14 @@ export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
 }, 'addPaapiConfig');
 
 
+declare module '../bidfactory' {
+    interface BannerBidProperties {
+        width: number;
+        height: number;
+        wratio?: number;
+        hratio?: number;
+    }
+}
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index} = {}) {

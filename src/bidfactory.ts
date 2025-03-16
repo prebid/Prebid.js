@@ -4,6 +4,7 @@ import {MediaType} from "./mediaTypes.ts";
 import type {DSAResponse} from "./types/ortb/ext/dsa.d.ts";
 import type {EventTrackerResponse} from "./types/ortb/native/eventtrackers.d.ts";
 import {Metrics} from "./utils/perfMetrics.ts";
+import {Renderer} from './Renderer.js';
 
 type ContextIdentifiers = {
     transactionId: Identifier;
@@ -89,14 +90,12 @@ export interface BaseBidResponse {
      * Event trackers for this bid.
      */
     eventtrackers?: EventTrackerResponse[];
-};
+}
 
 export interface BannerBidProperties {
     mediaType: 'banner';
     ad?: string;
     adUrl?: string;
-    wratio?: number;
-    hratio?: number;
 }
 
 export type BannerBidResponse = BaseBidResponse & BannerBidProperties;
@@ -116,6 +115,7 @@ export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidRespon
 
 export interface BaseBid extends ContextIdentifiers {
     metrics: Metrics;
+    renderer?: Renderer;
     source: BidSource;
     bidderCode: BidderCode;
     width: number;
@@ -130,7 +130,6 @@ export interface BaseBid extends ContextIdentifiers {
     cpm: number;
     currency: Currency;
     meta: BidMeta;
-    renderer?: any; // TODO WIP-TYPE
     /**
      * If true, this bid will not fire billing trackers until they are explicitly
      * triggered with `pbjs.triggerBilling()`.
@@ -139,9 +138,11 @@ export interface BaseBid extends ContextIdentifiers {
     deferRendering: boolean;
 }
 
-export type BannerBid = BaseBid & BannerBidResponse;
-export type VideoBid = BaseBid & VideoBidResponse;
-export type NativeBid = BaseBid & NativeBidResponse;
+type BidFrom<T> = BaseBid & Omit<T, keyof BaseBid>;
+
+export type BannerBid = BidFrom<BannerBidResponse>;
+export type VideoBid = BidFrom<VideoBidResponse>;
+export type NativeBid = BidFrom<NativeBidResponse>;
 export type Bid = BannerBid | VideoBid | NativeBid;
 
 
@@ -178,3 +179,5 @@ function Bid(statusCode: BidStatus, {src = 'client', bidder = '', bidId, transac
 export function createBid(statusCode: number, identifiers?: Partial<BidIdentifiers>): Partial<Bid> {
   return new Bid(statusCode, identifiers);
 }
+
+
