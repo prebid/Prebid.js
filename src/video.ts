@@ -118,13 +118,9 @@ declare module './bidfactory' {
 
 declare module './hook' {
     interface NamedHooks {
-        checkVideoBidSetup: {
-            type: 'sync';
-            fn: typeof checkVideoBidSetup
-        }
+        checkVideoBidSetup: typeof checkVideoBidSetup
     }
 }
-
 
 export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {

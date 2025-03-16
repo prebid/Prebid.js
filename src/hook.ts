@@ -26,16 +26,13 @@ export type Hookable<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> &
 }
 
 export interface NamedHooks {
-    [name: string]: {
-        type: HookType,
-        fn: AnyFunction
-    }
+    [name: string]: Hookable<HookType, AnyFunction>;
 }
 
 interface FunHooks {
     <TYP extends HookType, FN extends AnyFunction>(type: TYP, fn: FN, name?: string): Hookable<TYP, FN>;
     ready(): void;
-    get<T extends keyof NamedHooks>(name: T): Hookable<NamedHooks[T]['type'], NamedHooks[T]['fn']>
+    get<T extends keyof NamedHooks>(name: T): NamedHooks[T]
 }
 
 export let hook: FunHooks = funHooks({
