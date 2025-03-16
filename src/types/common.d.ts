@@ -1,6 +1,13 @@
+/**
+ * Prebid-generated identifier.
+ */
 export type Identifier = string;
-export type BidderCode = string;
+/**
+ * A bidder code.
+ */
+export type BidderCode = string | null;
 export type BidSource = 's2s' | 'client';
 export type Currency = string;
+
 
 

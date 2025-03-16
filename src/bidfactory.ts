@@ -1,6 +1,8 @@
 import { getUniqueIdentifierStr } from './utils.js';
 import type {BidderCode, BidSource, Currency, Identifier} from "./types/common.d.ts";
 import {MediaType} from "./mediaTypes.ts";
+import type {DSAResponse} from "./types/ortb/ext/dsa.d.ts";
+import type {EventTrackerResponse} from "./types/ortb/native/eventtrackers.d.ts";
 
 type ContextIdentifiers = {
     transactionId: Identifier;
@@ -36,17 +38,83 @@ function statusMessage(statusCode: BidStatus) {
 }
 
 /**
+ * Bid metadata.
+ */
+export type BidMeta = {
+    [key: string]: unknown;
+    /**
+     * Advertiser domains (corresponds to ORTB `bid.adomain`).
+     */
+    advertiserDomains?: string[];
+    /**
+     * Primary category ID (corresponds to ORTB `bid.cat[0]`).
+     */
+    primaryCatId?: string;
+    /**
+     * IDs of all other categories (corresponds to ORTB `bid.cat.slice(1)`).
+     */
+    secondaryCatIds?: string[];
+    /**
+     * Creative attributes (corresponds to ORTB `bid.attr`).
+     */
+    attr?: number[];
+    /**
+     * DSA transparency information.
+     */
+    dsa?: DSAResponse;
+}
+
+/**
  * Bid responses as provided by adapters; core then transforms these into `Bid`s
  */
-export type BidResponse<T extends MediaType> = {
-    mediaType: T;
+export type BaseBidResponse = {
+    bidderCode?: BidderCode;
+    requestId?: Identifier;
+    mediaType: MediaType;
     cpm: number | string;
+    ttl: number;
+    creativeId: string;
+    currency: Currency;
+    netRevenue: boolean;
+    dealId?: string;
+    meta?: BidMeta;
+    /**
+     * If true, and deferred billing was requested for this bid, its creative will not be rendered
+     * until billing is explicitly triggered with `pbjs.triggerBilling()`.
+     * Useful to avoid premature firing of trackers embedded in the creative.
+     */
+    deferRendering?: boolean;
+    /**
+     * Event trackers for this bid.
+     */
+    eventtrackers?: EventTrackerResponse[];
 };
 
-export type Bid<T extends MediaType> = ContextIdentifiers & BidResponse<T> & {
+export type BannerBidProperties = {
+    mediaType: 'banner';
+    ad?: string;
+    adUrl?: string;
+    wratio?: number;
+    hratio?: number;
+}
+
+export type BannerBidResponse = BaseBidResponse & BannerBidProperties;
+
+export type VideoBidProperties = {
+    mediaType: 'video';
+}
+
+export type VideoBidResponse = BaseBidResponse & VideoBidProperties;
+
+export type NativeBidProperties = {
+    mediaType: 'native';
+}
+export type NativeBidResponse = BaseBidResponse & NativeBidProperties;
+
+export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse;
+
+export type BaseBid = ContextIdentifiers & {
     source: BidSource;
-    requestId: Identifier;
-    mediaType: T;
     bidderCode: BidderCode;
     width: number;
     height: number;
@@ -54,26 +122,26 @@ export type Bid<T extends MediaType> = ContextIdentifiers & BidResponse<T> & {
     adId: Identifier;
     getSize(): string;
     getStatusCode(): BidStatus;
+    adapterCode?: BidderCode;
     originalCpm?: number | string;
     originalCurrency?: Currency;
     cpm: string;
+    currency: Currency;
+    meta: BidMeta;
+    /**
+     * If true, this bid will not fire billing trackers until they are explicitly
+     * triggered with `pbjs.triggerBilling()`.
+     */
+    deferBilling: boolean;
+    deferRendering: boolean;
 }
 
+export type BannerBid = BaseBid & BannerBidResponse;
+export type VideoBid = BaseBid & VideoBidResponse;
+export type NativeBid = BaseBid & NativeBidResponse;
+export type Bid = BannerBid | VideoBid | NativeBid;
 
-/**
- Required paramaters
- bidderCode,
- height,
- width,
- statusCode
- Optional paramaters
- adId,
- cpm,
- ad,
- adUrl,
- dealId,
- priceKeyString;
- */
+
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 function Bid(statusCode: BidStatus, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId}: Partial<BidIdentifiers> = {}) {
   var _bidSrc = src;
@@ -104,6 +172,6 @@ function Bid(statusCode: BidStatus, {src = 'client', bidder = '', bidId, transac
   };
 }
 
-export function createBid(statusCode: number, identifiers?: Partial<BidIdentifiers>): Partial<Bid<MediaType>> {
+export function createBid(statusCode: number, identifiers?: Partial<BidIdentifiers>): Partial<Bid> {
   return new Bid(statusCode, identifiers);
 }

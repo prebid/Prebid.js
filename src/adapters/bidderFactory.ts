@@ -1,7 +1,7 @@
 import Adapter from '../adapter.js';
 import adapterManager from '../adapterManager.js';
 import {config} from '../config.js';
-import {createBid} from '../bidfactory.ts';
+import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.ts';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
@@ -29,6 +29,7 @@ import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 import type {AnyFunction} from "../types/functions.d.ts";
+import {MediaType} from "../mediaTypes.ts";
 
 /**
  * @typedef {import('../mediaTypes.ts').MediaType} MediaType
@@ -252,7 +253,7 @@ export function newBidder(spec) {
       const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid) {
+      function addBidWithCode(adUnitCode: string, bid) {
         const metrics = useMetrics(bid.metrics);
         metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
@@ -313,26 +314,27 @@ export function newBidder(spec) {
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, {bidRequests: validBidRequests});
         },
-        onBid: (bid) => {
-          const bidRequest = bidRequestMap[bid.requestId];
+        onBid: (bidResponse: BidResponse) => {
+          const bidRequest = bidRequestMap[bidResponse.requestId];
+          const bid = bidResponse as Bid;
           if (bidRequest) {
             bid.adapterCode = bidRequest.bidder;
-            if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
-              logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
-              addBidResponse.reject(bidRequest.adUnitCode, bid, REJECTION_REASON.BIDDER_DISALLOWED)
+            if (isInvalidAlternateBidder(bidResponse.bidderCode, bidRequest.bidder)) {
+              logWarn(`${bidResponse.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED)
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
-            bid.originalCpm = bid.cpm;
-            bid.originalCurrency = bid.currency;
-            bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
+            bid.originalCpm = bidResponse.cpm;
+            bid.originalCurrency = bidResponse.currency;
+            bid.meta = bidResponse.meta || Object.assign({}, bidResponse[bidRequest.bidder]);
             bid.deferBilling = bidRequest.deferBilling;
-            bid.deferRendering = bid.deferBilling && (bid.deferRendering ?? typeof spec.onBidBillable !== 'function');
-            const prebidBid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
+            bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
+            const prebidBid: Bid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
-            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-            addBidResponse.reject(null, bid, REJECTION_REASON.INVALID_REQUEST_ID);
+            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bidResponse.requestId}. Ignoring.`);
+            addBidResponse.reject(null, bidResponse, REJECTION_REASON.INVALID_REQUEST_ID);
           }
         },
         onCompletion: afterAllResponses,
@@ -545,8 +547,10 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
 export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
 }, 'addPaapiConfig');
 
+
+
 // check that the bid has a width and height set
-function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
+function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index} = {}) {
   if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
     bid.width = parseInt(bid.width, 10);
     bid.height = parseInt(bid.height, 10);
@@ -578,7 +582,7 @@ function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
+export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index} = {}) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
