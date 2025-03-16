@@ -17,7 +17,7 @@ import {ajax} from '../src/ajax.js';
 import {logError, timestamp} from '../src/utils.js';
 import {addBidResponse} from '../src/auction.js';
 import {getCoreStorageManager} from '../src/storageManager.js';
-import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import {timedBidResponseHook} from '../src/utils/perfMetrics.ts';
 
 export const storage = getCoreStorageManager('categoryTranslation');
 const DEFAULT_TRANSLATION_FILE_URL = 'https://cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';

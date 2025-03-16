@@ -146,7 +146,7 @@ import {
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, PbPromise, delay} from '../../src/utils/promise.js';
-import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
+import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.ts';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
 import {allConsent, GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../src/activities/modules.js';

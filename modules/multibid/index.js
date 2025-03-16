@@ -13,7 +13,7 @@ import { EVENTS } from '../../src/constants.js';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
 import {PBS, registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
-import {timedBidResponseHook} from '../../src/utils/perfMetrics.js';
+import {timedBidResponseHook} from '../../src/utils/perfMetrics.ts';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;

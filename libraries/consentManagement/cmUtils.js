@@ -1,4 +1,4 @@
-import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.ts';
 import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../../src/utils.js';
 import {getGlobal} from '../../src/prebidGlobal.ts';
 import {PbPromise} from '../../src/utils/promise.js';

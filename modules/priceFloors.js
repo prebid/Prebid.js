@@ -26,7 +26,7 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
-import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.ts';
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';

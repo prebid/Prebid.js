@@ -6,7 +6,7 @@ import {config} from '../src/config.js';
 import {getHook} from '../src/hook.ts';
 import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
-import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.ts';
 import {on as onEvent, off as offEvent} from '../src/events.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';

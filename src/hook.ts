@@ -3,25 +3,22 @@ import {defer} from './utils/promise.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {AllExceptLast, Last} from "./types/tuples.d.ts";
 
-interface Next<T extends AnyFunction> {
-    bail(result: ReturnType<T>): void;
+export type Next<W extends AnyFunction> = {
+    (...args: Parameters<W>): unknown;
+    bail(result: ReturnType<W>): void;
 }
-type BeforeNext<T extends AnyFunction> = Next<T> & ((...args: Parameters<T>) => unknown);
-type AfterNext<T extends AnyFunction> = Next<T> & {
-    (result: ReturnType<T>): unknown;
-}
+
+export type HookFunction<W extends AnyFunction> = (next: Next<W>, ...args: Parameters<W>) => unknown;
+
 type RemoveLastParam<T extends AnyFunction> = (...args: AllExceptLast<Parameters<T>>) => ReturnType<T>;
-type AllParamsHook<T extends AnyFunction> = (next: BeforeNext<T>, ...args: Parameters<T>) => unknown;
-type AllExceptLastHook<T extends AnyFunction> = (next: BeforeNext<RemoveLastParam<T>>, ...args: AllExceptLast<Parameters<T>>) => unknown;
+export type HookType = 'sync' | 'async';
 
-type HookType = 'sync' | 'async';
+type SyncBeforeHook<T extends AnyFunction> = HookFunction<T>;
+type AsyncBeforeHook<T extends AnyFunction> = Last<Parameters<T>> extends AnyFunction ? HookFunction<RemoveLastParam<T>> : HookFunction<T>;
+export type BeforeHook<TYP extends HookType, FN extends AnyFunction> = TYP extends 'async' ? AsyncBeforeHook<FN> : SyncBeforeHook<FN>;
+export type AfterHook<FN extends AnyFunction> = HookFunction<(result: ReturnType<FN>) => ReturnType<FN>>;
 
-type SyncBeforeHook<T extends AnyFunction> = AllParamsHook<T>;
-type AsyncBeforeHook<T extends AnyFunction> = Last<Parameters<T>> extends AnyFunction ? AllExceptLastHook<T> : AllParamsHook<T>;
-type BeforeHook<TYP extends HookType, FN extends AnyFunction> = TYP extends 'async' ? AsyncBeforeHook<FN> : SyncBeforeHook<FN>;
-type AfterHook<T extends AnyFunction> = (next: AfterNext<T>, result: ReturnType<T>) => unknown;
-
-export type Hook<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> & {
+export type Hookable<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> & {
     before(beforeHook: BeforeHook<TYP, FN>, priority?: number): void;
     after(afterHook: AfterHook<FN>, priority?: number): void;
     getHooks(options?: { hook?: BeforeHook<TYP, FN> | AfterHook<FN> }): { length: number, remove(): void }
@@ -36,9 +33,9 @@ export interface NamedHooks {
 }
 
 interface FunHooks {
-    <TYP extends HookType, FN extends AnyFunction>(type: TYP, fn: FN, name?: string): Hook<TYP, FN>;
+    <TYP extends HookType, FN extends AnyFunction>(type: TYP, fn: FN, name?: string): Hookable<TYP, FN>;
     ready(): void;
-    get<T extends keyof NamedHooks>(name: T): Hook<NamedHooks[T]['type'], NamedHooks[T]['fn']>
+    get<T extends keyof NamedHooks>(name: T): Hookable<NamedHooks[T]['type'], NamedHooks[T]['fn']>
 }
 
 export let hook: FunHooks = funHooks({
@@ -65,7 +62,7 @@ export const ready: Promise<void> = readyCtl.promise;
 
 export const getHook = hook.get;
 
-export function setupBeforeHookFnOnce<TYP extends HookType, FN extends AnyFunction>(baseFn: Hook<TYP, FN>, hookFn: BeforeHook<TYP, FN>, priority = 15) {
+export function setupBeforeHookFnOnce<TYP extends HookType, FN extends AnyFunction>(baseFn: Hookable<TYP, FN>, hookFn: BeforeHook<TYP, FN>, priority = 15) {
   let result = baseFn.getHooks({hook: hookFn});
   if (result.length === 0) {
     baseFn.before(hookFn, priority);
@@ -92,10 +89,10 @@ export function submodule(name, ...args) {
 /**
  * Copy hook methods (.before, .after, etc) from a given hook to a given wrapper object.
  */
-export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hook<TYP, FN>, wrapper: FN): Hook<TYP, FN> {
+export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hookable<TYP, FN>, wrapper: FN): Hookable<TYP, FN> {
   Object.defineProperties(
     wrapper,
     Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
   );
-  return (wrapper as unknown) as Hook<TYP, FN>;
+  return (wrapper as unknown) as Hookable<TYP, FN>;
 }

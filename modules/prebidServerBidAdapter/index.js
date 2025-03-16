@@ -25,7 +25,7 @@ import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.ts';
 import {hasPurpose1Consent} from '../../src/utils/gdpr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
-import {useMetrics} from '../../src/utils/perfMetrics.js';
+import {useMetrics} from '../../src/utils/perfMetrics.ts';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 

@@ -93,7 +93,7 @@ import * as events from './events.js';
 import adapterManager from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
 import {defer, PbPromise} from './utils/promise.js';
-import {useMetrics} from './utils/perfMetrics.js';
+import {useMetrics} from './utils/perfMetrics.ts';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.ts';
 import {ttlCollection} from './utils/ttlCollection.js';

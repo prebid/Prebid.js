@@ -6,7 +6,7 @@ import { config } from '../../src/config.js';
 import { module, getHook } from '../../src/hook.ts';
 import {logError} from '../../src/utils.js';
 import {PbPromise} from '../../src/utils/promise.js';
-import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.ts';
 
 let submodules = [];
 

@@ -18,7 +18,7 @@ import {hook} from './hook.ts';
 import {fireNativeTrackers} from './native.js';
 import {PbPromise} from './utils/promise.js';
 import adapterManager from './adapterManager.js';
-import {useMetrics} from './utils/perfMetrics.js';
+import {useMetrics} from './utils/perfMetrics.ts';
 import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 

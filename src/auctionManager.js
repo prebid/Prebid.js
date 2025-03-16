@@ -28,7 +28,7 @@ import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import {AuctionIndex} from './auctionIndex.js';
 import { BID_STATUS, JSON_MAPPING } from './constants.js';
-import {useMetrics} from './utils/perfMetrics.js';
+import {useMetrics} from './utils/perfMetrics.ts';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 
