@@ -23,18 +23,13 @@ import {
 import {hook} from '../hook.ts';
 import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
-import {useMetrics} from '../utils/perfMetrics.js';
+import {useMetrics} from '../utils/perfMetrics.ts';
 import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 import type {AnyFunction} from "../types/functions.d.ts";
-import {MediaType} from "../mediaTypes.ts";
 
-/**
- * @typedef {import('../mediaTypes.ts').MediaType} MediaType
- * @typedef {import('../Renderer.js').Renderer} Renderer
- */
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.

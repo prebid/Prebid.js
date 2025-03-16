@@ -5,19 +5,11 @@
  * register themselves with prebid-core.
  */
 
-/**
- * @typedef {('native'|'video'|'banner')} MediaType
- * @typedef {('adpod')} VideoContext
- */
+export type MediaType = typeof NATIVE | typeof VIDEO | typeof BANNER;
 
-/** @type {MediaType} */
 export const NATIVE = 'native';
-/** @type {MediaType} */
 export const VIDEO = 'video';
-/** @type {MediaType} */
 export const BANNER = 'banner';
-/** @type {VideoContext} */
 export const ADPOD = 'adpod';
 
 export const ALL_MEDIATYPES: MediaType[] = [NATIVE, VIDEO, BANNER];
-export type MediaType = typeof NATIVE | typeof VIDEO | typeof BANNER;
