@@ -1,5 +1,5 @@
 import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
-import {config} from '../src/config.js';
+import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 
@@ -67,7 +67,7 @@ export function fillVideoDefaults(adUnit) {
  * @param {Function=} onInvalidParam - The callback function to be called with key, value, and adUnit.
  * @returns {void}
  */
-export function validateOrtbVideoFields(adUnit, onInvalidParam) {
+export function validateOrtbVideoFields(adUnit, onInvalidParam?) {
   const videoParams = adUnit?.mediaTypes?.video;
 
   if (!isPlainObject(videoParams)) {
