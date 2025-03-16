@@ -41,7 +41,7 @@ function statusMessage(statusCode: BidStatus) {
 /**
  * Bid metadata.
  */
-export type BidMeta = {
+export interface BidMeta {
     [key: string]: unknown;
     /**
      * Advertiser domains (corresponds to ORTB `bid.adomain`).
@@ -68,7 +68,7 @@ export type BidMeta = {
 /**
  * Bid responses as provided by adapters; core then transforms these into `Bid`s
  */
-export type BaseBidResponse = {
+export interface BaseBidResponse {
     bidderCode?: BidderCode;
     requestId?: Identifier;
     mediaType: MediaType;
@@ -91,7 +91,7 @@ export type BaseBidResponse = {
     eventtrackers?: EventTrackerResponse[];
 };
 
-export type BannerBidProperties = {
+export interface BannerBidProperties {
     mediaType: 'banner';
     ad?: string;
     adUrl?: string;
@@ -101,20 +101,20 @@ export type BannerBidProperties = {
 
 export type BannerBidResponse = BaseBidResponse & BannerBidProperties;
 
-export type VideoBidProperties = {
+export interface VideoBidProperties {
     mediaType: 'video';
 }
 
 export type VideoBidResponse = BaseBidResponse & VideoBidProperties;
 
-export type NativeBidProperties = {
+export interface NativeBidProperties {
     mediaType: 'native';
 }
 export type NativeBidResponse = BaseBidResponse & NativeBidProperties;
 
 export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse;
 
-export type BaseBid = ContextIdentifiers & {
+export interface BaseBid extends ContextIdentifiers {
     metrics: Metrics;
     source: BidSource;
     bidderCode: BidderCode;
@@ -125,11 +125,12 @@ export type BaseBid = ContextIdentifiers & {
     getSize(): string;
     getStatusCode(): BidStatus;
     adapterCode?: BidderCode;
-    originalCpm?: number | string;
+    originalCpm?: unknown;
     originalCurrency?: Currency;
-    cpm: string;
+    cpm: number;
     currency: Currency;
     meta: BidMeta;
+    renderer?: any; // TODO WIP-TYPE
     /**
      * If true, this bid will not fire billing trackers until they are explicitly
      * triggered with `pbjs.triggerBilling()`.

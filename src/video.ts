@@ -2,6 +2,7 @@ import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logW
 import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
+import type {VideoBid} from "./bidfactory.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -95,18 +96,9 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam?) {
 }
 
 /**
- * @typedef {object} VideoBid
- * @property {string} adId id of the bid
- */
-
-/**
  * Validate that the assets required for video context are present on the bid
- * @param {VideoBid} bid Video bid to validate
- * @param {Object} [options] - Options object
- * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`
- * @return {Boolean} If object is valid
  */
-export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
+export function isValidVideoBid(bid: VideoBid, {index = auctionManager.index} = {}): boolean {
   const videoMediaType = index.getMediaTypes(bid)?.video;
   const context = videoMediaType && videoMediaType?.context;
   const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
@@ -117,7 +109,24 @@ export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
   return checkVideoBidSetup(bid, adUnit, videoMediaType, context, useCacheKey);
 }
 
-export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context, useCacheKey) {
+declare module './bidfactory' {
+    interface VideoBidProperties {
+        vastXml?: string;
+        vastUrl?: string;
+    }
+}
+
+declare module './hook' {
+    interface NamedHooks {
+        checkVideoBidSetup: {
+            type: 'sync';
+            fn: typeof checkVideoBidSetup
+        }
+    }
+}
+
+
+export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
