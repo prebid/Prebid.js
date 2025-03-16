@@ -62,11 +62,7 @@ const converter = ortbConverter({
     netRevenue: DEFAULT_NET_REVENUE,
     ttl: DEFAULT_TTL,
     currency: CURRENCY
-  },
-  // imp,
-  // request,
-  // bidResponse,
-  // response
+  }
 });
 
 function getTTXConfig() {
@@ -265,7 +261,7 @@ function _getMRAKey(bidRequest) {
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSettings, bidderRequest, convertedORTB }) {
   const firstBidRequest = bidRequests[0];
-  const { siteId } = firstBidRequest.params;
+  const { siteId, test } = firstBidRequest.params;
   const ttxRequest = collapseFalsy({
     imp: bidRequests.map(req => _buildImpORTB(req)),
     site: {
@@ -279,22 +275,10 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
           vp: getViewportDimensions(),
         }
       },
-      // sua: firstBidRequest.ortb2?.device?.sua
     },
-    // id: bidderRequest.bidderRequestId,
-    // user: {
-    //   ext: {
-    //     eids: firstBidRequest.userIdAsEids,
-    //     consent: gdprConsent.consentString
-    //   }
-    // },
     regs: {
-      // coppa: Number(!!config.getConfig('coppa')),
-      // gpp: gppConsent.gppString,
-      // gpp_sid: gppConsent.applicableSections,
       ext: {
         gdpr: Number(gdprConsent.gdprApplies),
-        // us_privacy: uspConsent
       }
     },
     ext: {
@@ -306,12 +290,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
         } ]
       }
     },
-    // source: {
-    //   ext: {
-    //     schain: firstBidRequest.schain
-    //   }
-    // },
-    // test: test === 1 ? 1 : null
+    test: test === 1 ? 1 : null
   });
 
   delete convertedORTB.imp;
