@@ -22,7 +22,7 @@ export type MetricsTimer = {
     stopAfter<F extends AnyFunction>(fn: F): Wraps<F>;
 };
 
-type InstrumentedNext<F extends AnyFunction> = Next<F> & {
+export type InstrumentedNext<F extends AnyFunction> = Next<F> & {
     /**
      * The original `next` argument; using it will not affect the timer.
      */

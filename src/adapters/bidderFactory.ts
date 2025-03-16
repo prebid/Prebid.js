@@ -253,7 +253,7 @@ export function newBidder(spec) {
       const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode: string, bid) {
+      function addBidWithCode(adUnitCode: string, bid: Bid) {
         const metrics = useMetrics(bid.metrics);
         metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;

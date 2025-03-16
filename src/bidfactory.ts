@@ -3,6 +3,7 @@ import type {BidderCode, BidSource, Currency, Identifier} from "./types/common.d
 import {MediaType} from "./mediaTypes.ts";
 import type {DSAResponse} from "./types/ortb/ext/dsa.d.ts";
 import type {EventTrackerResponse} from "./types/ortb/native/eventtrackers.d.ts";
+import {Metrics} from "./utils/perfMetrics.ts";
 
 type ContextIdentifiers = {
     transactionId: Identifier;
@@ -114,6 +115,7 @@ export type NativeBidResponse = BaseBidResponse & NativeBidProperties;
 export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse;
 
 export type BaseBid = ContextIdentifiers & {
+    metrics: Metrics;
     source: BidSource;
     bidderCode: BidderCode;
     width: number;
