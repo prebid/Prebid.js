@@ -56,9 +56,7 @@ describe('33acrossBidAdapter:', function () {
       id: 'r1',
       regs: {
         coppa: 0,
-        ext: {
-          gdpr: 0
-        }
+        gdpr: 0
       },
       ext: {
         ttx: {
@@ -168,31 +166,24 @@ describe('33acrossBidAdapter:', function () {
     this.withGdprConsent = (consent, gdpr) => {
       Object.assign(ttxRequest, {
         user: {
-          ext: { consent }
+          consent
         }
       });
       Object.assign(ttxRequest, {
         regs: {
           coppa: 0,
-          ext: Object.assign(
-            {},
-            ttxRequest.regs?.ext,
-            { gdpr }
-          )
+          gdpr
         }
       });
       return this;
     };
 
-    this.withUspConsent = (consent) => {
+    this.withUspConsent = (us_privacy) => {
       Object.assign(ttxRequest, {
         regs: {
           coppa: 0,
-          ext: Object.assign(
-            {},
-            ttxRequest.regs?.ext,
-            { us_privacy: consent }
-          )
+          gdpr: 0,
+          us_privacy
         }
       });
 
@@ -211,9 +202,9 @@ describe('33acrossBidAdapter:', function () {
       Object.assign(ttxRequest, {
         regs: {
           coppa: 0,
+          gdpr: 0,
           gpp: consentString,
           gpp_sid: applicableSections,
-          ...(ttxRequest.regs?.ext ? { ext: ttxRequest.regs.ext } : {})
         }
       });
 
@@ -250,9 +241,7 @@ describe('33acrossBidAdapter:', function () {
     this.withSchain = schain => {
       Object.assign(ttxRequest, {
         source: {
-          ext: {
-            schain
-          }
+          schain
         }
       });
 
@@ -291,9 +280,7 @@ describe('33acrossBidAdapter:', function () {
     this.withUserIds = (eids) => {
       Object.assign(ttxRequest, {
         user: {
-          ext: {
-            eids
-          }
+          eids
         }
       });
 
