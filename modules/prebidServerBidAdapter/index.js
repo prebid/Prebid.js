@@ -502,15 +502,18 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .reduce(flatten, [])
     .filter(uniques);
 
-  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
-  const requestJson = request && JSON.stringify(request);
-  logInfo('BidRequest: ' + requestJson);
-  const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
-  const customHeaders = s2sBidRequest?.s2sConfig?.customHeaders ?? {};
-  if (request && requestJson && endpointUrl) {
+  const requestData = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
+  const request = {
+    endpointUrl: getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+    requestJson: requestData && JSON.stringify(requestData),
+    customHeaders: s2sBidRequest?.s2sConfig?.customHeaders ?? {},
+  };
+  events.emit(EVENTS.BEFORE_PBS_HTTP, request)
+  logInfo('BidRequest: ' + request);
+  if (requestData && request.requestJson && request.endpointUrl) {
     const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
-      endpointUrl,
+      request.endpointUrl,
       {
         success: function (response) {
           networkDone();
@@ -537,12 +540,12 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           onError.apply(this, arguments);
         }
       },
-      requestJson,
+      request.requestJson,
       {
         contentType: 'text/plain',
         withCredentials: true,
         browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
-        customHeaders
+        customHeaders: request.customHeaders
       }
     );
   } else {
