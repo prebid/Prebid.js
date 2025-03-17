@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/showheroes-bsBidAdapter.js'
-import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
@@ -93,19 +93,19 @@ describe('shBidAdapter', () => {
     expect(spec.isBidRequestValid(bid)).to.eql(true);
   });
 
-  it('passes gdpr, usp, schain, floor in ortb request', () => {
+  it('passes gdpr, usp, schain, floor in ortb request', async () => {
     const bidRequest = Object.assign({}, bidRequestVideoV2)
     const fullRequest = {
       bids: [bidRequestVideoV2],
       ...bidderRequest,
       ...gdpr,
       ...schain,
-      ...{ uspConsent: uspConsent },
+      ...{uspConsent: uspConsent},
     };
     bidRequest.schain = schain.schain.config;
-    const getFloorResponse = { currency: 'EUR', floor: 3 };
+    const getFloorResponse = {currency: 'EUR', floor: 3};
     bidRequest.getFloor = () => getFloorResponse;
-    const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(fullRequest));
+    const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest(fullRequest));
     const payload = request.data;
     expect(payload.regs.ext.gdpr).to.eql(Number(gdpr.gdprConsent.gdprApplies));
     expect(payload.regs.ext.us_privacy).to.eql(uspConsent);

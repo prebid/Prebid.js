@@ -1,4 +1,4 @@
-/* eslint-disable prebid/validate-imports,no-undef */
+ 
 import { expect } from 'chai';
 import { spec } from 'modules/luceadBidAdapter.js';
 import sinon from 'sinon';
