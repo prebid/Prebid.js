@@ -75,7 +75,6 @@ export const spec = {
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
-      bid.netRevenue = 'net';
       const imp = {
         id: id + 1 + ''
       }
@@ -193,7 +192,7 @@ export const spec = {
           cpm: bidResponse.price,
           creativeId: bidResponse.crid,
           ttl: 360,
-          netRevenue: bid.netRevenue === 'net',
+          netRevenue: true,
           currency: cur,
           mediaType: type,
           nurl: bidResponse.nurl,
