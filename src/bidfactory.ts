@@ -73,7 +73,7 @@ export interface BaseBidResponse {
     bidderCode?: BidderCode;
     requestId?: Identifier;
     mediaType: MediaType;
-    cpm: number | string;
+    cpm: number;
     ttl: number;
     creativeId: string;
     currency: Currency;
@@ -125,7 +125,7 @@ export interface BaseBid extends ContextIdentifiers {
     getSize(): string;
     getStatusCode(): BidStatus;
     adapterCode?: BidderCode;
-    originalCpm?: unknown;
+    originalCpm?: number;
     originalCurrency?: Currency;
     cpm: number;
     currency: Currency;

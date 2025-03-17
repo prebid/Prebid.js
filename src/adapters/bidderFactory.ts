@@ -545,8 +545,8 @@ export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
 
 declare module '../bidfactory' {
     interface BannerBidProperties {
-        width: number;
-        height: number;
+        width?: number;
+        height?: number;
         wratio?: number;
         hratio?: number;
     }
