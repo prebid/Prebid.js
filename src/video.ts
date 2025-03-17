@@ -110,7 +110,7 @@ export function isValidVideoBid(bid: VideoBid, {index = auctionManager.index} = 
 }
 
 declare module './bidfactory' {
-    interface VideoBidProperties {
+    interface VideoBidResponseProperties {
         vastXml?: string;
         vastUrl?: string;
     }

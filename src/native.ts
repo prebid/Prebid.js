@@ -44,8 +44,14 @@ export type LegacyNativeResponse = LegacyNativeAssetsResponse & {
 };
 
 declare module './bidfactory' {
-    interface NativeBidProperties {
+    interface NativeBidResponseProperties {
         native: LegacyNativeResponse & { ortb?: NativeResponse };
+    }
+
+    // core will always provide ortb for native responses
+
+    interface NativeBidProperties {
+        native: LegacyNativeResponse & { ortb: NativeBidResponse };
     }
 }
 

@@ -92,24 +92,31 @@ export interface BaseBidResponse {
     eventtrackers?: EventTrackerResponse[];
 }
 
-export interface BannerBidProperties {
+
+export interface BannerBidResponseProperties {
     mediaType: 'banner';
+    /**
+     * Ad markup. Required unless adUrl is provided.
+     */
     ad?: string;
+    /**
+     * Ad URL. Required unless ad is provided.
+     */
     adUrl?: string;
 }
 
-export type BannerBidResponse = BaseBidResponse & BannerBidProperties;
 
-export interface VideoBidProperties {
+export interface VideoBidResponseProperties {
     mediaType: 'video';
 }
 
-export type VideoBidResponse = BaseBidResponse & VideoBidProperties;
-
-export interface NativeBidProperties {
+export interface NativeBidResponseProperties {
     mediaType: 'native';
 }
-export type NativeBidResponse = BaseBidResponse & NativeBidProperties;
+
+export type BannerBidResponse = BaseBidResponse & BannerBidResponseProperties;
+export type VideoBidResponse = BaseBidResponse & VideoBidResponseProperties;
+export type NativeBidResponse = BaseBidResponse & NativeBidResponseProperties;
 
 export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse;
 
@@ -138,11 +145,24 @@ export interface BaseBid extends ContextIdentifiers {
     deferRendering: boolean;
 }
 
-type BidFrom<T> = BaseBid & Omit<T, keyof BaseBid>;
+export interface BannerBidProperties {
+    mediaType: 'banner';
+}
 
-export type BannerBid = BidFrom<BannerBidResponse>;
-export type VideoBid = BidFrom<VideoBidResponse>;
-export type NativeBid = BidFrom<NativeBidResponse>;
+export interface NativeBidProperties {
+    mediaType: 'native';
+}
+
+export interface VideoBidProperties {
+    mediaType: 'video';
+}
+
+
+type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;
+
+export type BannerBid = BidFrom<BannerBidResponse, BannerBidProperties>;
+export type VideoBid = BidFrom<VideoBidResponse, VideoBidProperties>;
+export type NativeBid = BidFrom<NativeBidResponse, NativeBidProperties>;
 export type Bid = BannerBid | VideoBid | NativeBid;
 
 
