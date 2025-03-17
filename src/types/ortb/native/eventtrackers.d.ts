@@ -1,5 +1,7 @@
 // https://www.iab.com/wp-content/uploads/2018/03/OpenRTB-Native-Ads-Specification-Final-1.2.pdf
 
+import type {Extensible} from "../common.d.ts";
+
 /**
  * Type of event to track.
  * 1 = impression;
@@ -23,7 +25,7 @@ type Method = number;
  * The event trackers response is an array of objects and specifies the types of events the bidder
  * wishes to track and the URLs/information to track them
  */
-export type EventTrackerResponse = {
+export type EventTrackerResponse = Extensible & {
     /**
      * @see Event
      */
@@ -44,5 +46,4 @@ export type EventTrackerResponse = {
      * {“accountnumber”:”123”}.
      */
     customdata?: { [key: string]: string };
-    ext?: { [key: string]: unknown };
 }

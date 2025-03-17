@@ -187,7 +187,7 @@ export const NATIVE_KEYS_THAT_ARE_NOT_ASSETS = [
   'adTemplate',
   'rendererUrl',
   'type'
-];
+] as const;
 
 export const MESSAGES = {
   REQUEST: 'Prebid Request',

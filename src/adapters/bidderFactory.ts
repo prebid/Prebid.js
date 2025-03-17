@@ -79,13 +79,6 @@ import type {AnyFunction} from "../types/functions.d.ts";
  */
 
 /**
- * @typedef {object} BidRequest
- *
- * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
- * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- */
-
-/**
  * @typedef {object} BidderAuctionResponse An object encapsulating an adapter response for current Auction
  *
  * @property {Array<Bid>} bids? Contextual bids returned by this adapter, if any
