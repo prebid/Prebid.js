@@ -241,28 +241,47 @@ function prepareData (data, result) {
   if (adTypeValue) {
     result[PARAMS_NAMES.adType] = adTypeValue;
   }
-  if (data.placementId) {
-    result.placementId = data.placementId;
-  } else {
-    // Simplified placementId determination
-    let placeIdFound = false;
-    if (data.params && Array.isArray(data.params)) {
-      for (let i = 0; i < data.params.length; i++) {
-        const param = data.params[i];
-        if (param.placementId) {
-          result.placementId = param.placementId;
-          placeIdFound = true;
-          break;
-        }
-      }
-    }
-    if (!placeIdFound && data.adUnitCode) {
-      result.placementId = data.adUnitCode;
-    }
+  const iiqConfig = getIntentIqConfig();
+  const adUnitConfig = iiqConfig.params?.adUnitConfig;
+
+  switch (adUnitConfig) {
+    case 1:
+      // adUnitCode or placementId
+      result.placementId = data.adUnitCode || extractPlacementId(data) || '';
+      break;
+    case 2:
+      // placementId or adUnitCode
+      result.placementId = extractPlacementId(data) || data.adUnitCode || '';
+      break;
+    case 3:
+      // Only adUnitCode
+      result.placementId = data.adUnitCode || '';
+      break;
+    case 4:
+      // Only placementId
+      result.placementId = extractPlacementId(data) || '';
+      break;
+    default:
+      // Default (like in case #1)
+      result.placementId = data.adUnitCode || extractPlacementId(data) || '';
   }
 
   result.biddingPlatformId = 1;
   result.partnerAuctionId = 'BW';
+}
+
+function extractPlacementId(data) {
+  if (data.placementId) {
+    return data.placementId;
+  }
+  if (data.params && Array.isArray(data.params)) {
+    for (let i = 0; i < data.params.length; i++) {
+      if (data.params[i].placementId) {
+        return data.params[i].placementId;
+      }
+    }
+  }
+  return null;
 }
 
 function getDefaultDataObject() {

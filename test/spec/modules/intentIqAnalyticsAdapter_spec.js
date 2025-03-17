@@ -59,7 +59,6 @@ let wonRequest = {
   'responseTimestamp': 1669644710345,
   'requestTimestamp': 1669644710109,
   'bidder': 'testbidder',
-  'adUnitCode': 'addUnitCode',
   'timeToRespond': 236,
   'pbLg': '5.00',
   'pbMg': '5.00',
@@ -405,6 +404,81 @@ describe('IntentIQ tests all', function () {
       if (shouldContainFui) {
         expect(fui).to.equal('1');
       }
+    });
+  });
+
+  const adUnitConfigTests = [
+    {
+      adUnitConfig: 1,
+      description: 'should extract adUnitCode first (adUnitConfig = 1)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'adUnitCode-123'
+    },
+    {
+      adUnitConfig: 1,
+      description: 'should extract placementId if there is no adUnitCode (adUnitConfig = 1)',
+      event: { placementId: 'placementId-456' },
+      expectedPlacementId: 'placementId-456'
+    },
+    {
+      adUnitConfig: 2,
+      description: 'should extract placementId first (adUnitConfig = 2)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'placementId-456'
+    },
+    {
+      adUnitConfig: 2,
+      description: 'should extract adUnitCode if there is no placementId (adUnitConfig = 2)',
+      event: { adUnitCode: 'adUnitCode-123', },
+      expectedPlacementId: 'adUnitCode-123'
+    },
+    {
+      adUnitConfig: 3,
+      description: 'should extract only adUnitCode (adUnitConfig = 3)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'adUnitCode-123'
+    },
+    {
+      adUnitConfig: 4,
+      description: 'should extract only placementId (adUnitConfig = 4)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'placementId-456'
+    },
+    {
+      adUnitConfig: 1,
+      description: 'should return empty placementId if neither adUnitCode or placementId exist',
+      event: {},
+      expectedPlacementId: ''
+    },
+    {
+      adUnitConfig: 1,
+      description: 'should extract placementId from params array if no top-level adUnitCode or placementId exist (adUnitConfig = 1)',
+      event: {
+        params: [{ someKey: 'value' }, { placementId: 'nested-placementId' }]
+      },
+      expectedPlacementId: 'nested-placementId'
+    }
+  ];
+
+  adUnitConfigTests.forEach(({ adUnitConfig, description, event, expectedPlacementId }) => {
+    it(description, function () {
+      const [userConfig] = getUserConfig();
+      userConfig.params.adUnitConfig = adUnitConfig;
+
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+      const testEvent = { ...wonRequest, ...event };
+      events.emit(EVENTS.BID_WON, testEvent);
+
+      const request = server.requests[0];
+      const urlParams = new URL(request.url);
+      const encodedPayload = urlParams.searchParams.get('payload');
+      const decodedPayload = JSON.parse(atob(JSON.parse(encodedPayload)[0]));
+
+      expect(server.requests.length).to.be.above(0);
+      expect(encodedPayload).to.exist;
+      expect(decodedPayload).to.have.property('placementId', expectedPlacementId);
     });
   });
 });
