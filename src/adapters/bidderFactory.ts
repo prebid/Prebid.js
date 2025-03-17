@@ -107,27 +107,6 @@ import type {AnyFunction} from "../types/functions.d.ts";
  */
 
 /**
- * @typedef {object} Bid
- *
- * @property {string} requestId The specific BidRequest which this bid is aimed at.
- *   This should match the BidRequest.bidId which this Bid targets.
- * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
- * @property {string} currency The currency code for the cpm value
- * @property {number} cpm The bid price, in US cents per thousand impressions.
- * @property {number} ttl Time-to-live - how long (in seconds) Prebid can use this bid.
- * @property {boolean} netRevenue Boolean defining whether the bid is Net or Gross.  The default is true (Net).
- * @property {number} height The height of the ad, in pixels.
- * @property {number} width The width of the ad, in pixels.
- *
- * @property {object} [native] Object for storing native creative assets
- * @property {object} [video] Object for storing video response data
- * @property {object} [meta] Object for storing bid meta data
- * @property {string} [meta.primaryCatId] The IAB primary category ID
- * @property {Renderer} renderer A Renderer which can be used as a default for this bid,
- *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
- */
-
-/**
  * @typedef {Object} SyncOptions
  *
  * An object containing information about usersyncs which the adapter should obey.
