@@ -23,7 +23,7 @@ const NATIVE_PARAMS = {
   cta: { id: 1, type: 12, name: 'data' }
 };
 const NATIVE_ASSET_IDS = Object.entries(NATIVE_PARAMS).reduce((acc, [key, value]) => {
-  acc[parseInt(value.id, 10)] = key;
+  acc[value.id] = key;
   return acc;
 }, {});
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
