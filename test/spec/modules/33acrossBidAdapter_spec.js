@@ -32,10 +32,10 @@ describe('33acrossBidAdapter:', function () {
         id: siteId
       },
       device: {
+        w: 1024,
+        h: 728,
         ext: {
           ttx: {
-            w: 1024,
-            h: 728,
             vp: {
               w: 800,
               h: 600
@@ -456,15 +456,6 @@ describe('33acrossBidAdapter:', function () {
     };
     this.win = {
       parent: null,
-      devicePixelRatio: 2,
-      screen: {
-        width: 1024,
-        height: 728,
-        availHeight: 500
-      },
-      navigator: {
-        maxTouchPoints: 0
-      },
       document: {
         visibilityState: 'visible',
         documentElement: {
@@ -490,12 +481,17 @@ describe('33acrossBidAdapter:', function () {
         .build();
     }
 
-    this.buildBidderRequest = (bidRequests, additionalArgs) => {
+    this.buildBidderRequest = (bidRequests, additionalProps) => {
       const [ bidRequest ] = bidRequests;
 
       return mergeDeep({
-        ortb2: bidRequest.ortb2,
-      }, additionalArgs);
+        ortb2: mergeDeep({
+          device: {
+            w: 1024,
+            h: 728
+          }
+        }, bidRequest.ortb2),
+      }, additionalProps);
     };
 
     this.buildServerRequest = (data, url) => {
@@ -996,63 +992,6 @@ describe('33acrossBidAdapter:', function () {
 
           validateBuiltServerRequest(buildRequest, serverRequest);
         });
-      });
-    });
-
-    it('returns the screen dimensions', function() {
-      const serverRequest = this.buildServerRequest(
-        new TtxRequestBuilder()
-          .withBanner()
-          .withDevice({
-            ext: {
-              ttx: {
-                w: 1024,
-                h: 728
-              }
-            }
-          })
-          .withProduct()
-          .build()
-      );
-      const bidRequests = this.buildBannerBidRequests();
-      const bidderRequest = this.buildBidderRequest(bidRequests);
-
-      this.win.screen.width = 1024;
-      this.win.screen.height = 728;
-
-      const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
-
-      validateBuiltServerRequest(buildRequest, serverRequest);
-    });
-
-    context('when the window height is greater than the width', function() {
-      it('returns the smaller screen dimension as the width', function() {
-        const serverRequest = this.buildServerRequest(
-          new TtxRequestBuilder()
-            .withBanner()
-            .withDevice({
-              ext: {
-                ttx: {
-                  w: 728,
-                  h: 1024
-                }
-              }
-            })
-            .withProduct()
-            .build()
-        );
-        const bidRequests = this.buildBannerBidRequests();
-        const bidderRequest = this.buildBidderRequest(bidRequests);
-
-        this.win.screen.width = 1024;
-        this.win.screen.height = 728;
-
-        this.win.innerHeight = 728;
-        this.win.innerWidth = 727;
-
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
-
-        validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
