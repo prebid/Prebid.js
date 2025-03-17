@@ -51,7 +51,7 @@ declare module './bidfactory' {
     // core will always provide ortb for native responses
 
     interface NativeBidProperties {
-        native: LegacyNativeResponse & { ortb: NativeBidResponse };
+        native: LegacyNativeResponse & { ortb: NativeResponse };
     }
 }
 
