@@ -1,21 +1,4 @@
 /**
- * Module for auction instances.
- *
- * In Prebid 0.x, $$PREBID_GLOBAL$$ had _bidsRequested and _bidsReceived as public properties.
- * Starting 1.0, Prebid will support concurrent auctions. Each auction instance will store private properties, bidsRequested and bidsReceived.
- *
- * AuctionManager will create an instance of auction and will store all the auctions.
- *
- */
-
-/**
- * @typedef {import('./adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('./adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/config.js').MediaTypePriceGranularity} MediaTypePriceGranularity
- * @typedef {import('./mediaTypes.js').MediaType} MediaType
- */
-
-/**
  * @typedef {Object} AdUnit An object containing the adUnit configuration.
  *
  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
@@ -501,6 +484,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   }
 
   function adapterDone() {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
     let bidderRequest = this;
     let bidderRequests = auctionInstance.getBidRequests();
     const auctionOptionsConfig = config.getConfig('auctionOptions');
@@ -717,7 +701,7 @@ export const getPriceGranularity = (bid, {index = auctionManager.index} = {}) =>
  * @param {string} granularity
  * @returns {function}
  */
-export const getPriceByGranularity = (granularity) => {
+export const getPriceByGranularity = (granularity?) => {
   return (bid) => {
     const bidGranularity = granularity || getPriceGranularity(bid);
     if (bidGranularity === GRANULARITY_OPTIONS.AUTO) {
