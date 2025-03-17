@@ -413,7 +413,7 @@ export function getNativeRenderingData(bid, adUnit, keys) {
 }
 
 function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
-  const msg = {
+  const msg: any = {
     message: 'assetResponse',
     adId: data.adId,
   };
@@ -482,7 +482,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     logError('Native assets object is empty or not an object: ', legacyNativeAssets);
     return;
   }
-  const ortb = {
+  const ortb: any = {
     ver: '1.2',
     assets: []
   };
@@ -504,7 +504,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     if (asset.required && isBoolean(asset.required)) {
       required = Number(asset.required);
     }
-    const ortbAsset = {
+    const ortbAsset: any = {
       id: ortb.assets.length,
       required
     };
@@ -603,7 +603,7 @@ export function fromOrtbNativeRequest(openRTBRequest) {
     return;
   }
 
-  const oldNativeObject = {};
+  const oldNativeObject: any = {};
   for (const asset of openRTBRequest.assets) {
     if (asset.title) {
       const title = {
@@ -612,7 +612,7 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       }
       oldNativeObject.title = title;
     } else if (asset.img) {
-      const image = {
+      const image: any = {
         required: asset.required ? Boolean(asset.required) : false,
       }
       if (asset.img.w && asset.img.h) {
@@ -690,7 +690,7 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
  * @param legacyNative `bidResponse.native` object as returned by adapters
  */
 export function legacyPropertiesToOrtbNative(legacyNative) {
-  const response = {
+  const response: any = {
     link: {},
     eventtrackers: []
   }
@@ -782,7 +782,7 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
  * @returns an object containing the response in legacy native format: { title: "this is a title", image: ... }
  */
 export function toLegacyResponse(ortbResponse, ortbRequest) {
-  const legacyResponse = {};
+  const legacyResponse: any = {};
   const requestAssets = ortbRequest?.assets || [];
   legacyResponse.clickUrl = ortbResponse.link?.url;
   legacyResponse.privacyLink = ortbResponse.privacy;

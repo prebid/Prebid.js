@@ -126,6 +126,9 @@ function creativeMessageHandler(deps) {
   }
 }
 
+/**
+ * @type {Hookable<"sync", function(*, *): *>}
+ */
 export const getRenderingData = hook('sync', function (bidResponse, options) {
   const {ad, adUrl, cpm, originalCpm, width, height} = bidResponse
   const repl = {
