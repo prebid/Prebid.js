@@ -81,6 +81,8 @@ import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
+import type {Bid} from "./bidfactory.ts";
+import type {BidderCode} from "./types/common.d.ts";
 
 const { syncUsers } = userSync;
 
@@ -403,15 +405,16 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   };
 }
 
+declare module './hook' {
+    interface NamedHooks {
+        addBidResponse: typeof addBidResponse
+    }
+}
+
 /**
  * Hook into this to intercept bids before they are added to an auction.
- *
- * @type {Function}
- * @param adUnitCode
- * @param bid
- * @param {function(String): void} reject a function that, when called, rejects `bid` with the given reason.
  */
-export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
+export const addBidResponse = hook('sync', function(adUnitCode: string, bid: Partial<Bid>, reject: (reason: (typeof REJECTION_REASON)[keyof typeof REJECTION_REASON]) => void): void {
   if (!isValidPrice(bid)) {
     reject(REJECTION_REASON.PRICE_TOO_HIGH)
   } else {
@@ -450,14 +453,14 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     }
   }
 
-  function handleBidResponse(adUnitCode, bid, handler) {
+  function handleBidResponse(adUnitCode: string, bid: Partial<Bid>, handler) {
     bidResponseMap[bid.requestId] = true;
     addCommonResponseProperties(bid, adUnitCode)
     outstandingBidsAdded++;
     return handler(afterBidAdded);
   }
 
-  function acceptBidResponse(adUnitCode, bid) {
+  function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
@@ -537,7 +540,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 }
 
 // Add a bid to the auction.
-export function addBidToAuction(auctionInstance, bidResponse) {
+export function addBidToAuction(auctionInstance, bidResponse: Bid) {
   setupBidTargeting(bidResponse);
 
   useMetrics(bidResponse.metrics).timeSince('addBidResponse', 'addBidResponse.total');
@@ -577,11 +580,62 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
   }
 }, 'callPrebidCache');
 
+declare module './bidfactory' {
+    interface BaseBid {
+        /**
+         * Timestamp of when the request for this bid was generated.
+         */
+        requestTimestamp: number;
+        /**
+         * Timestamp of when the response for this bid was received.
+         */
+        responseTimestamp: number;
+        /**
+         * responseTimestamp - requestTimestamp
+         */
+        timeToRespond: number;
+        /**
+         * alias of `bidderCode`.
+         */
+        bidder: BidderCode;
+        /**
+         * Code of the ad unit this bid is for.
+         */
+        adUnitCode: string;
+        /**
+         * TTL buffer for this bid; it will expire after `.ttl` - `.ttlBuffer` seconds have elapsed.
+         */
+        ttlBuffer?: number;
+        /**
+         * Low granularity price bucket for this bid.
+         */
+        pbLg: string;
+        /**
+         * Medium granularity price bucket for this bid.
+         */
+        pbMg: string;
+        /**
+         * High granularity price bucket for this bid.
+         */
+        pbHg: string;
+        /**
+         * Auto granularity price bucket for this bid.
+         */
+        pbAg: string;
+        /**
+         * Dense granularity price bucket for this bid.
+         */
+        pbDg: string;
+        /**
+         * Custom granularity price bucket for this bid.
+         */
+        pbCg: string;
+    }
+}
 /**
  * Augment `bidResponse` with properties that are common across all bids - including rejected bids.
- *
  */
-function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionManager.index} = {}) {
+function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: string, {index = auctionManager.index} = {}) {
   const bidderRequest = index.getBidderRequest(bidResponse);
   const adUnit = index.getAdUnit(bidResponse);
   const start = (bidderRequest && bidderRequest.start) || bidResponse.requestTimestamp;
@@ -604,7 +658,7 @@ function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionMa
 /**
  * Add additional bid response properties that are universal for all _accepted_ bids.
  */
-function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
+function getPreparedBidForAuction(bid: Partial<Bid>, {index = auctionManager.index} = {}): Bid {
   // Let listeners know that now is the time to adjust the bid, if they want to.
   //
   // CAREFUL: Publishers rely on certain bid properties to be available (like cpm),
@@ -650,7 +704,7 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   bid.pbDg = priceStringsObj.dense;
   bid.pbCg = priceStringsObj.custom;
 
-  return bid;
+  return bid as Bid;
 }
 
 function setupBidTargeting(bidObject) {
