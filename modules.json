@@ -3,6 +3,7 @@
     "33acrossBidAdapter",
     "admaticBidAdapter",
     "airgridRtdProvider",
+    "alkimiBidAdapter",
     "appnexusBidAdapter",
     "atsAnalyticsAdapter",
     "carbonAnalyticsAdapter",
