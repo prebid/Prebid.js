@@ -82,7 +82,7 @@ import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 import type {Bid} from "./bidfactory.ts";
-import type {BidderCode} from "./types/common.d.ts";
+import type {BidderCode, Identifier} from "./types/common.d.ts";
 
 const { syncUsers } = userSync;
 
@@ -581,6 +581,13 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
 }, 'callPrebidCache');
 
 declare module './bidfactory' {
+    interface BaseBidResponse {
+        /**
+         * Targeting key-value pairs for this bid.
+         */
+        adserverTargeting: { [key: string]: unknown }
+    }
+
     interface BaseBid {
         /**
          * Timestamp of when the request for this bid was generated.
@@ -630,6 +637,14 @@ declare module './bidfactory' {
          * Custom granularity price bucket for this bid.
          */
         pbCg: string;
+        /**
+         * This bid's creative size, expressed as width x height.
+         */
+        size: ReturnType<BaseBid['getSize']>
+        /**
+         * If custom targeting was defined, whether standard targeting should also be used for this bid.
+         */
+        sendStandardTargeting?: boolean;
     }
 }
 /**
@@ -707,7 +722,7 @@ function getPreparedBidForAuction(bid: Partial<Bid>, {index = auctionManager.ind
   return bid as Bid;
 }
 
-function setupBidTargeting(bidObject) {
+function setupBidTargeting(bidObject: Bid) {
   let keyValues;
   const cpmCheck = (bidderSettings.get(bidObject.bidderCode, 'allowZeroCpmBids') === true) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
@@ -881,7 +896,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
   return standardSettings;
 }
 
-export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = auctionManager.index} = {}) {
+export function getKeyValueTargetingPairs(bidderCode, custBidObj: Bid, {index = auctionManager.index} = {}) {
   if (!custBidObj) {
     return {};
   }

@@ -86,7 +86,7 @@ export const TARGETING_KEYS = {
   ACAT: 'hb_acat',
   CRID: 'hb_crid',
   DSP: 'hb_dsp'
-};
+} as const;
 
 export const DEFAULT_TARGETING_KEYS = {
   BIDDER: 'hb_bidder',
