@@ -362,19 +362,19 @@ export const intentIqIdSubmodule = {
       firePartnerCallback()
     }
 
-    if (!shouldCallServer) {
-      if (isGroupB) runtimeEids = { eids: [] };
-      firePartnerCallback();
-      return { id: runtimeEids.eids };
-    }
-
     // Check if current browser is in blacklist
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
-      logError('User ID - intentIqId submodule: browser is in blacklist!');
+      logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('', BLACK_LIST);
       const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData)
       sendSyncRequest(allowedStorage, url, configParams.partner)
       return
+    }
+
+    if (!shouldCallServer) {
+      if (isGroupB) runtimeEids = { eids: [] };
+      firePartnerCallback();
+      return { id: runtimeEids.eids };
     }
 
     // use protocol relative urls for http or https
