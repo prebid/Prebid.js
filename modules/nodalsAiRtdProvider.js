@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { prefixLog } from '../src/utils.js';
+import { logMessage, prefixLog } from '../src/utils.js';
 
 const MODULE_NAME = 'nodalsAi';
 const GVLID = 1360;
@@ -40,6 +40,7 @@ class NodalsAiRtdProvider {
   // Private properties
   #propertyId = null;
   #overrides = {};
+  #engine = undefined;
 
   // Public methods
 
@@ -83,20 +84,13 @@ class NodalsAiRtdProvider {
     if (!this.#hasRequiredUserConsent(userConsent)) {
       return targetingData;
     }
-    const storedData = this.#readFromStorage(
-      this.#overrides?.storageKey || this.STORAGE_KEY
-    );
-    if (storedData === null) {
+    const engine = this.#initialiseEngine(config);
+    if (!engine) {
       return targetingData;
     }
-    const facts = Object.assign({}, storedData?.facts ?? {});
-    facts['page.url'] = getRefererInfo().page;
-    const targetingEngine = window?.$nodals?.adTargetingEngine['latest'];
     try {
-      targetingEngine.init(config, facts);
-      targetingData = targetingEngine.getTargetingData(
+      targetingData = engine.getTargetingData(
         adUnitArray,
-        storedData,
         userConsent
       );
     } catch (error) {
@@ -105,7 +99,87 @@ class NodalsAiRtdProvider {
     return targetingData;
   }
 
+  getBidRequestData(requestObj, callback, config, userConsent) {
+    if (!this.#hasRequiredUserConsent(userConsent)) {
+      callback();
+      return;
+    }
+    const engine = this.#initialiseEngine(config);
+    if (!engine) {
+      logMessage('Engine not initialised, storing bid request data in queue');
+      this.#addToCommandQueue('getBidRequestData', { requestObj, callback, userConsent });
+    } else {
+      try {
+        engine.getBidRequestData(
+          requestObj,
+          callback,
+          userConsent
+       );
+      } catch (error) {
+        logError(`Error getting bid request data: ${error}`);
+        callback();
+      }
+    }
+  }
+
+  onBidResponseEvent(bidResponse, config, userConsent) {
+    if (!this.#hasRequiredUserConsent(userConsent)) {
+      return;
+    }
+    const engine = this.#initialiseEngine(config);
+    if (!engine) {
+      logMessage('Engine not initialised, storing bid response event data in queue');
+      this.#addToCommandQueue('onBidResponseEvent', { bidResponse, userConsent })
+      return;
+    }
+    try {
+      engine.onBidResponseEvent(bidResponse, userConsent);
+    } catch (error) {
+      logError(`Error processing bid response event: ${error}`);
+    }
+  }
+
+  onAuctionEndEvent(auctionDetails, config, userConsent) {
+    if (!this.#hasRequiredUserConsent(userConsent)) {
+      return;
+    }
+    const engine = this.#initialiseEngine(config);
+    if (!engine) {
+      logMessage('Engine not initialised, storing auction end event data in queue');
+      this.#addToCommandQueue('onAuctionEndEvent', { auctionDetails, userConsent });
+      return;
+    }
+    try {
+      engine.onAuctionEndEvent(auctionDetails, userConsent);
+    } catch (error) {
+      logError(`Error processing auction end event: ${error}`);
+    }
+  }
+
+
   // Private methods
+  #initialiseEngine(config) {
+    const storedData = this.#readFromStorage(
+      this.#overrides?.storageKey || this.STORAGE_KEY
+    );
+    if (storedData === null) {
+      return;
+    }
+    const facts = Object.assign({'page.url': getRefererInfo().page}, storedData?.facts ?? {});
+    this.#engine = this.#getEngine();
+    try {
+      this.#engine.init(config, facts, storedData);
+      return this.#engine;
+    } catch (error) {
+      logError(`Error initialising engine: ${error}`);
+      return;
+    }
+  }
+
+  #getEngine() {
+    return window?.$nodals?.adTargetingEngine['latest'];
+  }
+
   #setOverrides(params) {
     if (params?.storage?.ttl && typeof params.storage.ttl === 'number') {
       this.#overrides.storageTTL = params.storage.ttl;
@@ -263,6 +337,12 @@ class NodalsAiRtdProvider {
 
     logInfo(`Fetching ad rules from: ${endpointUrl}`);
     ajax(endpointUrl, callback, null, options);
+  }
+
+  #addToCommandQueue(cmd, payload) {
+    window.$nodals = window.$nodals || {};
+    window.$nodals.cmdQueue = window.$nodals.cmdQueue || [];
+    window.$nodals.cmdQueue.push({ cmd, ...payload });
   }
 
   /**
