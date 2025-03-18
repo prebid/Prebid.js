@@ -42,13 +42,21 @@ const VIDEO_ORTB_PARAMS = [
   'protocols',
   'startdelay',
   'skip',
+  'skipmin',
   'skipafter',
   'minbitrate',
   'maxbitrate',
   'delivery',
   'playbackmethod',
   'api',
-  'linearity'
+  'linearity',
+  'rqddurs',
+  'maxseq',
+  'poddur',
+  'podid',
+  'podseq',
+  'mincpmpersec',
+  'slotinpod'
 ];
 
 const adapterState = {
@@ -275,9 +283,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, referer, ttxSetti
       },
     },
     regs: {
-      ext: {
-        gdpr: Number(gdprConsent.gdprApplies),
-      }
+      gdpr: Number(gdprConsent.gdprApplies)
     },
     ext: {
       ttx: {

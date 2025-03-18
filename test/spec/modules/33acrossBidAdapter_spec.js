@@ -55,9 +55,7 @@ describe('33acrossBidAdapter:', function () {
         }
       },
       regs: {
-        ext: {
-          gdpr: 0
-        }
+        gdpr: 0
       },
       ext: {
         ttx: {
@@ -168,23 +166,20 @@ describe('33acrossBidAdapter:', function () {
     this.withGdprConsent = (consent, gdpr) => {
       utils.mergeDeep(ttxRequest, {
         user: {
-          ext: { consent }
+          consent
         },
         regs: {
-          ext: {
-            gdpr
-          }
+          gdpr
         }
       });
       return this;
     };
 
+
     this.withUspConsent = (consent) => {
       utils.mergeDeep(ttxRequest, {
         regs: {
-          ext: {
-            us_privacy: consent
-          }
+          us_privacy: consent
         }
       });
 
@@ -202,6 +197,7 @@ describe('33acrossBidAdapter:', function () {
     this.withGppConsent = (consentString, applicableSections) => {
       Object.assign(ttxRequest, {
         regs: {
+          gdpr: 0,
           gpp: consentString,
           gpp_sid: applicableSections,
           ...(ttxRequest.regs?.ext ? { ext: ttxRequest.regs.ext } : {})
@@ -242,9 +238,7 @@ describe('33acrossBidAdapter:', function () {
     this.withSchain = schain => {
       Object.assign(ttxRequest, {
         source: {
-          ext: {
-            schain
-          }
+          schain
         }
       });
 
@@ -283,9 +277,7 @@ describe('33acrossBidAdapter:', function () {
     this.withUserIds = (eids) => {
       Object.assign(ttxRequest, {
         user: {
-          ext: {
-            eids
-          }
+          eids
         }
       });
 
@@ -1033,12 +1025,10 @@ describe('33acrossBidAdapter:', function () {
         const bidderRequest = this.buildBidderRequest(bidRequests, {
           ortb2: {
             user: {
-              ext: { consent: gdprConsent }
+              consent: gdprConsent
             },
             regs: {
-              ext: {
-                gdpr: 1
-              }
+              gdpr: 1
             }
           }
         });
@@ -1068,12 +1058,10 @@ describe('33acrossBidAdapter:', function () {
         const bidderRequest = this.buildBidderRequest(bidRequests, {
           ortb2: {
             user: {
-              ext: { consent: gdprConsent }
+              consent: gdprConsent
             },
             regs: {
-              ext: {
-                gdpr: 1
-              }
+              gdpr: 1
             }
           }
         });
@@ -1133,9 +1121,7 @@ describe('33acrossBidAdapter:', function () {
         const bidderRequest = this.buildBidderRequest(bidRequests, {
           ortb2: {
             regs: {
-              ext: {
-                us_privacy: 'foo'
-              }
+              us_privacy: 'foo'
             }
           }
         });
@@ -1164,9 +1150,7 @@ describe('33acrossBidAdapter:', function () {
         const bidderRequest = this.buildBidderRequest(bidRequests, {
           ortb2: {
             regs: {
-              ext: {
-                us_privacy: 'foo'
-              }
+              us_privacy: 'foo'
             }
           }
         });
@@ -1459,9 +1443,7 @@ describe('33acrossBidAdapter:', function () {
           const bidderRequest = this.buildBidderRequest(bidRequests, {
             ortb2: {
               source: {
-                ext: {
-                  schain
-                }
+                schain
               }
             }
           });
@@ -1575,18 +1557,41 @@ describe('33acrossBidAdapter:', function () {
         });
 
         it('builds instream request with params passed', function() {
-          const bidRequests = new BidRequestsBuilder()
-            .withVideo({
-              context: 'instream',
-              startdelay: -2
-            })
-            .build();
-          const serverRequest = this.buildServerRequest(
-            new TtxRequestBuilder()
-              .withVideo({startdelay: -2})
-              .withProduct('instream')
+          const allowedParams = {
+            mimes: ['video/mp4'],
+            minduration: 15,
+            maxduration: 45,
+            placement: 1,
+            plcmt: 1,
+            protocols: [2,3],
+            startdelay: -2,
+            skip: true,
+            skipmin: 5,
+            skipafter: 15,
+            minbitrate: 300,
+            maxbitrate: 1500,
+            delivery: [2],
+            playbackmethod: [1, 3],
+            api: [3],
+            linearity: 1,
+            rqddurs: 123,
+            maxseq: 5,
+            poddur: 3,
+            podid: 'pod_1',
+            podseq: 1,
+            mincpmpersec: 'foo',
+            slotinpod: 0
+          };
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({context: 'instream', ...allowedParams})
               .build()
           );
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo(allowedParams)
+            .withProduct('instream')
+            .build();
+          const serverRequest = this.buildServerRequest(ttxRequest);
           const bidderRequest = this.buildBidderRequest(bidRequests);
           const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
@@ -1862,9 +1867,7 @@ describe('33acrossBidAdapter:', function () {
         const bidderRequest = this.buildBidderRequest(bidRequests, {
           ortb2: {
             user: {
-              ext: {
-                eids
-              }
+              eids
             }
           }
         });
@@ -1891,9 +1894,7 @@ describe('33acrossBidAdapter:', function () {
         const bidderRequest = this.buildBidderRequest(bidRequests, {
           ortb2: {
             user: {
-              ext: {
-                eids
-              }
+              eids
             }
           }
         });
