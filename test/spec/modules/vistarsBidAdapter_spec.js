@@ -119,56 +119,58 @@ describe('vistarsBidAdapterTests', function () {
     expect(bids).to.have.lengthOf(0);
   })
 
-  it('video_bid', function () {
-    const bidRequest = deepClone(bidRequestData.bids);
-    bidRequest[0].mediaTypes = {
-      video: {
-        playerSize: [234, 765]
-      }
-    };
+  if (FEATURES.VIDEO) {
+    it('video_bid', function () {
+      const bidRequest = deepClone(bidRequestData.bids);
+      bidRequest[0].mediaTypes = {
+        video: {
+          playerSize: [234, 765]
+        }
+      };
 
-    const request = spec.buildRequests(bidRequest, { timeout: 1234 });
-    const vastXml = '<VAST></VAST>';
-    let serverResponse = {
-      body: {
-        id: 'bid123',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: '1bh7jku7-ko2g-8654-ab72-h268abcde271',
-                impid: 'bid-123',
-                price: 0.6565,
-                adm: vastXml,
-                adomain: ['abc.com'],
-                cid: '1242512',
-                crid: '535231',
-                w: 300,
-                h: 600,
-                mtype: 1,
-                ext: {
-                  prebid: {
-                    type: 'banner',
+      const request = spec.buildRequests(bidRequest, { timeout: 1234 });
+      const vastXml = '<VAST></VAST>';
+      let serverResponse = {
+        body: {
+          id: 'bid123',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1bh7jku7-ko2g-8654-ab72-h268abcde271',
+                  impid: 'bid-123',
+                  price: 0.6565,
+                  adm: vastXml,
+                  adomain: ['abc.com'],
+                  cid: '1242512',
+                  crid: '535231',
+                  w: 300,
+                  h: 600,
+                  mtype: 1,
+                  ext: {
+                    prebid: {
+                      type: 'banner',
+                    }
                   }
-                }
-              },
-            ],
-            seat: '4212',
-          },
-        ],
-        cur: 'EUR',
-      }
-    };
+                },
+              ],
+              seat: '4212',
+            },
+          ],
+          cur: 'EUR',
+        }
+      };
 
-    let bids = spec.interpretResponse(serverResponse, request[0]);
-    expect(bids).to.have.lengthOf(1);
+      let bids = spec.interpretResponse(serverResponse, request[0]);
+      expect(bids).to.have.lengthOf(1);
 
-    let bid = bids[0];
-    expect(bid.mediaType).to.equal('video');
-    expect(bid.vastXml).to.equal(vastXml);
-    expect(bid.width).to.equal(300);
-    expect(bid.height).to.equal(600);
-  });
+      let bid = bids[0];
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.vastXml).to.equal(vastXml);
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(600);
+    });
+  }
 });
 
 describe('getUserSyncs', function() {
