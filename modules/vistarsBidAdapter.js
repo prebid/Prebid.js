@@ -83,7 +83,7 @@ export const spec = {
       return syncs;
     }
 
-    let params = `usp=${uspConsent || ''}&consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
+    let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
     if (typeof gdprConsent?.gdprApplies === 'boolean') {
       params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
     }

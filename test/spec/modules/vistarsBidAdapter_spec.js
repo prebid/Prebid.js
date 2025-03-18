@@ -189,7 +189,7 @@ describe('getUserSyncs', function() {
     expect(syncData[0].type).to.be.a('string')
     expect(syncData[0].type).to.equal('image')
     expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.vistarsagency.com/match/sp?usp=1---&consent=')
+    expect(syncData[0].url).to.equal('//sync.vistarsagency.com/match/sp?us_privacy=1---&gdpr_consent=')
   });
 
   it('Should return array of objects with proper sync config , include GDPR', function() {
@@ -211,7 +211,7 @@ describe('getUserSyncs', function() {
     expect(syncData[0].type).to.be.a('string')
     expect(syncData[0].type).to.equal('iframe')
     expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.vistarsagency.com/match/sp.ifr?usp=&consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=1')
+    expect(syncData[0].url).to.equal('//sync.vistarsagency.com/match/sp.ifr?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=1')
   });
 
   it('Should return array of objects with proper sync config , include GDPR, no purpose', function() {
@@ -243,6 +243,6 @@ describe('getUserSyncs', function() {
     expect(syncData[0].type).to.be.a('string')
     expect(syncData[0].type).to.equal('iframe')
     expect(syncData[0].url).to.be.a('string')
-    expect(syncData[0].url).to.equal('//sync.vistarsagency.com/match/sp.ifr?usp=&consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=0')
+    expect(syncData[0].url).to.equal('//sync.vistarsagency.com/match/sp.ifr?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=0')
   });
 })
