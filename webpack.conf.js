@@ -46,6 +46,16 @@ module.exports = {
       'node_modules'
     ],
   },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: path.resolve('./node_modules'),
+        enforce: "pre",
+        use: ["source-map-loader"],
+      },
+    ],
+  },
   entry: (() => {
     const entry = {
       'prebid-core': {

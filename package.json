@@ -114,6 +114,7 @@
     "opn": "^5.4.0",
     "resolve-from": "^5.0.0",
     "sinon": "^4.5.0",
+    "source-map-loader": "^5.0.0",
     "through2": "^4.0.2",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
