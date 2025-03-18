@@ -1,10 +1,11 @@
-import { getUniqueIdentifierStr } from './utils.js';
+import {getUniqueIdentifierStr} from './utils.js';
 import type {BidderCode, BidSource, Currency, Identifier} from "./types/common.d.ts";
 import {MediaType} from "./mediaTypes.ts";
 import type {DSAResponse} from "./types/ortb/ext/dsa.d.ts";
 import type {EventTrackerResponse} from "./types/ortb/native/eventtrackers.d.ts";
 import {Metrics} from "./utils/perfMetrics.ts";
 import {Renderer} from './Renderer.js';
+import {type BID_STATUS} from "./constants.ts";
 
 type ContextIdentifiers = {
     transactionId: Identifier;
@@ -18,23 +19,15 @@ type BidIdentifiers = ContextIdentifiers & {
     bidId: Identifier;
 };
 
-// TODO: status is always "1" in practice.
-enum BidStatus {
-    Pending = 0,
-    Available,
-    Error,
-    Timeout,
-}
-
-function statusMessage(statusCode: BidStatus) {
+function statusMessage(statusCode) {
     switch (statusCode) {
-        case BidStatus.Pending:
+        case 0:
             return 'Pending';
-        case BidStatus.Available:
+        case 1:
             return 'Bid available';
-        case BidStatus.Error:
+        case 2:
             return 'Bid returned empty or error response';
-        case BidStatus.Timeout:
+        case 3:
             return 'Bid timed out';
     }
 }
@@ -127,22 +120,23 @@ export interface BaseBid extends ContextIdentifiers {
     bidderCode: BidderCode;
     width: number;
     height: number;
-    statusMessage: ReturnType<typeof statusMessage>;
     adId: Identifier;
     getSize(): string;
-    getStatusCode(): BidStatus;
+    getStatusCode(): number;
+    statusMessage: ReturnType<typeof statusMessage>;
+    status?: (typeof BID_STATUS)[keyof typeof BID_STATUS]
     adapterCode?: BidderCode;
     originalCpm?: number;
     originalCurrency?: Currency;
     cpm: number;
     currency: Currency;
-    meta: BidMeta;
+    meta: BaseBidResponse['meta'];
     /**
      * If true, this bid will not fire billing trackers until they are explicitly
      * triggered with `pbjs.triggerBilling()`.
      */
     deferBilling: boolean;
-    deferRendering: boolean;
+    deferRendering: BaseBidResponse['deferRendering'];
 }
 
 export interface BannerBidProperties {
@@ -167,9 +161,9 @@ export type Bid = BannerBid | VideoBid | NativeBid;
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-function Bid(statusCode: BidStatus, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId}: Partial<BidIdentifiers> = {}) {
+function Bid(statusCode: number, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId}: Partial<BidIdentifiers> = {}) {
   var _bidSrc = src;
-  var _statusCode = statusCode || BidStatus.Pending;
+  var _statusCode = statusCode || 0;
 
   Object.assign(this, {
     bidderCode: bidder,

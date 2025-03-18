@@ -585,7 +585,7 @@ declare module './bidfactory' {
         /**
          * Targeting key-value pairs for this bid.
          */
-        adserverTargeting: { [key: string]: unknown }
+        adserverTargeting?: { [key: string]: unknown }
     }
 
     interface BaseBid {
@@ -645,6 +645,7 @@ declare module './bidfactory' {
          * If custom targeting was defined, whether standard targeting should also be used for this bid.
          */
         sendStandardTargeting?: boolean;
+        adserverTargeting: BaseBidResponse['adserverTargeting'];
     }
 }
 /**

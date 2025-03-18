@@ -132,7 +132,7 @@ export const BID_STATUS = {
   BID_TARGETING_SET: 'targetingSet',
   RENDERED: 'rendered',
   BID_REJECTED: 'bidRejected'
-};
+} as const;
 
 export const REJECTION_REASON = {
   INVALID: 'Bid has missing or invalid properties',
