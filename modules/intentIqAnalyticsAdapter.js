@@ -130,7 +130,7 @@ function initReadLsIds() {
       iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = pData.terminationCause
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
-      iiqAnalyticsAnalyticsAdapter.initOptions.ct = pData.ct || null;
+      iiqAnalyticsAnalyticsAdapter.initOptions.clientType = pData.clientType || null;
       iiqAnalyticsAnalyticsAdapter.initOptions.siteId = pData.siteId || null;
       iiqAnalyticsAnalyticsAdapter.initOptions.wsrvcll = pData.wsrvcll || false;
       iiqAnalyticsAnalyticsAdapter.initOptions.rrtt = pData.rrtt || null;
@@ -189,7 +189,7 @@ export function preparePayload(data) {
   result[PARAMS_NAMES.referrer] = getReferrer();
   result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
-  result[PARAMS_NAMES.clientType] = iiqAnalyticsAnalyticsAdapter.initOptions.ct;
+  result[PARAMS_NAMES.clientType] = iiqAnalyticsAnalyticsAdapter.initOptions.clientType;
   result[PARAMS_NAMES.siteId] = iiqAnalyticsAnalyticsAdapter.initOptions.siteId;
   result[PARAMS_NAMES.wasServerCalled] = iiqAnalyticsAnalyticsAdapter.initOptions.wsrvcll;
   result[PARAMS_NAMES.requestRtt] = iiqAnalyticsAnalyticsAdapter.initOptions.rrtt;
