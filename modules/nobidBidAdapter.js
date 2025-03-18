@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -231,7 +231,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     return adunits;
   }
   function getFloor (bid) {
-    if (bid && typeof bid.getFloor === 'function' && bid.getFloor().floor) {
+    if (bid && typeof bid.getFloor === 'function' && bid.getFloor()?.floor) {
       return bid.getFloor().floor;
     }
     return null;

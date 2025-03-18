@@ -1,5 +1,5 @@
 import {cyrb53Hash, isStr, timestamp} from './utils.js';
-import {defer, GreedyPromise} from './utils/promise.js';
+import {defer, PbPromise} from './utils/promise.js';
 import {config} from './config.js';
 
 /**
@@ -9,14 +9,6 @@ import {config} from './config.js';
  * see https://github.com/prebid/Prebid.js/issues/8161
  */
 export const VENDORLESS_GVLID = Object.freeze({});
-
-/**
- * Placeholder gvlid for when device.ext.cdep is present (Privacy Sandbox cookie deprecation label). When this value is used as gvlid, the gdpr
- * enforcement module will look to see that publisher consent was given.
- *
- * see https://github.com/prebid/Prebid.js/issues/10516
- */
-export const FIRST_PARTY_GVLID = Object.freeze({});
 
 export class ConsentHandler {
   #enabled;
@@ -76,7 +68,7 @@ export class ConsentHandler {
    */
   get promise() {
     if (this.#ready) {
-      return GreedyPromise.resolve(this.#data);
+      return PbPromise.resolve(this.#data);
     }
     if (!this.#enabled) {
       this.#resolve(null);
@@ -108,7 +100,6 @@ class UspConsentHandler extends ConsentHandler {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
       return {
-        usp: consentData,
         generatedAt: this.generatedTime
       };
     }
@@ -164,13 +155,18 @@ export function gvlidRegistry() {
       }
     },
     /**
+     * @typedef {Object} GvlIdResult
+     * @property {Object.<string, number>} modules - A map from module type to that module's GVL ID.
+     * @property {number} [gvlid] - The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
+     */
+
+    /**
      * Get a module's GVL ID(s).
      *
-     * @param {string} moduleName
-     * @return {{modules: {[moduleType]: number}, gvlid?: number}} an object where:
+     * @param {string} moduleName - The name of the module.
+     * @return {GvlIdResult} An object where:
      *   `modules` is a map from module type to that module's GVL ID;
-     *   `gvlid` is the single GVL ID for this family of modules (only defined
-     *   if all modules with this name declared the same ID).
+     *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
     get(moduleName) {
       const result = {modules: registry[moduleName] || {}};
@@ -195,7 +191,7 @@ export const coppaDataHandler = (() => {
     getConsentMeta: getCoppa,
     reset() {},
     get promise() {
-      return GreedyPromise.resolve(getCoppa())
+      return PbPromise.resolve(getCoppa())
     },
     get hash() {
       return getCoppa() ? '1' : '0'
@@ -222,7 +218,7 @@ export function multiHandler(handlers = ALL_HANDLERS) {
   return Object.assign(
     {
       get promise() {
-        return GreedyPromise.all(handlers.map(([name, handler]) => handler.promise.then(val => [name, val])))
+        return PbPromise.all(handlers.map(([name, handler]) => handler.promise.then(val => [name, val])))
           .then(entries => Object.fromEntries(entries));
       },
       get hash() {

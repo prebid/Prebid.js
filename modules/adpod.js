@@ -451,7 +451,6 @@ export function callPrebidCacheAfterAuction(bids, callback) {
 /**
  * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
  * @param {Object} bid
- * @param {Object} bid
  */
 export function sortByPricePerSecond(a, b) {
   if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
@@ -465,10 +464,10 @@ export function sortByPricePerSecond(a, b) {
 
 /**
  * This function returns targeting keyvalue pairs for long-form adserver modules. Freewheel and GAM are currently supporting Prebid long-form
- * @param {Object} options
- * @param {Array[string]} codes
- * @param {function} callback
- * @returns targeting kvs for adUnitCodes
+ * @param {Object} options - Options for targeting.
+ * @param {Array<string>} options.codes - Array of ad unit codes.
+ * @param {function} options.callback - Callback function to handle the targeting key-value pairs.
+ * @returns {Object} Targeting key-value pairs for ad unit codes.
  */
 export function getTargeting({ codes, callback } = {}) {
   if (!callback) {

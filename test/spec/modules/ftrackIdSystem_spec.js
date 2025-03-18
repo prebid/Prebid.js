@@ -3,10 +3,10 @@ import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import { loadExternalScript } from 'src/adloader.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import { init, setSubmoduleRegistry } from 'modules/userId/index.js';
+import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
-let expect = require('chai').expect;
+import 'src/prebid.js';
 
 let server;
 
@@ -105,41 +105,28 @@ describe('FTRACK ID System', () => {
   });
 
   describe(`ftrackIdSubmodule.isThereConsent():`, () => {
-    let uspDataHandlerStub;
-    beforeEach(() => {
-      uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
-    });
-
-    afterEach(() => {
-      uspDataHandlerStub.restore();
-    });
-
     describe(`returns 'false' if:`, () => {
       it(`GDPR: if gdprApplies is truthy`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: 1})).to.not.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: true})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: 1}})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: true}})).to.not.be.ok;
       });
 
       it(`US_PRIVACY version 1: if 'Opt Out Sale' is 'Y'`, () => {
-        uspDataHandlerStub.returns('1YYY');
-        expect(ftrackIdSubmodule.isThereConsent({})).to.not.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({usp: '1YYY'})).to.not.be.ok;
       });
     });
 
     describe(`returns 'true' if`, () => {
       it(`GDPR: if gdprApplies is undefined, false or 0`, () => {
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: 0})).to.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: false})).to.be.ok;
-        expect(ftrackIdSubmodule.isThereConsent({gdprApplies: null})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: 0}})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: false}})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({gdpr: {gdprApplies: null}})).to.be.ok;
         expect(ftrackIdSubmodule.isThereConsent({})).to.be.ok;
       });
 
       it(`US_PRIVACY version 1: if 'Opt Out Sale' is not 'Y' ('N','-')`, () => {
-        uspDataHandlerStub.returns('1NNN');
-        expect(ftrackIdSubmodule.isThereConsent(null)).to.be.ok;
-
-        uspDataHandlerStub.returns('1---');
-        expect(ftrackIdSubmodule.isThereConsent(null)).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({usp: '1NNN'})).to.be.ok;
+        expect(ftrackIdSubmodule.isThereConsent({usp: '1---'})).to.be.ok;
       });
     });
   });
@@ -380,10 +367,10 @@ describe('FTRACK ID System', () => {
           }
         });
 
-        getGlobal().getUserIdsAsync().then(ids => {
-          expect(ids).to.deep.equal({
+        return getGlobal().getUserIdsAsync().then(ids => {
+          expect(ids.ftrackId).to.deep.equal({
             uid: 'device_test_id',
-            ftrackId: {
+            ext: {
               HHID: 'household_test_id',
               DeviceID: 'device_test_id',
               SingleDeviceID: 'single_device_test_id'
@@ -394,7 +381,7 @@ describe('FTRACK ID System', () => {
     });
 
     describe('pbjs.getUserIds()', () => {
-      it('should return the IDs in the correct schema', () => {
+      it('should return the IDs in the correct schema', async () => {
         config.setConfig({
           userSync: {
             auctionDelay: 10,
@@ -414,6 +401,8 @@ describe('FTRACK ID System', () => {
           }
         });
 
+        await getGlobal().getUserIdsAsync();
+
         expect(getGlobal().getUserIds()).to.deep.equal({
           ftrackId: {
             uid: 'device_test_id',
@@ -428,7 +417,7 @@ describe('FTRACK ID System', () => {
     });
 
     describe('pbjs.getUserIdsAsEids()', () => {
-      it('should return the correct EIDs schema ', () => {
+      it('should return the correct EIDs schema ', async () => {
         // Pass all three IDs
         config.setConfig({
           userSync: {
@@ -449,6 +438,8 @@ describe('FTRACK ID System', () => {
           }
         });
 
+        await getGlobal().getUserIdsAsync();
+
         expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
           source: 'flashtalking.com',
           uids: [{
@@ -464,7 +455,7 @@ describe('FTRACK ID System', () => {
       });
 
       describe('by ID type:', () => {
-        it('- DeviceID', () => {
+        it('- DeviceID', async () => {
           // Pass DeviceID only
           config.setConfig({
             userSync: {
@@ -483,6 +474,8 @@ describe('FTRACK ID System', () => {
             }
           });
 
+          await getGlobal().getUserIdsAsync();
+
           expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
             source: 'flashtalking.com',
             uids: [{
@@ -495,7 +488,7 @@ describe('FTRACK ID System', () => {
           }]);
         });
 
-        it('- HHID', () => {
+        it('- HHID', async () => {
           // Pass HHID only
           config.setConfig({
             userSync: {
@@ -514,6 +507,8 @@ describe('FTRACK ID System', () => {
             }
           });
 
+          await getGlobal().getUserIdsAsync();
+
           expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
             source: 'flashtalking.com',
             uids: [{
@@ -526,7 +521,7 @@ describe('FTRACK ID System', () => {
           }]);
         });
 
-        it('- SingleDeviceID', () => {
+        it('- SingleDeviceID', async () => {
           // Pass SingleDeviceID only
           config.setConfig({
             userSync: {
@@ -545,6 +540,8 @@ describe('FTRACK ID System', () => {
             }
           });
 
+          await getGlobal().getUserIdsAsync();
+
           expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
             source: 'flashtalking.com',
             uids: [{
@@ -557,6 +554,41 @@ describe('FTRACK ID System', () => {
           }]);
         });
       });
+    });
+  });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(ftrackIdSubmodule);
+    });
+    it('should return the correct EID schema', () => {
+      // This is the schema returned from the ftrack decode() method
+      expect(createEidsArray({
+        ftrackId: {
+          uid: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
+        },
+        foo: {
+          bar: 'baz'
+        },
+        lorem: {
+          ipsum: ''
+        }
+      })).to.deep.equal([{
+        source: 'flashtalking.com',
+        uids: [{
+          atype: 1,
+          id: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
+        }]
+      }]);
     });
   })
 });

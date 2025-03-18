@@ -325,7 +325,7 @@ atsAnalyticsAdapter.getUserAgent = function () {
 
 atsAnalyticsAdapter.setSamplingCookie = function (samplRate) {
   const now = new Date();
-  now.setTime(now.getTime() + 86400000);
+  now.setTime(now.getTime() + 604800000);
   storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
 }
 

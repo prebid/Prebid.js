@@ -2,9 +2,8 @@ import { GAM_VENDOR } from '../../libraries/video/constants/vendorCodes.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
- * @constructor
+ * @class
  * @param {Object} dfpModule_ - the DFP ad server module
- * @returns {AdServerProvider}
  */
 function GamAdServerProvider(dfpModule_) {
   const dfp = dfpModule_;

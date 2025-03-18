@@ -12,7 +12,7 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {deepAccess, logError} from '../src/utils.js';
+import { deepAccess, logError, logWarn } from '../src/utils.js'
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -31,9 +31,7 @@ const playlistItemCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
 let resumeBidRequest;
-// defaults to 'always' for backwards compatibility
-// TODO: Prebid 9 - replace with ENRICH_WHEN_EMPTY
-let overrideContentId = ENRICH_ALWAYS;
+let overrideContentId = ENRICH_WHEN_EMPTY;
 let overrideContentUrl = ENRICH_WHEN_EMPTY;
 let overrideContentTitle = ENRICH_WHEN_EMPTY;
 let overrideContentDescription = ENRICH_WHEN_EMPTY;
@@ -83,9 +81,7 @@ export function fetchTargetingInformation(jwTargeting) {
 }
 
 export function setOverrides(params) {
-  // For backwards compatibility, default to always unless overridden by Publisher.
-  // TODO: Prebid 9 - replace with ENRICH_WHEN_EMPTY
-  overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_ALWAYS);
+  overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_WHEN_EMPTY);
   overrideContentUrl = sanitizeOverrideParam(params.overrideContentUrl, ENRICH_WHEN_EMPTY);
   overrideContentTitle = sanitizeOverrideParam(params.overrideContentTitle, ENRICH_WHEN_EMPTY);
   overrideContentDescription = sanitizeOverrideParam(params.overrideContentDescription, ENRICH_WHEN_EMPTY);
@@ -433,17 +429,37 @@ export function addTargetingToBid(bid, targeting) {
   bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
-function getPlayer(playerDivId) {
+export function getPlayer(playerDivId) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
     logError(SUBMODULE_NAME + '.js was not found on page');
     return;
   }
 
-  const player = jwplayer(playerDivId);
-  if (!player || !player.getPlaylist) {
-    logError('player ID did not match any players');
+  let player = jwplayer(playerDivId);
+  if (player && player.getPlaylist) {
+    return player;
+  }
+
+  const playerOnPageCount = document.getElementsByClassName('jwplayer').length;
+  if (playerOnPageCount === 0) {
+    logError('No JWPlayer instances have been detected on the page');
     return;
   }
-  return player;
+
+  let errorMessage = `player Div ID ${playerDivId} did not match any players.`;
+
+  // If there are multiple instances on the page, we cannot guess which one should be targeted.
+  if (playerOnPageCount > 1) {
+    logError(errorMessage);
+    return;
+  }
+
+  player = jwplayer();
+  if (player && player.getPlaylist) {
+    logWarn(`${errorMessage} Targeting player Div ID ${player.id} instead`);
+    return player;
+  }
+
+  logError(errorMessage);
 }

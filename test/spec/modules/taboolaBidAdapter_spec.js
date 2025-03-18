@@ -173,6 +173,11 @@ describe('Taboola Adapter', function () {
         page: 'https://example.com/ref',
         ref: 'https://ref',
         domain: 'example.com',
+      },
+      ortb2: {
+        device: {
+          ua: navigator.userAgent,
+        },
       }
     }
 
@@ -181,6 +186,7 @@ describe('Taboola Adapter', function () {
       const expectedData = {
         'imp': [{
           'id': res.data.imp[0].id,
+          'secure': 1,
           'banner': {
             format: [{
               w: displayBidRequestParams.sizes[0][0],
@@ -197,8 +203,15 @@ describe('Taboola Adapter', function () {
           'bidfloorcur': 'USD',
           'ext': {}
         }],
-        id: 'mock-uuid',
+        'device': {'ua': navigator.userAgent},
+        'id': 'mock-uuid',
         'test': 0,
+        'user': {
+          'buyeruid': 0,
+          'ext': {},
+        },
+        'regs': {'ext': {}, 'coppa': 0},
+        'source': {'fd': 1},
         'site': {
           'id': commonBidRequest.params.publisherId,
           'name': commonBidRequest.params.publisherId,
@@ -208,16 +221,9 @@ describe('Taboola Adapter', function () {
           'publisher': {'id': commonBidRequest.params.publisherId},
           'content': {'language': navigator.language}
         },
-        'device': {'ua': navigator.userAgent},
-        'source': {'fd': 1},
         'bcat': [],
         'badv': [],
         'wlang': [],
-        'user': {
-          'buyeruid': 0,
-          'ext': {},
-        },
-        'regs': {'coppa': 0, 'ext': {}},
         'ext': {
           'prebid': {
             'version': '$prebid.version$'
@@ -363,12 +369,46 @@ describe('Taboola Adapter', function () {
             bcat: ['EX1', 'EX2', 'EX3'],
             badv: ['site.com'],
             wlang: ['de'],
+            user: {
+              id: 'externalUserIdPassed'
+            },
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4'
+            }
           }
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
         expect(res.data.badv).to.deep.equal(bidderRequest.ortb2.badv)
         expect(res.data.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
+        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
+        expect(res.data.device).to.deep.equal(bidderRequest.ortb2.device);
+      });
+
+      it('should pass user entities', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            user: {
+              id: 'userid',
+              buyeruid: 'buyeruid',
+              yob: 1990
+            }
+          }
+        }
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
+        expect(res.data.user.buyeruid).to.deep.equal(bidderRequest.ortb2.user.buyeruid)
+        expect(res.data.user.yob).to.deep.equal(bidderRequest.ortb2.user.yob)
       });
 
       it('should pass pageType if exists in ortb2', function () {
@@ -500,6 +540,28 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         };
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.buyeruid).to.equal('12121212');
+      });
+
+      it('should get buyeruid from cookie as priority and external user id from ortb2 object', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.returns('taboola%20global%3Auser-id=12121212');
+
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            user: {
+              id: 'userid',
+              buyeruid: 'buyeruid',
+              yob: 1990
+            }
+          }
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.id).to.deep.equal('userid')
         expect(res.data.user.buyeruid).to.equal('12121212');
       });
 
@@ -1106,7 +1168,7 @@ describe('Taboola Adapter', function () {
             },
           }
         ],
-        'fledgeAuctionConfigs': [
+        'paapi': [
           {
             'impId': request.bids[0].bidId,
             'config': {
@@ -1179,7 +1241,7 @@ describe('Taboola Adapter', function () {
             },
           }
         ],
-        'fledgeAuctionConfigs': [
+        'paapi': [
           {
             'impId': request.bids[0].bidId,
             'config': {

@@ -5,14 +5,14 @@ import {
   adjustBids,
   getMediaTypeGranularity,
   getPriceByGranularity,
-  addBidResponse, resetAuctionState, responsesReady
+  addBidResponse, resetAuctionState, responsesReady, newAuction
 } from 'src/auction.js';
 import { EVENTS, TARGETING_KEYS, S2S } from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import * as store from 'src/videoCache.js';
+import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
@@ -27,6 +27,9 @@ import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
 import '../../modules/currency.js'
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 import { REJECTION_REASON } from '../../src/constants.js';
+import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
+import {sandbox} from 'sinon';
+import {getMinBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -840,7 +843,30 @@ describe('auctionmanager.js', function () {
       expect(auction.getNonBids()[0]).to.equal('test');
     });
 
-    describe('stale auctions', () => {
+    it('resolves .requestsDone', async () => {
+      const auction = auctionManager.createAuction({adUnits});
+      stubCallAdapters.reset();
+      auction.callBids();
+      await auction.requestsDone;
+    })
+
+    describe('setConfig(minBidCacheTTL)', () => {
+      it('should update getMinBidCacheTTL', () => {
+        expect(getMinBidCacheTTL()).to.eql(null);
+        config.setConfig({minBidCacheTTL: 123});
+        expect(getMinBidCacheTTL()).to.eql(123);
+      });
+
+      it('should run listeners registered with onMinBidCacheTTLChange', () => {
+        config.setConfig({minBidCacheTTL: 1});
+        let newTTL = null;
+        onMinBidCacheTTLChange((ttl) => { newTTL = ttl; });
+        config.setConfig({minBidCacheTTL: 2});
+        expect(newTTL).to.eql(2);
+      })
+    })
+
+    describe('minBidCacheTTL', () => {
       let clock, auction;
       beforeEach(() => {
         clock = sinon.useFakeTimers();
@@ -852,65 +878,119 @@ describe('auctionmanager.js', function () {
         config.resetConfig();
       });
 
-      it('are dropped after their last bid becomes stale (if minBidCacheTTL is set)', () => {
-        config.setConfig({
-          minBidCacheTTL: 0
+      describe('individual bids', () => {
+        beforeEach(() => {
+          bids = [
+            {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10
+            }, {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 100
+            }
+          ];
+        })
+        it('are dropped when stale (if minBidCacheTTL is set)', async () => {
+          config.setConfig({
+            minBidCacheTTL: 30
+          });
+          auction.callBids();
+          await auction.end;
+          await clock.tick(20 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
+          await clock.tick(50 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(1);
         });
-        bids = [
-          {
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 10
-          }, {
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 100
-          }
-        ];
-        auction.callBids();
-        return auction.end.then(() => {
+
+        it('pick up updates to minBidCacheTTL that happen during bid lifetime', async () => {
+          auction.callBids();
+          await auction.edn;
+          clock.tick(10 * 1000);
+          config.setConfig({
+            minBidCacheTTL: 20
+          })
+          await clock.tick(0);
+          await clock.tick(20 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(1);
+        })
+      })
+
+      describe('stale auctions', () => {
+        it('are dropped after their last bid becomes stale (if minBidCacheTTL is set)', async () => {
+          config.setConfig({
+            minBidCacheTTL: 90
+          });
+          bids = [
+            {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10
+            }, {
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 100
+            }
+          ];
+          auction.callBids();
+          await auction.end;
           clock.tick(50 * 1000);
           expect(auctionManager.getBidsReceived().length).to.equal(2);
           clock.tick(56 * 1000);
           expect(auctionManager.getBidsReceived()).to.eql([]);
         });
-      });
 
-      it('are dropped after `minBidCacheTTL` seconds if they had no bid', () => {
-        auction.callBids();
-        config.setConfig({
-          minBidCacheTTL: 2
-        });
-        return auction.end.then(() => {
+        it('are dropped after `minBidCacheTTL` seconds if they had no bid', async () => {
+          auction.callBids();
+          config.setConfig({
+            minBidCacheTTL: 2
+          });
+          await auction.end;
+          await clock.tick(0);
           expect(auctionManager.getNoBids().length).to.eql(1);
           clock.tick(10 * 10000);
           expect(auctionManager.getNoBids().length).to.eql(0);
-        })
-      });
+        });
 
-      Object.entries({
-        'bids': {
-          bd: [{
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 10
-          }],
-          entries: () => auctionManager.getBidsReceived()
-        },
-        'no bids': {
-          bd: [],
-          entries: () => auctionManager.getNoBids()
-        }
-      }).forEach(([t, {bd, entries}]) => {
-        it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
-          bids = bd;
+        it('are not dropped after `minBidCacheTTL` seconds if the page was hidden', () => {
           auction.callBids();
+          config.setConfig({
+            minBidCacheTTL: 10
+          });
           return auction.end.then(() => {
-            clock.tick(100 * 1000);
-            expect(entries().length > 0).to.be.true;
+            expect(auctionManager.getNoBids().length).to.eql(1);
+            setDocumentHidden(true);
+            clock.tick(10 * 10000);
+            setDocumentHidden(false);
+            expect(auctionManager.getNoBids().length).to.eql(1);
           })
-        })
-      });
+        });
+
+        Object.entries({
+          'bids': {
+            bd: [{
+              adUnitCode: ADUNIT_CODE,
+              adUnitId: ADUNIT_CODE,
+              ttl: 10
+            }],
+            entries: () => auctionManager.getBidsReceived()
+          },
+          'no bids': {
+            bd: [],
+            entries: () => auctionManager.getNoBids()
+          }
+        }).forEach(([t, {bd, entries}]) => {
+          it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
+            bids = bd;
+            auction.callBids();
+            return auction.end.then(() => {
+              clock.tick(100 * 1000);
+              expect(entries().length > 0).to.be.true;
+            })
+          })
+        });
+      })
     })
   });
 
@@ -1021,26 +1101,38 @@ describe('auctionmanager.js', function () {
         Object.entries({
           'on adUnit': () => adUnits[0],
           'on bid': () => bidderRequests[0].bids[0],
+          'on mediatype': () => bidderRequests[0].bids[0].mediaTypes.banner,
         }).forEach(([t, getObj]) => {
-          it(t, () => {
-            let renderer = {
+          let renderer, bid;
+          beforeEach(() => {
+            renderer = {
               url: 'renderer.js',
               render: (bid) => bid
             };
+          })
 
-            let bids1 = Object.assign({},
+          function getBid() {
+            let bid = Object.assign({},
               bids[0],
               {
                 bidderCode: BIDDER_CODE,
-                mediaType: 'video-outstream',
+                mediaType: 'banner',
               }
             );
             Object.assign(getObj(), {renderer});
-            spec.interpretResponse.returns(bids1);
+            spec.interpretResponse.returns(bid);
             auction.callBids();
-            const addedBid = auction.getBidsReceived().pop();
-            assert.equal(addedBid.renderer.url, 'renderer.js');
-          })
+            return auction.getBidsReceived().pop();
+          }
+
+          it(t, () => {
+            expect(getBid().renderer.url).to.eql('renderer.js');
+          });
+
+          it('allows renderers without URL', () => {
+            delete renderer.url;
+            expect(getBid().renderer.renderNow).to.be.true;
+          });
         })
       })
 
@@ -1408,10 +1500,10 @@ describe('auctionmanager.js', function () {
 
     it('should not alter bid requestID', function () {
       auction.callBids();
-
-      const addedBid2 = auction.getBidsReceived().pop();
+      const bidsReceived = auction.getBidsReceived();
+      const addedBid2 = bidsReceived.pop();
       assert.equal(addedBid2.requestId, bids1[0].requestId);
-      const addedBid1 = auction.getBidsReceived().pop();
+      const addedBid1 = bidsReceived.pop();
       assert.equal(addedBid1.requestId, bids[0].requestId);
     });
 
@@ -1427,17 +1519,18 @@ describe('auctionmanager.js', function () {
       assert.equal(length, 1);
     });
 
-    it('should run auction after video bids have been cached', function () {
-      sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
+    it('should run auction after video bids have been cached', async function () {
+      sinon.stub(store, 'store').callsArgWith(1, null, [{uuid: 123}]);
       sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
 
-      const bidsCopy = [Object.assign({}, bids[0], { mediaType: 'video' })];
-      const bids1Copy = [Object.assign({}, bids1[0], { mediaType: 'video' })];
+      const bidsCopy = [Object.assign({}, bids[0], {mediaType: 'video'})];
+      const bids1Copy = [Object.assign({}, bids1[0], {mediaType: 'video'})];
 
       spec.interpretResponse.returns(bidsCopy);
       spec1.interpretResponse.returns(bids1Copy);
 
       auction.callBids();
+      await auction.end;
 
       assert.equal(auction.getBidsReceived().length, 2);
       assert.equal(auction.getAuctionStatus(), 'completed');
@@ -1446,23 +1539,24 @@ describe('auctionmanager.js', function () {
       store.store.restore();
     });
 
-    it('runs auction after video responses with multiple bid objects have been cached', function () {
-      sinon.stub(store, 'store').callsArgWith(1, null, [{ uuid: 123 }]);
+    it('runs auction after video responses with multiple bid objects have been cached', async function () {
+      sinon.stub(store, 'store').callsArgWith(1, null, [{uuid: 123}]);
       sinon.stub(config, 'getConfig').withArgs('cache.url').returns('cache-url');
 
       const bidsCopy = [
-        Object.assign({}, bids[0], { mediaType: 'video' }),
-        Object.assign({}, bids[0], { mediaType: 'banner' }),
+        Object.assign({}, bids[0], {mediaType: 'video'}),
+        Object.assign({}, bids[0], {mediaType: 'banner'}),
       ];
       const bids1Copy = [
-        Object.assign({}, bids1[0], { mediaType: 'video' }),
-        Object.assign({}, bids1[0], { mediaType: 'video' }),
+        Object.assign({}, bids1[0], {mediaType: 'video'}),
+        Object.assign({}, bids1[0], {mediaType: 'video'}),
       ];
 
       spec.interpretResponse.returns(bidsCopy);
       spec1.interpretResponse.returns(bids1Copy);
 
       auction.callBids();
+      await auction.end;
 
       assert.equal(auction.getBidsReceived().length, 4);
       assert.equal(auction.getAuctionStatus(), 'completed');
@@ -1723,6 +1817,42 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  describe('addWinningBid', () => {
+    let auction, bid, adUnits, sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(adapterManager, 'callBidWonBidder');
+      sandbox.stub(adapterManager, 'triggerBilling')
+      adUnits = [{code: 'au1'}, {code: 'au2'}]
+      auction = newAuction({adUnits});
+      bid = {
+        bidder: 'mock-bidder'
+      };
+    })
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should call bidWon', () => {
+      auction.addWinningBid(bid);
+      sinon.assert.calledWith(adapterManager.callBidWonBidder, bid.bidder, bid, adUnits);
+    });
+
+    [undefined, false].forEach(deferBilling => {
+      it(`should call onBidBillable if deferBilling = ${deferBilling}`, () => {
+        bid.deferBilling = deferBilling;
+        auction.addWinningBid(bid);
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+    })
+
+    it('should NOT call onBidBillable if deferBilling  = true', () => {
+      bid.deferBilling = true;
+      auction.addWinningBid(bid);
+      sinon.assert.notCalled(adapterManager.triggerBilling);
+    })
+  })
+
   function mockAuction(getBidRequests, start = 1) {
     return {
       getBidRequests: getBidRequests,
@@ -1765,318 +1895,345 @@ describe('auctionmanager.js', function () {
     });
   })
 
-  describe('auctionCallbacks', function() {
-    let bids = TEST_BIDS;
-    let bidRequests;
-    let doneSpy;
-    let auction;
-
-    beforeEach(() => {
-      const start = Date.now();
-      auction = mockAuction(() => bidRequests, start);
-      indexAuctions = [auction];
-      doneSpy = sinon.spy();
-      config.setConfig({
-        cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
-        }
-      });
-    });
-
-    afterEach(() => {
-      doneSpy.resetHistory();
-      config.resetConfig();
-      bidRequests = null;
-    });
-
-    Object.entries({
-      'added to': (cbs) => cbs.addBidResponse,
-      'rejected from': (cbs) => cbs.addBidResponse.reject,
-    }).forEach(([t, getMethod]) => {
-      it(`should call auction done after bid is ${t} auction for mediaType banner`, function () {
-        let ADUNIT_CODE2 = 'adUnitCode2';
-        let BIDDER_CODE2 = 'sampleBidder2';
-
-        let bids1 = [mockBid({ bidderCode: BIDDER_CODE1, adUnitId: ADUNIT_CODE1 })];
-        let bids2 = [mockBid({ bidderCode: BIDDER_CODE2, adUnitId: ADUNIT_CODE2 })];
-        bidRequests = [
-          mockBidRequest(bids[0]),
-          mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-          mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE2 })
-        ];
-        let cbs = auctionCallbacks(doneSpy, auction);
-        const method = getMethod(cbs);
-        method(ADUNIT_CODE, bids[0]);
-        cbs.adapterDone.call(bidRequests[0]);
-        method(ADUNIT_CODE1, bids1[0]);
-        cbs.adapterDone.call(bidRequests[1]);
-        method(ADUNIT_CODE2, bids2[0]);
-        cbs.adapterDone.call(bidRequests[2]);
-        assert.equal(doneSpy.callCount, 1);
-      });
-    })
-
-    if (FEATURES.VIDEO) {
-      it('should call auction done after prebid cache is complete for mediaType video', function() {
-        bids[0].mediaType = 'video';
-        let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
-
-        let opts = {
-          mediaType: {
-            video: {
-              context: 'instream',
-              playerSize: [640, 480],
-            },
-          }
-        };
-        bidRequests = [
-          mockBidRequest(bids[0], opts),
-          mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-        ];
-
-        let cbs = auctionCallbacks(doneSpy, auction);
-        cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
-        cbs.adapterDone.call(bidRequests[0]);
-        cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
-        cbs.adapterDone.call(bidRequests[1]);
-        assert.equal(doneSpy.callCount, 0);
-        const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
-        const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
-        server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
-        assert.equal(doneSpy.callCount, 1);
-      });
+  describe('auction options / callbacks', () => {
+    let ready;
+    function responsesReadyHook(next) {
+      next(ready);
     }
 
-    it('should convert cpm to number', () => {
-      auction.addBidReceived = sinon.spy();
-      const cbs = auctionCallbacks(doneSpy, auction);
-      const bid = {...bids[0], cpm: '1.23'}
-      bidRequests = [mockBidRequest(bid)];
-      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
-      sinon.assert.calledWith(auction.addBidReceived, sinon.match({cpm: 1.23}));
-    })
-
-    describe('when responsesReady defers', () => {
-      let resolve, reject, promise, callbacks, bids;
-
-      function hook(next, ready) {
-        next(ready.then(() => promise));
-      }
-
-      before(() => {
-        responsesReady.before(hook);
-      });
-
-      after(() => {
-        responsesReady.getHooks({hook}).remove();
-      });
-
-      beforeEach(() => {
-        // eslint-disable-next-line promise/param-names
-        promise = new Promise((rs, rj) => {
-          resolve = rs;
-          reject = rj;
-        });
-        bids = [
-          mockBid({bidderCode: BIDDER_CODE1}),
-          mockBid({bidderCode: BIDDER_CODE})
-        ]
-        bidRequests = bids.map((b) => mockBidRequest(b));
-        callbacks = auctionCallbacks(doneSpy, auction);
-        Object.assign(auction, {
-          addNoBid: sinon.spy()
-        });
-      });
-
-      Object.entries({
-        'resolve': () => resolve(),
-        'reject': () => reject(),
-      }).forEach(([t, resolver]) => {
-        it(`should wait for responsesReady to ${t} before calling auctionDone`, (done) => {
-          bidRequests.forEach(bidRequest => callbacks.adapterDone.call(bidRequest));
-          setTimeout(() => {
-            sinon.assert.notCalled(doneSpy);
-            resolver();
-            setTimeout(() => {
-              sinon.assert.called(doneSpy);
-              done();
-            })
-          })
-        });
-      });
+    before(() => {
+      responsesReady.before(responsesReadyHook, 100);
     });
-
-    describe('when bids are rejected', () => {
-      let cbs, bid, expectedRejection;
-      const onBidRejected = sinon.stub();
-      const REJECTION_REASON = 'Bid rejected';
-      const AU_CODE = 'au';
-
-      function rejectHook(fn, adUnitCode, bid, reject) {
-        reject(REJECTION_REASON);
-        reject(REJECTION_REASON); // second call should do nothing
-      }
-
-      before(() => {
-        addBidResponse.before(rejectHook, 999);
-        events.on(EVENTS.BID_REJECTED, onBidRejected);
-      });
-
-      after(() => {
-        addBidResponse.getHooks({hook: rejectHook}).remove();
-        events.off(EVENTS.BID_REJECTED, onBidRejected);
-      });
-
-      beforeEach(() => {
-        onBidRejected.reset();
-        bid = mockBid({bidderCode: BIDDER_CODE});
-        bidRequests = [
-          mockBidRequest(bid),
-        ];
-        cbs = auctionCallbacks(doneSpy, auction);
-        expectedRejection = sinon.match(Object.assign({}, bid, {
-          cpm: parseFloat(bid.cpm),
-          rejectionReason: REJECTION_REASON,
-          adUnitCode: AU_CODE
-        }));
-        auction.addBidRejected = sinon.stub();
-      });
-
-      Object.entries({
-        'with addBidResponse.reject': () => cbs.addBidResponse.reject(AU_CODE, deepClone(bid), REJECTION_REASON),
-        'from addBidResponse hooks': () => cbs.addBidResponse(AU_CODE, deepClone(bid))
-      }).forEach(([t, rejectBid]) => {
-        describe(t, () => {
-          it('should emit a BID_REJECTED event', () => {
-            rejectBid();
-            sinon.assert.calledWith(onBidRejected, expectedRejection);
-          });
-
-          it('should pass bid to auction.addBidRejected', () => {
-            rejectBid();
-            sinon.assert.calledWith(auction.addBidRejected, expectedRejection);
-          });
-        })
-      });
-
-      it('addBidResponse hooks should not be able to reject the same bid twice', () => {
-        cbs.addBidResponse(AU_CODE, bid);
-        expect(auction.addBidRejected.calledOnce).to.be.true;
-      });
-    })
-  });
-
-  describe('auctionOptions', function() {
-    let bidRequests;
-    let doneSpy;
-    let clock;
-    let requiredBidder = BIDDER_CODE;
-    let requiredBidder1 = BIDDER_CODE1;
-    let secondaryBidder = 'doNotWaitForMe';
-    let auction;
+    after(() => {
+      responsesReady.getHooks({hook: responsesReadyHook}).remove();
+    });
 
     beforeEach(() => {
-      clock = sinon.useFakeTimers();
-      doneSpy = sinon.spy();
-      config.setConfig({
-        'auctionOptions': {
-          secondaryBidders: [ secondaryBidder ]
-        }
+      ready = Promise.resolve();
+      return ready;
+    });
+
+    describe('auctionCallbacks', function() {
+      let bids = TEST_BIDS;
+      let bidRequests;
+      let doneSpy;
+      let auction;
+
+      beforeEach(() => {
+        const start = Date.now();
+        auction = mockAuction(() => bidRequests, start);
+        indexAuctions = [auction];
+        doneSpy = sinon.spy();
+        config.setConfig({
+          cache: {
+            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          }
+        });
       });
 
-      const start = Date.now();
-      auction = mockAuction(() => bidRequests);
-      indexAuctions = [auction];
-    });
+      afterEach(() => {
+        doneSpy.resetHistory();
+        config.resetConfig();
+        bidRequests = null;
+      });
 
-    afterEach(() => {
-      doneSpy.resetHistory();
-      config.resetConfig();
-      clock.restore();
-    });
+      Object.entries({
+        'added to': (cbs) => cbs.addBidResponse,
+        'rejected from': (cbs) => cbs.addBidResponse.reject,
+      }).forEach(([t, getMethod]) => {
+        it(`should call auction done after bid is ${t} auction for mediaType banner`, async function () {
+          let ADUNIT_CODE2 = 'adUnitCode2';
+          let BIDDER_CODE2 = 'sampleBidder2';
 
-    it('should not wait to call auction done for secondary bidders', function () {
-      let bids1 = [mockBid({ bidderCode: requiredBidder, transactionId: ADUNIT_CODE1 })];
-      let bids2 = [mockBid({ bidderCode: requiredBidder1, transactionId: ADUNIT_CODE1 })];
-      let bids3 = [mockBid({ bidderCode: secondaryBidder, transactionId: ADUNIT_CODE1 })];
-      bidRequests = [
-        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
-        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
-      ];
-      let cbs = auctionCallbacks(doneSpy, auction);
-      // required bidder responds immeaditely to auction
-      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
-      cbs.adapterDone.call(bidRequests[0]);
-      assert.equal(doneSpy.callCount, 0);
-
-      // auction waits for second required bidder to respond
-      clock.tick(100);
-      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
-      cbs.adapterDone.call(bidRequests[1]);
-
-      // auction done is reported and does not wait for secondaryBidder request
-      assert.equal(doneSpy.callCount, 1);
-
-      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
-      cbs.adapterDone.call(bidRequests[2]);
-    });
-
-    it('should wait for all bidders if they are all secondary', function () {
-      config.setConfig({
-        'auctionOptions': {
-          secondaryBidders: [requiredBidder, requiredBidder1, secondaryBidder]
-        }
+          let bids1 = [mockBid({bidderCode: BIDDER_CODE1, adUnitId: ADUNIT_CODE1})];
+          let bids2 = [mockBid({bidderCode: BIDDER_CODE2, adUnitId: ADUNIT_CODE2})];
+          bidRequests = [
+            mockBidRequest(bids[0]),
+            mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
+            mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE2})
+          ];
+          let cbs = auctionCallbacks(doneSpy, auction);
+          const method = getMethod(cbs);
+          method(ADUNIT_CODE, bids[0]);
+          cbs.adapterDone.call(bidRequests[0]);
+          method(ADUNIT_CODE1, bids1[0]);
+          cbs.adapterDone.call(bidRequests[1]);
+          method(ADUNIT_CODE2, bids2[0]);
+          cbs.adapterDone.call(bidRequests[2]);
+          await ready;
+          assert.equal(doneSpy.callCount, 1);
+        });
       })
-      let bids1 = [mockBid({ bidderCode: requiredBidder })];
-      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
-      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
-      bidRequests = [
-        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
-        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
-      ];
-      let cbs = auctionCallbacks(doneSpy, auction);
-      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
-      cbs.adapterDone.call(bidRequests[0]);
-      clock.tick(100);
-      assert.equal(doneSpy.callCount, 0)
 
-      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
-      cbs.adapterDone.call(bidRequests[1]);
-      clock.tick(100);
-      assert.equal(doneSpy.callCount, 0);
+      if (FEATURES.VIDEO) {
+        it('should call auction done after prebid cache is complete for mediaType video', async function () {
+          bids[0].mediaType = 'video';
+          let bids1 = [mockBid({bidderCode: BIDDER_CODE1})];
 
-      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
-      cbs.adapterDone.call(bidRequests[2]);
-      assert.equal(doneSpy.callCount, 1);
+          let opts = {
+            mediaType: {
+              video: {
+                context: 'instream',
+                playerSize: [640, 480],
+              },
+            }
+          };
+          bidRequests = [
+            mockBidRequest(bids[0], opts),
+            mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
+          ];
+
+          let cbs = auctionCallbacks(doneSpy, auction);
+          cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
+          cbs.adapterDone.call(bidRequests[0]);
+          cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
+          cbs.adapterDone.call(bidRequests[1]);
+          await ready;
+          assert.equal(doneSpy.callCount, 0);
+          const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
+          const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
+          server.requests[0].respond(200, {'Content-Type': 'application/json'}, responseBody);
+          assert.equal(doneSpy.callCount, 1);
+        });
+      }
+
+      it('should convert cpm to number', () => {
+        auction.addBidReceived = sinon.spy();
+        const cbs = auctionCallbacks(doneSpy, auction);
+        const bid = {...bids[0], cpm: '1.23'}
+        bidRequests = [mockBidRequest(bid)];
+        cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
+        sinon.assert.calledWith(auction.addBidReceived, sinon.match({cpm: 1.23}));
+      })
+
+      describe('when responsesReady defers', () => {
+        let resolve, reject, promise, callbacks, bids;
+
+        function hook(next, ready) {
+          next(ready.then(() => promise));
+        }
+
+        before(() => {
+          responsesReady.before(hook, 0); // higher priority than wrapping setup
+        });
+
+        after(() => {
+          responsesReady.getHooks({hook}).remove();
+        });
+
+        beforeEach(() => {
+          // eslint-disable-next-line promise/param-names
+          promise = new Promise((rs, rj) => {
+            resolve = rs;
+            reject = rj;
+          });
+          bids = [
+            mockBid({bidderCode: BIDDER_CODE1}),
+            mockBid({bidderCode: BIDDER_CODE})
+          ]
+          bidRequests = bids.map((b) => mockBidRequest(b));
+          callbacks = auctionCallbacks(doneSpy, auction);
+          Object.assign(auction, {
+            addNoBid: sinon.spy()
+          });
+        });
+
+        Object.entries({
+          'resolve': () => resolve(),
+          'reject': () => reject(),
+        }).forEach(([t, resolver]) => {
+          it(`should wait for responsesReady to ${t} before calling auctionDone`, (done) => {
+            bidRequests.forEach(bidRequest => callbacks.adapterDone.call(bidRequest));
+            setTimeout(() => {
+              sinon.assert.notCalled(doneSpy);
+              resolver();
+              setTimeout(() => {
+                sinon.assert.called(doneSpy);
+                done();
+              })
+            })
+          });
+        });
+      });
+
+      describe('when bids are rejected', () => {
+        let cbs, bid, expectedRejection;
+        const onBidRejected = sinon.stub();
+        const REJECTION_REASON = 'Bid rejected';
+        const AU_CODE = 'au';
+
+        function rejectHook(fn, adUnitCode, bid, reject) {
+          reject(REJECTION_REASON);
+          reject(REJECTION_REASON); // second call should do nothing
+        }
+
+        before(() => {
+          addBidResponse.before(rejectHook, 999);
+          events.on(EVENTS.BID_REJECTED, onBidRejected);
+        });
+
+        after(() => {
+          addBidResponse.getHooks({hook: rejectHook}).remove();
+          events.off(EVENTS.BID_REJECTED, onBidRejected);
+        });
+
+        beforeEach(() => {
+          onBidRejected.reset();
+          bid = mockBid({bidderCode: BIDDER_CODE});
+          bidRequests = [
+            mockBidRequest(bid),
+          ];
+          cbs = auctionCallbacks(doneSpy, auction);
+          expectedRejection = sinon.match(Object.assign({}, bid, {
+            cpm: parseFloat(bid.cpm),
+            rejectionReason: REJECTION_REASON,
+            adUnitCode: AU_CODE
+          }));
+          auction.addBidRejected = sinon.stub();
+        });
+
+        Object.entries({
+          'with addBidResponse.reject': () => cbs.addBidResponse.reject(AU_CODE, deepClone(bid), REJECTION_REASON),
+          'from addBidResponse hooks': () => cbs.addBidResponse(AU_CODE, deepClone(bid))
+        }).forEach(([t, rejectBid]) => {
+          describe(t, () => {
+            it('should emit a BID_REJECTED event', () => {
+              rejectBid();
+              sinon.assert.calledWith(onBidRejected, expectedRejection);
+            });
+
+            it('should pass bid to auction.addBidRejected', () => {
+              rejectBid();
+              sinon.assert.calledWith(auction.addBidRejected, expectedRejection);
+            });
+          })
+        });
+
+        it('addBidResponse hooks should not be able to reject the same bid twice', () => {
+          cbs.addBidResponse(AU_CODE, bid);
+          expect(auction.addBidRejected.calledOnce).to.be.true;
+        });
+      })
     });
+    describe('auctionOptions', function() {
+      let bidRequests;
+      let doneSpy;
+      let clock;
+      let requiredBidder = BIDDER_CODE;
+      let requiredBidder1 = BIDDER_CODE1;
+      let secondaryBidder = 'doNotWaitForMe';
+      let auction;
 
-    it('should allow secondaryBidders to respond in auction before is is done', function () {
-      let bids1 = [mockBid({ bidderCode: requiredBidder })];
-      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
-      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
-      bidRequests = [
-        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
-        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
-      ];
-      let cbs = auctionCallbacks(doneSpy, auction);
-      // secondaryBidder is first to respond
-      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
-      cbs.adapterDone.call(bidRequests[2]);
-      clock.tick(100);
-      assert.equal(doneSpy.callCount, 0);
+      beforeEach(() => {
+        clock = sinon.useFakeTimers();
+        doneSpy = sinon.spy();
+        config.setConfig({
+          'auctionOptions': {
+            secondaryBidders: [ secondaryBidder ]
+          }
+        });
 
-      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
-      cbs.adapterDone.call(bidRequests[1]);
-      clock.tick(100);
-      assert.equal(doneSpy.callCount, 0);
+        const start = Date.now();
+        auction = mockAuction(() => bidRequests);
+        indexAuctions = [auction];
+      });
 
-      // first required bidder takes longest to respond, auction isn't marked as done until this occurs
-      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
-      cbs.adapterDone.call(bidRequests[0]);
-      assert.equal(doneSpy.callCount, 1);
+      afterEach(() => {
+        doneSpy.resetHistory();
+        config.resetConfig();
+        clock.restore();
+      });
+
+      it('should not wait to call auction done for secondary bidders', async function () {
+        let bids1 = [mockBid({bidderCode: requiredBidder, transactionId: ADUNIT_CODE1})];
+        let bids2 = [mockBid({bidderCode: requiredBidder1, transactionId: ADUNIT_CODE1})];
+        let bids3 = [mockBid({bidderCode: secondaryBidder, transactionId: ADUNIT_CODE1})];
+        bidRequests = [
+          mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
+          mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE1}),
+          mockBidRequest(bids3[0], {adUnitCode: ADUNIT_CODE1}),
+        ];
+        let cbs = auctionCallbacks(doneSpy, auction);
+        // required bidder responds immeaditely to auction
+        cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+        cbs.adapterDone.call(bidRequests[0]);
+        await ready;
+        assert.equal(doneSpy.callCount, 0);
+
+        // auction waits for second required bidder to respond
+        clock.tick(100);
+        cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+        cbs.adapterDone.call(bidRequests[1]);
+        // auction done is reported and does not wait for secondaryBidder request
+        await ready;
+        assert.equal(doneSpy.callCount, 1);
+
+        cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+        cbs.adapterDone.call(bidRequests[2]);
+      });
+
+      it('should wait for all bidders if they are all secondary', async function () {
+        config.setConfig({
+          'auctionOptions': {
+            secondaryBidders: [requiredBidder, requiredBidder1, secondaryBidder]
+          }
+        })
+        let bids1 = [mockBid({bidderCode: requiredBidder})];
+        let bids2 = [mockBid({bidderCode: requiredBidder1})];
+        let bids3 = [mockBid({bidderCode: secondaryBidder})];
+        bidRequests = [
+          mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
+          mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE1}),
+          mockBidRequest(bids3[0], {adUnitCode: ADUNIT_CODE1}),
+        ];
+        let cbs = auctionCallbacks(doneSpy, auction);
+        cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+        cbs.adapterDone.call(bidRequests[0]);
+        clock.tick(100);
+        await ready;
+        assert.equal(doneSpy.callCount, 0)
+
+        cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+        cbs.adapterDone.call(bidRequests[1]);
+        clock.tick(100);
+        await ready;
+        assert.equal(doneSpy.callCount, 0);
+
+        cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+        cbs.adapterDone.call(bidRequests[2]);
+        await ready;
+        assert.equal(doneSpy.callCount, 1);
+      });
+
+      it('should allow secondaryBidders to respond in auction before is is done', async function () {
+        let bids1 = [mockBid({bidderCode: requiredBidder})];
+        let bids2 = [mockBid({bidderCode: requiredBidder1})];
+        let bids3 = [mockBid({bidderCode: secondaryBidder})];
+        bidRequests = [
+          mockBidRequest(bids1[0], {adUnitCode: ADUNIT_CODE1}),
+          mockBidRequest(bids2[0], {adUnitCode: ADUNIT_CODE1}),
+          mockBidRequest(bids3[0], {adUnitCode: ADUNIT_CODE1}),
+        ];
+        let cbs = auctionCallbacks(doneSpy, auction);
+        // secondaryBidder is first to respond
+        cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+        cbs.adapterDone.call(bidRequests[2]);
+        clock.tick(100);
+        await ready;
+        assert.equal(doneSpy.callCount, 0);
+
+        cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+        cbs.adapterDone.call(bidRequests[1]);
+        clock.tick(100);
+        await ready;
+        assert.equal(doneSpy.callCount, 0);
+
+        // first required bidder takes longest to respond, auction isn't marked as done until this occurs
+        cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+        cbs.adapterDone.call(bidRequests[0]);
+        await ready;
+        assert.equal(doneSpy.callCount, 1);
+      });
     });
   });
 });

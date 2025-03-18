@@ -5,6 +5,7 @@ import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
 import { __TEST__ } from '../../../modules/cleanioRtdProvider.js';
+import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
 
 const {
   readConfig,
@@ -70,7 +71,7 @@ describe('clean.io RTD module', function () {
       pageInitStepProtectPage(fakeScriptURL);
 
       sinon.assert.calledOnce(loadExternalScriptStub);
-      sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, 'clean.io');
+      sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, MODULE_TYPE_RTD, 'clean.io');
     });
   });
 
@@ -139,7 +140,7 @@ describe('clean.io RTD module', function () {
       const { init, onBidResponseEvent } = getModule();
       expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } }, {})).to.equal(true);
       sinon.assert.calledOnce(loadExternalScriptStub);
-      sinon.assert.calledWith(loadExternalScriptStub, 'https://abc1234567890.cloudfront.net/script.js', 'clean.io');
+      sinon.assert.calledWith(loadExternalScriptStub, 'https://abc1234567890.cloudfront.net/script.js', MODULE_TYPE_RTD, 'clean.io');
 
       const fakeBidResponse = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse, {}, {});

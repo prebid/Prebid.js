@@ -4,6 +4,8 @@ import adapterManager from '../src/adapterManager.js';
 import {EVENTS} from '../src/constants.js';
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import {config} from '../src/config.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const ZETA_GVL_ID = 833;
 const ADAPTER_CODE = 'zeta_global_ssp';
@@ -27,10 +29,11 @@ function sendEvent(eventType, event) {
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function adRenderSucceededHandler(args) {
+  const page = config.getConfig('pageUrl') || args.doc?.location?.host + args.doc?.location?.pathname;
   const event = {
     zetaParams: zetaParams,
-    domain: args.doc?.location?.host,
-    page: args.doc?.location?.host + args.doc?.location?.pathname,
+    domain: parseDomain(page, {noLeadingWww: true}),
+    page: page,
     bid: {
       adId: args.bid?.adId,
       requestId: args.bid?.requestId,
@@ -41,7 +44,11 @@ function adRenderSucceededHandler(args) {
       size: args.bid?.size,
       adomain: args.bid?.adserverTargeting?.hb_adomain,
       timeToRespond: args.bid?.timeToRespond,
-      cpm: args.bid?.cpm
+      cpm: args.bid?.cpm,
+      adUnitCode: args.bid?.adUnitCode
+    },
+    device: {
+      ua: navigator.userAgent
     }
   }
   sendEvent(EVENTS.AD_RENDER_SUCCEEDED, event);
@@ -59,7 +66,9 @@ function auctionEndHandler(args) {
         auctionId: b?.auctionId,
         bidder: b?.bidder,
         mediaType: b?.mediaTypes?.video ? 'VIDEO' : (b?.mediaTypes?.banner ? 'BANNER' : undefined),
-        size: b?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s)
+        size: b?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s),
+        device: b?.ortb2?.device,
+        adUnitCode: b?.adUnitCode
       }))
     })),
     bidsReceived: args.bidsReceived?.map(br => ({
@@ -71,7 +80,8 @@ function auctionEndHandler(args) {
       size: br?.size,
       adomain: br?.adserverTargeting?.hb_adomain,
       timeToRespond: br?.timeToRespond,
-      cpm: br?.cpm
+      cpm: br?.cpm,
+      adUnitCode: br?.adUnitCode
     }))
   }
   sendEvent(EVENTS.AUCTION_END, event);
@@ -80,6 +90,8 @@ function auctionEndHandler(args) {
 function bidTimeoutHandler(args) {
   const event = {
     zetaParams: zetaParams,
+    domain: args.find(t => t?.ortb2?.site?.domain)?.ortb2?.site?.domain,
+    page: args.find(t => t?.ortb2?.site?.page)?.ortb2?.site?.page,
     timeouts: args.map(t => ({
       bidId: t?.bidId,
       auctionId: t?.auctionId,
@@ -87,7 +99,8 @@ function bidTimeoutHandler(args) {
       mediaType: t?.mediaTypes?.video ? 'VIDEO' : (t?.mediaTypes?.banner ? 'BANNER' : undefined),
       size: t?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s),
       timeout: t?.timeout,
-      device: t?.ortb2?.device
+      device: t?.ortb2?.device,
+      adUnitCode: t?.adUnitCode
     }))
   }
   sendEvent(EVENTS.BID_TIMEOUT, event);

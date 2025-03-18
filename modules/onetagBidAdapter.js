@@ -7,6 +7,7 @@ import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -93,7 +94,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = navigator.connection || navigator.webkitConnection;
   payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
   payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
-  payload.fledgeEnabled = Boolean(bidderRequest && bidderRequest.fledgeEnabled)
+  payload.fledgeEnabled = Boolean(bidderRequest?.paapi?.enabled)
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -156,7 +157,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      fledgeAuctionConfigs,
+      paapi: fledgeAuctionConfigs,
     }
   } else {
     return bids;
@@ -307,12 +308,12 @@ function setGeneralInfo(bidRequest) {
 function getSpaceCoords(id) {
   const space = document.getElementById(id);
   try {
-    const { top, left, width, height } = space.getBoundingClientRect();
+    const { top, left, width, height } = getBoundingClientRect(space);
     let window = space.ownerDocument.defaultView;
     const coords = { top: top + window.pageYOffset, left: left + window.pageXOffset, width, height };
     let frame = window.frameElement;
     while (frame != null) {
-      const { top, left } = frame.getBoundingClientRect();
+      const { top, left } = getBoundingClientRect(frame);
       coords.top += top + window.pageYOffset;
       coords.left += left + window.pageXOffset;
       window = window.parent;
@@ -411,7 +412,7 @@ function getBidFloor(bidRequest, mediaType, sizes) {
         currency: 'EUR',
         mediaType: mediaType || '*',
         size: [size.width, size.height]
-      });
+      }) || {};
       floor.size = deepClone(size);
       if (!floor.floor) { floor.floor = null; }
       priceFloors.push(floor);

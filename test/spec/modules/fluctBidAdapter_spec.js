@@ -26,30 +26,30 @@ describe('fluctAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return true when dfpUnitCode is not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         tagId: '10000:100000001',
         groupId: '1000000002',
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
 
     it('should return false when groupId is not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         dfpUnitCode: '/1000/dfp_unit_code',
         tagId: '10000:100000001',
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -401,6 +401,36 @@ describe('fluctAdapter', function () {
 
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.regs.coppa).to.eql(1);
+    });
+
+    it('includes data.regs.gpp.string and data.regs.gpp.sid if bidderRequest.gppConsent exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          gppConsent: {
+            gppString: 'gpp-consent-string',
+            applicableSections: [1, 2, 3],
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
+      expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
+    });
+
+    it('includes data.regs.gpp.string and data.regs.gpp.sid if bidderRequest.ortb2.regs.gpp exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          ortb2: {
+            regs: {
+              gpp: 'gpp-consent-string',
+              gpp_sid: [1, 2, 3],
+            },
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gpp.string).to.eql('gpp-consent-string');
+      expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
     });
   });
 

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import { config } from 'src/config.js';
-import {spec, resetInvibes, stubDomainOptions, readGdprConsent} from 'modules/invibesBidAdapter.js';
+import {spec, resetInvibes, stubDomainOptions, readGdprConsent, storage} from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
@@ -187,6 +187,8 @@ describe('invibesBidAdapter:', function () {
     };
   }
 
+  let sandbox;
+
   beforeEach(function () {
     resetInvibes();
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -196,11 +198,13 @@ describe('invibesBidAdapter:', function () {
     };
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     this.cStub1.restore();
+    sandbox.restore();
   });
 
   describe('isBidRequestValid:', function () {
@@ -528,6 +532,8 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends undefined lid when no cookie', function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      sandbox.stub(storage, 'getCookie').returns(null);
       let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.lId).to.be.undefined;
     });
@@ -563,7 +569,7 @@ describe('invibesBidAdapter:', function () {
     it('does not send handIid when it doesnt exist in cookie', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
-      global.document.cookie = '';
+      sandbox.stub(storage, 'getCookie').returns(null)
       let bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -1504,6 +1510,29 @@ describe('invibesBidAdapter:', function () {
 
       let response = spec.getUserSyncs({iframeEnabled: false});
       expect(response).to.equal(undefined);
+    });
+
+    it('uses uspConsent when no gdprConsent', function () {
+      let bidderRequest = {
+        uspConsent: '1YNY',
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      };
+
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(top.window.invibes.optIn).to.equal(2);
+      expect(top.window.invibes.GdprModuleInstalled).to.be.false;
+      expect(top.window.invibes.UspModuleInstalled).to.be.true;
+      var index;
+      for (index = 0; index < top.window.invibes.purposes.length; ++index) {
+        expect(top.window.invibes.purposes[index]).to.be.true;
+      }
+      for (index = 0; index < top.window.invibes.legitimateInterests.length; ++index) {
+        expect(top.window.invibes.legitimateInterests[index]).to.be.true;
+      }
+      expect(request.data.tc).to.not.exist;
+      expect(request.data.uspc).to.equal(bidderRequest.uspConsent);
     });
   });
 });

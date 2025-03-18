@@ -1,8 +1,12 @@
 /* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepClone} from '../../../src/utils';
+import 'modules/consentManagementTcf';
+import 'modules/consentManagementUsp';
+import 'modules/userId/index';
+import 'modules/schain';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -155,8 +159,8 @@ describe('PulsePoint Adapter Tests', function () {
     }
   };
 
-  it('Verify build request', function () {
-    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+  it('Verify build request', async function () {
+    const request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -179,8 +183,8 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[1].banner.format).to.deep.eq([{'w': 728, 'h': 90}]);
   });
 
-  it('Verify parse response', function () {
-    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+  it('Verify parse response', async function () {
+    const request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
     const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
@@ -221,8 +225,8 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   if (FEATURES.NATIVE) {
-    it('Verify Native request', function () {
-      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+    it('Verify Native request', async function () {
+      const request = spec.buildRequests(nativeSlotConfig, await addFPDToBidderRequest(bidderRequest));
       expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -257,8 +261,8 @@ describe('PulsePoint Adapter Tests', function () {
       expect(nativeRequest.assets[2].data.type).to.equal(1);
     });
 
-    it('Verify Native response', function () {
-      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+    it('Verify Native response', async function () {
+      const request = spec.buildRequests(nativeSlotConfig, await addFPDToBidderRequest(bidderRequest));
       expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -358,33 +362,33 @@ describe('PulsePoint Adapter Tests', function () {
     expect(options[0].url).to.equal('https://bh.contextweb.com/visitormatch/prebid');
   });
 
-  it('Verify GDPR', function () {
+  it('Verify GDPR', async function () {
     const bidderRequestGdpr = {
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gpdr_data'
+        consentString: 'serialized_gdpr_data'
       }
     };
-    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(Object.assign({}, bidderRequest, bidderRequestGdpr)));
+    const request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(Object.assign({}, bidderRequest, bidderRequestGdpr)));
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
     // user object
     expect(ortbRequest.user).to.not.equal(null);
     expect(ortbRequest.user.ext).to.not.equal(null);
-    expect(ortbRequest.user.ext.consent).to.equal('serialized_gpdr_data');
+    expect(ortbRequest.user.ext.consent).to.equal('serialized_gdpr_data');
     // regs object
     expect(ortbRequest.regs).to.not.equal(null);
     expect(ortbRequest.regs.ext).to.not.equal(null);
     expect(ortbRequest.regs.ext.gdpr).to.equal(1);
   });
 
-  it('Verify CCPA', function () {
+  it('Verify CCPA', async function () {
     const bidderRequestUSPrivacy = {
       uspConsent: '1YYY'
     };
     const request = spec.buildRequests(slotConfigs,
-      syncAddFPDToBidderRequest(Object.assign({}, bidderRequest, bidderRequestUSPrivacy)));
+      await addFPDToBidderRequest(Object.assign({}, bidderRequest, bidderRequestUSPrivacy)));
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -395,8 +399,8 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   if (FEATURES.VIDEO) {
-    it('Verify Video request', function () {
-      const request = spec.buildRequests(videoSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+    it('Verify Video request', async function () {
+      const request = spec.buildRequests(videoSlotConfig, await addFPDToBidderRequest(bidderRequest));
       expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -440,8 +444,8 @@ describe('PulsePoint Adapter Tests', function () {
     });
   }
 
-  it('Verify extra parameters', function () {
-    let request = spec.buildRequests(additionalParamsConfig, syncAddFPDToBidderRequest(bidderRequest));
+  it('Verify extra parameters', async function () {
+    let request = spec.buildRequests(additionalParamsConfig, await addFPDToBidderRequest(bidderRequest));
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
@@ -463,8 +467,8 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[0].ext).to.be.undefined;
   });
 
-  it('Verify schain parameters', function () {
-    const request = spec.buildRequests(schainParamsSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+  it('Verify schain parameters', async function () {
+    const request = spec.buildRequests(schainParamsSlotConfig, await addFPDToBidderRequest(bidderRequest));
     const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.source).to.not.equal(null);
@@ -482,24 +486,35 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.source.ext.schain.nodes[0].domain).to.equal('publisher.com');
   });
 
-  it('Verify common id parameters', function () {
+  it('Verify common id parameters', async function () {
     const bidRequests = deepClone(slotConfigs);
-    bidRequests[0].userIdAsEids = [{
-      source: 'pubcid.org',
-      uids: [{
-        id: 'userid_pubcid'
-      }]
-    }, {
-      source: 'adserver.org',
-      uids: [{
-        id: 'userid_ttd',
-        ext: {
-          rtiPartner: 'TDID'
-        }
-      }]
-    }
+    const eids = [
+      {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'userid_pubcid'
+        }]
+      }, {
+        source: 'adserver.org',
+        uids: [{
+          id: 'userid_ttd',
+          ext: {
+            rtiPartner: 'TDID'
+          }
+        }]
+      }
     ];
-    const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+    const br = {
+      ...bidderRequest,
+      ortb2: {
+        user: {
+          ext: {
+            eids
+          }
+        }
+      }
+    }
+    const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(br));
     expect(request).to.be.not.null;
     expect(request.data).to.be.not.null;
     const ortbRequest = request.data;
@@ -507,10 +522,10 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user).to.not.be.undefined;
     expect(ortbRequest.user.ext).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
+    expect(ortbRequest.user.ext.eids).to.deep.equal(eids);
   });
 
-  it('Verify user level first party data', function () {
+  it('Verify user level first party data', async function () {
     const bidderRequest = {
       refererInfo: {
         page: 'https://publisher.com/home',
@@ -518,7 +533,7 @@ describe('PulsePoint Adapter Tests', function () {
       },
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gpdr_data'
+        consentString: 'serialized_gdpr_data'
       },
       ortb2: {
         user: {
@@ -533,7 +548,7 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.user).to.not.equal(null);
@@ -545,12 +560,12 @@ describe('PulsePoint Adapter Tests', function () {
           registered: true,
           interests: ['cars']
         },
-        consent: 'serialized_gpdr_data'
+        consent: 'serialized_gdpr_data'
       }
     });
   });
 
-  it('Verify site level first party data', function () {
+  it('Verify site level first party data', async function () {
     const bidderRequest = {
       ortb2: {
         site: {
@@ -571,7 +586,7 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(slotConfigs, await addFPDToBidderRequest(bidderRequest));
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.site).to.not.equal(null);
@@ -645,7 +660,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(mkRequest(Object.assign({}, { timeout: 6000 }, bidderRequest)).tmax).to.equal(6000)
   });
 
-  it('Verify deals', function () {
+  it('Verify deals', async function () {
     const bidRequests = deepClone(slotConfigs);
     const deals = [{
       id: 'DEAL_ONE',
@@ -655,7 +670,7 @@ describe('PulsePoint Adapter Tests', function () {
       bidfloor: 2.2
     }];
     bidRequests[0].params.deals = deals;
-    const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
+    const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;

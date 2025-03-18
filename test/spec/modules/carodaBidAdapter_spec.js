@@ -3,6 +3,8 @@ import { assert } from 'chai';
 import { spec } from 'modules/carodaBidAdapter.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Caroda adapter', function () {
   let bids = [];
@@ -185,29 +187,28 @@ describe('Caroda adapter', function () {
     });
 
     it('should send currency if defined', function () {
-      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
+      setCurrencyConfig({ adServerCurrency: 'EUR' });
       let validBidRequests = [{ params: {} }];
-      let refererInfo = { page: 'page' };
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo })[0].data);
-
-      assert.deepEqual(request.currency, 'EUR');
+      const bidderRequest = { refererInfo: { page: 'page' } };
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        let request = JSON.parse(spec.buildRequests(validBidRequests, res)[0].data);
+        assert.deepEqual(request.currency, 'EUR');
+        setCurrencyConfig({});
+      });
     });
 
     it('should pass extended ids', function () {
       let validBidRequests = [{
         bid_id: 'bidId',
         params: {},
-        userIdAsEids: createEidsArray({
-          tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-          pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
-        })
+        userIdAsEids: [
+          { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
+          { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
+        ]
       }];
 
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
-      assert.deepEqual(request.user.eids, [
-        { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
-        { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
-      ]);
+      assert.deepEqual(request.user.eids, validBidRequests[0].userIdAsEids);
     });
 
     describe('user privacy', function () {
@@ -304,11 +305,15 @@ describe('Caroda adapter', function () {
         });
 
         it('should request floor price in adserver currency', function () {
-          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
           const validBidRequests = [ getBidWithFloor() ];
-          const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0].data);
-          assert.equal(imp.bidfloor, undefined);
-          assert.equal(imp.bidfloorcur, 'DKK');
+          setCurrencyConfig({ adServerCurrency: 'DKK' });
+          const bidderRequest = { refererInfo: { page: 'page' } };
+          return addFPDToBidderRequest(bidderRequest).then(res => {
+            const imp = JSON.parse(spec.buildRequests(validBidRequests, res)[0].data);
+            assert.equal(imp.bidfloor, undefined);
+            assert.equal(imp.bidfloorcur, 'DKK');
+            setCurrencyConfig({});
+          });
         });
 
         it('should add correct floor values', function () {

@@ -50,6 +50,26 @@ describe('pbjs -> ortb banner conversion', () => {
       }
     },
     {
+      t: 'banner with format',
+      request: {
+        mediaTypes: {
+          banner: {
+            sizes: ['should be ignored']
+          }
+        },
+        ortb2Imp: {
+          banner: {
+            format: [{w: 123, h: 321}, {wratio: 2, hratio: 1}]
+          }
+        },
+      },
+      imp: {
+        banner: {
+          topframe: 0
+        }
+      }
+    },
+    {
       t: 'multi size banner',
       request: {
         mediaTypes: {
@@ -124,6 +144,16 @@ describe('pbjs -> ortb banner conversion', () => {
     };
     fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {});
     expect(imp.banner.someParam).to.eql('someValue');
+  });
+
+  it('should keep ortb2Imp.banner.battr', () => {
+    const imp = {
+      banner: {
+        battr: 'battr'
+      }
+    };
+    fillBannerImp(imp, {mediaTypes: {banner: {sizes: [1, 2]}}}, {});
+    expect(imp.banner.battr).to.eql('battr');
   });
 
   it('does nothing if context.mediaType is set but is not BANNER', () => {
