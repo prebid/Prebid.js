@@ -49,16 +49,16 @@
  */
 
 import {
-  generateUUID,
-  isEmpty,
-  isEmptyStr,
-  isFn,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  parseUrl,
-  timestamp
+    generateUUID,
+    isEmpty,
+    isEmptyStr,
+    isFn,
+    logError,
+    logInfo,
+    logMessage,
+    logWarn,
+    parseUrl,
+    timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
@@ -82,7 +82,7 @@ import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 import type {Bid} from "./bidfactory.ts";
-import type {BidderCode, Identifier} from "./types/common.d.ts";
+import type {BidderCode} from './types/common.d.ts';
 
 const { syncUsers } = userSync;
 
