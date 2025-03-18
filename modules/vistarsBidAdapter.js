@@ -105,10 +105,6 @@ export const spec = {
     return syncs;
   },
 
-  onTimeout: function(timeoutData) {},
-  onBidWon: function(bid) {},
-  onSetTargeting: function(bid) {},
-  onBidderError: function() {},
   supportedMediaTypes: [ BANNER, VIDEO ]
 }
 
