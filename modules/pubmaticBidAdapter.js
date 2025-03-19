@@ -1,4 +1,4 @@
-import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID } from '../src/utils.js';
+import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -27,7 +27,7 @@ const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentiall
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
 const MSG_VIDEO_PLCMT_MISSING = 'Video.plcmt param missing';
 const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
-const DEFAULT_TTL = 99;
+const DEFAULT_TTL = 360;
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -139,7 +139,8 @@ const converter = ortbConverter({
   },
   overrides: {
     imp: {
-      bidfloor: false
+      bidfloor: false,
+extBidfloor: false
     },
     bidResponse: {
       native: false
@@ -211,8 +212,18 @@ const setImpFields = imp => {
   if (imp.ext?.data && Object.keys(imp.ext.data).length === 0) delete imp.ext.data
 }
 
+function removeGranularFloor(imp, mediaTypes) {
+  mediaTypes.forEach(mt => {
+    if (imp[mt]?.ext && imp[mt].ext.bidfloor === imp.bidfloor && imp[mt].ext.bidfloorcur === imp.bidfloorcur) {
+      delete imp[mt].ext;
+    }
+  })
+}
+
 const setFloorInImp = (imp, bid) => {
   let bidFloor = -1;
+  let requestedMediatypes = Object.keys(bid.mediaTypes);
+  let isMultiFormatRequest = requestedMediatypes.length > 1
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (!imp.hasOwnProperty(mediaType)) return;
@@ -225,13 +236,20 @@ const setFloorInImp = (imp, bid) => {
         const floorInfo = bid.getFloor({ currency: imp.bidfloorcur, mediaType, size });
         logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, ' and size:', size, ' is: currency', floorInfo.currency, 'floor', floorInfo.floor);
 
-        if (floorInfo?.currency === imp.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+        if (isPlainObject(floorInfo) && floorInfo?.currency === imp.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
+          if (isMultiFormatRequest && mediaType !== BANNER) {
+            logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', imp.bidfloorcur);
+            imp[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': imp.bidfloorcur};
+          }
           logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
           bidFloor = bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor);
           logInfo(LOG_WARN_PREFIX, 'new floor value:', bidFloor);
         }
       });
+      if (isMultiFormatRequest && mediaType === BANNER) {
+        imp[mediaType]['ext'] = {'bidfloor': bidFloor, 'bidfloorcur': imp.bidfloorcur};
+      }
     });
   }
   // Determine the highest value between imp.bidfloor and the floor from the floor module.
@@ -244,6 +262,8 @@ const setFloorInImp = (imp, bid) => {
   // Set imp.bidfloor only if bidFloor is greater than 0.
   imp.bidfloor = (bidFloor > 0) ? bidFloor : UNDEFINED;
   logInfo(LOG_WARN_PREFIX, 'Updated imp.bidfloor:', imp.bidfloor);
+  // remove granular floor if impression level floor is same as granular
+  if (isMultiFormatRequest) removeGranularFloor(imp, requestedMediatypes);
 }
 
 const updateBannerImp = (bannerObj, adSlot) => {
@@ -394,7 +414,7 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   res.pm_dspid = bid.ext?.dspid ? bid.ext.dspid : null;
   res.pm_seat = seatbid.seat;
   if (!res.creativeId) res.creativeId = bid.id;
-  if (!res.ttl || res.ttl == DEFAULT_TTL) res.ttl = MEDIATYPE_TTL[res.mediaType];
+  if (res.ttl == DEFAULT_TTL) res.ttl = MEDIATYPE_TTL[res.mediaType];
   if (bid.dealid) {
     res.dealChannel = bid.ext?.deal_channel ? dealChannel[bid.ext.deal_channel] || null : 'PMP';
   }
