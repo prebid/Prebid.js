@@ -16,7 +16,8 @@ describe('AdGrid Bid Adapter', function () {
       }
     },
     params: {
-      domainId: 12345
+      domainId: 12345,
+      placement: 'leaderboard'
     }
   }];
 
@@ -32,17 +33,18 @@ describe('AdGrid Bid Adapter', function () {
       }
     },
     params: {
-      domainId: 12345
+      domainId: 12345,
+      placement: 'video1'
     }
   }];
 
   describe('isBidRequestValid', function () {
-    it('Should return true when domainId exist inside params object', function () {
+    it('Should return true when domainId and placement exist inside params object', function () {
       const isBidValid = spec.isBidRequestValid(bannerRequest[0]);
       expect(isBidValid).to.be.true;
     });
 
-    it('Should return false when domainId is not exist inside params object', function () {
+    it('Should return false when domainId and placement are not exist inside params object', function () {
       const isBidNotValid = spec.isBidRequestValid(null);
       expect(isBidNotValid).to.be.false;
     });
