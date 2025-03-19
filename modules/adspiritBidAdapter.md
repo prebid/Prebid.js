@@ -51,13 +51,13 @@ Each adunit with `adspirit` adapter has to have `placementId` and `host`.
                     request: {
                         ver: "1.2",
                         assets: [
-                            { id: 1, required: 1, title: { len: 80 } }, // Title
-                            { id: 2, required: 1, img: { type: 3,  mimes: ["image/png", "image/gif", "image/jpeg"] } }, // Main Image
-                            { id: 4, required: 1, data: { type: 2, "len": 200 } }, // Body Text
-                            { id: 3, required: 1, data: { type: 12 } }, // CTA Text
-                            { id: 6, required: 1, data: { type: 1 } }, // Sponsored By
-                            { id: 5, required: 1, img: { type: 3, wmin: 200, hmin: 200, mimes: ["image/png", "image/gif", "image/jpeg"] } } // Icon Image
-                        ],
+                  { id: 1, required: 1, title: { len: 100 } },
+                  { id: 2, required: 1, img: {type: 3, wmin: 1200, hmin: 627, mimes: ['image/png', 'image/gif', 'image/jpeg']} },
+                  { id: 4, required: 1, data: {type: 2, len: 150} },
+                  { id: 3, required: 0, data: {type: 12, len: 50} },
+                  { id: 6, required: 0, data: {type: 1, len: 50} },
+                  { id: 5, required: 0, img: {type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] }}
+                ],
                         link: { required: 1 } // Click-through URL
                     }
                 }
@@ -79,7 +79,7 @@ Each adunit with `adspirit` adapter has to have `placementId` and `host`.
 
 ### Short description in five points for native
 
-1. Title (id:1): This is the main heading of the ad, and it should be mandatory with a maximum length of 80 characters.
+1. Title (id:1): This is the main heading of the ad, and it should be mandatory with a maximum length of 100 characters.
 
 2. Main Image (id:2): This is the main image that represents the ad content and should be in PNG, GIF, or JPEG formats.
 
