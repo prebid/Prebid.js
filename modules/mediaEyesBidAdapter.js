@@ -13,14 +13,14 @@ export const spec = {
   supportedMediaTypes: BANNER,
 
   isBidRequestValid: (bid) => {
-    return !!(bid.params.item_id);
+    return !!(bid.params.itemId);
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
     let requests = [];
 
     bidRequests.map(bidRequest => {
-      let {item_id} = bidRequest.params;
+      let {itemId} = bidRequest.params;
       let requestData = {
         id: generateUUID(),
         imp: [cookingImp(bidRequest)],
@@ -29,7 +29,7 @@ export const spec = {
       }
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + "?item_id=" + item_id,
+        url: ENDPOINT_URL + "?item_id=" + itemId,
         data: JSON.stringify(requestData),
         options: {
           contentType: 'application/json',

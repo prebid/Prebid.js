@@ -16,7 +16,7 @@ describe('mediaeyes adapter', function () {
                     }
                 },
                 params: {
-                    item_id: 'ec1d7389a4a5afa28a23c4',
+                    itemId: 'ec1d7389a4a5afa28a23c4',
                     bid_floor: 0.1
                 }
             }
@@ -49,17 +49,17 @@ describe('mediaeyes adapter', function () {
     });
 
     describe('validations', function () {
-        it('isBidValid : item_id is passed', function () {
+        it('isBidValid : itemId is passed', function () {
             let bid = {
                 bidder: 'mediaeyes',
                 params: {
-                    item_id: 'ec1d7389a4a5afa28a23c4',
+                    itemId: 'ec1d7389a4a5afa28a23c4',
                 }
             },
                 isValid = spec.isBidRequestValid(bid);
             expect(isValid).to.equals(true);
         });
-        it('isBidValid : item_id is not passed', function () {
+        it('isBidValid : itemId is not passed', function () {
             let bid = {
                 bidder: 'mediaeyes',
                 params: {

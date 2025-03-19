@@ -24,7 +24,7 @@ Module that connects to MediaEyes Bidder System
                 {
                     bidder: 'mediaeyes',
                     params: {
-                        item_id: '4d27f3cc8bbd5bd153045e' // Item for test
+                        itemId: '4d27f3cc8bbd5bd153045e' // Item for test
                     }
                 }
             ]
