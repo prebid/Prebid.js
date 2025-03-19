@@ -140,7 +140,7 @@ const converter = ortbConverter({
   overrides: {
     imp: {
       bidfloor: false,
-extBidfloor: false
+      extBidfloor: false
     },
     bidResponse: {
       native: false
