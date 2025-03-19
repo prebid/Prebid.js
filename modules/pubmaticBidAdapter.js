@@ -811,7 +811,7 @@ function _addImpressionFPD(imp, bid) {
   gpid && deepSetValue(imp, `ext.gpid`, gpid);
 }
 
-function setGranularFloor(imp, mediaTypes) {
+function removeGranularFloor(imp, mediaTypes) {
   mediaTypes.forEach(mt => {
     if (imp[mt]?.ext && imp[mt].ext.bidfloor === imp.bidfloor && imp[mt].ext.bidfloorcur === imp.bidfloorcur) {
       delete imp[mt].ext;
@@ -848,7 +848,7 @@ function _addFloorFromFloorModule(impObj, bid) {
           if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
             let mediaTypeFloor = parseFloat(floorInfo.floor);
             if (isMultiFormatRequest && mediaType !== BANNER) {
-              logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ',mediaTypeFloor, 'with currency :',impObj.bidfloorcur);
+              logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', impObj.bidfloorcur);
               impObj[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': impObj.bidfloorcur};
             }
             logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
@@ -877,7 +877,7 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
   logInfo(LOG_WARN_PREFIX, 'new impObj.bidfloor value:', impObj.bidfloor);
   // remove granular floor if impression level floor is same as granular
-  if (isMultiFormatRequest) setGranularFloor(impObj, requestedMediatypes);
+  if (isMultiFormatRequest) removeGranularFloor(impObj, requestedMediatypes);
 }
 
 function _handleEids(payload, validBidRequests) {
