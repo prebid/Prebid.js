@@ -20,6 +20,7 @@ const FLOOR_VALUES = {
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
 const VENDOR_OPENWRAP = 'openwrap';
+const DISPLAY_MANAGER = 'Prebid.js';
 const SEND_TIMEOUT = 2000;
 const END_POINT_HOST = 'https://t.pubmatic.com/';
 const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl?';
@@ -454,7 +455,8 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
-  outputObj['pbv'] = '$prebid.version$' || '-1';
+  outputObj['dm'] = DISPLAY_MANAGER;
+  outputObj['dmv'] = '$prebid.version$' || '-1';
   outputObj['bm'] = getBrowserType();
   outputObj['ctr'] = Object.keys(user).length ? user.ctr : '';
 
@@ -549,6 +551,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&en=' + enc(winningBid.bidResponse?.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse?.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
+  pixelURL += '&dm=' + enc(DISPLAY_MANAGER);
+  pixelURL += '&dmv=' + enc('$prebid.version$' || '-1');
   pixelURL += '&origbidid=' + enc(winningBid?.bidResponse?.partnerImpId || winningBid?.bidResponse?.prebidBidId || winningBid.bidId);
   pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
   const ds = winningBid.bidResponse?.meta ? getMetadata(winningBid.bidResponse.meta)?.ds : undefined;

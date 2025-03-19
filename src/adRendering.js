@@ -16,7 +16,7 @@ import {auctionManager} from './auctionManager.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
 import {fireNativeTrackers} from './native.js';
-import {GreedyPromise} from './utils/promise.js';
+import {PbPromise} from './utils/promise.js';
 import adapterManager from './adapterManager.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {filters} from './targeting.js';
@@ -25,7 +25,7 @@ import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTra
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
-export const getBidToRender = hook('sync', function (adId, forRender = true, override = GreedyPromise.resolve()) {
+export const getBidToRender = hook('sync', function (adId, forRender = true, override = PbPromise.resolve()) {
   return override
     .then(bid => bid ?? auctionManager.findBidByAdId(adId))
     .catch(() => {})
