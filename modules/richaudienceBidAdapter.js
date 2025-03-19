@@ -275,12 +275,6 @@ function renderer(bid) {
 function renderAd(bid) {
   let raOutstreamHBPassback = `${bid.vastXml}`;
   let raPlayerHB = {
-    config: bid.params[0].player != undefined ? {
-      end: bid.params[0].player.end != null ? bid.params[0].player.end : 'close',
-      init: bid.params[0].player.init != null ? bid.params[0].player.init : 'close',
-      skin: bid.params[0].player.skin != null ? bid.params[0].player.skin : 'light',
-    } : {end: 'close', init: 'close', skin: 'light'},
-    pid: bid.params[0].pid,
     adUnit: bid.adUnitCode
   };
 

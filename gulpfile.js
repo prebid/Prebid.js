@@ -16,7 +16,6 @@ var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
@@ -28,6 +27,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+const run = require('gulp-run-command').default;
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -79,23 +79,18 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const isFixed = function (file) {
-    return file.eslint != null && file.eslint.fixed;
+  const args = ['eslint'];
+  if (!argv.nolintfix) {
+    args.push('--fix');
   }
-  return gulp.src([
-    'src/**/*.js',
-    'modules/**/*.js',
-    'libraries/**/*.js',
-    'creative/**/*.js',
-    'test/**/*.js',
-    'plugins/**/*.js',
-    '!plugins/**/node_modules/**',
-    './*.js'
-  ], { base: './' })
-    .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
-    .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError())
-    .pipe(gulpif(isFixed, gulp.dest('./')));
+  if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
+    args.push('--quiet')
+  }
+  return run(args.join(' '))().then(() => {
+    done();
+  }, (err) => {
+    done(err);
+  });
 };
 
 // View the code coverage report in the browser.

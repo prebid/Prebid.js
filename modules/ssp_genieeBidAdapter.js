@@ -1,4 +1,4 @@
-/* eslint-disable camelcase */
+
 import * as utils from '../src/utils.js';
 import { isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

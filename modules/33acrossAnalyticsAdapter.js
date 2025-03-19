@@ -155,12 +155,12 @@ class TransactionManager {
   }
 
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
-  // eslint-disable-next-line no-dupe-class-members
+
   #clearSendTimeout() {
     return clearTimeout(this.#sendTimeoutId);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
+
   #restartSendTimeout() {
     this.#clearSendTimeout();
 

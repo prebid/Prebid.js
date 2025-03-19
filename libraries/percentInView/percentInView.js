@@ -1,6 +1,7 @@
+import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
 
-function getBoundingBox(element, {w, h} = {}) {
-  let {width, height, left, top, right, bottom} = element.getBoundingClientRect();
+export function getBoundingBox(element, {w, h} = {}) {
+  let {width, height, left, top, right, bottom, x, y} = getBoundingClientRect(element);
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;
@@ -9,7 +10,7 @@ function getBoundingBox(element, {w, h} = {}) {
     bottom = top + h;
   }
 
-  return {width, height, left, top, right, bottom};
+  return {width, height, left, top, right, bottom, x, y};
 }
 
 function getIntersectionOfRects(rects) {

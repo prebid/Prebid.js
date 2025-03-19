@@ -863,19 +863,19 @@ function _logMessage(textValue, objectValue) {
   logMessage(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logInfo(textValue, objectValue) {
   objectValue = objectValue || '';
   logInfo(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logWarn(textValue, objectValue) {
   objectValue = objectValue || '';
   logWarn(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logError(textValue, objectValue) {
   objectValue = objectValue || '';
   logError(LOG_PREFIX + textValue, objectValue);

@@ -33,7 +33,7 @@ import {submodule} from '../src/hook.js';
 const setupFailMessage = 'Failed to instantiate the player';
 
 /**
- * @constructor
+ * @class
  * @param {Object} config - videoProviderConfig
  * @param {function} adPlayerPro_
  * @param {CallbackStorage} callbackStorage_
@@ -160,7 +160,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         return;
     }
 
-    // eslint-disable-next-line no-unreachable
+
     const playerEventName = utils.getPlayerEvent(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
     player && player.on(playerEventName, eventHandler);

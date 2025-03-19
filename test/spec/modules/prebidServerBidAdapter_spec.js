@@ -1,4 +1,4 @@
-/* eslint-disable no-trailing-spaces */
+ 
 import {expect} from 'chai';
 import {
   PrebidServer as Adapter,

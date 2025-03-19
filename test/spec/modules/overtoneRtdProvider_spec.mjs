@@ -28,7 +28,6 @@ describe('Overtone RTD Submodule with Test URLs', function () {
     });
     
     getBidRequestDataStub = sinon.stub(overtoneRtdProvider, 'getBidRequestData').callsFake((config, callback) => {
-      console.log('ortb2Fragments value:', JSON.stringify(config.ortb2Fragments, null, 2));
       if (config.shouldFail) {
         return;
       }

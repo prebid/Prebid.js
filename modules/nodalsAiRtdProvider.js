@@ -119,7 +119,7 @@ class NodalsAiRtdProvider {
    * @param {Object} params - Parameters object from the module configuration.
    * @returns {boolean} - True if parameters are valid, false otherwise.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #isValidConfig(params) {
     // Basic validation logic
     if (typeof params === 'object' && params?.propertyId) {
@@ -134,7 +134,7 @@ class NodalsAiRtdProvider {
    * @param {Object} userConsent - User consent object.
    * @returns {boolean} - True if the user consent is valid, false otherwise.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #hasRequiredUserConsent(userConsent) {
     if (userConsent?.gdpr?.gdprApplies !== true) {
       return true;
@@ -153,7 +153,7 @@ class NodalsAiRtdProvider {
    * @param {string} key - The key of the data to retrieve.
    * @returns {string|null} - The data from localStorage, or null if not found.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #readFromStorage(key) {
     if (
       this.storage.hasLocalStorage() &&
@@ -188,7 +188,7 @@ class NodalsAiRtdProvider {
    * @param {string} key - The key under which to store the data.
    * @param {Object} data - The data to store.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #writeToStorage(key, data) {
     if (
       this.storage.hasLocalStorage() &&
@@ -209,7 +209,7 @@ class NodalsAiRtdProvider {
    * @param {Object} dataEnvelope - The data envelope object.
    * @returns {boolean} - True if the data is stale, false otherwise.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #dataIsStale(dataEnvelope) {
     const currentTime = Date.now();
     const dataTime = dataEnvelope.createdAt || 0;
@@ -217,7 +217,7 @@ class NodalsAiRtdProvider {
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
+
   #getEndpointUrl(userConsent) {
     const endpointOrigin =
       this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN;
@@ -243,7 +243,7 @@ class NodalsAiRtdProvider {
   /**
    * Initiates the request to fetch rule data from the publisher endpoint.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #fetchRules(userConsent) {
     const endpointUrl = this.#getEndpointUrl(userConsent);
 
@@ -270,7 +270,7 @@ class NodalsAiRtdProvider {
    * @param {Object} response - The server response object.
    * @returns {Object} - Processed data from the response.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #handleServerResponse(response, req) {
     let data;
     try {
@@ -282,12 +282,12 @@ class NodalsAiRtdProvider {
     this.#loadAdLibraries(data.deps || []);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
+
   #handleServerError(error, req) {
     logError(`Publisher endpoint response error: ${error}`);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
+
   #loadAdLibraries(deps) {
     // eslint-disable-next-line no-unused-vars
     for (const [key, value] of Object.entries(deps)) {

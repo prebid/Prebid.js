@@ -19,7 +19,7 @@ var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null
 const prettyLog = (level, text, isGroup = false, cb = () => {}) => {
   if (self.isLoggingEnabled === undefined) {
     // TODO FIX THIS RULES VIOLATION
-    // eslint-disable-next-line prebid/no-global
+    // eslint-disable-next-line no-restricted-properties
     if (window.localStorage.getItem('__aggLoggingEnabled')) {
       self.isLoggingEnabled = true
     } else {
@@ -303,7 +303,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
 
   logMessage(`Automatad Analytics Adapter enabled with sdk config`, window.__atmtdSDKConfig)
 
-  // eslint-disable-next-line
+
   atmtdAdapter.originEnableAnalytics(configuration)
 };
 
