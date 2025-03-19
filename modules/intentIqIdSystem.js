@@ -152,13 +152,15 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData) {
     if (needToDoSync) {
       ajax(url, () => {
       }, undefined, {method: 'GET', withCredentials: true});
+      if (firstPartyData?.date) {
+        firstPartyData.date = Date.now()
+        storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      }
     }
-  } else {
-    if (!lastSyncDate || lastSyncElapsedTime > SYNC_REFRESH_MILL) {
-      storeData(SYNC_KEY(partner), Date.now() + '', allowedStorage);
-      ajax(url, () => {
-      }, undefined, {method: 'GET', withCredentials: true});
-    }
+  } else if (!lastSyncDate || lastSyncElapsedTime > SYNC_REFRESH_MILL) {
+    storeData(SYNC_KEY(partner), Date.now() + '', allowedStorage);
+    ajax(url, () => {
+    }, undefined, {method: 'GET', withCredentials: true});
   }
 }
 
