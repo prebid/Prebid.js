@@ -58,7 +58,7 @@ Each adunit with `adspirit` adapter has to have `placementId` and `host`.
                   { id: 6, required: 0, data: {type: 1, len: 50} },
                   { id: 5, required: 0, img: {type: 1, wmin: 50, hmin: 50, mimes: ['image/png', 'image/gif', 'image/jpeg'] }}
                 ],
-                        link: { required: 1 } // Click-through URL
+                      
                     }
                 }
             }
