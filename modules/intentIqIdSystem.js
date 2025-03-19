@@ -143,13 +143,13 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   return url;
 }
 
-function sendSyncRequest(allowedStorage, url, partner, firstPartyData) {
+function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) {
   const lastSyncDate = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
   const lastSyncElapsedTime = Date.now() - lastSyncDate
 
   if (firstPartyData.isOptedOut) {
     const needToDoSync = (Date.now() - (firstPartyData?.date || firstPartyData?.sCal || Date.now())) > SYNC_REFRESH_MILL
-    if (needToDoSync) {
+    if (newUser || needToDoSync) {
       ajax(url, () => {
       }, undefined, {method: 'GET', withCredentials: true});
       if (firstPartyData?.date) {
@@ -293,6 +293,7 @@ export const intentIqIdSubmodule = {
 
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
+    let newUser = false;
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
@@ -306,6 +307,7 @@ export const intentIqIdSubmodule = {
         gdprString: EMPTY,
         date: Date.now()
       };
+      newUser = true;
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
@@ -360,7 +362,6 @@ export const intentIqIdSubmodule = {
       firstPartyData.uspString = cmpData.uspString;
       firstPartyData.gppString = cmpData.gppString;
       firstPartyData.gdprString = cmpData.gdprString;
-      firstPartyData.date = Date.now();
       shouldCallServer = true;
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
       storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
@@ -378,7 +379,7 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('', BLACK_LIST);
       const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData)
-      sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData)
+      sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser)
       return
     }
 
