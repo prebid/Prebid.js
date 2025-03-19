@@ -289,7 +289,7 @@ describe('IntentIQ tests all', function () {
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
     const referrer = getReferrer();
-    expect(referrer).to.equal(encodeURIComponent('http://localhost:9876/'));
+    expect(referrer).to.equal('http://localhost:9876/');
   });
 
   it('should return window.top.location.href when window.self !== window.top and access is successful', function () {
@@ -299,7 +299,7 @@ describe('IntentIQ tests all', function () {
 
     const referrer = getReferrer();
 
-    expect(referrer).to.equal(encodeURIComponent('http://example.com/'));
+    expect(referrer).to.equal('http://example.com/');
   });
 
   it('should return an empty string and log an error when accessing window.top.location.href throws an error', function () {
