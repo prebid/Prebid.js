@@ -746,7 +746,7 @@ export function hasDeviceAccess() {
  * @returns {(boolean|undefined)}
  */
 export function checkCookieSupport() {
-  // eslint-disable-next-line prebid/no-member
+  // eslint-disable-next-line no-restricted-properties
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }

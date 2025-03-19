@@ -108,7 +108,7 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
 const videoVendorDirectory = {};
 
 /**
- * @constructor
+ * @class
  * @param {ParentModule} parentModule_
  * @returns {VideoCore}
  */
