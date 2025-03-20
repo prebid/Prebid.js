@@ -97,8 +97,13 @@ module.exports = {
           } else {
             candidates = [modulePath]
           }
-          if (candidates.some(name => fs.existsSync(name))) {
-            modulePath = this.getPrecompiledPath(path.relative(__dirname, modulePath));
+          const target = candidates.find(name => fs.existsSync(name));
+          if (target) {
+            modulePath = this.getPrecompiledPath(path.relative(__dirname, path.format({
+              ...path.parse(target),
+              base: null,
+              ext: '.js'
+            })));
             memo[modulePath] = moduleName;
           }
           return memo;
