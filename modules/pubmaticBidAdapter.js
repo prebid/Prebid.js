@@ -848,8 +848,18 @@ function _addImpressionFPD(imp, bid) {
   gpid && deepSetValue(imp, `ext.gpid`, gpid);
 }
 
+function removeGranularFloor(imp, mediaTypes) {
+  mediaTypes.forEach(mt => {
+    if (imp[mt]?.ext && imp[mt].ext.bidfloor === imp.bidfloor && imp[mt].ext.bidfloorcur === imp.bidfloorcur) {
+      delete imp[mt].ext;
+    }
+  })
+}
+
 function _addFloorFromFloorModule(impObj, bid) {
   let bidFloor = -1;
+  let requestedMediatypes = Object.keys(bid.mediaTypes);
+  let isMultiFormatRequest = requestedMediatypes.length > 1
   // get lowest floor from floorModule
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
@@ -874,6 +884,10 @@ function _addFloorFromFloorModule(impObj, bid) {
           logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, ' and size:', size, ' is: currency', floorInfo.currency, 'floor', floorInfo.floor);
           if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
             let mediaTypeFloor = parseFloat(floorInfo.floor);
+            if (isMultiFormatRequest && mediaType !== BANNER) {
+              logInfo(LOG_WARN_PREFIX, 'floor from floor module returned for mediatype:', mediaType, 'is : ', mediaTypeFloor, 'with currency :', impObj.bidfloorcur);
+              impObj[mediaType]['ext'] = {'bidfloor': mediaTypeFloor, 'bidfloorcur': impObj.bidfloorcur};
+            }
             logInfo(LOG_WARN_PREFIX, 'floor from floor module:', mediaTypeFloor, 'previous floor value', bidFloor, 'Min:', Math.min(mediaTypeFloor, bidFloor));
             if (bidFloor === -1) {
               bidFloor = mediaTypeFloor;
@@ -883,6 +897,9 @@ function _addFloorFromFloorModule(impObj, bid) {
             logInfo(LOG_WARN_PREFIX, 'new floor value:', bidFloor);
           }
         });
+        if (isMultiFormatRequest && mediaType === BANNER) {
+          impObj[mediaType]['ext'] = {'bidfloor': bidFloor, 'bidfloorcur': impObj.bidfloorcur};
+        }
       }
     });
   }
@@ -896,6 +913,8 @@ function _addFloorFromFloorModule(impObj, bid) {
   // assign value only if bidFloor is > 0
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
   logInfo(LOG_WARN_PREFIX, 'new impObj.bidfloor value:', impObj.bidfloor);
+  // remove granular floor if impression level floor is same as granular
+  if (isMultiFormatRequest) removeGranularFloor(impObj, requestedMediatypes);
 }
 
 function _handleEids(payload, validBidRequests) {

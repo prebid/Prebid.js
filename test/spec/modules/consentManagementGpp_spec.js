@@ -497,7 +497,6 @@ describe('consentManagementGpp', function () {
         window.__gpp = sinon.stub().callsFake(function (command, callback) {
           switch (command) {
             case 'addEventListener':
-              // eslint-disable-next-line standard/no-callback-literal
               triggerCMPEvent = (event, payload = {}) => callback({eventName: event, pingData: {...pingData, ...payload}})
               break;
             case 'ping':
