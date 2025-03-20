@@ -188,7 +188,7 @@ export function _calculateBidCpmAdjustment(bid) {
 
   existingIndex !== -1
     ? cpmAdjustment.adjustment.splice(existingIndex, 1, adjustmentEntry)
-    : cpmAdjustment.adjustment.push(adjustmentEntry); 
+    : cpmAdjustment.adjustment.push(adjustmentEntry);
 }
 
 export function _getDomainFromURL(url) {
