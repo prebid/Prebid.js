@@ -101,10 +101,11 @@ export const spec = {
         }
       }
 
-      // get param kewords (if it exists)
-      let paramsKeywords = req.params.keywords
-        ? req.params.keywords.split(',')
-        : [];
+      // get param keywords (if it exists)
+      let paramsKeywords =
+        typeof req.params.keywords === 'string'
+          ? req.params.keywords.split(",")
+          : [];
       // merge all keywords
       let keywords = ortb2KeywordsList
         .concat(paramsKeywords)
