@@ -31,7 +31,9 @@ import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
-import {ALL_MEDIATYPES, BANNER} from '../src/mediaTypes.js';
+import {ALL_MEDIATYPES, BANNER, type MediaType} from '../src/mediaTypes.js';
+import type {Currency} from "../src/types/common";
+import type {Bid} from "../src/bidfactory.ts";
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -69,7 +71,7 @@ let addedFloorsHook = false;
 /**
  * @summary The config to be used. Can be updated via: setConfig or a real time fetch
  */
-let _floorsConfig = {};
+let _floorsConfig: any = {};
 
 /**
  * @summary If a auction is to be delayed by an ongoing fetch we hold it here until it can be resumed
@@ -87,7 +89,7 @@ export let _floorDataForAuction = {};
  * @summary Simple function to round up to a certain decimal degree
  */
 function roundUp(number, precision) {
-  return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
+  return Math.ceil((parseFloat(number) * Math.pow(10, precision) as any).toFixed(1)) / Math.pow(10, precision);
 }
 
 const getHostname = (() => {
@@ -159,7 +161,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   let allPossibleMatches = generatePossibleEnumerations(fieldValues, deepAccess(floorData, 'schema.delimiter') || '|');
   let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
 
-  let matchingData = {
+  let matchingData: any = {
     floorMin: floorData.floorMin || 0,
     floorRuleValue: floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
@@ -236,11 +238,18 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
   return requestParams;
 }
 
+type GetFloorParams = {
+    currency?: Currency | '*';
+    mediaType?: MediaType | '*';
+    size?: [number, number] | '*';
+}
+
 /**
  * @summary This is the function which will return a single floor based on the input requests
  * and matching it to a rule for the current auction
  */
-export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
+export function getFloor(requestParams: GetFloorParams = {currency: 'USD', mediaType: '*', size: '*'}) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
   if (!floorData || floorData.skipped) return {};
@@ -291,7 +300,7 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
 /**
  * @summary Takes a floorsData object and converts it into a hash map with appropriate keys
  */
-export function getFloorsDataForAuction(floorData, adUnitCode) {
+export function getFloorsDataForAuction(floorData, adUnitCode?) {
   let auctionFloorData = deepClone(floorData);
   auctionFloorData.schema.delimiter = floorData.schema.delimiter || '|';
   auctionFloorData.values = normalizeRulesForAuction(auctionFloorData, adUnitCode);
@@ -719,11 +728,22 @@ export function handleSetFloorsConfig(config) {
   }
 }
 
+export type BidFloorData = {
+    // TODO type this
+    [key: string]: unknown
+}
+
+declare module '../src/bidfactory' {
+    interface BaseBid {
+        floorData?: BidFloorData
+    }
+}
+
 /**
  * @summary Analytics adapters especially need context of what the floors module is doing in order
  * to best create informed models. This function attaches necessary information to the bidResponse object for processing
  */
-function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
+function addFloorDataToBid(floorData, floorInfo, bid: Partial<Bid>, adjustedCpm) {
   bid.floorData = {
     floorValue: floorInfo.matchingFloor,
     floorRule: floorInfo.matchingRule,
@@ -805,7 +825,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
 
-function tryGetFloor(bidRequest, {currency = config.getConfig('currency.adServerCurrency') || 'USD', mediaType = '*', size = '*'}, fn) {
+function tryGetFloor(bidRequest, {currency = config.getConfig('currency.adServerCurrency') || 'USD', mediaType = '*', size = '*'}: GetFloorParams, fn) {
   if (typeof bidRequest.getFloor === 'function') {
     let floor;
     try {
