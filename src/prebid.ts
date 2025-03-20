@@ -395,8 +395,8 @@ declare module './prebidGlobal' {
         getConsentMetadata;
         getNoBids;
         getNoBidsForAdUnitCode;
-        getBidResponses;
-        getBidResponsesForAdUnitCode;
+        getBidResponses: typeof getBidResponses;
+        getBidResponsesForAdUnitCode: typeof getBidResponsesForAdUnitCode;
         setTargetingForGPTAsync;
         setTargetingForAst;
         renderAd;
@@ -412,9 +412,9 @@ declare module './prebidGlobal' {
         enableAnalytics;
         aliasBidder;
         aliasRegistry;
-        getAllWinningBids;
-        getAllPrebidWinningBids;
-        getHighestCpmBids;
+        getAllWinningBids: typeof getAllWinningBids;
+        getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
+        getHighestCpmBids: typeof getHighestCpmBids;
         clearAllAuctions;
         markWinningBidAsUsed;
         getConfig;
@@ -489,7 +489,11 @@ pbjsInstance.getConsentMetadata = logInvocation('getConsentMetadata', function (
   return allConsent.getConsentMeta()
 });
 
-function getBids(type) {
+type WrapsInBids<T> = {
+    bids: T[]
+}
+
+function getBids<T>(type): { [adUnitCode: string]: WrapsInBids<T> } {
   const responses = auctionManager[type]()
     .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
@@ -514,7 +518,6 @@ function getBids(type) {
  * @alias module:pbjs.getNoBids
  * @return {Object}            map | object that contains the bidRequests
  */
-
 pbjsInstance.getNoBids = logInvocation('getNoBids', function () {
   return getBids('getNoBids');
 });
@@ -532,26 +535,22 @@ pbjsInstance.getNoBidsForAdUnitCode = function (adUnitCode) {
 };
 
 /**
- * This function returns the bid responses at the given moment.
- * @alias module:pbjs.getBidResponses
- * @return {Object}            map | object that contains the bidResponses
+ * @return a map from ad unit code to all bids received for that ad unit code.
  */
-
-pbjsInstance.getBidResponses = logInvocation('getBidResponses', function () {
-  return getBids('getBidsReceived');
-});
+function getBidResponses() {
+    return getBids<Bid>('getBidsReceived');
+}
+addApiMethod('getBidResponses', getBidResponses);
 
 /**
- * Returns bidResponses for the specified adUnitCode
- * @param  {string} adUnitCode adUnitCode
- * @alias module:pbjs.getBidResponsesForAdUnitCode
- * @return {Object}            bidResponse object
+ * Returns bids received for the specified ad unit.
+ * @param adUnitCode ad unit code
  */
-
-pbjsInstance.getBidResponsesForAdUnitCode = function (adUnitCode) {
-  const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-  return { bids };
-};
+function getBidResponsesForAdUnitCode(adUnitCode: string): WrapsInBids<Bid> {
+    const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
+    return { bids };
+}
+addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode, false);
 
 /**
  * Set query string targeting on one or more GPT ad units.
@@ -998,31 +997,37 @@ config.getConfig('aliasRegistry', config => {
 
 /**
  * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
- * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
+ *
+ * @return A list of bids that have been rendered.
  */
-pbjsInstance.getAllWinningBids = function () {
-  return auctionManager.getAllWinningBids();
-};
+function getAllWinningBids(): Bid[] {
+    return auctionManager.getAllWinningBids();
+}
+
+addApiMethod('getAllWinningBids', getAllWinningBids, false)
 
 /**
- * Get all of the bids that have won their respective auctions.
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * @return Bids that have won their respective auctions but have not been rendered yet.
  */
-pbjsInstance.getAllPrebidWinningBids = function () {
-  return auctionManager.getBidsReceived()
-    .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
-};
+function getAllPrebidWinningBids(): Bid[] {
+    return auctionManager.getBidsReceived()
+        .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
+}
+
+addApiMethod('getAllPrebidWinningBids', getAllPrebidWinningBids, false);
 
 /**
  * Get array of highest cpm bids for all adUnits, or highest cpm bid
  * object for the given adUnit
- * @param {string} adUnitCode - optional ad unit code
- * @alias module:pbjs.getHighestCpmBids
- * @return {Array} array containing highest cpm bid object(s)
+ * @param adUnitCode - optional ad unit code
+ * @return array containing highest cpm bid object(s)
  */
-pbjsInstance.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode);
-};
+function getHighestCpmBids(adUnitCode?: string): Bid[] {
+    return targeting.getWinningBids(adUnitCode);
+}
+
+addApiMethod('getHighestCpmBids', getHighestCpmBids, false);
+
 
 pbjsInstance.clearAllAuctions = function () {
   auctionManager.clearAllAuctions();
