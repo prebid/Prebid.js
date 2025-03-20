@@ -167,6 +167,9 @@ function loadRates() {
 
 declare module '../src/prebidGlobal' {
     interface PrebidJS {
+        /**
+         * Convert `amount` in currency `fromCurrency` to `toCurrency`.
+         */
         convertCurrency(cpm: number, fromCurrency: Currency, toCurrency: Currency): number;
     }
 }
