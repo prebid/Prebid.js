@@ -38,5 +38,6 @@
   "taboolaBidAdapter",
   "prebidServerBidAdapter",
   "s2sTesting",
-  "bridgeuppBidAdapter"
+  "bridgeuppBidAdapter",
+  "valuadBidAdapter"
 ]
