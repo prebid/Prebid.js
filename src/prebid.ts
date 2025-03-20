@@ -81,6 +81,11 @@ declare module './prebidGlobal' {
          * Prebid version.
          */
         version: string;
+        /**
+         * Set this to true to delay processing of `que` / `cmd` until prerendering is complete
+         * (applies only when the page is prerendering).
+         */
+        delayPrerendering?: boolean
         adUnits;
     }
 }
@@ -961,44 +966,7 @@ config.getConfig('aliasRegistry', config => {
 });
 
 /**
- * The bid response object returned by an external bidder adapter during the auction.
- * @typedef {Object} AdapterBidResponse
- * @property {string} pbAg Auto granularity price bucket; CPM <= 5 ? increment = 0.05 : CPM > 5 && CPM <= 10 ? increment = 0.10 : CPM > 10 && CPM <= 20 ? increment = 0.50 : CPM > 20 ? priceCap = 20.00.  Example: `"0.80"`.
- * @property {string} pbCg Custom price bucket.  For example setup, see {@link setPriceGranularity}.  Example: `"0.84"`.
- * @property {string} pbDg Dense granularity price bucket; CPM <= 3 ? increment = 0.01 : CPM > 3 && CPM <= 8 ? increment = 0.05 : CPM > 8 && CPM <= 20 ? increment = 0.50 : CPM > 20? priceCap = 20.00.  Example: `"0.84"`.
- * @property {string} pbLg Low granularity price bucket; $0.50 increment, capped at $5, floored to two decimal places.  Example: `"0.50"`.
- * @property {string} pbMg Medium granularity price bucket; $0.10 increment, capped at $20, floored to two decimal places.  Example: `"0.80"`.
- * @property {string} pbHg High granularity price bucket; $0.01 increment, capped at $20, floored to two decimal places.  Example: `"0.84"`.
- *
- * @property {string} bidder The string name of the bidder.  This *may* be the same as the `bidderCode`.  For For a list of all bidders and their codes, see [Bidders' Params](http://prebid.org/dev-docs/bidders.html).
- * @property {string} bidderCode The unique string that identifies this bidder.  For a list of all bidders and their codes, see [Bidders' Params](http://prebid.org/dev-docs/bidders.html).
- *
- * @property {string} requestId The [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) representing the bid request.
- * @property {number} requestTimestamp The time at which the bid request was sent out, expressed in milliseconds.
- * @property {number} responseTimestamp The time at which the bid response was received, expressed in milliseconds.
- * @property {number} timeToRespond How long it took for the bidder to respond with this bid, expressed in milliseconds.
- *
- * @property {string} size The size of the ad creative, expressed in `"AxB"` format, where A and B are numbers of pixels.  Example: `"320x50"`.
- * @property {string} width The width of the ad creative in pixels.  Example: `"320"`.
- * @property {string} height The height of the ad creative in pixels.  Example: `"50"`.
- *
- * @property {string} ad The actual ad creative content, often HTML with CSS, JavaScript, and/or links to additional content.  Example: `"<div id='beacon_-YQbipJtdxmMCgEPHExLhmqzEm' style='position: absolute; left: 0px; top: 0px; visibility: hidden;'><img src='http://aplus-...'/></div><iframe src=\"http://aax-us-east.amazon-adsystem.com/e/is/8dcfcd..." width=\"728\" height=\"90\" frameborder=\"0\" ...></iframe>",`.
- * @property {number} ad_id The ad ID of the creative, as understood by the bidder's system.  Used by the line item's [creative in the ad server](http://prebid.org/adops/send-all-bids-adops.html#step-3-add-a-creative).
- * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page.
- *
- * @property {string} statusMessage The status of the bid.  Allowed values: `"Bid available"` or `"Bid returned empty or error response"`.
- * @property {number} cpm The exact bid price from the bidder, expressed to the thousandths place.  Example: `"0.849"`.
- *
- * @property {Object} adserverTargeting An object whose values represent the ad server's targeting on the bid.
- * @property {string} adserverTargeting.hb_adid The ad ID of the creative, as understood by the ad server.
- * @property {string} adserverTargeting.hb_pb The price paid to show the creative, as logged in the ad server.
- * @property {string} adserverTargeting.hb_bidder The winning bidder whose ad creative will be served by the ad server.
- */
-
-/**
- * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
- *
- * @return A list of bids that have been rendered.
+ * @return All bids that have been rendered. Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
  */
 function getAllWinningBids(): Bid[] {
     return auctionManager.getAllWinningBids();
@@ -1017,10 +985,8 @@ function getAllPrebidWinningBids(): Bid[] {
 addApiMethod('getAllPrebidWinningBids', getAllPrebidWinningBids, false);
 
 /**
- * Get array of highest cpm bids for all adUnits, or highest cpm bid
- * object for the given adUnit
- * @param adUnitCode - optional ad unit code
- * @return array containing highest cpm bid object(s)
+ * Get highest cpm bids for all adUnits, or highest cpm bid object for the given adUnit
+ * @param adUnitCode - ad unit code
  */
 function getHighestCpmBids(adUnitCode?: string): Bid[] {
     return targeting.getWinningBids(adUnitCode);
@@ -1133,7 +1099,7 @@ function processQueue(queue) {
 /**
  * @alias module:pbjs.processQueue
  */
-pbjsInstance.processQueue = delayIfPrerendering(() => (getGlobal() as any).delayPrerendering, function () {
+pbjsInstance.processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, function () {
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
