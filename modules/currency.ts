@@ -10,7 +10,7 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {on as onEvent, off as offEvent} from '../src/events.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
-import type {Currency} from "../src/types/common";
+import type {Currency} from "../src/types/common.d.ts";
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -210,6 +210,16 @@ export function resetCurrency() {
 
 function responsesReadyHook(next, ready) {
   next(ready.then(() => responseReady.promise));
+}
+
+declare module '../src/bidfactory' {
+    interface BaseBid {
+        /**
+         * Convert this bid's CPM into the given currency.
+         * @return the converted CPM as a string with 3 digit precision.
+         */
+        getCpmInNewCurrency(toCurrency: Currency): string
+    }
 }
 
 export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid, reject) {
