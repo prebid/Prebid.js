@@ -10,6 +10,7 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {on as onEvent, off as offEvent} from '../src/events.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
+import type {Currency} from "../src/types/common";
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -23,7 +24,7 @@ let needToCallForCurrencyFile = true;
 let adServerCurrency = 'USD';
 
 export var currencySupportEnabled = false;
-export var currencyRates = {};
+export var currencyRates = {} as any;
 let bidderCurrencyDefault = {};
 let defaultRates;
 
@@ -84,7 +85,7 @@ export function setConfig(config) {
 
   if (typeof config.adServerCurrency === 'string') {
     auctionDelay = config.auctionDelay;
-    logInfo('enabling currency support', arguments);
+    logInfo('enabling currency support', config);
 
     adServerCurrency = config.adServerCurrency;
     if (config.conversionRateFile) {
@@ -150,8 +151,8 @@ function loadRates() {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
           }
         },
-        error: function (...args) {
-          errorSettingsRates(...args);
+        error: function (err) {
+          errorSettingsRates(err);
           currencyRatesLoaded = true;
           processBidResponseQueue();
           delayedAuctions.resume();
@@ -162,6 +163,12 @@ function loadRates() {
   } else {
     processBidResponseQueue();
   }
+}
+
+declare module '../src/prebidGlobal' {
+    interface PrebidJS {
+        convertCurrency(cpm: number, fromCurrency: Currency, toCurrency: Currency): number;
+    }
 }
 
 function initCurrency() {
@@ -335,7 +342,7 @@ function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
 }
 
 function roundFloat(num, dec) {
-  var d = 1;
+  var d: any = 1;
   for (let i = 0; i < dec; i++) {
     d += '0';
   }
