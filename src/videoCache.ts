@@ -14,37 +14,24 @@ import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
 import {logError, logWarn} from './utils.js';
 import {addBidToAuction} from './auction.js';
+import type {VideoBid} from "./bidfactory.ts";
 
 /**
  * Might be useful to be configurable in the future
  * Depending on publisher needs
  */
+// TODO: we have a `ttlBuffer` setting
 const ttlBufferInSeconds = 15;
 
-/**
- * @typedef {object} CacheableUrlBid
- * @property {string} vastUrl A URL which loads some valid VAST XML.
- */
-
-/**
- * @typedef {object} CacheablePayloadBid
- * @property {string} vastXml Some VAST XML which loads an ad in a video player.
- */
-
-/**
- * A CacheableBid describes the types which the videoCache can store.
- *
- * @typedef {CacheableUrlBid|CacheablePayloadBid} CacheableBid
- */
 
 /**
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
- * @param {string} uri The URI where the VAST content can be found.
- * @param {(string|string[])} impTrackerURLs An impression tracker URL for the delivery of the video ad
+ * @param uri The URI where the VAST content can be found.
+ * @param impTrackerURLs An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri, impTrackerURLs) {
+function wrapURI(uri: string, impTrackerURLs: string | string[]) {
   impTrackerURLs = impTrackerURLs && (Array.isArray(impTrackerURLs) ? impTrackerURLs : [impTrackerURLs]);
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
@@ -62,20 +49,29 @@ function wrapURI(uri, impTrackerURLs) {
   </VAST>`;
 }
 
+declare module './bidfactory' {
+    interface VideoBidResponseProperties {
+        /**
+         *  VAST impression trackers to attach to this bid.
+         */
+        vastImpUrl?: string | string []
+        /**
+         * Cache key to use for caching this bid's VAST.
+         */
+        customCacheKey?: string
+    }
+}
 /**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
  * the bid can't be converted cleanly.
  *
- * @param {CacheableBid} bid
- * @param {Object} [options] - Options object.
- * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`.
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
-function toStorageRequest(bid, {index = auctionManager.index} = {}) {
+function toStorageRequest(bid: VideoBid, {index = auctionManager.index} = {}) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
-  let payload = {
+  let payload: any = {
     type: 'xml',
     value: vastValue,
     ttlseconds: ttlWithBuffer
@@ -98,26 +94,25 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
   return payload;
 }
 
-/**
- * A function which should be called with the results of the storage operation.
- *
- * @callback videoCacheStoreCallback
- *
- * @param {Error} [error] The error, if one occurred.
- * @param {?string[]} uuids An array of unique IDs. The array will have one element for each bid we were asked
- *   to store. It may include null elements if some of the bids were malformed, or an error occurred.
- *   Each non-null element in this array is a valid input into the retrieve function, which will fetch
- *   some VAST XML which can be used to render this bid's ad.
- */
+interface VideoCacheStoreCallback {
+    /**
+     * A function which should be called with the results of the storage operation.
+     *
+     * @param error The error, if one occurred.
+     * @param uuids An array of unique IDs. The array will have one element for each bid we were asked
+     *   to store. It may include null elements if some of the bids were malformed, or an error occurred.
+     *   Each non-null element in this array is a valid input into the retrieve function, which will fetch
+     *   some VAST XML which can be used to render this bid's ad.
+     */
+    (error: Error | null, uuids: { uuid: string }[])
+}
 
 /**
  * A function which bridges the APIs between the videoCacheStoreCallback and our ajax function's API.
  *
- * @param {videoCacheStoreCallback} done A callback to the "store" function.
- * @return {Function} A callback which interprets the cache server's responses, and makes up the right
- *   arguments for our callback.
+ * @param done A callback to the "store" function.
  */
-function shimStorageCallback(done) {
+function shimStorageCallback(done: VideoCacheStoreCallback) {
   return {
     success: function (responseBody) {
       let ids;
@@ -143,13 +138,14 @@ function shimStorageCallback(done) {
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
- * @param {CacheableBid[]} bids A list of bid objects which should be cached.
- * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
+ * @param bids A list of bid objects which should be cached.
+ * @param done An optional callback which should be executed after
+ * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids, done, getAjax = ajaxBuilder) {
+export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = ajaxBuilder) {
   const requestData = {
-    puts: bids.map(toStorageRequest)
+    puts: bids.map(bid => toStorageRequest(bid))
   };
   const ajax = getAjax(config.getConfig('cache.timeout'));
   ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {
