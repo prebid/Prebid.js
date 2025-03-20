@@ -177,7 +177,7 @@ class NodalsAiRtdProvider {
   }
 
   #getEngine() {
-    return window?.$nodals?.adTargetingEngine['latest'];
+    return window?.$nodals?.adTargetingEngine['1.x.x'];
   }
 
   #setOverrides(params) {

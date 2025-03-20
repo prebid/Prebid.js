@@ -109,7 +109,7 @@ const setDataInLocalStorage = (data) => {
 };
 
 const createTargetingEngineStub = (getTargetingDataReturnValue = {}, raiseError = false) => {
-  const version = 'latest';
+  const version = '1.x.x';
   const initStub = sinon.stub();
   const getTargetingDataStub = sinon.stub();
   const getBidRequestDataStub = sinon.stub();
