@@ -6,6 +6,7 @@ import type {EventTrackerResponse} from "./types/ortb/native/eventtrackers.d.ts"
 import {Metrics} from "./utils/perfMetrics.ts";
 import {Renderer} from './Renderer.js';
 import {type BID_STATUS} from "./constants.ts";
+import type {DemandChain} from "./types/ortb/ext/dchain.d.ts";
 
 type ContextIdentifiers = {
     /**
@@ -68,6 +69,10 @@ export interface BidMeta {
      * DSA transparency information.
      */
     dsa?: DSAResponse;
+    /**
+     * Demand chain object.
+     */
+    dchain?: DemandChain
 }
 
 /**

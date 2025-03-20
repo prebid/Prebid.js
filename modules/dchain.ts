@@ -3,6 +3,7 @@ import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {_each, deepAccess, deepClone, isArray, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import type {DemandChain} from "../src/types/ortb/ext/dchain.d.ts";
 
 const shouldBeAString = ' should be a string';
 const shouldBeAnObject = ' should be an object';
@@ -109,8 +110,21 @@ function isValidDchain(bid) {
   }
 }
 
+declare module '../src/bidfactory' {
+    interface BidMeta {
+        /**
+         * Dchain node `name` for the dchain module to use.
+         */
+        networkName?: string;
+        /**
+         * Dchain node `bsid` for the dchain module to use.
+         */
+        networkId?: string | number;
+    }
+}
+
 export const addBidResponseHook = timedBidResponseHook('dchain', function addBidResponseHook(fn, adUnitCode, bid, reject) {
-  const basicDchain = {
+  const basicDchain: DemandChain = {
     ver: '1.0',
     complete: 0,
     nodes: []
