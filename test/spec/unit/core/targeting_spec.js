@@ -920,6 +920,75 @@ describe('targeting tests', function () {
       });
     });
 
+    describe('targetingControls.allBidsCustomTargeting', function () {
+      beforeEach(function () {
+        const winningBid = deepClone(bid1);
+        winningBid.adserverTargeting.foobar = 'winner';
+
+        const losingBid = utils.deepClone(bid2);
+        losingBid.adserverTargeting = {
+          hb_deal: '4321',
+          hb_pb: '0.1',
+          hb_adid: '567891011',
+          hb_bidder: 'appnexus',
+          foobar: 'loser'
+        };
+        losingBid.bidder = losingBid.bidderCode = 'appnexus';
+        losingBid.cpm = 0.1;
+
+        bidsReceived = [winningBid, losingBid];
+        enableSendAllBids = false;
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+      });
+
+      it('should merge custom targeting from all bids by default', function () {
+        // Default behavior - no specific configuration
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Custom key values from both bids should be combined to maintain existing functionality
+        expect(targeting['/123456/header-bid-tag-0']).to.have.property('foobar');
+        expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner,loser');
+      });
+
+      it('should only use custom targeting from winning bid when allBidsCustomTargeting=false', function () {
+        // Set allBidsCustomTargeting to false
+        config.setConfig({
+          targetingControls: {
+            allBidsCustomTargeting: false
+          }
+        });
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Only the winning bid's custom key value should be used
+        expect(targeting['/123456/header-bid-tag-0']).to.have.property('foobar');
+        expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner');
+      });
+
+      it('should handle multiple custom keys correctly when allBidsCustomTargeting=false', function () {
+        // Add another custom key to the bids
+        bidsReceived[0].adserverTargeting.custom1 = 'value1';
+        bidsReceived[1].adserverTargeting.custom2 = 'value2';
+
+        config.setConfig({
+          targetingControls: {
+            allBidsCustomTargeting: false
+          }
+        });
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Only winning bid's custom values should be present
+        expect(targeting['/123456/header-bid-tag-0']).to.have.property('foobar');
+        expect(targeting['/123456/header-bid-tag-0'].foobar).to.equal('winner');
+        expect(targeting['/123456/header-bid-tag-0']).to.have.property('custom1');
+        expect(targeting['/123456/header-bid-tag-0']).to.not.have.property('custom2');
+      });
+    });
+
     it('selects the top bid when enableSendAllBids true', function () {
       enableSendAllBids = true;
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);

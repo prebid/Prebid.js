@@ -338,10 +338,15 @@ export function newTargeting(auctionManager) {
   }
 
   function getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes) {
+    const useAllBidsCustomTargeting = config.getConfig('targetingControls.allBidsCustomTargeting') !== false;
+
     const targeting = getWinningBidTargeting(bidsSorted, adUnitCodes)
-      .concat(getCustomBidTargeting(bidsSorted, customKeysByUnit))
       .concat(getBidderTargeting(bidsSorted))
       .concat(getAdUnitTargeting(adUnitCodes));
+
+    if (useAllBidsCustomTargeting) {
+      targeting.push(...getCustomBidTargeting(bidsSorted, customKeysByUnit))
+    }
 
     targeting.forEach(adUnitCode => {
       updatePBTargetingKeys(adUnitCode);
