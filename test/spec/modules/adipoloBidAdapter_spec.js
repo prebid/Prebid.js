@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {spec} from 'modules/AdipoloBidAdapter.js';
+import {spec} from 'modules/adipoloBidAdapter.js';
 import {deepClone} from 'src/utils';
 import {getBidFloor} from '../../../libraries/xeUtils/bidderUtils.js';
 
