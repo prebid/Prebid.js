@@ -1,4 +1,4 @@
-import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger, generateUUID } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger, generateUUID, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -153,6 +153,43 @@ let publisherId = 0;
 let isInvalidNativeRequest = false;
 let biddersList = ['pubmatic'];
 const allBiddersList = ['all'];
+export let cpmAdjustment;
+
+export function _calculateBidCpmAdjustment(bid) {
+  if (!bid) return;
+
+  const { originalCurrency, currency, cpm, originalCpm, meta } = bid;
+  const convertedCpm = originalCurrency !== currency && isFn(bid.getCpmInNewCurrency)
+    ? bid.getCpmInNewCurrency(originalCurrency)
+    : cpm;
+
+  const mediaType = bid.mediaType;
+  const metaMediaType = meta?.mediaType;
+
+  cpmAdjustment = cpmAdjustment || {
+    currency,
+    originalCurrency,
+    adjustment: []
+  };
+
+  const adjustmentValue = Number(((originalCpm - convertedCpm) / originalCpm).toFixed(2));
+
+  const adjustmentEntry = {
+    cpmAdjustment: adjustmentValue,
+    mediaType,
+    metaMediaType,
+    cpm: convertedCpm,
+    originalCpm
+  };
+
+  const existingIndex = cpmAdjustment?.adjustment?.findIndex(
+    (entry) => entry?.mediaType === mediaType && entry?.metaMediaType === metaMediaType
+  );
+
+  existingIndex !== -1
+    ? cpmAdjustment.adjustment.splice(existingIndex, 1, adjustmentEntry)
+    : cpmAdjustment.adjustment.push(adjustmentEntry);
+}
 
 export function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
@@ -1230,6 +1267,8 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
+    // Set cpmAdjustment of last auction
+    payload.ext.cpmAdjustment = cpmAdjustment;
     const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (allowAlternateBidder !== undefined) {
       payload.ext.marketplace = {};
@@ -1536,6 +1575,10 @@ export const spec = {
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
     }
+  },
+
+  onBidWon: (bid) => {
+    _calculateBidCpmAdjustment(bid);
   }
 };
 
