@@ -2,6 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
+  cleanObj,
+  deepAccess,
   deepSetValue,
   generateUUID,
   getWindowSelf,
@@ -128,6 +130,35 @@ function calculateVisibility(rect) {
   return totalArea > 0 ? visibleArea / totalArea : 0;
 }
 
+function getGdprConsent(bidderRequest) {
+  if (!deepAccess(bidderRequest, 'gdprConsent')) {
+    return false;
+  }
+
+  const {
+    apiVersion,
+    gdprApplies,
+    consentString,
+    allowAuctionWithoutConsent
+  } = bidderRequest.gdprConsent;
+
+  return cleanObj({
+    apiVersion,
+    consentString,
+    consentRequired: gdprApplies ? 1 : 0,
+    allowAuctionWithoutConsent: allowAuctionWithoutConsent ? 1 : 0
+  });
+}
+
+function getCoppa() {
+  return {
+    required: config.getConfig('coppa') === true ? 1 : 0
+  };
+}
+
+function getUspConsent(bidderRequest) {
+  return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
+}
 // Enhanced ORTBConverter with additional data
 const converter = ortbConverter({
   context: {
@@ -140,9 +171,24 @@ const converter = ortbConverter({
     const site = getSite(bidderRequest);
     const session = getSession();
 
+    const gdprConsent = getGdprConsent(bidderRequest) || {};
+    const uspConsent = getUspConsent(bidderRequest) || {};
+    const coppa = getCoppa();
+    const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+
     // Ensure we have required extensions
     deepSetValue(request, 'device', {...request.device, ...device});
     deepSetValue(request, 'site', {...request.site, ...site});
+
+    deepSetValue(request, 'regs', {
+      gdpr: gdprConsent,
+      coppa: coppa,
+      ccpa: uspConsent,
+      gpp: gpp || '',
+      gppSid: gppSid || [],
+      dsa: dsa
+    });
 
     deepSetValue(request, 'site.ext.data.valuad_rtd', {
       pageviewId: _VALUAD.pageviewId,
@@ -277,48 +323,27 @@ const interpretResponse = () => (response, request) => {
   return bidResponses;
 };
 
-const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
-  let url = syncUrl + `/${type}?pbjs=1`;
-
-  if (gdprConsent && gdprConsent.consentString) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') {
-      url += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-    } else {
-      url += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-    }
+const getUserSyncs = () => (syncOptions, serverResponses) => {
+  if (!serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSyncs) {
+    return false;
   }
 
-  if (uspConsent && uspConsent.consentString) {
-    url += `&ccpa_consent=${uspConsent.consentString}`;
-  }
+  const syncs = serverResponses[0].body.userSyncs.map(sync => ({
+    type: sync.type === 'iframe' ? 'iframe' : 'image',
+    url: sync.url
+  }));
 
-  if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-    url += '&gpp=' + gppConsent.gppString;
-    url += '&gpp_sid=' + gppConsent.applicableSections.join(',');
-  }
-
-  const coppa = config.getConfig('coppa') ? 1 : 0;
-  url += `&coppa=${coppa}`;
-
-  // Add our session ID
-  url += `&sid=${_VALUAD.sessionId}`;
-
-  return [{
-    type,
-    url
-  }];
+  return syncs;
 };
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  gvlid: 1234, // Replace with your actual GVL ID for GDPR purposes
 
   isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
   interpretResponse: interpretResponse(),
-  getUserSyncs: getUserSyncs(SYNC_URL)
+  getUserSyncs: getUserSyncs()
 };
 
 registerBidder(spec);
