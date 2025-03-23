@@ -181,7 +181,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // use bidderRequest.bids[] to get bidder-dependent request info
-    const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
+    const adServerCurrency = config.getConfig('currency.adServerCurrency') || getCurrencyFromBidderRequest(bidderRequest);
     const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
     const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
 
