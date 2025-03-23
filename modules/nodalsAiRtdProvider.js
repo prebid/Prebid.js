@@ -111,10 +111,14 @@ class NodalsAiRtdProvider {
     }
     this.#userConsent = userConsent;
     const storedData = this.#getData();
+    if (!storedData) {
+      callback();
+      return;
+    }
     const engine = this.#initialiseEngine(config);
-    if (!storedData || !engine) {
+    if (!engine) {
       logMessage('Storing bid request data in queue');
-      this.#addToCommandQueue('getBidRequestData', {config, requestObj, callback, userConsent });
+      this.#addToCommandQueue('getBidRequestData', {config, requestObj, callback, userConsent, storedData });
     } else {
       try {
         engine.getBidRequestData(
@@ -136,10 +140,13 @@ class NodalsAiRtdProvider {
     }
     this.#userConsent = userConsent;
     const storedData = this.#getData();
+    if (!storedData) {
+      return;
+    }
     const engine = this.#initialiseEngine(config);
-    if (!storedData || !engine) {
+    if (!engine) {
       logMessage('Storing bid response event data in queue');
-      this.#addToCommandQueue('onBidResponseEvent', {config, bidResponse, userConsent })
+      this.#addToCommandQueue('onBidResponseEvent', {config, bidResponse, userConsent, storedData })
       return;
     }
     try {
@@ -155,10 +162,13 @@ class NodalsAiRtdProvider {
     }
     this.#userConsent = userConsent;
     const storedData = this.#getData();
+    if (!storedData) {
+      return;
+    }
     const engine = this.#initialiseEngine(config);
-    if (!storedData || !engine) {
+    if (!engine) {
       logMessage('Storing auction end event data in queue');
-      this.#addToCommandQueue('onAuctionEndEvent', {config, auctionDetails, userConsent });
+      this.#addToCommandQueue('onAuctionEndEvent', {config, auctionDetails, userConsent, storedData });
       return;
     }
     try {
@@ -381,12 +391,6 @@ class NodalsAiRtdProvider {
     window.$nodals.cmdQueue.push({ cmd, runtimeFacts: this.#getRuntimeFacts(), data: payload });
   }
 
-  #addDataToCommandQueue(data) {
-    if (window?.$nodals?.cmdQueue) {
-      window.$nodals.cmdQueue.unshift({ cmd: 'registerData', data });
-    }
-  }
-
   /**
    * Handles the server response, processes it and extracts relevant data.
    * @param {Object} response - The server response object.
@@ -401,7 +405,6 @@ class NodalsAiRtdProvider {
       throw `Error parsing response: ${error}`;
     }
     this.#writeToStorage(this.#overrides?.storageKey || this.STORAGE_KEY, data);
-    this.#addDataToCommandQueue(data);
     this.#loadAdLibraries(data.deps || []);
   }
 
