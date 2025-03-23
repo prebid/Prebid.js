@@ -33,7 +33,6 @@
   "teadsBidAdapter",
   "omsBidAdapter",
   "nobidBidAdapter",
-  "riseBidAdapter",
   "copper6sspBidAdapter",
   "taboolaBidAdapter",
   "prebidServerBidAdapter",
