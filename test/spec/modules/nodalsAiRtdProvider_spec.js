@@ -9,6 +9,8 @@ const jsonResponseHeaders = {
   'Content-Type': 'application/json',
 };
 
+const overrideLocalStorageKey = '_foobarbaz_';
+
 const successPubEndpointResponse = {
   deps: {
     '1.0.0': 'https://static.nodals.io/sdk/rule/1.0.0/engine.js',
@@ -138,18 +140,29 @@ describe('NodalsAI RTD Provider', () => {
   let validConfig;
 
   beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+
     validConfig = { params: { propertyId: '10312dd2' } };
 
-    sandbox = sinon.sandbox.create();
-    nodalsAiRtdSubmodule.storage.removeDataFromLocalStorage(
-      nodalsAiRtdSubmodule.STORAGE_KEY
-    );
+    server.respondWith([
+      200,
+      jsonResponseHeaders,
+      JSON.stringify(successPubEndpointResponse)
+    ]);
   });
 
   afterEach(() => {
     if (window.$nodals) {
       delete window.$nodals;
     }
+
+    nodalsAiRtdSubmodule.storage.removeDataFromLocalStorage(
+      nodalsAiRtdSubmodule.STORAGE_KEY
+    );
+    nodalsAiRtdSubmodule.storage.removeDataFromLocalStorage(
+      overrideLocalStorageKey
+    );
+
     sandbox.restore();
   });
 
@@ -169,6 +182,7 @@ describe('NodalsAI RTD Provider', () => {
 
       it('should return true when initialized with valid config and empty user consent', function () {
         const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
+        server.respond();
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
       });
@@ -185,25 +199,32 @@ describe('NodalsAI RTD Provider', () => {
       it('should return false when user is under GDPR jurisdiction and purpose1 has not been granted', () => {
         const userConsent = generateGdprConsent({ purpose1Consent: false });
         const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
+        server.respond();
         expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
       });
 
       it('should return false when user is under GDPR jurisdiction and Nodals AI as a vendor has no consent', () => {
         const userConsent = generateGdprConsent({ nodalsConsent: false });
         const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
         expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
       });
 
       it('should return true when user is under GDPR jurisdiction and all consent provided', function () {
         const userConsent = generateGdprConsent();
         const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
+        server.respond();
         expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
       });
 
       it('should return true when user is not under GDPR jurisdiction', () => {
         const userConsent = generateGdprConsent({ gdprApplies: false });
         const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
+        server.respond();
         expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
       });
     });
 
@@ -218,6 +239,7 @@ describe('NodalsAI RTD Provider', () => {
       it('should return true and make a remote request when stored data has no TTL defined', function () {
         setDataInLocalStorage({ data: { foo: 'bar' } });
         const result = nodalsAiRtdSubmodule.init(validConfig, {});
+        server.respond();
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
       });
@@ -225,6 +247,7 @@ describe('NodalsAI RTD Provider', () => {
       it('should return true and make a remote request when stored data has expired', function () {
         setDataInLocalStorage({ data: { foo: 'bar' }, createdAt: 100 });
         const result = nodalsAiRtdSubmodule.init(validConfig, {});
+        server.respond();
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
       });
@@ -238,6 +261,7 @@ describe('NodalsAI RTD Provider', () => {
         const config = Object.assign({}, validConfig);
         config.params.storage = { ttl: 4 * 60 };
         const result = nodalsAiRtdSubmodule.init(config, {});
+        server.respond();
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
       });
@@ -249,6 +273,7 @@ describe('NodalsAI RTD Provider', () => {
           createdAt: fiveMinutesAgoMs,
         });
         const result = nodalsAiRtdSubmodule.init(validConfig, {});
+        server.respond();
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
       });
@@ -282,8 +307,9 @@ describe('NodalsAI RTD Provider', () => {
       it('should return true and make a remote request when data stored under default key, but override key specified', () => {
         setDataInLocalStorage({ data: { foo: 'bar' }, createdAt: Date.now() });
         const config = Object.assign({}, validConfig);
-        config.params.storage = { key: '_foobarbaz_' };
+        config.params.storage = { key: overrideLocalStorageKey };
         const result = nodalsAiRtdSubmodule.init(config, {});
+        server.respond();
         expect(result).to.be.true;
         expect(server.requests.length).to.equal(1);
       });
@@ -295,6 +321,7 @@ describe('NodalsAI RTD Provider', () => {
         nodalsAiRtdSubmodule.init(validConfig, userConsent);
 
         let request = server.requests[0];
+        server.respond();
 
         expect(request.method).to.equal('GET');
         expect(request.withCredentials).to.be.false;
@@ -309,6 +336,7 @@ describe('NodalsAI RTD Provider', () => {
         nodalsAiRtdSubmodule.init(config, userConsent);
 
         let request = server.requests[0];
+        server.respond();
 
         expect(request.method).to.equal('GET');
         expect(request.withCredentials).to.be.false;
@@ -321,6 +349,8 @@ describe('NodalsAI RTD Provider', () => {
         nodalsAiRtdSubmodule.init(validConfig, userConsent);
 
         let request = server.requests[0];
+        server.respond();
+
         const requestUrl = new URL(request.url);
         expect(requestUrl.pathname).to.equal('/p/v1/10312dd2/config');
       });
@@ -333,6 +363,8 @@ describe('NodalsAI RTD Provider', () => {
         nodalsAiRtdSubmodule.init(validConfig, userConsent);
 
         let request = server.requests[0];
+        server.respond();
+
         const requestUrl = new URL(request.url);
         expect(requestUrl.searchParams.get('gdpr')).to.equal('1');
         expect(requestUrl.searchParams.get('gdpr_consent')).to.equal(
@@ -350,11 +382,7 @@ describe('NodalsAI RTD Provider', () => {
         nodalsAiRtdSubmodule.init(validConfig, userConsent);
 
         let request = server.requests[0];
-        request.respond(
-          200,
-          jsonResponseHeaders,
-          JSON.stringify(successPubEndpointResponse)
-        );
+        server.respond();
 
         const storedData = JSON.parse(
           nodalsAiRtdSubmodule.storage.getDataFromLocalStorage(
@@ -369,18 +397,14 @@ describe('NodalsAI RTD Provider', () => {
       it('should store successful response data in local storage under the override key', () => {
         const userConsent = generateGdprConsent();
         const config = Object.assign({}, validConfig);
-        config.params.storage = { key: '_foobarbaz_' };
+        config.params.storage = { key: overrideLocalStorageKey };
         nodalsAiRtdSubmodule.init(config, userConsent);
 
+        server.respond();
         let request = server.requests[0];
-        request.respond(
-          200,
-          jsonResponseHeaders,
-          JSON.stringify(successPubEndpointResponse)
-        );
 
         const storedData = JSON.parse(
-          nodalsAiRtdSubmodule.storage.getDataFromLocalStorage('_foobarbaz_')
+          nodalsAiRtdSubmodule.storage.getDataFromLocalStorage(overrideLocalStorageKey)
         );
         expect(request.method).to.equal('GET');
         expect(storedData).to.have.property('createdAt');
@@ -390,13 +414,7 @@ describe('NodalsAI RTD Provider', () => {
       it('should attempt to load the referenced script libraries contained in the response payload', () => {
         const userConsent = generateGdprConsent();
         nodalsAiRtdSubmodule.init(validConfig, userConsent);
-
-        let request = server.requests[0];
-        request.respond(
-          200,
-          jsonResponseHeaders,
-          JSON.stringify(successPubEndpointResponse)
-        );
+        server.respond();
 
         expect(loadExternalScriptStub.calledTwice).to.be.true;
         expect(
@@ -418,13 +436,15 @@ describe('NodalsAI RTD Provider', () => {
   });
 
   describe('getTargetingData()', () => {
-    it('should return an empty object when no data is available in local storage', () => {
+    it('should return an empty object when no data is available in local storage, but fetch data', () => {
       const result = nodalsAiRtdSubmodule.getTargetingData(
         ['adUnit1'],
         validConfig,
         {}
       );
+      server.respond();
       expect(result).to.deep.equal({});
+      expect(server.requests.length).to.equal(1);
     });
 
     it('should return an empty object when getTargetingData throws error', () => {
@@ -441,9 +461,10 @@ describe('NodalsAI RTD Provider', () => {
         userConsent
       );
       expect(result).to.deep.equal({});
+      expect(server.requests.length).to.equal(0);
     });
 
-    it('should initialise the versioned targeting engine if data is in storage', () => {
+    it('should initialise the versioned targeting engine if fresh data is in storage and not make a HTTP request', () => {
       const returnData = {};
       const engine = createTargetingEngineStub(returnData);
       const userConsent = generateGdprConsent();
@@ -461,46 +482,32 @@ describe('NodalsAI RTD Provider', () => {
       expect(engine.init.called).to.be.true;
       const args = engine.init.getCall(0).args;
       expect(args[0]).to.deep.equal(validConfig);
-      expect(args[1]).to.deep.include(successPubEndpointResponse.facts);
-      expect(args[1]).to.include.keys(['page.url']);
-      expect(args[2]).to.deep.equal(successPubEndpointResponse);
+      expect(server.requests.length).to.equal(0);
     });
 
-    it('should not initialise the versioned targeting engine if data is missing from storage', () => {
+    it('should initialise the versioned targeting engine with stale data if data expired and fetch fresh data', function () {
       const returnData = {};
       const engine = createTargetingEngineStub(returnData);
       const userConsent = generateGdprConsent();
+      setDataInLocalStorage({
+        data: successPubEndpointResponse,
+        createdAt: 100,
+      });
+
       nodalsAiRtdSubmodule.getTargetingData(
         ['adUnit1'],
         validConfig,
         userConsent
       );
-
-      expect(engine.init.called).to.be.false;
-    });
-
-    it('should proxy the correct data to engine.init()', () => {
-      const engine = createTargetingEngineStub(
-        engineGetTargetingDataReturnValue
-      );
-      const userConsent = generateGdprConsent();
-      setDataInLocalStorage({
-        data: successPubEndpointResponse,
-        createdAt: Date.now(),
-      });
-      nodalsAiRtdSubmodule.getTargetingData(
-        ['adUnit1', 'adUnit2'],
-        validConfig,
-        userConsent
-      );
+      server.respond();
 
       expect(engine.init.called).to.be.true;
       const args = engine.init.getCall(0).args;
       expect(args[0]).to.deep.equal(validConfig);
-      expect(args[1]).to.be.an('object').with.keys(['browser.name', 'geo.country', 'page.url']);
+      expect(server.requests.length).to.equal(1);
     });
 
-    it('should proxy the correct data to engine.getTargetingData()', () => {
+    it('should proxy the correct data to engine.getTargetingData() when storage data is available and we have consent under GDPR jurisdiction', () => {
       const engine = createTargetingEngineStub(
         engineGetTargetingDataReturnValue
       );
@@ -509,6 +516,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
+
       nodalsAiRtdSubmodule.getTargetingData(
         ['adUnit1', 'adUnit2'],
         validConfig,
@@ -519,9 +527,13 @@ describe('NodalsAI RTD Provider', () => {
       const args = engine.getTargetingData.getCall(0).args;
       expect(args[0]).to.deep.equal(['adUnit1', 'adUnit2']);
       expect(args[1]).to.deep.equal(userConsent);
+
+      expect(args[2].deps).to.deep.include(successPubEndpointResponse.deps);
+      expect(args[2].facts).to.deep.include(successPubEndpointResponse.facts);
+      expect(args[2].campaigns[0]).to.deep.include(successPubEndpointResponse.campaigns[0]);
     });
 
-    it('should return the response from engine.getTargetingData when data is available and we have consent under GDPR jurisdiction', () => {
+    it('should return the data from engine.getTargetingData when storage data is available and we have consent under GDPR jurisdiction', () => {
       createTargetingEngineStub(engineGetTargetingDataReturnValue);
       const userConsent = generateGdprConsent();
       setDataInLocalStorage({
@@ -538,7 +550,7 @@ describe('NodalsAI RTD Provider', () => {
       expect(result).to.deep.equal(engineGetTargetingDataReturnValue);
     });
 
-    it('should return the response from engine.getTargetingData when data is available and we are NOT under GDPR jurisdiction', () => {
+    it('should return the data from engine.getTargetingData when storage is available and we are NOT under GDPR jurisdiction', () => {
       createTargetingEngineStub(engineGetTargetingDataReturnValue);
       const userConsent = generateGdprConsent({ gdprApplies: false });
       setDataInLocalStorage({
@@ -588,9 +600,11 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(callback.called).to.be.true;
       expect(engine.init.called).to.be.false;
+      expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(server.requests.length).to.equal(0);
     });
 
-    it('should store function arguments in a queue when no data is in localstorage', () => {
+    it('should store function arguments in a queue when no data is in localstorage and make a HTTP request for data', () => {
       const engine = createTargetingEngineStub();
       const userConsent = generateGdprConsent();
       const callback = sinon.spy();
@@ -598,13 +612,15 @@ describe('NodalsAI RTD Provider', () => {
       nodalsAiRtdSubmodule.getBidRequestData(
         requestObj, callback, validConfig, userConsent
       );
-
+      server.respond();
       expect(callback.called).to.be.false;
-      expect(engine.init.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.an('array').with.length(1);
-      expect(window.$nodals.cmdQueue[0]).to.deep.equal({
-        cmd: 'getBidRequestData', requestObj, callback, userConsent
-      });
+      expect(engine.init.called).to.be.true;
+      expect(window.$nodals.cmdQueue).to.be.an('array').with.length(2);
+      expect(window.$nodals.cmdQueue[0].cmd).to.equal('registerData');
+      expect(window.$nodals.cmdQueue[0].data).to.deep.include(successPubEndpointResponse);
+      expect(window.$nodals.cmdQueue[1].cmd).to.equal('getBidRequestData');
+      expect(window.$nodals.cmdQueue[1].runtimeFacts).to.have.keys(['prebid.version', 'page.url']);
+      expect(window.$nodals.cmdQueue[1].data).to.deep.equal({config: validConfig, requestObj, callback, userConsent });
     });
 
     it('should proxy the correct data to engine.getBidRequestData', () => {
@@ -627,6 +643,10 @@ describe('NodalsAI RTD Provider', () => {
       expect(args[0]).to.deep.equal(requestObj);
       expect(args[1]).to.deep.equal(callback);
       expect(args[2]).to.deep.equal(userConsent);
+      expect(args[3].deps).to.deep.equal(successPubEndpointResponse.deps);
+      expect(args[3].facts).to.deep.include(successPubEndpointResponse.facts);
+      expect(args[3].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
+      expect(server.requests.length).to.equal(0);
     });
   });
 
@@ -646,22 +666,26 @@ describe('NodalsAI RTD Provider', () => {
       expect(engine.init.called).to.be.false;
       expect(engine.onBidResponseEvent.called).to.be.false;
       expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(server.requests.length).to.equal(0);
     });
 
-    it('should store the function arguments in a queue if we do not have data in local storage', () => {
+    it('should store the function arguments in a queue if we do not have data in local storage and make a HTTP request', () => {
       const engine = createTargetingEngineStub();
       const userConsent = generateGdprConsent();
       const bidResponse = {dummy: 'obj', 'bid': 'foo'};
       nodalsAiRtdSubmodule.onBidResponseEvent(
         bidResponse, validConfig, userConsent
       );
+      server.respond();
 
-      expect(engine.init.called).to.be.false;
-      expect(engine.onBidResponseEvent.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.an('array').with.length(1);
-      expect(window.$nodals.cmdQueue[0]).to.deep.equal({
-        cmd: 'onBidResponseEvent', bidResponse, userConsent
-      });
+      expect(engine.init.called).to.be.true;
+      expect(window.$nodals.cmdQueue).to.be.an('array').with.length(2);
+      expect(window.$nodals.cmdQueue[0].cmd).to.equal('registerData');
+      expect(window.$nodals.cmdQueue[0].data).to.deep.include(successPubEndpointResponse);
+      expect(window.$nodals.cmdQueue[1].cmd).to.equal('onBidResponseEvent');
+      expect(window.$nodals.cmdQueue[1].runtimeFacts).to.have.keys(['prebid.version', 'page.url']);
+      expect(window.$nodals.cmdQueue[1].data).to.deep.equal({config: validConfig, bidResponse, userConsent });
+      expect(server.requests.length).to.equal(1);
     });
 
     it('should proxy the correct data to engine.onBidResponseEvent', () => {
@@ -681,6 +705,10 @@ describe('NodalsAI RTD Provider', () => {
       const args = engine.onBidResponseEvent.getCall(0).args;
       expect(args[0]).to.deep.equal(bidResponse);
       expect(args[1]).to.deep.equal(userConsent);
+      expect(args[2].deps).to.deep.equal(successPubEndpointResponse.deps);
+      expect(args[2].facts).to.deep.include(successPubEndpointResponse.facts);
+      expect(args[2].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
+      expect(server.requests.length).to.equal(0);
     });
   });
 
@@ -700,22 +728,26 @@ describe('NodalsAI RTD Provider', () => {
       expect(engine.init.called).to.be.false;
       expect(engine.onAuctionEndEvent.called).to.be.false;
       expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(server.requests.length).to.equal(0);
     });
 
-    it('should store the function arguments in a queue if we do not have data in local storage', () => {
+    it('should store the function arguments in a queue if we do not have data in local storage and make a HTTP request', () => {
       const engine = createTargetingEngineStub();
       const userConsent = generateGdprConsent();
       const auctionDetails = {dummy: 'obj', auction: 'foo'};
       nodalsAiRtdSubmodule.onAuctionEndEvent(
         auctionDetails, validConfig, userConsent
       );
+      server.respond();
 
-      expect(engine.init.called).to.be.false;
-      expect(engine.onBidResponseEvent.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.an('array').with.length(1);
-      expect(window.$nodals.cmdQueue[0]).to.deep.equal({
-        cmd: 'onAuctionEndEvent', auctionDetails, userConsent
-      });
+      expect(engine.init.called).to.be.true;
+      expect(window.$nodals.cmdQueue).to.be.an('array').with.length(2);
+      expect(window.$nodals.cmdQueue[0].cmd).to.equal('registerData');
+      expect(window.$nodals.cmdQueue[0].data).to.deep.include(successPubEndpointResponse);
+      expect(window.$nodals.cmdQueue[1].cmd).to.equal('onAuctionEndEvent');
+      expect(window.$nodals.cmdQueue[1].runtimeFacts).to.have.keys(['prebid.version', 'page.url']);
+      expect(window.$nodals.cmdQueue[1].data).to.deep.equal({config: validConfig, auctionDetails, userConsent });
+      expect(server.requests.length).to.equal(1);
     });
 
     it('should proxy the correct data to engine.onAuctionEndEvent', () => {
@@ -735,6 +767,10 @@ describe('NodalsAI RTD Provider', () => {
       const args = engine.onAuctionEndEvent.getCall(0).args;
       expect(args[0]).to.deep.equal(auctionDetails);
       expect(args[1]).to.deep.equal(userConsent);
+      expect(args[2].deps).to.deep.equal(successPubEndpointResponse.deps);
+      expect(args[2].facts).to.deep.include(successPubEndpointResponse.facts);
+      expect(args[2].campaigns).to.deep.equal(successPubEndpointResponse.campaigns);
+      expect(server.requests.length).to.equal(0);
     });
   });
 });
