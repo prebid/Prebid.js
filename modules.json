@@ -35,8 +35,6 @@
   "nobidBidAdapter",
   "copper6sspBidAdapter",
   "taboolaBidAdapter",
-  "prebidServerBidAdapter",
-  "s2sTesting",
   "bridgeuppBidAdapter",
   "valuadBidAdapter"
 ]
