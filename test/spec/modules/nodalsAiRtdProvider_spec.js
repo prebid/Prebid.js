@@ -633,16 +633,16 @@ describe('NodalsAI RTD Provider', () => {
       });
       const userConsent = generateGdprConsent();
       const callback = sinon.spy();
-      const requestObj = {dummy: 'obj'}
+      const reqBidsConfigObj = {dummy: 'obj'}
       nodalsAiRtdSubmodule.getBidRequestData(
-        requestObj, callback, validConfig, userConsent
+        reqBidsConfigObj, callback, validConfig, userConsent
       );
 
       expect(callback.called).to.be.false;
       expect(window.$nodals.cmdQueue).to.be.an('array').with.length(1);
       expect(window.$nodals.cmdQueue[0].cmd).to.equal('getBidRequestData');
       expect(window.$nodals.cmdQueue[0].runtimeFacts).to.have.keys(['prebid.version', 'page.url']);
-      expect(window.$nodals.cmdQueue[0].data).to.deep.include({config: validConfig, requestObj, callback, userConsent});
+      expect(window.$nodals.cmdQueue[0].data).to.deep.include({config: validConfig, reqBidsConfigObj, callback, userConsent});
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('deps').that.deep.equals(
         successPubEndpointResponse.deps);
       expect(window.$nodals.cmdQueue[0].data.storedData).to.have.property('facts').that.deep.includes(
@@ -660,16 +660,16 @@ describe('NodalsAI RTD Provider', () => {
       const engine = createTargetingEngineStub();
       const userConsent = generateGdprConsent();
       const callback = sinon.spy();
-      const requestObj = {dummy: 'obj'}
+      const reqBidsConfigObj = {dummy: 'obj'}
       nodalsAiRtdSubmodule.getBidRequestData(
-        requestObj, callback, validConfig, userConsent
+        reqBidsConfigObj, callback, validConfig, userConsent
       );
 
       expect(callback.called).to.be.false;
       expect(engine.init.called).to.be.true;
       expect(engine.getBidRequestData.called).to.be.true;
       const args = engine.getBidRequestData.getCall(0).args;
-      expect(args[0]).to.deep.equal(requestObj);
+      expect(args[0]).to.deep.equal(reqBidsConfigObj);
       expect(args[1]).to.deep.equal(callback);
       expect(args[2]).to.deep.equal(userConsent);
       expect(args[3].deps).to.deep.equal(successPubEndpointResponse.deps);

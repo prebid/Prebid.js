@@ -104,7 +104,7 @@ class NodalsAiRtdProvider {
     return targetingData;
   }
 
-  getBidRequestData(requestObj, callback, config, userConsent) {
+  getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     if (!this.#hasRequiredUserConsent(userConsent)) {
       callback();
       return;
@@ -118,11 +118,11 @@ class NodalsAiRtdProvider {
     const engine = this.#initialiseEngine(config);
     if (!engine) {
       logMessage('Storing bid request data in queue');
-      this.#addToCommandQueue('getBidRequestData', {config, requestObj, callback, userConsent, storedData });
+      this.#addToCommandQueue('getBidRequestData', {config, reqBidsConfigObj, callback, userConsent, storedData });
     } else {
       try {
         engine.getBidRequestData(
-          requestObj,
+          reqBidsConfigObj,
           callback,
           userConsent,
           storedData
