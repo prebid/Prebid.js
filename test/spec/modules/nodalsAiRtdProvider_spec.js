@@ -653,7 +653,6 @@ describe('NodalsAI RTD Provider', () => {
     });
 
     it('should proxy the correct data to engine.getBidRequestData when data is in localstorage and library has loaded', () => {
-
       setDataInLocalStorage({
         data: successPubEndpointResponse,
         createdAt: Date.now(),
