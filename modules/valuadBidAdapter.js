@@ -15,10 +15,11 @@ import {
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
 import { parseDomain } from '../src/refererDetection.js';
+import { triggerPixel } from '../src/utils.js';
 
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://valuad-server-test.appspot.com/adapter';
-const SYNC_URL = 'https://valuad-server-test.appspot.com/cookie_sync';
+const WON_URL = 'https://valuad-server-test.appspot.com/reportWin';
 
 export const _VALUAD = (function() {
   const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
@@ -171,7 +172,8 @@ const converter = ortbConverter({
     const site = getSite(bidderRequest);
     const session = getSession();
 
-    const gdprConsent = getGdprConsent(bidderRequest) || {};
+    const gdprConsent = getGdprConsent(bidderRequest).consentRequired || 0;
+    const gdprConsentString = getGdprConsent(bidderRequest).consentString || "";
     const uspConsent = getUspConsent(bidderRequest) || {};
     const coppa = getCoppa();
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
@@ -184,10 +186,13 @@ const converter = ortbConverter({
     deepSetValue(request, 'regs', {
       gdpr: gdprConsent,
       coppa: coppa,
-      ccpa: uspConsent,
-      gpp: gpp || '',
-      gppSid: gppSid || [],
-      dsa: dsa
+      us_privacy: uspConsent,
+      ext: {
+        gdpr_conset: gdprConsentString,
+        gpp: gpp || '',
+        gppSid: gppSid || [],
+        dsa: dsa,
+      }
     });
 
     deepSetValue(request, 'site.ext.data.valuad_rtd', {
@@ -336,6 +341,12 @@ const getUserSyncs = () => (syncOptions, serverResponses) => {
   return syncs;
 };
 
+const bidWonEvent = () => (bid) => {
+  const bidStr = JSON.stringify(bid);
+  const encodedBidStr = window.btoa(bidStr);
+  triggerPixel(WON_URL + '?b=' + encodedBidStr);
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -343,7 +354,8 @@ export const spec = {
   isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
   interpretResponse: interpretResponse(),
-  getUserSyncs: getUserSyncs()
+  getUserSyncs: getUserSyncs(),
+  onBidWon: bidWonEvent()
 };
 
 registerBidder(spec);
