@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setIBVField, setTTL } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType, setIBVField, setTTL, cpmAdjustment } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -4220,6 +4220,48 @@ describe('PubMatic adapter', function () {
           expect(result).to.deep.equal([{
             type: 'image', url: `${syncurl_image}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
           }]);
+        });
+      });
+    });
+
+    describe('onBidWon', () => {
+      beforeEach(() => {
+        global.cpmAdjustment = {};
+      });
+
+      it('should do nothing if bid is undefined', () => {
+        spec.onBidWon(undefined);
+        expect(global.cpmAdjustment).to.deep.equal({});
+      });
+
+      it('should do nothing if bid is null', () => {
+        spec.onBidWon(null);
+        expect(global.cpmAdjustment).to.deep.equal({});
+      });
+      it('should call _calculateBidCpmAdjustment and update cpmAdjustment correctly', () => {
+        const bid = {
+          cpm: 2.5,
+          originalCpm: 3,
+          originalCurrency: 'USD',
+          currency: 'USD',
+          mediaType: 'banner',
+          meta: { mediaType: 'banner' }
+        };
+
+        spec.onBidWon(bid);
+
+        expect(cpmAdjustment).to.deep.equal({
+          currency: 'USD',
+          originalCurrency: 'USD',
+          adjustment: [
+            {
+              cpmAdjustment: Number(((3 - 2.5) / 3).toFixed(2)), // Expected: 0.17
+              mediaType: 'banner',
+              metaMediaType: 'banner',
+              cpm: 2.5,
+              originalCpm: 3
+            }
+          ]
         });
       });
     });
