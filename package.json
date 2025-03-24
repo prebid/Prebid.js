@@ -13,7 +13,7 @@
     "./modules/*.js": "./modules/*.js"
   },
   "scripts": {
-    "start": "gulp build --modules=modules.json && cp ./build/dist/prebid.js ../prebid.js && node transform.js",
+    "start": "gulp build --modules=modules.json && cp ./build/dist/prebid.js ../prebid.js",
     "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint"

@@ -164,7 +164,7 @@ export const spec = {
   createServerRequest: function(payload, domain) {
     return {
       method: 'POST',
-      url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
+      url: 'https://prg.smartadserver.com/prebid/v1',
       data: JSON.stringify(payload),
       options: {
         browsingTopics: false
