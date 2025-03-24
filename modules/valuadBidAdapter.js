@@ -341,8 +341,9 @@ const getUserSyncs = () => (syncOptions, serverResponses) => {
   return syncs;
 };
 
-const bidWonEvent = () => (bid) => {
-  const bidStr = JSON.stringify(bid);
+const onBidWon = (bid) => {
+  const { ad, ...restBid } = bid;
+  const bidStr = JSON.stringify(restBid);
   const encodedBidStr = window.btoa(bidStr);
   triggerPixel(WON_URL + '?b=' + encodedBidStr);
 }
@@ -355,7 +356,7 @@ export const spec = {
   buildRequests: buildRequests(AD_URL),
   interpretResponse: interpretResponse(),
   getUserSyncs: getUserSyncs(),
-  onBidWon: bidWonEvent()
+  onBidWon,
 };
 
 registerBidder(spec);
