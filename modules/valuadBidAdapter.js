@@ -174,8 +174,8 @@ const converter = ortbConverter({
 
     const gdprConsent = getGdprConsent(bidderRequest).consentRequired || 0;
     const gdprConsentString = getGdprConsent(bidderRequest).consentString || "";
-    const uspConsent = getUspConsent(bidderRequest) || {};
-    const coppa = getCoppa();
+    const uspConsent = getUspConsent(bidderRequest).uspConsent || "";
+    const coppa = getCoppa().required;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
 
