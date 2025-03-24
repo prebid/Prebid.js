@@ -1,7 +1,8 @@
-/* global $$PREBID_GLOBAL$$ */
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+
 
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
@@ -24,7 +25,8 @@ export const spec = {
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
-    let prebidVersion = $$PREBID_GLOBAL$$.version;
+    let prebidVersion = getGlobal().version;
+
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let bidRequest = validBidRequests[i];
