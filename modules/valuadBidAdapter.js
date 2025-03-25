@@ -11,11 +11,11 @@ import {
   canAccessWindowTop,
   getDNT,
   logInfo,
+  triggerPixel,
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
 import { parseDomain } from '../src/refererDetection.js';
-import { triggerPixel } from '../src/utils.js';
 
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://valuad-server-test.appspot.com/adapter';
@@ -173,8 +173,8 @@ const converter = ortbConverter({
     const session = getSession();
 
     const gdprConsent = getGdprConsent(bidderRequest).consentRequired || 0;
-    const gdprConsentString = getGdprConsent(bidderRequest).consentString || "";
-    const uspConsent = getUspConsent(bidderRequest).uspConsent || "";
+    const gdprConsentString = getGdprConsent(bidderRequest).consentString || '';
+    const uspConsent = getUspConsent(bidderRequest).uspConsent || '';
     const coppa = getCoppa().required;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
