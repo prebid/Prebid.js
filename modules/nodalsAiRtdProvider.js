@@ -259,11 +259,6 @@ class NodalsAiRtdProvider {
     return true;
   }
 
-  /**
-   * @param {string} key - The key of the data to retrieve.
-   * @returns {string|null} - The data from localStorage, or null if not found.
-   */
-  // eslint-disable-next-line no-dupe-class-members
   #readFromStorage() {
     const key = this.#overrides?.storageKey || this.STORAGE_KEY;
     if (
@@ -354,7 +349,7 @@ class NodalsAiRtdProvider {
   /**
    * Initiates the request to fetch rule data from the publisher endpoint.
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #fetchData() {
     if (this.#dataFetchInProgress) {
       return;
