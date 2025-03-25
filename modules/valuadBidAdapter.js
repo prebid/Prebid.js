@@ -19,7 +19,7 @@ import { parseDomain } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://valuad-server-test.appspot.com/adapter';
-const WON_URL = 'https://valuad-server-test.appspot.com/reportWin';
+const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
 export const _VALUAD = (function() {
   const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
@@ -272,7 +272,18 @@ const converter = ortbConverter({
     }
 
     return imp;
-  }
+  },
+
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    if (bid.vbid) {
+      bidResponse.vbid = bid.vbid;
+    }
+    if (context.bidRequest?.params?.placementId) {
+      bidResponse.vid = context.bidRequest.params.placementId;
+    }
+    return bidResponse;
+  },
 });
 
 const isBidRequestValid = () => (bid = {}) => {
@@ -342,8 +353,12 @@ const getUserSyncs = () => (syncOptions, serverResponses) => {
 };
 
 const onBidWon = (bid) => {
-  const { ad, ...restBid } = bid;
-  const bidStr = JSON.stringify(restBid);
+  const {
+    adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
+  } = bid;
+  const bidStr = JSON.stringify({
+    adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
+  });
   const encodedBidStr = window.btoa(bidStr);
   triggerPixel(WON_URL + '?b=' + encodedBidStr);
 }
