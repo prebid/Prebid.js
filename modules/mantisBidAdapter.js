@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 export const storage = getStorageManager({bidderCode: 'mantis'});
 
@@ -75,7 +76,7 @@ export function onVisible(win, element, doOnVisible, time, pct) {
   interval = setInterval(function () {
     var winHeight = (win.innerHeight || document.documentElement.clientHeight);
     var winWidth = (win.innerWidth || document.documentElement.clientWidth);
-    doCheck(winWidth, winHeight, element.getBoundingClientRect());
+    doCheck(winWidth, winHeight, getBoundingClientRect(element));
   }, 100);
 }
 function storeUuid(uuid) {
@@ -271,9 +272,8 @@ export const spec = {
 
 export function sfPostMessage ($sf, width, height, callback) {
   var viewed = false;
-  // eslint-disable-next-line no-undef
+
   $sf.ext.register(width, height, function () {
-    // eslint-disable-next-line no-undef
     if ($sf.ext.inViewPercentage() < 50 || viewed) {
       return;
     }

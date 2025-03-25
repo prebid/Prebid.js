@@ -16,7 +16,7 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {server} from '../../mocks/xhr.js';
 import {expect} from 'chai';
-import {GreedyPromise} from '../../../src/utils/promise.js';
+import {PbPromise} from '../../../src/utils/promise.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
 describe('ID5 ID System', function () {
@@ -193,7 +193,7 @@ describe('ID5 ID System', function () {
   }
 
   function callSubmoduleGetId(config, consentData, cacheIdObj) {
-    return new GreedyPromise((resolve) => {
+    return new PbPromise((resolve) => {
       id5System.id5IdSubmodule.getId(config, consentData, cacheIdObj).callback((response) => {
         resolve(response);
       });
@@ -250,7 +250,7 @@ describe('ID5 ID System', function () {
 
     async #waitOnRequest(index) {
       const server = this.server;
-      return new GreedyPromise((resolve) => {
+      return new PbPromise((resolve) => {
         const waitForCondition = () => {
           if (server.requests && server.requests.length > index) {
             resolve(server.requests[index]);
