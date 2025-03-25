@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { logMessage, mergeDeep, prefixLog } from '../src/utils.js';
+import { mergeDeep, prefixLog } from '../src/utils.js';
 
 const MODULE_NAME = 'nodalsAi';
 const GVLID = 1360;
@@ -117,7 +117,6 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      logMessage('Storing bid request data in queue');
       this.#addToCommandQueue('getBidRequestData', {config, reqBidsConfigObj, callback, userConsent, storedData });
     } else {
       try {
@@ -145,7 +144,6 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      logMessage('Storing bid response event data in queue');
       this.#addToCommandQueue('onBidResponseEvent', {config, bidResponse, userConsent, storedData })
       return;
     }
@@ -167,7 +165,6 @@ class NodalsAiRtdProvider {
     }
     const engine = this.#initialiseEngine(config);
     if (!engine) {
-      logMessage('Storing auction end event data in queue');
       this.#addToCommandQueue('onAuctionEndEvent', {config, auctionDetails, userConsent, storedData });
       return;
     }
@@ -196,7 +193,7 @@ class NodalsAiRtdProvider {
   #initialiseEngine(config) {
     const engine = this.#getEngine();
     if (!engine) {
-      logMessage(`Engine v${ENGINE_VESION} not found`);
+      logInfo(`Engine v${ENGINE_VESION} not found`);
       return null;
     }
     try {
