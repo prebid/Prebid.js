@@ -320,9 +320,9 @@ const interpretResponse = () => (response, request) => {
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
 
   // Process server-side data
-  if (response.body && response.body.ext && response.body.ext.valuad_data) {
+  if (response.body && response.body.ext && response.body.ext.valuad) {
     // Store any server-side enhanced data for future use
-    _VALUAD.serverData = response.body.ext.valuad_data;
+    _VALUAD.serverData = response.body.ext.valuad;
   }
 
   return bidResponses;
