@@ -295,6 +295,11 @@ const converter = ortbConverter({
       });
     }
 
+    const tmax = bidderRequest.timeout;
+    if (tmax) {
+      deepSetValue(request, 'tmax', tmax);
+    }
+
     return request;
   },
 
