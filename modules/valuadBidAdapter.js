@@ -191,6 +191,36 @@ function processVideoParams(bid) {
   });
 }
 
+function processNativeAssets(nativeParams) {
+  const assets = [];
+  let id = 1;
+
+  if (nativeParams.title) {
+    assets.push({
+      id: id++,
+      required: nativeParams.title.required ? 1 : 0,
+      title: {
+        len: nativeParams.title.len || 140
+      }
+    });
+  }
+
+  if (nativeParams.image) {
+    assets.push({
+      id: id++,
+      required: nativeParams.image.required ? 1 : 0,
+      img: {
+        type: 3, // Main image
+        w: nativeParams.image.sizes[0],
+        h: nativeParams.image.sizes[1],
+        mimes: nativeParams.image.mimes || ['image/jpeg', 'image/png']
+      }
+    });
+  }
+
+  return assets;
+}
+
 // Enhanced ORTBConverter with additional data
 const converter = ortbConverter({
   context: {
@@ -326,6 +356,13 @@ const converter = ortbConverter({
       imp.video = {
         ...imp.video,
         ...processVideoParams(bid)
+      };
+    }
+
+    if (bid.mediaTypes?.native) {
+      imp.native = {
+        ver: '1.2',
+        assets: processNativeAssets(bid.mediaTypes.native)
       };
     }
 
