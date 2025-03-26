@@ -21,20 +21,213 @@ const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://valuad-server-test.appspot.com/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
+const DEFAULT_RTD_CONFIG = {
+  auctionDelay: 50,  // ms to wait for RTD data
+  params: {
+    handleRtd: true,
+    handleViewability: true,
+    handleUserData: true
+  }
+};
+
+const StorageManager = {
+  data: {},
+
+  init() {
+    const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
+    w.VALUAD = w.VALUAD || {};
+    this.data = w.VALUAD;
+
+    // Load data from persistent storage
+    this.loadFromStorage();
+    return this;
+  },
+
+  loadFromStorage() {
+    try {
+      // Load session data
+      const sessionData = sessionStorage.getItem('valuad_session');
+      if (sessionData) {
+        this.data.session = JSON.parse(sessionData);
+      }
+
+      // Load historical data
+      const historicalData = localStorage.getItem('valuad_historical');
+      if (historicalData) {
+        this.data.historical = JSON.parse(historicalData);
+      }
+
+      // Load RTD data
+      const rtdData = localStorage.getItem('valuad_rtd');
+      if (rtdData) {
+        const parsedRtdData = JSON.parse(rtdData);
+        // Only load non-expired data
+        if (parsedRtdData.expiry && parsedRtdData.expiry > Date.now()) {
+          this.data.rtd = parsedRtdData.value;
+        }
+      }
+    } catch (e) {
+      logInfo('Valuad: Error loading from storage', e);
+    }
+  },
+
+  saveToStorage() {
+    try {
+      // Save session data
+      sessionStorage.setItem('valuad_session', JSON.stringify(this.data.session));
+
+      // Save historical data
+      localStorage.setItem('valuad_historical', JSON.stringify(this.data.historical));
+
+      // Save RTD data
+      if (this.data.rtd) {
+        localStorage.setItem('valuad_rtd', JSON.stringify({
+          value: this.data.rtd,
+          expiry: Date.now() + (30 * 60 * 1000) // 30 minutes TTL
+        }));
+      }
+    } catch (e) {
+      logInfo('Valuad: Error saving to storage', e);
+    }
+  },
+
+  set(key, value, persistent = false) {
+    this.data[key] = value;
+    if (persistent) {
+      this.saveToStorage();
+    }
+    return value;
+  },
+
+  get(key) {
+    return this.data[key];
+  },
+
+  update(key, value, persistent = false) {
+    this.data[key] = {
+      ...this.data[key],
+      ...value,
+      lastUpdate: Date.now()
+    };
+    if (persistent) {
+      this.saveToStorage();
+    }
+    return this.data[key];
+  },
+
+  updateHistoricalData(data) {
+    const now = new Date();
+    const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
+    this.data.historical = this.data.historical || {};
+    this.data.historical[dateKey] = this.data.historical[dateKey] || {
+      pageviews: 0,
+      adImpressions: {},
+      bidRequests: 0,
+      bidResponses: 0,
+      revenue: 0
+    };
+
+    this.data.historical[dateKey] = {
+      ...this.data.historical[dateKey],
+      ...data
+    };
+
+    // Save to localStorage
+    localStorage.setItem('valuad_historical', JSON.stringify(this.data.historical));
+  },
+
+  getHistoricalData(days = 30) {
+    const historical = this.data.historical || {};
+    const now = new Date();
+    const result = {};
+
+    // Get last N days of data
+    for (let i = 0; i < days; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+      if (historical[dateKey]) {
+        result[dateKey] = historical[dateKey];
+      }
+    }
+
+    return result;
+  },
+
+  updateSessionData(data) {
+    const session = this.data.session || {
+      id: generateUUID(),
+      startTime: Date.now(),
+      pageviews: 0,
+      adImpressions: {},
+      bidRequests: 0,
+      bidResponses: 0,
+      revenue: 0
+    };
+
+    this.data.session = {
+      ...session,
+      ...data,
+      lastUpdate: Date.now()
+    };
+
+    // Save to sessionStorage
+    sessionStorage.setItem('valuad_session', JSON.stringify(this.data.session));
+  },
+
+  cleanup() {
+    try {
+      // Clean up expired RTD data
+      const rtdData = localStorage.getItem('valuad_rtd');
+      if (rtdData) {
+        const parsed = JSON.parse(rtdData);
+        if (parsed.expiry && parsed.expiry < Date.now()) {
+          localStorage.removeItem('valuad_rtd');
+          delete this.data.rtd;
+        }
+      }
+
+      // Clean up historical data older than 90 days
+      const historical = this.data.historical || {};
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 90);
+
+      Object.keys(historical).forEach(dateKey => {
+        const [year, month, day] = dateKey.split('-').map(Number);
+        const dataDate = new Date(year, month - 1, day);
+        if (dataDate < cutoffDate) {
+          delete historical[dateKey];
+        }
+      });
+
+      localStorage.setItem('valuad_historical', JSON.stringify(historical));
+    } catch (e) {
+      logInfo('Valuad: Error in cleanup', e);
+    }
+  }
+};
+
 export const _VALUAD = (function() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
+  const storage = StorageManager.init();
 
-  w.VALUAD = w.VALUAD || {};
-  w.VALUAD.pageviewId = w.VALUAD.pageviewId || generateUUID();
-  w.VALUAD.sessionId = w.VALUAD.sessionId || generateUUID();
-  w.VALUAD.sessionStartTime = w.VALUAD.sessionStartTime || Date.now();
-  w.VALUAD.pageLoadTime = w.VALUAD.pageLoadTime || window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart;
-  w.VALUAD.userActivity = w.VALUAD.userActivity || {
-    lastActivityTime: Date.now(),
-    pageviewCount: (w.VALUAD.userActivity?.pageviewCount || 0) + 1
-  };
+  // Update session data
+  storage.updateSessionData({
+    pageviews: (storage.get('session')?.pageviews || 0) + 1
+  });
 
-  return w.VALUAD;
+  // Initialize RTD data
+  storage.set('rtdData', {
+    userActivity: {
+      lastActivityTime: Date.now(),
+      pageviewCount: (storage.get('session')?.pageviews || 0)
+    }
+  }, true); // true for persistent storage
+
+  // Cleanup expired data periodically
+  setInterval(() => storage.cleanup(), 5 * 60 * 1000);
+
+  return storage;
 })();
 
 // Helper functions to enrich data
@@ -232,6 +425,57 @@ const converter = ortbConverter({
     const device = getDevice();
     const site = getSite(bidderRequest);
     const session = getSession();
+    const rtdConfig = getRtdConfig();
+
+    // Get session and historical data
+    const sessionData = _VALUAD.get('session') || {};
+    const historicalData = _VALUAD.getHistoricalData(30); // Get last 30 days
+
+    // Calculate aggregate metrics from historical data
+    const aggregateHistorical = Object.values(historicalData).reduce((acc, daily) => {
+      return {
+        totalRevenue: (acc.totalRevenue || 0) + (daily.revenue || 0),
+        totalImpressions: (acc.totalImpressions || 0) + Object.values(daily.adImpressions || {}).reduce((sum, count) => sum + count, 0),
+        totalBidRequests: (acc.totalBidRequests || 0) + (daily.bidRequests || 0),
+        totalBidResponses: (acc.totalBidResponses || 0) + (daily.bidResponses || 0),
+      };
+    }, {});
+
+    // Add enriched data to the request
+    deepSetValue(request, 'site.ext.data.valuad_analytics', {
+      session: {
+        id: sessionData.id,
+        startTime: sessionData.startTime,
+        pageviews: sessionData.pageviews,
+        duration: Date.now() - sessionData.startTime,
+        revenue: sessionData.revenue || 0,
+        bidRequests: sessionData.bidRequests || 0,
+        bidResponses: sessionData.bidResponses || 0,
+        adImpressions: sessionData.adImpressions || {},
+        lastUpdate: sessionData.lastUpdate
+      },
+      historical: {
+        last30Days: {
+          ...aggregateHistorical,
+          averageDailyRevenue: aggregateHistorical.totalRevenue / Object.keys(historicalData).length,
+          averageDailyImpressions: aggregateHistorical.totalImpressions / Object.keys(historicalData).length,
+          bidResponseRate: aggregateHistorical.totalBidResponses / (aggregateHistorical.totalBidRequests || 1),
+        },
+        // Include today's data separately for immediate context
+        today: historicalData[Object.keys(historicalData)[0]] || {},
+      }
+    });
+
+    // Add performance metrics for the current page
+    deepSetValue(request, 'site.ext.data.valuad_rtd', {
+      ...request.site.ext.data.valuad_rtd,
+      performance: {
+        pageLoadTime: _VALUAD.get('pageLoadTime'),
+        timeOnPage: Date.now() - sessionData.startTime,
+        userInteractions: _VALUAD.get('userActivity')?.interactions || 0,
+        maxScroll: _VALUAD.get('userActivity')?.maxScroll || 0,
+      }
+    });
 
     const gdprConsent = getGdprConsent(bidderRequest).consentRequired || 0;
     const gdprConsentString = getGdprConsent(bidderRequest).consentString || '';
@@ -256,16 +500,18 @@ const converter = ortbConverter({
       }
     });
 
-    deepSetValue(request, 'site.ext.data.valuad_rtd', {
-      pageviewId: _VALUAD.pageviewId,
-      session: session,
-      features: {
-        page_dimensions: `${document.documentElement.scrollWidth}x${document.documentElement.scrollHeight}`,
-        viewport_dimensions: `${window.innerWidth}x${window.innerHeight}`,
-        user_timestamp: Math.floor(Date.now() / 1000),
-        dom_loading: window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart
-      }
-    });
+    if (rtdConfig.params.handleRtd) {
+      const rtdData = collectRtdData();
+
+      deepSetValue(request, 'site.ext.data.valuad_rtd', {
+        ...request.site.ext.data.valuad_rtd,
+        ...rtdData,
+        config: {
+          enabled: true,
+          auctionDelay: rtdConfig.auctionDelay
+        }
+      });
+    }
 
     // Add bid parameters
     if (bidderRequest && bidderRequest.bids && bidderRequest.bids.length) {
@@ -406,12 +652,20 @@ const isBidRequestValid = () => (bid = {}) => {
 };
 
 const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = {}) => {
-  // Add bid-level metadata for our server to use
   validBidRequests = validBidRequests.map(req => {
     req.valuadMeta = {
       pageviewId: _VALUAD.pageviewId,
-      adUnitPosition: detectAdUnitPosition(req.adUnitCode)
+      adUnitPosition: detectAdUnitPosition(req.adUnitCode),
+      rtd: _VALUAD.rtdData,
+      viewability: _VALUAD.viewabilityData?.[req.adUnitCode],
+      userActivity: _VALUAD.userActivity
     };
+
+    // Start viewability tracking
+    if (getRtdConfig().params.handleViewability) {
+      trackViewability(req.adUnitCode);
+    }
+
     return req;
   });
 
@@ -430,10 +684,21 @@ const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = {}) => 
 const interpretResponse = () => (response, request) => {
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
 
-  // Process server-side data
-  if (response.body && response.body.ext && response.body.ext.valuad) {
-    // Store any server-side enhanced data for future use
-    _VALUAD.serverData = response.body.ext.valuad;
+  if (response.body?.ext?.valuad_rtd) {
+    const rtdData = response.body.ext.valuad_rtd;
+    _VALUAD.setWithExpiry('serverRtdData', rtdData, 5 * 60 * 1000); // 5 minutes TTL
+
+    return bidResponses.map(bid => ({
+      ...bid,
+      meta: {
+        ...bid.meta,
+        rtd: {
+          segments: rtdData.segments,
+          viewability: _VALUAD.getWithExpiry('viewabilityData')?.[bid.adUnitCode],
+          performance: rtdData.performance
+        }
+      }
+    }));
   }
 
   return bidResponses;
@@ -453,15 +718,36 @@ const getUserSyncs = () => (syncOptions, serverResponses) => {
 };
 
 const onBidWon = (bid) => {
-  const {
-    adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
-  } = bid;
-  const bidStr = JSON.stringify({
-    adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
-  });
-  const encodedBidStr = window.btoa(bidStr);
-  triggerPixel(WON_URL + '?b=' + encodedBidStr);
-}
+  try {
+    const {
+      adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
+    } = bid;
+
+    // Update historical and session data
+    _VALUAD.updateHistoricalData({
+      revenue: (_VALUAD.get('historical')?.revenue || 0) + cpm,
+      adImpressions: {
+        [adUnitCode]: (_VALUAD.get('historical')?.adImpressions?.[adUnitCode] || 0) + 1
+      }
+    });
+
+    _VALUAD.updateSessionData({
+      revenue: (_VALUAD.get('session')?.revenue || 0) + cpm,
+      adImpressions: {
+        [adUnitCode]: (_VALUAD.get('session')?.adImpressions?.[adUnitCode] || 0) + 1
+      }
+    });
+
+    // Send win notification
+    const bidStr = JSON.stringify({
+      adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
+    });
+    const encodedBidStr = window.btoa(bidStr);
+    triggerPixel(WON_URL + '?b=' + encodedBidStr);
+  } catch (e) {
+    logInfo('Valuad: Error in onBidWon', e);
+  }
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -475,3 +761,96 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+// Add RTD configuration getter
+function getRtdConfig() {
+  return config.getConfig('valuad.rtd') || DEFAULT_RTD_CONFIG;
+}
+
+// Add this function to collect more RTD data
+function collectRtdData() {
+  return {
+    page: {
+      dimensions: `${document.documentElement.scrollWidth}x${document.documentElement.scrollHeight}`,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      url: window.location.href,
+      title: document.title,
+      keywords: Array.from(document.getElementsByTagName('meta'))
+        .filter(meta => meta.name === 'keywords')
+        .map(meta => meta.content)
+        .join(','),
+      loadTime: window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart,
+      referrer: document.referrer
+    },
+    user: {
+      timestamp: Math.floor(Date.now() / 1000),
+      language: navigator.language,
+      userAgent: navigator.userAgent
+    },
+    session: {
+      id: _VALUAD.sessionId,
+      pageviews: _VALUAD.userActivity.pageviewCount,
+      duration: Date.now() - _VALUAD.sessionStartTime,
+      lastActivity: _VALUAD.userActivity.lastActivityTime
+    },
+    performance: {
+      navigationStart: window.performance?.timing?.navigationStart,
+      domInteractive: window.performance?.timing?.domInteractive,
+      domComplete: window.performance?.timing?.domComplete,
+      loadEventEnd: window.performance?.timing?.loadEventEnd
+    }
+  };
+}
+
+// Add viewability tracking function
+function trackViewability(adUnitCode) {
+  if ('IntersectionObserver' in window) {
+    const element = document.getElementById(adUnitCode);
+    if (!element) return null;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const viewabilityData = {
+          inView: entry.isIntersecting,
+          visibleRatio: entry.intersectionRatio,
+          time: Date.now(),
+          adUnitCode: adUnitCode
+        };
+
+        _VALUAD.update('viewabilityData', {
+          [adUnitCode]: viewabilityData
+        });
+      });
+    }, {
+      threshold: [0, 0.25, 0.5, 0.75, 1]
+    });
+
+    observer.observe(element);
+    return observer;
+  }
+  return null;
+}
+
+// Add event tracking
+function initRtdEventListeners() {
+  // Track scroll depth
+  let maxScroll = 0;
+  window.addEventListener('scroll', () => {
+    const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight;
+    maxScroll = Math.max(maxScroll, scrollPercent);
+    _VALUAD.userActivity.maxScroll = maxScroll;
+  });
+
+  // Track time on page
+  const startTime = Date.now();
+  window.addEventListener('beforeunload', () => {
+    const timeOnPage = Date.now() - startTime;
+    _VALUAD.userActivity.timeOnPage = timeOnPage;
+  });
+
+  // Track user interactions
+  document.addEventListener('click', () => {
+    _VALUAD.userActivity.lastActivityTime = Date.now();
+    _VALUAD.userActivity.interactions = (_VALUAD.userActivity.interactions || 0) + 1;
+  });
+}
