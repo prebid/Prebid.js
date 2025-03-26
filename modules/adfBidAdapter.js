@@ -3,7 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, getWinDimensions, mergeDeep, parseSizesInput, setOnAny} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
@@ -55,8 +55,8 @@ export const spec = {
     if (commonFpd.device) {
       mergeDeep(device, commonFpd.device);
     }
-    device.w = device.w || window.innerWidth;
-    device.h = device.h || window.innerHeight;
+    device.w = device.w || getWinDimensions('innerWidth');
+    device.h = device.h || getWinDimensions('innerHeight');
     device.ua = device.ua || navigator.userAgent;
 
     let source = commonFpd.source || {};

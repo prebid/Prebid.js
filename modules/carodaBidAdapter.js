@@ -8,6 +8,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   logError,
   mergeDeep,
   sizeTupleToRtbSize,
@@ -169,8 +170,8 @@ function getORTBCommon (bidderRequest) {
     }
   }
   const device = getConfig('device') || {};
-  device.w = device.w || window.innerWidth;
-  device.h = device.h || window.innerHeight;
+  device.w = device.w || getWinDimensions('innerWidth');
+  device.h = device.h || getWinDimensions('innerHeight');
   device.ua = device.ua || navigator.userAgent;
   return {
     app,

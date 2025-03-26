@@ -8,7 +8,8 @@ import {
   isArray,
   contains,
   parseUrl,
-  generateUUID
+  generateUUID,
+  getWinDimensions
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
@@ -157,7 +158,7 @@ export const spec = {
     }
     const getParams = this.getGetParametersAsObject();
     const isTestMode = getParams['nptestmode'] || null; // this can be any string, it's used for testing ads
-    npRequest.device = {'w': window.innerWidth, 'h': window.innerHeight};
+    npRequest.device = {'w': getWinDimensions('innerWidth'), 'h': getWinDimensions('innerHeight')};
     let placementIdOverrideFromGetParam = this.getPlacementIdOverrideFromGetParam(); // null or string
     let schain = null;
     let tosendtags = validBidRequests.map(npBidRequest => {

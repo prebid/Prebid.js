@@ -263,7 +263,7 @@ function _getViewability(element, topWin, {
   h
 } = {}) {
   return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, topWin, {
+    ? percentInView(element, {
       w,
       h
     })

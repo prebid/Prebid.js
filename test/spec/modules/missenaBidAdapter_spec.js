@@ -3,6 +3,7 @@ import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
+import { getWinDimensions } from '../../../src/utils.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
@@ -18,7 +19,7 @@ describe('Missena Adapter', function () {
   let sandbox = sinon.sandbox.create();
   sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
   sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
-  const viewport = { width: window.top.innerWidth, height: window.top.innerHeight };
+  const viewport = { width: getWinDimensions('innerWidth'), height: getWinDimensions('innerHeight') };
 
   const bidId = 'abc';
   const bid = {

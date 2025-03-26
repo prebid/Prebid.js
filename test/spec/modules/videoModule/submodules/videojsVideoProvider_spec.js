@@ -2,6 +2,7 @@
 import {
   SETUP_COMPLETE, SETUP_FAILED
 } from 'libraries/video/constants/events.js';
+import { getWinDimensions } from '../../../../../src/utils';
 
 const {VideojsProvider, utils} = require('modules/videojsVideoProvider');
 
@@ -293,31 +294,34 @@ describe('utils', function() {
 
   describe('getPositionCode', function() {
     it('should return the correct position when video is above the fold', function () {
+      const {innerWidth, innerHeight} = getWinDimensions();
       const code = utils.getPositionCode({
-        left: window.innerWidth / 10,
+        left: innerWidth / 10,
         top: 0,
-        width: window.innerWidth - window.innerWidth / 10,
-        height: window.innerHeight,
+        width: innerWidth - innerWidth / 10,
+        height: innerHeight,
       })
       expect(code).to.equal(AD_POSITION.ABOVE_THE_FOLD)
     });
 
     it('should return the correct position when video is below the fold', function () {
+      const {innerWidth, innerHeight} = getWinDimensions();
       const code = utils.getPositionCode({
-        left: window.innerWidth / 10,
-        top: window.innerHeight,
-        width: window.innerWidth - window.innerWidth / 10,
-        height: window.innerHeight / 2,
+        left: innerWidth / 10,
+        top: innerHeight,
+        width: innerWidth - innerWidth / 10,
+        height: innerHeight / 2,
       })
       expect(code).to.equal(AD_POSITION.BELOW_THE_FOLD)
     });
 
     it('should return the unkown position when the video is out of bounds', function () {
+      const {innerWidth, innerHeight} = getWinDimensions();
       const code = utils.getPositionCode({
-        left: window.innerWidth / 10,
-        top: window.innerHeight,
-        width: window.innerWidth,
-        height: window.innerHeight,
+        left: innerWidth / 10,
+        top: innerHeight,
+        width: innerWidth,
+        height: innerHeight,
       })
       expect(code).to.equal(AD_POSITION.UNKNOWN)
     });

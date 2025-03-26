@@ -16,6 +16,7 @@ import {
   buildUrl,
   isArray,
   generateUUID,
+  getWinDimensions,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -290,8 +291,8 @@ function getUiEvents() {
 
 function getScreen() {
   function getInnerSize() {
-    let w = window?.innerWidth;
-    let h = window?.innerHeight;
+    let w = getWinDimensions('innerWidth');
+    let h = getWinDimensions('innerHeight');
 
     if (w && h) {
       return [w, h];
@@ -299,9 +300,8 @@ function getScreen() {
   }
 
   function getDocumentSize() {
-    let body = window?.document?.body;
-    let w = body.clientWidth;
-    let h = body.clientHeight;
+    let w = getWinDimensions('document.body.clientWidth');
+    let h = getWinDimensions('document.body.clientHeight');
 
     if (w && h) {
       return [w, h];

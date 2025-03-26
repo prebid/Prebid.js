@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject, parseQueryStringParameters } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject, parseQueryStringParameters, getWinDimensions } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -433,7 +433,7 @@ function _getBidIdFromTrinityKey(key) {
 /**
  * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
  */
-export const _isInbounds = (context = window) => (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => context.innerWidth >= lowerBound && context.innerWidth < upperBound;
+export const _isInbounds = (context = getWinDimensions()) => (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => deepAccess(context, 'innerWidth') >= lowerBound && deepAccess(context, 'innerWidth') < upperBound;
 
 /**
  * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window

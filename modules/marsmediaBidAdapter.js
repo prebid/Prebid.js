@@ -370,7 +370,7 @@ function MarsmediaAdapter() {
 
   function _getViewability(element, topWin, { w, h } = {}) {
     return topWin.document.visibilityState === 'visible'
-      ? percentInView(element, topWin, { w, h })
+      ? percentInView(element, { w, h })
       : 0;
   }
 }
