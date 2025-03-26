@@ -169,6 +169,28 @@ function getEids(bidRequest) {
   return deepAccess(bidRequest, 'userIdAsEids');
 }
 
+function processVideoParams(bid) {
+  const videoParams = deepAccess(bid, 'mediaTypes.video', {});
+  const playerSize = videoParams.playerSize || [];
+
+  return cleanObj({
+    mimes: videoParams.mimes,
+    minduration: videoParams.minduration,
+    maxduration: videoParams.maxduration,
+    protocols: videoParams.protocols,
+    w: playerSize[0]?.[0],
+    h: playerSize[0]?.[1],
+    startdelay: videoParams.startdelay,
+    placement: videoParams.placement,
+    linearity: videoParams.linearity,
+    skip: videoParams.skip,
+    skipmin: videoParams.skipmin,
+    skipafter: videoParams.skipafter,
+    playbackmethod: videoParams.playbackmethod,
+    api: videoParams.api
+  });
+}
+
 // Enhanced ORTBConverter with additional data
 const converter = ortbConverter({
   context: {
@@ -298,6 +320,13 @@ const converter = ortbConverter({
       } catch (e) {
         logInfo('Valuad: Error getting floor', e);
       }
+    }
+
+    if (bid.mediaTypes?.video) {
+      imp.video = {
+        ...imp.video,
+        ...processVideoParams(bid)
+      };
     }
 
     return imp;
