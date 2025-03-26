@@ -235,6 +235,14 @@ const converter = ortbConverter({
       deepSetValue(request, 'user.ext.eids', eids);
     }
 
+    const ortb2 = bidderRequest.ortb2 || {};
+    if (ortb2.site?.ext?.data) {
+      deepSetValue(request, 'site.ext.data', {
+        ...request.site.ext.data,
+        ...ortb2.site.ext.data
+      });
+    }
+
     return request;
   },
 
