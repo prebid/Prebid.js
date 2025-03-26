@@ -165,6 +165,10 @@ function getSchain(bidRequest) {
   return deepAccess(bidRequest, 'schain');
 }
 
+function getEids(bidRequest) {
+  return deepAccess(bidRequest, 'userIdAsEids');
+}
+
 // Enhanced ORTBConverter with additional data
 const converter = ortbConverter({
   context: {
@@ -223,6 +227,12 @@ const converter = ortbConverter({
     const schain = getSchain(bidderRequest.bids[0]);
     if (schain) {
       deepSetValue(request, 'source.ext.schain', schain);
+    }
+
+    // Add eids if present
+    const eids = getEids(bidderRequest.bids[0]);
+    if (eids) {
+      deepSetValue(request, 'user.ext.eids', eids);
     }
 
     return request;
