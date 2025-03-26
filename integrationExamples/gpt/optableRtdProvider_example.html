@@ -126,6 +126,11 @@
             ];
 
             pbjs.setConfig({
+                optableRtdConfig: { // optional, check the doc for explanation
+                    email: 'email-sha256-hash',
+                    phone: 'phone-sha256-hash',
+                    postal_code: 'postal_code',
+                },
                 debug: true, // use only for testing, remove in production
                 realTimeData: {
                     auctionDelay: 1000, // should be set lower in production use
@@ -136,10 +141,11 @@
                             params: {
                                 // bundleUrl: "https://prebidtest.solutions.cdn.optable.co/public-assets/prebidtest-sdk.js?hello=world",
                                 // adserverTargeting: false,
-                                // handleRtd: async (reqBidsConfigObj, mergeFn) => {
+                                // handleRtd: async (reqBidsConfigObj, optableExtraData, mergeFn) => {
                                 //     const optableBundle = /** @type {Object} */ (window.optable);
                                 //     console.warn('Entering custom RTD handler');
                                 //     console.warn('reqBidsConfigObj', reqBidsConfigObj);
+                                //     console.warn('optableExtraData', optableExtraData);
                                 //     console.warn('mergeFn', mergeFn);
                                 //
                                 //     // Call Optable DCN for targeting data and return the ORTB2 object

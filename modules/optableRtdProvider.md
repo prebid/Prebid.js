@@ -58,26 +58,21 @@ pbjs.setConfig({
 ### Additional input to the module
 
 Optable bundle may use PPIDs (publisher provided IDs) from the `user.ext.eids` as input.
-In addition other arbitrary keys can be used as input, f.e. the following:
 
-- `user.ext.optable.email` - a SHA256-hashed user email
-- `user.ext.optable.phone` - a SHA256-hashed [E.164 normalized phone](https://unifiedid.com/docs/getting-started/gs-normalization-encoding#phone-number-normalization) (meaning a phone number consisting of digits and leading plus sign without spaces or any additional characters, f.e. a US number would be: `+12345678999`)
-- `user.ext.optable.postal_code` - a ZIP postal code string
+In addition, other arbitrary keys can be used as input, f.e. the following:
 
-Each of these identifiers is completely optional and can be provided through `pbjs.mergeConfig` like so:
+- `optableRtdConfig.email` - a SHA256-hashed user email
+- `optableRtdConfig.phone` - a SHA256-hashed [E.164 normalized phone](https://unifiedid.com/docs/getting-started/gs-normalization-encoding#phone-number-normalization) (meaning a phone number consisting of digits and leading plus sign without spaces or any additional characters, f.e. a US number would be: `+12345678999`)
+- `optableRtdConfig.postal_code` - a ZIP postal code string
+
+Each of these identifiers is completely optional and can be provided through `pbjs.mergeConfig(...)` like so:
 
 ```javascript
 pbjs.mergeConfig({
-  ortb2: {
-    user: {
-      ext: {
-        optable: {
-          email: await sha256("test@example.com"),
-          phone: await sha256("12345678999"),
-          postal_code: "61054"
-        }
-      }
-    }
+  optableRtdConfig: {
+    email: await sha256("test@example.com"),
+    phone: await sha256("12345678999"),
+    postal_code: "61054"
   }
 })
 ```
@@ -92,29 +87,35 @@ async function sha256(input) {
 }
 ```
 
-To handle PPIDs and the above input - a custom `handleRtd` function may need to be provided. In the custom `handleRtd` implementation make sure to erase any `user.ext.optable` fields not meant to be propagated to the bidders.
+To handle PPIDs and the above input - a custom `handleRtd` function may need to be provided.
 
 ### Parameters
 
-| Name                     | Type     | Description                                                                                                                                                                                                                                   | Default          | Notes    |
-|--------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------|
-| name                     | String   | Real time data module name                                                                                                                                                                                                                    | Always `optable` |          |
-| waitForIt                | Boolean  | Should be set `true` together with `auctionDelay: 1000`                                                                                                                                                                                       | `false`          |          |
-| params                   | Object   |                                                                                                                                                                                                                                               |                  |          |
-| params.bundleUrl         | String   | Optable bundle URL                                                                                                                                                                                                                            | `null`           | Optional |
-| params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                  | `true`           | Optional |
-| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module will do a default call to Optable bundle. The function signature is `[async] (reqBidsConfigObj, mergeFn) => {}` | `null`           | Optional |
+| Name                     | Type     | Description                                                                                                                                                                                                                                                     | Default          | Notes    |
+|--------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------|
+| name                     | String   | Real time data module name                                                                                                                                                                                                                                      | Always `optable` |          |
+| waitForIt                | Boolean  | Should be set `true` together with `auctionDelay: 1000`                                                                                                                                                                                                         | `false`          |          |
+| params                   | Object   |                                                                                                                                                                                                                                                                 |                  |          |
+| params.bundleUrl         | String   | Optable bundle URL                                                                                                                                                                                                                                              | `null`           | Optional |
+| params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`           | Optional |
+| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module will do a default call to Optable bundle. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`           | Optional |
 
 ## Publisher Customized RTD Handler Function
 
-When there is more pre-processing or post-processing needed prior/post calling Optable bundle - a custom `handleRtd` function can be supplied to do that. This function will also be responsible for the `reqBidsConfigObj` enrichment.  `mergeFn` parameter taken by `handleRtd` is a standard Prebid.js utility function that take an object to be enriched and an object to enrich with: the second object's fields will be merged into the first one (also see the code of an example mentioned below):
+When there is more pre-processing or post-processing needed prior/post calling Optable bundle - a custom `handleRtd`
+function can be supplied to do that.
+This function will also be responsible for the `reqBidsConfigObj` enrichment.
+It will also receive the `optableExtraData` object, which can contain the extra data required for the enrichment and
+shouldn't be shared with other RTD providers/bidders.
+`mergeFn` parameter taken by `handleRtd` is a standard Prebid.js utility function that take an object to be enriched and
+an object to enrich with: the second object's fields will be merged into the first one (also see the code of an example
+mentioned below):
 
-```
+```javascript
 mergeFn(
   reqBidsConfigObj.ortb2Fragments.global, // or other nested object as needed
   rtdData,
 );
-
 ```
 
 A `handleRtd` function implementation has access to its surrounding context including capturing a `pbjs` object, calling `pbjs.getConfig()` and f.e. reading off the `consentManagement` config to make the appropriate decision based on it.

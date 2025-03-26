@@ -1,5 +1,6 @@
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 import {loadExternalScript} from '../src/adloader.js';
+import {config} from '../src/config.js';
 import {submodule} from '../src/hook.js';
 import {deepAccess, mergeDeep, prefixLog} from '../src/utils.js';
 
@@ -39,10 +40,11 @@ export const parseConfig = (moduleConfig) => {
 /**
  * Default function to handle/enrich RTD data
  * @param reqBidsConfigObj Bid request configuration object
+ * @param optableExtraData Additional data to be used by the Optable SDK
  * @param mergeFn Function to merge data
  * @returns {Promise<void>}
  */
-export const defaultHandleRtd = async (reqBidsConfigObj, mergeFn) => {
+export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
   const optableBundle = /** @type {Object} */ (window.optable);
   // Call Optable DCN for targeting data and return the ORTB2 object
   const targetingData = await optableBundle?.instance?.targeting();
@@ -64,13 +66,14 @@ export const defaultHandleRtd = async (reqBidsConfigObj, mergeFn) => {
  * Get data from Optable and merge it into the global ORTB2 object
  * @param {Function} handleRtdFn Function to handle RTD data
  * @param {Object} reqBidsConfigObj Bid request configuration object
+ * @param {Object} optableExtraData Additional data to be used by the Optable SDK
  * @param {Function} mergeFn Function to merge data
  */
-export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, mergeFn) => {
+export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn) => {
   if (handleRtdFn.constructor.name === 'AsyncFunction') {
-    await handleRtdFn(reqBidsConfigObj, mergeFn);
+    await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
   } else {
-    handleRtdFn(reqBidsConfigObj, mergeFn);
+    handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
   }
 };
 
@@ -86,6 +89,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     const {bundleUrl, handleRtd} = parseConfig(moduleConfig);
 
     const handleRtdFn = handleRtd || defaultHandleRtd;
+    const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
     if (bundleUrl) {
       // If bundleUrl is present, load the Optable JS bundle
@@ -95,7 +99,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       // Load Optable JS bundle and merge the data
       loadExternalScript(bundleUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
         logMessage('Successfully loaded Optable JS bundle');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, mergeDeep).then(callback, callback);
+        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
       }, document);
     } else {
       // At this point, we assume that the Optable JS bundle is already
@@ -106,7 +110,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       window.optable = window.optable || { cmd: [] };
       window.optable.cmd.push(() => {
         logMessage('Optable JS bundle found on the page');
-        mergeOptableData(handleRtdFn, reqBidsConfigObj, mergeDeep).then(callback, callback);
+        mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
       });
     }
   } catch (error) {

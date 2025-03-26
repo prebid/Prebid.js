@@ -69,14 +69,14 @@ describe('Optable RTD Submodule', function () {
       const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
       window.optable.instance.targeting.resolves(targetingData);
 
-      await defaultHandleRtd(reqBidsConfigObj, mergeFn);
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
       expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
     });
 
     it('does nothing if targeting data is missing the ortb2 property', async function () {
       window.optable.instance.targeting.resolves({});
 
-      await defaultHandleRtd(reqBidsConfigObj, mergeFn);
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
       expect(mergeFn.called).to.be.false;
     });
   });
@@ -96,14 +96,14 @@ describe('Optable RTD Submodule', function () {
 
     it('calls handleRtdFn synchronously if it is a regular function', async function () {
       handleRtdFn = sinon.spy();
-      await mergeOptableData(handleRtdFn, reqBidsConfigObj, mergeFn);
-      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, mergeFn)).to.be.true;
+      await mergeOptableData(handleRtdFn, reqBidsConfigObj, {}, mergeFn);
+      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn)).to.be.true;
     });
 
     it('calls handleRtdFn asynchronously if it is an async function', async function () {
       handleRtdFn = sinon.stub().resolves();
-      await mergeOptableData(handleRtdFn, reqBidsConfigObj, mergeFn);
-      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, mergeFn)).to.be.true;
+      await mergeOptableData(handleRtdFn, reqBidsConfigObj, {}, mergeFn);
+      expect(handleRtdFn.calledOnceWith(reqBidsConfigObj, {}, mergeFn)).to.be.true;
     });
   });
 
