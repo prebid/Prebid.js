@@ -160,6 +160,11 @@ function getCoppa() {
 function getUspConsent(bidderRequest) {
   return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
 }
+
+function getSchain(bidRequest) {
+  return deepAccess(bidRequest, 'schain');
+}
+
 // Enhanced ORTBConverter with additional data
 const converter = ortbConverter({
   context: {
@@ -213,6 +218,12 @@ const converter = ortbConverter({
 
     // Set currency to USD
     deepSetValue(request, 'cur', ['USD']);
+
+    // Add schain if present
+    const schain = getSchain(bidderRequest.bids[0]);
+    if (schain) {
+      deepSetValue(request, 'source.ext.schain', schain);
+    }
 
     return request;
   },
