@@ -52,7 +52,7 @@ const addParamsToUrl = (url, params) => {
  * @returns {string|null}
  */
 const getGlobalAccountIdOrNull = () => {
-  const globalAccountId = config.getConfig('newspassid.accountId');
+  const globalAccountId = config.getConfig('accountId');
   if (globalAccountId) return globalAccountId;
   return null;
 };
@@ -121,7 +121,7 @@ export const spec = {
         ttl: DEFAULT_TTL,
         ad: bid.adm,
         meta: {
-          advertiserDomains: bid.adomain || []
+          advertiserDomains: bid.adomain || [],
         }
       });
     });
