@@ -163,7 +163,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice()
+      devicetype: getDevice(),
+      ua: navigator.userAgent
     },
     site: {
       page: pageUrl,
