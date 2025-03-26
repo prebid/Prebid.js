@@ -165,7 +165,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     device: {
       devicetype: getDevice(),
       ua: navigator.userAgent,
-      sua: navigator.userAgentData
+      sua: validBidRequests[0]?.ortb2?.device?.sua
     },
     site: {
       page: pageUrl,
