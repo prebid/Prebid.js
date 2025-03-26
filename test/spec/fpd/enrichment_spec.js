@@ -160,24 +160,28 @@ describe('FPD enrichment', () => {
     });
     testWindows(() => win, () => {
       it('sets w/h', () => {
-        win.screen.width = 321;
-        win.screen.height = 123;
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions');
+        getWinDimensionsStub.withArgs('screen.width').returns(321);
+        getWinDimensionsStub.withArgs('screen.height').returns(123);
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
             h: 123,
           });
+          getWinDimensionsStub.restore();
         });
       });
 
       it('sets ext.vpw/vph', () => {
-        win.innerWidth = 12;
-        win.innerHeight = 21;
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions');
+        getWinDimensionsStub.withArgs('innerWidth').returns(12);
+        getWinDimensionsStub.withArgs('innerHeight').returns(21);
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device.ext, {
             vpw: 12,
             vph: 21,
           });
+          getWinDimensionsStub.restore();
         });
       });
 

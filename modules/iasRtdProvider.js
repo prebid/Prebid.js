@@ -101,7 +101,7 @@ function stringifySlot(bidRequest, adUnitPath) {
 }
 
 function stringifyWindowSize() {
-  return [window.innerWidth || -1, window.innerHeight || -1].join('.');
+  return [utils.getWinDimensions('innerWidth') || -1, utils.getWinDimensions('innerHeight') || -1].join('.');
 }
 
 function stringifyScreenSize() {

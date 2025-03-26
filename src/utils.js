@@ -22,6 +22,7 @@ let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
+let windowDimensions;
 
 const pbjsInstance = getGlobal();
 
@@ -35,6 +36,54 @@ function emitEvent(...args) {
     eventEmitter(...args);
   }
 }
+
+/* eslint-disable no-restricted-properties */
+export function getWinDimensions(path = null) {
+  if (!windowDimensions) {
+    const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
+
+    windowDimensions = {
+      screen: {
+        width: top.screen?.width,
+        height: top.screen?.height,
+        availWidth: top.screen?.availWidth,
+        availHeight: top.screen?.availHeight,
+        colorDepth: top.screen?.colorDepth,
+      },
+      innerHeight: top.innerHeight,
+      innerWidth: top.innerWidth,
+      outerWidth: top.outerWidth,
+      outerHeight: top.outerHeight,
+      visualViewport: {
+        height: top.visualViewport?.height,
+        width: top.visualViewport?.width,
+      },
+      document: {
+        documentElement: {
+          clientWidth: top.document?.documentElement?.clientWidth,
+          clientHeight: top.document?.documentElement?.clientHeight,
+          scrollTop: top.document?.documentElement?.scrollTop,
+          scrollLeft: top.document?.documentElement?.scrollLeft,
+        },
+        body: {
+          scrollTop: document.body?.scrollTop,
+          scrollLeft: document.body?.scrollLeft,
+          clientWidth: document.body?.clientWidth,
+          clientHeight: document.body?.clientHeight,
+        },
+      }
+    };
+  };
+
+  return path ? deepAccess(windowDimensions, path) : windowDimensions;
+}
+/* eslint-enable no-restricted-properties */
+
+export function resetWinDimensions() {
+  windowDimensions = null;
+}
+
+window.addEventListener('resize', resetWinDimensions);
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {

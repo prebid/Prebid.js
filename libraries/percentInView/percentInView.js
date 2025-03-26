@@ -1,3 +1,4 @@
+import { getWinDimensions } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
 
 export function getBoundingBox(element, {w, h} = {}) {
@@ -40,12 +41,15 @@ function getIntersectionOfRects(rects) {
   return bbox;
 }
 
-export const percentInView = (element, topWin, {w, h} = {}) => {
+export const percentInView = (element, {w, h} = {}) => {
   const elementBoundingBox = getBoundingBox(element, {w, h});
 
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = getIntersectionOfRects([{
-    left: 0, top: 0, right: topWin.innerWidth, bottom: topWin.innerHeight
+    left: 0,
+    top: 0,
+    right: getWinDimensions('innerWidth'),
+    bottom: getWinDimensions('innerHeight')
   }, elementBoundingBox]);
 
   let elementInViewArea, elementTotalArea;

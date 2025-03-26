@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, getDNT, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
+import {deepAccess, deepSetValue, getDNT, getWinDimensions, inIframe, logWarn, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -190,8 +190,8 @@ function getDevice(data) {
     dnt = getDNT() ? 1 : 0;
   }
   return {
-    w: data.w || window.innerWidth,
-    h: data.h || window.innerHeight,
+    w: data.w || getWinDimensions('innerWidth'),
+    h: data.h || getWinDimensions('innerHeight'),
     ua: data.ua || navigator.userAgent,
     dnt: dnt,
     language: data.language || navigator.language,

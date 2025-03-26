@@ -1,9 +1,11 @@
 import { expect } from 'chai';
 
 import * as utils from 'src/utils.js';
+import { internal } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
+import { resetWinDimensions } from '../../../src/utils';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
@@ -499,12 +501,15 @@ describe('33acrossBidAdapter:', function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').returns(element);
+    sandbox.stub(internal, 'getWindowTop').returns(win);
+    sandbox.stub(internal, 'getWindowSelf').returns(win);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
     bidderRequest = {bidderRequestId: 'r1'};
   });
 
   afterEach(function() {
+    resetWinDimensions();
     sandbox.restore();
   });
   describe('isBidRequestValid:', function() {

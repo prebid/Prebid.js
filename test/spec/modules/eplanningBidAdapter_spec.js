@@ -8,6 +8,7 @@ import {hook} from '../../../src/hook.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -625,7 +626,7 @@ describe('E-Planning Adapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [validBid];
     let sandbox;
-    let getWindowSelfStub;
+    let getWindowTopStub;
     let innerWidth;
     beforeEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = {
@@ -634,19 +635,23 @@ describe('E-Planning Adapter', function () {
         }
       };
       sandbox = sinon.sandbox.create();
-      getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf');
-      getWindowSelfStub.returns(createWindow(800));
+      getWindowTopStub = sandbox.stub(internal, 'getWindowTop');
+      getWindowTopStub.returns(createWindow(800));
     });
 
     afterEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
+      resetWinDimensions();
     });
 
     const createWindow = (innerWidth) => {
       const win = {};
       win.self = win;
       win.innerWidth = innerWidth;
+      win.location = {
+        href: 'location'
+      };
       return win;
     };
 
@@ -956,7 +961,7 @@ describe('E-Planning Adapter', function () {
     it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
       // overwrite default innerWdith for tests with a larger one we consider "Desktop" or NOT Mobile
-      getWindowSelfStub.returns(createWindow(1025));
+      getWindowTopStub.returns(createWindow(1025));
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600,970x250');
     });

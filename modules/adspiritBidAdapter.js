@@ -30,8 +30,8 @@ export const spec = {
         '&ref=' + encodeURIComponent(bidderRequest.refererInfo.topmostLocation) +
         '&scx=' + (screen.width) +
         '&scy=' + (screen.height) +
-        '&wcx=' + (window.innerWidth || document.documentElement.clientWidth) +
-        '&wcy=' + (window.innerHeight || document.documentElement.clientHeight) +
+        '&wcx=' + (utils.getWinDimensions('innerWidth') || utils.getWinDimensions('document.documentElement.clientWidth')) +
+        '&wcy=' + (utils.getWinDimensions('innerHeight') || utils.getWinDimensions('document.documentElement.clientHeight')) +
         '&async=' + bidRequest.adspiritConId +
         '&t=' + Math.round(Math.random() * 100000);
 
