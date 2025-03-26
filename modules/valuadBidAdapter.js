@@ -71,20 +71,38 @@ const StorageManager = {
     }
   },
 
+  isStorageAvailable(type) {
+    try {
+      const storage = window[type];
+      const x = '__storage_test__';
+      storage.setItem(x, x);
+      storage.removeItem(x);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
   saveToStorage() {
     try {
-      // Save session data
-      sessionStorage.setItem('valuad_session', JSON.stringify(this.data.session));
+      if (this.isStorageAvailable('localStorage')) {
+        // Save session data
+        localStorage.setItem('valuad_session', JSON.stringify(this.data.session));
 
-      // Save historical data
-      localStorage.setItem('valuad_historical', JSON.stringify(this.data.historical));
+        // Save historical data
+        localStorage.setItem('valuad_historical', JSON.stringify(this.data.historical));
 
-      // Save RTD data
-      if (this.data.rtd) {
-        localStorage.setItem('valuad_rtd', JSON.stringify({
-          value: this.data.rtd,
-          expiry: Date.now() + (30 * 60 * 1000) // 30 minutes TTL
-        }));
+        // Save RTD data
+        if (this.data.rtd) {
+          localStorage.setItem('valuad_rtd', JSON.stringify({
+            value: this.data.rtd,
+            expiry: Date.now() + (30 * 60 * 1000) // 30 minutes TTL
+          }));
+        }
+      }
+      if (this.isStorageAvailable('sessionStorage')) {
+        // Save session data
+        sessionStorage.setItem('valuad_session', JSON.stringify(this.data.session));
       }
     } catch (e) {
       logInfo('Valuad: Error saving to storage', e);
