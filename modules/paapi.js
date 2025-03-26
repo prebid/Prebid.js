@@ -84,6 +84,7 @@ function attachHandlers() {
   getHook('makeBidRequests').before(addPaapiData);
   getHook('makeBidRequests').after(markForFledge);
   getHook('processBidderRequests').before(parallelPaapiProcessing);
+  getHook('processBidderRequests').before(adAuctionHeadersHook);
   events.on(EVENTS.AUCTION_INIT, onAuctionInit);
   events.on(EVENTS.AUCTION_END, onAuctionEnd);
 }
@@ -93,8 +94,22 @@ function detachHandlers() {
   getHook('makeBidRequests').getHooks({hook: addPaapiData}).remove();
   getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
   getHook('processBidderRequests').getHooks({hook: parallelPaapiProcessing}).remove();
+  getHook('processBidderRequests').getHooks({hook: adAuctionHeadersHook}).remove();
   events.off(EVENTS.AUCTION_INIT, onAuctionInit);
   events.off(EVENTS.AUCTION_END, onAuctionEnd);
+}
+
+export function adAuctionHeadersHook(next, spec, bids, bidderRequest, ajax, ...args) {
+  if (bidderRequest.paapi?.enabled) {
+    ajax = ((orig) => {
+      return function (url, callback, data, options) {
+        options = options ?? {};
+        options.adAuctionHeaders = options.adAuctionHeaders ?? true;
+        return orig.call(this, url, callback, data, options);
+      }
+    })(ajax);
+  }
+  return next.call(this, spec, bids, bidderRequest, ajax, ...args);
 }
 
 function getStaticSignals(adUnit = {}) {
@@ -256,7 +271,7 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
     const {adUnitCode, auctionId, bidder} = request;
 
-    // eslint-disable-next-line no-inner-declarations
+
     function storePendingData(store, data) {
       const target = store(auctionId);
       if (target != null) {
@@ -494,7 +509,7 @@ export function markForFledge(next, bidderRequests) {
   next(bidderRequests);
 }
 
-export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals'];
+export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals', 'perBuyerCurrencies', 'perBuyerCumulativeTimeouts'];
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [

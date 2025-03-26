@@ -48,6 +48,8 @@ export const EVENTS = {
   PAAPI_BID: 'paapiBid',
   PAAPI_NO_BID: 'paapiNoBid',
   PAAPI_ERROR: 'paapiError',
+  BROWSI_INIT: 'browsiInit',
+  BROWSI_DATA: 'browsiData',
 };
 
 export const AD_RENDER_FAILED_REASON = {
