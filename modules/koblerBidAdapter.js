@@ -164,7 +164,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     imp: imps,
     device: {
       devicetype: getDevice(),
-      ua: navigator.userAgent
+      ua: navigator.userAgent,
+      sua: navigator.userAgentData
     },
     site: {
       page: pageUrl,
