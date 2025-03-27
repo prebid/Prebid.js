@@ -70,7 +70,7 @@ export let _country;
 // Waits for a given promise to resolve within a timeout
 export function withTimeout(promise, ms) {
     let timeout;
-    const timeoutPromise = new Promise((resolve) => { // Do we need this promise
+    const timeoutPromise = new Promise((resolve) => {
       timeout = setTimeout(() => resolve(undefined), ms);
     });
   
