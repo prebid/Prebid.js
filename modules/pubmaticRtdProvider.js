@@ -30,9 +30,9 @@ const CONSTANTS = Object.freeze({
     NIGHT: 'night',
   },
   ENDPOINTS: {
-    BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt/floors',
+    BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
     FLOORS: 'floors.json',
-    CONFIGS: 'configs.json'
+    CONFIGS: 'config.json'
   }
 });
 
@@ -54,7 +54,7 @@ const BROWSER_REGEX_MAP = [
 export const defaultValueTemplate = {
     currency: 'USD',
     skipRate: 0,
-    modelVersion: 'modelVersion',
+    modelVersion: 'MV_def',
     schema: {
         fields: ['mediaType', 'size']
     }
@@ -163,7 +163,8 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
 export const fetchData = async (publisherId, profileId, type) => {
     try {
       const endpoint = CONSTANTS.ENDPOINTS[type];
-      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${endpoint}`;
+      const baseURL = (type == 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
+      const url = `${baseURL}/${publisherId}/${profileId}/${endpoint}`;
       const response = await fetch(url);
   
       if (!response.ok) {
