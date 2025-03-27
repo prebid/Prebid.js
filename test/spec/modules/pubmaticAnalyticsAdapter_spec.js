@@ -333,7 +333,13 @@ describe('pubmatic analytics adapter', function () {
         s2sConfig: {
           accountId: '1234',
           bidders: ['pubmatic'],
-          defaultVendor: 'openwrap',
+          adapter: 'prebidServer',
+          enabled: true,
+          endpoint: {
+            p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+            noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+          },
+          maxTimeout: 500
           timeout: 500
         }
       });
