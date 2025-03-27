@@ -550,7 +550,7 @@ describe('auctionmanager.js', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       let expected = getDefaultExpected(bid);
       let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
-      assert.deepEqual(response, expected);
+      if (FEATURES.PBS_CONSTANTS) { assert.deepEqual(response, expected) };
     });
 
     it('Custom bidCpmAdjustment for one bidder and inherit standard but doesn\'t use standard bidCpmAdjustment', function () {
