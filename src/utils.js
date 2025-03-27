@@ -83,7 +83,10 @@ export function resetWinDimensions() {
   windowDimensions = null;
 }
 
-window.addEventListener('resize', resetWinDimensions);
+['resize', 'scroll', 'orientationchange'].forEach(event => {
+  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
+  top.addEventListener(event, resetWinDimensions)
+});
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
