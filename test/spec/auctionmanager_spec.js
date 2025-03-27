@@ -536,21 +536,23 @@ describe('auctionmanager.js', function () {
     });
 
     it('Should set targeting as expecting when pbs is enabled', function () {
-      config.setConfig({
-        s2sConfig: {
-          accountId: '1',
-          enabled: true,
-          defaultVendor: 'appnexuspsp',
-          bidders: ['appnexus'],
-          timeout: 1000,
-          adapter: 'prebidServer'
-        }
-      });
+      if (FEATURES.PBS_CONSTANTS) {
+        config.setConfig({
+          s2sConfig: {
+            accountId: '1',
+            enabled: true,
+            defaultVendor: 'appnexuspsp',
+            bidders: ['appnexus'],
+            timeout: 1000,
+            adapter: 'prebidServer'
+          }
+        });
 
-      $$PREBID_GLOBAL$$.bidderSettings = {};
-      let expected = getDefaultExpected(bid);
-      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
-      if (FEATURES.PBS_CONSTANTS) { assert.deepEqual(response, expected) };
+        $$PREBID_GLOBAL$$.bidderSettings = {};
+        let expected = getDefaultExpected(bid);
+        let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+        assert.deepEqual(response, expected);
+      };
     });
 
     it('Custom bidCpmAdjustment for one bidder and inherit standard but doesn\'t use standard bidCpmAdjustment', function () {
@@ -1389,58 +1391,60 @@ describe('auctionmanager.js', function () {
         return pm;
       });
 
-      it('should NOT emit BID_TIMEOUT for bidders that replied through S2S', () => {
-        adapterManager.registerBidAdapter(new PrebidServer(), 'pbs');
-        config.setConfig({
-          s2sConfig: [{
-            accountId: '1',
-            enabled: true,
-            defaultVendor: 'appnexuspsp',
-            bidders: ['mock-s2s-1'],
-            adapter: 'pbs'
-          }, {
-            accountId: '1',
-            enabled: true,
-            defaultVendor: 'rubicon',
-            bidders: ['mock-s2s-2'],
-            adapter: 'pbs'
-          }]
-        })
-        adUnits[0].bids.push({bidder: 'mock-s2s-1'}, {bidder: 'mock-s2s-2'})
-        const s2sAdUnits = deepClone(adUnits);
-        bids.unshift(
-          mockBid({ bidderCode: 'mock-s2s-1', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '1' }),
-          mockBid({ bidderCode: 'mock-s2s-2', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '2' })
-        );
-        Object.assign(s2sAdUnits[0], {
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], [300, 600]]
-            }
-          },
-          bids: [
-            {
-              bidder: 'mock-s2s-1',
-              bid_id: bids[0].requestId
+      if (FEATURES.PBS_CONSTANTS) {
+        it('should NOT emit BID_TIMEOUT for bidders that replied through S2S', () => {
+          adapterManager.registerBidAdapter(new PrebidServer(), 'pbs');
+          config.setConfig({
+            s2sConfig: [{
+              accountId: '1',
+              enabled: true,
+              defaultVendor: 'appnexuspsp',
+              bidders: ['mock-s2s-1'],
+              adapter: 'pbs'
+            }, {
+              accountId: '1',
+              enabled: true,
+              defaultVendor: 'rubicon',
+              bidders: ['mock-s2s-2'],
+              adapter: 'pbs'
+            }]
+          })
+          adUnits[0].bids.push({bidder: 'mock-s2s-1'}, {bidder: 'mock-s2s-2'})
+          const s2sAdUnits = deepClone(adUnits);
+          bids.unshift(
+            mockBid({ bidderCode: 'mock-s2s-1', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '1' }),
+            mockBid({ bidderCode: 'mock-s2s-2', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '2' })
+          );
+          Object.assign(s2sAdUnits[0], {
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [300, 600]]
+              }  
             },
-            {
-              bidder: 'mock-s2s-2',
-              bid_id: bids[1].requestId
-            }
-          ]
-        })
+            bids: [
+              {
+                bidder: 'mock-s2s-1',
+                bid_id: bids[0].requestId
+              },
+              {
+                bidder: 'mock-s2s-2',
+                bid_id: bids[1].requestId
+              }
+            ]
+          })
 
-        const pm = runAuction().then(() => {
-          const toBids = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).getCalls()[0].args[1]
-          expect(toBids.map(bid => bid.bidder)).to.eql([
-            'mock-s2s-2',
-            BIDDER_CODE,
-            BIDDER_CODE1,
-          ])
-        });
-        respondToRequest(1);
-        return pm;
-      })
+          const pm = runAuction().then(() => {
+            const toBids = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).getCalls()[0].args[1]
+            expect(toBids.map(bid => bid.bidder)).to.eql([
+              'mock-s2s-2',
+              BIDDER_CODE,
+              BIDDER_CODE1,
+            ])
+          });
+          respondToRequest(1);
+          return pm;
+        })
+      }
     });
   });
 
