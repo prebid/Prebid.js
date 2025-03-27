@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, isStr, logMessage, isPlainObject, isEmpty, isFn, mergeDeep, logWarn } from '../src/utils.js';
+import { logError, isStr, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getLowEntropySUA } from '../src/fpd/sua.js';
@@ -54,7 +54,6 @@ const BROWSER_REGEX_MAP = [
 export const defaultValueTemplate = {
     currency: 'USD',
     skipRate: 0,
-    modelVersion: 'MV_def',
     schema: {
         fields: ['mediaType', 'size']
     }
@@ -166,7 +165,7 @@ export const fetchData = async (publisherId, profileId, type) => {
       const baseURL = (type == 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
       const url = `${baseURL}/${publisherId}/${profileId}/${endpoint}`;
       const response = await fetch(url);
-  
+
       if (!response.ok) {
         logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: Not ok`);
         return;

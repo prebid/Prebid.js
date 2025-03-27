@@ -327,7 +327,6 @@ describe('Pubmatic RTD Provider', () => {
 
             expect(result.floors.data).to.have.property('currency', 'USD');
             expect(result.floors.data).to.have.property('skipRate', 11);
-            expect(result.floors.data).to.have.property('modelVersion', 'modelVersion');
             expect(result.floors.data.schema).to.deep.equal(defaultValueTemplate.schema);
             expect(result.floors.data.value).to.deep.equal(defaultValueTemplate.value);
         });
@@ -392,31 +391,31 @@ describe('Pubmatic RTD Provider', () => {
 
             fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200 }));
 
-            const result = await fetchData('publisherId', 'profileId', 'configs');
+            const result = await fetchData('1234', '123', 'CONFIGS');
             expect(result).to.deep.equal(mockApiResponse);
         });
 
         it('should log error when JSON parsing fails', async () => {
             fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
-            await fetchData('publisherId', 'profileId', 'configs');
+            await fetchData('1234', '123', 'CONFIGS');
             expect(logErrorStub.calledOnce).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching configs:');
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS:');
         });
 
         it('should log error when response is not ok', async () => {
             fetchStub.resolves(new Response(null, { status: 500 }));
 
-            await fetchData('publisherId', 'profileId', 'configs');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching configs: Not ok/))).to.be.true;
+            await fetchData('1234', '123', 'CONFIGS');
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching CONFIGS: Not ok/))).to.be.true;
         });
 
         it('should log error on network failure', async () => {
             fetchStub.rejects(new Error('Network Error'));
 
-            await fetchData('publisherId', 'profileId', 'configs');
+            await fetchData('1234', '123', 'CONFIGS');
             expect(logErrorStub.calledOnce).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching configs');
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS');
         });
     });
 
@@ -447,7 +446,7 @@ describe('Pubmatic RTD Provider', () => {
 
             fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200, headers: { 'country_code': 'US' } }));
 
-            const result = await fetchData('publisherId', 'profileId', 'floors');
+            const result = await fetchData('1234', '123', 'FLOORS');
             expect(result).to.deep.equal(mockApiResponse);
             expect(_country).to.equal('US');
         });
@@ -458,7 +457,7 @@ describe('Pubmatic RTD Provider', () => {
                 headers: { 'country_code': 'US,IN,US' }
             }));
 
-            await fetchData('publisherId', 'profileId', 'floors');
+            await fetchData('1234', '123', 'FLOORS');
             expect(_country).to.equal('US');
         });
 
@@ -467,31 +466,31 @@ describe('Pubmatic RTD Provider', () => {
                 status: 200
             }));
 
-            await fetchData('publisherId', 'profileId', 'floors');
+            await fetchData('1234', '123', 'FLOORS');
             expect(_country).to.be.undefined;
         });
 
         it('should log error when JSON parsing fails', async () => {
             fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
-            await fetchData('publisherId', 'profileId', 'floors');
+            await fetchData('1234', '123', 'FLOORS');
             expect(logErrorStub.calledOnce).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching FLOORS');
         });
 
         it('should log error when response is not ok', async () => {
             fetchStub.resolves(new Response(null, { status: 500 }));
 
-            await fetchData('publisherId', 'profileId', 'floors');
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
+            await fetchData('1234', '123', 'FLOORS');
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching FLOORS');
         });
 
         it('should log error on network failure', async () => {
             fetchStub.rejects(new Error('Network Error'));
 
-            await fetchData('publisherId', 'profileId', 'floors');
+            await fetchData('1234', '123', 'FLOORS');
             expect(logErrorStub.calledOnce).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
+            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching FLOORS');
         });
     });
 
