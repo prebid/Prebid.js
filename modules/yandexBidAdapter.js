@@ -166,6 +166,11 @@ export const spec = {
         queryParams['ssp-cur'] = currency;
       }
 
+      const lang = document.documentElement.getAttribute('lang');
+      if (lang) {
+        queryParams['banner-lang'] = lang;
+      }
+
       const data = {
         id: bidRequest.bidId,
         imp: [imp],
