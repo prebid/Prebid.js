@@ -35,6 +35,7 @@ export namespace Ortb2 {
     coppa?: unknown;
     ext?: {
       gdpr?: unknown;
+
       us_privacy?: unknown;
       [key: string]: unknown;
     };
