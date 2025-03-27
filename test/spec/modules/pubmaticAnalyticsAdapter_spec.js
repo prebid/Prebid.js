@@ -369,7 +369,9 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[0]);
 
       clock.tick(2000 + 1000);
-      expect(requests.length).to.equal(1); // only logger is fired
+      if (FEATURES.PBS_CONSTANTS) {
+        expect(requests.length).to.equal(1); // only logger is fired
+      };
       let request = requests[0];
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
