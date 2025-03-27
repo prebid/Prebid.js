@@ -1,5 +1,5 @@
 // accountId and bidders params are not included here, should be configured by end-user
-export const S2S_VENDORS = {
+const S2S_VENDORS = FEATURES.PBS_CONSTANTS ? {
   'appnexuspsp': {
     adapter: 'prebidServer',
     enabled: true,
@@ -35,4 +35,5 @@ export const S2S_VENDORS = {
     },
     maxTimeout: 500
   }
-}
+} : {};
+export default S2S_VENDORS;
