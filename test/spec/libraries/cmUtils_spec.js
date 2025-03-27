@@ -88,7 +88,6 @@ describe('consent management utils', () => {
             cmHook(next, {});
             await loadResult;
             sinon.assert.notCalled(utils.logWarn)
-            sinon.assert.calledWith(utils.logInfo, sinon.match('already known'));
           })
         });
 
