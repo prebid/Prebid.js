@@ -339,7 +339,7 @@ describe('pubmatic analytics adapter', function () {
             p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
             noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
           },
-          maxTimeout: 500
+          maxTimeout: 500,
           timeout: 500
         }
       });
