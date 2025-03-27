@@ -22,8 +22,8 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.newspassid', {
-      accountId: resolveNewpassidAccountId(bidRequest),
-      groupId: bidRequest.params.groupId,
+      publisher: resolveNewpassidPublisherId(bidRequest),
+      placementId: bidRequest.params.placementId,
     })
     return imp;
   },
@@ -48,28 +48,28 @@ const addParamsToUrl = (url, params) => {
 };
 
 /**
- * Get the global accountId for the newspassid bidder
+ * Get the global publisherId for the newspassid bidder
  * @returns {string|null}
  */
-const getGlobalAccountIdOrNull = () => {
-  const globalAccountId = config.getConfig('accountId');
-  if (globalAccountId) return globalAccountId;
+const getGlobalPublisherIdOrNull = () => {
+  const globalPublisherId = config.getConfig('newspassid.publisherId');
+  if (globalPublisherId) return globalPublisherId;
   return null;
 };
 
 /**
- * Resolve the accountId for the newspassid bidder
+ * Resolve the publisherId for the newspassid bidder
  * @param {BidRequest|undefined} bidRequest
  * @returns {string|null}
  */
-export const resolveNewpassidAccountId = (bidRequest) => {
-  if (typeof bidRequest !== 'object') return getGlobalAccountIdOrNull();
+export const resolveNewpassidPublisherId = (bidRequest) => {
+  if (typeof bidRequest !== 'object') return getGlobalPublisherIdOrNull();
 
-  // get accountId from bidRequest params
+  // get publisherId from bidRequest params
   const { params } = bidRequest;
-  if (params?.accountId) return params?.accountId;
+  if (params?.publisherId) return params?.publisherId;
 
-  return getGlobalAccountIdOrNull();
+  return getGlobalPublisherIdOrNull();
 };
 
 /**
@@ -80,9 +80,9 @@ export const spec = {
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
-  isBidRequestValid: function(bid) {
-    const accountId = resolveNewpassidAccountId(bid);
-    return !!(bid.params && accountId && bid.params.groupId);
+  isBidRequestValid: function(bidRequest) {
+    const publisherId = resolveNewpassidPublisherId(bidRequest);
+    return !!(bidRequest.params && publisherId && bidRequest.params.placementId);
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
@@ -144,9 +144,10 @@ export const spec = {
       us_privacy: encodeURIComponent(uspConsent || ''),
     };
 
-    const globalAccountId = resolveNewpassidAccountId({});
-    if (globalAccountId) {
-      params.account = globalAccountId;
+    const globalPublisherId = resolveNewpassidPublisherId({});
+    if (globalPublisherId) {
+      // "publisher" is a convention on the server side
+      params.publisher = globalPublisherId;
     }
 
     let syncs = [];

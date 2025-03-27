@@ -1,16 +1,17 @@
 import { spec } from 'modules/newspassidBidAdapter.js';
 import { config } from 'src/config.js';
 import { deepClone } from 'src/utils.js';
-import { resolveNewpassidAccountId } from '../../../modules/newspassidBidAdapter';
-
-const TEST_ACCOUNT_ID = '123456';
+import { resolveNewpassidPublisherId } from '../../../modules/newspassidBidAdapter';
 
 describe('newspassidBidAdapter', function () {
+  const TEST_PUBLISHER_ID = '123456';
+  const TEST_PLACEMENT_ID = 'test-group1';
+
   const validBidRequest = {
     bidder: 'newspassid',
     params: {
-      accountId: TEST_ACCOUNT_ID,
-      groupId: 'test-group1'
+      publisherId: TEST_PUBLISHER_ID,
+      placementId: TEST_PLACEMENT_ID
     },
     mediaTypes: {
       banner: {
@@ -61,22 +62,22 @@ describe('newspassidBidAdapter', function () {
     });
   });
 
-  describe('resolveNewpassidAccountId', function() {
+  describe('resolveNewpassidPublisherId', function() {
     afterEach(() => {
       config.resetConfig();
     });
 
-    it('should return null if no bidrequest object or no global account id set', function() {
-      expect(resolveNewpassidAccountId()).to.equal(null);
+    it('should return null if no bidrequest object or no global publisherId set', function() {
+      expect(resolveNewpassidPublisherId()).to.equal(null);
     });
 
-    it('should return global account id if no bidrequest object and global account id set', function() {
+    it('should return global publisherId if no bidrequest object and global publisherId set', function() {
       config.setConfig({
         newspassid: {
-          accountId: TEST_ACCOUNT_ID
+          publisherId: TEST_PUBLISHER_ID
         }
       });
-      expect(resolveNewpassidAccountId()).to.equal(TEST_ACCOUNT_ID);
+      expect(resolveNewpassidPublisherId()).to.equal(TEST_PUBLISHER_ID);
     });
   });
 
@@ -85,15 +86,15 @@ describe('newspassidBidAdapter', function () {
       expect(spec.isBidRequestValid(validBidRequest)).to.be.true;
     });
 
-    it('should return false when accountId is missing', function() {
+    it('should return false when publisherId is missing', function() {
       const bid = deepClone(validBidRequest);
-      delete bid.params.accountId;
+      delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('should return false when groupId is missing', function() {
+    it('should return false when placementId is missing', function() {
       const bid = deepClone(validBidRequest);
-      delete bid.params.groupId;
+      delete bid.params.placementId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -110,7 +111,43 @@ describe('newspassidBidAdapter', function () {
     it('should include bidder params in ortb2 request', function() {
       const requests = spec.buildRequests([validBidRequest], validBidderRequest);
       const data = requests[0].data;
-      expect(data.imp[0].ext.newspassid.accountId).to.equal(TEST_ACCOUNT_ID);
+      expect(data.imp[0].ext.newspassid.publisher).to.equal(TEST_PUBLISHER_ID);
+      expect(data.imp[0].ext.newspassid.placementId).to.equal(TEST_PLACEMENT_ID);
+    });
+
+    it('should use global publisherId when not set in bid params', function() {
+      const validBidRequestWithoutPublisherId = {
+        ...validBidRequest,
+        params: {
+          placementId: TEST_PLACEMENT_ID
+        },
+      };
+      config.setConfig({
+        newspassid: {
+          publisherId: TEST_PUBLISHER_ID
+        }
+      });
+      const requests = spec.buildRequests([validBidRequestWithoutPublisherId], validBidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.newspassid.publisher).to.equal(TEST_PUBLISHER_ID);
+      expect(data.imp[0].ext.newspassid.placementId).to.equal(TEST_PLACEMENT_ID);
+    });
+
+    it('should use publisherId from bidRequest first over global publisherId', function() {
+      config.setConfig({
+        newspassid: {
+          publisherId: TEST_PUBLISHER_ID
+        }
+      });
+      const validBidRequestWithDifferentPublisherId = {
+        ...validBidRequest,
+        params: {
+          publisherId: 'publisherId123'
+        }
+      };
+      const requests = spec.buildRequests([validBidRequestWithDifferentPublisherId], validBidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.newspassid.publisher).to.equal('publisherId123');
     });
 
     it('should handle multiple bid requests', function() {
@@ -248,10 +285,10 @@ describe('newspassidBidAdapter', function () {
       expect(url.searchParams.get('us_privacy')).to.equal('');
     });
 
-    it('should include account param when accountId is set in config', function() {
+    it('should include publisher param when publisherId is set in config', function() {
       config.setConfig({
         newspassid: {
-          accountId: TEST_ACCOUNT_ID
+          publisherId: TEST_PUBLISHER_ID
         }
       });
       const syncs = spec.getUserSyncs({iframeEnabled: true});
@@ -261,7 +298,7 @@ describe('newspassidBidAdapter', function () {
       expect(url.searchParams.get('gpp')).to.equal('');
       expect(url.searchParams.get('gpp_sid')).to.equal('');
       expect(url.searchParams.get('us_privacy')).to.equal('');
-      expect(url.searchParams.get('account')).to.equal(TEST_ACCOUNT_ID);
+      expect(url.searchParams.get('publisher')).to.equal(encodeURIComponent(TEST_PUBLISHER_ID));
     });
 
     it('should have zero user syncs if coppa is true', function() {
@@ -293,7 +330,7 @@ describe('newspassidBidAdapter', function () {
       };
       config.setConfig({
         newspassid: {
-          accountId: TEST_ACCOUNT_ID
+          publisherId: TEST_PUBLISHER_ID
         }
       });
       const syncs = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent, uspConsent, gppConsent);
@@ -303,7 +340,7 @@ describe('newspassidBidAdapter', function () {
       expect(url.searchParams.get('gpp')).to.equal(encodeURIComponent(gppConsentString));
       expect(url.searchParams.get('gpp_sid')).to.equal(encodeURIComponent(gppSections));
       expect(url.searchParams.get('us_privacy')).to.equal(encodeURIComponent(uspConsent));
-      expect(url.searchParams.get('account')).to.equal(TEST_ACCOUNT_ID);
+      expect(url.searchParams.get('publisher')).to.equal(encodeURIComponent(TEST_PUBLISHER_ID));
     });
   });
 });
