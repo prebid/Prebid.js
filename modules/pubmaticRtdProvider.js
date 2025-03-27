@@ -3,6 +3,15 @@ import { logError, isStr, logMessage, isPlainObject, isEmpty, isFn, mergeDeep, l
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getLowEntropySUA } from '../src/fpd/sua.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
+/**
+ * This RTD module has a dependency on the priceFloors module.
+ * We utilize the continueAuction function from the priceFloors module to incorporate price floors data into the current auction.
+ */
 import { continueAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
 const CONSTANTS = Object.freeze({
@@ -21,22 +30,22 @@ const CONSTANTS = Object.freeze({
     NIGHT: 'night',
   },
   ENDPOINTS: {
-    BASEURL: 'http://localhost:8080/',  // TODO: Update with actual endpoint
-    floors: 'floors.json',
-    configs: 'configs.json'
+    BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt/floors',
+    FLOORS: 'floors.json',
+    CONFIGS: 'configs.json'
   }
 });
 
 const BROWSER_REGEX_MAP = [
   { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 }, // Chrome for iOS
-  { regex: /edg(?:e|ios|a)?\/([\w\.]+)/i, id: 2 }, // Edge
+  { regex: /(edg|edge)(?:e|ios|a)?(?:\/([\w\.]+))?/i, id: 2 }, // Edge
   { regex: /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 }, // Opera
   { regex: /(?:ms|\()(ie) ([\w\.]+)/i, id: 4 }, // Internet Explorer
   { regex: /fxios\/([-\w\.]+)/i, id: 5 }, // Firefox for iOS
   { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 }, // Facebook In-App Browser
   { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 }, // Chrome WebView
   { regex: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, id: 8 }, // Android Browser
-  { regex: /(chrome|chromium|crios)\/v?([\w\.]+)/i, id: 9 }, // Chrome
+  { regex: /(chrome|crios)(?:\/v?([\w\.]+))?\b/i, id: 9 }, // Chrome
   { regex: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, id: 10 }, // Safari Mobile
   { regex: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, id: 11 }, // Safari
   { regex: /(firefox)\/([\w\.]+)/i, id: 12 } // Firefox
@@ -45,9 +54,9 @@ const BROWSER_REGEX_MAP = [
 export const defaultValueTemplate = {
     currency: 'USD',
     skipRate: 0,
-    modelVersion: 'modelVersion', // TODO
+    modelVersion: 'modelVersion',
     schema: {
-        fields: ['mediaType', 'size'] // TODO
+        fields: ['mediaType', 'size']
     }
 };
 
@@ -68,6 +77,7 @@ export function withTimeout(promise, ms) {
     return Promise.race([promise.finally(() => clearTimeout(timeout)), timeoutPromise]);
 }
 
+// Utility Functions
 export const getCurrentTimeOfDay = () => {
   const currentHour = new Date().getHours();
 
@@ -79,28 +89,26 @@ export const getCurrentTimeOfDay = () => {
 }
 
 export const getBrowserType = () => {
-    const brandName = getLowEntropySUA()?.browsers
-      ?.map(b => b.brand.toLowerCase())
-      .join(' ') || '';
-    const browserMatch = brandName ? BROWSER_REGEX_MAP.find(({ regex }) => regex.test(brandName)) : -1;
-  
-    if (browserMatch?.id) return browserMatch.id.toString();
-  
-    const userAgent = navigator?.userAgent;
-    let browserIndex = userAgent == null ? -1 : 0;
-  
-    if (userAgent) {
-      browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
-    }
-    return browserIndex.toString();
+  const brandName = getLowEntropySUA()?.browsers
+    ?.map(b => b.brand.toLowerCase())
+    .join(' ') || '';
+  const browserMatch = brandName ? BROWSER_REGEX_MAP.find(({ regex }) => regex.test(brandName)) : -1;
+
+  if (browserMatch?.id) return browserMatch.id.toString();
+
+  const userAgent = navigator?.userAgent;
+  let browserIndex = userAgent == null ? -1 : 0;
+
+  if (userAgent) {
+    browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
+  }
+  return browserIndex.toString();
 }
 
+// Getter Functions
 export const getOs = () => getOS().toString();
-
 export const getDeviceType = () => fetchDeviceType().toString();
-
 export const getCountry = () => _country;
-
 export const getUtm = () => {
   const url = new URL(window.location?.href);
   const urlParams = new URLSearchParams(url?.search);
@@ -163,8 +171,9 @@ export const fetchData = async (publisherId, profileId, type) => {
         return;
       }
   
-      if (type === "floors") {
-        _country = response.headers?.get("country_code")?.split(",")[0]?.trim() ?? undefined;
+      if (type === "FLOORS") {
+        const cc = response.headers?.get('country_code');
+        _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
       }
   
       return await response.json();
@@ -199,8 +208,8 @@ const init = (config, _userConsent) => {
       return false;
     }
 
-    _fetchFloorRulesPromise = fetchData(publisherId, profileId, "floors");
-    _fetchConfigPromise = fetchData(publisherId, profileId, "configs");
+    _fetchFloorRulesPromise = fetchData(publisherId, profileId, "FLOORS");
+    _fetchConfigPromise = fetchData(publisherId, profileId, "CONFIGS");
 
     _fetchConfigPromise.then(async (profileConfigs) => {
       const auctionDelay = conf.getConfig('realTimeData').auctionDelay;

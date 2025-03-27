@@ -495,59 +495,6 @@ describe('Pubmatic RTD Provider', () => {
         });
     });
 
-    // describe('getBidRequestData', () => {
-    //     let _mergedConfigPromise;
-    //     let continueAuctionStub;
-    //     let callback = sinon.spy();
-
-    //     const reqBidsConfigObj = {
-    //         adUnits: [{ code: 'ad-slot-code-0' }],
-    //         auctionId: 'auction-id-0',
-    //         ortb2Fragments: {
-    //             bidder: {
-    //                 user: {
-    //                     ext: {
-    //                         ctr: 'US',
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     };
-
-    //     const ortb2 = {
-    //         user: {
-    //             ext: {
-    //                 ctr: 'US',
-    //             }
-    //         }
-    //     }
-
-    //     const hookConfig = {
-    //         reqBidsConfigObj,
-    //         context: this,
-    //         nextFn: () => true,
-    //         haveExited: false,
-    //         timer: null
-    //     };
-
-    //     beforeEach(() => {
-    //         continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
-    //     });
-
-    //     it('should call continueAuction once after _mergedConfigPromise. Also getBidRequestData executed only once', async () => {
-    //         _mergedConfigPromise = Promise.resolve();
-    //         pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
-    //         await _mergedConfigPromise;
-    //         expect(continueAuctionStub.calledOnce);
-    //         expect(
-    //             continueAuctionStub.alwaysCalledWith(
-    //                 hookConfig
-    //             )
-    //         );
-    //         expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.include(ortb2);
-    //     });
-    // });
-
     describe('getBidRequestData', function () {
         let callback, continueAuctionStub, mergeDeepStub, logErrorStub;
 

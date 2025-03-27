@@ -436,8 +436,8 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
-  const user = e.bidderRequests.length > 0
-    ? e.bidderRequests.find(bidder => bidder.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext || {}
+  const user = e.bidderRequests?.length > 0
+    ? e.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext || {}
     : {};
 
   if (!auctionCache || auctionCache.sent) {
@@ -458,7 +458,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dm'] = DISPLAY_MANAGER;
   outputObj['dmv'] = '$prebid.version$' || '-1';
   outputObj['bm'] = getBrowserType();
-  outputObj['ctr'] = Object.keys(user).length ? user.ctr : '';
+  outputObj['ctr'] = Object.keys(user)?.length ? user.ctr : '';
 
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData?.floorRequestData);
