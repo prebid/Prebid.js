@@ -60,7 +60,7 @@ export const defaultValueTemplate = {
 };
 
 let initTime;
-let _fetchFloorRulesPromise = null, _fetchConfigPromise = null;
+let _fetchFloorRulesPromise = null; let _fetchConfigPromise = null;
 export let configMerged;
 // configMerged is a reference to the function that can resolve configMergedPromise whenever we want
 let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
@@ -72,7 +72,7 @@ export function withTimeout(promise, ms) {
     const timeoutPromise = new Promise((resolve) => {
       timeout = setTimeout(() => resolve(undefined), ms);
     });
-  
+
     return Promise.race([promise.finally(() => clearTimeout(timeout)), timeoutPromise]);
 }
 
@@ -124,7 +124,7 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
     const defaultFloorConfig = conf.getConfig('floors') ?? {};
     // Plugin data from profile
     const dynamicFloors = profileConfigs?.plugins?.dynamicFloors;
-  
+
     // If plugin disabled or config not present, return undefined
     if (!dynamicFloors?.enabled || !dynamicFloors?.config) {
       return undefined;
@@ -141,7 +141,7 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
     // If skiprate is provided in configs, overwrite the value in finalFloorsData
     (config.skipRate !== undefined) && (finalFloorsData.skipRate = config.skipRate);
 
-    // merge default configs from page, configs 
+    // merge default configs from page, configs
     return {
         floors: {
             ...defaultFloorConfig,
@@ -170,12 +170,12 @@ export const fetchData = async (publisherId, profileId, type) => {
         logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: Not ok`);
         return;
       }
-  
+
       if (type === "FLOORS") {
         const cc = response.headers?.get('country_code');
         _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
       }
-  
+
       return await response.json();
     } catch (error) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}:`, error);
@@ -223,7 +223,7 @@ const init = (config, _userConsent) => {
       floorsConfig && conf.setConfig(floorsConfig);
       configMerged();
     });
-  
+
     return true;
 };
 
