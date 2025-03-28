@@ -688,7 +688,7 @@ describe('stackadaptBidAdapter', function () {
 
     it('should set correct endpoint', function () {
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequest);
-      expect(ortbRequest.url).to.equal('https://pjs.stackadapt.com/br');
+      expect(ortbRequest.url).to.equal('https://pjs.srv.stackadapt.com/br');
     });
 
     it('should set correct publisherId', function () {
@@ -954,7 +954,6 @@ describe('stackadaptBidAdapter', function () {
       };
       clonedBidderRequests.bids = clonedBidRequests;
       const ortbRequest = spec.buildRequests(clonedBidRequests, clonedBidderRequests).data;
-      config.resetConfig();
       expect(ortbRequest.imp[0].bidfloor).to.equal(bidfloor);
     });
 

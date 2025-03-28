@@ -1,20 +1,21 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepSetValue, deepAccess, mergeDeep, logWarn, parseSizesInput, isNumber, isInteger, replaceAuctionPrice, getDNT, formatQS } from '../src/utils.js';
+import { deepSetValue, deepAccess, mergeDeep, logWarn, parseSizesInput, isNumber, isInteger, replaceAuctionPrice, getDNT, formatQS, isFn, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'stackadapt';
-const ENDPOINT_URL = 'https://pjs.stackadapt.com/br';
+const ENDPOINT_URL = 'https://pjs.srv.stackadapt.com/br';
 const USER_SYNC_ENDPOINT = 'https://sync.srv.stackadapt.com/sync?nid=pjs';
+const CURRENCY = 'USD';
 
 export const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 300,
-    currency: 'USD',
+    currency: CURRENCY,
   },
 
   request(buildRequest, imps, bidderRequest, context) {
@@ -35,14 +36,17 @@ export const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
-    if (bidRequest.params.bidfloor) {
-      deepSetValue(imp, 'bidfloor', bidRequest.params.bidfloor);
-    }
     if (bidRequest.params.placementId) {
       deepSetValue(imp, 'tagid', bidRequest.params.placementId);
     }
     if (bidRequest.params.banner?.expdir) {
       deepSetValue(imp, 'banner.expdir', bidRequest.params.banner.expdir);
+    }
+
+    const bidfloor = getBidFloor(bidRequest);
+    if (bidfloor) {
+      imp.bidfloor = parseFloat(bidfloor);
+      imp.bidfloorcur = CURRENCY;
     }
 
     if (!isNumber(imp.secure)) {
@@ -146,7 +150,6 @@ export const spec = {
       url: ENDPOINT_URL,
       data: data,
       options: {
-        contentType: 'application/json',
         withCredentials: true
       }
     };
@@ -227,6 +230,24 @@ function setUser(request, bidderRequest) {
   if (eids && eids.length && !request.user?.ext?.eids) {
     deepSetValue(request, 'user.ext.eids', eids);
   }
+}
+
+function getBidFloor(bidRequest) {
+  if (bidRequest.params.bidfloor) {
+    return bidRequest.params.bidfloor;
+  }
+
+  if (isFn(bidRequest.getFloor)) {
+    let floor = bidRequest.getFloor({
+      currency: CURRENCY,
+      mediaType: '*',
+      size: '*'
+    });
+    if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === CURRENCY) {
+      return floor.floor;
+    }
+  }
+  return null;
 }
 
 registerBidder(spec);
