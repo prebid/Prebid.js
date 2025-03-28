@@ -189,7 +189,7 @@ export const fetchData = async (publisherId, profileId, type) => {
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
-    const initTime = Date.now(); // Capture the initialization time
+    initTime = Date.now(); // Capture the initialization time
     const { publisherId, profileId } = config?.params || {};
 
     if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {

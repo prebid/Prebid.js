@@ -579,7 +579,7 @@ describe('Pubmatic RTD Provider', () => {
         });
 
         it('should properly handle rejected promises', async function () {
-            const promise = new Promise((_, reject) => setTimeout(() => reject(new Error('Failure')), 50));
+            const promise = new Promise((resolve, reject) => setTimeout(() => reject(new Error('Failure')), 50));
             try {
                 await withTimeout(promise, 100);
             } catch (error) {
@@ -588,7 +588,7 @@ describe('Pubmatic RTD Provider', () => {
         });
 
         it('should resolve with undefined if the original promise is rejected but times out first', async function () {
-            const promise = new Promise((_, reject) => setTimeout(() => reject(new Error('Failure')), 200));
+            const promise = new Promise((resolve, reject) => setTimeout(() => reject(new Error('Failure')), 200));
             const result = await withTimeout(promise, 100);
             expect(result).to.be.undefined;
         });
