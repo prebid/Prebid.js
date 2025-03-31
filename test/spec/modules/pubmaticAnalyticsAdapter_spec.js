@@ -371,13 +371,13 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
       if (FEATURES.PBS_CONSTANTS) {
         expect(requests.length).to.equal(1); // only logger is fired
+        let request = requests[0];
+        expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+        let data = getLoggerJsonFromRequest(request.requestBody);
+        expect(data.pubid).to.equal('9999');
+        expect(data.pid).to.equal('1111');
+        expect(data.pdvid).to.equal('20');
       };
-      let request = requests[0];
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
-      expect(data.pubid).to.equal('9999');
-      expect(data.pid).to.equal('1111');
-      expect(data.pdvid).to.equal('20');
     });
 
     it('Non-pubmatic won: logger, tracker fired', function() {
