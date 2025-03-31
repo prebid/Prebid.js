@@ -71,6 +71,7 @@ const generateGdprConsent = (consent = {}) => {
   const defaults = {
     gdprApplies: true,
     purpose1Consent: true,
+    purpose7Consent: true,
     nodalsConsent: true,
   };
   const mergedConsent = { ...defaults, ...consent };
@@ -82,11 +83,15 @@ const generateGdprConsent = (consent = {}) => {
         purpose: {
           consents: {
             1: mergedConsent.purpose1Consent,
+            2: true,
             3: true,
             4: true,
             5: true,
             6: true,
+            7: mergedConsent.purpose7Consent,
+            8: true,
             9: true,
+            10: true,
           },
         },
         specialFeatureOptins: {
@@ -141,6 +146,7 @@ describe('NodalsAI RTD Provider', () => {
   const permissiveUserConsent = generateGdprConsent();
   const vendorRestrictiveUserConsent = generateGdprConsent({ nodalsConsent: false });
   const noPurpose1UserConsent = generateGdprConsent({ purpose1Consent: false });
+  const noPurpose7UserConsent = generateGdprConsent({ purpose7Consent: false });
   const outsideGdprUserConsent = generateGdprConsent({ gdprApplies: false });
 
   beforeEach(() => {
@@ -182,15 +188,15 @@ describe('NodalsAI RTD Provider', () => {
 
   describe('init()', () => {
     describe('when initialised with empty consent data', () => {
-      it('should return false when initialized with valid config and empty user consent', function () {
+      it('should return true when initialised with valid config and empty user consent', function () {
         const result = nodalsAiRtdSubmodule.init(validConfig, {});
         server.respond();
 
-        expect(result).to.be.false;
-        expect(server.requests.length).to.equal(0);
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
       });
 
-      it('should return false when initialized with invalid config', () => {
+      it('should return false when initialised with invalid config', () => {
         const config = { params: { invalid: true } };
         const result = nodalsAiRtdSubmodule.init(config, {});
         server.respond();
@@ -203,6 +209,14 @@ describe('NodalsAI RTD Provider', () => {
     describe('when initialised with valid config data', () => {
       it('should return false when user is under GDPR jurisdiction and purpose1 has not been granted', () => {
         const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose1UserConsent);
+        server.respond();
+
+        expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
+      });
+
+      it('should return false when user is under GDPR jurisdiction and purpose7 has not been granted', () => {
+        const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose7UserConsent);
         server.respond();
 
         expect(result).to.be.false;

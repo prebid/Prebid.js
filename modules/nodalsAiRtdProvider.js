@@ -246,14 +246,16 @@ class NodalsAiRtdProvider {
    */
 
   #hasRequiredUserConsent(userConsent) {
-    if (userConsent?.gdpr?.gdprApplies === false) {
+    if (userConsent.gdpr === undefined || userConsent.gdpr?.gdprApplies === false) {
       return true;
     }
     if (
-      [false, undefined].includes(userConsent?.gdpr?.vendorData?.vendor?.consents?.[this.gvlid])
+      [false, undefined].includes(userConsent.gdpr.vendorData?.vendor?.consents?.[this.gvlid])
     ) {
       return false;
-    } else if (userConsent?.gdpr?.vendorData?.purpose?.consents[1] === false) {
+    } else if (userConsent.gdpr.vendorData?.purpose?.consents[1] === false ||
+      userConsent.gdpr.vendorData?.purpose?.consents[7] === false
+    ) {
       return false;
     }
     return true;
