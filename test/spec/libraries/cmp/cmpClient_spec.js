@@ -113,7 +113,6 @@ describe('cmpClient', () => {
 
           it('rejects when CMP api throws', (done) => {
             mockApiFn.resetBehavior();
-            mockApiFn.resetHistory();
             const e = new Error();
             mockApiFn.throws(e);
             mkClient()({}).catch(val => {
