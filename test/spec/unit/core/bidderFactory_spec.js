@@ -248,7 +248,7 @@ describe('bidderFactory', () => {
             br.bids.forEach(checkBidRequest);
           }
 
-          it(`should ${t} from the spec logic when the transmitTid activity is${allowed ? '' : ' not'} allowed`, async () => {
+          it(`should ${t} from the spec logic when the transmitTid activity is${allowed ? '' : ' not'} allowed`, () => {
             spec.isBidRequestValid.callsFake(br => {
               checkBidRequest(br);
               return true;
@@ -262,7 +262,7 @@ describe('bidderFactory', () => {
 
             const bidder = newBidder(spec);
 
-            await bidder.callBids({
+            bidder.callBids({
               bidderCode: 'mockBidder',
               auctionId: 'aid',
               bids: [
@@ -381,10 +381,10 @@ describe('bidderFactory', () => {
         expect(ajaxStub.called).to.equal(false);
       });
 
-      it('should make the appropriate POST request', async function () {
+      it('should make the appropriate POST request', function () {
         const bidder = newBidder(spec);
         const url = 'test.url.com';
-        const data = {arg: 2};
+        const data = { arg: 2 };
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns({
           method: 'POST',
@@ -392,7 +392,7 @@ describe('bidderFactory', () => {
           data: data
         });
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(ajaxStub.calledOnce).to.equal(true);
         expect(ajaxStub.firstCall.args[0]).to.equal(url);
@@ -404,11 +404,11 @@ describe('bidderFactory', () => {
         });
       });
 
-      it('should make the appropriate POST request when options are passed', async function () {
+      it('should make the appropriate POST request when options are passed', function () {
         const bidder = newBidder(spec);
         const url = 'test.url.com';
-        const data = {arg: 2};
-        const options = {contentType: 'application/json'};
+        const data = { arg: 2 };
+        const options = { contentType: 'application/json' };
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns({
           method: 'POST',
@@ -417,7 +417,7 @@ describe('bidderFactory', () => {
           options: options
         });
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(ajaxStub.calledOnce).to.equal(true);
         expect(ajaxStub.firstCall.args[0]).to.equal(url);
@@ -429,10 +429,10 @@ describe('bidderFactory', () => {
         })
       });
 
-      it('should make the appropriate GET request', async function () {
+      it('should make the appropriate GET request', function () {
         const bidder = newBidder(spec);
         const url = 'test.url.com';
-        const data = {arg: 2};
+        const data = { arg: 2 };
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns({
           method: 'GET',
@@ -440,7 +440,7 @@ describe('bidderFactory', () => {
           data: data
         });
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(ajaxStub.calledOnce).to.equal(true);
         expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
@@ -451,11 +451,11 @@ describe('bidderFactory', () => {
         })
       });
 
-      it('should make the appropriate GET request when options are passed', async function () {
+      it('should make the appropriate GET request when options are passed', function () {
         const bidder = newBidder(spec);
         const url = 'test.url.com';
-        const data = {arg: 2};
-        const opt = {withCredentials: false}
+        const data = { arg: 2 };
+        const opt = { withCredentials: false }
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns({
           method: 'GET',
@@ -464,7 +464,7 @@ describe('bidderFactory', () => {
           options: opt
         });
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(ajaxStub.calledOnce).to.equal(true);
         expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
@@ -475,10 +475,10 @@ describe('bidderFactory', () => {
         })
       });
 
-      it('should make multiple calls if the spec returns them', async function () {
+      it('should make multiple calls if the spec returns them', function () {
         const bidder = newBidder(spec);
         const url = 'test.url.com';
-        const data = {arg: 2};
+        const data = { arg: 2 };
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns([
           {
@@ -493,7 +493,7 @@ describe('bidderFactory', () => {
           }
         ]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(ajaxStub.calledTwice).to.equal(true);
       });
@@ -515,7 +515,7 @@ describe('bidderFactory', () => {
           spec.isBidRequestValid.returns(true);
         });
 
-        it(`should be set to false when adapter sets browsingTopics = false`, async () => {
+        it(`should be set to false when adapter sets browsingTopics = false`, () => {
           transmitUfpdAllowed = true;
           spec.buildRequests.returns([
             {
@@ -526,7 +526,7 @@ describe('bidderFactory', () => {
               }
             }
           ]);
-          await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
           sinon.assert.calledWith(ajaxStub, 'url', sinon.match.any, sinon.match.any, sinon.match({
             browsingTopics: false
           }));
@@ -556,7 +556,7 @@ describe('bidderFactory', () => {
             }).forEach(([t, allow]) => {
               const shouldBeSet = allow && enabled;
 
-              it(`should be set to ${shouldBeSet} when transmitUfpd is ${t}`, async () => {
+              it(`should be set to ${shouldBeSet} when transmitUfpd is ${t}`, () => {
                 transmitUfpdAllowed = allow;
                 spec.buildRequests.returns([
                   {
@@ -584,7 +584,7 @@ describe('bidderFactory', () => {
                     }
                   }
                 ]);
-                await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+                bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
                 ['1', '2', '3', '4'].forEach(url => {
                   sinon.assert.calledWith(
                     ajaxStub,
@@ -613,19 +613,19 @@ describe('bidderFactory', () => {
         expect(addBidResponseStub.callCount).to.equal(0);
       });
 
-      it('should emit BEFORE_BIDDER_HTTP events before network requests', async function () {
+      it('should emit BEFORE_BIDDER_HTTP events before network requests', function () {
         const bidder = newBidder(spec);
         const req = {
           method: 'POST',
           url: 'test.url.com',
-          data: {arg: 2}
+          data: { arg: 2 }
         };
 
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns([req, req]);
 
         const eventEmitterSpy = sinon.spy(events, 'emit');
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(ajaxStub.calledTwice).to.equal(true);
         expect(eventEmitterSpy.getCalls()
@@ -659,15 +659,15 @@ describe('bidderFactory', () => {
         utils.logError.restore();
       });
 
-      it('should call onTimelyResponse', async () => {
+      it('should call onTimelyResponse', () => {
         const bidder = newBidder(spec);
         spec.isBidRequestValid.returns(true);
         spec.buildRequests.returns({method: 'POST', url: 'test', data: {}});
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         sinon.assert.called(onTimelyResponseStub);
       })
 
-      it('should call spec.interpretResponse() with the response content', async function () {
+      it('should call spec.interpretResponse() with the response content', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(true);
@@ -678,7 +678,7 @@ describe('bidderFactory', () => {
         });
         spec.getUserSyncs.returns([]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(spec.interpretResponse.calledOnce).to.equal(true);
         const response = spec.interpretResponse.firstCall.args[0]
@@ -692,7 +692,7 @@ describe('bidderFactory', () => {
         expect(doneStub.calledOnce).to.equal(true);
       });
 
-      it('should call spec.interpretResponse() once for each request made', async function () {
+      it('should call spec.interpretResponse() once for each request made', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(true);
@@ -710,7 +710,7 @@ describe('bidderFactory', () => {
         ]);
         spec.getUserSyncs.returns([]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(spec.interpretResponse.calledTwice).to.equal(true);
         expect(doneStub.calledOnce).to.equal(true);
@@ -737,7 +737,7 @@ describe('bidderFactory', () => {
           bidderRequest.bids[0].bidder = 'sampleBidder';
         })
 
-        async function getAuctionBid() {
+        function getAuctionBid() {
           const bidder = newBidder(spec);
           spec.isBidRequestValid.returns(true);
           spec.buildRequests.returns({
@@ -747,7 +747,7 @@ describe('bidderFactory', () => {
           });
           spec.getUserSyncs.returns([]);
           spec.interpretResponse.returns(bid);
-          await bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
           return addBidResponseStub.firstCall.args[1];
         }
 
@@ -755,8 +755,8 @@ describe('bidderFactory', () => {
           bidderRequest.bids.forEach(bid => { bid.deferBilling = deferredBilling });
         }
 
-        it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', async function () {
-          const auctionBid = await getAuctionBid();
+        it('should only add bids for valid adUnit code into the auction, even if the bidder doesn\'t bid on all of them', function () {
+          const auctionBid = getAuctionBid();
           expect(addBidResponseStub.calledOnce).to.equal(true);
           expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
           // checking the fields added by our code
@@ -771,9 +771,9 @@ describe('bidderFactory', () => {
         describe('if request has deferBilling = true', () => {
           beforeEach(() => setDeferredBilling(true));
 
-          it('should set response.deferBilling = true, regardless of what the adapter says', async () => {
+          it('should set response.deferBilling = true, regardless of what the adapter says', () => {
             bid.deferBilling = false;
-            expect((await getAuctionBid()).deferBilling).to.be.true;
+            expect(getAuctionBid().deferBilling).to.be.true;
           });
           [
             {
@@ -793,12 +793,12 @@ describe('bidderFactory', () => {
               shouldDefer: true
             }
           ].forEach(({onBidBillable, deferRendering, shouldDefer}) => {
-            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and sayd deferRender = ${deferRendering}`, async () => {
+            it(`sets response deferRendering = ${shouldDefer} when adapter ${onBidBillable ? 'supports' : 'does not support'} onBidBillable, and sayd deferRender = ${deferRendering}`, () => {
               if (onBidBillable) {
                 spec.onBidBillable = sinon.stub();
               }
               bid.deferRendering = deferRendering;
-              expect((await getAuctionBid()).deferRendering).to.equal(shouldDefer);
+              expect(getAuctionBid().deferRendering).to.equal(shouldDefer);
             });
           })
         });
@@ -806,15 +806,15 @@ describe('bidderFactory', () => {
         describe('if request has deferBilling = false', () => {
           beforeEach(() => setDeferredBilling(false));
           [true, false].forEach(deferredRender => {
-            it(`should set deferRendering = false when adapter says deferRendering = ${deferredRender}`, async () => {
+            it(`should set deferRendering = false when adapter says deferRendering = ${deferredRender}`, () => {
               bid.deferRendering = deferredRender;
-              expect((await getAuctionBid()).deferRendering).to.be.false;
+              expect(getAuctionBid().deferRendering).to.be.false;
             });
           });
         });
       })
 
-      it('should call spec.getUserSyncs() with the response', async function () {
+      it('should call spec.getUserSyncs() with the response', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(true);
@@ -825,7 +825,7 @@ describe('bidderFactory', () => {
         });
         spec.getUserSyncs.returns([]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(spec.getUserSyncs.calledOnce).to.equal(true);
         expect(spec.getUserSyncs.firstCall.args[1].length).to.equal(1);
@@ -834,7 +834,7 @@ describe('bidderFactory', () => {
         expect(spec.getUserSyncs.firstCall.args[1][0].headers.get).to.be.a('function');
       });
 
-      it('should register usersync pixels', async function () {
+      it('should register usersync pixels', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(false);
@@ -844,7 +844,7 @@ describe('bidderFactory', () => {
           url: 'usersync.com'
         }]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(userSyncStub.called).to.equal(true);
         expect(userSyncStub.firstCall.args[0]).to.equal('iframe');
@@ -852,7 +852,7 @@ describe('bidderFactory', () => {
         expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
       });
 
-      it('should logError and reject bid when required bid response params are missing', async function () {
+      it('should logError and reject bid when required bid response params are missing', function () {
         const bidder = newBidder(spec);
 
         const bid = {
@@ -873,13 +873,13 @@ describe('bidderFactory', () => {
 
         spec.interpretResponse.returns(bid);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(logErrorSpy.calledOnce).to.equal(true);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
       });
 
-      it('should logError and reject bid when required response params are undefined', async function () {
+      it('should logError and reject bid when required response params are undefined', function () {
         const bidder = newBidder(spec);
 
         const bid = {
@@ -904,13 +904,13 @@ describe('bidderFactory', () => {
 
         spec.interpretResponse.returns(bid);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(logErrorSpy.calledOnce).to.equal(true);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
       });
 
-      it('should require requestId from interpretResponse', async () => {
+      it('should require requestId from interpretResponse', () => {
         const bidder = newBidder(spec);
         const bid = {
           'ad': 'creative',
@@ -929,7 +929,7 @@ describe('bidderFactory', () => {
         spec.getUserSyncs.returns([]);
         spec.interpretResponse.returns(bid);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.be.false;
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
@@ -966,17 +966,17 @@ describe('bidderFactory', () => {
         'timeouts': true,
         'other errors': false
       }).forEach(([t, timedOut]) => {
-        it(`should ${timedOut ? 'NOT ' : ''}call onTimelyResponse on ${t}`, async () => {
+        it(`should ${timedOut ? 'NOT ' : ''}call onTimelyResponse on ${t}`, () => {
           Object.assign(xhrErrorMock, {timedOut});
           const bidder = newBidder(spec);
           spec.isBidRequestValid.returns(true);
           spec.buildRequests.returns({method: 'POST', url: 'test', data: {}});
-          await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
           sinon.assert[timedOut ? 'notCalled' : 'called'](onTimelyResponseStub);
         })
       })
 
-      it('should not spec.interpretResponse()', async function () {
+      it('should not spec.interpretResponse()', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(true);
@@ -987,7 +987,7 @@ describe('bidderFactory', () => {
         });
         spec.getUserSyncs.returns([]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(spec.interpretResponse.called).to.equal(false);
         expect(doneStub.calledOnce).to.equal(true);
@@ -1001,7 +1001,7 @@ describe('bidderFactory', () => {
         });
       });
 
-      it('should not add bids for each adunit code into the auction', async function () {
+      it('should not add bids for each adunit code into the auction', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(true);
@@ -1013,7 +1013,7 @@ describe('bidderFactory', () => {
         spec.interpretResponse.returns([]);
         spec.getUserSyncs.returns([]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.callCount).to.equal(0);
         expect(doneStub.calledOnce).to.equal(true);
@@ -1027,7 +1027,7 @@ describe('bidderFactory', () => {
         });
       });
 
-      it('should call spec.getUserSyncs() with no responses', async function () {
+      it('should call spec.getUserSyncs() with no responses', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(true);
@@ -1038,7 +1038,7 @@ describe('bidderFactory', () => {
         });
         spec.getUserSyncs.returns([]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(spec.getUserSyncs.calledOnce).to.equal(true);
         expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
@@ -1053,7 +1053,7 @@ describe('bidderFactory', () => {
         });
       });
 
-      it('should call spec.getUserSyncs() with no responses', async function () {
+      it('should call spec.getUserSyncs() with no responses', function () {
         const bidder = newBidder(spec);
 
         spec.isBidRequestValid.returns(true);
@@ -1064,7 +1064,7 @@ describe('bidderFactory', () => {
         });
         spec.getUserSyncs.returns([]);
 
-        await bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(spec.getUserSyncs.calledOnce).to.equal(true);
         expect(spec.getUserSyncs.firstCall.args[1]).to.deep.equal([]);
@@ -1239,7 +1239,7 @@ describe('bidderFactory', () => {
     });
 
     if (FEATURES.NATIVE) {
-      it('should add native bids that do have required assets', async function () {
+      it('should add native bids that do have required assets', function () {
         adUnits = [{
           adUnitId: 'au',
           nativeParams: {
@@ -1274,14 +1274,14 @@ describe('bidderFactory', () => {
         const bidder = newBidder(spec);
 
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
         expect(logErrorSpy.callCount).to.equal(0);
       });
 
-      it('should not add native bids that do not have required assets', async function () {
+      it('should not add native bids that do not have required assets', function () {
         adUnits = [{
           transactionId: 'au',
           nativeParams: {
@@ -1315,7 +1315,7 @@ describe('bidderFactory', () => {
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(false);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
@@ -1323,7 +1323,7 @@ describe('bidderFactory', () => {
       });
     }
 
-    it('should add bid when renderer is present on outstream bids', async function () {
+    it('should add bid when renderer is present on outstream bids', function () {
       adUnits = [{
         transactionId: 'au',
         mediaTypes: {
@@ -1354,14 +1354,14 @@ describe('bidderFactory', () => {
       const bidder = newBidder(spec);
 
       spec.interpretResponse.returns(bids1);
-      await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(addBidResponseStub.calledOnce).to.equal(true);
       expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
-    it('should add banner bids that have no width or height but single adunit size', async function () {
+    it('should add banner bids that have no width or height but single adunit size', function () {
       let bidRequest = {
         bids: [{
           bidder: CODE,
@@ -1386,14 +1386,14 @@ describe('bidderFactory', () => {
       const bidder = newBidder(spec);
 
       spec.interpretResponse.returns(bids1);
-      await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(addBidResponseStub.calledOnce).to.equal(true);
       expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       expect(logErrorSpy.callCount).to.equal(0);
     });
 
-    it('should disregard auctionId/transactionId set by the adapter', async () => {
+    it('should disregard auctionId/transactionId set by the adapter', () => {
       let bidderRequest = {
         bids: [{
           bidder: CODE,
@@ -1405,7 +1405,7 @@ describe('bidderFactory', () => {
       };
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(Object.assign({}, bids[0], {transactionId: 'ignored', auctionId: 'ignored'}));
-      await bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
       sinon.assert.calledWith(addBidResponseStub, sinon.match.any, sinon.match({
         transactionId: 'tid',
         auctionId: 'aid'
@@ -1450,126 +1450,126 @@ describe('bidderFactory', () => {
         aliasRegistryStub.restore();
       });
 
-      it('should log warning when bidder is unknown and allowAlternateBidderCodes flag is false', async function () {
+      it('should log warning when bidder is unknown and allowAlternateBidderCodes flag is false', function () {
         bidderSettingStub.returns(false);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(false);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
         expect(logWarnSpy.callCount).to.equal(1);
       });
 
-      it('should reject the bid, when allowAlternateBidderCodes flag is undefined (default should be false)', async function () {
+      it('should reject the bid, when allowAlternateBidderCodes flag is undefined (default should be false)', function () {
         bidderSettingStub.returns(undefined);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(false);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
       });
 
-      it('should log warning when the particular bidder is not specified in allowedAlternateBidderCodes and allowAlternateBidderCodes flag is true', async function () {
+      it('should log warning when the particular bidder is not specified in allowedAlternateBidderCodes and allowAlternateBidderCodes flag is true', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
         bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['invalidAlternateBidder02']);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(false);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
         expect(logWarnSpy.callCount).to.equal(1);
       });
 
-      it('should accept the bid, when allowedAlternateBidderCodes is empty and allowAlternateBidderCodes flag is true', async function () {
+      it('should accept the bid, when allowedAlternateBidderCodes is empty and allowAlternateBidderCodes flag is true', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
         bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns();
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(logWarnSpy.callCount).to.equal(0);
         expect(logErrorSpy.callCount).to.equal(0);
       });
 
-      it('should accept the bid, when allowedAlternateBidderCodes is marked as * and allowAlternateBidderCodes flag is true', async function () {
+      it('should accept the bid, when allowedAlternateBidderCodes is marked as * and allowAlternateBidderCodes flag is true', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
         bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['*']);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(logWarnSpy.callCount).to.equal(0);
         expect(logErrorSpy.callCount).to.equal(0);
       });
 
-      it('should accept the bid, when allowedAlternateBidderCodes is marked as * (with space) and allowAlternateBidderCodes flag is true', async function () {
+      it('should accept the bid, when allowedAlternateBidderCodes is marked as * (with space) and allowAlternateBidderCodes flag is true', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
         bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns([' * ']);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(logWarnSpy.callCount).to.equal(0);
         expect(logErrorSpy.callCount).to.equal(0);
       });
 
-      it('should not accept the bid, when allowedAlternateBidderCodes is marked as empty array and allowAlternateBidderCodes flag is true', async function () {
+      it('should not accept the bid, when allowedAlternateBidderCodes is marked as empty array and allowAlternateBidderCodes flag is true', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
         bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns([]);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(false);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
         expect(logWarnSpy.callCount).to.equal(1);
       });
 
-      it('should accept the bid, when allowedAlternateBidderCodes contains bidder name and allowAlternateBidderCodes flag is true', async function () {
+      it('should accept the bid, when allowedAlternateBidderCodes contains bidder name and allowAlternateBidderCodes flag is true', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
         bidderSettingStub.withArgs(CODE, 'allowedAlternateBidderCodes').returns(['validAlternateBidder']);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(true);
         expect(logWarnSpy.callCount).to.equal(0);
         expect(logErrorSpy.callCount).to.equal(0);
       });
 
-      it('should not accept the bid, when bidder is an alias but bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', async function () {
+      it('should not accept the bid, when bidder is an alias but bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(false);
         aliasRegistry = {'validAlternateBidder': CODE};
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(false);
         expect(logWarnSpy.callCount).to.equal(1);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
       });
 
-      it('should not accept the bid, when bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', async function () {
+      it('should not accept the bid, when bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
         bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(false);
 
         const bidder = newBidder(spec);
         spec.interpretResponse.returns(bids1);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
         expect(addBidResponseStub.called).to.equal(false);
         expect(addBidResponseStub.reject.calledOnce).to.be.true;
@@ -1598,22 +1598,22 @@ describe('bidderFactory', () => {
         }
       }
 
-      it('should unwrap bids', async function () {
+      it('should unwrap bids', function() {
         const bidder = newBidder(spec);
         spec.interpretResponse.returns({
           bids: bids,
         });
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
       });
 
-      it('does not unwrap bids from a bid that happens to have a "bids" property', async () => {
+      it('does not unwrap bids from a bid that happens to have a "bids" property', () => {
         const bidder = newBidder(spec);
         const bid = Object.assign({
           bids: ['a', 'b']
         }, bids[0]);
         spec.interpretResponse.returns(bid);
-        await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
       })
 
@@ -1624,10 +1624,10 @@ describe('bidderFactory', () => {
           paapiStub(...args);
         }
 
-        async function runBidder(response) {
+        function runBidder(response) {
           const bidder = newBidder(spec);
           spec.interpretResponse.returns(response);
-          await bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         }
 
         before(() => {
@@ -1643,8 +1643,8 @@ describe('bidderFactory', () => {
         });
 
         describe(`when response has paapi`, () => {
-          it('should call paapi config hook with auction configs', async function () {
-            await runBidder({
+          it('should call paapi config hook with auction configs', function () {
+            runBidder({
               bids: bids,
               paapi: [paapiConfig]
             });
@@ -1657,8 +1657,8 @@ describe('bidderFactory', () => {
             'missing': undefined,
             'an empty array': []
           }).forEach(([t, bids]) => {
-            it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, async function () {
-              await runBidder({
+            it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function () {
+              runBidder({
                 bids,
                 paapi: [paapiConfig]
               });
