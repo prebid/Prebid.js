@@ -54,7 +54,11 @@ describe('Yandex adapter', function () {
       }];
       bidderRequest = {
         ortb2: {
-          site: {},
+          site: {
+            content: {
+              language: 'en'
+            }
+          },
           device: {
             language: 'fr'
           }
@@ -62,23 +66,15 @@ describe('Yandex adapter', function () {
       };
     });
 
-    it('should set site.content.language from device.language', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].data.site.content).to.be.an('object');
-      expect(requests[0].data.site.content.language).to.equal('fr');
-    });
-
-    it('should not set site.content.language if device.language is not set', function () {
+    it('should set site.content.language if device.language is not set', function () {
       delete bidderRequest.ortb2.device.language;
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].data.site.content).to.be.undefined;
+      expect(requests[0].data.device.language).to.equal('en');
     });
 
-    it('should preserve existing site.content.language if device.language is not set', function () {
-      delete bidderRequest.ortb2.device.language;
-      bidderRequest.ortb2.site.content = { language: 'en' };
+    it('should preserve existing device.language if it set', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].data.site.content.language).to.equal('en');
+      expect(requests[0].data.device.language).to.equal('fr');
     });
 
     it('should pass device.language to bidRequest params and use it in request', function () {
@@ -87,8 +83,7 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl;
 
-      // Verify device.language is set in site.content.language
-      expect(data.site.content.language).to.equal('fr');
+      expect(data.device.language).to.equal('fr');
     });
 
     /** @type {import('../../../src/auction').BidderRequest} */
