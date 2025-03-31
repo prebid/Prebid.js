@@ -94,10 +94,11 @@ const ENRICHMENTS = {
       return;
     }
     const documentLang = dep.getDocument().documentElement.lang;
-    return {...removeUndef({
+    return removeUndef({
       page: ri.page,
       ref: ri.ref,
-    }), content: documentLang ? { language: documentLang } : undefined};
+      content: documentLang ? { language: documentLang } : undefined
+    });
   },
   device() {
     return winFallback((win) => {
