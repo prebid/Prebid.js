@@ -1,7 +1,7 @@
 import {hook} from '../hook.js';
 import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
-import {deepSetValue, getDefinedParams, getDNT, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import {deepSetValue, getDefinedParams, getDNT, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {PbPromise} from '../utils/promise.js';
@@ -18,6 +18,7 @@ export const dep = {
   getWindowSelf,
   getHighEntropySUA,
   getLowEntropySUA,
+  getDocument
 };
 
 const oneClient = clientSectionChecker('FPD')
@@ -92,10 +93,11 @@ const ENRICHMENTS = {
       // do not enrich site if dooh or app are set
       return;
     }
-    return removeUndef({
+    const documentLang = dep.getDocument().documentElement.lang;
+    return {...removeUndef({
       page: ri.page,
       ref: ri.ref,
-    });
+    }), content: documentLang ? { language: documentLang } : undefined};
   },
   device() {
     return winFallback((win) => {
@@ -107,16 +109,12 @@ const ENRICHMENTS = {
       const vpw = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
       const vph = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
 
-      const winLang = win.navigator.language.split('-').shift();
-      const documentLang = document.documentElement.lang.split('-').shift();
-
       const device = {
         w,
         h,
         dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
-        language: winLang,
-        documentLang: documentLang || winLang,
+        language: win.navigator.language.split('-').shift(),
         ext: {
           vpw,
           vph,

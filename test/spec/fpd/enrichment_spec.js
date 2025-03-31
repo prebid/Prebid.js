@@ -33,7 +33,10 @@ describe('FPD enrichment', () => {
         language: ''
       },
       document: {
-        querySelector: sinon.stub()
+        querySelector: sinon.stub(),
+        documentElement: {
+          lang: 'fr'
+        }
       },
       screen: {
         width: 1,
@@ -149,6 +152,25 @@ describe('FPD enrichment', () => {
         }
       }).then(ortb2 => {
         expect(ortb2.site.publisher.domain).to.eql('pub.com');
+      });
+    });
+
+    it('should set site.content.language from document.documentElement.lang', function() {
+      const win = mockWindow();
+      sandbox.stub(dep, 'getDocument').returns(win.document);
+
+      return fpd().then(ortb2 => {
+        expect(ortb2.site.content.language).to.equal('fr');
+      });
+    });
+
+    it('should not set site.content.language if document.documentElement.lang is not set', function() {
+      const win = mockWindow();
+      win.document.documentElement.lang = '';
+      sandbox.stub(dep, 'getDocument').returns(win.document);
+
+      return fpd().then(ortb2 => {
+        expect(ortb2.site.content).to.be.undefined;
       });
     });
   });

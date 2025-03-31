@@ -166,11 +166,6 @@ export const spec = {
         queryParams['ssp-cur'] = currency;
       }
 
-      const lang = document.documentElement.getAttribute('lang');
-      if (lang) {
-        queryParams['banner-lang'] = lang;
-      }
-
       const data = {
         id: bidRequest.bidId,
         imp: [imp],
@@ -180,7 +175,7 @@ export const spec = {
         device: ortb2?.device,
       };
 
-      // Set the language in ortb2 site content if available
+      const lang = bidderRequest?.ortb2?.device?.language;
       if (lang && data.site) {
         if (!data.site.content) data.site.content = {};
         data.site.content.language = lang;

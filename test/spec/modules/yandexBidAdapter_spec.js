@@ -42,8 +42,57 @@ describe('Yandex adapter', function () {
   });
 
   describe('buildRequests', function () {
+    let bidRequests;
+    let bidderRequest;
+
+    beforeEach(function () {
+      bidRequests = [{
+        bidId: 'bid123',
+        params: {
+          placementId: 'R-I-123456-2'
+        }
+      }];
+      bidderRequest = {
+        ortb2: {
+          site: {},
+          device: {
+            language: 'fr'
+          }
+        }
+      };
+    });
+
+    it('should set site.content.language from device.language', function () {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.site.content).to.be.an('object');
+      expect(requests[0].data.site.content.language).to.equal('fr');
+    });
+
+    it('should not set site.content.language if device.language is not set', function () {
+      delete bidderRequest.ortb2.device.language;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.site.content).to.be.undefined;
+    });
+
+    it('should preserve existing site.content.language if device.language is not set', function () {
+      delete bidderRequest.ortb2.device.language;
+      bidderRequest.ortb2.site.content = { language: 'en' };
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].data.site.content.language).to.equal('en');
+    });
+
+    it('should pass device.language to bidRequest params and use it in request', function () {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      const { url, data } = requests[0];
+      const parsedRequestUrl = utils.parseUrl(url);
+      const { search: query } = parsedRequestUrl;
+
+      // Verify device.language is set in site.content.language
+      expect(data.site.content.language).to.equal('fr');
+    });
+
     /** @type {import('../../../src/auction').BidderRequest} */
-    const bidderRequest = {
+    const testBidderRequest = {
       ortb2: {
         site: {
           domain: 'ya.ru',
@@ -96,7 +145,7 @@ describe('Yandex adapter', function () {
         // floor: 0.5
       });
 
-      const requests = spec.buildRequests([bannerRequest], bidderRequest);
+      const requests = spec.buildRequests([bannerRequest], testBidderRequest);
 
       expect(requests).to.have.lengthOf(1);
       const request = requests[0];
@@ -132,7 +181,7 @@ describe('Yandex adapter', function () {
 
       const bannerRequest = getBidRequest();
 
-      return addFPDToBidderRequest(bidderRequest).then(res => {
+      return addFPDToBidderRequest(testBidderRequest).then(res => {
         const requests = spec.buildRequests([bannerRequest], res);
         const { url } = requests[0];
         const parsedRequestUrl = utils.parseUrl(url);
@@ -145,9 +194,9 @@ describe('Yandex adapter', function () {
 
     it('should send eids and ortb2 user data if defined', function() {
       const bidderRequestWithUserData = {
-        ...bidderRequest,
+        ...testBidderRequest,
         ortb2: {
-          ...bidderRequest.ortb2,
+          ...testBidderRequest.ortb2,
           user: {
             data: [
               {
@@ -193,10 +242,10 @@ describe('Yandex adapter', function () {
 
     it('should send site', function() {
       const expected = {
-        site: bidderRequest.ortb2.site
+        site: testBidderRequest.ortb2.site
       };
 
-      const requests = spec.buildRequests([getBidRequest()], bidderRequest);
+      const requests = spec.buildRequests([getBidRequest()], testBidderRequest);
 
       expect(requests[0].data.site).to.deep.equal(expected.site);
     });
@@ -214,7 +263,7 @@ describe('Yandex adapter', function () {
           }
         });
 
-        const requests = spec.buildRequests([bannerRequest], bidderRequest);
+        const requests = spec.buildRequests([bannerRequest], testBidderRequest);
         expect(requests[0].data.imp).to.have.lengthOf(1);
 
         const imp = requests[0].data.imp[0];
@@ -232,7 +281,7 @@ describe('Yandex adapter', function () {
     describe('native', () => {
       function buildRequestAndGetNativeParams(extra) {
         const bannerRequest = getBidRequest(extra);
-        const requests = spec.buildRequests([bannerRequest], bidderRequest);
+        const requests = spec.buildRequests([bannerRequest], testBidderRequest);
 
         return JSON.parse(requests[0].data.imp[0].native.request);
       }
