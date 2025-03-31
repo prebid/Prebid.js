@@ -1076,6 +1076,7 @@ export const utils = {
     const ortbId =
       // called bidderRequestId in Prebid Request
       bid.bidderRequestId ||
+      bid.requestId ||
       // called seatBidId in Prebid Bid Response Object
       bid.seatBidId ||
       // called ortbId in Interpreted Prebid Response Object
